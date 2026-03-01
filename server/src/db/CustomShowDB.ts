@@ -21,7 +21,7 @@ import {
   AllProgramJoins,
   withCustomShowPrograms,
 } from './programQueryHelpers.ts';
-import type { NewCustomShow } from './schema/CustomShow.ts';
+import type { CustomShow, NewCustomShow } from './schema/CustomShow.ts';
 import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
 import { DB } from './schema/db.ts';
 import {
@@ -29,6 +29,8 @@ import {
   ProgramWithRelationsOrm,
 } from './schema/derivedTypes.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
+
+export type CustomShowWithContentCount = CustomShow & { contentCount: number };
 
 @injectable()
 export class CustomShowDB {
@@ -51,7 +53,7 @@ export class CustomShowDB {
       .executeTakeFirst();
   }
 
-  async getShows(ids: string[]) {
+  async getShows(ids: string[]): Promise<Array<CustomShowWithContentCount>> {
     if (ids.length === 0) {
       return [];
     }

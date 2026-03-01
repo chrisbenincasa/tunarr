@@ -161,7 +161,11 @@ const useNamedRoutes = () => {
       },
       {
         matcher: entityPageMatcher('schedules', ''),
-        name: '<replace me>',
+        name: '{{ schedule_name }}',
+      },
+      {
+        matcher: entityPageMatcher(`schedules/${uuidRegexPattern}/slots`, ''),
+        name: '{{ schedule_name }}',
       },
     ],
     [],

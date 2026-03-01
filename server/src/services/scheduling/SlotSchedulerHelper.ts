@@ -7,7 +7,6 @@ import {
   isNumber,
   partition,
   reduce,
-  uniq,
   values,
 } from 'lodash-es';
 import { CustomShowDB } from '../../db/CustomShowDB.ts';
@@ -52,16 +51,60 @@ export class SlotSchedulerHelper {
       programs = await this.programDB.getProgramsByIds(request.programIds);
     }
 
+    const smartCollectionIds = new Set<string>();
+    const showIds = new Set<string>();
+    const customShowIds = new Set<string>();
+    let fillerIds = new Set<string>();
+
+    for (const slot of request.schedule.slots) {
+      switch (slot.type) {
+        case 'filler':
+          fillerIds.add(slot.fillerListId);
+          break;
+        case 'show':
+          showIds.add(slot.showId);
+          break;
+        case 'custom-show':
+          customShowIds.add(slot.customShowId);
+          break;
+        case 'smart-collection':
+          smartCollectionIds.add(slot.smartCollectionId);
+          break;
+        case 'movie':
+        case 'flex':
+        case 'redirect':
+          break;
+      }
+    }
+
+    // Here's the big one - find shows that are included in the schedule but
+    // not currently saved to the channel.
+    (request.schedule.slots as BaseSlot[]).forEach((slot) => {
+      switch (slot.type) {
+        case 'filler':
+        case 'flex':
+        case 'redirect':
+          break;
+        case 'movie':
+        case 'show':
+        case 'custom-show':
+        case 'smart-collection':
+          fillerIds = fillerIds.union(
+            new Set(slot.filler?.map(({ fillerListId }) => fillerListId) ?? []),
+          );
+      }
+    });
+
     const [
       customShowPrograms,
       fillerPrograms,
       showPrograms,
       smartCollectionPrograms,
     ] = await Promise.all([
-      this.materializeCustomShowPrograms(request.schedule.slots),
-      this.materializeFillerLists(request.schedule.slots),
-      this.materializeShows(request.schedule.slots),
-      this.materializeSmartCollections(request.schedule.slots),
+      this.materializeCustomShowPrograms(customShowIds),
+      this.materializeFillerLists(fillerIds),
+      this.materializeShows(showIds),
+      this.materializeSmartCollections(smartCollectionIds),
     ]);
 
     const customShowContexts = reduce(
@@ -112,24 +155,10 @@ export class SlotSchedulerHelper {
     return slotPrograms;
   }
 
-  async materializeCustomShowPrograms(slots: BaseSlot[]) {
-    // Here's the big one - find shows that are included in the schedule but
-    // not currently saved to the channel.
-    const slottedCustomShows = reduce(
-      slots,
-      (acc, curr) => {
-        if (curr.type === 'custom-show') {
-          acc.add(curr.customShowId);
-        }
-        return acc;
-      },
-      new Set<string>(),
-    );
-
-    // Query
+  async materializeCustomShowPrograms(slottedCustomShows: Set<string>) {
     return Object.fromEntries(
       await Promise.all(
-        [...slottedCustomShows].map((show) =>
+        [...slottedCustomShows.values()].map((show) =>
           this.customShowDB
             .getShowProgramsOrm(show)
             .then((programs) => [show, programs] as const),
@@ -139,41 +168,12 @@ export class SlotSchedulerHelper {
   }
 
   async materializeFillerLists(
-    slots: BaseSlot[],
+    ids: Set<string>,
   ): Promise<Record<string, ProgramWithRelationsOrm[]>> {
-    // Here's the big one - find shows that are included in the schedule but
-    // not currently saved to the channel.
-    const slotFiller = slots.flatMap((slot) => {
-      switch (slot.type) {
-        case 'filler':
-        case 'flex':
-        case 'redirect':
-          return [];
-        case 'movie':
-        case 'show':
-        case 'custom-show':
-        case 'smart-collection':
-          return slot.filler?.map(({ fillerListId }) => fillerListId) ?? [];
-      }
-    });
-
-    const slottedFillerLists = reduce(
-      slots,
-      (acc, curr) => {
-        if (curr.type === 'filler') {
-          acc.add(curr.fillerListId);
-        }
-        return acc;
-      },
-      new Set<string>(),
-    );
-
-    slotFiller.forEach((id) => slottedFillerLists.add(id));
-
     // Query
     return Object.fromEntries(
       await Promise.all(
-        [...slottedFillerLists].map((list) =>
+        [...ids.values()].map((list) =>
           this.fillerDB
             .getFillerProgramsOrm(list)
             .then((programs) => [list, programs] as const),
@@ -182,20 +182,12 @@ export class SlotSchedulerHelper {
     );
   }
 
-  async materializeShows(slots: BaseSlot[]) {
-    const showIds = uniq(
-      seq.collect(slots, (slot) => {
-        if (slot.type !== 'show') {
-          return;
-        }
-        return slot.showId;
-      }),
-    );
-
+  async materializeShows(showIds: Set<string>) {
     const allDescendants: ProgramWithRelationsOrm[] = [];
 
     const batchResult = await Promise.all(
       showIds
+        .values()
         .map((id) => [id, 'show'] as const)
         .map(([groupId, type]) =>
           this.programDB
@@ -203,6 +195,7 @@ export class SlotSchedulerHelper {
             .then((result) => [groupId, result] as const),
         ),
     );
+    console.log(batchResult);
     for (const result of batchResult) {
       if (isError(result)) {
         this.logger.warn(result, 'Error while loading descedents for group');
@@ -220,28 +213,21 @@ export class SlotSchedulerHelper {
   }
 
   async materializeSmartCollections(
-    slots: BaseSlot[],
+    collectionIds: Set<string>,
   ): Promise<Record<string, ProgramWithRelationsOrm[]>> {
-    const collectionIds = uniq(
-      seq.collect(slots, (slot) => {
-        if (slot.type !== 'smart-collection') {
-          return;
-        }
-        return slot.smartCollectionId;
-      }),
-    );
-
-    if (collectionIds.length === 0) {
+    if (collectionIds.size === 0) {
       return {};
     }
 
     const resultsBySmartCollection = Object.fromEntries(
       await Promise.all(
-        collectionIds.map((id) =>
-          this.smartCollectionsDB
-            .materializeSmartCollection(id, false)
-            .then((results) => [id, results] as const),
-        ),
+        collectionIds
+          .values()
+          .map((id) =>
+            this.smartCollectionsDB
+              .materializeSmartCollection(id, false)
+              .then((results) => [id, results] as const),
+          ),
       ),
     );
 

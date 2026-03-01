@@ -8,7 +8,7 @@ import { Channel } from './Channel.ts';
 import { CustomShow } from './CustomShow.ts';
 import { FillerShow } from './FillerShow.ts';
 import { InfiniteSchedule } from './InfiniteSchedule.ts';
-import { InfiniteScheduleSlotState } from './InfiniteScheduleSlotState.ts';
+import { InfiniteScheduleSlotState } from './InfiniteScheduleSlotState.ts'; // for many() relation
 import { ProgramGrouping } from './ProgramGrouping.ts';
 import { SmartCollection } from './SmartCollection.ts';
 
@@ -50,6 +50,8 @@ const InfiniteSlotConfig = z.object({
   direction: z.enum(IterationDirections).nullish(),
   // For 'show' slots - season filter
   seasonFilter: z.number().array().nullish(),
+  // Per-slot flex preference override (falls back to schedule-level setting)
+  flexPreference: z.enum(['distribute', 'end']).nullish(),
 });
 
 export type InfiniteSlotConfig = z.infer<typeof InfiniteSlotConfig>;
@@ -130,7 +132,7 @@ export const InfiniteScheduleSlot = sqliteTable(
 
 export const InfiniteScheduleSlotRelations = relations(
   InfiniteScheduleSlot,
-  ({ one }) => ({
+  ({ one, many }) => ({
     schedule: one(InfiniteSchedule, {
       fields: [InfiniteScheduleSlot.scheduleUuid],
       references: [InfiniteSchedule.uuid],
@@ -155,10 +157,8 @@ export const InfiniteScheduleSlotRelations = relations(
       fields: [InfiniteScheduleSlot.smartCollectionId],
       references: [SmartCollection.uuid],
     }),
-    state: one(InfiniteScheduleSlotState, {
-      fields: [InfiniteScheduleSlot.uuid],
-      references: [InfiniteScheduleSlotState.slotUuid],
-    }),
+    // One state row per channel that uses a schedule containing this slot
+    states: many(InfiniteScheduleSlotState),
   }),
 );
 

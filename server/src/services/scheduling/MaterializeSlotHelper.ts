@@ -1,8 +1,12 @@
-import { Show } from '@tunarr/types';
+import { Show, SmartCollection } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { castArray, head, isString } from 'lodash-es';
+import { Dictionary } from 'ts-essentials';
 import { MaterializeProgramGroupings } from '../../commands/MaterializeProgramGroupings.ts';
-import { CustomShowDB } from '../../db/CustomShowDB.ts';
+import {
+  CustomShowDB,
+  CustomShowWithContentCount,
+} from '../../db/CustomShowDB.ts';
 import {
   FillerShowWithContentCount,
   IFillerListDB,
@@ -77,14 +81,39 @@ export class MaterializeSlotHelper {
     return groupByUniq(filler, (filler) => filler.uuid);
   }
 
-  async materializeCustomShows(showIds: string[]) {
-    const customShows = await this.customShowDB.getShows(showIds);
+  async materializeCustomShows(
+    showId: string,
+  ): Promise<Maybe<CustomShowWithContentCount>>;
+  async materializeCustomShows(
+    showIds: string[],
+  ): Promise<Dictionary<CustomShowWithContentCount>>;
+  async materializeCustomShows(
+    showIds: string[] | string,
+  ): Promise<
+    Dictionary<CustomShowWithContentCount> | Maybe<CustomShowWithContentCount>
+  > {
+    const customShows = await this.customShowDB.getShows(castArray(showIds));
+    if (isString(showIds)) {
+      return head(customShows);
+    }
     return groupByUniq(customShows, (cs) => cs.uuid);
   }
 
-  async materializeSmartCollections(smartCollections: string[]) {
-    const collections =
-      await this.smartCollectionsDB.getByIds(smartCollections);
+  async materializeSmartCollections(
+    smartCollection: string,
+  ): Promise<Maybe<SmartCollection>>;
+  async materializeSmartCollections(
+    smartCollection: string[],
+  ): Promise<Dictionary<SmartCollection>>;
+  async materializeSmartCollections(
+    smartCollections: string[] | string,
+  ): Promise<Dictionary<SmartCollection> | Maybe<SmartCollection>> {
+    const collections = await this.smartCollectionsDB.getByIds(
+      castArray(smartCollections),
+    );
+    if (isString(smartCollections)) {
+      return head(collections);
+    }
     return groupByUniq(collections, (coll) => coll.uuid);
   }
 }

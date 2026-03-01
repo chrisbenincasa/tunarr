@@ -2,7 +2,7 @@ import { Stack, Typography } from '@mui/material';
 import type { MaterializedScheduleSlot, Schedule } from '@tunarr/types/api';
 import { maxBy } from 'lodash-es';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { BreadcrumbsV2 } from '../../components/BreadcrumbsV2.tsx';
+import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { EditScheduleSlotForm } from '../../components/schedules/EditScheduleSlotForm.tsx';
 
 type Props = {
@@ -32,12 +32,16 @@ function defaultNewSlot(schedule: Schedule): MaterializedScheduleSlot {
 export const EditScheduleSlot = ({ schedule, slot }: Props) => {
   return (
     <Stack spacing={2}>
-      <BreadcrumbsV2 />
+      <Breadcrumbs
+        routeNameMap={{ schedule_name: schedule.name }}
+        thisRouteName="Edit Slot"
+      />
       <Typography variant="h3">{slot ? `Edit Slot` : 'New Slot'}</Typography>
       <PaddedPaper>
         <EditScheduleSlotForm
           schedule={schedule}
           slot={slot ?? defaultNewSlot(schedule)}
+          isNew={!slot}
         />
       </PaddedPaper>
     </Stack>

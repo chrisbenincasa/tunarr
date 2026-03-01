@@ -21,6 +21,11 @@ export const GeneratedScheduleItem = sqliteTable(
   'generated_schedule_item',
   {
     uuid: text().primaryKey(),
+    // The channel this item belongs to — primary partition key for all queries
+    channelUuid: text()
+      .notNull()
+      .references(() => Channel.uuid, { onDelete: 'cascade' }),
+    // The schedule that produced this item — kept for cascade delete when schedule is deleted
     scheduleUuid: text()
       .notNull()
       .references(() => InfiniteSchedule.uuid, { onDelete: 'cascade' }),
@@ -34,26 +39,32 @@ export const GeneratedScheduleItem = sqliteTable(
     // For filler items
     fillerListId: text().references(() => FillerShow.uuid, { onDelete: 'cascade' }),
     fillerType: text().$type<SlotFillerTypes>(),
-    // Sequence tracking
-    sequenceIndex: integer().notNull(), // For ordering within the schedule
+    // Sequence tracking (monotonically increasing per channel)
+    sequenceIndex: integer().notNull(),
     createdAt: integer(),
   },
   (table) => [
-    index('generated_schedule_item_schedule_uuid_index').on(table.scheduleUuid),
-    index('generated_schedule_item_start_time_index').on(
-      table.scheduleUuid,
+    index('generated_schedule_item_channel_uuid_index').on(table.channelUuid),
+    index('generated_schedule_item_channel_start_time_index').on(
+      table.channelUuid,
       table.startTimeMs,
     ),
-    index('generated_schedule_item_sequence_index').on(
-      table.scheduleUuid,
+    index('generated_schedule_item_channel_sequence_index').on(
+      table.channelUuid,
       table.sequenceIndex,
     ),
+    // Keep schedule index for cascade-delete lookups
+    index('generated_schedule_item_schedule_uuid_index').on(table.scheduleUuid),
   ],
 );
 
 export const GeneratedScheduleItemRelations = relations(
   GeneratedScheduleItem,
   ({ one }) => ({
+    channel: one(Channel, {
+      fields: [GeneratedScheduleItem.channelUuid],
+      references: [Channel.uuid],
+    }),
     schedule: one(InfiniteSchedule, {
       fields: [GeneratedScheduleItem.scheduleUuid],
       references: [InfiniteSchedule.uuid],

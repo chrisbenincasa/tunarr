@@ -17,7 +17,8 @@ export const InfiniteSchedule = sqliteTable('infinite_schedule', {
   uuid: text().primaryKey(),
   name: text().notNull(),
   // Schedule-level settings
-  padMs: integer().default(0).notNull(), // Default none
+  // Round each program up to the nearest multiple (0 = disabled)
+  padToMultiple: integer().default(0).notNull(),
   flexPreference: text({ enum: FlexPreferences }).default('end').notNull(),
   timeZoneOffset: integer().default(0).notNull(), // Offset in minutes
   slotPlaybackOrder: text({ enum: SlotPlaybackOrder })
@@ -33,14 +34,12 @@ export const InfiniteSchedule = sqliteTable('infinite_schedule', {
 
 export const InfiniteScheduleRelations = relations(
   InfiniteSchedule,
-  ({ one, many }) => ({
+  ({ many }) => ({
     channels: many(ChannelSchedule),
     slots: many(InfiniteScheduleSlot),
     generatedItems: many(GeneratedScheduleItem),
-    state: one(InfiniteScheduleState, {
-      fields: [InfiniteSchedule.uuid],
-      references: [InfiniteScheduleState.scheduleUuid],
-    }),
+    // One state row per channel that uses this schedule
+    states: many(InfiniteScheduleState),
   }),
 );
 

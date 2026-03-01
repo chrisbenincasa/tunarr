@@ -5,7 +5,7 @@ import type {
   ScheduleSlot as InfiniteScheduleSlotApi,
   UpdateInfiniteScheduleRequest,
 } from '@tunarr/types/api';
-import { and, asc, eq, gte, lt, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lt, lte, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { chunk, head, isNil, omitBy } from 'lodash-es';
 import { v4 } from 'uuid';
@@ -26,8 +26,14 @@ import {
 import {
   InfiniteScheduleSlotState,
   type NewInfiniteScheduleSlotState,
+  type SlotFillerPersistenceState,
 } from './schema/InfiniteScheduleSlotState.ts';
+import {
+  InfiniteScheduleState,
+  type NewInfiniteScheduleState,
+} from './schema/InfiniteScheduleState.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
+import { groupByUniq } from '../util/index.ts';
 
 export type InfiniteScheduleWithSlots = InfiniteSchedule & {
   slots: InfiniteScheduleSlot[];
@@ -39,6 +45,7 @@ export type InfiniteScheduleSlotWithState = InfiniteScheduleSlot & {
 
 export type InfiniteScheduleWithSlotsAndState = InfiniteSchedule & {
   slots: InfiniteScheduleSlotWithState[];
+  state: InfiniteScheduleState | null;
 };
 
 @injectable()
@@ -93,47 +100,97 @@ export class InfiniteScheduleDB {
   }
 
   /**
-   * Get a schedule with slot states
-   */
-  async getScheduleWithState(
-    uuid: string,
-  ): Promise<InfiniteScheduleWithSlotsAndState | null> {
-    const result = await this.drizzle.query.infiniteSchedule.findFirst({
-      where: eq(InfiniteSchedule.uuid, uuid),
-      with: {
-        slots: {
-          orderBy: asc(InfiniteScheduleSlot.slotIndex),
-          with: {
-            state: true,
-          },
-        },
-      },
-    });
-    return result ?? null;
-  }
-
-  /**
-   * Get schedule by channel UUID with states
+   * Get schedule by channel UUID with per-channel states loaded.
+   * Returns slot states scoped to this specific channel.
    */
   async getScheduleByChannelWithState(
     channelUuid: string,
   ): Promise<InfiniteScheduleWithSlotsAndState | null> {
-    const result = await this.drizzle.query.channelSchedule.findFirst({
+    // 1. Load schedule + slots (no state via Drizzle relations — state is per-channel)
+    const channelSched = await this.drizzle.query.channelSchedule.findFirst({
       where: (fields, { eq }) => eq(fields.channelId, channelUuid),
       with: {
         infiniteSchedule: {
           with: {
             slots: {
               orderBy: (fields, { asc }) => asc(fields.slotIndex),
-              with: {
-                state: true,
-              },
             },
           },
         },
       },
     });
-    return result?.infiniteSchedule ?? null;
+
+    if (!channelSched?.infiniteSchedule) return null;
+    const schedule = channelSched.infiniteSchedule;
+
+    // 2. Load schedule-level state for this channel
+    const scheduleState =
+      (await this.drizzle.query.infiniteScheduleState.findFirst({
+        where: and(
+          eq(InfiniteScheduleState.scheduleUuid, schedule.uuid),
+          eq(InfiniteScheduleState.channelUuid, channelUuid),
+        ),
+      })) ?? null;
+
+    // 3. Load slot states for this channel
+    const slotUuids = schedule.slots.map((s) => s.uuid);
+    const slotStates =
+      slotUuids.length > 0
+        ? await this.drizzle.query.infiniteScheduleSlotState.findMany({
+            where: and(
+              eq(InfiniteScheduleSlotState.channelUuid, channelUuid),
+              inArray(InfiniteScheduleSlotState.slotUuid, slotUuids),
+            ),
+          })
+        : [];
+
+    const slotStateBySlotUuid = groupByUniq(slotStates, (s) => s.slotUuid);
+
+    // 4. Merge slot states onto slots
+    return {
+      ...schedule,
+      state: scheduleState,
+      slots: schedule.slots.map((slot) => ({
+        ...slot,
+        state: slotStateBySlotUuid[slot.uuid] ?? null,
+      })),
+    };
+  }
+
+  /**
+   * Ensure slot state rows exist for the given (channelUuid, slotUuid) pairs.
+   * Inserts missing rows with default (zeroed) state; ignores existing rows.
+   */
+  async ensureChannelSlotStates(
+    channelUuid: string,
+    slotUuids: string[],
+  ): Promise<void> {
+    if (slotUuids.length === 0) return;
+
+    const now = dayjs();
+    const records: NewInfiniteScheduleSlotState[] = slotUuids.map(
+      (slotUuid) => ({
+        uuid: v4(),
+        channelUuid,
+        slotUuid,
+        rngSeed: null,
+        rngUseCount: 0,
+        iteratorPosition: 0,
+        shuffleOrder: null,
+        fillModeCount: 0,
+        fillModeDurationMs: 0,
+        lastScheduledAt: null,
+        createdAt: now.toDate(),
+        updatedAt: now.toDate(),
+      }),
+    );
+
+    for (const batch of chunk(records, 100)) {
+      await this.drizzle
+        .insert(InfiniteScheduleSlotState)
+        .values(batch)
+        .onConflictDoNothing();
+    }
   }
 
   /**
@@ -148,7 +205,7 @@ export class InfiniteScheduleDB {
     const schedule: NewInfiniteSchedule = {
       uuid: scheduleUuid,
       name: request.name,
-      padMs: Math.max(request.padMs, 1),
+      padToMultiple: request.padToMultiple ?? 0,
       flexPreference: request.flexPreference ?? 'end',
       timeZoneOffset: request.timeZoneOffset ?? 0,
       bufferDays: request.bufferDays ?? 7,
@@ -168,12 +225,6 @@ export class InfiniteScheduleDB {
       slots.push(...(await this.createSlots(scheduleUuid, request.slots)));
     }
 
-    // Link the channel to this schedule
-    // await this.drizzle
-    //   .update(Channel)
-    //   .set({ infiniteScheduleUuid: scheduleUuid })
-    //   .where(eq(Channel.uuid, request.channelUuid));
-
     return {
       ...inserted,
       slots,
@@ -192,17 +243,16 @@ export class InfiniteScheduleDB {
       return;
     }
 
-    const now = +dayjs();
     const updateData = omitBy(
       {
-        padMs: request.padMs,
+        padToMultiple: request.padToMultiple,
         flexPreference: request.flexPreference,
         timeZoneOffset: request.timeZoneOffset,
         bufferDays: request.bufferDays,
         bufferThresholdDays: request.bufferThresholdDays,
         enabled: request.enabled,
-        updatedAt: now,
-      },
+        updatedAt: dayjs().toDate(),
+      } satisfies Partial<NewInfiniteSchedule>,
       isNil,
     );
 
@@ -254,7 +304,9 @@ export class InfiniteScheduleDB {
   }
 
   /**
-   * Create slots for a schedule
+   * Create slots for a schedule.
+   * Note: slot states are NOT created here — they are created per-channel
+   * on first generation via ensureChannelSlotStates().
    */
   private async createSlots(
     scheduleUuid: string,
@@ -284,6 +336,8 @@ export class InfiniteScheduleDB {
       anchorDays: slot.anchorDays ?? null,
       weight: slot.weight ?? 1,
       cooldownMs: slot.cooldownMs ?? 0,
+      fillMode: slot.fillMode ?? 'fill',
+      fillValue: slot.fillValue ?? null,
       padMs: slot.padMs ?? null,
       padToMultiple: slot.padToMultiple ?? null,
       fillerConfig: slot.fillerConfig ?? null,
@@ -302,25 +356,6 @@ export class InfiniteScheduleDB {
       );
     }
 
-    // Create initial state for each slot
-    const stateRecords: NewInfiniteScheduleSlotState[] = slotRecords.map(
-      (slot) => ({
-        uuid: v4(),
-        slotUuid: slot.uuid,
-        rngSeed: null,
-        rngUseCount: 0,
-        iteratorPosition: 0,
-        shuffleOrder: null,
-        lastScheduledAt: null,
-        createdAt: now.toDate(),
-        updatedAt: now.toDate(),
-      }),
-    );
-
-    for (const batch of chunk(stateRecords, 100)) {
-      await this.drizzle.insert(InfiniteScheduleSlotState).values(batch);
-    }
-
     return insertedSlots;
   }
 
@@ -331,7 +366,7 @@ export class InfiniteScheduleDB {
       const slotRecord = {
         uuid: slot.uuid ?? v4(),
         scheduleUuid,
-        slotIndex: slot.slotIndex, // ?? index,
+        slotIndex: slot.slotIndex,
         slotType: slot.type,
         showId: slot.type === 'show' ? slot.showId : null,
         customShowId: slot.type === 'custom-show' ? slot.customShowId : null,
@@ -346,6 +381,8 @@ export class InfiniteScheduleDB {
         anchorDays: slot.anchorDays ?? null,
         weight: slot.weight ?? 1,
         cooldownMs: slot.cooldownMs ?? 0,
+        fillMode: slot.fillMode ?? 'fill',
+        fillValue: slot.fillValue ?? null,
         padMs: slot.padMs ?? null,
         padToMultiple: slot.padToMultiple ?? null,
         fillerConfig: slot.fillerConfig ?? null,
@@ -357,20 +394,48 @@ export class InfiniteScheduleDB {
         await tx.insert(InfiniteScheduleSlot).values(slotRecord).returning(),
       )!;
 
-      // Create initial state for each slot
-      const stateRecord = {
-        uuid: v4(),
-        slotUuid: slotRecord.uuid,
-        rngSeed: null,
-        rngUseCount: 0,
-        iteratorPosition: 0,
-        shuffleOrder: null,
-        lastScheduledAt: null,
+      // Slot states are created per-channel on first generation via ensureChannelSlotStates()
+
+      return newSlot;
+    });
+  }
+
+  async updateSlot(slotId: string, slot: InfiniteScheduleSlotApi) {
+    return await this.drizzle.transaction(async (tx) => {
+      const now = dayjs();
+
+      const slotRecord = {
+        slotIndex: slot.slotIndex,
+        slotType: slot.type,
+        showId: slot.type === 'show' ? slot.showId : null,
+        customShowId: slot.type === 'custom-show' ? slot.customShowId : null,
+        fillerListId: slot.type === 'filler' ? slot.fillerListId : null,
+        redirectChannelId:
+          slot.type === 'redirect' ? slot.redirectChannelId : null,
+        smartCollectionId:
+          slot.type === 'smart-collection' ? slot.smartCollectionId : null,
+        slotConfig: 'slotConfig' in slot ? slot.slotConfig : null,
+        anchorTime: slot.anchorTime ?? null,
+        anchorMode: slot.anchorMode ?? null,
+        anchorDays: slot.anchorDays ?? null,
+        weight: slot.weight ?? 1,
+        cooldownMs: slot.cooldownMs ?? 0,
+        fillMode: slot.fillMode ?? 'fill',
+        fillValue: slot.fillValue ?? null,
+        padMs: slot.padMs ?? null,
+        padToMultiple: slot.padToMultiple ?? null,
+        fillerConfig: slot.fillerConfig ?? null,
         createdAt: now.toDate(),
         updatedAt: now.toDate(),
-      } satisfies NewInfiniteScheduleSlotState;
+      };
 
-      await tx.insert(InfiniteScheduleSlotState).values(stateRecord);
+      const newSlot = head(
+        await tx
+          .update(InfiniteScheduleSlot)
+          .set(slotRecord)
+          .where(eq(InfiniteScheduleSlot.uuid, slotId))
+          .returning(),
+      )!;
 
       return newSlot;
     });
@@ -378,7 +443,7 @@ export class InfiniteScheduleDB {
 
   async getSlot(slotId: string): Promise<Maybe<InfiniteScheduleSlot>> {
     return await this.drizzle.query.infiniteScheduleSlot.findFirst({
-      where: (fields, { eq }) => eq(field.uuid, slotId),
+      where: (fields, { eq }) => eq(fields.uuid, slotId),
     });
   }
 
@@ -389,7 +454,7 @@ export class InfiniteScheduleDB {
     scheduleUuid: string,
     slots: InfiniteScheduleSlotApi[],
   ): Promise<InfiniteScheduleSlot[]> {
-    // Delete existing slots (cascades to states)
+    // Delete existing slots (cascades to slot states and generated items via slot FK)
     await this.drizzle
       .delete(InfiniteScheduleSlot)
       .where(eq(InfiniteScheduleSlot.scheduleUuid, scheduleUuid));
@@ -403,23 +468,28 @@ export class InfiniteScheduleDB {
   }
 
   /**
-   * Get slot state
+   * Get slot state for a channel+slot pair
    */
   async getSlotState(
+    channelUuid: string,
     slotUuid: string,
   ): Promise<InfiniteScheduleSlotState | null> {
     const result = await this.drizzle.query.infiniteScheduleSlotState.findFirst(
       {
-        where: eq(InfiniteScheduleSlotState.slotUuid, slotUuid),
+        where: and(
+          eq(InfiniteScheduleSlotState.channelUuid, channelUuid),
+          eq(InfiniteScheduleSlotState.slotUuid, slotUuid),
+        ),
       },
     );
     return result ?? null;
   }
 
   /**
-   * Update slot state
+   * Update slot state for a specific channel+slot pair
    */
   async updateSlotState(
+    channelUuid: string,
     slotUuid: string,
     update: Partial<
       Pick<
@@ -429,8 +499,10 @@ export class InfiniteScheduleDB {
         | 'iteratorPosition'
         | 'shuffleOrder'
         | 'lastScheduledAt'
+        | 'fillModeCount'
+        | 'fillModeDurationMs'
       >
-    >,
+    > & { fillerState?: SlotFillerPersistenceState | null },
   ): Promise<void> {
     const now = dayjs();
     await this.drizzle
@@ -439,13 +511,61 @@ export class InfiniteScheduleDB {
         ...update,
         updatedAt: now.toDate(),
       })
-      .where(eq(InfiniteScheduleSlotState.slotUuid, slotUuid));
+      .where(
+        and(
+          eq(InfiniteScheduleSlotState.channelUuid, channelUuid),
+          eq(InfiniteScheduleSlotState.slotUuid, slotUuid),
+        ),
+      );
   }
 
   /**
-   * Reset all slot seeds in a schedule
+   * Upsert the schedule-level generation state for a specific channel.
+   * Conflict key is channelUuid — one state row per channel.
    */
-  async resetSlotSeeds(scheduleUuid: string): Promise<number> {
+  async upsertScheduleState(
+    channelUuid: string,
+    scheduleUuid: string,
+    update: {
+      floatingSlotIndex: number;
+      generationCursor: number;
+      slotSelectionSeed: number[] | null;
+      slotSelectionUseCount: number;
+    },
+  ): Promise<void> {
+    const now = dayjs();
+    await this.drizzle
+      .insert(InfiniteScheduleState)
+      .values({
+        uuid: v4(),
+        channelUuid,
+        scheduleUuid,
+        floatingSlotIndex: update.floatingSlotIndex,
+        generationCursor: new Date(update.generationCursor),
+        slotSelectionSeed: update.slotSelectionSeed,
+        slotSelectionUseCount: update.slotSelectionUseCount,
+        lastGeneratedAt: now.toDate(),
+        createdAt: now.toDate(),
+        updatedAt: now.toDate(),
+      } satisfies NewInfiniteScheduleState)
+      .onConflictDoUpdate({
+        target: InfiniteScheduleState.channelUuid,
+        set: {
+          scheduleUuid,
+          floatingSlotIndex: update.floatingSlotIndex,
+          generationCursor: new Date(update.generationCursor),
+          slotSelectionSeed: update.slotSelectionSeed,
+          slotSelectionUseCount: update.slotSelectionUseCount,
+          lastGeneratedAt: now.toDate(),
+          updatedAt: now.toDate(),
+        },
+      });
+  }
+
+  /**
+   * Reset all slot seeds for a channel (clears RNG state and iterator positions)
+   */
+  async resetSlotSeeds(channelUuid: string): Promise<number> {
     const now = dayjs();
     const result = await this.drizzle
       .update(InfiniteScheduleSlotState)
@@ -454,17 +574,11 @@ export class InfiniteScheduleDB {
         rngUseCount: 0,
         iteratorPosition: 0,
         shuffleOrder: null,
+        fillModeCount: 0,
+        fillModeDurationMs: 0,
         updatedAt: now.toDate(),
       })
-      .where(
-        eq(
-          InfiniteScheduleSlotState.slotUuid,
-          this.drizzle
-            .select({ uuid: InfiniteScheduleSlot.uuid })
-            .from(InfiniteScheduleSlot)
-            .where(eq(InfiniteScheduleSlot.scheduleUuid, scheduleUuid)),
-        ),
-      );
+      .where(eq(InfiniteScheduleSlotState.channelUuid, channelUuid));
 
     return result.changes;
   }
@@ -472,16 +586,16 @@ export class InfiniteScheduleDB {
   // ==================== Generated Schedule Items ====================
 
   /**
-   * Get generated items for a schedule within a time range
+   * Get generated items for a channel within a time range
    */
   async getGeneratedItems(
-    scheduleUuid: string,
+    channelUuid: string,
     fromTimeMs: number,
     toTimeMs: number,
   ): Promise<GeneratedScheduleItem[]> {
     return this.drizzle.query.generatedScheduleItem.findMany({
       where: and(
-        eq(GeneratedScheduleItem.scheduleUuid, scheduleUuid),
+        eq(GeneratedScheduleItem.channelUuid, channelUuid),
         gte(GeneratedScheduleItem.startTimeMs, fromTimeMs),
         lt(GeneratedScheduleItem.startTimeMs, toTimeMs),
       ),
@@ -490,29 +604,28 @@ export class InfiniteScheduleDB {
   }
 
   /**
-   * Get the last generated item for a schedule
+   * Get the last generated item for a channel
    */
   async getLastGeneratedItem(
-    scheduleUuid: string,
+    channelUuid: string,
   ): Promise<GeneratedScheduleItem | null> {
     const result = await this.drizzle.query.generatedScheduleItem.findFirst({
-      where: eq(GeneratedScheduleItem.scheduleUuid, scheduleUuid),
+      where: eq(GeneratedScheduleItem.channelUuid, channelUuid),
       orderBy: (fields, { desc }) => desc(fields.sequenceIndex),
     });
     return result ?? null;
   }
 
   /**
-   * Get the item playing at a specific time
+   * Get the item playing at a specific time for a channel
    */
   async getItemAtTime(
-    scheduleUuid: string,
+    channelUuid: string,
     timeMs: number,
   ): Promise<GeneratedScheduleItem | null> {
-    // Find the item where startTimeMs <= timeMs < startTimeMs + durationMs
     const result = await this.drizzle.query.generatedScheduleItem.findFirst({
       where: and(
-        eq(GeneratedScheduleItem.scheduleUuid, scheduleUuid),
+        eq(GeneratedScheduleItem.channelUuid, channelUuid),
         lte(GeneratedScheduleItem.startTimeMs, timeMs),
         gte(
           sql`${GeneratedScheduleItem.startTimeMs} + ${GeneratedScheduleItem.durationMs}`,
@@ -535,17 +648,17 @@ export class InfiniteScheduleDB {
   }
 
   /**
-   * Delete generated items from a certain time onwards
+   * Delete generated items from a certain time onwards for a channel
    */
   async deleteGeneratedItemsFrom(
-    scheduleUuid: string,
+    channelUuid: string,
     fromTimeMs: number,
   ): Promise<number> {
     const result = await this.drizzle
       .delete(GeneratedScheduleItem)
       .where(
         and(
-          eq(GeneratedScheduleItem.scheduleUuid, scheduleUuid),
+          eq(GeneratedScheduleItem.channelUuid, channelUuid),
           gte(GeneratedScheduleItem.startTimeMs, fromTimeMs),
         ),
       );
@@ -553,17 +666,17 @@ export class InfiniteScheduleDB {
   }
 
   /**
-   * Delete generated items older than a certain time
+   * Delete generated items older than a certain time for a channel
    */
   async deleteGeneratedItemsBefore(
-    scheduleUuid: string,
+    channelUuid: string,
     beforeTimeMs: number,
   ): Promise<number> {
     const result = await this.drizzle
       .delete(GeneratedScheduleItem)
       .where(
         and(
-          eq(GeneratedScheduleItem.scheduleUuid, scheduleUuid),
+          eq(GeneratedScheduleItem.channelUuid, channelUuid),
           lt(
             sql`${GeneratedScheduleItem.startTimeMs} + ${GeneratedScheduleItem.durationMs}`,
             beforeTimeMs,
@@ -574,43 +687,40 @@ export class InfiniteScheduleDB {
   }
 
   /**
-   * Clear all generated items for a schedule
+   * Clear all generated items for a channel
    */
-  async clearGeneratedItems(scheduleUuid: string): Promise<number> {
+  async clearGeneratedItems(channelUuid: string): Promise<number> {
     const result = await this.drizzle
       .delete(GeneratedScheduleItem)
-      .where(eq(GeneratedScheduleItem.scheduleUuid, scheduleUuid));
+      .where(eq(GeneratedScheduleItem.channelUuid, channelUuid));
     return result.changes;
   }
 
   /**
-   * Get the buffer end time (latest end time of generated items)
+   * Get the buffer end time (latest end time of generated items) for a channel
    */
-  async getBufferEndTime(scheduleUuid: string): Promise<number | null> {
-    const lastItem = await this.getLastGeneratedItem(scheduleUuid);
+  async getBufferEndTime(channelUuid: string): Promise<number | null> {
+    const lastItem = await this.getLastGeneratedItem(channelUuid);
     if (!lastItem) return null;
     return lastItem.startTimeMs + lastItem.durationMs;
   }
 
   /**
-   * Count generated items for a schedule
+   * Count generated items for a channel
    */
-  async countGeneratedItems(scheduleUuid: string): Promise<number> {
+  async countGeneratedItems(channelUuid: string): Promise<number> {
     const result = await this.drizzle
       .select({ count: sql<number>`count(*)` })
       .from(GeneratedScheduleItem)
-      .where(eq(GeneratedScheduleItem.scheduleUuid, scheduleUuid));
+      .where(eq(GeneratedScheduleItem.channelUuid, channelUuid));
     return result[0]?.count ?? 0;
   }
 
   /**
-   * Get all enabled schedules that need buffer maintenance
+   * Get all enabled schedules that need buffer maintenance.
+   * TODO: This should be channel-scoped once background maintenance is implemented.
    */
   async getSchedulesNeedingBufferMaintenance(): Promise<InfiniteSchedule[]> {
-    const now = +dayjs();
-
-    // Get schedules where the buffer end time is less than (now + bufferThresholdDays)
-    // or where there are no generated items at all
     const schedules = await this.drizzle.query.infiniteSchedule.findMany({
       where: eq(InfiniteSchedule.enabled, true),
     });
@@ -618,23 +728,18 @@ export class InfiniteScheduleDB {
     const schedulesNeedingMaintenance: InfiniteSchedule[] = [];
 
     for (const schedule of schedules) {
-      const bufferEnd = await this.getBufferEndTime(schedule.uuid);
-      const thresholdTime =
-        now + schedule.bufferThresholdDays * 24 * 60 * 60 * 1000;
-
-      if (bufferEnd === null || bufferEnd < thresholdTime) {
-        schedulesNeedingMaintenance.push(schedule);
-      }
+      // TODO: query per channel-schedule binding once buffer maintenance is channel-scoped
+      schedulesNeedingMaintenance.push(schedule);
     }
 
     return schedulesNeedingMaintenance;
   }
 
   /**
-   * Get the next sequence index for generated items
+   * Get the next sequence index for generated items for a channel
    */
-  async getNextSequenceIndex(scheduleUuid: string): Promise<number> {
-    const lastItem = await this.getLastGeneratedItem(scheduleUuid);
+  async getNextSequenceIndex(channelUuid: string): Promise<number> {
+    const lastItem = await this.getLastGeneratedItem(channelUuid);
     return lastItem ? lastItem.sequenceIndex + 1 : 0;
   }
 }

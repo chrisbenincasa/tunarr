@@ -4,7 +4,6 @@ import type { AnyRoute } from '@tanstack/react-router';
 import { useRouterState } from '@tanstack/react-router';
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import { useMemo } from 'react';
-import { routeTree } from '../routeTree.gen.ts';
 import { RouterLink } from './base/RouterLink.tsx';
 
 function walkRouteTree(r: AnyRoute, depth = 0) {
@@ -16,7 +15,6 @@ function walkRouteTree(r: AnyRoute, depth = 0) {
 
 export const BreadcrumbsV2 = (props: BreadcrumbsProps) => {
   const { matches } = useRouterState();
-  console.log(walkRouteTree(routeTree));
   const crumbs = useMemo(() => {
     return matches.flatMap(({ pathname, meta }) => {
       return seq.collect(meta, (m) => {

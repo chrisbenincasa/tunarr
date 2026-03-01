@@ -19,6 +19,31 @@ export const BaseSlotOrdering = z.object({
   direction: z.enum(['asc', 'desc']).default('asc'),
 });
 
+export const CountFillMode = z.object({
+  type: z.literal('count'),
+  count: z.coerce.number().int().positive(),
+});
+
+export const RandomFillMode = z.object({
+  type: z.literal('random'),
+});
+
+export const DurationFillMode = z.object({
+  type: z.literal('duration'),
+  duration: z.coerce.number().int().positive(),
+});
+
+export const CollectionSizeFillMode = z.object({
+  type: z.literal('size'),
+});
+
+export const FillMode = z.discriminatedUnion('type', [
+  CountFillMode,
+  RandomFillMode,
+  DurationFillMode,
+  CollectionSizeFillMode,
+]);
+
 export const SlotFillerTypes = z.enum([
   'head',
   'pre',
@@ -35,6 +60,8 @@ export const SlotFiller = z.object({
   fillerOrder: SlotProgrammingFillerOrder.optional().default(
     'shuffle_prefer_short',
   ),
+  mode: z.enum(['relaxed', 'strict']).optional(),
+  count: z.number().int().positive().optional(),
 });
 
 export type SlotFiller = z.infer<typeof SlotFiller>;

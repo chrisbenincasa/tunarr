@@ -2,31 +2,33 @@ import type {
   InfiniteScheduleDB,
   InfiniteScheduleWithSlotsAndState,
 } from '@/db/InfiniteScheduleDB.js';
-import type {
-  GeneratedScheduleItem,
-  NewGeneratedScheduleItem,
-} from '@/db/schema/GeneratedScheduleItem.js';
 import { KEYS } from '@/types/inject.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
+  BaseErrorSchema,
   BasicIdParamSchema,
   CreateInfiniteScheduleRequestSchema,
   GeneratedScheduleItemSchema,
   InfiniteSchedulePreviewRequestSchema,
+  InfiniteSchedulePreviewResponseSchema,
   MaterializedScheduleSchema,
   ScheduleSchema,
   ScheduleSlotSchema,
   UpdateInfiniteScheduleRequestSchema,
 } from '@tunarr/types/api';
 import { SlotStateSchema } from '@tunarr/types/schemas';
+import dayjs from 'dayjs';
 import { isNil } from 'lodash-es';
 import { v4 } from 'uuid';
 import { z } from 'zod/v4';
 import { MaterializeScheduleCommand } from '../commands/MaterializeScheduleCommand.ts';
+import { MaterializeScheduleGenerationResult } from '../commands/scheduling/MaterializeScheduleGenerationResult.ts';
 import { container } from '../container.ts';
 import { InfiniteScheduleGenerator } from '../services/scheduling/InfiniteScheduleGenerator.ts';
+import { groupByUniq } from '../util/index.ts';
 import {
+  generatedScheduleItemToDto,
   scheduleDaoToDto,
   slotDaoToDto,
 } from './converters/scheduleConverters.ts';
@@ -39,26 +41,6 @@ const SlotIdParamSchema = z.object({
   id: z.string(),
   slotId: z.string(),
 });
-
-// Helper function to convert generated item to API format
-function generatedItemToApi(
-  item: GeneratedScheduleItem | NewGeneratedScheduleItem,
-) {
-  return {
-    uuid: item.uuid,
-    scheduleUuid: item.scheduleUuid,
-    programUuid: item.programUuid ?? null,
-    slotUuid: item.slotUuid ?? null,
-    itemType: item.itemType,
-    startTimeMs: item.startTimeMs,
-    durationMs: item.durationMs,
-    redirectChannelUuid: item.redirectChannelUuid ?? null,
-    fillerListId: item.fillerListId ?? null,
-    fillerType: item.fillerType ?? null,
-    sequenceIndex: item.sequenceIndex,
-    createdAt: item.createdAt ?? null,
-  };
-}
 
 export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
   fastify,
@@ -174,6 +156,7 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
     {
       schema: {
         operationId: 'addSlotToSchedule',
+        description: 'Add a new slot to the given schedule',
         tags: ['Scnedules'],
         params: BasicIdParamSchema,
         body: ScheduleSlotSchema,
@@ -188,6 +171,113 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         req.body,
       );
       return res.status(201).send(slotDaoToDto(slot));
+    },
+  );
+
+  fastify.put(
+    '/schedules/:id/slots/:slotId',
+    {
+      schema: {
+        operationId: 'updateScheduleSlot',
+        tags: ['Schedules'],
+        params: z.object({
+          ...BasicIdParamSchema.shape,
+          slotId: z.uuid(),
+        }),
+        body: ScheduleSlotSchema,
+        response: {
+          200: ScheduleSlotSchema,
+          400: BaseErrorSchema,
+          404: BaseErrorSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      const slot = await req.serverCtx.infiniteScheduleDB.getSlot(
+        req.params.slotId,
+      );
+      if (!slot) {
+        return res
+          .status(404)
+          .send({ message: `Slot ID ${req.params.slotId} not found` });
+      }
+
+      if (slot.scheduleUuid !== req.params.id) {
+        return res
+          .status(400)
+          .send({ message: 'Cannot update schedule ID for slot' });
+      }
+
+      const updatedSlot = await req.serverCtx.infiniteScheduleDB.updateSlot(
+        req.params.slotId,
+        req.body,
+      );
+      return res.send(slotDaoToDto(updatedSlot));
+    },
+  );
+
+  fastify.post(
+    '/schedules/:id/preview',
+    {
+      schema: {
+        operationId: 'previewSchedule',
+        description: 'Preview the given schedule',
+        tags: ['Schedules'],
+        params: BasicIdParamSchema,
+        querystring: z.object({
+          startTimeMs: z.coerce
+            .number()
+            .int()
+            .positive()
+            .default(() => +dayjs().startOf('day')),
+          endTimeMs: z.coerce
+            .number()
+            .int()
+            .positive()
+            .default(() => +dayjs().add(1, 'day').startOf('day')),
+        }),
+        response: {
+          200: InfiniteSchedulePreviewResponseSchema,
+          400: BaseErrorSchema,
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      if (req.query.endTimeMs < req.query.startTimeMs) {
+        return res
+          .status(400)
+          .send({ message: 'End time cannot be less than start time' });
+      }
+
+      const schedule = await req.serverCtx.infiniteScheduleDB.getSchedule(
+        req.params.id,
+      );
+      if (!schedule) {
+        return res.status(404).send();
+      }
+      const result = await getGenerator().preview(
+        {
+          ...schedule,
+          state: null,
+          slots: schedule.slots.map((s) => ({ ...s, state: null })),
+        },
+        req.query.startTimeMs,
+        req.query.endTimeMs,
+      );
+
+      const programs = await container
+        .get<MaterializeScheduleGenerationResult>(
+          MaterializeScheduleGenerationResult,
+        )
+        .run({ result });
+
+      return res.send({
+        items: result.items.map(generatedScheduleItemToDto),
+        contentPrograms: groupByUniq(programs, (p) => p.id!),
+        fromTimeMs: req.query.startTimeMs,
+        toTimeMs: req.query.endTimeMs,
+      });
     },
   );
 
@@ -220,13 +310,7 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         return res.status(404).send({ error: 'Infinite schedule not found' });
       }
 
-      // Convert slots to API format
-      const response = {
-        ...schedule,
-        slots: schedule.slots.map(slotDaoToDto),
-      };
-
-      return res.send(response);
+      return res.send(scheduleDaoToDto(schedule));
     },
   );
 
@@ -242,7 +326,7 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         params: ChannelIdParamSchema,
         body: CreateInfiniteScheduleRequestSchema,
         response: {
-          201: z.object({ uuid: z.string() }),
+          201: ScheduleSchema,
           400: z.object({ error: z.string() }),
           404: z.object({ error: z.string() }),
           409: z.object({ error: z.string() }),
@@ -265,12 +349,12 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
           .send({ error: 'Infinite schedule already exists for this channel' });
       }
 
-      const uuid = await db.createSchedule({
+      const newSchedule = await db.createSchedule({
         ...req.body,
-        channelUuid: channel.uuid,
+        // channelUuid: channel.uuid,
       });
 
-      return res.status(201).send({ uuid });
+      return res.status(201).send(scheduleDaoToDto(newSchedule));
     },
   );
 
@@ -286,7 +370,7 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         params: ChannelIdParamSchema,
         body: UpdateInfiniteScheduleRequestSchema,
         response: {
-          200: z.object({ success: z.boolean() }),
+          200: ScheduleSchema,
           404: z.object({ error: z.string() }),
         },
       },
@@ -304,8 +388,11 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         return res.status(404).send({ error: 'Infinite schedule not found' });
       }
 
-      const success = await db.updateSchedule(schedule.uuid, req.body);
-      return res.send({ success });
+      const updatedSchedule = await db.updateSchedule(schedule.uuid, req.body);
+      if (!updatedSchedule) {
+        return res.status(404).send({ error: 'Infinite schedule not found' });
+      }
+      return res.send(scheduleDaoToDto(updatedSchedule));
     },
   );
 
@@ -375,7 +462,8 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
       // Create a temporary schedule structure for preview
       const scheduleForPreview = {
         uuid: v4(),
-        padMs: req.body.padMs ?? 300000,
+        name: 'Preview Schedule',
+        padToMultiple: req.body.padToMultiple ?? 0,
         flexPreference: req.body.flexPreference ?? ('end' as const),
         timeZoneOffset: req.body.timeZoneOffset ?? 0,
         bufferDays: 7,
@@ -383,6 +471,8 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         enabled: true,
         createdAt: new Date(),
         updatedAt: new Date(),
+        slotPlaybackOrder: req.body.slotPlaybackOrder,
+        state: null,
         slots: (req.body.slots ?? []).map((slot, index) => ({
           uuid: slot.uuid ?? `preview-slot-${index}`,
           scheduleUuid: 'preview',
@@ -410,8 +500,8 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
           createdAt: new Date(),
           updatedAt: new Date(),
           state: null,
-          fillMode: 'fill',
-          fillValue: null,
+          fillMode: slot.fillMode,
+          fillValue: slot.fillValue ?? null,
         })),
       } satisfies InfiniteScheduleWithSlotsAndState;
 
@@ -422,7 +512,7 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
       );
 
       return res.send({
-        items: result.items.map(generatedItemToApi),
+        items: result.items.map(generatedScheduleItemToDto),
         fromTimeMs: result.fromTimeMs,
         toTimeMs: result.toTimeMs,
       });
@@ -460,30 +550,24 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
       }
 
       const db = getInfiniteScheduleDB();
-      const schedule = await db.getScheduleByChannel(channel.uuid);
 
-      if (isNil(schedule)) {
+      // Verify the channel has a schedule
+      const hasSchedule = await db.getScheduleByChannel(channel.uuid);
+      if (isNil(hasSchedule)) {
         return res.status(404).send({ error: 'Infinite schedule not found' });
       }
 
       // Optionally clear existing items
       if (req.body.clearExisting) {
-        await db.clearGeneratedItems(schedule.uuid);
+        await db.clearGeneratedItems(channel.uuid);
       }
 
       const generator = getGenerator();
+      // generate() is channel-scoped and persists items/state internally
       const result = await generator.generate(
-        schedule.uuid,
+        channel.uuid,
         req.body.fromTimeMs,
       );
-
-      // Persist the generated items
-      await db.insertGeneratedItems(result.items);
-
-      // Update slot states
-      for (const [slotUuid, stateUpdate] of result.slotStates) {
-        await db.updateSlotState(slotUuid, stateUpdate);
-      }
 
       return res.send({
         itemsGenerated: result.items.length,
@@ -516,13 +600,14 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
       }
 
       const db = getInfiniteScheduleDB();
-      const schedule = await db.getScheduleByChannel(channel.uuid);
 
-      if (isNil(schedule)) {
+      // Verify the channel has a schedule
+      const hasSchedule = await db.getScheduleByChannel(channel.uuid);
+      if (isNil(hasSchedule)) {
         return res.status(404).send({ error: 'Infinite schedule not found' });
       }
 
-      const slotsReset = await db.resetSlotSeeds(schedule.uuid);
+      const slotsReset = await db.resetSlotSeeds(channel.uuid);
       return res.send({ slotsReset });
     },
   );
@@ -561,8 +646,8 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         return res.status(404).send({ error: 'Infinite schedule not found' });
       }
 
-      const bufferEndTimeMs = await db.getBufferEndTime(schedule.uuid);
-      const itemCount = await db.countGeneratedItems(schedule.uuid);
+      const bufferEndTimeMs = await db.getBufferEndTime(channel.uuid);
+      const itemCount = await db.countGeneratedItems(channel.uuid);
 
       return res.send({
         scheduleUuid: schedule.uuid,
@@ -570,7 +655,19 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
           slotUuid: slot.uuid,
           slotIndex: slot.slotIndex,
           slotType: slot.slotType,
-          state: slot.state,
+          state: slot.state
+            ? {
+                uuid: slot.state.uuid,
+                slotUuid: slot.state.slotUuid,
+                rngSeed: slot.state.rngSeed,
+                rngUseCount: slot.state.rngUseCount,
+                iteratorPosition: slot.state.iteratorPosition,
+                shuffleOrder: slot.state.shuffleOrder,
+                lastScheduledAt: slot.state.lastScheduledAt?.valueOf() ?? null,
+                createdAt: slot.state.createdAt?.valueOf() ?? null,
+                updatedAt: slot.state.updatedAt?.valueOf() ?? null,
+              }
+            : null,
         })),
         bufferEndTimeMs,
         itemCount,
@@ -614,12 +711,12 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
       }
 
       const items = await db.getGeneratedItems(
-        schedule.uuid,
+        channel.uuid,
         req.query.fromTimeMs,
         req.query.toTimeMs,
       );
 
-      return res.send({ items: items.map(generatedItemToApi) });
+      return res.send({ items: items.map(generatedScheduleItemToDto) });
     },
   );
 

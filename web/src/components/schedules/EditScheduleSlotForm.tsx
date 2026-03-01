@@ -13,9 +13,10 @@ import {
 import { TimeField, TimePicker } from '@mui/x-date-pickers';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { isNonEmptyString } from '@tunarr/shared/util';
-import type { Season, Show, TupleToUnion } from '@tunarr/types';
+import type { Season, Show } from '@tunarr/types';
 import type { MaterializedShowScheduleSlot } from '@tunarr/types/api';
 import {
+  AnchorModeSchema,
   FillModes,
   type MaterializedCustomShowScheduleSlot,
   type MaterializedScheduleSlot,
@@ -37,6 +38,7 @@ import { match } from 'ts-pattern';
 import {
   addSlotToScheduleMutation,
   getScheduleByIdQueryKey,
+  updateScheduleSlotMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { betterHumanize } from '../../helpers/dayjs.ts';
 import type { ProgramOption } from '../../helpers/slotSchedulerUtil.ts';
@@ -50,6 +52,7 @@ import { NumericFormControllerText } from '../util/TypedController.tsx';
 type Props = {
   schedule: Schedule;
   slot: MaterializedScheduleSlot;
+  isNew: boolean;
 };
 
 function defaultCustomShowSlot(
@@ -166,10 +169,7 @@ const newSlotForType = (
   );
 };
 
-const StartType = ['anchored', 'dynamic'] as const;
-type StartType = TupleToUnion<typeof StartType>;
-
-export const EditScheduleSlotForm = ({ schedule, slot }: Props) => {
+export const EditScheduleSlotForm = ({ schedule, slot, isNew }: Props) => {
   const form = useForm<MaterializedScheduleSlot>({
     defaultValues: slot,
   });
@@ -185,16 +185,16 @@ export const EditScheduleSlotForm = ({ schedule, slot }: Props) => {
   } = form;
   const { isDirty, isValid, isSubmitting } = formState;
 
-  const [type, fillMode, show, slotConfig] = watch([
+  const [type, fillMode, show, slotConfig, startType] = watch([
     'type',
     'fillMode',
     'show',
     'slotConfig',
+    'anchorMode',
   ]);
   const seasonFilter = slotConfig?.seasonFilter;
   const order = slotConfig?.order;
   const [typeSelectValue, setTypeSelectValue] = useState(type);
-  const [startType, setStartType] = useState<StartType>('dynamic');
 
   const handleTypeChange = useCallback(
     (typ: ScheduleSlot['type']) => {
@@ -259,17 +259,36 @@ export const EditScheduleSlotForm = ({ schedule, slot }: Props) => {
     },
   });
 
-  const onSubmit: SubmitHandler<MaterializedScheduleSlot> = useCallback(
-    (values: MaterializedScheduleSlot) => {
-      console.log(values);
-      addSlotMutation.mutate({
-        path: {
-          id: schedule.uuid,
-        },
-        body: values,
+  const updateSlotMutation = useMutation({
+    ...updateScheduleSlotMutation(),
+    onSuccess: async (data) => {
+      reset((prev) => ({ ...prev, ...data }));
+      await queryClient.invalidateQueries({
+        queryKey: getScheduleByIdQueryKey({ path: { id: schedule.uuid } }),
       });
     },
-    [addSlotMutation, schedule.uuid],
+  });
+
+  const onSubmit: SubmitHandler<MaterializedScheduleSlot> = useCallback(
+    (values: MaterializedScheduleSlot) => {
+      if (!isNew) {
+        updateSlotMutation.mutate({
+          path: {
+            id: schedule.uuid,
+            slotId: slot.uuid!, // Required
+          },
+          body: values,
+        });
+      } else {
+        addSlotMutation.mutate({
+          path: {
+            id: schedule.uuid,
+          },
+          body: values,
+        });
+      }
+    },
+    [addSlotMutation, isNew, schedule.uuid, slot.uuid, updateSlotMutation],
   );
 
   const onSubmitError: SubmitErrorHandler<MaterializedScheduleSlot> =
@@ -369,17 +388,29 @@ export const EditScheduleSlotForm = ({ schedule, slot }: Props) => {
           <Stack direction={'row'} spacing={2}>
             <FormControl fullWidth>
               <InputLabel>Start Type</InputLabel>
-              <Select
-                label="Start Type"
-                value={startType}
-                onChange={(e) => setStartType(e.target.value as StartType)}
-              >
-                {StartType.map((type) => (
-                  <MenuItem key={type} value={type}>
-                    {capitalize(type)}
-                  </MenuItem>
-                ))}
-              </Select>
+              <Controller
+                control={control}
+                name="anchorMode"
+                render={({ field }) => (
+                  <Select
+                    label="Start Type"
+                    {...field}
+                    value={field.value ?? 'dynamic'}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value === 'dynamic' ? null : e.target.value,
+                      )
+                    }
+                  >
+                    <MenuItem value="dynamic">Dynamic</MenuItem>
+                    {AnchorModeSchema.options.map((type) => (
+                      <MenuItem key={type} value={type}>
+                        {capitalize(type)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
               <FormHelperText>
                 <Box component="ul" sx={{ pl: 1 }}>
                   <li>
@@ -392,9 +423,23 @@ export const EditScheduleSlotForm = ({ schedule, slot }: Props) => {
                 </Box>
               </FormHelperText>
             </FormControl>
-            {startType === 'anchored' && (
-              <TimePicker
-                slotProps={{ textField: { fullWidth: true, helperText: ' ' } }}
+            {startType === 'hard' && (
+              <Controller
+                control={control}
+                name="anchorTime"
+                render={({ field }) => (
+                  <TimePicker
+                    format="H[h] m[m] s[s]"
+                    {...field}
+                    value={dayjs()
+                      .startOf('day')
+                      .add(field.value ?? 0)}
+                    onChange={(value) => updateSlotTime(value, field.onChange)}
+                    slotProps={{
+                      textField: { fullWidth: true, helperText: ' ' },
+                    }}
+                  />
+                )}
               />
             )}
           </Stack>

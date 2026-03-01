@@ -16,8 +16,7 @@ import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import { SlotPlaybackOrder, type Schedule } from '@tunarr/types/api';
 import { useSnackbar } from 'notistack';
 import { useCallback } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { v4 } from 'uuid';
+import { Controller, useFormContext } from 'react-hook-form';
 import {
   postApiSchedulesMutation,
   updateScheduleByIdMutation,
@@ -28,28 +27,9 @@ type Props = {
   schedule?: Schedule;
 };
 
-function newSchedule() {
-  return {
-    uuid: v4(),
-    name: 'New Schedule',
-    bufferDays: 2,
-    bufferThresholdDays: 1,
-    createdAt: null,
-    enabled: true,
-    flexPreference: 'end',
-    padMs: 1,
-    slots: [],
-    timeZoneOffset: new Date().getTimezoneOffset(),
-    updatedAt: null,
-    slotPlaybackOrder: 'ordered',
-  } satisfies Schedule;
-}
-
 export const EditScheduleForm = ({ schedule }: Props) => {
   const navigate = useNavigate();
-  const form = useForm<Schedule>({
-    defaultValues: schedule ?? newSchedule(),
-  });
+  const form = useFormContext<Schedule>();
 
   const { control, reset } = form;
   const { isDirty, isSubmitting, isValid } = form.formState;
@@ -112,7 +92,7 @@ export const EditScheduleForm = ({ schedule }: Props) => {
               <InputLabel>Pad Times</InputLabel>
               <Controller
                 control={control}
-                name="padMs"
+                name="padToMultiple"
                 render={({ field }) => (
                   <Select label="Pad Times" {...field}>
                     {padOptions.map((opt) => (
@@ -164,7 +144,7 @@ export const EditScheduleForm = ({ schedule }: Props) => {
                 control={control}
                 name="slotPlaybackOrder"
                 render={({ field }) => (
-                  <Select label="Slot Playback Orde" {...field}>
+                  <Select label="Slot Playback Order" {...field}>
                     {SlotPlaybackOrder.map((opt) => (
                       <MenuItem key={opt} value={opt}>
                         {prettifySnakeCaseString(opt)}
@@ -177,7 +157,11 @@ export const EditScheduleForm = ({ schedule }: Props) => {
                 <strong>Ordered:</strong> slots are played back in the order
                 defined.
                 <br />
-                <strong>Shuffle:</strong> slots are shuffled before scheduling.
+                <strong>Shuffle:</strong> slots are shuffled before scheduling.{' '}
+                <strong>
+                  NOTE: This mode disables anchored start times and "fill" mode
+                  for slots.
+                </strong>
               </FormHelperText>
             </FormControl>
           </Grid>

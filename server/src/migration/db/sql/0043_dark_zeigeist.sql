@@ -1,0 +1,1 @@
+ALTER TABLE `infinite_schedule` RENAME COLUMN "pad_ms" TO "pad_to_multiple";

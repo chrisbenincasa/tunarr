@@ -163,7 +163,7 @@ export class SmartCollectionsDB {
   async materializeSmartCollection(
     id: string,
     failOnNotFound: boolean = false,
-  ) {
+  ): Promise<ProgramSearchDocument[]> {
     const maybeCollection = await this.db.query.smartCollection.findFirst({
       where: (fields, { eq }) => eq(fields.uuid, id),
     });

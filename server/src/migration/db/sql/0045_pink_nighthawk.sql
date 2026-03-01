@@ -1,0 +1,1 @@
+ALTER TABLE `infinite_schedule_slot_state` ADD `filler_state` text;

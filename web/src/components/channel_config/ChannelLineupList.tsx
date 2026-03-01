@@ -196,7 +196,9 @@ const ProgramListItem = ({
   ];
   const startTimeDate = !isUndefined(program.startTimeOffset)
     ? dayjs(channel.startTime + program.startTimeOffset)
-    : undefined;
+    : program.startTime
+      ? dayjs(program.startTime)
+      : undefined;
 
   const startTime = startTimeDate?.format(smallViewport ? 'L LT' : 'lll');
   if (!smallViewport && showProgramStartTime && startTime) {

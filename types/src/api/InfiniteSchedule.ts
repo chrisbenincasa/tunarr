@@ -3,7 +3,7 @@ import { ChannelSchema } from '../schemas/channelSchema.js';
 import { SmartCollection } from '../schemas/collectionsSchema.js';
 import { CustomShowSchema } from '../schemas/customShowsSchema.js';
 import { FillerListSchema } from '../schemas/fillerSchema.js';
-import { Show } from '../schemas/programmingSchema.js';
+import { ContentProgramSchema, Show } from '../schemas/programmingSchema.js';
 import type { TupleToUnion } from '../util.js';
 import {
   BaseSlotOrdering,
@@ -57,6 +57,8 @@ export const InfiniteSlotConfigSchema = z.object({
   order: BaseSlotOrdering.shape.order.nullish(),
   direction: BaseSlotOrdering.shape.direction.nullish(),
   seasonFilter: z.array(z.number()).nullish(),
+  // Per-slot flex preference override (falls back to schedule-level setting)
+  flexPreference: FlexPreferenceSchema.nullish(),
 });
 
 export type InfiniteSlotConfig = z.infer<typeof InfiniteSlotConfigSchema>;
@@ -210,7 +212,7 @@ export const MaterializedFillerShowScheduleSlotSchema =
 export const MaterializedFillerScheduleSlot = z.object({
   ...MaterializedFillerShowScheduleSlotSchema.shape,
   fillerList: FillerListSchema.omit({ programs: true }).nullable(),
-  isMissing: z.boolean().optional().default(false),
+  isMissing: z.boolean().or(z.stringbool()).optional().default(false),
 });
 
 export type MaterializedFillerScheduleSlot = z.infer<
@@ -220,7 +222,7 @@ export type MaterializedFillerScheduleSlot = z.infer<
 export const MaterializedSmartCollectioScheduleSlotSchema = z.object({
   ...SmartCollectionScheduleSlotSchema.shape,
   smartCollection: SmartCollection.nullable(),
-  isMissing: z.boolean().optional().default(false),
+  isMissing: z.boolean().or(z.stringbool()).optional().default(false),
 });
 
 export type MaterializedSmartCollectioScheduleSlot = z.infer<
@@ -229,6 +231,7 @@ export type MaterializedSmartCollectioScheduleSlot = z.infer<
 
 export const MaterializedScheduleSlotSchema = z.discriminatedUnion('type', [
   FlexScheduleSlotSchema,
+  MovieScheduleSlotSchema,
   MaterializedRedirectScheduleSlotSchema,
   MaterializedCustomShowScheduleSlotSchema,
   MaterializedFillerShowScheduleSlotSchema,
@@ -248,7 +251,8 @@ export const ScheduleSchema = z.object({
   uuid: z.uuid(), // Optional for creation
   name: z.string(),
   // Schedule-level settings
-  padMs: z.number().int().nonnegative().default(1),
+  // Round each program up to the nearest multiple in ms (0 = disabled)
+  padToMultiple: z.number().int().nonnegative().default(0),
   flexPreference: FlexPreferenceSchema.default('end'),
   timeZoneOffset: z.number().int().default(0),
   // Buffer management
@@ -276,20 +280,43 @@ export type MaterializedSchedule2 = z.infer<typeof MaterializedScheduleSchema>;
 // Generated Schedule Item Schema
 //
 
-export const GeneratedScheduleItemSchema = z.object({
+const BaseGeneratedScheduleItemSchema = z.object({
   uuid: z.uuid(),
-  scheduleUuid: z.uuid(),
-  programUuid: z.uuid().nullable(),
-  slotUuid: z.uuid().nullable(),
-  itemType: GeneratedItemTypeSchema,
   startTimeMs: z.number().int().nonnegative(),
   durationMs: z.number().int().positive(),
-  redirectChannelUuid: z.uuid().nullable().optional(),
-  fillerListId: z.uuid().nullable().optional(),
-  fillerType: z.string().nullable().optional(),
   sequenceIndex: z.number().int().nonnegative(),
-  createdAt: z.number().nullable().optional(),
+  createdAt: z.number().nullish(),
 });
+
+export const GeneratedContentScheduleItemSchema =
+  BaseGeneratedScheduleItemSchema.extend({
+    programUuid: z.uuid(),
+    itemType: z.literal('content'),
+  });
+
+export const GeneratedFlexScheduleItemSchema =
+  BaseGeneratedScheduleItemSchema.extend({
+    itemType: z.enum(['flex', 'offline']),
+  });
+
+export const GeneratedFillerScheduleItemSchema =
+  BaseGeneratedScheduleItemSchema.extend({
+    itemType: z.literal('filler'),
+    fillerListId: z.string(),
+  });
+
+export const GeneratedRedirectScheduleItemSchema =
+  BaseGeneratedScheduleItemSchema.extend({
+    itemType: z.literal('redirect'),
+    redirectChannelId: z.string(),
+  });
+
+export const GeneratedScheduleItemSchema = z.discriminatedUnion('itemType', [
+  GeneratedContentScheduleItemSchema,
+  GeneratedFlexScheduleItemSchema,
+  GeneratedFillerScheduleItemSchema,
+  GeneratedRedirectScheduleItemSchema,
+]);
 
 export type GeneratedScheduleItem = z.infer<typeof GeneratedScheduleItemSchema>;
 
@@ -362,9 +389,10 @@ export type ResetSeedsResponse = z.infer<typeof ResetSeedsResponseSchema>;
 
 export const InfiniteSchedulePreviewRequestSchema = z.object({
   // Schedule settings (optional, allows partial override)
-  padMs: z.number().int().nonnegative().default(300000),
+  padToMultiple: z.number().int().nonnegative().default(0),
   flexPreference: FlexPreferenceSchema.default('end'),
   timeZoneOffset: z.number().int().default(0),
+  slotPlaybackOrder: z.enum(SlotPlaybackOrder),
   slots: z.array(ScheduleSlotSchema).default([]),
   // Time range for preview
   fromTimeMs: z.number().int().nonnegative(),
@@ -377,7 +405,9 @@ export type InfiniteSchedulePreviewRequest = z.infer<
 
 export const InfiniteSchedulePreviewResponseSchema = z.object({
   items: z.array(GeneratedScheduleItemSchema),
-  totalDurationMs: z.number().int().nonnegative(),
+  fromTimeMs: z.number(),
+  toTimeMs: z.number(),
+  contentPrograms: z.record(z.uuid(), ContentProgramSchema),
 });
 
 export type InfiniteSchedulePreviewResponse = z.infer<

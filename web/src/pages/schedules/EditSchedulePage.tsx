@@ -1,25 +1,18 @@
-import { Box, Stack, Typography } from '@mui/material';
-import type { Schedule } from '@tunarr/types/api';
-import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { BreadcrumbsV2 } from '../../components/BreadcrumbsV2.tsx';
-import { EditScheduleForm } from '../../components/schedules/EditScheduleForm.tsx';
-import { ScheduleSlotTable } from './ScheduleSlotTable.tsx';
+import { Stack, Typography } from '@mui/material';
+import type { MaterializedSchedule2 } from '@tunarr/types/api';
+import Breadcrumbs from '../../components/Breadcrumbs.tsx';
+import { ScheduleEditor } from './ScheduleEditor.tsx';
 
 type Props = {
-  schedule: Schedule;
+  schedule: MaterializedSchedule2;
 };
 
 export const EditSchedulePage = ({ schedule }: Props) => {
   return (
     <Stack spacing={2}>
-      <BreadcrumbsV2 />
+      <Breadcrumbs routeNameMap={{ schedule_name: schedule.name }} />
       <Typography variant="h3">Edit Schedule "{schedule.name}"</Typography>
-      <PaddedPaper>
-        <EditScheduleForm schedule={schedule} />
-      </PaddedPaper>
-      <Box>
-        <ScheduleSlotTable schedule={schedule} />
-      </Box>
+      <ScheduleEditor schedule={schedule} />
     </Stack>
   );
 };

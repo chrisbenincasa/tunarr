@@ -2091,7 +2091,7 @@ export type GetChannelsResponses = {
 export type GetChannelsResponse = GetChannelsResponses[keyof GetChannelsResponses];
 
 export type CreateChannelV2Data = {
-    body: {
+    body?: {
         type: 'new';
         channel: {
             disableFillerOverlay: boolean;
@@ -3641,7 +3641,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
 export type GetApiChannelsByIdProgrammingResponse = GetApiChannelsByIdProgrammingResponses[keyof GetApiChannelsByIdProgrammingResponses];
 
 export type PostApiChannelsByIdProgrammingData = {
-    body: {
+    body?: {
         type: 'manual';
         programs: Array<{
             type: 'content';
@@ -7522,6 +7522,7 @@ export type CreateScheduleForChannelData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -7548,6 +7549,7 @@ export type CreateScheduleForChannelData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -7574,6 +7576,7 @@ export type CreateScheduleForChannelData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -7663,6 +7666,7 @@ export type CreateScheduleForChannelData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         }>;
     };
@@ -7702,6 +7706,187 @@ export type CreateScheduleForChannelResponses = {
      */
     201: {
         uuid: string;
+        name: string;
+        padMs: number;
+        flexPreference: 'distribute' | 'end';
+        timeZoneOffset: number;
+        bufferDays: number;
+        bufferThresholdDays: number;
+        enabled: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'movie';
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+        }>;
+        createdAt?: number | null;
+        updatedAt?: number | null;
     };
 };
 
@@ -13837,7 +14022,7 @@ export type GetApiMediaSourcesResponses = {
 export type GetApiMediaSourcesResponse = GetApiMediaSourcesResponses[keyof GetApiMediaSourcesResponses];
 
 export type PostApiMediaSourcesData = {
-    body: {
+    body?: {
         name: string;
         uri: string;
         accessToken: string;
@@ -14741,7 +14926,7 @@ export type DeleteApiMediaSourcesByIdResponses = {
 };
 
 export type PutApiMediaSourcesByIdData = {
-    body: {
+    body?: {
         id: string;
         name: string;
         uri: string;
@@ -19960,6 +20145,7 @@ export type GetSchedulesResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -19986,6 +20172,7 @@ export type GetSchedulesResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20012,6 +20199,7 @@ export type GetSchedulesResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20101,6 +20289,7 @@ export type GetSchedulesResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         }>;
         createdAt?: number | null;
@@ -20144,6 +20333,7 @@ export type PostApiSchedulesData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20170,6 +20360,7 @@ export type PostApiSchedulesData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20196,6 +20387,7 @@ export type PostApiSchedulesData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20285,6 +20477,7 @@ export type PostApiSchedulesData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         }>;
     };
@@ -20331,6 +20524,7 @@ export type PostApiSchedulesResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20357,6 +20551,7 @@ export type PostApiSchedulesResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20383,6 +20578,7 @@ export type PostApiSchedulesResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20472,6 +20668,7 @@ export type PostApiSchedulesResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         }>;
         createdAt?: number | null;
@@ -20533,6 +20730,32 @@ export type GetScheduleByIdResponses = {
             fillMode: 'fill' | 'count' | 'duration';
             fillValue: number;
             type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'movie';
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
         } | {
             uuid?: string;
             slotIndex: number;
@@ -20687,6 +20910,7 @@ export type GetScheduleByIdResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
             customShow: {
                 id: string;
@@ -20741,6 +20965,7 @@ export type GetScheduleByIdResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
             show: Show | null;
             /**
@@ -20774,6 +20999,7 @@ export type GetScheduleByIdResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
             smartCollection: {
                 uuid: string;
@@ -20823,6 +21049,7 @@ export type UpdateScheduleByIdData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20849,6 +21076,7 @@ export type UpdateScheduleByIdData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20875,6 +21103,7 @@ export type UpdateScheduleByIdData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -20964,6 +21193,7 @@ export type UpdateScheduleByIdData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         }>;
     };
@@ -21019,6 +21249,7 @@ export type UpdateScheduleByIdResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -21045,6 +21276,7 @@ export type UpdateScheduleByIdResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -21071,6 +21303,7 @@ export type UpdateScheduleByIdResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -21160,6 +21393,7 @@ export type UpdateScheduleByIdResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         }>;
         createdAt?: number | null;
@@ -21170,7 +21404,7 @@ export type UpdateScheduleByIdResponses = {
 export type UpdateScheduleByIdResponse = UpdateScheduleByIdResponses[keyof UpdateScheduleByIdResponses];
 
 export type AddSlotToScheduleData = {
-    body: {
+    body?: {
         uuid?: string;
         slotIndex: number;
         anchorMode?: ('hard' | 'soft' | 'padded') | null;
@@ -21194,6 +21428,7 @@ export type AddSlotToScheduleData = {
             order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
             direction?: ('asc' | 'desc') | null;
             seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
         };
     } | {
         uuid?: string;
@@ -21220,6 +21455,7 @@ export type AddSlotToScheduleData = {
             order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
             direction?: ('asc' | 'desc') | null;
             seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
         };
     } | {
         uuid?: string;
@@ -21246,6 +21482,7 @@ export type AddSlotToScheduleData = {
             order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
             direction?: ('asc' | 'desc') | null;
             seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
         };
     } | {
         uuid?: string;
@@ -21335,6 +21572,7 @@ export type AddSlotToScheduleData = {
             order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
             direction?: ('asc' | 'desc') | null;
             seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
         };
     };
     path: {
@@ -21372,6 +21610,7 @@ export type AddSlotToScheduleResponses = {
             order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
             direction?: ('asc' | 'desc') | null;
             seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
         };
     } | {
         uuid?: string;
@@ -21398,6 +21637,7 @@ export type AddSlotToScheduleResponses = {
             order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
             direction?: ('asc' | 'desc') | null;
             seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
         };
     } | {
         uuid?: string;
@@ -21424,6 +21664,7 @@ export type AddSlotToScheduleResponses = {
             order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
             direction?: ('asc' | 'desc') | null;
             seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
         };
     } | {
         uuid?: string;
@@ -21513,11 +21754,616 @@ export type AddSlotToScheduleResponses = {
             order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
             direction?: ('asc' | 'desc') | null;
             seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
         };
     };
 };
 
 export type AddSlotToScheduleResponse = AddSlotToScheduleResponses[keyof AddSlotToScheduleResponses];
+
+export type UpdateScheduleSlotData = {
+    body?: {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'movie';
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'show';
+        showId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'custom-show';
+        customShowId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'filler';
+        fillerListId: string;
+        order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'redirect';
+        redirectChannelId: string;
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'flex';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'smart-collection';
+        smartCollectionId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+    };
+    path: {
+        id: string;
+        slotId: string;
+    };
+    query?: never;
+    url: '/api/schedules/{id}/slots/{slotId}';
+};
+
+export type UpdateScheduleSlotErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        message: string;
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        message: string;
+    };
+};
+
+export type UpdateScheduleSlotError = UpdateScheduleSlotErrors[keyof UpdateScheduleSlotErrors];
+
+export type UpdateScheduleSlotResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'movie';
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'show';
+        showId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'custom-show';
+        customShowId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'filler';
+        fillerListId: string;
+        order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'redirect';
+        redirectChannelId: string;
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'flex';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'smart-collection';
+        smartCollectionId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+    };
+};
+
+export type UpdateScheduleSlotResponse = UpdateScheduleSlotResponses[keyof UpdateScheduleSlotResponses];
+
+export type PreviewScheduleData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        startTimeMs?: number;
+        endTimeMs?: number;
+    };
+    url: '/api/schedules/{id}/preview';
+};
+
+export type PreviewScheduleErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        message: string;
+    };
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type PreviewScheduleError = PreviewScheduleErrors[keyof PreviewScheduleErrors];
+
+export type PreviewScheduleResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        items: Array<{
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            programUuid: string;
+            itemType: 'content';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'flex' | 'offline';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'filler';
+            fillerListId: string;
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'redirect';
+            redirectChannelId: string;
+        }>;
+        fromTimeMs: number;
+        toTimeMs: number;
+        contentPrograms: {
+            [key: string]: {
+                type: 'content';
+                persisted: boolean;
+                duration: number;
+                icon?: string;
+                id?: string;
+                subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
+                summary?: string;
+                date?: string;
+                year?: number;
+                rating?: string;
+                serverFileKey?: string;
+                serverFilePath?: string;
+                title: string;
+                showId?: string;
+                seasonId?: string;
+                seasonNumber?: number;
+                episodeNumber?: number;
+                albumId?: string;
+                artistId?: string;
+                index?: number;
+                parent?: {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'season';
+                } | {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'album';
+                };
+                grandparent?: {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'show';
+                    seasons?: Array<{
+                        id?: string;
+                        title?: string;
+                        index?: number;
+                        guids?: Array<string>;
+                        year?: number;
+                        externalKey?: string;
+                        externalIds: Array<{
+                            type: 'single';
+                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                            id: string;
+                        } | {
+                            type: 'multi';
+                            source: 'plex' | 'jellyfin' | 'emby';
+                            sourceId: string;
+                            id: string;
+                        }>;
+                        summary?: string;
+                    }>;
+                } | {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'artist';
+                    albums?: Array<{
+                        id?: string;
+                        title?: string;
+                        index?: number;
+                        guids?: Array<string>;
+                        year?: number;
+                        externalKey?: string;
+                        externalIds: Array<{
+                            type: 'single';
+                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                            id: string;
+                        } | {
+                            type: 'multi';
+                            source: 'plex' | 'jellyfin' | 'emby';
+                            sourceId: string;
+                            id: string;
+                        }>;
+                        summary?: string;
+                    }>;
+                };
+                externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                externalSourceName: string;
+                externalSourceId: string;
+                libraryId?: string;
+                externalKey: string;
+                uniqueId: string;
+                externalIds: Array<{
+                    type: 'single';
+                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                    id: string;
+                } | {
+                    type: 'multi';
+                    source: 'plex' | 'jellyfin' | 'emby';
+                    sourceId: string;
+                    id: string;
+                }>;
+                canonicalId?: string;
+            };
+        };
+    };
+};
+
+export type PreviewScheduleResponse = PreviewScheduleResponses[keyof PreviewScheduleResponses];
 
 export type DeleteInfiniteScheduleData = {
     body?: never;
@@ -21608,6 +22454,7 @@ export type GetChannelScheduleResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -21634,6 +22481,7 @@ export type GetChannelScheduleResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -21660,6 +22508,7 @@ export type GetChannelScheduleResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -21749,6 +22598,7 @@ export type GetChannelScheduleResponses = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         }>;
         createdAt?: number | null;
@@ -21792,6 +22642,7 @@ export type UpdateInfiniteScheduleData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -21818,6 +22669,7 @@ export type UpdateInfiniteScheduleData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -21844,6 +22696,7 @@ export type UpdateInfiniteScheduleData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -21933,6 +22786,7 @@ export type UpdateInfiniteScheduleData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         }>;
     };
@@ -21959,7 +22813,188 @@ export type UpdateInfiniteScheduleResponses = {
      * Default Response
      */
     200: {
-        success: boolean;
+        uuid: string;
+        name: string;
+        padMs: number;
+        flexPreference: 'distribute' | 'end';
+        timeZoneOffset: number;
+        bufferDays: number;
+        bufferThresholdDays: number;
+        enabled: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'movie';
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+        }>;
+        createdAt?: number | null;
+        updatedAt?: number | null;
     };
 };
 
@@ -21970,6 +23005,7 @@ export type PreviewInfiniteScheduleData = {
         padMs?: number;
         flexPreference?: 'distribute' | 'end';
         timeZoneOffset?: number;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
         slots?: Array<{
             uuid?: string;
             slotIndex: number;
@@ -21994,6 +23030,7 @@ export type PreviewInfiniteScheduleData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -22020,6 +23057,7 @@ export type PreviewInfiniteScheduleData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -22046,6 +23084,7 @@ export type PreviewInfiniteScheduleData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         } | {
             uuid?: string;
@@ -22135,6 +23174,7 @@ export type PreviewInfiniteScheduleData = {
                 order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
                 direction?: ('asc' | 'desc') | null;
                 seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
             };
         }>;
         fromTimeMs: number;
@@ -22165,17 +23205,35 @@ export type PreviewInfiniteScheduleResponses = {
     200: {
         items: Array<{
             uuid: string;
-            scheduleUuid: string;
-            programUuid: string | null;
-            slotUuid: string | null;
-            itemType: 'content' | 'offline' | 'redirect' | 'filler' | 'flex';
             startTimeMs: number;
             durationMs: number;
-            redirectChannelUuid?: string | null;
-            fillerListId?: string | null;
-            fillerType?: string | null;
             sequenceIndex: number;
             createdAt?: number | null;
+            programUuid: string;
+            itemType: 'content';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'flex' | 'offline';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'filler';
+            fillerListId: string;
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'redirect';
+            redirectChannelId: string;
         }>;
         fromTimeMs: number;
         toTimeMs: number;
@@ -22330,17 +23388,35 @@ export type GetInfiniteScheduleItemsResponses = {
     200: {
         items: Array<{
             uuid: string;
-            scheduleUuid: string;
-            programUuid: string | null;
-            slotUuid: string | null;
-            itemType: 'content' | 'offline' | 'redirect' | 'filler' | 'flex';
             startTimeMs: number;
             durationMs: number;
-            redirectChannelUuid?: string | null;
-            fillerListId?: string | null;
-            fillerType?: string | null;
             sequenceIndex: number;
             createdAt?: number | null;
+            programUuid: string;
+            itemType: 'content';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'flex' | 'offline';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'filler';
+            fillerListId: string;
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'redirect';
+            redirectChannelId: string;
         }>;
     };
 };

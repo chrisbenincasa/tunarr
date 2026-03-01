@@ -1,6 +1,6 @@
+import { InfiniteScheduleDB } from '@/db/InfiniteScheduleDB.js';
 import { ChannelOrm } from '@/db/schema/Channel.js';
 import type { ProgramWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
-import { InfiniteScheduleDB } from '@/db/InfiniteScheduleDB.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { Maybe, Nullable } from '@/types/util.js';
@@ -600,10 +600,12 @@ export class StreamProgramCalculator {
    */
   private async getCurrentFromInfiniteSchedule(
     req: GetCurrentLineupItemRequest,
-    channel: Channel,
+    channel: ChannelOrm,
   ): Promise<Result<CurrentLineupItemResult>> {
     if (!channel.infiniteScheduleUuid) {
-      return Result.forError(new Error('Channel does not have an infinite schedule'));
+      return Result.forError(
+        new Error('Channel does not have an infinite schedule'),
+      );
     }
 
     // Get the item playing at the current time
@@ -627,9 +629,7 @@ export class StreamProgramCalculator {
     switch (currentItem.itemType) {
       case 'content': {
         if (!currentItem.programUuid) {
-          return Result.forError(
-            new Error('Content item has no program UUID'),
-          );
+          return Result.forError(new Error('Content item has no program UUID'));
         }
 
         const program = await this.programDB.getProgramById(
@@ -723,7 +723,10 @@ export class StreamProgramCalculator {
       case 'offline':
       case 'flex':
       default: {
-        lineupItem = createOfflineStreamLineupItem(streamDuration, req.startTime);
+        lineupItem = createOfflineStreamLineupItem(
+          streamDuration,
+          req.startTime,
+        );
         break;
       }
     }

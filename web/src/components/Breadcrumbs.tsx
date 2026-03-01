@@ -6,12 +6,17 @@ import {
   useTheme,
 } from '@mui/material';
 import { useLocation } from '@tanstack/react-router';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import { isEmpty, map, reject } from 'lodash-es';
+import type { Dictionary } from 'ts-essentials';
 import { useGetRouteDetails } from '../hooks/useRouteName.ts';
 import { RouterLink } from './base/RouterLink.tsx';
 
+const templateExtractor = /\{\{\s*(.*?)\s*\}\}/g;
+
 type Props = BreadcrumbsProps & {
   thisRouteName?: string;
+  routeNameMap?: Dictionary<string>;
 };
 
 export default function Breadcrumbs(props: Props) {
@@ -22,6 +27,7 @@ export default function Breadcrumbs(props: Props) {
     sx = { mb: 2 },
     separator = '›',
     thisRouteName,
+    routeNameMap,
     ...restProps
   } = props;
 
@@ -51,9 +57,21 @@ export default function Breadcrumbs(props: Props) {
             return null;
           }
 
+          console.log(route.name, [
+            ...route.name.matchAll(/\{\{\s*(.*?)\s*\}\}/g),
+          ]);
+          const routeName = route.name.replaceAll(
+            /\{\{\s*(.*?)\s*\}\}/g,
+            (_, match) => {
+              return isNonEmptyString(match)
+                ? (routeNameMap?.[match] ?? '')
+                : '';
+            },
+          );
+
           const trimmedText =
-            route.name.substring(0, MAX_LENGTH) +
-            (route.name.length + 3 >= MAX_LENGTH ? '...' : '');
+            routeName.substring(0, MAX_LENGTH) +
+            (routeName.length + 3 >= MAX_LENGTH ? '...' : '');
 
           // Don't link the last item in a breadcrumb because you are on that page
           // Don't display crumbs for pages that aren't excplicely defined in useRouteNames hook
