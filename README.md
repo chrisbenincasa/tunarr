@@ -1,88 +1,126 @@
-# Tunarr
-
-[![GitHub Repo stars](https://img.shields.io/github/stars/chrisbenincasa/tunarr?style=flat&logo=github&color=lightseagreen)](https://github.com/chrisbenincasa/tunarr/stargazers) [![Docker Pulls](https://img.shields.io/docker/pulls/chrisbenincasa/tunarr?style=flat&logo=docker&color=lightseagreen)](https://hub.docker.com/r/chrisbenincasa/tunarr) [![Docker Image Version](https://img.shields.io/docker/v/chrisbenincasa/tunarr?sort=semver&arch=amd64&style=flat&logo=docker&color=lightseagreen)](https://hub.docker.com/r/chrisbenincasa/tunarr/tags)[![Discord](https://img.shields.io/discord/1254564006123802805?style=flat&logo=discord&logoColor=white&label=Discord)](https://discord.gg/7tUjBbDxag)
-
-Create and configure live TV channels using media on your Plex, Jellyfin, or Emby servers.
-
-Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin, or Emby. Or utilize the m3u URL with any IPTV player app (we love [UHF](https://www.uhfapp.com/) and [Tivimate](https://tivimate.com/)).
-
 <p align="center">
-<img src="./design/tunarr-guide.png">
-<img src="./design/tunarr-channels.png">
+  <img src="./design/tunarr-guide.png" alt="Tunarr TV Guide">
 </p>
 
-> [!IMPORTANT]
->
-> - ⚠️ Tunarr is a work in progress and is under **very active** development.
-> - ⚠️ Please report any issues you encounter or suggest any ideas you have in the [issues](https://github.com/chrisbenincasa/tunarr/issues)
->   section or in [Tunarr's discord server](https://discord.gg/svgSBYkEK5).
+<h1 align="center">Tunarr</h1>
 
-## What is this?
+<p align="center">Create your own live TV channels from media on Plex, Jellyfin, Emby, or local files.</p>
 
-Tunarr is a rewrite + rebrand of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in itself was a fork of [other projects](https://github.com/DEFENDORe/pseudotv)!). This project was born out of both a love for TV and an appreciation for the work put into dizqueTV and its predecessors.
+<p align="center">
+  <a href="https://github.com/chrisbenincasa/tunarr/releases"><img src="https://img.shields.io/github/v/release/chrisbenincasa/tunarr?style=flat&logo=github&color=lightseagreen" alt="GitHub Release"></a>
+  <a href="https://hub.docker.com/r/chrisbenincasa/tunarr"><img src="https://img.shields.io/docker/pulls/chrisbenincasa/tunarr?style=flat&logo=docker&color=lightseagreen" alt="Docker Pulls"></a>
+  <a href="https://github.com/chrisbenincasa/tunarr/stargazers"><img src="https://img.shields.io/github/stars/chrisbenincasa/tunarr?style=flat&logo=github&color=lightseagreen" alt="GitHub Stars"></a>
+  <a href="https://discord.gg/7tUjBbDxag"><img src="https://img.shields.io/discord/1254564006123802805?style=flat&logo=discord&logoColor=white&label=Discord" alt="Discord"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Zlib-lightseagreen?style=flat" alt="License"></a>
+</p>
 
-Tunarr has the following goals:
+---
 
-- Modernize the stack, both backend and frontend
-- Stabilize the program, fix bugs, and improve performance (Tunarr currently is developed and tested on Node 22, [non-trivial performance improvements](https://blog.rafaelgss.dev/state-of-nodejs-performance-2023) over previous versions)
-- Modernize and "prettify" the Web UI
-- And of course, **Add a ton great new features!**
+## What is Tunarr?
+
+Tunarr lets you build custom live TV channels out of your existing media libraries — movies, TV episodes, music videos, or local files — and stream them as if they were real broadcast channels.
+
+Tune in by adding Tunarr's spoofed HDHomeRun tuner to Plex, Jellyfin, or Emby, or grab the M3U URL for any IPTV player like [Tivimate](https://tivimate.com/) or [UHF](https://www.uhfapp.com/).
 
 ## Features
 
-- **NEW** Advanced filtering of Plex libraries, helping to easily find the content you want to schedule
-- **NEW** Jellyfin / Emby library support!
-- **NEW** Stream your channels directly in the [browser](https://github.com/chrisbenincasa/tunarr/pull/116)
-- **NEW** Complete rewrite of streaming pipeline, offering better stability and improved performance
-- **NEW** New and more powerful [scheduling options](https://tunarr.com/configure/scheduling-tools/)!
-- **NEW** [Dark mode!](https://github.com/chrisbenincasa/tunarr/pull/34)
-- **NEW** Quickly find content you want for your channels with [advanced filtering and sorting](https://github.com/chrisbenincasa/tunarr/pull/210) (Jellyfin filtering [coming soon](https://github.com/chrisbenincasa/tunarr/issues/752))
-- **NEW** Scheduled, configurable backups - never lose your channels and configuration!
-- **NEW** Support multiple transcode configurations and set them per-channel
-- **NEW** Audio language preference support
-- **NEW** Improved UI for time/random slot scheduling
-- **NEW** Improved Subtitle support: support for image and text based subtitles. Supports extracting embedded text based subtitles. Configure subtitle preferences (language, subtitle type, etc) per-channel.
-- Spoofed [HDHR](https://www.silicondust.com/hdhomerun/) tuner and a IPTV channel list, providing a large amount of flexibility and easing integration with [xTeVe](https://github.com/xteve-project/xTeVe) or [Threadfin](https://github.com/Threadfin/Threadfin) and Plex, or the IPTV client of your choice.
-- Customize channels with a logo, filler content ("commercials", music videos, prerolls, channel branding videos) between programming, and more!
-- View channel lineups on the web-based TV Guide
-- Support for hardware accelerated transcoding, including Nvidia, VAAPI, QuickSync, and macOS VideoToolbox. (AMF; #1131 and Vulkann #1172 are coming soon!)
+**Media Sources**
 
-## Limitations
+- Connect Plex, Jellyfin, Emby, or local file libraries
+- Advanced search, filter, and sort across all connected libraries
 
-- Like dizqueTV, Tunarr does not currently watch your Plex server for media updates/changes. You must manually remove and re-add your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. You&apos;ll have to update the server settings manually in that case. **NOTE** This feature is actively under development! (https://github.com/chrisbenincasa/tunarr/issues/15)
+**Channel Management**
 
-## Releases
+- Drag-and-drop lineup editor
+- Filler content between programs (commercials, music videos, prerolls, branding)
+- Per-channel logos and automatic configuration backups
 
-- https://github.com/chrisbenincasa/Tunarr/releases
+**Scheduling**
 
-## Wiki
+- Time-slot and random-slot scheduling tools
+- Web-based TV guide for viewing channel lineups
 
-- For setup instructions, check our [documentation site](https://tunarr.com/)
+**Playback & Integration**
+
+- Spoofed [HDHR](https://www.silicondust.com/hdhomerun/) tuner for Plex, Jellyfin, and Emby
+- M3U/IPTV output for [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr), [Threadfin](https://github.com/Threadfin/Threadfin), [xTeVe](https://github.com/xteve-project/xTeVe), or any IPTV client
+- Stream channels directly in the browser
+- Per-channel audio language and subtitle preferences
+
+**Transcoding**
+
+- Hardware-accelerated transcoding: Nvidia NVENC, VAAPI, Intel QuickSync, macOS VideoToolbox
+- Multiple transcode profiles, configurable per channel
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="./design/tunarr-channels.png" alt="Channel Management"><br><em>Channel Management</em></td>
+    <td align="center"><img src="./docs/assets/channel-properties.png" alt="Channel Configuration"><br><em>Channel Configuration</em></td>
+  </tr>
+</table>
+
+## Quick Start
+
+The easiest way to run Tunarr is with Docker Compose. Create a `docker-compose.yml`:
+
+```yaml
+services:
+  tunarr:
+    image: chrisbenincasa/tunarr:latest
+    container_name: tunarr
+    ports:
+      - 8000:8000
+    environment:
+      - TZ=America/New_York
+    volumes:
+      - ./tunarr-data:/config/tunarr
+    restart: unless-stopped
+```
+
+Then run:
+
+```bash
+docker compose up -d
+```
+
+Tunarr will be available at `http://localhost:8000`.
+
+**Other installation options:**
+
+| Platform                 | Method                                                                   |
+| ------------------------ | ------------------------------------------------------------------------ |
+| Linux / macOS / Windows  | [Standalone binaries](https://github.com/chrisbenincasa/tunarr/releases) |
+| Unraid                   | Community App Store                                                      |
+| Proxmox                  | [LXC helper script](https://tunarr.com/install/proxmox)                  |
+| ARM (Raspberry Pi, etc.) | Docker image (`linux/arm64`)                                             |
+
+For hardware-accelerated transcoding setup, see the [transcoding docs](https://tunarr.com/configure/transcode/).
+
+## Documentation
+
+- [Installation guide](https://tunarr.com/install/)
+- [Creating channels](https://tunarr.com/configure/channels/)
+- [Scheduling tools](https://tunarr.com/configure/scheduling-tools/)
+- [Transcoding configuration](https://tunarr.com/configure/transcode/)
+- [Full documentation](https://tunarr.com/)
 
 ## Development
 
-At a high level, [pnpm](https://pnpm.io) is Tunarr's package manager and [turbo](https://turbo.build/) is used for task running in the repo.
-
-### Web
-
-[vite](https://vitejs.dev/) is used for web dev and bundling.
-
-### Start dev servers
-
-1. Install deps:
-
-```
+```bash
 pnpm i
+pnpm turbo dev  # backend at :8000, frontend at :5173/web
 ```
 
-2. Start dev servers:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for a full development guide.
 
-```
-pnpm turbo dev
-```
+## Community
 
-After the servers are running, the backend should be available at `localhost:8000` and the frontend at `localhost:5173/web`.
+- [Discord](https://discord.gg/7tUjBbDxag) — chat, help, and announcements
+- [GitHub Issues](https://github.com/chrisbenincasa/tunarr/issues) — bug reports and feature requests
+- [GitHub Discussions](https://github.com/chrisbenincasa/tunarr/discussions) — questions and general conversation
 
 ## License
 
-- The original dizqueTV is released under zlib license (c) 2020 Victor Hugo Soliz Kuncar: we've kept this.
+Tunarr is released under the [Zlib License](LICENSE).
