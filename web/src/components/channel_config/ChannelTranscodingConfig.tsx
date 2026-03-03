@@ -231,7 +231,10 @@ export default function ChannelTranscodingConfig() {
                 <CheckboxFormController
                   control={control}
                   name="watermark.enabled"
-                  disabled={streamMode === 'hls_direct'}
+                  disabled={
+                    streamMode === 'hls_direct' ||
+                    streamMode === 'hls_direct_v2'
+                  }
                 />
               }
               label="Enable Watermark"
@@ -241,265 +244,270 @@ export default function ChannelTranscodingConfig() {
               Graphic) on top of the channel's stream.
             </FormHelperText>
           </FormControl>
-          {watermark?.enabled && streamMode !== 'hls_direct' && (
-            <Stack direction="row" mt={2} gap={2} useFlexGap>
-              <Stack sx={{ minWidth: '33%' }} spacing={2}>
-                <Box
-                  sx={{
-                    width: '100%',
-                    padding: `0 0 ${paddingPct}%`,
-                    position: 'relative',
-                    backgroundColor: (theme) => theme.palette.grey[200],
-                    borderColor: (theme) => theme.palette.grey[700],
-                    borderStyle: 'solid',
-                    borderWidth: 2,
-                    overflow: 'hidden',
-                  }}
-                >
+          {watermark?.enabled &&
+            streamMode !== 'hls_direct' &&
+            streamMode !== 'hls_direct_v2' && (
+              <Stack direction="row" mt={2} gap={2} useFlexGap>
+                <Stack sx={{ minWidth: '33%' }} spacing={2}>
                   <Box
-                    component="img"
                     sx={{
-                      position: 'absolute',
-                      width:
-                        watermark?.width && !watermark?.fixedSize
-                          ? `${watermark.width}%`
-                          : null,
-                      opacity: opacity ? opacity / 100 : 1.0,
-                      [isBottom ? 'bottom' : 'top']:
-                        `${watermark?.verticalMargin}%`,
-                      [isRight ? 'right' : 'left']:
-                        `${watermark?.horizontalMargin}%`,
+                      width: '100%',
+                      padding: `0 0 ${paddingPct}%`,
+                      position: 'relative',
+                      backgroundColor: (theme) => theme.palette.grey[200],
+                      borderColor: (theme) => theme.palette.grey[700],
+                      borderStyle: 'solid',
+                      borderWidth: 2,
+                      overflow: 'hidden',
                     }}
-                    src={watermarkPath || `${backendUri}/images/tunarr.png`}
-                  />
-                  {safeTitleIndicatorVisible && (
+                  >
                     <Box
+                      component="img"
                       sx={{
-                        background: 'transparent',
-                        border: '1px red dashed',
                         position: 'absolute',
-                        height: `${safeVerticalPct}%`,
-                        width: `${safeHorizontalPct}%`,
-                        left: `${(100 - safeHorizontalPct) / 2}%`,
-                        top: `${(100 - safeVerticalPct) / 2}%`,
+                        width:
+                          watermark?.width && !watermark?.fixedSize
+                            ? `${watermark.width}%`
+                            : null,
+                        opacity: opacity ? opacity / 100 : 1.0,
+                        [isBottom ? 'bottom' : 'top']:
+                          `${watermark?.verticalMargin}%`,
+                        [isRight ? 'right' : 'left']:
+                          `${watermark?.horizontalMargin}%`,
                       }}
-                    ></Box>
-                  )}
-                </Box>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={safeTitleIndicatorVisible}
-                      onChange={(_, checked) =>
-                        setSafeTitleIndicatorVisible(checked)
-                      }
+                      src={watermarkPath || `${backendUri}/images/tunarr.png`}
                     />
-                  }
-                  label={
-                    <span>
-                      Toggle{' '}
-                      <Link
-                        href="https://en.wikipedia.org/wiki/Safe_area_(television)#:~:text=The%20title%2Dsafe%20area%20or,screen%20location%20and%20display%20type."
-                        target="_blank"
-                      >
-                        Safe Title Indicator
-                      </Link>{' '}
-                      lines in preview
-                    </span>
-                  }
-                />
-              </Stack>
-              <Grid
-                container
-                spacing={2}
-                sx={{ flexGrow: 1, height: 'fit-content' }}
-              >
-                <Grid size={{ xs: 12 }}>
-                  <Controller
-                    name="watermark.url"
-                    control={control}
-                    render={({ field }) => (
-                      <ImageUploadInput
-                        // TODO: This should be something like {channel.id}_fallback_picture.ext
-                        fileRenamer={typedProperty('name')}
-                        label="Watermark Image URL"
-                        onFormValueChange={(newPath) => field.onChange(newPath)}
-                        onUploadError={console.error}
-                        FormControlProps={{ fullWidth: true }}
-                        value={field.value ?? ''}
-                      >
-                        <FormHelperText>
-                          Leave blank to use the channel's icon.
-                        </FormHelperText>
-                      </ImageUploadInput>
+                    {safeTitleIndicatorVisible && (
+                      <Box
+                        sx={{
+                          background: 'transparent',
+                          border: '1px red dashed',
+                          position: 'absolute',
+                          height: `${safeVerticalPct}%`,
+                          width: `${safeHorizontalPct}%`,
+                          left: `${(100 - safeHorizontalPct) / 2}%`,
+                          top: `${(100 - safeVerticalPct) / 2}%`,
+                        }}
+                      ></Box>
                     )}
+                  </Box>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={safeTitleIndicatorVisible}
+                        onChange={(_, checked) =>
+                          setSafeTitleIndicatorVisible(checked)
+                        }
+                      />
+                    }
+                    label={
+                      <span>
+                        Toggle{' '}
+                        <Link
+                          href="https://en.wikipedia.org/wiki/Safe_area_(television)#:~:text=The%20title%2Dsafe%20area%20or,screen%20location%20and%20display%20type."
+                          target="_blank"
+                        >
+                          Safe Title Indicator
+                        </Link>{' '}
+                        lines in preview
+                      </span>
+                    }
                   />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <FormControl fullWidth margin="normal">
-                    <InputLabel>Position</InputLabel>
+                </Stack>
+                <Grid
+                  container
+                  spacing={2}
+                  sx={{ flexGrow: 1, height: 'fit-content' }}
+                >
+                  <Grid size={{ xs: 12 }}>
                     <Controller
-                      name="watermark.position"
+                      name="watermark.url"
                       control={control}
                       render={({ field }) => (
-                        <Select label="Position" {...field}>
-                          {map(watermarkPositionOptions, (opt) => (
-                            <MenuItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </MenuItem>
-                          ))}
-                        </Select>
+                        <ImageUploadInput
+                          // TODO: This should be something like {channel.id}_fallback_picture.ext
+                          fileRenamer={typedProperty('name')}
+                          label="Watermark Image URL"
+                          onFormValueChange={(newPath) =>
+                            field.onChange(newPath)
+                          }
+                          onUploadError={console.error}
+                          FormControlProps={{ fullWidth: true }}
+                          value={field.value ?? ''}
+                        >
+                          <FormHelperText>
+                            Leave blank to use the channel's icon.
+                          </FormHelperText>
+                        </ImageUploadInput>
                       )}
                     />
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <NumericFormControllerText
-                    control={control}
-                    name="watermark.width"
-                    float
-                    rules={{
-                      min: 0, //{ value: 0, message: 'Width must be >= 0' },
-                      max: 100,
-                    }}
-                    TextFieldProps={{ label: 'Width %', fullWidth: true }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <NumericFormControllerText
-                    control={control}
-                    name="watermark.horizontalMargin"
-                    float
-                    rules={{ min: 0, max: 100 }}
-                    TextFieldProps={{
-                      label: 'Horizontal Margin %',
-                      fullWidth: true,
-                    }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <NumericFormControllerText
-                    control={control}
-                    name="watermark.verticalMargin"
-                    float
-                    rules={{ min: 0, max: 100 }}
-                    TextFieldProps={{
-                      label: 'Vertical Margin %',
-                      fullWidth: true,
-                    }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <FormControl fullWidth>
-                    <Typography gutterBottom>Opacity</Typography>
-                    <Box sx={{ px: 2 }}>
-                      <Slider
-                        min={0}
-                        max={100}
-                        value={opacity}
-                        marks={range(0, 100, 10).map((i) => ({ value: i }))}
-                        valueLabelDisplay="auto"
-                        sx={{ width: '100%' }}
-                        onChange={(_, newValue) => setOpacity(newValue)}
-                        onChangeCommitted={(_, newValue) =>
-                          setValue('watermark.opacity', newValue, {
-                            shouldDirty: true,
-                          })
-                        }
-                        step={1}
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <FormControl fullWidth margin="normal">
+                      <InputLabel>Position</InputLabel>
+                      <Controller
+                        name="watermark.position"
+                        control={control}
+                        render={({ field }) => (
+                          <Select label="Position" {...field}>
+                            {map(watermarkPositionOptions, (opt) => (
+                              <MenuItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        )}
                       />
-                    </Box>
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <Divider />
-                </Grid>
-                <Grid size={{ xs: 12, lg: 6 }}>
-                  <FormControl fullWidth>
-                    <FormControlLabel
-                      control={
-                        <CheckboxFormController
-                          control={control}
-                          name="watermark.fixedSize"
-                        />
-                      }
-                      label="Disable Image Scaling"
+                    </FormControl>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <NumericFormControllerText
+                      control={control}
+                      name="watermark.width"
+                      float
+                      rules={{
+                        min: 0, //{ value: 0, message: 'Width must be >= 0' },
+                        max: 100,
+                      }}
+                      TextFieldProps={{ label: 'Width %', fullWidth: true }}
                     />
-                    <FormHelperText>
-                      The image will be rendered at its actual size without any
-                      scaling applied.
-                    </FormHelperText>
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12, lg: 6 }}>
-                  <FormControl fullWidth>
-                    <FormControlLabel
-                      control={
-                        <CheckboxFormController
-                          control={control}
-                          name="watermark.animated"
-                        />
-                      }
-                      label="Enable Animation"
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <NumericFormControllerText
+                      control={control}
+                      name="watermark.horizontalMargin"
+                      float
+                      rules={{ min: 0, max: 100 }}
+                      TextFieldProps={{
+                        label: 'Horizontal Margin %',
+                        fullWidth: true,
+                      }}
                     />
-                    <FormHelperText>
-                      Enable if the watermark is an animated GIF or PNG. The
-                      watermark will loop according to the image's
-                      configuration. If this option is enabled and the image is
-                      not animated, there will be playback errors.
-                    </FormHelperText>
-                  </FormControl>
-                </Grid>
-
-                <Grid size={{ xs: 12, lg: 6 }}>
-                  <NumericFormControllerText
-                    control={control}
-                    name="watermark.fadeConfig.0.periodMins"
-                    rules={{ min: 0 }}
-                    TextFieldProps={{
-                      label: 'Watermark Period (mins)',
-                      fullWidth: true,
-                      helperText:
-                        'Display/hide the watermark via a fade animation every N minutes. Set to 0 to disable.',
-                    }}
-                  />
-                </Grid>
-                {(fadePeriod ?? 0) > 0 && (
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <NumericFormControllerText
+                      control={control}
+                      name="watermark.verticalMargin"
+                      float
+                      rules={{ min: 0, max: 100 }}
+                      TextFieldProps={{
+                        label: 'Vertical Margin %',
+                        fullWidth: true,
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <FormControl fullWidth>
+                      <Typography gutterBottom>Opacity</Typography>
+                      <Box sx={{ px: 2 }}>
+                        <Slider
+                          min={0}
+                          max={100}
+                          value={opacity}
+                          marks={range(0, 100, 10).map((i) => ({ value: i }))}
+                          valueLabelDisplay="auto"
+                          sx={{ width: '100%' }}
+                          onChange={(_, newValue) => setOpacity(newValue)}
+                          onChangeCommitted={(_, newValue) =>
+                            setValue('watermark.opacity', newValue, {
+                              shouldDirty: true,
+                            })
+                          }
+                          step={1}
+                        />
+                      </Box>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Divider />
+                  </Grid>
                   <Grid size={{ xs: 12, lg: 6 }}>
                     <FormControl fullWidth>
                       <FormControlLabel
                         control={
                           <CheckboxFormController
                             control={control}
-                            name="watermark.fadeConfig.0.leadingEdge"
+                            name="watermark.fixedSize"
                           />
                         }
-                        label="Display Watermark on Leading Edge"
+                        label="Disable Image Scaling"
                       />
                       <FormHelperText>
-                        When enabled, intermittent watermarks fade in
-                        immediately when a stream is initialized. When disabled,
-                        the first watermark fade-in occurs after a full period.
+                        The image will be rendered at its actual size without
+                        any scaling applied.
                       </FormHelperText>
                     </FormControl>
                   </Grid>
-                )}
-                <Grid size={{ xs: 12, lg: 6 }}>
-                  <NumericFormControllerText
-                    control={control}
-                    name="watermark.duration"
-                    rules={{ min: 0 }}
-                    TextFieldProps={{
-                      label: 'Total Watermark Duration (seconds)',
-                      fullWidth: true,
-                      helperText:
-                        "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
-                    }}
-                  />
+                  <Grid size={{ xs: 12, lg: 6 }}>
+                    <FormControl fullWidth>
+                      <FormControlLabel
+                        control={
+                          <CheckboxFormController
+                            control={control}
+                            name="watermark.animated"
+                          />
+                        }
+                        label="Enable Animation"
+                      />
+                      <FormHelperText>
+                        Enable if the watermark is an animated GIF or PNG. The
+                        watermark will loop according to the image's
+                        configuration. If this option is enabled and the image
+                        is not animated, there will be playback errors.
+                      </FormHelperText>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, lg: 6 }}>
+                    <NumericFormControllerText
+                      control={control}
+                      name="watermark.fadeConfig.0.periodMins"
+                      rules={{ min: 0 }}
+                      TextFieldProps={{
+                        label: 'Watermark Period (mins)',
+                        fullWidth: true,
+                        helperText:
+                          'Display/hide the watermark via a fade animation every N minutes. Set to 0 to disable.',
+                      }}
+                    />
+                  </Grid>
+                  {(fadePeriod ?? 0) > 0 && (
+                    <Grid size={{ xs: 12, lg: 6 }}>
+                      <FormControl fullWidth>
+                        <FormControlLabel
+                          control={
+                            <CheckboxFormController
+                              control={control}
+                              name="watermark.fadeConfig.0.leadingEdge"
+                            />
+                          }
+                          label="Display Watermark on Leading Edge"
+                        />
+                        <FormHelperText>
+                          When enabled, intermittent watermarks fade in
+                          immediately when a stream is initialized. When
+                          disabled, the first watermark fade-in occurs after a
+                          full period.
+                        </FormHelperText>
+                      </FormControl>
+                    </Grid>
+                  )}
+                  <Grid size={{ xs: 12, lg: 6 }}>
+                    <NumericFormControllerText
+                      control={control}
+                      name="watermark.duration"
+                      rules={{ min: 0 }}
+                      TextFieldProps={{
+                        label: 'Total Watermark Duration (seconds)',
+                        fullWidth: true,
+                        helperText:
+                          "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
+                      }}
+                    />
+                  </Grid>
                 </Grid>
-              </Grid>
-            </Stack>
-          )}
+              </Stack>
+            )}
         </Box>
       </Stack>
     )

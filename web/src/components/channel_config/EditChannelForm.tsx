@@ -173,6 +173,8 @@ export function EditChannelForm({
             priority: idx,
           }));
 
+    console.log(data);
+
     const dataTransform = {
       ...data,
       // Transform this to milliseconds before we send it over
@@ -187,6 +189,7 @@ export function EditChannelForm({
       watermark: data.watermark
         ? {
             ...data.watermark,
+            enabled: !!data.watermark.enabled,
             fadeConfig: isEmpty(fadeConfigs) ? undefined : fadeConfigs,
           }
         : undefined,
