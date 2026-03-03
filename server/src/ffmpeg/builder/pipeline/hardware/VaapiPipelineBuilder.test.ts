@@ -47,6 +47,7 @@ describe('VaapiPipelineBuilder', () => {
       new Set(),
       new Map(),
       new Set(),
+      new Set(),
     );
     const video = VideoInputSource.withStream(
       new FileStreamSource('/path/to/video.mkv'),
@@ -57,6 +58,7 @@ describe('VaapiPipelineBuilder', () => {
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
         providedSampleAspectRatio: null,
+        colorFormat: null,
       }),
     );
 
@@ -106,7 +108,7 @@ describe('VaapiPipelineBuilder', () => {
       state,
       new FrameState({
         isAnamorphic: false,
-        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        scaledSize: video.streams[0]!.squarePixelFrameSize(FrameSize.FHD),
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
       }),
@@ -131,6 +133,7 @@ describe('VaapiPipelineBuilder', () => {
       new Set(),
       new Map(),
       new Set(),
+      new Set(),
     );
     const video = VideoInputSource.withStream(
       new FileStreamSource('/path/to/video.mkv'),
@@ -141,6 +144,7 @@ describe('VaapiPipelineBuilder', () => {
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
         providedSampleAspectRatio: null,
+        colorFormat: null,
       }),
     );
 
@@ -190,7 +194,7 @@ describe('VaapiPipelineBuilder', () => {
       state,
       new FrameState({
         isAnamorphic: false,
-        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        scaledSize: video.streams[0]!.squarePixelFrameSize(FrameSize.FHD),
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
         videoFormat: 'h264',
@@ -216,6 +220,7 @@ describe('VaapiPipelineBuilder', () => {
       new Set(),
       new Map(),
       new Set(),
+      new Set(),
     );
     const video = VideoInputSource.withStream(
       new FileStreamSource('/path/to/video.mkv'),
@@ -227,6 +232,7 @@ describe('VaapiPipelineBuilder', () => {
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
         providedSampleAspectRatio: null,
+        colorFormat: null,
       }),
     );
 
@@ -277,7 +283,7 @@ describe('VaapiPipelineBuilder', () => {
       state,
       new FrameState({
         isAnamorphic: false,
-        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        scaledSize: video.streams[0]!.squarePixelFrameSize(FrameSize.FHD),
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
         videoFormat: 'h264',
@@ -303,6 +309,7 @@ describe('VaapiPipelineBuilder', () => {
       new Set(),
       new Map(),
       new Set(),
+      new Set(),
     );
     const video = VideoInputSource.withStream(
       new FileStreamSource('/path/to/video.mkv'),
@@ -314,6 +321,7 @@ describe('VaapiPipelineBuilder', () => {
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
         providedSampleAspectRatio: null,
+        colorFormat: null,
       }),
     );
 
@@ -363,7 +371,7 @@ describe('VaapiPipelineBuilder', () => {
       state,
       new FrameState({
         isAnamorphic: false,
-        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        scaledSize: video.streams[0]!.squarePixelFrameSize(FrameSize.FHD),
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
         videoFormat: 'h264',
@@ -388,6 +396,7 @@ describe('VaapiPipelineBuilder', () => {
     const binaryCapabilities = new FfmpegCapabilities(
       new Set(),
       new Map(),
+      new Set(),
       new Set(),
     );
 
@@ -439,7 +448,7 @@ describe('VaapiPipelineBuilder', () => {
       state,
       new FrameState({
         isAnamorphic: false,
-        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        scaledSize: video.streams[0]!.squarePixelFrameSize(FrameSize.FHD),
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
         videoFormat: 'h264',
@@ -448,6 +457,155 @@ describe('VaapiPipelineBuilder', () => {
     );
 
     console.log(out.getCommandArgs().join(' '));
+  });
+});
+
+describe('VaapiPipelineBuilder pad', () => {
+  const fakeVersion = {
+    versionString: 'n7.0.2',
+    majorVersion: 7,
+    minorVersion: 0,
+    patchVersion: 2,
+    isUnknown: false,
+  };
+
+  // 4:3 video that needs pillarboxing to fit in 16:9 FHD:
+  // squarePixelFrameSize(FHD) = 1440x1080, paddedSize = 1920x1080
+  function create43VideoStream(): VideoStream {
+    return VideoStream.create({
+      index: 0,
+      codec: 'h264',
+      profile: 'main',
+      pixelFormat: new PixelFormatYuv420P(),
+      frameSize: FrameSize.withDimensions(640, 480),
+      displayAspectRatio: '4:3',
+      providedSampleAspectRatio: null,
+      colorFormat: null,
+    });
+  }
+
+  function buildWithPad(opts: {
+    videoStream: VideoStream;
+    binaryCapabilities?: FfmpegCapabilities;
+    disableHardwareDecoding?: boolean;
+    disableHardwareEncoding?: boolean;
+  }) {
+    const capabilities = new VaapiHardwareCapabilities([
+      new VaapiProfileEntrypoint(
+        VaapiProfiles.H264Main,
+        VaapiEntrypoint.Decode,
+      ),
+      new VaapiProfileEntrypoint(
+        VaapiProfiles.H264Main,
+        VaapiEntrypoint.Encode,
+      ),
+    ]);
+
+    const binaryCapabilities =
+      opts.binaryCapabilities ??
+      new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.PadVaapi]),
+        new Set(),
+      );
+
+    const video = VideoInputSource.withStream(
+      new FileStreamSource('/path/to/video.mkv'),
+      opts.videoStream,
+    );
+
+    const builder = new VaapiPipelineBuilder(
+      capabilities,
+      binaryCapabilities,
+      video,
+      null,
+      null,
+      null,
+      null,
+    );
+
+    const state = FfmpegState.create({ version: fakeVersion });
+    const videoStream = video.streams[0]!;
+
+    return builder.build(
+      state,
+      new FrameState({
+        isAnamorphic: false,
+        scaledSize: videoStream.squarePixelFrameSize(FrameSize.FHD),
+        paddedSize: FrameSize.FHD,
+        pixelFormat: new PixelFormatYuv420P(),
+        videoFormat: 'h264',
+      }),
+      {
+        ...DefaultPipelineOptions,
+        vaapiDevice: '/dev/dri/renderD128',
+        disableHardwareDecoding: opts.disableHardwareDecoding ?? false,
+        disableHardwareEncoding: opts.disableHardwareEncoding ?? false,
+      },
+    );
+  }
+
+  test('uses pad_vaapi when capability is available and content is SDR', () => {
+    const pipeline = buildWithPad({ videoStream: create43VideoStream() });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).toContain('pad_vaapi=w=1920:h=1080');
+    expect(args).not.toContain('pad=1920');
+  });
+
+  test('falls back to software pad when pad_vaapi capability is not available', () => {
+    const pipeline = buildWithPad({
+      videoStream: create43VideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set(),
+        new Set(),
+      ),
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).not.toContain('pad_vaapi');
+    expect(args).toContain('pad=1920:1080');
+  });
+
+  test('uses software pad for HDR content even when pad_vaapi capability is available', () => {
+    const hdrStream = VideoStream.create({
+      index: 0,
+      codec: 'h264',
+      profile: 'main',
+      pixelFormat: new PixelFormatYuv420P(),
+      frameSize: FrameSize.withDimensions(640, 480),
+      displayAspectRatio: '4:3',
+      providedSampleAspectRatio: null,
+      colorFormat: new ColorFormat({
+        colorRange: ColorRanges.Tv,
+        colorSpace: ColorSpaces.Bt2020nc,
+        colorPrimaries: ColorPrimaries.Bt2020,
+        colorTransfer: ColorTransferFormats.Smpte2084,
+      }),
+    });
+
+    const pipeline = buildWithPad({ videoStream: hdrStream });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).not.toContain('pad_vaapi');
+    expect(args).toContain('pad=1920:1080');
+  });
+
+  test('pad_vaapi includes hwupload when frame data is in software', () => {
+    const pipeline = buildWithPad({
+      videoStream: create43VideoStream(),
+      disableHardwareDecoding: true,
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).toContain('pad_vaapi');
+    const hwuploadIndex = args.indexOf('hwupload');
+    const padVaapiIndex = args.indexOf('pad_vaapi');
+    expect(hwuploadIndex).toBeGreaterThan(-1);
+    expect(hwuploadIndex).toBeLessThan(padVaapiIndex);
   });
 });
 
@@ -511,6 +669,7 @@ describe('VaapiPipelineBuilder tonemap', () => {
         new Set(),
         new Map(),
         new Set([KnownFfmpegFilters.TonemapVaapi]),
+        new Set(),
       );
 
     const video = VideoInputSource.withStream(
