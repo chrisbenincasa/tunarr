@@ -89,21 +89,21 @@ Tunarr will be available at `http://localhost:8000`.
 
 **Other installation options:**
 
-| Platform                 | Method                                                                   |
-| ------------------------ | ------------------------------------------------------------------------ |
-| Linux / macOS / Windows  | [Standalone binaries](https://github.com/chrisbenincasa/tunarr/releases) |
-| Unraid                   | Community App Store                                                      |
-| Proxmox                  | [LXC helper script](https://tunarr.com/install/proxmox)                  |
-| ARM (Raspberry Pi, etc.) | Docker image (`linux/arm64`)                                             |
+| Platform                 | Method                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| Linux / macOS / Windows  | [Standalone binaries](https://github.com/chrisbenincasa/tunarr/releases)      |
+| Unraid                   | Community App Store                                                           |
+| Proxmox                  | [LXC helper script](https://tunarr.com/getting-started/installation/#proxmox) |
+| ARM (Raspberry Pi, etc.) | Docker image (`linux/arm64`)                                                  |
 
-For hardware-accelerated transcoding setup, see the [transcoding docs](https://tunarr.com/configure/transcode/).
+For hardware-accelerated transcoding setup, see the [transcoding docs](https://tunarr.com/getting-started/run/).
 
 ## Documentation
 
-- [Installation guide](https://tunarr.com/install/)
+- [Installation guide](https://tunarr.com/getting-started/installation/)
 - [Creating channels](https://tunarr.com/configure/channels/)
-- [Scheduling tools](https://tunarr.com/configure/scheduling-tools/)
-- [Transcoding configuration](https://tunarr.com/configure/transcode/)
+- [Scheduling tools](https://tunarr.com/configure/scheduling/)
+- [Transcoding configuration](https://tunarr.com/configure/ffmpeg/transcode_config/)
 - [Full documentation](https://tunarr.com/)
 
 ## Development
