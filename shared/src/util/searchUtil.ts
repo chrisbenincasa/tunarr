@@ -1231,7 +1231,11 @@ export function searchFilterToString(input: SearchFilter): string {
             : denormalizer(input.fieldSpec.value).toString();
       } else if (input.fieldSpec.value.length === 0) {
         return '';
-      } else if (input.fieldSpec.value.length === 1) {
+      } else if (
+        input.fieldSpec.value.length === 1 &&
+        input.fieldSpec.op !== 'in' &&
+        input.fieldSpec.op !== 'not in'
+      ) {
         const value = input.fieldSpec.value[0];
         const repr = `"${value}"`;
         return `${key} ${op} ${repr}`;

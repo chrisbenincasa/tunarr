@@ -567,3 +567,64 @@ describe('parsedSearchToRequest', () => {
     } satisfies SearchFilter);
   });
 });
+
+describe('searchFilterToString', () => {
+  test('in with single value always produces brackets', () => {
+    const filter = {
+      type: 'value',
+      fieldSpec: {
+        key: 'genres.name',
+        name: 'genre',
+        op: 'in',
+        type: 'faceted_string',
+        value: ['comedy'],
+      },
+    } satisfies SearchFilter;
+
+    expect(searchFilterToString(filter)).toEqual('genre in ["comedy"]');
+  });
+
+  test('not in with single value always produces brackets', () => {
+    const filter = {
+      type: 'value',
+      fieldSpec: {
+        key: 'genres.name',
+        name: 'genre',
+        op: 'not in',
+        type: 'faceted_string',
+        value: ['comedy'],
+      },
+    } satisfies SearchFilter;
+
+    expect(searchFilterToString(filter)).toEqual('genre not in ["comedy"]');
+  });
+
+  test('in with multiple values produces brackets', () => {
+    const filter = {
+      type: 'value',
+      fieldSpec: {
+        key: 'genres.name',
+        name: 'genre',
+        op: 'in',
+        type: 'faceted_string',
+        value: ['comedy', 'horror'],
+      },
+    } satisfies SearchFilter;
+
+    expect(searchFilterToString(filter)).toEqual(
+      'genre in ["comedy", "horror"]',
+    );
+  });
+
+  test('round-trips single-value in through parse and stringify', () => {
+    const input = 'genre IN ["comedy"]';
+    const lexerResult = tokenizeSearchQuery(input);
+    expect(lexerResult.errors).toHaveLength(0);
+    const parser = new SearchParser();
+    parser.input = lexerResult.tokens;
+    const query = parser.searchExpression();
+    expect(parser.errors).toHaveLength(0);
+    const request = parsedSearchToRequest(query);
+    expect(searchFilterToString(request)).toEqual('genre in ["comedy"]');
+  });
+});

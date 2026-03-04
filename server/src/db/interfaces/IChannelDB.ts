@@ -112,6 +112,11 @@ export interface IChannelDB {
     limit?: number,
   ): Promise<CondensedChannelProgramming | null>;
 
+  /**
+   * Replace associations between channel and programs completely
+   * @param channelId
+   * @param programIds
+   */
   replaceChannelPrograms(
     channelId: string,
     programIds: string[],

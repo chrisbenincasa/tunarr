@@ -251,9 +251,16 @@ export class XmlTvWriter {
         url = `{{host}}/api/programs/${showId}/artwork/poster`;
       } else if (
         program.type === 'episode' &&
-        program.artwork?.some((art) => art.artworkType === 'poster')
+        program.artwork?.some(
+          (art) =>
+            art.artworkType === 'poster' || art.artworkType === 'thumbnail',
+        )
       ) {
-        url = `{{host}}/api/programs/${program.uuid}/artwork/poster`;
+        const art = program.artwork.find(
+          (art) =>
+            art.artworkType === 'poster' || art.artworkType === 'thumbnail',
+        );
+        url = `{{host}}/api/programs/${program.uuid}/artwork/${art?.artworkType}`;
       } else if (
         program.type === 'track' &&
         program.album?.artwork?.some((art) => art.artworkType === 'poster')

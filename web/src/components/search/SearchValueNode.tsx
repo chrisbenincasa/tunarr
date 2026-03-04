@@ -273,7 +273,10 @@ export function SearchValueNode(props: ValueNodeProps) {
         />
       </FormControl>
 
-      {renderValueInput}
+      {/* value editor: wrap in a FormControl to enforce a width */}
+      <FormControl size="small" sx={{ minWidth: 400 }}>
+        {renderValueInput}
+      </FormControl>
       {!only && (
         <span>
           <IconButton onClick={() => remove(index)}>

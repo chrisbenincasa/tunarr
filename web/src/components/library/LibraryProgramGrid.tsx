@@ -85,8 +85,10 @@ export const LibraryProgramGrid = ({
   const programHierarchy = useProgramHierarchy(
     useCallback((p: ProgramOrFolder) => p.uuid, []),
   );
-  const currentParentContext =
-    last(parentContext) ?? last(programHierarchy.parentContext);
+  const currentParentContext = useMemo(
+    () => last(parentContext) ?? last(programHierarchy.parentContext),
+    [parentContext, programHierarchy.parentContext],
+  );
 
   const query = useMemo<SearchRequest>(() => {
     if (currentParentContext) {

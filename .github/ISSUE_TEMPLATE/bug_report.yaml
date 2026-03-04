@@ -15,7 +15,7 @@ body:
           required: true
         - label: This issue is **not** already reported on [GitHub](https://github.com/chrisbenincasa/tunarr/issues?q=is%3Aopen+is%3Aissue) _(I've searched it)_.
           required: true
-        - label: I'm using an up to date version of Jellyfin Server stable, unstable or master; We generally do not support previous older versions. If possible, please update to the latest version before opening an issue.
+        - label: I'm using an up to date version of Tunarr; We generally do not support previous older versions. If possible, please update to the latest version before opening an issue.
           required: true
     validations:
       required: true

@@ -10,7 +10,6 @@ import {
   Tooltip,
 } from '@mui/material';
 import type { MediaSourceId } from '@tunarr/shared';
-import type { SearchRequest } from '@tunarr/types/schemas';
 import { isEmpty, isNil } from 'lodash-es';
 import { useCallback } from 'react';
 import type { FieldPathValue, Validate } from 'react-hook-form';
@@ -22,7 +21,6 @@ import type { SearchForm } from './SearchInput.tsx';
 import { SearchInputToggle } from './SearchInputToggle.tsx';
 
 type SearchBuilderProps = {
-  onSearch: (query: SearchRequest) => void;
   mediaSourceId?: MediaSourceId;
   libraryId?: string;
 };

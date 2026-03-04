@@ -349,11 +349,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       await req.serverCtx.m3uService.regenerateCache();
 
       try {
-        GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
-          .runNow()
-          .catch((err) => logger.error(err, 'Error regenerating guide'));
+        await req.serverCtx.guideService.removeCachedChannel(channel.uuid);
       } catch (e) {
-        logger.error(e, 'Unable to update guide after lineup update %O');
+        logger.error(e, 'Error removing channel from guide cache');
       }
 
       return res.send();

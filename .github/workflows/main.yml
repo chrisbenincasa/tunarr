@@ -10,6 +10,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[nobuild]') }}
+    env:
+      TURBO_CACHE_DIR: .turbo
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,10 +26,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
-          cache: 'pnpm'
+          cache: "pnpm"
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build server
         run: pnpm turbo typecheck --filter=@tunarr/server
