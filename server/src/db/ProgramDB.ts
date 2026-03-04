@@ -76,6 +76,7 @@ import {
   map,
   mapValues,
   omit,
+  orderBy,
   partition,
   reduce,
   reject,
@@ -2501,7 +2502,7 @@ export class ProgramDB implements IProgramDB {
     groupId: string,
     groupTypeHint?: ProgramGroupingType,
   ): Promise<ProgramWithRelationsOrm[]> {
-    return this.drizzleDB.query.program.findMany({
+    const programs = await this.drizzleDB.query.program.findMany({
       where: (fields, { or, eq }) => {
         if (groupTypeHint) {
           switch (groupTypeHint) {
@@ -2550,11 +2551,13 @@ export class ProgramDB implements IProgramDB {
             : undefined,
         externalIds: true,
       },
-      orderBy: (fields, { asc }) => [
-        asc(fields.seasonNumber),
-        asc(fields.episode),
-      ],
     });
+
+    return orderBy(
+      programs,
+      [(p) => p.season?.index ?? p.seasonNumber ?? 1, (p) => p.episode ?? 1],
+      ['asc', 'asc'],
+    );
   }
 
   async updateProgramsState(

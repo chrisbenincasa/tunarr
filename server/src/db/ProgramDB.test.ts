@@ -1782,6 +1782,324 @@ describe('ProgramDB', () => {
       expect(descendants.length).toBeGreaterThan(0);
       expect(descendants[0]?.uuid).toEqual(episode.program.uuid);
     });
+
+    describe('getProgramGroupingDescendants ordering', () => {
+      function makeEpisode(
+        libraryId: string,
+        mediaSourceId: string,
+        showUuid: string,
+        seasonUuid: string,
+        seasonNumber: number,
+        episodeNumber: number,
+      ): NewProgramWithRelations {
+        return {
+          program: createBaseProgram('episode', libraryId, 'local', {
+            mediaSourceId: tag<MediaSourceId>(mediaSourceId),
+            tvShowUuid: showUuid,
+            seasonUuid,
+            seasonNumber,
+            episode: episodeNumber,
+          }),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          versions: [],
+          subtitles: [],
+          tags: [],
+        };
+      }
+
+      test('returns episodes ordered by season then episode number', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+
+        const showGrouping: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'show',
+            library.uuid,
+            'local',
+            {
+              mediaSourceId: library.mediaSourceId,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          tags: [],
+        };
+        const showResult = await programDb.upsertProgramGrouping(showGrouping);
+        const showUuid = showResult.entity.uuid;
+
+        // Create two seasons
+        const season1: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'season',
+            library.uuid,
+            'local',
+            {
+              mediaSourceId: library.mediaSourceId,
+              showUuid,
+              index: 1,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          tags: [],
+        };
+        const season2: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'season',
+            library.uuid,
+            'local',
+            {
+              mediaSourceId: library.mediaSourceId,
+              showUuid,
+              index: 2,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          tags: [],
+        };
+        const season1Result = await programDb.upsertProgramGrouping(season1);
+        const season2Result = await programDb.upsertProgramGrouping(season2);
+
+        // Insert in deliberately scrambled order: s2e1, s1e2, s1e1
+        await programDb.upsertPrograms([
+          makeEpisode(
+            library.uuid,
+            library.mediaSourceId,
+            showUuid,
+            season2Result.entity.uuid,
+            2,
+            1,
+          ),
+          makeEpisode(
+            library.uuid,
+            library.mediaSourceId,
+            showUuid,
+            season1Result.entity.uuid,
+            1,
+            2,
+          ),
+          makeEpisode(
+            library.uuid,
+            library.mediaSourceId,
+            showUuid,
+            season1Result.entity.uuid,
+            1,
+            1,
+          ),
+        ]);
+
+        const descendants = await programDb.getProgramGroupingDescendants(
+          showUuid,
+          'show',
+        );
+
+        expect(descendants).toHaveLength(3);
+        // s1e1, s1e2, s2e1
+        expect(descendants[0]?.seasonNumber).toBe(1);
+        expect(descendants[0]?.episode).toBe(1);
+        expect(descendants[1]?.seasonNumber).toBe(1);
+        expect(descendants[1]?.episode).toBe(2);
+        expect(descendants[2]?.seasonNumber).toBe(2);
+        expect(descendants[2]?.episode).toBe(1);
+      });
+
+      test('orders by season.index (grouping index) rather than seasonNumber fallback', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+
+        const showGrouping: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'show',
+            library.uuid,
+            'local',
+            {
+              mediaSourceId: library.mediaSourceId,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          tags: [],
+        };
+        const showResult = await programDb.upsertProgramGrouping(showGrouping);
+        const showUuid = showResult.entity.uuid;
+
+        // Season index=1 but give it a higher seasonNumber to verify index wins
+        const season1: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'season',
+            library.uuid,
+            'local',
+            {
+              mediaSourceId: library.mediaSourceId,
+              showUuid,
+              index: 1,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          tags: [],
+        };
+        // Season index=2
+        const season2: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'season',
+            library.uuid,
+            'local',
+            {
+              mediaSourceId: library.mediaSourceId,
+              showUuid,
+              index: 2,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          tags: [],
+        };
+        const season1Result = await programDb.upsertProgramGrouping(season1);
+        const season2Result = await programDb.upsertProgramGrouping(season2);
+
+        // Insert s2e1 first, then s1e1 — result should still be s1e1, s2e1
+        await programDb.upsertPrograms([
+          makeEpisode(
+            library.uuid,
+            library.mediaSourceId,
+            showUuid,
+            season2Result.entity.uuid,
+            2,
+            1,
+          ),
+          makeEpisode(
+            library.uuid,
+            library.mediaSourceId,
+            showUuid,
+            season1Result.entity.uuid,
+            1,
+            1,
+          ),
+        ]);
+
+        const descendants = await programDb.getProgramGroupingDescendants(
+          showUuid,
+          'show',
+        );
+
+        expect(descendants).toHaveLength(2);
+        expect(descendants[0]?.season?.index).toBe(1);
+        expect(descendants[1]?.season?.index).toBe(2);
+      });
+
+      test('returns episodes for a specific season in episode order', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+
+        const showGrouping: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'show',
+            library.uuid,
+            'local',
+            {
+              mediaSourceId: library.mediaSourceId,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          tags: [],
+        };
+        const showResult = await programDb.upsertProgramGrouping(showGrouping);
+        const showUuid = showResult.entity.uuid;
+
+        const season: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'season',
+            library.uuid,
+            'local',
+            {
+              mediaSourceId: library.mediaSourceId,
+              showUuid,
+              index: 1,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          tags: [],
+        };
+        const seasonResult = await programDb.upsertProgramGrouping(season);
+        const seasonUuid = seasonResult.entity.uuid;
+
+        // Insert episodes out of order: e3, e1, e2
+        await programDb.upsertPrograms([
+          makeEpisode(
+            library.uuid,
+            library.mediaSourceId,
+            showUuid,
+            seasonUuid,
+            1,
+            3,
+          ),
+          makeEpisode(
+            library.uuid,
+            library.mediaSourceId,
+            showUuid,
+            seasonUuid,
+            1,
+            1,
+          ),
+          makeEpisode(
+            library.uuid,
+            library.mediaSourceId,
+            showUuid,
+            seasonUuid,
+            1,
+            2,
+          ),
+        ]);
+
+        const descendants = await programDb.getProgramGroupingDescendants(
+          seasonUuid,
+          'season',
+        );
+
+        expect(descendants).toHaveLength(3);
+        expect(descendants[0]?.episode).toBe(1);
+        expect(descendants[1]?.episode).toBe(2);
+        expect(descendants[2]?.episode).toBe(3);
+      });
+    });
   });
 
   describe('Idempotency and Concurrent Operations', () => {

@@ -446,6 +446,7 @@ export class ProgramDaoMinter {
       createdAt: now,
       updatedAt: now,
       canonicalId: episode.canonicalId,
+      seasonNumber: episode.season?.index,
       episode: episode.episodeNumber,
       state: 'ok',
     } satisfies NewEpisodeProgram;
