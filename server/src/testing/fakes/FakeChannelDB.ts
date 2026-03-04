@@ -233,6 +233,7 @@ export class FakeChannelDB implements IChannelDB {
         | undefined;
     } | null;
     subtitlesEnabled: number;
+    skipCredits: number;
   } | null> {
     throw new Error('Method not implemented.');
   }

@@ -1294,6 +1294,7 @@ export class TVGuideService {
           .executeTakeFirstOrThrow()
       ).uuid,
       subtitlesEnabled: false,
+      skipCredits: false,
     };
 
     // Placeholder channel with random ID.

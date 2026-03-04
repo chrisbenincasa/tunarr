@@ -2085,6 +2085,7 @@ export type GetChannelsResponses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        skipCredits: boolean;
     }>;
 };
 
@@ -2151,6 +2152,7 @@ export type CreateChannelV2Data = {
                 allowExternal: boolean;
                 filter?: 'none' | 'forced' | 'default' | 'any';
             }>;
+            skipCredits: boolean;
         };
     } | {
         type: 'copy';
@@ -2286,6 +2288,7 @@ export type CreateChannelV2Responses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        skipCredits: boolean;
     };
 };
 
@@ -2444,6 +2447,7 @@ export type GetChannelsByNumberV2Responses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        skipCredits: boolean;
     };
 };
 
@@ -2508,6 +2512,7 @@ export type PutApiChannelsByIdData = {
             allowExternal: boolean;
             filter?: 'none' | 'forced' | 'default' | 'any';
         }>;
+        skipCredits: boolean;
     };
     path: {
         id: string;
@@ -2637,6 +2642,7 @@ export type PutApiChannelsByIdResponses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        skipCredits: boolean;
     };
 };
 
@@ -7156,6 +7162,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         allowExternal: boolean;
                         filter: 'none' | 'forced' | 'default' | 'any';
                     }>;
+                    skipCredits: boolean;
                 } | null;
                 isMissing: boolean;
             } | {
@@ -7403,6 +7410,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         allowExternal: boolean;
                         filter: 'none' | 'forced' | 'default' | 'any';
                     }>;
+                    skipCredits: boolean;
                 } | null;
                 isMissing: boolean;
             } | {

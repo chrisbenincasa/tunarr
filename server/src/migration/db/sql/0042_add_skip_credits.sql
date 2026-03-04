@@ -1,0 +1,1 @@
+ALTER TABLE `channel` ADD `skip_credits` integer DEFAULT false;
