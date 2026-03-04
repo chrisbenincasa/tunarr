@@ -18,6 +18,7 @@ export const useProgramHierarchy = <ItemType>(
       setParentContext((prev) => {
         const lastItem = last(prev);
         if (!lastItem || itemIdExtractor(lastItem) !== itemIdExtractor(item)) {
+          console.log('push', prev, item);
           return [...prev, item];
         } else {
           return prev;

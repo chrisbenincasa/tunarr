@@ -126,6 +126,9 @@ export function MediaItemList<PageDataType, ItemType>(
     });
   };
 
+  const listHeight =
+    containerHeight && containerHeight < 800 ? 800 : (containerHeight ?? 800);
+
   return (
     <Box
       ref={containerRef}
@@ -137,7 +140,7 @@ export function MediaItemList<PageDataType, ItemType>(
       {isFetchingNextPage && <LinearProgress />}
       <Box ref={gridContainerRef} sx={{ width: '100%' }}>
         <FixedSizeList
-          height={containerHeight ?? 800}
+          height={listHeight}
           width={'100%'}
           itemSize={61}
           itemCount={loadedItems.length}
