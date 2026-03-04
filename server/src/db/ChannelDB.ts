@@ -34,15 +34,7 @@ import {
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { ContentProgramType } from '@tunarr/types/schemas';
-import {
-  and,
-  asc,
-  count,
-  countDistinct,
-  sum as dbSum,
-  eq,
-  isNotNull,
-} from 'drizzle-orm';
+import { and, asc, count, countDistinct, eq, isNotNull } from 'drizzle-orm';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
@@ -1165,18 +1157,6 @@ export class ChannelDB implements IChannelDB {
           .insert(ChannelPrograms)
           .values(c.map((id) => ({ channelUuid: channelId, programUuid: id })));
       }
-      // This can probably be done in a single query.
-      const sumResult = await tx
-        .select({ duration: dbSum(Program.duration).mapWith(Number) })
-        .from(ChannelPrograms)
-        .where(eq(ChannelPrograms.channelUuid, channelId))
-        .innerJoin(Program, eq(Program.uuid, ChannelPrograms.programUuid));
-      await tx
-        .update(Channel)
-        .set({
-          duration: sum(sumResult.map((r) => r.duration)),
-        })
-        .where(eq(Channel.uuid, channelId));
     });
   }
 

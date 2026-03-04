@@ -1,6 +1,7 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import { inject, injectable, interfaces } from 'inversify';
+import { sum } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { LineupItem } from '../db/derived_types/Lineup.ts';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
@@ -57,6 +58,10 @@ export class RegenerateChannelLineupCommand {
         // Regenerate schedule at the new start time.
         await this.channelDB.replaceChannelPrograms(channelId, programIds);
         await this.channelDB.saveLineup(channelId, { items: lineupItems });
+        await this.channelDB.updateChannelDuration(
+          channelId,
+          sum(lineupItems.map((item) => item.durationMs)),
+        );
       } else if (channelAndLineup.lineup.schedule.type === 'random') {
         const { result } = await this.workerPoolProvider().queueTask({
           type: 'schedule-slots',
@@ -82,6 +87,10 @@ export class RegenerateChannelLineupCommand {
         // Regenerate schedule at the new start time.
         await this.channelDB.replaceChannelPrograms(channelId, programIds);
         await this.channelDB.saveLineup(channelId, { items: lineupItems });
+        await this.channelDB.updateChannelDuration(
+          channelId,
+          sum(lineupItems.map((item) => item.durationMs)),
+        );
       }
     }
 
