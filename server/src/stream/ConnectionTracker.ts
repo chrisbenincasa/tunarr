@@ -71,6 +71,7 @@ export class ConnectionTracker<
     }
 
     if (delay <= 0) {
+      this.#logger.debug('Cleaning up channel session');
       this.emit('cleanup');
       return;
     }
