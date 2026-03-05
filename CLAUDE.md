@@ -18,6 +18,7 @@ This is a monorepo with four main packages:
 ## Code Style
 
 - Never cast types using `as any`
+- Avoid overly verbose or excessive comments in code. Only comment critical sections or informative descriptions for classes or important methods.
 
 ## Development Setup
 

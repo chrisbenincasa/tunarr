@@ -195,7 +195,6 @@ export class SlotSchedulerHelper {
             .then((result) => [groupId, result] as const),
         ),
     );
-    console.log(batchResult);
     for (const result of batchResult) {
       if (isError(result)) {
         this.logger.warn(result, 'Error while loading descedents for group');

@@ -27,6 +27,7 @@ import ChannelEditActions from './ChannelEditActions.tsx';
 import ChannelEpgConfig from './ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from './ChannelFlexConfig.tsx';
 import { ChannelPropertiesEditor } from './ChannelPropertiesEditor.tsx';
+import { ChannelScheduleConfig } from './ChannelScheduleConfig.tsx';
 import ChannelTranscodingConfig from './ChannelTranscodingConfig.tsx';
 import {
   EditChannelTabPanel,
@@ -86,8 +87,13 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
 const EditChannelTabsProps: EditChannelTabProps[] = [
   {
     value: 'properties',
-    description: 'Properties',
+    description: 'General',
     fields: ['number', 'name', 'groupTitle', 'icon'],
+  },
+  {
+    value: 'programming',
+    description: 'Scheduling',
+    fields: ['scheduleId', 'startTime'],
   },
   {
     value: 'flex',
@@ -265,6 +271,9 @@ export function EditChannelForm({
         >
           <EditChannelTabPanel value="properties" currentValue={currentTab}>
             <ChannelPropertiesEditor />
+          </EditChannelTabPanel>
+          <EditChannelTabPanel value="programming" currentValue={currentTab}>
+            <ChannelScheduleConfig />
           </EditChannelTabPanel>
           <EditChannelTabPanel value="flex" currentValue={currentTab}>
             <ChannelFlexConfig />

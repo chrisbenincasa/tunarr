@@ -13,13 +13,14 @@ import {
   InfiniteSchedulePreviewRequestSchema,
   InfiniteSchedulePreviewResponseSchema,
   MaterializedScheduleSchema,
+  ScheduleAssignChannelsResultSchema,
   ScheduleSchema,
   ScheduleSlotSchema,
   UpdateInfiniteScheduleRequestSchema,
 } from '@tunarr/types/api';
 import { SlotStateSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { isNil } from 'lodash-es';
+import { isNil, uniq } from 'lodash-es';
 import { v4 } from 'uuid';
 import { z } from 'zod/v4';
 import { MaterializeScheduleCommand } from '../commands/MaterializeScheduleCommand.ts';
@@ -148,6 +149,53 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         return res.status(404).send();
       }
       return res.status(200).send(scheduleDaoToDto(result));
+    },
+  );
+
+  fastify.put(
+    '/schedules/:id/channels',
+    {
+      schema: {
+        operationId: 'assignScheduleToChannels',
+        tags: ['Schedules'],
+        params: BasicIdParamSchema,
+        body: z.object({
+          channelsToAssign: z.uuid().array(),
+          channelsToRemove: z.uuid().array(),
+        }),
+        repsonse: {
+          200: ScheduleAssignChannelsResultSchema,
+          400: BaseErrorSchema,
+          404: BaseErrorSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      const uniqAdds = uniq(req.body.channelsToAssign);
+      const uniqRemoves = uniq(req.body.channelsToRemove);
+      const inBoth = uniqAdds.some((add) => uniqRemoves.includes(add));
+      if (inBoth) {
+        return res.status(400).send({
+          message: 'Cannot specify add and remove for the same channel ID',
+        });
+      }
+
+      const schedule = await req.serverCtx.infiniteScheduleDB.getSchedule(
+        req.params.id,
+      );
+      if (!schedule) {
+        return res.status(404).send({
+          message: `Schedule ID ${req.params.id} does not exist`,
+        });
+      }
+
+      const result = await req.serverCtx.infiniteScheduleDB.assignChannels(
+        req.params.id,
+        uniqAdds,
+        uniqRemoves,
+      );
+
+      return res.send(result);
     },
   );
 
@@ -351,8 +399,10 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
 
       const newSchedule = await db.createSchedule({
         ...req.body,
-        // channelUuid: channel.uuid,
       });
+
+      // Link channel → schedule in both mechanisms
+      await db.assignScheduleToChannel(channel.uuid, newSchedule.uuid);
 
       return res.status(201).send(scheduleDaoToDto(newSchedule));
     },
@@ -531,7 +581,14 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         params: ChannelIdParamSchema,
         body: z.object({
           fromTimeMs: z.number().optional(),
-          clearExisting: z.boolean().default(false),
+          /**
+           * 'full'   – delete generated items + all slot/schedule state, then
+           *            regenerate from now.  Resets playback position entirely.
+           * 'buffer' – delete generated items only, keep slot states, then
+           *            regenerate from now.  Preserves iterator position.
+           * 'none'   – keep existing items, just generate more (default).
+           */
+          resetMode: z.enum(['full', 'buffer', 'none']).default('none'),
         }),
         response: {
           200: z.object({
@@ -557,17 +614,35 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         return res.status(404).send({ error: 'Infinite schedule not found' });
       }
 
-      // Optionally clear existing items
-      if (req.body.clearExisting) {
+      const { resetMode } = req.body;
+      if (resetMode === 'full') {
+        await db.fullResetSchedule(channel.uuid);
+      } else if (resetMode === 'buffer') {
         await db.clearGeneratedItems(channel.uuid);
       }
 
+      // For full/buffer resets, always start from now (state was cleared or
+      // is being discarded).  For 'none', respect the caller-supplied fromTimeMs.
+      const fromTimeMs =
+        resetMode !== 'none' ? undefined : req.body.fromTimeMs;
+
       const generator = getGenerator();
-      // generate() is channel-scoped and persists items/state internally
-      const result = await generator.generate(
-        channel.uuid,
-        req.body.fromTimeMs,
-      );
+      const result = await generator.generate(channel.uuid, fromTimeMs);
+
+      // Flush the guide cache for this channel so the freshly-generated items
+      // are visible immediately without waiting for the next scheduled refresh.
+      try {
+        await req.serverCtx.guideService.updateCachedChannel(
+          channel.uuid,
+          true,
+        );
+      } catch (err) {
+        logger.error(
+          err,
+          'Failed to refresh guide cache after regenerate for channel %s',
+          channel.uuid,
+        );
+      }
 
       return res.send({
         itemsGenerated: result.items.length,

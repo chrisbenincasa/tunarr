@@ -1,54 +1,53 @@
 import { Add, Delete, Edit } from '@mui/icons-material';
+import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import {
-  Box,
-  Dialog,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { isNonEmptyString } from '@tunarr/shared/util';
-import type { SmartCollection } from '@tunarr/types';
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import type { Schedule } from '@tunarr/types/api';
 import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
 import { useCallback, useState } from 'react';
-import { getSchedulesOptions } from '../../generated/@tanstack/react-query.gen.ts';
-import { useDeleteSmartCollection } from '../../hooks/smartCollectionHooks.ts';
+import {
+  deleteInfiniteScheduleMutation,
+  getSchedulesOptions,
+  getSchedulesQueryKey,
+} from '../../generated/@tanstack/react-query.gen.ts';
 import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
-import { Route } from '../../routes/schedules_/index.tsx';
 import type { Maybe } from '../../types/util.ts';
 import {
   RouterButtonLink,
   RouterIconButtonLink,
 } from '../base/RouterButtonLink.tsx';
 import { DeleteConfirmationDialog } from '../DeleteConfirmationDialog.tsx';
-import { EditSmartCollectionDialog } from '../smart_collections/EditSmartCollectionDialog.tsx';
 
 export const SchedulesTable = () => {
-  const navigate = Route.useNavigate();
+  const queryClient = useQueryClient();
   const schedulesQuery = useSuspenseQuery({
     ...getSchedulesOptions(),
   });
   const tableSettings = useStoreBackedTableSettings('Schedules');
 
-  const [editingSchedule, setEditingSchedule] = useState<Maybe<string>>();
-  const [deletingSchedule, setDeletingSchedule] =
-    useState<Maybe<SmartCollection>>();
+  const [deletingSchedule, setDeletingSchedule] = useState<Maybe<Schedule>>();
 
-  const deleteSmartCollectionMut = useDeleteSmartCollection();
-
-  const handleDeleteSmartCollection = useCallback(
-    (id: string) => {
-      deleteSmartCollectionMut.mutate({
-        path: {
-          id,
-        },
-      });
+  const deleteScheduleMut = useMutation({
+    ...deleteInfiniteScheduleMutation(),
+    onSuccess: () => {
+      setDeletingSchedule(undefined);
+      queryClient
+        .invalidateQueries({ queryKey: getSchedulesQueryKey() })
+        .catch(console.error);
     },
-    [deleteSmartCollectionMut],
+  });
+
+  const handleDeleteSchedule = useCallback(
+    (id: string) => {
+      deleteScheduleMut.mutate({ path: { id } });
+    },
+    [deleteScheduleMut],
   );
 
   const table = useMaterialReactTable({
@@ -74,7 +73,7 @@ export const SchedulesTable = () => {
     positionActionsColumn: 'last',
     displayColumnDefOptions: {
       'mrt-row-actions': {
-        size: 112, // 3 icons + 16px padding
+        size: 108, // 2 icons + 4px gap + 24px padding
         grow: false,
         Header: '',
         visibleInShowHideMenu: false,
@@ -94,7 +93,6 @@ export const SchedulesTable = () => {
       );
     },
     renderRowActions: ({ row }) => {
-      console.log(row.original);
       return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Tooltip title="Edit" placement="top">
@@ -121,22 +119,12 @@ export const SchedulesTable = () => {
   return (
     <>
       <MaterialReactTable table={table} />
-      <Dialog
-        open={isNonEmptyString(editingSchedule)}
-        onClose={() => setEditingSchedule(undefined)}
-        fullWidth
-      >
-        <EditSmartCollectionDialog
-          onClose={() => setEditingSchedule(undefined)}
-          id={editingSchedule ?? ''}
-        />
-      </Dialog>
       <DeleteConfirmationDialog
         open={!!deletingSchedule}
         onClose={() => setDeletingSchedule(undefined)}
-        onConfirm={() => handleDeleteSmartCollection(deletingSchedule!.uuid)}
+        onConfirm={() => handleDeleteSchedule(deletingSchedule!.uuid)}
         title={`Delete "${deletingSchedule?.name}"`}
-        body={`Are you sure you want to delete Smart Collection "${deletingSchedule?.name}"?`}
+        body={`Are you sure you want to delete schedule "${deletingSchedule?.name}"?`}
       />
     </>
   );

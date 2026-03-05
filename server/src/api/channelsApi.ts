@@ -238,13 +238,6 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const inserted = insertResult.get();
 
-      // const inserted = await attempt(() =>
-      //   req.serverCtx.channelDB.saveChannel(req.body),
-      // );
-      // if (isError(inserted)) {
-      //   return res.status(500).send(inserted);
-      // }
-
       GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
         .runNow(true)
         .catch((err) => logger.error(err, 'Error regenerating guide'));

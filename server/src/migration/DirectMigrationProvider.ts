@@ -213,6 +213,9 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1772281713: makeKyselyMigrationFromSqlFile(
             './sql/0045_pink_nighthawk.sql',
           ),
+          migration1772742819: makeKyselyMigrationFromSqlFile(
+            './sql/0046_famous_metal_master.sql',
+          ),
         },
         wrapWithTransaction,
       ),

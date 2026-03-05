@@ -2085,6 +2085,7 @@ export type GetChannelsResponses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        scheduleId?: string;
     }>;
 };
 
@@ -2151,6 +2152,7 @@ export type CreateChannelV2Data = {
                 allowExternal: boolean;
                 filter?: 'none' | 'forced' | 'default' | 'any';
             }>;
+            scheduleId?: string;
         };
     } | {
         type: 'copy';
@@ -2286,6 +2288,7 @@ export type CreateChannelV2Responses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        scheduleId?: string;
     };
 };
 
@@ -2444,6 +2447,7 @@ export type GetChannelsByNumberV2Responses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        scheduleId?: string;
     };
 };
 
@@ -2508,6 +2512,7 @@ export type PutApiChannelsByIdData = {
             allowExternal: boolean;
             filter?: 'none' | 'forced' | 'default' | 'any';
         }>;
+        scheduleId?: string;
     };
     path: {
         id: string;
@@ -2637,6 +2642,7 @@ export type PutApiChannelsByIdResponses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        scheduleId?: string;
     };
 };
 
@@ -3411,6 +3417,8 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -3424,6 +3432,8 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -3453,6 +3463,8 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 startTime: number;
                 padMs?: number;
@@ -3467,6 +3479,8 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             }>;
             timeZoneOffset: number;
@@ -3482,6 +3496,8 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -3502,6 +3518,8 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -3552,6 +3570,8 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -3591,6 +3611,8 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4168,6 +4190,8 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -4181,6 +4205,8 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -4210,6 +4236,8 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 startTime: number;
                 padMs?: number;
@@ -4224,6 +4252,8 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             }>;
             timeZoneOffset: number;
@@ -4245,6 +4275,8 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4265,6 +4297,8 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4315,6 +4349,8 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4354,6 +4390,8 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4640,6 +4678,8 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -4653,6 +4693,8 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -4682,6 +4724,8 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 startTime: number;
                 padMs?: number;
@@ -4696,6 +4740,8 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             }>;
             timeZoneOffset: number;
@@ -4711,6 +4757,8 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4731,6 +4779,8 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4781,6 +4831,8 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4820,6 +4872,8 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -6309,6 +6363,8 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -6322,6 +6378,8 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -6351,6 +6409,8 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 startTime: number;
                 padMs?: number;
@@ -6365,6 +6425,8 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             }>;
             timeZoneOffset: number;
@@ -6620,6 +6682,8 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -6640,6 +6704,8 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -6690,6 +6756,8 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -6729,6 +6797,8 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -7019,6 +7089,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -7032,6 +7104,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 show: Show | null;
                 /**
@@ -7156,6 +7230,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         allowExternal: boolean;
                         filter: 'none' | 'forced' | 'default' | 'any';
                     }>;
+                    scheduleId?: string;
                 } | null;
                 isMissing: boolean;
             } | {
@@ -7167,6 +7242,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 startTime: number;
                 padMs?: number;
@@ -7202,6 +7279,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 smartCollection: {
                     uuid: string;
@@ -7225,6 +7304,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -7245,6 +7326,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -7403,6 +7486,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         allowExternal: boolean;
                         filter: 'none' | 'forced' | 'default' | 'any';
                     }>;
+                    scheduleId?: string;
                 } | null;
                 isMissing: boolean;
             } | {
@@ -7410,6 +7494,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -7461,6 +7547,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -7491,7 +7579,7 @@ export type GetApiChannelsByIdScheduleResponse = GetApiChannelsByIdScheduleRespo
 export type CreateScheduleForChannelData = {
     body: {
         name: string;
-        padMs?: number;
+        padToMultiple?: number;
         flexPreference?: 'distribute' | 'end';
         timeZoneOffset?: number;
         bufferDays?: number;
@@ -7513,6 +7601,8 @@ export type CreateScheduleForChannelData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7539,6 +7629,8 @@ export type CreateScheduleForChannelData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7566,6 +7658,8 @@ export type CreateScheduleForChannelData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7593,6 +7687,8 @@ export type CreateScheduleForChannelData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7615,6 +7711,8 @@ export type CreateScheduleForChannelData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7636,6 +7734,8 @@ export type CreateScheduleForChannelData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7656,6 +7756,8 @@ export type CreateScheduleForChannelData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7707,7 +7809,7 @@ export type CreateScheduleForChannelResponses = {
     201: {
         uuid: string;
         name: string;
-        padMs: number;
+        padToMultiple: number;
         flexPreference: 'distribute' | 'end';
         timeZoneOffset: number;
         bufferDays: number;
@@ -7729,6 +7831,8 @@ export type CreateScheduleForChannelResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7755,6 +7859,8 @@ export type CreateScheduleForChannelResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7782,6 +7888,8 @@ export type CreateScheduleForChannelResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7809,6 +7917,8 @@ export type CreateScheduleForChannelResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7831,6 +7941,8 @@ export type CreateScheduleForChannelResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7852,6 +7964,8 @@ export type CreateScheduleForChannelResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7872,6 +7986,8 @@ export type CreateScheduleForChannelResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20114,7 +20230,7 @@ export type GetSchedulesResponses = {
     200: Array<{
         uuid: string;
         name: string;
-        padMs: number;
+        padToMultiple: number;
         flexPreference: 'distribute' | 'end';
         timeZoneOffset: number;
         bufferDays: number;
@@ -20136,6 +20252,8 @@ export type GetSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20162,6 +20280,8 @@ export type GetSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20189,6 +20309,8 @@ export type GetSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20216,6 +20338,8 @@ export type GetSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20238,6 +20362,8 @@ export type GetSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20259,6 +20385,8 @@ export type GetSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20279,6 +20407,8 @@ export type GetSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20302,7 +20432,7 @@ export type GetSchedulesResponse = GetSchedulesResponses[keyof GetSchedulesRespo
 export type PostApiSchedulesData = {
     body: {
         name: string;
-        padMs?: number;
+        padToMultiple?: number;
         flexPreference?: 'distribute' | 'end';
         timeZoneOffset?: number;
         bufferDays?: number;
@@ -20324,6 +20454,8 @@ export type PostApiSchedulesData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20350,6 +20482,8 @@ export type PostApiSchedulesData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20377,6 +20511,8 @@ export type PostApiSchedulesData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20404,6 +20540,8 @@ export type PostApiSchedulesData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20426,6 +20564,8 @@ export type PostApiSchedulesData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20447,6 +20587,8 @@ export type PostApiSchedulesData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20467,6 +20609,8 @@ export type PostApiSchedulesData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20493,7 +20637,7 @@ export type PostApiSchedulesResponses = {
     201: {
         uuid: string;
         name: string;
-        padMs: number;
+        padToMultiple: number;
         flexPreference: 'distribute' | 'end';
         timeZoneOffset: number;
         bufferDays: number;
@@ -20515,6 +20659,8 @@ export type PostApiSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20541,6 +20687,8 @@ export type PostApiSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20568,6 +20716,8 @@ export type PostApiSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20595,6 +20745,8 @@ export type PostApiSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20617,6 +20769,8 @@ export type PostApiSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20638,6 +20792,8 @@ export type PostApiSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20658,6 +20814,8 @@ export type PostApiSchedulesResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20701,7 +20859,7 @@ export type GetScheduleByIdResponses = {
     200: {
         uuid: string;
         name: string;
-        padMs: number;
+        padToMultiple: number;
         flexPreference: 'distribute' | 'end';
         timeZoneOffset: number;
         bufferDays: number;
@@ -20725,6 +20883,8 @@ export type GetScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20745,6 +20905,8 @@ export type GetScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20771,6 +20933,8 @@ export type GetScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20883,6 +21047,7 @@ export type GetScheduleByIdResponses = {
                     allowExternal: boolean;
                     filter: 'none' | 'forced' | 'default' | 'any';
                 }>;
+                scheduleId?: string;
             } | null;
             isMissing: boolean;
         } | {
@@ -20900,6 +21065,8 @@ export type GetScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20933,6 +21100,8 @@ export type GetScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20955,6 +21124,8 @@ export type GetScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20989,6 +21160,8 @@ export type GetScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21018,7 +21191,7 @@ export type GetScheduleByIdResponse = GetScheduleByIdResponses[keyof GetSchedule
 export type UpdateScheduleByIdData = {
     body?: {
         name?: string;
-        padMs?: number;
+        padToMultiple?: number;
         flexPreference?: 'distribute' | 'end';
         timeZoneOffset?: number;
         bufferDays?: number;
@@ -21040,6 +21213,8 @@ export type UpdateScheduleByIdData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21066,6 +21241,8 @@ export type UpdateScheduleByIdData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21093,6 +21270,8 @@ export type UpdateScheduleByIdData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21120,6 +21299,8 @@ export type UpdateScheduleByIdData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21142,6 +21323,8 @@ export type UpdateScheduleByIdData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21163,6 +21346,8 @@ export type UpdateScheduleByIdData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21183,6 +21368,8 @@ export type UpdateScheduleByIdData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21218,7 +21405,7 @@ export type UpdateScheduleByIdResponses = {
     200: {
         uuid: string;
         name: string;
-        padMs: number;
+        padToMultiple: number;
         flexPreference: 'distribute' | 'end';
         timeZoneOffset: number;
         bufferDays: number;
@@ -21240,6 +21427,8 @@ export type UpdateScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21266,6 +21455,8 @@ export type UpdateScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21293,6 +21484,8 @@ export type UpdateScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21320,6 +21513,8 @@ export type UpdateScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21342,6 +21537,8 @@ export type UpdateScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21363,6 +21560,8 @@ export type UpdateScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21383,6 +21582,8 @@ export type UpdateScheduleByIdResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21403,6 +21604,25 @@ export type UpdateScheduleByIdResponses = {
 
 export type UpdateScheduleByIdResponse = UpdateScheduleByIdResponses[keyof UpdateScheduleByIdResponses];
 
+export type AssignScheduleToChannelsData = {
+    body: {
+        channelsToAssign: Array<string>;
+        channelsToRemove: Array<string>;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/schedules/{id}/channels';
+};
+
+export type AssignScheduleToChannelsResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
+
 export type AddSlotToScheduleData = {
     body?: {
         uuid?: string;
@@ -21419,6 +21639,8 @@ export type AddSlotToScheduleData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21445,6 +21667,8 @@ export type AddSlotToScheduleData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21472,6 +21696,8 @@ export type AddSlotToScheduleData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21499,6 +21725,8 @@ export type AddSlotToScheduleData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21521,6 +21749,8 @@ export type AddSlotToScheduleData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21542,6 +21772,8 @@ export type AddSlotToScheduleData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21562,6 +21794,8 @@ export type AddSlotToScheduleData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21601,6 +21835,8 @@ export type AddSlotToScheduleResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21627,6 +21863,8 @@ export type AddSlotToScheduleResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21654,6 +21892,8 @@ export type AddSlotToScheduleResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21681,6 +21921,8 @@ export type AddSlotToScheduleResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21703,6 +21945,8 @@ export type AddSlotToScheduleResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21724,6 +21968,8 @@ export type AddSlotToScheduleResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21744,6 +21990,8 @@ export type AddSlotToScheduleResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21777,6 +22025,8 @@ export type UpdateScheduleSlotData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21803,6 +22053,8 @@ export type UpdateScheduleSlotData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21830,6 +22082,8 @@ export type UpdateScheduleSlotData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21857,6 +22111,8 @@ export type UpdateScheduleSlotData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21879,6 +22135,8 @@ export type UpdateScheduleSlotData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21900,6 +22158,8 @@ export type UpdateScheduleSlotData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21920,6 +22180,8 @@ export type UpdateScheduleSlotData = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21977,6 +22239,8 @@ export type UpdateScheduleSlotResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22003,6 +22267,8 @@ export type UpdateScheduleSlotResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22030,6 +22296,8 @@ export type UpdateScheduleSlotResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22057,6 +22325,8 @@ export type UpdateScheduleSlotResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22079,6 +22349,8 @@ export type UpdateScheduleSlotResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22100,6 +22372,8 @@ export type UpdateScheduleSlotResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22120,6 +22394,8 @@ export type UpdateScheduleSlotResponses = {
                 types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                mode?: 'relaxed' | 'strict';
+                count?: number;
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22423,7 +22699,7 @@ export type GetChannelScheduleResponses = {
     200: {
         uuid: string;
         name: string;
-        padMs: number;
+        padToMultiple: number;
         flexPreference: 'distribute' | 'end';
         timeZoneOffset: number;
         bufferDays: number;
@@ -22445,6 +22721,8 @@ export type GetChannelScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22471,6 +22749,8 @@ export type GetChannelScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22498,6 +22778,8 @@ export type GetChannelScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22525,6 +22807,8 @@ export type GetChannelScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22547,6 +22831,8 @@ export type GetChannelScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22568,6 +22854,8 @@ export type GetChannelScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22588,6 +22876,8 @@ export type GetChannelScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22611,7 +22901,7 @@ export type GetChannelScheduleResponse = GetChannelScheduleResponses[keyof GetCh
 export type UpdateInfiniteScheduleData = {
     body?: {
         name?: string;
-        padMs?: number;
+        padToMultiple?: number;
         flexPreference?: 'distribute' | 'end';
         timeZoneOffset?: number;
         bufferDays?: number;
@@ -22633,6 +22923,8 @@ export type UpdateInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -22659,6 +22951,8 @@ export type UpdateInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -22686,6 +22980,8 @@ export type UpdateInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -22713,6 +23009,8 @@ export type UpdateInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -22735,6 +23033,8 @@ export type UpdateInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -22756,6 +23056,8 @@ export type UpdateInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -22776,6 +23078,8 @@ export type UpdateInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -22815,7 +23119,7 @@ export type UpdateInfiniteScheduleResponses = {
     200: {
         uuid: string;
         name: string;
-        padMs: number;
+        padToMultiple: number;
         flexPreference: 'distribute' | 'end';
         timeZoneOffset: number;
         bufferDays: number;
@@ -22837,6 +23141,8 @@ export type UpdateInfiniteScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22863,6 +23169,8 @@ export type UpdateInfiniteScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22890,6 +23198,8 @@ export type UpdateInfiniteScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22917,6 +23227,8 @@ export type UpdateInfiniteScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22939,6 +23251,8 @@ export type UpdateInfiniteScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22960,6 +23274,8 @@ export type UpdateInfiniteScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22980,6 +23296,8 @@ export type UpdateInfiniteScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -23002,7 +23320,7 @@ export type UpdateInfiniteScheduleResponse = UpdateInfiniteScheduleResponses[key
 
 export type PreviewInfiniteScheduleData = {
     body: {
-        padMs?: number;
+        padToMultiple?: number;
         flexPreference?: 'distribute' | 'end';
         timeZoneOffset?: number;
         slotPlaybackOrder: 'ordered' | 'shuffle';
@@ -23021,6 +23339,8 @@ export type PreviewInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23047,6 +23367,8 @@ export type PreviewInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23074,6 +23396,8 @@ export type PreviewInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23101,6 +23425,8 @@ export type PreviewInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23123,6 +23449,8 @@ export type PreviewInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23144,6 +23472,8 @@ export type PreviewInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23164,6 +23494,8 @@ export type PreviewInfiniteScheduleData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    mode?: 'relaxed' | 'strict';
+                    count?: number;
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23245,7 +23577,7 @@ export type PreviewInfiniteScheduleResponse = PreviewInfiniteScheduleResponses[k
 export type RegenerateInfiniteScheduleData = {
     body?: {
         fromTimeMs?: number;
-        clearExisting?: boolean;
+        resetMode?: 'full' | 'buffer' | 'none';
     };
     path: {
         id: string;

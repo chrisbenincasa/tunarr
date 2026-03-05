@@ -209,6 +209,7 @@ function updateRequestToChannel(updateReq: SaveableChannel): ChannelUpdate {
     transcodeConfigId: updateReq.transcodeConfigId,
     streamMode: updateReq.streamMode,
     subtitlesEnabled: booleanToNumber(updateReq.subtitlesEnabled),
+    infiniteScheduleUuid: updateReq.scheduleId,
   } satisfies ChannelUpdate;
 }
 

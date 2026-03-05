@@ -6,6 +6,7 @@ import type {
   MaterializedScheduleSlot,
   Schedule,
 } from '@tunarr/types/api';
+import dayjs from 'dayjs';
 import { capitalize, identity } from 'lodash-es';
 import type { MRT_ColumnDef } from 'material-react-table';
 import {
@@ -15,6 +16,7 @@ import {
 import { useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { match } from 'ts-pattern';
+import { v4 } from 'uuid';
 import {
   RouterButtonLink,
   RouterIconButtonLink,
@@ -36,6 +38,8 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
         Cell: ({ cell }) => {
           return prettifySnakeCaseString(cell.getValue<string>());
         },
+        size: 100,
+        grow: false,
       },
       {
         header: 'Program',
@@ -61,9 +65,37 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
       },
       {
         header: 'Mode',
-        accessorKey: 'fillMode',
-        Cell({ cell }) {
-          return capitalize(cell.getValue<string>());
+        id: 'fillMode',
+        accessorFn: identity,
+        Cell({ row: { original } }) {
+          const fillMode = original.fillMode;
+          return match(fillMode)
+            .with('fill', () => capitalize(fillMode))
+            .with(
+              'count',
+              () => `${capitalize(fillMode)} (${original.fillValue})`,
+            )
+            .with(
+              'duration',
+              () =>
+                `${capitalize(fillMode)} (${dayjs.duration(original.fillValue).humanize()})`,
+            )
+            .exhaustive();
+        },
+      },
+      {
+        header: 'Start Type',
+        id: 'anchorMode',
+        accessorFn: identity,
+        Cell({ row: { original } }) {
+          const mode = original.anchorMode;
+          const time = original.anchorTime;
+          if (!mode || !time) {
+            return '-';
+          }
+
+          const pretty = capitalize(mode);
+          return `${pretty} @ ${dayjs().startOf('day').add(time).format('LT')}`;
         },
       },
     ];
@@ -72,12 +104,13 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
   const table = useMaterialReactTable({
     data: schedule.slots,
     columns,
-    positionActionsColumn: 'last',
+    getRowId: (row) => row.uuid ?? v4(),
     enableRowActions: true,
     // TODO: Can enable this with custom options to filter by show name
     enableGlobalFilter: false,
     enableFullScreenToggle: false,
     enableRowDragging: slotPlaybackOrder === 'ordered',
+    enableSorting: slotPlaybackOrder !== 'ordered',
     renderRowActions: ({ row }) => {
       return (
         <>
@@ -89,6 +122,13 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
           </RouterIconButtonLink>
         </>
       );
+    },
+    displayColumnDefOptions: {
+      'mrt-row-actions': {
+        grow: false,
+        Header: '',
+        visibleInShowHideMenu: false,
+      },
     },
     muiRowDragHandleProps: () => ({
       onDragEnd: () => {

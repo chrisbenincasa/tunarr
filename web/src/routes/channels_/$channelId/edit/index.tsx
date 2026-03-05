@@ -7,7 +7,10 @@ import { z } from 'zod/v4';
 
 // TODO: Share this schema between new and edit routes
 const editChannelParamsSchema = z.object({
-  tab: z.enum(['flex', 'epg', 'ffmpeg']).optional().catch(undefined),
+  tab: z
+    .enum(['flex', 'epg', 'ffmpeg', 'programming'])
+    .optional()
+    .catch(undefined),
 });
 
 export const Route = createFileRoute('/channels_/$channelId/edit/')({

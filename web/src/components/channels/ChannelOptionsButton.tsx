@@ -1,59 +1,70 @@
 import type { channelListOptions } from '@/types/index.ts';
-import { Settings } from '@mui/icons-material';
+import { MoreVert, Settings } from '@mui/icons-material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import { Button } from '@mui/material';
+import { Button, IconButton } from '@mui/material';
 import type { Channel } from '@tunarr/types';
 import { isNull } from 'lodash-es';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ChannelOptionsMenu } from './ChannelOptionsMenu.tsx';
 
 type Props = {
   channel: Channel;
   hideItems?: channelListOptions[];
+  iconButton?: boolean;
 };
 
-export const ChannelOptionsButton = ({ channel, hideItems }: Props) => {
+export const ChannelOptionsButton = ({
+  channel,
+  hideItems,
+  iconButton,
+}: Props) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [channelMenu, setChannelMenu] = useState<Channel>();
   const open = !isNull(anchorEl);
 
-  const handleClick = (
-    event: React.MouseEvent<HTMLElement>,
-    channel: Channel,
-  ) => {
-    console.log(channel);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-    setChannelMenu(channel);
   };
 
   const handleClose = () => {
     setAnchorEl(null);
   };
 
+  const button = useMemo(() => {
+    if (iconButton) {
+      return (
+        <IconButton onClick={handleClick}>
+          <MoreVert />
+        </IconButton>
+      );
+    } else {
+      return (
+        <Button
+          variant="outlined"
+          startIcon={<Settings />}
+          aria-controls={open ? 'channel-nav-menu' : undefined}
+          aria-haspopup="true"
+          aria-expanded={open ? 'true' : undefined}
+          disableRipple
+          disableElevation
+          onClick={handleClick}
+          endIcon={<KeyboardArrowDownIcon />}
+        >
+          Options
+        </Button>
+      );
+    }
+  }, [iconButton, open]);
+
   return (
     <>
-      <Button
-        variant="outlined"
-        startIcon={<Settings />}
-        aria-controls={open ? 'channel-nav-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
-        disableRipple
-        disableElevation
-        onClick={(event) => handleClick(event, channel)}
-        endIcon={<KeyboardArrowDownIcon />}
-      >
-        Options
-      </Button>
-      {channelMenu && (
-        <ChannelOptionsMenu
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose}
-          row={channelMenu}
-          hideItems={hideItems}
-        />
-      )}
+      {button}
+      <ChannelOptionsMenu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        row={channel}
+        hideItems={hideItems}
+      />
     </>
   );
 };

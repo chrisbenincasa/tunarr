@@ -13,13 +13,14 @@ import type {
 import type { InfiniteScheduleState } from '@/db/schema/InfiniteScheduleState.js';
 import { KEYS } from '@/types/inject.js';
 import dayjs from '@/util/dayjs.js';
-import { nullToUndefined } from '@tunarr/shared/util';
+import { nullToUndefined, seq } from '@tunarr/shared/util';
 import type { SlotFillerTypes } from '@tunarr/types/api';
 import { inject, injectable } from 'inversify';
 import { isNil, sortBy, sumBy } from 'lodash-es';
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import { v4 } from 'uuid';
 import { Nullable } from '../../types/util.ts';
+import { isDefined } from '../../util/index.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.js';
 import { InfiniteSlotFillerHelper } from './InfiniteSlotFillerHelper.ts';
 import { SlotSchedulerHelper } from './SlotSchedulerHelper.ts';
@@ -326,12 +327,33 @@ export class InfiniteScheduleGenerator {
     );
 
     let shuffleOrder: string[] | null = null;
+    let resolvedPosition = state?.iteratorPosition ?? 0;
+
     if (order === 'shuffle' || order === 'ordered_shuffle') {
-      if (
-        state?.shuffleOrder &&
-        state.shuffleOrder.length === programs.length
-      ) {
-        shuffleOrder = state.shuffleOrder;
+      if (state?.shuffleOrder && state.shuffleOrder.length > 0) {
+        const storedUuidSet = new Set(state.shuffleOrder);
+        const currentUuidSet = new Set(programs.map((p) => p.uuid));
+        const setsAreEqual =
+          storedUuidSet.size === currentUuidSet.size &&
+          [...storedUuidSet].every((uuid) => currentUuidSet.has(uuid));
+
+        if (!setsAreEqual) {
+          // Program list changed — reconcile rather than doing a full reshuffle.
+          // This preserves the relative order of existing programs, inserts new
+          // ones after the current cursor, and correctly adjusts the position
+          // index when programs before the cursor have been removed.
+          const { reconciledOrder, reconciledPosition } =
+            this.reconcileShuffleOrder(
+              state.shuffleOrder,
+              resolvedPosition,
+              sortedPrograms,
+              random,
+            );
+          shuffleOrder = reconciledOrder;
+          resolvedPosition = reconciledPosition;
+        } else {
+          shuffleOrder = state.shuffleOrder;
+        }
         sortedPrograms = this.applyShuffleOrder(sortedPrograms, shuffleOrder);
       } else {
         shuffleOrder = this.createShuffleOrder(sortedPrograms, random);
@@ -339,8 +361,7 @@ export class InfiniteScheduleGenerator {
       }
     }
 
-    const position =
-      (state?.iteratorPosition ?? 0) % Math.max(1, sortedPrograms.length);
+    const position = resolvedPosition % Math.max(1, sortedPrograms.length);
 
     return {
       position,
@@ -414,14 +435,66 @@ export class InfiniteScheduleGenerator {
     return indices.map((i) => programs[i]!.uuid);
   }
 
+  /**
+   * Reconcile a stored shuffle order against the current program list.
+   *
+   * - Programs no longer in the list are silently dropped.
+   * - New programs (UUIDs not in the stored order) are inserted at random
+   *   positions after the current cursor so they appear in the ongoing pass.
+   * - The returned position index correctly tracks where the iterator was,
+   *   accounting for any items removed before the cursor.
+   */
+  private reconcileShuffleOrder(
+    storedOrder: string[],
+    storedPosition: number,
+    programs: ProgramWithRelationsOrm[],
+    random: Random,
+  ): { reconciledOrder: string[]; reconciledPosition: number } {
+    const currentUuidSet = new Set(programs.map((p) => p.uuid));
+
+    // Keep relative order of programs still present, drop removed ones.
+    const filteredOrder = storedOrder.filter((uuid) =>
+      currentUuidSet.has(uuid),
+    );
+
+    // Find where the program that was at storedPosition ended up after filtering.
+    const currentUuid = storedOrder[storedPosition];
+    let reconciledPosition: number;
+    if (isDefined(currentUuid) && currentUuidSet.has(currentUuid)) {
+      reconciledPosition = filteredOrder.indexOf(currentUuid);
+    } else {
+      // The current program was removed; clamp to a valid index.
+      reconciledPosition = Math.min(
+        storedPosition,
+        Math.max(0, filteredOrder.length - 1),
+      );
+    }
+
+    // Insert new programs (not in stored order) at random positions after cursor.
+    const storedUuidSet = new Set(storedOrder);
+    const newUuids = programs
+      .map((p) => p.uuid)
+      .filter((uuid) => !storedUuidSet.has(uuid));
+
+    const reconciledOrder = [...filteredOrder];
+    for (const uuid of newUuids) {
+      const insertStart = reconciledPosition + 1;
+      const insertAt =
+        insertStart >= reconciledOrder.length
+          ? reconciledOrder.length // append if cursor is at/past the end
+          : random.integer(insertStart, reconciledOrder.length);
+      reconciledOrder.splice(insertAt, 0, uuid);
+    }
+
+    return { reconciledOrder, reconciledPosition };
+  }
+
   private applyShuffleOrder(
     programs: ProgramWithRelationsOrm[],
     shuffleOrder: string[],
   ): ProgramWithRelationsOrm[] {
     const programMap = new Map(programs.map((p) => [p.uuid, p]));
-    return shuffleOrder
-      .map((uuid) => programMap.get(uuid))
-      .filter((p): p is ProgramWithRelationsOrm => p !== undefined);
+    return seq.collect(shuffleOrder, (uuid) => programMap.get(uuid));
   }
 
   /**
@@ -464,20 +537,11 @@ export class InfiniteScheduleGenerator {
     }
 
     if (schedule.slotPlaybackOrder === 'shuffle') {
-      if (floatingSlots.length === 0) {
-        this.logger.warn('No floating slots found for shuffle mode');
-        const scheduleStateUpdate: ScheduleStateUpdate = {
-          floatingSlotIndex: 0,
-          generationCursor: toTimeMs,
-          slotSelectionSeed: null,
-          slotSelectionUseCount: 0,
-        };
-        return { items, fromTimeMs, toTimeMs, slotStates, scheduleStateUpdate };
-      }
       return this.generateShuffleMode(
         channelUuid,
         schedule,
         floatingSlots,
+        anchorEvents,
         items,
         slotStates,
         fromTimeMs,
@@ -575,6 +639,8 @@ export class InfiniteScheduleGenerator {
 
         // Check day-of-week restriction (0=Sunday, 6=Saturday in local time)
         if (slot.anchorDays && slot.anchorDays.length > 0) {
+          // TODO: check if we should use localized dayjs here to get the day
+          // since 0 might mean Sunday for some and Monday for others.
           const dayOfWeek = new Date(localDayStart).getUTCDay();
           if (!slot.anchorDays.includes(dayOfWeek)) continue;
         }
@@ -639,6 +705,16 @@ export class InfiniteScheduleGenerator {
       );
     };
 
+    // Snap the initial cursor to the next padToMultiple boundary so the first
+    // program also starts on a grid-aligned time.
+    if (schedule.padToMultiple > 1 && currentTimeMs % schedule.padToMultiple !== 0) {
+      const alignedStart =
+        Math.ceil(currentTimeMs / schedule.padToMultiple) *
+        schedule.padToMultiple;
+      pushOrExtendFlex(null, alignedStart - currentTimeMs);
+      currentTimeMs = alignedStart;
+    }
+
     while (currentTimeMs < toTimeMs) {
       // 1. Fire any anchor events that are now due (currentTimeMs >= anchor.timeMs)
       while (anchorEventIndex < anchorEvents.length) {
@@ -686,10 +762,11 @@ export class InfiniteScheduleGenerator {
             ancSlot.padToMultiple ?? schedule.padToMultiple;
           let ancFlexAmount = 0;
           if (effectivePadToMultiple > 1) {
+            const ancRawEndMs = currentTimeMs;
             ancFlexAmount =
-              Math.ceil(ancProgramDuration / effectivePadToMultiple) *
+              Math.ceil(ancRawEndMs / effectivePadToMultiple) *
                 effectivePadToMultiple -
-              ancProgramDuration;
+              ancRawEndMs;
           } else if (ancSlot.padMs && ancSlot.padMs > 0) {
             ancFlexAmount = ancSlot.padMs;
           }
@@ -823,34 +900,53 @@ export class InfiniteScheduleGenerator {
       const progress = fillProgress.get(slot.uuid)!;
       const isFirstInRun = progress.count === 0 && progress.durationMs === 0;
 
-      // For fill mode: if this program would overshoot the next anchor, bridge with
-      // flex instead and let the anchor fire on the next iteration
+      // For fill mode: if this program would overshoot the next anchor, handle
+      // based on anchorMode:
+      //   hard (default): bridge gap with flex and fire anchor at scheduled time
+      //   soft: let the program run; the anchor fires late on the next iteration
+      //   padded: fill the gap with the anchor slot's filler, then flex for any remainder
       if (
         slot.fillMode === 'fill' &&
         hasAnchors &&
         nextAnchor &&
-        currentTimeMs + programDuration > nextAnchor.timeMs
+        currentTimeMs + programDuration > nextAnchor.timeMs &&
+        nextAnchor.slotPrograms.slot.anchorMode !== 'soft'
       ) {
-        const gapMs = nextAnchor.timeMs - currentTimeMs;
-        if (gapMs > 0) {
-          pushOrExtendFlex(slot.uuid, gapMs);
-          currentTimeMs = nextAnchor.timeMs;
-        } else {
+        if (nextAnchor.slotPrograms.slot.anchorMode === 'padded') {
+          const r = this.fillPaddedAnchorGap(
+            channelUuid,
+            schedule.uuid,
+            nextAnchor.slotPrograms,
+            currentTimeMs,
+            nextAnchor.timeMs,
+            sequenceIndex,
+          );
+          items.push(...r.items);
+          currentTimeMs = r.endTimeMs;
+          sequenceIndex = r.nextSeqIndex;
+        }
+        if (currentTimeMs < nextAnchor.timeMs) {
+          pushOrExtendFlex(slot.uuid, nextAnchor.timeMs - currentTimeMs);
           currentTimeMs = nextAnchor.timeMs;
         }
         floatingSlotIndex++;
         continue;
       }
 
-      // Compute padding flex amount (for time-grid alignment)
+      // Compute padding flex amount (for time-grid alignment).
+      // Use (currentTimeMs + programDuration) as the raw end so the snapped
+      // boundary is time-relative, not just duration-relative.  Pre-content
+      // filler steals from flexBudget, so its duration cancels and the slot
+      // still ends on a multiple of effectivePadToMultiple.
       const effectivePadToMultiple =
         slot.padToMultiple ?? schedule.padToMultiple;
       let flexBudget = 0;
       if (effectivePadToMultiple > 1) {
+        const rawEndMs = currentTimeMs + programDuration;
         flexBudget =
-          Math.ceil(programDuration / effectivePadToMultiple) *
+          Math.ceil(rawEndMs / effectivePadToMultiple) *
             effectivePadToMultiple -
-          programDuration;
+          rawEndMs;
       } else if (slot.padMs && slot.padMs > 0) {
         flexBudget = slot.padMs;
       }
@@ -1133,6 +1229,7 @@ export class InfiniteScheduleGenerator {
     channelUuid: string,
     schedule: InfiniteScheduleWithSlotsAndState,
     floatingSlots: SlotPrograms[],
+    anchorEvents: AnchorEvent[],
     items: NewGeneratedScheduleItem[],
     slotStates: Map<string, SlotStateUpdate>,
     fromTimeMs: number,
@@ -1174,7 +1271,116 @@ export class InfiniteScheduleGenerator {
       );
     };
 
+    let anchorEventIndex = 0;
+
+    // Snap the initial cursor to the next padToMultiple boundary so the first
+    // program also starts on a grid-aligned time.
+    if (schedule.padToMultiple > 1 && currentTimeMs % schedule.padToMultiple !== 0) {
+      const alignedStart =
+        Math.ceil(currentTimeMs / schedule.padToMultiple) *
+        schedule.padToMultiple;
+      pushOrExtendFlex(null, alignedStart - currentTimeMs);
+      currentTimeMs = alignedStart;
+    }
+
     while (currentTimeMs < toTimeMs) {
+      // 1. Fire any anchor events that are now due.
+      while (anchorEventIndex < anchorEvents.length) {
+        const nextAnchor = anchorEvents[anchorEventIndex];
+        if (!nextAnchor || currentTimeMs < nextAnchor.timeMs) break;
+
+        const { slot: ancSlot, iterator: ancIterator } =
+          nextAnchor.slotPrograms;
+        const ancFillValue = ancSlot.fillValue ?? 1;
+        let ancEmitted = 0;
+        let ancDurationMs = 0;
+
+        while (currentTimeMs < toTimeMs) {
+          const shouldStop = (() => {
+            switch (ancSlot.fillMode) {
+              case 'fill':
+                return ancEmitted > 0; // anchored fill = emit exactly one, then stop
+              case 'count':
+                return ancEmitted >= ancFillValue;
+              case 'duration':
+                return ancDurationMs >= ancFillValue;
+            }
+          })();
+          if (shouldStop) break;
+
+          const ancProgram = ancIterator.current();
+          if (!ancProgram) break;
+
+          const ancProgramDuration = ancProgram.duration;
+          items.push(
+            this.createContentItem(
+              channelUuid,
+              schedule.uuid,
+              ancSlot,
+              ancProgram,
+              currentTimeMs,
+              ancProgramDuration,
+              sequenceIndex++,
+            ),
+          );
+          currentTimeMs += ancProgramDuration;
+
+          const ancEffectivePad =
+            ancSlot.padToMultiple ?? schedule.padToMultiple;
+          let ancFlexAmount = 0;
+          if (ancEffectivePad > 1) {
+            // currentTimeMs is already past the anchor program at this point
+            const ancRawEndMs = currentTimeMs;
+            ancFlexAmount =
+              Math.ceil(ancRawEndMs / ancEffectivePad) * ancEffectivePad -
+              ancRawEndMs;
+          } else if (ancSlot.padMs && ancSlot.padMs > 0) {
+            ancFlexAmount = ancSlot.padMs;
+          }
+          if (ancFlexAmount > 0) {
+            pushOrExtendFlex(ancSlot.uuid, ancFlexAmount);
+            currentTimeMs += ancFlexAmount;
+          }
+
+          ancEmitted++;
+          ancDurationMs += ancProgramDuration;
+          ancIterator.next();
+        }
+
+        slotStates.set(ancSlot.uuid, {
+          ...ancIterator.getState(),
+          fillModeCount: 0,
+          fillModeDurationMs: 0,
+          fillerState: null,
+        });
+
+        anchorEventIndex++;
+      }
+
+      if (currentTimeMs >= toTimeMs) break;
+
+      // 2. If there are no floating slots, advance to the next anchor with flex.
+      if (floatingSlots.length === 0) {
+        const nextAnchor = anchorEvents[anchorEventIndex];
+        if (nextAnchor) {
+          const gapMs = nextAnchor.timeMs - currentTimeMs;
+          if (gapMs > 0) {
+            pushOrExtendFlex(null, gapMs);
+            currentTimeMs = nextAnchor.timeMs;
+          }
+        } else {
+          pushOrExtendFlex(null, toTimeMs - currentTimeMs);
+          currentTimeMs = toTimeMs;
+        }
+        continue;
+      }
+
+      // 3. Determine the fill boundary: the next anchor time (or end of window).
+      const nextAnchorForFloat = anchorEvents[anchorEventIndex];
+      const fillUntil = nextAnchorForFloat
+        ? Math.min(nextAnchorForFloat.timeMs, toTimeMs)
+        : toTimeMs;
+
       const selected = this.selectSlotWeightedRng(
         floatingSlots,
         totalWeight,
@@ -1187,7 +1393,7 @@ export class InfiniteScheduleGenerator {
 
       if (slot.slotType === 'redirect') {
         const dur = Math.max(schedule.padToMultiple, 1);
-        if (currentTimeMs + dur <= toTimeMs) {
+        if (currentTimeMs + dur <= fillUntil) {
           items.push(
             this.createRedirectItem(
               channelUuid,
@@ -1200,18 +1406,18 @@ export class InfiniteScheduleGenerator {
           );
           currentTimeMs += dur;
         } else {
-          currentTimeMs = toTimeMs;
+          currentTimeMs = fillUntil;
         }
         continue;
       }
 
       if (slot.slotType === 'flex') {
         const dur = Math.max(schedule.padToMultiple, 1);
-        if (currentTimeMs + dur <= toTimeMs) {
+        if (currentTimeMs + dur <= fillUntil) {
           pushOrExtendFlex(slot.uuid, dur);
           currentTimeMs += dur;
         } else {
-          currentTimeMs = toTimeMs;
+          currentTimeMs = fillUntil;
         }
         continue;
       }
@@ -1222,7 +1428,7 @@ export class InfiniteScheduleGenerator {
         if (fillerHelper && fillerHelper.hasType('fallback')) {
           const sel = fillerHelper.select(
             'fallback',
-            toTimeMs - currentTimeMs,
+            fillUntil - currentTimeMs,
             currentTimeMs,
           );
           if (sel) {
@@ -1251,6 +1457,36 @@ export class InfiniteScheduleGenerator {
 
       const programDuration = program.duration;
 
+      // If this program would overshoot the next anchor, handle based on anchorMode
+      // (same semantics as ordered mode; soft lets the program run).
+      if (
+        nextAnchorForFloat &&
+        currentTimeMs + programDuration > nextAnchorForFloat.timeMs &&
+        nextAnchorForFloat.slotPrograms.slot.anchorMode !== 'soft'
+      ) {
+        if (nextAnchorForFloat.slotPrograms.slot.anchorMode === 'padded') {
+          const r = this.fillPaddedAnchorGap(
+            channelUuid,
+            schedule.uuid,
+            nextAnchorForFloat.slotPrograms,
+            currentTimeMs,
+            nextAnchorForFloat.timeMs,
+            sequenceIndex,
+          );
+          items.push(...r.items);
+          currentTimeMs = r.endTimeMs;
+          sequenceIndex = r.nextSeqIndex;
+        }
+        if (currentTimeMs < nextAnchorForFloat.timeMs) {
+          pushOrExtendFlex(
+            slot.uuid,
+            nextAnchorForFloat.timeMs - currentTimeMs,
+          );
+          currentTimeMs = nextAnchorForFloat.timeMs;
+        }
+        continue;
+      }
+
       // In shuffle mode every selected program is its own mini-run, so
       // isFirstInRun = true and isLastInRun = true for every program.
       const isFirstInRun = true;
@@ -1261,10 +1497,11 @@ export class InfiniteScheduleGenerator {
         slot.padToMultiple ?? schedule.padToMultiple;
       let flexBudget = 0;
       if (effectivePadToMultiple > 0) {
+        const rawEndMs = currentTimeMs + programDuration;
         flexBudget =
-          Math.ceil(programDuration / effectivePadToMultiple) *
+          Math.ceil(rawEndMs / effectivePadToMultiple) *
             effectivePadToMultiple -
-          programDuration;
+          rawEndMs;
       } else if (slot.padMs && slot.padMs > 0) {
         flexBudget = slot.padMs;
       }
@@ -1553,6 +1790,65 @@ export class InfiniteScheduleGenerator {
       fillerType: null,
       sequenceIndex,
       createdAt: +dayjs(),
+    };
+  }
+
+  /**
+   * For 'padded' anchor mode: attempt to fill the gap before the anchor fires
+   * using the anchor slot's filler configuration (head → pre → fallback in
+   * priority order). Any gap that filler cannot cover is left to the caller to
+   * close with flex.
+   */
+  private fillPaddedAnchorGap(
+    channelUuid: string,
+    scheduleUuid: string,
+    anchorSlotPrograms: SlotPrograms,
+    startTimeMs: number,
+    anchorTimeMs: number,
+    startSequenceIndex: number,
+  ): {
+    items: NewGeneratedScheduleItem[];
+    endTimeMs: number;
+    nextSeqIndex: number;
+  } {
+    const { slot, fillerHelper } = anchorSlotPrograms;
+    const fillerItems: NewGeneratedScheduleItem[] = [];
+    let currentTimeMs = startTimeMs;
+    let sequenceIndex = startSequenceIndex;
+
+    if (fillerHelper) {
+      for (const fType of ['head', 'pre', 'fallback'] as const) {
+        if (!fillerHelper.hasType(fType)) continue;
+        while (currentTimeMs < anchorTimeMs) {
+          const sel = fillerHelper.select(
+            fType,
+            anchorTimeMs - currentTimeMs,
+            currentTimeMs,
+          );
+          if (!sel) break;
+          fillerItems.push(
+            this.createFillerItem(
+              channelUuid,
+              scheduleUuid,
+              slot.uuid,
+              sel.program,
+              fType,
+              sel.fillerListId,
+              currentTimeMs,
+              sel.program.duration,
+              sequenceIndex++,
+            ),
+          );
+          currentTimeMs += sel.program.duration;
+        }
+        if (currentTimeMs >= anchorTimeMs) break;
+      }
+    }
+
+    return {
+      items: fillerItems,
+      endTimeMs: currentTimeMs,
+      nextSeqIndex: sequenceIndex,
     };
   }
 

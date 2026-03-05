@@ -41,9 +41,9 @@ export const ScheduleEditor = ({ schedule }: Props) => {
       <Box>
         <ScheduleSlotTable schedule={schedule} />
       </Box>
-      <Box>
+      <PaddedPaper>
         <SchedulePreview schedule={schedule} />
-      </Box>
+      </PaddedPaper>
     </FormProvider>
   );
 };

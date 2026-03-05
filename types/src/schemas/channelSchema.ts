@@ -148,6 +148,7 @@ export const ChannelSchema = z.object({
   sessions: z.array(ChannelSessionSchema).optional(),
   subtitlesEnabled: z.boolean(),
   subtitlePreferences: z.array(SubtitlePreference).nonempty().optional(),
+  scheduleId: z.uuid().optional(),
 });
 
 export const SaveableChannelSchema = ChannelSchema.omit({

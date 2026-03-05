@@ -455,3 +455,20 @@ export const UpdateInfiniteSlotsRequestSchema = z.object({
 export type UpdateInfiniteSlotsRequest = z.infer<
   typeof UpdateInfiniteSlotsRequestSchema
 >;
+
+export const ScheduleAssignChannelsResultSchema = z.record(
+  z.uuid(),
+  z.discriminatedUnion('type', [
+    z.object({
+      type: z.literal('success'),
+    }),
+    z.object({
+      type: z.literal('failure'),
+      reason: z.string(),
+    }),
+  ]),
+);
+
+export type ScheduleAssignChannelsResult = z.infer<
+  typeof ScheduleAssignChannelsResultSchema
+>;

@@ -1,4 +1,5 @@
 import { ChannelDB } from '@/db/ChannelDB.js';
+import { InfiniteScheduleDB } from '@/db/InfiniteScheduleDB.js';
 import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
 import { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
@@ -75,6 +76,7 @@ import { loggingDef } from '../util/logging/loggingDef.ts';
 import { EventService } from './EventService.ts';
 import { OnDemandChannelService } from './OnDemandChannelService.ts';
 import { XmlTvWriter } from './XmlTvWriter.ts';
+import { InfiniteScheduleGenerator } from './scheduling/InfiniteScheduleGenerator.ts';
 
 export type ChannelAndPrograms = ChannelOrm & {
   programs: Pick<ProgramOrm, 'uuid'>[];
@@ -152,6 +154,10 @@ export class TVGuideService {
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(OnDemandChannelService)
     private onDemandChannelService: OnDemandChannelService,
+    @inject(KEYS.InfiniteScheduleDB)
+    private infiniteScheduleDB: InfiniteScheduleDB,
+    @inject(InfiniteScheduleGenerator)
+    private infiniteScheduleGenerator: InfiniteScheduleGenerator,
   ) {
     this.timer = new Timer(this.logger);
     this.cachedGuide = {};
@@ -912,11 +918,200 @@ export class TVGuideService {
     devAssert(!isEmpty(this.accumulateTable));
     const currentUpdateTimeMs = this.currentUpdateTime[channelId]!;
     const channelToUpdate = this.channelsById[channelId]!;
+
+    if (isNonEmptyString(channelToUpdate.channel.infiniteScheduleUuid)) {
+      return this.buildInfiniteScheduleChannelGuide(channelId);
+    }
+
     return this.getChannelPrograms(
       currentUpdateTimeMs,
       this.currentEndTime[channelToUpdate.channel.uuid]!,
       channelToUpdate,
     );
+  }
+
+  /**
+   * Build a guide for a channel backed by an infinite schedule.
+   * Queries the generated_schedule_item table and maps items to GuideItems.
+   */
+  private async buildInfiniteScheduleChannelGuide(
+    channelId: string,
+  ): Promise<ChannelPrograms> {
+    this.logger.debug('Building infinite schedule for channel %s', channelId);
+    const currentUpdateTimeMs = this.currentUpdateTime[channelId]!;
+    const currentEndTimeMs = this.currentEndTime[channelId]!;
+    const channel = this.channelsById[channelId]!.channel;
+
+    const result: ChannelPrograms = { channel, programs: [] };
+
+    // Ensure the buffer is stocked before reading items.
+    try {
+      const schedule = await this.infiniteScheduleDB.getScheduleByChannel(
+        channel.uuid,
+      );
+      if (schedule) {
+        const bufferEndTimeMs = await this.infiniteScheduleDB.getBufferEndTime(
+          channel.uuid,
+        );
+        const thresholdMs = schedule.bufferThresholdDays * 24 * 60 * 60 * 1000;
+        const needsGeneration =
+          bufferEndTimeMs === null ||
+          bufferEndTimeMs < currentEndTimeMs + thresholdMs;
+        if (needsGeneration) {
+          this.logger.info(
+            'Infinite schedule buffer low for channel %s (bufferEnd=%s, threshold=%s), running generation',
+            channelId,
+            bufferEndTimeMs,
+            thresholdMs,
+          );
+          await this.infiniteScheduleGenerator.generate(channel.uuid);
+        }
+      }
+    } catch (err) {
+      this.logger.error(
+        err,
+        'Failed to check/extend buffer for channel %s',
+        channelId,
+      );
+      // Continue — serve whatever is already in the DB
+    }
+
+    // Find the item playing at the start of the guide window (may have
+    // started before currentUpdateTimeMs).
+    const currentItem = await this.infiniteScheduleDB.getItemAtTime(
+      channel.uuid,
+      currentUpdateTimeMs,
+    );
+
+    // Fetch from the start of the current item (or window start if none)
+    const fromTimeMs = currentItem?.startTimeMs ?? currentUpdateTimeMs;
+    const items = await this.infiniteScheduleDB.getGeneratedItems(
+      channel.uuid,
+      fromTimeMs,
+      currentEndTimeMs,
+    );
+
+    if (items.length === 0) {
+      result.programs.push({
+        startTimeMs: currentUpdateTimeMs,
+        lineupItem: {
+          type: 'offline',
+          durationMs: currentEndTimeMs - currentUpdateTimeMs,
+        },
+      });
+      return result;
+    }
+
+    const programs = result.programs;
+    let melded = 0;
+
+    // Mirrors the push() melding logic in getChannelPrograms: short offline
+    // items (flex, filler) are absorbed into the preceding content item so
+    // the guide shows e.g. "The Simpsons 8:00–8:30" rather than exposing
+    // every padding block as its own entry.
+    const push = (program: GuideItem) => {
+      const currentProgram = program.lineupItem;
+      const prevIndex = programs.length - 1;
+      const previousProgram = programs[prevIndex];
+
+      if (
+        programs.length > 0 &&
+        !isNil(previousProgram) &&
+        isProgramOffline(currentProgram, channel) &&
+        (currentProgram.durationMs <=
+          constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS ||
+          isProgramOffline(previousProgram.lineupItem, channel))
+      ) {
+        const meldedProgram = deepCopy(previousProgram);
+        meldedProgram.lineupItem = {
+          ...meldedProgram.lineupItem,
+          durationMs:
+            meldedProgram.lineupItem.durationMs + currentProgram.durationMs,
+        };
+        melded += currentProgram.durationMs;
+
+        if (
+          melded > constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS &&
+          !isProgramOffline(previousProgram.lineupItem, channel)
+        ) {
+          meldedProgram.lineupItem = {
+            ...meldedProgram.lineupItem,
+            durationMs: meldedProgram.lineupItem.durationMs - melded,
+          };
+          programs[prevIndex] = meldedProgram;
+          if (
+            meldedProgram.startTimeMs + meldedProgram.lineupItem.durationMs <
+            currentEndTimeMs
+          ) {
+            programs.push({
+              ...meldedProgram,
+              startTimeMs:
+                meldedProgram.startTimeMs + meldedProgram.lineupItem.durationMs,
+              lineupItem: { durationMs: melded, type: 'offline' },
+            });
+          }
+          melded = 0;
+        } else {
+          programs[prevIndex] = meldedProgram;
+        }
+      } else if (isProgramOffline(currentProgram, channel)) {
+        melded = 0;
+        programs.push({
+          ...program,
+          lineupItem: { durationMs: currentProgram.durationMs, type: 'offline' },
+        });
+      } else {
+        melded = 0;
+        programs.push(program);
+      }
+    };
+
+    // Fill any gap before the first item (programs is still empty here,
+    // so this is always pushed as a standalone offline item).
+    if (items[0]!.startTimeMs > currentUpdateTimeMs) {
+      push({
+        startTimeMs: currentUpdateTimeMs,
+        lineupItem: {
+          type: 'offline',
+          durationMs: items[0]!.startTimeMs - currentUpdateTimeMs,
+        },
+      });
+    }
+
+    for (const item of items) {
+      let lineupItem: LineupItem;
+      if (item.itemType === 'content' && isNonEmptyString(item.programUuid)) {
+        lineupItem = {
+          type: 'content',
+          id: item.programUuid,
+          durationMs: item.durationMs,
+        };
+      } else if (
+        item.itemType === 'redirect' &&
+        isNonEmptyString(item.redirectChannelUuid)
+      ) {
+        lineupItem = {
+          type: 'redirect',
+          channel: item.redirectChannelUuid,
+          durationMs: item.durationMs,
+        };
+      } else {
+        lineupItem = { type: 'offline', durationMs: item.durationMs };
+      }
+      push({ startTimeMs: item.startTimeMs, lineupItem });
+    }
+
+    // Fill any gap after the last item
+    const lastProgram = programs[programs.length - 1]!;
+    const lastEnd = lastProgram.startTimeMs + lastProgram.lineupItem.durationMs;
+    if (lastEnd < currentEndTimeMs) {
+      push({
+        startTimeMs: lastEnd,
+        lineupItem: { type: 'offline', durationMs: currentEndTimeMs - lastEnd },
+      });
+    }
+
+    return result;
   }
 
   private async buildChannelGuideWithRetries(

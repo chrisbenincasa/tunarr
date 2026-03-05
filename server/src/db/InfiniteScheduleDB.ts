@@ -3,13 +3,24 @@ import dayjs from '@/util/dayjs.js';
 import type {
   CreateInfiniteScheduleRequest,
   ScheduleSlot as InfiniteScheduleSlotApi,
+  ScheduleAssignChannelsResult,
   UpdateInfiniteScheduleRequest,
 } from '@tunarr/types/api';
 import { and, asc, eq, gte, inArray, lt, lte, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { chunk, head, isNil, omitBy } from 'lodash-es';
+import {
+  chunk,
+  head,
+  isError,
+  isNil,
+  isString,
+  omitBy,
+  partition,
+} from 'lodash-es';
 import { v4 } from 'uuid';
 import { Maybe } from '../types/util.ts';
+import { groupByUniq } from '../util/index.ts';
+import { Logger } from '../util/logging/LoggerFactory.ts';
 import { Channel } from './schema/Channel.ts';
 import {
   GeneratedScheduleItem,
@@ -33,7 +44,6 @@ import {
   type NewInfiniteScheduleState,
 } from './schema/InfiniteScheduleState.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
-import { groupByUniq } from '../util/index.ts';
 
 export type InfiniteScheduleWithSlots = InfiniteSchedule & {
   slots: InfiniteScheduleSlot[];
@@ -50,7 +60,10 @@ export type InfiniteScheduleWithSlotsAndState = InfiniteSchedule & {
 
 @injectable()
 export class InfiniteScheduleDB {
-  constructor(@inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess) {}
+  constructor(
+    @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
+    @inject(KEYS.Logger) private logger: Logger,
+  ) {}
 
   async getSchedules(): Promise<InfiniteScheduleWithSlots[]> {
     const result = await this.drizzle.query.infiniteSchedule.findMany({
@@ -84,8 +97,8 @@ export class InfiniteScheduleDB {
   async getScheduleByChannel(
     channelUuid: string,
   ): Promise<InfiniteScheduleWithSlots | null> {
-    const result = await this.drizzle.query.channelSchedule.findFirst({
-      where: (fields, { eq }) => eq(fields.channelId, channelUuid),
+    const channel = await this.drizzle.query.channels.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, channelUuid),
       with: {
         infiniteSchedule: {
           with: {
@@ -96,7 +109,7 @@ export class InfiniteScheduleDB {
         },
       },
     });
-    return result?.infiniteSchedule ?? null;
+    return channel?.infiniteSchedule ?? null;
   }
 
   /**
@@ -107,8 +120,8 @@ export class InfiniteScheduleDB {
     channelUuid: string,
   ): Promise<InfiniteScheduleWithSlotsAndState | null> {
     // 1. Load schedule + slots (no state via Drizzle relations — state is per-channel)
-    const channelSched = await this.drizzle.query.channelSchedule.findFirst({
-      where: (fields, { eq }) => eq(fields.channelId, channelUuid),
+    const channel = await this.drizzle.query.channels.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, channelUuid),
       with: {
         infiniteSchedule: {
           with: {
@@ -120,8 +133,8 @@ export class InfiniteScheduleDB {
       },
     });
 
-    if (!channelSched?.infiniteSchedule) return null;
-    const schedule = channelSched.infiniteSchedule;
+    if (!channel?.infiniteSchedule) return null;
+    const schedule = channel.infiniteSchedule;
 
     // 2. Load schedule-level state for this channel
     const scheduleState =
@@ -231,6 +244,40 @@ export class InfiniteScheduleDB {
     };
   }
 
+  async assignScheduleToChannel(
+    channelUuid: string,
+    scheduleUuid: string,
+  ): Promise<void> {
+    await this.drizzle
+      .update(Channel)
+      .set({ infiniteScheduleUuid: scheduleUuid })
+      .where(eq(Channel.uuid, channelUuid));
+  }
+
+  async unassignScheduleFromChannel(channelUuid: string, scheduleUuid: string) {
+    await this.drizzle.transaction(async (tx) => {
+      await tx
+        .update(Channel)
+        .set({ infiniteScheduleUuid: null })
+        .where(eq(Channel.uuid, channelUuid));
+
+      await tx
+        .delete(InfiniteScheduleState)
+        .where(
+          and(
+            eq(InfiniteScheduleState.scheduleUuid, scheduleUuid),
+            eq(InfiniteScheduleState.channelUuid, channelUuid),
+          ),
+        );
+
+      // And all of the state for slots. New state will be generated
+      // on the next generation.
+      await tx
+        .delete(InfiniteScheduleSlotState)
+        .where(and(eq(InfiniteScheduleSlotState.channelUuid, channelUuid)));
+    });
+  }
+
   /**
    * Update an existing schedule
    */
@@ -251,6 +298,7 @@ export class InfiniteScheduleDB {
         bufferDays: request.bufferDays,
         bufferThresholdDays: request.bufferThresholdDays,
         enabled: request.enabled,
+        slotPlaybackOrder: request.slotPlaybackOrder,
         updatedAt: dayjs().toDate(),
       } satisfies Partial<NewInfiniteSchedule>,
       isNil,
@@ -697,6 +745,25 @@ export class InfiniteScheduleDB {
   }
 
   /**
+   * Full reset: delete all generated items, slot states, and schedule state for
+   * a channel in a single transaction.  The next generate() call will start
+   * fresh from "now" with clean iterator positions.
+   */
+  async fullResetSchedule(channelUuid: string): Promise<void> {
+    await this.drizzle.transaction(async (tx) => {
+      await tx
+        .delete(GeneratedScheduleItem)
+        .where(eq(GeneratedScheduleItem.channelUuid, channelUuid));
+      await tx
+        .delete(InfiniteScheduleSlotState)
+        .where(eq(InfiniteScheduleSlotState.channelUuid, channelUuid));
+      await tx
+        .delete(InfiniteScheduleState)
+        .where(eq(InfiniteScheduleState.channelUuid, channelUuid));
+    });
+  }
+
+  /**
    * Get the buffer end time (latest end time of generated items) for a channel
    */
   async getBufferEndTime(channelUuid: string): Promise<number | null> {
@@ -741,5 +808,100 @@ export class InfiniteScheduleDB {
   async getNextSequenceIndex(channelUuid: string): Promise<number> {
     const lastItem = await this.getLastGeneratedItem(channelUuid);
     return lastItem ? lastItem.sequenceIndex + 1 : 0;
+  }
+
+  async assignChannels(
+    scheduleId: string,
+    channelsToAdd: string[],
+    channelsToRemove: string[],
+  ): Promise<ScheduleAssignChannelsResult> {
+    const allChannels = channelsToAdd.concat(channelsToRemove);
+    if (allChannels.length === 0) {
+      return {};
+    }
+
+    const channels = await this.drizzle.query.channels.findMany({
+      where: (fields, { inArray }) => inArray(fields.uuid, allChannels),
+    });
+
+    const [existingChannels, missingChannels] = partition(
+      allChannels,
+      (channel) => channels.some((c) => c.uuid === channel),
+    );
+
+    const missingStatuses = missingChannels.reduce((prev, channel) => {
+      prev[channel] = {
+        type: 'failure',
+        reason: `Channel ${channel} does not exist`,
+      };
+      return prev;
+    }, {} as ScheduleAssignChannelsResult);
+
+    if (existingChannels.length === 0) {
+      return missingStatuses;
+    }
+
+    const newResults: ScheduleAssignChannelsResult = {};
+    for (const existingChannel of existingChannels) {
+      if (channelsToAdd.includes(existingChannel)) {
+        try {
+          const channel = channels.find(
+            (channel) => channel.uuid === existingChannel,
+          )!;
+          if (channel.infiniteScheduleUuid) {
+            await this.unassignScheduleFromChannel(
+              existingChannel,
+              channel.infiniteScheduleUuid,
+            );
+          }
+          await this.assignScheduleToChannel(existingChannel, scheduleId);
+          newResults[existingChannel] = { type: 'success' };
+        } catch (e) {
+          this.logger.error(
+            e,
+            'Error while assigning schedule %s to channel %s',
+            scheduleId,
+            existingChannel,
+          );
+          newResults[existingChannel] = {
+            type: 'failure',
+            reason: isError(e)
+              ? e.message
+              : isString(e)
+                ? e
+                : JSON.stringify(e),
+          };
+        }
+        continue;
+      }
+
+      if (channelsToRemove.includes(existingChannel)) {
+        try {
+          await this.unassignScheduleFromChannel(existingChannel, scheduleId);
+          newResults[existingChannel] = { type: 'success' };
+        } catch (e) {
+          this.logger.error(
+            e,
+            'Error while unassigning schedule %s to channel %s',
+            scheduleId,
+            existingChannel,
+          );
+          newResults[existingChannel] = {
+            type: 'failure',
+            reason: isError(e)
+              ? e.message
+              : isString(e)
+                ? e
+                : JSON.stringify(e),
+          };
+        }
+        continue;
+      }
+    }
+
+    return {
+      ...newResults,
+      ...missingStatuses,
+    };
   }
 }

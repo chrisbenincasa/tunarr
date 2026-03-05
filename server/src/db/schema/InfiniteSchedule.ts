@@ -2,7 +2,6 @@ import type { TupleToUnion } from '@tunarr/types';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { ChannelSchedule } from './ChannelSchedule.ts';
 import { GeneratedScheduleItem } from './GeneratedScheduleItem.ts';
 import { InfiniteScheduleSlot } from './InfiniteScheduleSlot.ts';
 import { InfiniteScheduleState } from './InfiniteScheduleState.ts';
@@ -35,7 +34,6 @@ export const InfiniteSchedule = sqliteTable('infinite_schedule', {
 export const InfiniteScheduleRelations = relations(
   InfiniteSchedule,
   ({ many }) => ({
-    channels: many(ChannelSchedule),
     slots: many(InfiniteScheduleSlot),
     generatedItems: many(GeneratedScheduleItem),
     // One state row per channel that uses this schedule

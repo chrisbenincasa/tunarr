@@ -159,8 +159,8 @@ export const EditScheduleForm = ({ schedule }: Props) => {
                 <br />
                 <strong>Shuffle:</strong> slots are shuffled before scheduling.{' '}
                 <strong>
-                  NOTE: This mode disables anchored start times and "fill" mode
-                  for slots.
+                  NOTE: This mode disables "fill" mode for slots. Slots with
+                  Fill Mode = "fill" will output one program and continue.
                 </strong>
               </FormHelperText>
             </FormControl>

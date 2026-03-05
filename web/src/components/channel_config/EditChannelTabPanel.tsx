@@ -22,7 +22,12 @@ export interface EditChannelTabPanelProps {
   currentValue: EditChannelTabs;
   value: EditChannelTabs;
 }
-export type EditChannelTabs = 'properties' | 'flex' | 'epg' | 'ffmpeg';
+export type EditChannelTabs =
+  | 'properties'
+  | 'programming'
+  | 'flex'
+  | 'epg'
+  | 'ffmpeg';
 
 export type EditChannelTabProps = {
   value: EditChannelTabs;

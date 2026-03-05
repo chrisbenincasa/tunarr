@@ -13,10 +13,6 @@ import {
   ChannelPrograms,
   ChannelProgramsRelations,
 } from './ChannelPrograms.ts';
-import {
-  ChannelSchedule,
-  ChannelScheduleRelations,
-} from './ChannelSchedule.ts';
 import { Credit, CreditRelations } from './Credit.ts';
 import { CustomShow, CustomShowRelations } from './CustomShow.ts';
 import {
@@ -124,8 +120,6 @@ export const schema = {
   channelFillerShow: ChannelFillerShow,
   channelFillerShowRelations: ChannelFillerShowRelations,
   channelProgramRelations: ChannelProgramsRelations,
-  channelSchedule: ChannelSchedule,
-  channelScheduleRelations: ChannelScheduleRelations,
   customShow: CustomShow,
   customShowRelations: CustomShowRelations,
   customShowContent: CustomShowContent,

@@ -11,7 +11,7 @@ import {
   ScheduleSlot,
 } from '@tunarr/types/api';
 import { inject, injectable } from 'inversify';
-import { uniq } from 'lodash-es';
+import { difference, uniq } from 'lodash-es';
 import { match } from 'ts-pattern';
 import {
   scheduleDaoToDto,
@@ -117,7 +117,8 @@ export class MaterializeScheduleCommand {
               materializedShow.raw.state === 'missing'
             ) {
               this.logger.error(
-                `Could not materialize show with ID ${showSlot.showId} from schedule!`,
+                `Could not materialize show with ID %s from schedule!`,
+                showSlot.showId,
               );
               return {
                 ...showSlot,
@@ -208,6 +209,10 @@ export class MaterializeScheduleCommand {
     const showsFromDB =
       await this.serverContext.programDB.getProgramGroupings(showIds);
 
+    if (Object.keys(showsFromDB).length !== showIds.length) {
+      const missing = difference(showIds, Object.keys(showsFromDB));
+    }
+
     const materialized = groupByUniq(
       await this.materializeProgramGroupings.execute(
         Object.values(showsFromDB),
@@ -218,9 +223,21 @@ export class MaterializeScheduleCommand {
     const showsById: Record<string, ShowAndRawShow> = {};
     for (const [id, dbShow] of Object.entries(showsFromDB)) {
       if (dbShow.type !== 'show') {
+        this.logger.warn(
+          'Received a grouping of type %s when we wanted a show (ID = %s)',
+          dbShow.type,
+          id,
+        );
         continue;
       }
       const materializedShow = materialized[id];
+      if (materializedShow?.type !== 'show') {
+        this.logger.warn(
+          'Received a materialized grouping of type %s when we wanted a show (ID = %s)',
+          dbShow.type,
+          id,
+        );
+      }
       showsById[id] = {
         show: materializedShow?.type === 'show' ? materializedShow : undefined,
         raw: dbShow,

@@ -37,7 +37,7 @@ export const CollectionSizeFillMode = z.object({
   type: z.literal('size'),
 });
 
-export const FillMode = z.discriminatedUnion('type', [
+export const SlotFillMode = z.discriminatedUnion('type', [
   CountFillMode,
   RandomFillMode,
   DurationFillMode,

@@ -20,6 +20,7 @@ import {
 import { ChannelCustomShow } from './ChannelCustomShow.ts';
 import { ChannelFillerShow } from './ChannelFillerShow.ts';
 import { ChannelPrograms } from './ChannelPrograms.ts';
+import { InfiniteSchedule } from './InfiniteSchedule.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
 import { ProgramPlayHistory } from './ProgramPlayHistory.ts';
 import { TranscodeConfig } from './TranscodeConfig.ts';
@@ -86,5 +87,9 @@ export const ChannelRelations = relations(Channel, ({ many, one }) => ({
   transcodeConfig: one(TranscodeConfig, {
     fields: [Channel.transcodeConfigId],
     references: [TranscodeConfig.uuid],
+  }),
+  infiniteSchedule: one(InfiniteSchedule, {
+    fields: [Channel.infiniteScheduleUuid],
+    references: [InfiniteSchedule.uuid],
   }),
 }));

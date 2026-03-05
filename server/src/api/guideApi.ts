@@ -24,7 +24,7 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
         const s = await req.serverCtx.guideService.getStatus();
         return res.send(s);
       } catch (err) {
-        logger.error('%s, %O', req.routeOptions.url, err);
+        logger.error(err, '%s', req.routeOptions.url);
         return res.status(500).send('error');
       }
     },
@@ -42,7 +42,7 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
         const s = await req.serverCtx.guideService.get();
         return res.send(s);
       } catch (err) {
-        logger.error('%s, %O', req.routeOptions.url, err);
+        logger.error(err, '%s', req.routeOptions.url);
         return res.status(500).send('error');
       }
     },
@@ -108,7 +108,7 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
           return res.send(lineup);
         }
       } catch (err) {
-        logger.error('%s, %O', req.routeOptions.url, err);
+        logger.error(err, '%s', req.routeOptions.url);
         return res.status(500).send('error');
       }
     },

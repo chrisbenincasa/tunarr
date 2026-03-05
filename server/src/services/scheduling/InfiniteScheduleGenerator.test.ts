@@ -363,6 +363,33 @@ describe('InfiniteScheduleGenerator', () => {
       assertContinuous(result.items);
       assertWindowCovered(result);
     });
+
+    it('self-corrects alignment when generation starts at a non-multiple time', async () => {
+      const showId = 'show-a';
+      const fortyFiveMin = 45 * 60 * 1000;
+      const thirtyMin = 30 * 60 * 1000;
+      // Start at 10 min past a boundary — NOT a multiple of 30
+      const startOffset = 10 * 60 * 1000;
+      const programs = makePrograms(3, { duration: fortyFiveMin });
+      const slot = makeCustomShowSlot(showId);
+      const schedule = makeSchedule([slot], { padToMultiple: thirtyMin });
+      const gen = makeGenerator(makeHelper({ [showId]: programs }));
+
+      const result = await gen.preview(
+        schedule,
+        startOffset,
+        startOffset + 3 * HOUR_MS,
+      );
+
+      const content = contentItems(result);
+      expect(content.length).toBeGreaterThanOrEqual(2);
+
+      // Every program (including the first) must start on a 30-min multiple
+      for (const item of content) {
+        expect(item.startTimeMs % thirtyMin).toBe(0);
+      }
+      assertContinuous(result.items);
+    });
   });
 
   // ── 5. Slot padding (padMs) ──────────────────────────────────────────────────
@@ -413,7 +440,110 @@ describe('InfiniteScheduleGenerator', () => {
     });
   });
 
-  // ── 6. Multi-slot ordered rotation ──────────────────────────────────────────
+  // ── 6. Shuffle playback order ────────────────────────────────────────────────
+  describe('shuffle playback order', () => {
+    it('anchor fires at the correct time while floating slots fill the gaps', async () => {
+      const floatId = 'float';
+      const anchorId = 'anchor';
+      // Use 1-hour programs so timing is easy to reason about.
+      const floatSlot = makeCustomShowSlot(floatId);
+      const anchorSlot = makeCustomShowSlot(anchorId, {
+        anchorTime: 6 * HOUR_MS, // 6 AM
+      });
+      const schedule = makeSchedule([floatSlot, anchorSlot], {
+        slotPlaybackOrder: 'shuffle',
+      });
+      const gen = makeGenerator(
+        makeHelper({
+          [floatId]: makePrograms(20, { prefix: 'f' }),
+          [anchorId]: makePrograms(5, { prefix: 'a' }),
+        }),
+      );
+
+      const result = await gen.preview(schedule, 0, DAY_MS);
+
+      // The anchor must fire exactly once and start at exactly 6 AM.
+      const anchorContent = result.items.filter(
+        (i) => i.slotUuid === anchorSlot.uuid && i.itemType === 'content',
+      );
+      expect(anchorContent).toHaveLength(1);
+      expect(anchorContent[0]!.startTimeMs).toBe(6 * HOUR_MS);
+
+      // Floating content must exist and must not overlap the anchor.
+      const floatContent = result.items.filter(
+        (i) => i.slotUuid === floatSlot.uuid && i.itemType === 'content',
+      );
+      expect(floatContent.length).toBeGreaterThan(0);
+
+      assertContinuous(result.items);
+      assertWindowCovered(result);
+    });
+
+    it('anchor fires on each matching day in a multi-day shuffle window', async () => {
+      const floatId = 'float';
+      const anchorId = 'anchor';
+      const floatSlot = makeCustomShowSlot(floatId);
+      const anchorSlot = makeCustomShowSlot(anchorId, {
+        anchorTime: 12 * HOUR_MS, // noon
+      });
+      const schedule = makeSchedule([floatSlot, anchorSlot], {
+        slotPlaybackOrder: 'shuffle',
+      });
+      const gen = makeGenerator(
+        makeHelper({
+          [floatId]: makePrograms(100, { prefix: 'f' }),
+          [anchorId]: makePrograms(10, { prefix: 'a' }),
+        }),
+      );
+
+      const result = await gen.preview(schedule, 0, 3 * DAY_MS);
+
+      const anchorContent = result.items.filter(
+        (i) => i.slotUuid === anchorSlot.uuid && i.itemType === 'content',
+      );
+      expect(anchorContent).toHaveLength(3);
+      expect(anchorContent.map((i) => i.startTimeMs)).toEqual(
+        [0, 1, 2].map((d) => d * DAY_MS + 12 * HOUR_MS),
+      );
+
+      assertContinuous(result.items);
+      assertWindowCovered(result);
+    });
+
+    it('anchor-only shuffle schedule (no floating slots) emits anchor programs with flex gaps', async () => {
+      const anchorId = 'anchor';
+      const anchorSlot = makeCustomShowSlot(anchorId, {
+        anchorTime: 18 * HOUR_MS, // 6 PM
+        fillMode: 'count',
+        fillValue: 2,
+      });
+      const schedule = makeSchedule([anchorSlot], {
+        slotPlaybackOrder: 'shuffle',
+      });
+      const gen = makeGenerator(
+        makeHelper({ [anchorId]: makePrograms(5, { prefix: 'a' }) }),
+      );
+
+      const result = await gen.preview(schedule, 0, DAY_MS);
+
+      const anchorContent = result.items.filter(
+        (i) => i.slotUuid === anchorSlot.uuid && i.itemType === 'content',
+      );
+      // count=2 → 2 programs starting at 18:00
+      expect(anchorContent).toHaveLength(2);
+      expect(anchorContent[0]!.startTimeMs).toBe(18 * HOUR_MS);
+      // The rest of the 24-hour window must be flex.
+      const nonAnchor = result.items.filter(
+        (i) => i.slotUuid !== anchorSlot.uuid,
+      );
+      nonAnchor.forEach((i) => expect(i.itemType).toBe('flex'));
+
+      assertContinuous(result.items);
+      assertWindowCovered(result);
+    });
+  });
+
+  // ── 7. Multi-slot ordered rotation ──────────────────────────────────────────
   describe('multi-slot ordered rotation', () => {
     it('two floating slots alternate in order', async () => {
       const idA = 'show-a';
@@ -939,7 +1069,127 @@ describe('InfiniteScheduleGenerator', () => {
     });
   });
 
-  // ── 11. State persistence across preview runs ────────────────────────────────
+  // ── 11. Shuffle mode — new content discovery ─────────────────────────────────
+  describe('shuffle mode — new content discovery', () => {
+    /**
+     * Helper that promotes a SlotStateUpdate back into the
+     * InfiniteScheduleSlotState shape expected by the slot.
+     */
+    function restoreSlotState(
+      slot: InfiniteScheduleSlot,
+      saved: SlotStateUpdate,
+    ): InfiniteScheduleSlotState {
+      return {
+        uuid: v4(),
+        channelUuid: 'ch',
+        slotUuid: slot.uuid,
+        rngSeed: saved.rngSeed,
+        rngUseCount: saved.rngUseCount,
+        iteratorPosition: saved.iteratorPosition,
+        shuffleOrder: saved.shuffleOrder ?? null,
+        fillModeCount: saved.fillModeCount,
+        fillModeDurationMs: saved.fillModeDurationMs,
+        fillerState: saved.fillerState,
+        lastScheduledAt: null,
+        createdAt: null,
+        updatedAt: null,
+      };
+    }
+
+    it('list grows: new program appears in the current pass and existing shuffle order is preserved', async () => {
+      const showId = 'show-a';
+      const programs = makePrograms(3, { prefix: 'a' });
+      const slot = makeCustomShowSlot(showId, {
+        slotConfig: { order: 'shuffle', direction: 'asc' },
+      });
+
+      // Run 1: consume a full 3-program shuffle pass → iterator wraps to position 0.
+      const run1 = await makeGenerator(makeHelper({ [showId]: programs })).preview(
+        makeSchedule([slot]),
+        0,
+        3 * HOUR_MS,
+      );
+
+      const savedState = run1.slotStates.get(slot.uuid)!;
+      const slotState = restoreSlotState(slot, savedState);
+
+      // Add a 4th program (list grows 3 → 4).
+      const a3 = createFakeProgramOrm({
+        uuid: 'a-3',
+        type: 'movie',
+        duration: HOUR_MS,
+      });
+      const expandedPrograms = [...programs, a3];
+
+      // Run 2: 4-hour window with restored state → enough time to schedule all 4.
+      const run2 = await makeGenerator(
+        makeHelper({ [showId]: expandedPrograms }),
+      ).preview(
+        makeSchedule([{ ...slot, state: slotState }]),
+        3 * HOUR_MS,
+        7 * HOUR_MS,
+      );
+
+      const run1UUIDs = contentItems(run1).map((i) => i.programUuid);
+      const run2UUIDs = contentItems(run2).map((i) => i.programUuid);
+
+      // The new program must appear in the current pass (not deferred to the next full cycle).
+      expect(run2UUIDs).toContain('a-3');
+
+      // The existing programs must appear in the SAME relative order as run 1
+      // (reconcile preserves the stored shuffle order rather than regenerating it).
+      const run2ExistingOrder = run2UUIDs.filter((id) => id !== 'a-3');
+      expect(run2ExistingOrder.slice(0, 3)).toEqual(run1UUIDs);
+    });
+
+    it('same-size mutation: replaced program is not silently dropped', async () => {
+      const showId = 'show-a';
+      // Programs: a-0, a-1, a-2
+      const programs = makePrograms(3, { prefix: 'a' });
+      const slot = makeCustomShowSlot(showId, {
+        slotConfig: { order: 'shuffle', direction: 'asc' },
+      });
+
+      // Run 1: full 3-program pass.
+      const run1 = await makeGenerator(makeHelper({ [showId]: programs })).preview(
+        makeSchedule([slot]),
+        0,
+        3 * HOUR_MS,
+      );
+
+      const savedState = run1.slotStates.get(slot.uuid)!;
+      const slotState = restoreSlotState(slot, savedState);
+
+      // Replace a-0 with a-new — list length stays at 3.
+      const aNew = createFakeProgramOrm({
+        uuid: 'a-new',
+        type: 'movie',
+        duration: HOUR_MS,
+      });
+      const mutatedPrograms = programs
+        .filter((p) => p.uuid !== 'a-0')
+        .concat([aNew]);
+
+      // Run 2 with restored state — in the old implementation the length check
+      // would pass (3 === 3) and applyShuffleOrder would silently drop a-new.
+      const run2 = await makeGenerator(
+        makeHelper({ [showId]: mutatedPrograms }),
+      ).preview(
+        makeSchedule([{ ...slot, state: slotState }]),
+        3 * HOUR_MS,
+        6 * HOUR_MS,
+      );
+
+      const run2UUIDs = contentItems(run2).map((i) => i.programUuid);
+
+      // The new program must appear — not silently dropped.
+      expect(run2UUIDs).toContain('a-new');
+      // The removed program must not appear.
+      expect(run2UUIDs).not.toContain('a-0');
+    });
+  });
+
+  // ── 12. State persistence across preview runs ────────────────────────────────
   describe('state persistence', () => {
     it('second run continues from the saved iterator position', async () => {
       const showId = 'show-a';
