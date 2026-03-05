@@ -33,10 +33,10 @@ import { KnownFfmpegFilters } from '@/ffmpeg/builder/options/KnownFfmpegOptions.
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.js';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import type { Nullable } from '@/types/util.js';
+import type { Maybe, Nullable } from '@/types/util.js';
 import { TONEMAP_ENABLED, getBooleanEnvVar } from '@/util/env.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
-import { every, head, inRange, isUndefined } from 'lodash-es';
+import { every, head, inRange } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {
   H264VaapiEncoder,
@@ -44,8 +44,10 @@ import {
   Mpeg2VaapiEncoder,
 } from '../../encoder/vaapi/VaapiEncoders.ts';
 import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
+import { PadOpenclFilter } from '../../filter/opencl/PadOpenclFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
+import { PadVaapiFilter } from '../../filter/vaapi/PadVaapiFilter.ts';
 import { ScaleSubtitlesVaapiFilter } from '../../filter/vaapi/ScaleSubtitlesVaapiFilter.ts';
 import { VaapiOverlayFilter } from '../../filter/vaapi/VaapiOverlayFilter.ts';
 import { VaapiSubtitlePixelFormatFilter } from '../../filter/vaapi/VaapiSubtitlePixelFormatFilter.ts';
@@ -421,16 +423,40 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
   }
 
   protected setPad(currentState: FrameState) {
-    let nextState = currentState;
     if (
-      isUndefined(this.desiredState.croppedSize) &&
-      !currentState.paddedSize.equals(this.desiredState.paddedSize)
+      this.desiredState.croppedSize &&
+      currentState.paddedSize.equals(this.desiredState.paddedSize)
     ) {
-      const padFilter = PadFilter.create(currentState, this.desiredState);
-      nextState = padFilter.nextState(currentState);
-      this.videoInputSource.filterSteps.push(padFilter);
+      return currentState;
     }
-    return nextState;
+
+    if (!this.context.videoStream) {
+      return currentState;
+    }
+
+    let padFilter: Maybe<FilterOption>;
+    if (this.context.videoStream.isHdr()) {
+      padFilter = PadFilter.create(currentState, this.desiredState);
+    } else if (this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.PadVaapi)) {
+      padFilter = new PadVaapiFilter(
+        currentState,
+        this.desiredState.paddedSize,
+      );
+    } else if (
+      this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.PadOpencl)
+    ) {
+      padFilter = new PadOpenclFilter(
+        currentState,
+        this.desiredState.paddedSize,
+      );
+    } else {
+      padFilter = PadFilter.create(currentState, this.desiredState);
+    }
+
+    currentState = padFilter.nextState(currentState);
+    this.videoInputSource.filterSteps.push(padFilter);
+
+    return currentState;
   }
 
   protected addSubtitles(currentState: FrameState): FrameState {
