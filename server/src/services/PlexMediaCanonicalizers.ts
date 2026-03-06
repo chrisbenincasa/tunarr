@@ -42,6 +42,7 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
   private canonicalizePlexMovie(plexMovie: PlexMovie): string {
     const hash = crypto.createHash('sha1');
     hash.update(plexMovie.key);
+    hash.update(plexMovie.title);
     hash.update(plexMovie.addedAt?.toString() ?? '');
     hash.update(plexMovie.updatedAt?.toString() ?? '');
     for (const media of plexMovie.Media ?? []) {
@@ -64,6 +65,7 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
   private canonicalizePlexShow(plexShow: PlexTvShow): string {
     const hash = crypto.createHash('sha1');
     hash.update(plexShow.key);
+    hash.update(plexShow.title);
     hash.update(plexShow.addedAt?.toString() ?? '');
     hash.update(plexShow.updatedAt?.toString() ?? '');
     for (const role of plexShow.Role ?? []) {
@@ -84,6 +86,7 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
   ): string {
     const hash = crypto.createHash('sha1');
     hash.update(plexCollection.key);
+    hash.update(plexCollection.title);
     hash.update(plexCollection.addedAt?.toString() ?? '');
     hash.update(plexCollection.updatedAt?.toString() ?? '');
     hash.update(plexCollection.childCount?.toFixed() ?? '');
@@ -94,6 +97,7 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
   private canonicalizePlexSeason(plexSeason: PlexTvSeason): string {
     const hash = crypto.createHash('sha1');
     hash.update(plexSeason.key);
+    hash.update(plexSeason.title);
     hash.update(plexSeason.addedAt?.toString() ?? '');
     hash.update(plexSeason.updatedAt?.toString() ?? '');
 
@@ -107,6 +111,7 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
   private canonicalizePlexEpisode(plexEpisode: PlexEpisode): string {
     const hash = crypto.createHash('sha1');
     hash.update(plexEpisode.key);
+    hash.update(plexEpisode.title);
     hash.update(plexEpisode.addedAt?.toString() ?? '');
     hash.update(plexEpisode.updatedAt?.toString() ?? '');
 
@@ -134,14 +139,20 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
       }
     }
 
-    seq.collect(
-      compact(
-        flatten([plexEpisode.Director, plexEpisode.Writer, plexEpisode.Role]),
-      ),
-      (keyVal) => {
-        hash.update(keyVal.tag);
-      },
-    );
+    for (const director of plexEpisode.Director ?? []) {
+      hash.update('director');
+      hash.update(director.tag);
+    }
+
+    for (const writer of plexEpisode.Writer ?? []) {
+      hash.update('writer');
+      hash.update(writer.tag);
+    }
+
+    for (const role of plexEpisode.Role ?? []) {
+      hash.update('role');
+      hash.update(role.tag);
+    }
 
     return hash.digest('base64');
   }
@@ -149,6 +160,7 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
   private canonicalizePlexMusicArtist(plexArtist: PlexMusicArtist): string {
     const hash = crypto.createHash('sha1');
     hash.update(plexArtist.key);
+    hash.update(plexArtist.title);
     hash.update(plexArtist.addedAt?.toString() ?? '');
     hash.update(plexArtist.updatedAt?.toString() ?? '');
 
@@ -169,9 +181,9 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
     //     hash.update(keyVal.tag);
     //   },
     // );
-    plexArtist.Genre?.sort()
-      .map((g) => g.tag)
-      .forEach((genre) => hash.update(genre));
+    plexArtist.Genre?.toSorted((a, b) => a.tag.localeCompare(b.tag)).forEach(
+      (g) => hash.update(g.tag),
+    );
 
     return hash.digest('base64');
   }
@@ -179,6 +191,7 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
   private canonicalizePlexMusicAlbum(plexAlbum: PlexMusicAlbum): string {
     const hash = crypto.createHash('sha1');
     hash.update(plexAlbum.key);
+    hash.update(plexAlbum.title);
     hash.update(plexAlbum.addedAt?.toString() ?? '');
     hash.update(plexAlbum.updatedAt?.toString() ?? '');
     hash.update(plexAlbum.year?.toFixed() ?? '');
@@ -191,9 +204,9 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
       hash.update(plexAlbum.studio);
     }
 
-    plexAlbum.Genre?.sort()
-      .map((g) => g.tag)
-      .forEach((genre) => hash.update(genre));
+    plexAlbum.Genre?.toSorted((a, b) => a.tag.localeCompare(b.tag)).forEach(
+      (g) => hash.update(g.tag),
+    );
 
     return hash.digest('base64');
   }
@@ -201,6 +214,7 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
   private canonicalizePlexTrack(plexMusicTrack: PlexMusicTrack): string {
     const hash = crypto.createHash('sha1');
     hash.update(plexMusicTrack.key);
+    hash.update(plexMusicTrack.title);
     hash.update(plexMusicTrack.addedAt?.toString() ?? '');
     hash.update(plexMusicTrack.updatedAt?.toString() ?? '');
     hash.update(plexMusicTrack.duration?.toFixed() ?? '');
