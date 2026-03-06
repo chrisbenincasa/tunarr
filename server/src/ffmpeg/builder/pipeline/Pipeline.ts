@@ -23,6 +23,7 @@ export class Pipeline {
       this.inputs.watermarkInput,
       this.inputs.concatInput,
       this.steps,
+      this.inputs.subtitleInput,
     );
   }
 

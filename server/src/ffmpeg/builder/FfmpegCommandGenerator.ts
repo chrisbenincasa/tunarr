@@ -2,11 +2,13 @@ import type { Nullable } from '@/types/util.js';
 import { ifDefined } from '@/util/index.js';
 import { filter, findIndex, first, flatMap, partition } from 'lodash-es';
 import type { Dictionary } from 'ts-essentials';
+import { SubtitleMethods } from './MediaStream.ts';
 import { BaseEncoder } from './encoder/BaseEncoder.ts';
 import { ComplexFilter } from './filter/ComplexFilter.ts';
 import { StreamSeekFilter } from './filter/StreamSeekFilter.ts';
 import type { AudioInputSource } from './input/AudioInputSource.ts';
 import type { ConcatInputSource } from './input/ConcatInputSource.ts';
+import type { SubtitlesInputSource } from './input/SubtitlesInputSource.ts';
 import type { VideoInputSource } from './input/VideoInputSource.ts';
 import type { WatermarkInputSource } from './input/WatermarkInputSource.ts';
 import type { PipelineStep } from './types/PipelineStep.ts';
@@ -36,6 +38,7 @@ export class FfmpegCommandGenerator {
     watermarkInputSource: Nullable<WatermarkInputSource>,
     concatInputSource: Nullable<ConcatInputSource>,
     steps: PipelineStep[],
+    subtitleInputSource?: Nullable<SubtitlesInputSource>,
   ): string[] {
     const args = [
       ...flatMap(filter(steps, isGlobalOption), (step) => step.options()),
@@ -75,6 +78,20 @@ export class FfmpegCommandGenerator {
         ...concatInputSource.getInputOptions(),
         '-i',
         concatInputSource.path,
+      );
+    }
+
+    // For external sidecar subtitle files, add an additional -i input after
+    // all other inputs so HlsWebVttOutputFormat can map it by index.
+    if (
+      subtitleInputSource &&
+      subtitleInputSource.streams[0]?.method === SubtitleMethods.Sidecar &&
+      !includedPaths.has(subtitleInputSource.path)
+    ) {
+      args.push(
+        ...subtitleInputSource.getInputOptions(),
+        '-i',
+        subtitleInputSource.path,
       );
     }
 

@@ -1,5 +1,6 @@
 import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
 import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import type { SubtitlesInputSource } from '@/ffmpeg/builder/input/SubtitlesInputSource.js';
 import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
 import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
 import type { Nullable } from '@/types/util.js';
@@ -9,4 +10,5 @@ export type PipelineInputs = {
   audioInput: Nullable<AudioInputSource>;
   watermarkInput: Nullable<WatermarkInputSource>;
   concatInput: Nullable<ConcatInputSource>;
+  subtitleInput?: Nullable<SubtitlesInputSource>;
 };
