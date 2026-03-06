@@ -57,6 +57,9 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
   private getShowCanonicalId(show: Show): string {
     const hash = crypto.createHash('sha1');
     this.updateHashForBaseItem(show, hash);
+    // FIXME: updateHashForBaseItem already calls updateHashForGrouping for non-terminal
+    // types, so plot/tagline are hashed twice here. Removing this call is a breaking
+    // change (all Show canonical IDs will change).
     this.updateHashForGrouping(show, hash);
     orderBy(show.actors, (a) => a.name).forEach((a) => {
       hash.update(a.name);
@@ -73,6 +76,7 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
   private getSeasonCanonicalId(season: Season): string {
     const hash = crypto.createHash('sha1');
     this.updateHashForBaseItem(season, hash);
+    // FIXME: same double-hash bug as getShowCanonicalId — plot/tagline hashed twice.
     this.updateHashForGrouping(season, hash);
     hash.update(season.index?.toString() ?? '');
     orderBy(season.studios, (s) => s.name).forEach((s) => hash.update(s.name));
@@ -100,6 +104,7 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
   private getMusicArtistCanonicalId(musicArtist: MusicArtist): string {
     const hash = crypto.createHash('sha1');
     this.updateHashForBaseItem(musicArtist, hash);
+    // FIXME: same double-hash bug as getShowCanonicalId — plot/tagline hashed twice.
     this.updateHashForGrouping(musicArtist, hash);
     return hash.digest('hex');
   }
@@ -107,6 +112,7 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
   private getMusicAlbumCanonicalId(musicAlbum: MusicAlbum): string {
     const hash = crypto.createHash('sha1');
     this.updateHashForBaseItem(musicAlbum, hash);
+    // FIXME: same double-hash bug as getShowCanonicalId — plot/tagline hashed twice.
     this.updateHashForGrouping(musicAlbum, hash);
     hash.update(musicAlbum.index?.toString() ?? '');
     orderBy(musicAlbum.studios, (s) => s.name).forEach((s) =>
@@ -121,6 +127,10 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
   private getMusicTrackCanonicalId(musicTrack: MusicTrack): string {
     const hash = crypto.createHash('sha1');
     this.updateHashForBaseItem(musicTrack, hash);
+    // FIXME: updateHashForBaseItem already calls updateHashForTerminalProgram for
+    // terminal types, so all terminal fields (actors, directors, duration, mediaItem,
+    // etc.) are hashed twice, and year is hashed a third time below. Removing this
+    // call is a breaking change (all MusicTrack canonical IDs will change).
     this.updateHashForTerminalProgram(musicTrack, hash);
     hash.update(musicTrack.trackNumber?.toString() ?? '');
     hash.update(musicTrack.year?.toString() ?? '');
@@ -129,16 +139,19 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
 
   private updateHashForBaseItem(base: ProgramLike, hash: crypto.Hash) {
     hash.update(base.externalId);
-    base.genres?.forEach((g) => {
+    orderBy(base.genres ?? [], (g) => g.name).forEach((g) => {
       hash.update(g.name);
     });
-    base.identifiers.forEach((i) => {
+    orderBy(
+      base.identifiers,
+      (i) => `${i.type}|${i.id}|${i.sourceId ?? ''}`,
+    ).forEach((i) => {
       hash.update(`${i.id}|${i.sourceId ?? ''}|${i.type}`);
     });
     hash.update(base.libraryId);
     hash.update(base.mediaSourceId);
     hash.update(base.sourceType);
-    base.tags.forEach((t) => hash.update(t));
+    orderBy(base.tags).forEach((t) => hash.update(t));
     hash.update(base.title);
     hash.update(base.type);
     if (isTerminalItemType(base)) {
@@ -152,6 +165,11 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
     base: TerminalProgram,
     hash: crypto.Hash,
   ) {
+    // FIXME: actors and directors are not prefixed with a type marker before hashing.
+    // Because hash.update('') is a no-op, an actor with no order/role is
+    // hash-indistinguishable from a director with the same name. Fix by adding a
+    // type prefix (e.g. hash.update('actor') / hash.update('director')) — but this
+    // is a breaking change for any item that has actors or directors.
     orderBy(base.actors, (a) => a.name).forEach((a) => {
       hash.update(a.name);
       hash.update(a.order?.toString() ?? '');
