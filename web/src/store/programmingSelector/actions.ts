@@ -159,7 +159,7 @@ export const addPlexSelectedMedia = (
         ({
           type: Plex,
           mediaSource: server,
-          id: m.externalId,
+          id: m.uuid,
           childCount: isTerminalItemType(m) ? 0 : m.childCount,
           libraryId,
           persisted: false,
