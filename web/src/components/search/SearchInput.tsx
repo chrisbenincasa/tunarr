@@ -19,6 +19,7 @@ import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
 import { setSearchRequest } from '../../store/programmingSelector/actions.ts';
 import type { Maybe, Nullable } from '../../types/util.ts';
+import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import { CreateSmartCollectionDialog } from '../smart_collections/CreateSmartCollectionDialog.tsx';
 import {
   AllSearchRestrictKeys,
@@ -31,6 +32,7 @@ type Props = {
   libraryId?: string;
   initialKeywords?: string;
   initialSearchFilter?: SearchFilter;
+  showViewToggle?: boolean;
 };
 
 type SearchFilterFormInput =
@@ -72,6 +74,7 @@ export const SearchInput = ({
   initialKeywords,
   initialSearchFilter,
   mediaSourceId,
+  showViewToggle,
 }: Props) => {
   const [savedInitialSearch, setInitialSearch] = useState(initialSearchFilter);
   const [savedKeywords, setKeywords] = useState(initialKeywords);
@@ -241,18 +244,21 @@ export const SearchInput = ({
             mediaSourceId={mediaSourceId}
           />
           <Box sx={{ width: '100%' }}>
-            <Stack direction={'row'} justifyContent={'flex-end'}>
-              <Tooltip title="Save as Smart Collection">
-                <IconButton
-                  onClick={() => toggleSmartCollectionModal(true)}
-                  disabled={!!formState.errors.filter}
-                >
-                  <Save />
+            <Stack direction={'row'}>
+              {showViewToggle && <ProgramViewToggleButton />}
+              <Box sx={{ marginLeft: 'auto' }}>
+                <Tooltip title="Save as Smart Collection">
+                  <IconButton
+                    onClick={() => toggleSmartCollectionModal(true)}
+                    disabled={!!formState.errors.filter}
+                  >
+                    <Save />
+                  </IconButton>
+                </Tooltip>
+                <IconButton type="submit">
+                  <Search />
                 </IconButton>
-              </Tooltip>
-              <IconButton type="submit">
-                <Search />
-              </IconButton>
+              </Box>
             </Stack>
           </Box>
         </Stack>

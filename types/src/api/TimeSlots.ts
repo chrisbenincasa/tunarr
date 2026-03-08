@@ -19,6 +19,7 @@ import {
 //
 const BaseTimeSlot = z.object({
   startTime: z.number(), // Offset from midnight in millis
+  padMs: z.number().optional(),
 });
 
 export const MovieProgrammingTimeSlotSchema = z.object({

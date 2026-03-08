@@ -17,7 +17,7 @@ import { HealthCheckModule } from '@/services/health_checks/HealthCheckModule.js
 import { StreamModule } from '@/stream/StreamModule.js';
 import { TasksModule } from '@/tasks/TasksModule.js';
 import { FixerModule } from '@/tasks/fixers/FixerModule.js';
-import { KEYS } from '@/types/inject.js';
+import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import type { Maybe } from '@/types/util.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -45,6 +45,7 @@ import { SystemDevicesService } from './services/SystemDevicesService.ts';
 import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
 import { DynamicChannelsModule } from './services/dynamic_channels/DynamicChannelsModule.ts';
 import { TimeSlotSchedulerService } from './services/scheduling/TimeSlotSchedulerService.ts';
+import { SearchParser } from './services/search/SearchParser.ts';
 import { ChannelLineupMigratorStartupTask } from './services/startup/ChannelLineupMigratorStartupTask.ts';
 import { ClearM3uCacheStartupTask } from './services/startup/ClearM3uCacheStartupTask.ts';
 import { GenerateGuideStartupTask } from './services/startup/GenerateGuideStartupTask.ts';
@@ -59,6 +60,7 @@ import { FixerRunner } from './tasks/fixers/FixerRunner.ts';
 import { ChildProcessHelper } from './util/ChildProcessHelper.ts';
 import { Timer } from './util/Timer.ts';
 import { getBooleanEnvVar, USE_WORKER_POOL_ENV_VAR } from './util/env.ts';
+import type { LoggingDefinition } from './util/logging/loggingDef.ts';
 
 const container = new Container({ autoBindInjectable: true });
 
@@ -87,9 +89,13 @@ const RootModule = new ContainerModule((bind) => {
   bind<Logger>(KEYS.Logger).toDynamicValue((ctx) => {
     const impl =
       ctx.currentRequest.parentRequest?.bindings?.[0]?.implementationType;
+    const loggingDef = impl
+      ? (Reflect.get(impl, 'tunarr:log_def') as LoggingDefinition)
+      : null;
     return LoggerFactory.child({
       className: impl ? (Reflect.get(impl, 'name') as string) : 'Unknown',
       worker: isMainThread ? undefined : true,
+      category: loggingDef?.category,
     });
   });
 
@@ -169,6 +175,7 @@ const RootModule = new ContainerModule((bind) => {
   bind(App).toSelf().inSingletonScope();
 
   bind(search.SearchParser).to(search.SearchParser);
+  bind(autoFactoryKey(SearchParser)).toAutoFactory(SearchParser);
 });
 
 container.load(RootModule);

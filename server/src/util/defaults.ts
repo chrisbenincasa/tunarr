@@ -3,7 +3,7 @@ import path from 'node:path';
 import { globalOptions } from '../globals.ts';
 import { isRunningInContainer } from './containerUtil.ts';
 import { DATABASE_LOCATION_ENV_VAR, SERVER_PORT_ENV_VAR } from './env.ts';
-import { isNonEmptyString, isProduction } from './index.js';
+import { isNonEmptyString } from './index.js';
 import type { LogLevels } from './logging/LoggerFactory.ts';
 import { getEnvironmentLogLevel } from './logging/LoggerFactory.ts';
 
@@ -34,7 +34,7 @@ export function getDefaultLogLevel(useEnvVar: boolean = true): LogLevels {
     }
   }
 
-  return isProduction ? 'info' : 'debug';
+  return 'info';
 }
 
 export function getDefaultDatabaseDirectory(): string {

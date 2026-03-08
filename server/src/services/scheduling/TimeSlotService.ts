@@ -246,7 +246,10 @@ export async function scheduleTimeSlots(
       continue;
     }
 
-    const paddedProgram = createPaddedProgram(program, schedule.padMs);
+    const paddedProgram = createPaddedProgram(
+      program,
+      currSlot.padMs ?? schedule.padMs,
+    );
     currSlot.advanceIterator();
     const paddedPrograms: NonEmptyArray<PaddedProgram> = [paddedProgram];
     maybeAddPrePostFiller(

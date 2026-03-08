@@ -1005,7 +1005,7 @@ export class ProgramDB implements IProgramDB {
   async upsertContentPrograms(
     programs: ChannelProgram[],
     programUpsertBatchSize: number = 100,
-  ) {
+  ): Promise<MarkNonNullable<ProgramDao, 'mediaSourceId'>[]> {
     if (isEmpty(programs)) {
       return [];
     }

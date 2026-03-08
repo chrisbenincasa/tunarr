@@ -176,7 +176,10 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         req.query.mode,
         settings.hlsDirectOutputFormat,
       ])
-        .with([P.union('hls', 'mpegts'), P._], () => 'video/mp2t')
+        .with(
+          [P.union('hls', 'mpegts', 'hls_direct_v2'), P._],
+          () => 'video/mp2t',
+        )
         .with(['hls_slower', P._], () => 'video/nut')
         .with(['hls_direct', 'mpegts'], () => 'video/mp2t')
         .with(['hls_direct', 'mkv'], () => 'video/matroska')

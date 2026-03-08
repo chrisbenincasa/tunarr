@@ -3,9 +3,10 @@ import { inject, injectable } from 'inversify';
 import z from 'zod';
 import { SmartCollectionsDB } from '../db/SmartCollectionsDB.ts';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { ApiController } from './ApiController.ts';
 
 @injectable()
-export class SmartCollectionsApiController {
+export class SmartCollectionsApiController implements ApiController {
   constructor(
     @inject(SmartCollectionsDB) private smartCollectionDB: SmartCollectionsDB,
   ) {}

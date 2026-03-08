@@ -7,12 +7,15 @@ import { VaapiDecoder } from '@/ffmpeg/builder/decoder/vaapi/VaapiDecoder.js';
 import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js';
 import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.js';
+import { isHdrContent } from '@/ffmpeg/builder/filter/HdrDetection.js';
+import { TonemapOpenclFilter } from '@/ffmpeg/builder/filter/opencl/TonemapOpenclFilter.js';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import { PixelFormatFilter } from '@/ffmpeg/builder/filter/PixelFormatFilter.js';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
 import { DeinterlaceVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/DeinterlaceVaapiFilter.js';
 import { HardwareUploadVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/HardwareUploadVaapiFilter.js';
 import { ScaleVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/ScaleVaapiFilter.js';
+import { TonemapVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/TonemapVaapiFilter.js';
 import { VaapiFormatFilter } from '@/ffmpeg/builder/filter/vaapi/VaapiFormatFilter.js';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
 import { WatermarkOpacityFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkOpacityFilter.js';
@@ -26,10 +29,12 @@ import { ExtraHardwareFramesOption } from '@/ffmpeg/builder/options/hardwareAcce
 import { VaapiHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/VaapiOptions.js';
 import { DoNotIgnoreLoopInputOption } from '@/ffmpeg/builder/options/input/DoNotIgnoreLoopInputOption.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
+import { KnownFfmpegFilters } from '@/ffmpeg/builder/options/KnownFfmpegOptions.js';
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.js';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { Nullable } from '@/types/util.js';
+import { TONEMAP_ENABLED, getBooleanEnvVar } from '@/util/env.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { every, head, inRange, isUndefined } from 'lodash-es';
 import { P, match } from 'ts-pattern';
@@ -159,11 +164,13 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
       pixelFormat: videoStream.pixelFormat,
+      colorFormat: videoStream.colorFormat,
     });
 
     currentState = this.decoder?.nextState(currentState) ?? currentState;
 
     currentState = this.setDeinterlace(currentState);
+    currentState = this.setTonemap(currentState);
     currentState = this.setScale(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
@@ -334,6 +341,41 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputSource.filterSteps.push(filter);
     }
     return nextState;
+  }
+
+  protected setTonemap(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    const { videoStream, pipelineOptions } = this.context;
+
+    if (
+      !getBooleanEnvVar(TONEMAP_ENABLED, false) ||
+      !isHdrContent(videoStream)
+    ) {
+      return currentState;
+    }
+
+    let filter: FilterOption | undefined;
+    if (!pipelineOptions.disableHardwareFilters) {
+      if (this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapVaapi)) {
+        filter = new TonemapVaapiFilter(currentState);
+      } else if (
+        this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapOpencl)
+      ) {
+        filter = new TonemapOpenclFilter(currentState);
+      }
+    }
+
+    if (filter) {
+      const nextState = filter.nextState(currentState);
+      this.videoInputSource.filterSteps.push(filter);
+      return nextState;
+    }
+
+    // Fall back to software tonemap
+    return super.setTonemap(currentState);
   }
 
   protected setScale(currentState: FrameState): FrameState {

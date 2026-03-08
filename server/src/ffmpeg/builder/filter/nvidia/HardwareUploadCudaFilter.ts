@@ -23,7 +23,6 @@ export class HardwareUploadCudaFilter extends FilterOption {
       return '';
     } else {
       let fmtPart = '';
-      console.log(this.currentState);
       if (
         !this.currentState.pixelFormat ||
         this.currentState.pixelFormat.name === PixelFormats.Unknown

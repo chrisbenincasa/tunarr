@@ -1,9 +1,5 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
-import {
-  setChannelPaginationState,
-  setChannelTableColumnModel,
-} from '@/store/settings/actions.ts';
 import type { Maybe } from '@/types/util.ts';
 import { Check, Close, Edit, MoreVert } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -27,7 +23,6 @@ import { green, red, yellow } from '@mui/material/colors';
 import { styled, useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import type { PaginationState, VisibilityState } from '@tanstack/react-table';
 import type { ChannelSession } from '@tunarr/types';
 import {
   type Channel,
@@ -57,7 +52,7 @@ import { deleteApiChannelsByIdMutation } from '../../generated/@tanstack/react-q
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
-import { useSettings } from '../../store/settings/selectors.ts';
+import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
 
 type ChannelRow = Channel;
 
@@ -105,19 +100,8 @@ export default function ChannelsPage() {
   const [channelMenuOpen, setChannelMenuOpen] = React.useState<string | null>(
     null,
   );
-  const settings = useSettings();
-
-  const initialColumnModel = settings.ui.channelTableColumnModel;
-  const [columnVisibility, setColumnVisibility] =
-    useState<VisibilityState>(initialColumnModel);
-  const [paginationState, setPaginationState] = useState<PaginationState>(
-    settings.ui.channelTablePagination,
-  );
+  const tableSettings = useStoreBackedTableSettings('Channels');
   const { addListener, removeListener } = useServerEvents();
-
-  useEffect(() => {
-    setChannelTableColumnModel(columnVisibility);
-  }, [columnVisibility]);
 
   useEffect(() => {
     const key = addListener((ev) => {
@@ -133,10 +117,6 @@ export default function ChannelsPage() {
       removeListener(key);
     };
   }, [addListener, queryClient, removeListener]);
-
-  useEffect(() => {
-    setChannelPaginationState(paginationState);
-  }, [paginationState]);
 
   const handleOpenMenu = (
     event: React.MouseEvent<HTMLElement>,
@@ -411,13 +391,7 @@ export default function ChannelsPage() {
     data: channels,
     enableRowActions: true,
     layoutMode: 'grid',
-    state: {
-      columnVisibility,
-      pagination: paginationState,
-    },
-    initialState: {
-      pagination: paginationState,
-    },
+    ...tableSettings,
     muiTableBodyRowProps: ({ row }) => ({
       sx: {
         cursor: 'pointer',
@@ -435,10 +409,6 @@ export default function ChannelsPage() {
       },
     },
     renderRowActions: renderActionCell,
-    onColumnVisibilityChange: (updater) => {
-      setColumnVisibility(updater);
-    },
-    onPaginationChange: (updater) => setPaginationState(updater),
     autoResetPageIndex: false,
   });
 

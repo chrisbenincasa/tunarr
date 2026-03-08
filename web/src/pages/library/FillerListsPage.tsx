@@ -35,6 +35,9 @@ import {
   getApiFillerListsQueryKey,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
+import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
+
+const TableName = 'FillerLists';
 
 export default function FillerListsPage() {
   const queryClient = useQueryClient();
@@ -42,6 +45,8 @@ export default function FillerListsPage() {
     string | undefined
   >(undefined);
   const snackbar = useSnackbar();
+
+  const tableState = useStoreBackedTableSettings(TableName);
 
   const deleteFillerList = useMutation({
     ...deleteApiFillerListsByIdMutation(),
@@ -194,6 +199,7 @@ export default function FillerListsPage() {
       },
     },
     positionActionsColumn: 'last',
+    ...tableState,
   });
 
   return (

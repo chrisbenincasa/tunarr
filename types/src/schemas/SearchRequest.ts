@@ -5,6 +5,7 @@ const StringOperators = [
   '=',
   '!=',
   'contains',
+  'not contains',
   'starts with',
   'in',
   'not in',

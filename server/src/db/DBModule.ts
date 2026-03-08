@@ -8,6 +8,7 @@ import { ContainerModule } from 'inversify';
 import type { Kysely } from 'kysely';
 import { DBAccess } from './DBAccess.ts';
 import { FillerDB } from './FillerListDB.ts';
+import { ProgramPlayHistoryDB } from './ProgramPlayHistoryDB.ts';
 import { ProgramDaoMinter } from './converters/ProgramMinter.ts';
 import type { DB } from './schema/db.ts';
 import type { DrizzleDBAccess } from './schema/index.ts';
@@ -29,6 +30,7 @@ const DBModule = new ContainerModule((bind) => {
     KEYS.DrizzleDatabaseFactory,
   ).toAutoFactory(KEYS.DrizzleDB);
   bind(KEYS.FillerListDB).to(FillerDB).inSingletonScope();
+  bind(ProgramPlayHistoryDB).toSelf().inSingletonScope();
 
   bind(ProgramDaoMinter).toSelf();
   bind<interfaces.AutoFactory<ProgramDaoMinter>>(

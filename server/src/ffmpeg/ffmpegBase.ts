@@ -22,6 +22,7 @@ export const ConcatStreamModeToChildMode: Record<
   hls_slower_concat: 'hls_slower',
   mpegts_concat: 'mpegts',
   hls_direct_concat: 'hls_direct',
+  hls_direct_v2_concat: 'hls_direct_v2',
 } as const;
 
 export abstract class IFFMPEG {

@@ -68,6 +68,9 @@ export const NoSceneDetectOutputOption = (
 export const TimeLimitOutputOption = (finish: Duration): ConstantOutputOption =>
   makeConstantOutputOption(['-t', `${finish.asMilliseconds()}ms`]);
 
+export const TransocdeUntilOutputOption = (ms: number): ConstantOutputOption =>
+  makeConstantOutputOption(['-to', `${ms}ms`]);
+
 export const VideoBitrateOutputOption = (
   bitrate: number,
 ): ConstantOutputOption =>
