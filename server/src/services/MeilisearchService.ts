@@ -504,7 +504,7 @@ export class MeilisearchService implements ISearchService {
                 this.settingsDB.systemSettings().server.searchSettings
                   .snapshotIntervalHours,
             })
-            .asMinutes()
+            .asSeconds()
             .toFixed(0),
           '--snapshot-dir',
           this.fileSystemService.getMsSnapshotsPath(),
