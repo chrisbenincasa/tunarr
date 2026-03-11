@@ -5,6 +5,7 @@ import {
   ArchiveDatabaseBackup,
   ArchiveDatabaseBackupKey,
 } from '@/db/backup/ArchiveDatabaseBackup.js';
+import { CleanupGeneratedScheduleItemsTask } from '@/tasks/CleanupGeneratedScheduleItemsTask.js';
 import { CleanupSessionsTask } from '@/tasks/CleanupSessionsTask.js';
 import { OnDemandChannelStateTask } from '@/tasks/OnDemandChannelStateTask.js';
 import type { ReconcileProgramDurationsTaskRequest } from '@/tasks/ReconcileProgramDurationsTask.js';
@@ -55,6 +56,11 @@ const TasksModule = new ContainerModule((bind) => {
   bind<interfaces.Factory<ScheduleDynamicChannelsTask>>(
     ScheduleDynamicChannelsTask.KEY,
   ).toAutoFactory(ScheduleDynamicChannelsTask);
+
+  bind(CleanupGeneratedScheduleItemsTask).toSelf();
+  bind<interfaces.Factory<CleanupGeneratedScheduleItemsTask>>(
+    CleanupGeneratedScheduleItemsTask.KEY,
+  ).toAutoFactory(CleanupGeneratedScheduleItemsTask);
 
   bind(CleanupSessionsTask).toSelf();
   bind<interfaces.Factory<CleanupSessionsTask>>(

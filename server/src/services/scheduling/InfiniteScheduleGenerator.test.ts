@@ -7,6 +7,7 @@
  *  3. Timezone / DST — UTC-offset math, spring-forward, fall-back
  *  4. Filler injection — relaxed/strict pre/head/tail, fallback filler
  *  5. State persistence — second preview run continues from saved iterator state
+ *  6. Slot editing — changing/adding/removing slots while preserving other slot state
  *
  * The `preview()` method drives all tests because it takes a fully-constructed
  * schedule object and never touches the database, so no InfiniteScheduleDB mock
@@ -136,6 +137,29 @@ function makeSchedule(
     state: null,
   };
 }
+
+/** Promote a SlotStateUpdate back into the InfiniteScheduleSlotState shape. */
+function restoreSlotState(
+  slot: InfiniteScheduleSlot,
+  saved: SlotStateUpdate,
+): InfiniteScheduleSlotState {
+  return {
+    uuid: v4(),
+    channelUuid: 'test-channel',
+    slotUuid: slot.uuid,
+    rngSeed: saved.rngSeed,
+    rngUseCount: saved.rngUseCount,
+    iteratorPosition: saved.iteratorPosition,
+    shuffleOrder: saved.shuffleOrder ?? null,
+    fillModeCount: saved.fillModeCount,
+    fillModeDurationMs: saved.fillModeDurationMs,
+    fillerState: saved.fillerState,
+    lastScheduledAt: null,
+    createdAt: null,
+    updatedAt: null,
+  };
+}
+
 
 // ── Helper mock factory ───────────────────────────────────────────────────────
 
@@ -909,10 +933,10 @@ describe('InfiniteScheduleGenerator', () => {
         fillerConfig: {
           fillers: [
             {
-              types: ['pre'],
+              type: 'pre',
               fillerListId,
               fillerOrder: 'uniform',
-              mode: 'relaxed',
+              playbackMode: { type: 'relaxed' },
             },
           ],
         },
@@ -947,10 +971,10 @@ describe('InfiniteScheduleGenerator', () => {
         fillerConfig: {
           fillers: [
             {
-              types: ['pre'],
+              type: 'pre',
               fillerListId,
               fillerOrder: 'uniform',
-              mode: 'relaxed',
+              playbackMode: { type: 'relaxed' },
             },
           ],
         },
@@ -982,11 +1006,10 @@ describe('InfiniteScheduleGenerator', () => {
         fillerConfig: {
           fillers: [
             {
-              types: ['pre'],
+              type: 'pre',
               fillerListId,
               fillerOrder: 'uniform',
-              mode: 'strict',
-              count: 2,
+              playbackMode: { type: 'count', count: 2 },
             },
           ],
         },
@@ -1029,11 +1052,10 @@ describe('InfiniteScheduleGenerator', () => {
         fillerConfig: {
           fillers: [
             {
-              types: ['head'],
+              type: 'head',
               fillerListId,
               fillerOrder: 'uniform',
-              mode: 'strict',
-              count: 1,
+              playbackMode: { type: 'count', count: 1 },
             },
           ],
         },
@@ -1071,30 +1093,6 @@ describe('InfiniteScheduleGenerator', () => {
 
   // ── 11. Shuffle mode — new content discovery ─────────────────────────────────
   describe('shuffle mode — new content discovery', () => {
-    /**
-     * Helper that promotes a SlotStateUpdate back into the
-     * InfiniteScheduleSlotState shape expected by the slot.
-     */
-    function restoreSlotState(
-      slot: InfiniteScheduleSlot,
-      saved: SlotStateUpdate,
-    ): InfiniteScheduleSlotState {
-      return {
-        uuid: v4(),
-        channelUuid: 'ch',
-        slotUuid: slot.uuid,
-        rngSeed: saved.rngSeed,
-        rngUseCount: saved.rngUseCount,
-        iteratorPosition: saved.iteratorPosition,
-        shuffleOrder: saved.shuffleOrder ?? null,
-        fillModeCount: saved.fillModeCount,
-        fillModeDurationMs: saved.fillModeDurationMs,
-        fillerState: saved.fillerState,
-        lastScheduledAt: null,
-        createdAt: null,
-        updatedAt: null,
-      };
-    }
 
     it('list grows: new program appears in the current pass and existing shuffle order is preserved', async () => {
       const showId = 'show-a';
@@ -1212,22 +1210,7 @@ describe('InfiniteScheduleGenerator', () => {
       const savedState = run1.slotStates.get(slot.uuid);
       expect(savedState).toBeDefined();
 
-      // Reconstruct slot state from the saved SlotStateUpdate
-      const restoredSlotState: InfiniteScheduleSlotState = {
-        uuid: v4(),
-        channelUuid: 'test-channel',
-        slotUuid: slot.uuid,
-        rngSeed: savedState!.rngSeed,
-        rngUseCount: savedState!.rngUseCount,
-        iteratorPosition: savedState!.iteratorPosition,
-        shuffleOrder: savedState!.shuffleOrder ?? null,
-        fillModeCount: savedState!.fillModeCount,
-        fillModeDurationMs: savedState!.fillModeDurationMs,
-        fillerState: savedState!.fillerState,
-        lastScheduledAt: null,
-        createdAt: null,
-        updatedAt: null,
-      };
+      const restoredSlotState = restoreSlotState(slot, savedState!);
 
       // Run 2: generate the next 3 hours with restored state
       const run2 = await makeGenerator(helper).preview(
@@ -1242,6 +1225,517 @@ describe('InfiniteScheduleGenerator', () => {
       // Run 1 consumed ep-0, ep-1, ep-2; run 2 continues with ep-3, ep-4, ep-5
       expect(run1Uuids).toEqual(['ep-0', 'ep-1', 'ep-2']);
       expect(run2Uuids).toEqual(['ep-3', 'ep-4', 'ep-5']);
+    });
+  });
+
+  // ── 13. Slot editing ──────────────────────────────────────────────────────────
+  //
+  // These tests document what happens to ongoing schedule generation when the
+  // user edits the schedule's slot configuration.
+  //
+  // Key invariants:
+  //  • Each slot's iterator state is stored under its UUID.  Editing one slot's
+  //    config must not alter the saved state of any other slot.
+  //  • preview() always starts with floatingSlotIndex=0 (schedule-level rotation
+  //    position is not persisted in preview).  Only slot-level state (iterator
+  //    position, shuffle order, fill progress) is restored from `slot.state`.
+  describe('slot editing — ordered mode', () => {
+    it("changing one slot's fill mode does not affect the other slot's iterator position", async () => {
+      const showA = 'show-a';
+      const showB = 'show-b';
+      const programsA = makePrograms(6, { prefix: 'ep' });
+      const programsB = makePrograms(6, { prefix: 'movie' });
+
+      // Both slots start in 'fill' mode.
+      const slotA = makeCustomShowSlot(showA, { fillMode: 'fill' });
+      const slotB = makeCustomShowSlot(showB, { fillMode: 'fill' });
+      const helper = makeHelper({ [showA]: programsA, [showB]: programsB });
+
+      // Run 1: 2-hour window.  slotA fires for 1 h (ep-0), slotB fires for 1 h
+      // (movie-0).  Both iterator positions advance to index 1.
+      const run1 = await makeGenerator(helper).preview(
+        makeSchedule([slotA, slotB]),
+        0,
+        2 * HOUR_MS,
+      );
+
+      expect(contentItems(run1).map((i) => i.programUuid)).toEqual([
+        'ep-0',
+        'movie-0',
+      ]);
+
+      const savedA = run1.slotStates.get(slotA.uuid)!;
+      const savedB = run1.slotStates.get(slotB.uuid)!;
+
+      // User edits slotA: switch fill mode from 'fill' → 'count' (1 program per
+      // rotation).  The iterator position (ep-1) must survive the config change.
+      const editedSlotA = {
+        ...slotA,
+        fillMode: 'count' as const,
+        fillValue: 1,
+        state: restoreSlotState(slotA, savedA),
+      };
+      const restoredSlotB = { ...slotB, state: restoreSlotState(slotB, savedB) };
+
+      // Run 2: 4-hour window with restored states.
+      // 'count' mode (fillValue=1) causes slotA and slotB to alternate every
+      // program → [ep-1, movie-1, ep-2, movie-2].
+      // preview() starts with floatingSlotIndex=0 (schedule-level rotation is
+      // not persisted in preview), so both slots start from position 0 in the
+      // rotation — the iterator positions (ep-1, movie-1) are the saved state.
+      const run2 = await makeGenerator(helper).preview(
+        makeSchedule([editedSlotA, restoredSlotB]),
+        2 * HOUR_MS,
+        6 * HOUR_MS,
+      );
+
+      const run2UUIDs = contentItems(run2).map((i) => i.programUuid);
+
+      // Iterator positions were preserved: both slots start from index 1.
+      expect(run2UUIDs).not.toContain('ep-0');
+      expect(run2UUIDs).not.toContain('movie-0');
+      expect(run2UUIDs).toContain('ep-1');
+      expect(run2UUIDs).toContain('movie-1');
+
+      // Config change took effect: slots alternate every program.
+      expect(run2UUIDs).toEqual(['ep-1', 'movie-1', 'ep-2', 'movie-2']);
+
+      assertContinuous(run2.items);
+      assertWindowCovered(run2);
+    });
+
+    it('adding a new slot starts it at position 0 while existing slots continue', async () => {
+      const showA = 'show-a';
+      const showB = 'show-b';
+      const showC = 'show-c';
+      const programsA = makePrograms(4, { prefix: 'ep' });
+      const programsB = makePrograms(4, { prefix: 'movie' });
+      const programsC = makePrograms(4, { prefix: 'doc' });
+
+      const slotA = makeCustomShowSlot(showA);
+      const slotB = makeCustomShowSlot(showB);
+      const helper = makeHelper({
+        [showA]: programsA,
+        [showB]: programsB,
+        [showC]: programsC,
+      });
+
+      // Run 1: 2-hour window → slotA emits ep-0, slotB emits movie-0.
+      const run1 = await makeGenerator(helper).preview(
+        makeSchedule([slotA, slotB]),
+        0,
+        2 * HOUR_MS,
+      );
+
+      expect(contentItems(run1).map((i) => i.programUuid)).toEqual([
+        'ep-0',
+        'movie-0',
+      ]);
+
+      const savedA = run1.slotStates.get(slotA.uuid)!;
+      const savedB = run1.slotStates.get(slotB.uuid)!;
+
+      // User adds a brand-new slot C.  It has no saved state (state: null).
+      const slotC = makeCustomShowSlot(showC);
+      const restoredSlotA = { ...slotA, state: restoreSlotState(slotA, savedA) };
+      const restoredSlotB = { ...slotB, state: restoreSlotState(slotB, savedB) };
+
+      // Run 2: 3-hour window with slots [A, B, C].
+      // preview() starts with floatingSlotIndex=0, so rotation is:
+      //   0 % 3 = 0  →  slot A fires first  →  ep-1   (continues from position 1)
+      //   1 % 3 = 1  →  slot B fires next   →  movie-1 (continues from position 1)
+      //   2 % 3 = 2  →  slot C fires last   →  doc-0  (fresh state, position 0)
+      const run2 = await makeGenerator(helper).preview(
+        makeSchedule([restoredSlotA, restoredSlotB, slotC]),
+        2 * HOUR_MS,
+        5 * HOUR_MS,
+      );
+
+      const run2UUIDs = contentItems(run2).map((i) => i.programUuid);
+
+      // New slot C starts from the beginning (doc-0, not doc-1).
+      expect(run2UUIDs).toContain('doc-0');
+      expect(run2UUIDs).not.toContain('doc-1');
+
+      // Existing slots A and B continue from their saved positions.
+      expect(run2UUIDs).toContain('ep-1');
+      expect(run2UUIDs).not.toContain('ep-0');
+      expect(run2UUIDs).toContain('movie-1');
+      expect(run2UUIDs).not.toContain('movie-0');
+
+      expect(run2UUIDs).toEqual(['ep-1', 'movie-1', 'doc-0']);
+
+      assertContinuous(run2.items);
+      assertWindowCovered(run2);
+    });
+
+    it('removing a slot discards its state; remaining slots continue from their saved positions', async () => {
+      const showA = 'show-a';
+      const showB = 'show-b';
+      const showC = 'show-c';
+      const programsA = makePrograms(4, { prefix: 'ep' });
+      const programsB = makePrograms(4, { prefix: 'movie' });
+      const programsC = makePrograms(4, { prefix: 'doc' });
+
+      const slotA = makeCustomShowSlot(showA);
+      const slotB = makeCustomShowSlot(showB);
+      const slotC = makeCustomShowSlot(showC);
+      const helper = makeHelper({
+        [showA]: programsA,
+        [showB]: programsB,
+        [showC]: programsC,
+      });
+
+      // Run 1: 3-hour window.  Each slot fires once in order:
+      //   slotA → ep-0, slotB → movie-0, slotC → doc-0.
+      const run1 = await makeGenerator(helper).preview(
+        makeSchedule([slotA, slotB, slotC]),
+        0,
+        3 * HOUR_MS,
+      );
+
+      expect(contentItems(run1).map((i) => i.programUuid)).toEqual([
+        'ep-0',
+        'movie-0',
+        'doc-0',
+      ]);
+
+      const savedA = run1.slotStates.get(slotA.uuid)!;
+      const savedC = run1.slotStates.get(slotC.uuid)!;
+      // slotB's state is intentionally not restored — the slot is being removed.
+
+      const restoredSlotA = { ...slotA, state: restoreSlotState(slotA, savedA) };
+      const restoredSlotC = { ...slotC, state: restoreSlotState(slotC, savedC) };
+
+      // Run 2: 2-hour window with slotB removed; schedule has slots [A, C].
+      // preview() starts with floatingSlotIndex=0:
+      //   0 % 2 = 0  →  slot A fires first  →  ep-1   (continues from position 1)
+      //   1 % 2 = 1  →  slot C fires next   →  doc-1  (continues from position 1)
+      const run2 = await makeGenerator(helper).preview(
+        makeSchedule([restoredSlotA, restoredSlotC]),
+        3 * HOUR_MS,
+        5 * HOUR_MS,
+      );
+
+      const run2UUIDs = contentItems(run2).map((i) => i.programUuid);
+
+      // Removed slot B must not appear at all.
+      expect(run2UUIDs).not.toContain('movie-0');
+      expect(run2UUIDs).not.toContain('movie-1');
+
+      // Slots A and C continue from their saved positions (index 1).
+      expect(run2UUIDs).not.toContain('ep-0');
+      expect(run2UUIDs).not.toContain('doc-0');
+      expect(run2UUIDs).toContain('ep-1');
+      expect(run2UUIDs).toContain('doc-1');
+
+      expect(run2UUIDs).toEqual(['ep-1', 'doc-1']);
+
+      assertContinuous(run2.items);
+      assertWindowCovered(run2);
+    });
+  });
+
+  // ── 14. Ordered mode — new content discovery ─────────────────────────────────
+  //
+  // Unlike shuffle mode, ordered ('next') iteration has no UUID-based
+  // reconciliation: the saved position is a raw index applied to whatever array
+  // the helper returns on the next run.  List mutations can therefore cause
+  // skips or replays that wouldn't occur in shuffle mode.
+  describe('ordered mode — new content discovery', () => {
+    it('list grows: appending a program does not disrupt the saved iterator position', async () => {
+      const showId = 'show-a';
+      const programs = makePrograms(3, { prefix: 'ep' });
+      const slot = makeCustomShowSlot(showId);
+
+      // Run 1: 1-hour window → ep-0 emitted; iterator advances to position 1.
+      const run1 = await makeGenerator(makeHelper({ [showId]: programs })).preview(
+        makeSchedule([slot]),
+        0,
+        HOUR_MS,
+      );
+
+      expect(contentItems(run1).map((i) => i.programUuid)).toEqual(['ep-0']);
+      const savedState = run1.slotStates.get(slot.uuid)!;
+
+      // Append a new program.  The existing position 1 still points to ep-1.
+      const ep3 = createFakeProgramOrm({
+        uuid: 'ep-3',
+        type: 'movie',
+        duration: HOUR_MS,
+      });
+      const expandedPrograms = [...programs, ep3];
+
+      // Run 2: 3-hour window, position 1 → [ep-1, ep-2, ep-3].
+      const run2 = await makeGenerator(
+        makeHelper({ [showId]: expandedPrograms }),
+      ).preview(
+        makeSchedule([{ ...slot, state: restoreSlotState(slot, savedState) }]),
+        HOUR_MS,
+        4 * HOUR_MS,
+      );
+
+      const run2UUIDs = contentItems(run2).map((i) => i.programUuid);
+
+      // Iterator is unaffected: ep-1 is still the first program in run 2.
+      expect(run2UUIDs[0]).toBe('ep-1');
+      // The new program appears naturally after the existing ones cycle through.
+      expect(run2UUIDs).toEqual(['ep-1', 'ep-2', 'ep-3']);
+      // ep-0 was already emitted and is not replayed.
+      expect(run2UUIDs).not.toContain('ep-0');
+
+      assertContinuous(run2.items);
+      assertWindowCovered(run2);
+    });
+
+    it('list shrinks: removing a program before the iterator position wraps the index, replaying an already-emitted program', async () => {
+      const showId = 'show-a';
+      const programs = makePrograms(3, { prefix: 'ep' });
+      const slot = makeCustomShowSlot(showId);
+
+      // Run 1: 2-hour window → ep-0 and ep-1 emitted.  Iterator ends at
+      // position 2, which would point to ep-2 on the next run.
+      const run1 = await makeGenerator(makeHelper({ [showId]: programs })).preview(
+        makeSchedule([slot]),
+        0,
+        2 * HOUR_MS,
+      );
+
+      const run1UUIDs = contentItems(run1).map((i) => i.programUuid);
+      expect(run1UUIDs).toEqual(['ep-0', 'ep-1']);
+
+      const savedState = run1.slotStates.get(slot.uuid)!;
+      expect(savedState.iteratorPosition).toBe(2);
+
+      // Remove ep-0 from the list.  List is now [ep-1, ep-2] (length 2).
+      // There is no UUID-based reconciliation in ordered mode — the raw
+      // position 2 is applied to the new array: 2 % 2 = 0 → ep-1.
+      const shrunkPrograms = programs.filter((p) => p.uuid !== 'ep-0');
+
+      const run2 = await makeGenerator(
+        makeHelper({ [showId]: shrunkPrograms }),
+      ).preview(
+        makeSchedule([{ ...slot, state: restoreSlotState(slot, savedState) }]),
+        2 * HOUR_MS,
+        4 * HOUR_MS,
+      );
+
+      const run2UUIDs = contentItems(run2).map((i) => i.programUuid);
+
+      // ep-1 is replayed: it appeared in run 1 and is also the first program
+      // in run 2 (position wrapped to 0 → ep-1 rather than advancing to ep-2).
+      expect(run1UUIDs).toContain('ep-1');
+      expect(run2UUIDs[0]).toBe('ep-1');
+
+      // ep-2 still appears — it is not permanently lost, just delayed.
+      expect(run2UUIDs).toContain('ep-2');
+
+      // ep-0 does not appear: it was removed from the list.
+      expect(run2UUIDs).not.toContain('ep-0');
+
+      assertContinuous(run2.items);
+      assertWindowCovered(run2);
+    });
+  });
+
+  // ── 15. Slot editing — shuffle mode ──────────────────────────────────────────
+  //
+  // The slot-state invariants from section 13 hold equally in shuffle mode:
+  // each slot's iterator state is keyed by UUID and is unaffected by edits to
+  // other slots.  These tests demonstrate the same three scenarios (config
+  // change, add slot, remove slot) under schedule-level random slot selection.
+  //
+  // Because slot selection is non-deterministic, assertions use slotUuid
+  // filtering to isolate each slot's program subsequence.  Within-slot order
+  // is always sequential for `order: 'next'` regardless of which slot the
+  // schedule randomly selects next.
+  describe('slot editing — shuffle mode', () => {
+    it("changing one slot's config does not affect the other slot's iterator position", async () => {
+      // Use a two-slot shuffle schedule.  Assertions are per-slot via slotUuid
+      // filtering so they hold regardless of which slot the RNG selects next.
+      const showA = 'show-a';
+      const showB = 'show-b';
+      // Large program pool (40) ensures the cycle never wraps back to position 0
+      // within either run window (max ~10 fires per slot per window).
+      const programsA = makePrograms(40, { prefix: 'ep' });
+      const programsB = makePrograms(40, { prefix: 'movie' });
+
+      const slotA = makeCustomShowSlot(showA, { fillMode: 'fill' });
+      const slotB = makeCustomShowSlot(showB, { fillMode: 'fill' });
+      const helper = makeHelper({ [showA]: programsA, [showB]: programsB });
+
+      // Run 1: 20-hour window so both slots are near-certain to fire multiple
+      // times (P(either slot fires 0 times) ≈ 2 × 2^-20 ≈ negligible).
+      const run1 = await makeGenerator(helper).preview(
+        makeSchedule([slotA, slotB], { slotPlaybackOrder: 'shuffle' }),
+        0,
+        20 * HOUR_MS,
+      );
+
+      const savedA = run1.slotStates.get(slotA.uuid);
+      const savedB = run1.slotStates.get(slotB.uuid);
+      expect(savedA).toBeDefined();
+      expect(savedB).toBeDefined();
+
+      // Edit: change slotA's fill mode.  Iterator positions must survive.
+      const editedSlotA = {
+        ...slotA,
+        fillMode: 'count' as const,
+        fillValue: 1,
+        state: restoreSlotState(slotA, savedA!),
+      };
+      const restoredSlotB = {
+        ...slotB,
+        state: restoreSlotState(slotB, savedB!),
+      };
+
+      // Run 2: 20-hour window.
+      const run2 = await makeGenerator(helper).preview(
+        makeSchedule([editedSlotA, restoredSlotB], {
+          slotPlaybackOrder: 'shuffle',
+        }),
+        20 * HOUR_MS,
+        40 * HOUR_MS,
+      );
+
+      // Filter run 2 results by slot to get each slot's independent sequence.
+      const run2AProgs = contentItems(run2).filter(
+        (i) => i.slotUuid === slotA.uuid,
+      );
+      const run2BProgs = contentItems(run2).filter(
+        (i) => i.slotUuid === slotB.uuid,
+      );
+
+      // The first program A emits in run 2 must be at its saved position.
+      const savedPosA = savedA!.iteratorPosition;
+      expect(run2AProgs.length).toBeGreaterThan(0);
+      expect(run2AProgs[0]!.programUuid).toBe(`ep-${savedPosA}`);
+
+      // Slot B's iterator is unaffected by the edit to slot A.
+      const savedPosB = savedB!.iteratorPosition;
+      expect(run2BProgs.length).toBeGreaterThan(0);
+      expect(run2BProgs[0]!.programUuid).toBe(`movie-${savedPosB}`);
+    });
+
+    it('adding a new slot starts it at position 0 while existing slots continue', async () => {
+      const showA = 'show-a';
+      const showC = 'show-c';
+      const programsA = makePrograms(40, { prefix: 'ep' });
+      const programsC = makePrograms(40, { prefix: 'doc' });
+
+      const slotA = makeCustomShowSlot(showA);
+      const helper = makeHelper({ [showA]: programsA, [showC]: programsC });
+
+      // Run 1: single-slot shuffle schedule → deterministic, only slotA fires.
+      // 3-hour window: ep-0, ep-1, ep-2 emitted; iterator ends at position 3.
+      const run1 = await makeGenerator(helper).preview(
+        makeSchedule([slotA], { slotPlaybackOrder: 'shuffle' }),
+        0,
+        3 * HOUR_MS,
+      );
+
+      expect(contentItems(run1).map((i) => i.programUuid)).toEqual([
+        'ep-0',
+        'ep-1',
+        'ep-2',
+      ]);
+
+      const savedA = run1.slotStates.get(slotA.uuid)!;
+      expect(savedA.iteratorPosition).toBe(3);
+
+      // Add brand-new slot C (no state).
+      const slotC = makeCustomShowSlot(showC);
+      const restoredSlotA = { ...slotA, state: restoreSlotState(slotA, savedA) };
+
+      // Run 2: 20-hour window with [A, C].  Both slots fire many times.
+      const run2 = await makeGenerator(helper).preview(
+        makeSchedule([restoredSlotA, slotC], { slotPlaybackOrder: 'shuffle' }),
+        3 * HOUR_MS,
+        23 * HOUR_MS,
+      );
+
+      const run2AProgs = contentItems(run2).filter(
+        (i) => i.slotUuid === slotA.uuid,
+      );
+      const run2CProgs = contentItems(run2).filter(
+        (i) => i.slotUuid === slotC.uuid,
+      );
+
+      // Slot A continues from position 3: first program is ep-3.
+      expect(run2AProgs.length).toBeGreaterThan(0);
+      expect(run2AProgs[0]!.programUuid).toBe('ep-3');
+      expect(run2AProgs.map((i) => i.programUuid)).not.toContain('ep-0');
+
+      // Slot C starts fresh at position 0: first program is doc-0.
+      expect(run2CProgs.length).toBeGreaterThan(0);
+      expect(run2CProgs[0]!.programUuid).toBe('doc-0');
+    });
+
+    it('removing a slot discards its state; remaining slots continue from their saved positions', async () => {
+      const showA = 'show-a';
+      const showB = 'show-b';
+      const showC = 'show-c';
+      const programsA = makePrograms(40, { prefix: 'ep' });
+      const programsB = makePrograms(40, { prefix: 'movie' });
+      const programsC = makePrograms(40, { prefix: 'doc' });
+
+      const slotA = makeCustomShowSlot(showA);
+      const slotB = makeCustomShowSlot(showB);
+      const slotC = makeCustomShowSlot(showC);
+      const helper = makeHelper({
+        [showA]: programsA,
+        [showB]: programsB,
+        [showC]: programsC,
+      });
+
+      // Run 1: 30-hour window, three-slot shuffle schedule.  All three slots
+      // fire many times (~10 each), advancing their iterator positions well
+      // past 0 so the saved positions are meaningful in run 2.
+      const run1 = await makeGenerator(helper).preview(
+        makeSchedule([slotA, slotB, slotC], { slotPlaybackOrder: 'shuffle' }),
+        0,
+        30 * HOUR_MS,
+      );
+
+      const savedA = run1.slotStates.get(slotA.uuid)!;
+      const savedC = run1.slotStates.get(slotC.uuid)!;
+      // slotB's state is intentionally discarded — the slot is being removed.
+
+      const restoredSlotA = { ...slotA, state: restoreSlotState(slotA, savedA) };
+      const restoredSlotC = { ...slotC, state: restoreSlotState(slotC, savedC) };
+
+      // Run 2: 20-hour window with slotB removed.  A and C continue from their
+      // saved positions.
+      const run2 = await makeGenerator(helper).preview(
+        makeSchedule([restoredSlotA, restoredSlotC], {
+          slotPlaybackOrder: 'shuffle',
+        }),
+        30 * HOUR_MS,
+        50 * HOUR_MS,
+      );
+
+      const run2AProgs = contentItems(run2).filter(
+        (i) => i.slotUuid === slotA.uuid,
+      );
+      const run2BProgs = contentItems(run2).filter(
+        (i) => i.slotUuid === slotB.uuid,
+      );
+      const run2CProgs = contentItems(run2).filter(
+        (i) => i.slotUuid === slotC.uuid,
+      );
+
+      // Removed slot B must not appear at all.
+      expect(run2BProgs).toHaveLength(0);
+
+      // Slot A's first program in run 2 is exactly at its saved position.
+      const savedPosA = savedA.iteratorPosition;
+      expect(run2AProgs.length).toBeGreaterThan(0);
+      expect(run2AProgs[0]!.programUuid).toBe(`ep-${savedPosA}`);
+
+      // Slot C's first program in run 2 is exactly at its saved position.
+      const savedPosC = savedC.iteratorPosition;
+      expect(run2CProgs.length).toBeGreaterThan(0);
+      expect(run2CProgs[0]!.programUuid).toBe(`doc-${savedPosC}`);
     });
   });
 });

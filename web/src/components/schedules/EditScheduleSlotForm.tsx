@@ -7,6 +7,8 @@ import {
   MenuItem,
   Select,
   Stack,
+  Tab,
+  Tabs,
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
@@ -24,8 +26,7 @@ import {
   type ScheduleSlot,
 } from '@tunarr/types/api';
 import type { Dayjs } from 'dayjs';
-import dayjs from 'dayjs';
-import { capitalize, find, isNil, maxBy } from 'lodash-es';
+import { capitalize, isNil, maxBy, range, uniq } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import type { SubmitErrorHandler, SubmitHandler } from 'react-hook-form';
 import {
@@ -41,12 +42,14 @@ import {
   updateScheduleSlotMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { betterHumanize } from '../../helpers/dayjs.ts';
-import type { ProgramOption } from '../../helpers/slotSchedulerUtil.ts';
 import {
   ProgramOptionTypes,
   slotOrderOptions,
 } from '../../helpers/slotSchedulerUtil.ts';
+import { useDayjs } from '../../hooks/useDayjs.ts';
 import { ShowSearchSlotProgrammingForm } from '../slot_scheduler/ShowSearchSlotProgrammingForm.tsx';
+import { SlotFillerDialogPanel } from '../slot_scheduler/SlotFillerDialogPanel.tsx';
+import { TabPanel } from '../TabPanel.tsx';
 import { NumericFormControllerText } from '../util/TypedController.tsx';
 
 type Props = {
@@ -83,90 +86,82 @@ const newSlotForType = (
   //   programOptions,
   //   (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
   // );
-  return (
-    match(type)
-      .returnType<MaterializedScheduleSlot>()
-      .with('custom-show', () => defaultCustomShowSlot(schedule))
-      // .with('movie', () => ({
-      //   type: 'movie',
-      //   order: 'alphanumeric',
-      //   direction: 'asc',
-      //   title: 'Movies',
-      // }))
-      .with('filler', () => {
-        return {
-          type: 'filler',
-          cooldownMs: 0,
-          slotIndex: 0,
-          weight: 0,
-          // order: 'shuffle_prefer_short',
-          // decayFactor: 0.5,
-          // durationWeighting: 'linear',
-          // recoveryFactor: 0.05,
-          fillerListId: '',
-          fillerList: null,
-          isMissing: false,
-        };
-      })
-      .with('flex', () => ({
-        type: 'flex',
+  return match(type)
+    .returnType<MaterializedScheduleSlot>()
+    .with('custom-show', () => defaultCustomShowSlot(schedule))
+    .with('filler', () => {
+      return {
+        type: 'filler',
         cooldownMs: 0,
         slotIndex: 0,
         weight: 0,
-      }))
-      .with('redirect', () => {
-        // const opt = programOptions.find((opt) => opt.type === 'redirect');
-        return {
-          cooldownMs: 0,
-          slotIndex: 0,
-          weight: 0,
-          type: 'redirect',
-          redirectChannelId: '', // opt?.channelId ?? '',
+        // order: 'shuffle_prefer_short',
+        // decayFactor: 0.5,
+        // durationWeighting: 'linear',
+        // recoveryFactor: 0.05,
+        fillerListId: '',
+        fillerList: null,
+        isMissing: false,
+      };
+    })
+    .with('flex', () => ({
+      type: 'flex',
+      cooldownMs: 0,
+      slotIndex: 0,
+      weight: 0,
+    }))
+    .with('redirect', () => {
+      // const opt = programOptions.find((opt) => opt.type === 'redirect');
+      return {
+        cooldownMs: 0,
+        slotIndex: 0,
+        weight: 0,
+        type: 'redirect',
+        redirectChannelId: '', // opt?.channelId ?? '',
+        order: 'next',
+        direction: 'asc',
+        title: '', // `Redirect to Channel ${opt?.channelName ?? ''}`,
+        channel: null,
+        isMissing: false,
+      };
+    })
+    .with('show', () => {
+      // const opt = programOptions.find((opt) => opt.type === 'show');
+      return {
+        cooldownMs: 0,
+        slotIndex: 0,
+        weight: 0,
+        type: 'show' as const,
+        showId: '', // opt?.showId ?? '',
+        // order: 'next',
+        // direction: 'asc',
+        slotConfig: {
           order: 'next',
           direction: 'asc',
-          title: '', // `Redirect to Channel ${opt?.channelName ?? ''}`,
-          channel: null,
-          isMissing: false,
-        };
-      })
-      .with('show', () => {
-        // const opt = programOptions.find((opt) => opt.type === 'show');
-        return {
-          cooldownMs: 0,
-          slotIndex: 0,
-          weight: 0,
-          type: 'show' as const,
-          showId: '', // opt?.showId ?? '',
-          // order: 'next',
-          // direction: 'asc',
-          slotConfig: {
-            order: 'next',
-            direction: 'asc',
-            seasonFilter: [],
-          },
-          show: null,
-          fillMode: 'fill',
-          fillValue: 0,
-        } satisfies MaterializedShowScheduleSlot;
-      })
-      .with('smart-collection', () => {
-        // const opt = programOptions.find(
-        //   (opt) => opt.type === 'smart-collection',
-        // );
-        return {
-          cooldownMs: 0,
-          slotIndex: 0,
-          weight: 0,
-          type: 'smart-collection' as const,
-          order: 'next',
-          direction: 'asc',
-          smartCollectionId: '', //opt?.collectionId ?? '',
-          smartCollection: null,
-          isMissing: false,
-        };
-      })
-      .exhaustive()
-  );
+          seasonFilter: [],
+        },
+        show: null,
+        fillMode: 'fill',
+        fillValue: 0,
+      } satisfies MaterializedShowScheduleSlot;
+    })
+    .with('smart-collection', () => {
+      // const opt = programOptions.find(
+      //   (opt) => opt.type === 'smart-collection',
+      // );
+      return {
+        cooldownMs: 0,
+        slotIndex: 0,
+        weight: 0,
+        type: 'smart-collection' as const,
+        order: 'next',
+        direction: 'asc',
+        smartCollectionId: '', //opt?.collectionId ?? '',
+        smartCollection: null,
+        isMissing: false,
+      };
+    })
+    .exhaustive();
 };
 
 export const EditScheduleSlotForm = ({ schedule, slot, isNew }: Props) => {
@@ -192,6 +187,9 @@ export const EditScheduleSlotForm = ({ schedule, slot, isNew }: Props) => {
     'slotConfig',
     'anchorMode',
   ]);
+
+  const dayjs = useDayjs();
+  const [tab, setTab] = useState(0);
   const seasonFilter = slotConfig?.seasonFilter;
   const order = slotConfig?.order;
   const [typeSelectValue, setTypeSelectValue] = useState(type);
@@ -253,7 +251,7 @@ export const EditScheduleSlotForm = ({ schedule, slot, isNew }: Props) => {
     ...addSlotToScheduleMutation(),
     onSuccess: async (data) => {
       reset((prev) => ({ ...prev, ...data }));
-      await queryClient.invalidateQueries({
+      await queryClient.resetQueries({
         queryKey: getScheduleByIdQueryKey({ path: { id: schedule.uuid } }),
       });
     },
@@ -263,7 +261,7 @@ export const EditScheduleSlotForm = ({ schedule, slot, isNew }: Props) => {
     ...updateScheduleSlotMutation(),
     onSuccess: async (data) => {
       reset((prev) => ({ ...prev, ...data }));
-      await queryClient.invalidateQueries({
+      await queryClient.resetQueries({
         queryKey: getScheduleByIdQueryKey({ path: { id: schedule.uuid } }),
       });
     },
@@ -299,255 +297,322 @@ export const EditScheduleSlotForm = ({ schedule, slot, isNew }: Props) => {
   return (
     <Box component={'form'} onSubmit={handleSubmit(onSubmit, onSubmitError)}>
       <FormProvider {...form}>
-        <Stack spacing={2}>
-          <FormControl fullWidth>
-            <InputLabel>Type</InputLabel>
-            <Select
-              label="Type"
-              value={typeSelectValue}
-              onChange={(e) =>
-                handleTypeChange(e.target.value as ProgramOption['type'])
-              }
-            >
-              {ProgramOptionTypes.map(({ value, description }) => (
-                <MenuItem key={value} value={value}>
-                  {description}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {type === 'show' && (
-            <ShowSearchSlotProgrammingForm
-              show={show}
-              onShowChange={onShowChange}
-              onSeasonFilterChange={onSeasonFilterChange}
-              seasonFilter={seasonFilter ?? []}
-            />
-          )}
-          <Stack direction="row" spacing={2}>
-            <Controller
-              control={control}
-              name="slotConfig.order"
-              render={({ field }) => {
-                const opts = slotOrderOptions(type);
-                const helperText = find(opts, {
-                  value: field.value,
-                })?.helperText;
-                return (
+        <Tabs
+          value={tab}
+          onChange={(_, tab: number) => setTab(tab)}
+          sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+        >
+          <Tab label="Programming" />
+          <Tab label="Filler" />
+        </Tabs>
+        <TabPanel value={tab} index={0}>
+          <Stack spacing={2}>
+            <FormControl fullWidth>
+              <InputLabel>Type</InputLabel>
+              <Select
+                label="Type"
+                value={typeSelectValue}
+                onChange={(e) =>
+                  handleTypeChange(e.target.value as ScheduleSlot['type'])
+                }
+              >
+                {ProgramOptionTypes.filter(
+                  ({ value }) => value !== 'movie',
+                ).map(({ value, description }) => (
+                  <MenuItem key={value} value={value}>
+                    {description}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {type === 'show' && (
+              <ShowSearchSlotProgrammingForm
+                show={show}
+                onShowChange={onShowChange}
+                onSeasonFilterChange={onSeasonFilterChange}
+                seasonFilter={seasonFilter ?? []}
+              />
+            )}
+            {type !== 'redirect' && type !== 'flex' && (
+              <Stack direction="row" spacing={2}>
+                <Controller
+                  control={control}
+                  name="slotConfig.order"
+                  render={({ field }) => {
+                    const opts = slotOrderOptions(type);
+                    const helperText = opts.find(
+                      (opt) => opt.value === field.value,
+                    )?.helperText;
+                    return (
+                      <FormControl fullWidth>
+                        <InputLabel>Order</InputLabel>
+                        <Select label="Order" {...field}>
+                          {opts.map(({ description, value }) => (
+                            <MenuItem key={value} value={value}>
+                              {description}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        <FormHelperText>
+                          Choose how to sort the programs in this slot.
+                          <br />
+                          <Box component="ul" sx={{ pl: 1 }}>
+                            <li>
+                              <strong>Next:</strong> play in order depending on
+                              slot type
+                            </li>
+                            <li>
+                              <strong>Ordered Shuffle:</strong> like "Next" but
+                              with a random start point
+                            </li>
+                          </Box>
+                        </FormHelperText>
+                        {helperText && (
+                          <FormHelperText>{helperText}</FormHelperText>
+                        )}
+                      </FormControl>
+                    );
+                  }}
+                />
+                {(order === 'alphanumeric' ||
+                  order === 'chronological' ||
+                  order === 'ordered_shuffle') && (
+                  <Controller
+                    control={control}
+                    name="slotConfig.direction"
+                    render={({ field }) => (
+                      <ToggleButtonGroup
+                        exclusive
+                        value={field.value}
+                        onChange={(_, value) =>
+                          isNonEmptyString(value)
+                            ? field.onChange(value)
+                            : void 0
+                        }
+                      >
+                        <ToggleButton value="asc">Asc</ToggleButton>
+                        <ToggleButton value="desc">Desc</ToggleButton>
+                      </ToggleButtonGroup>
+                    )}
+                  />
+                )}
+              </Stack>
+            )}
+            <Stack direction={'row'} spacing={2}>
+              <FormControl fullWidth>
+                <InputLabel>Start Type</InputLabel>
+                <Controller
+                  control={control}
+                  name="anchorMode"
+                  render={({ field }) => (
+                    <Select
+                      label="Start Type"
+                      {...field}
+                      value={field.value ?? 'dynamic'}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === 'dynamic' ? null : e.target.value,
+                        )
+                      }
+                    >
+                      <MenuItem value="dynamic">Dynamic</MenuItem>
+                      {AnchorModeSchema.options.map((type) => (
+                        <MenuItem key={type} value={type}>
+                          {capitalize(type)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                <FormHelperText>
+                  <Box component="ul" sx={{ pl: 1 }}>
+                    <li>
+                      <strong>Dynamic:</strong> this slot begins when the
+                      preceeding slot ends.
+                    </li>
+                    <li>
+                      <strong>Anchored:</strong> begin this slot at a fixed
+                      time.
+                    </li>
+                  </Box>
+                </FormHelperText>
+              </FormControl>
+              {startType === 'hard' && (
+                <Stack sx={{ width: '100%' }} gap={2}>
+                  <Controller
+                    control={control}
+                    name="anchorTime"
+                    render={({ field }) => (
+                      <TimePicker
+                        label="Start Time"
+                        {...field}
+                        value={dayjs()
+                          .startOf('day')
+                          .add(field.value ?? 0)}
+                        onChange={(value) =>
+                          updateSlotTime(value, field.onChange)
+                        }
+                        slotProps={{
+                          textField: { fullWidth: true },
+                        }}
+                      />
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="anchorDays"
+                    render={({ field }) => (
+                      <ToggleButtonGroup
+                        value={field.value ?? []}
+                        sx={{ width: '100%' }}
+                      >
+                        {range(0, 7).map((i) => {
+                          const weekday = dayjs
+                            .utc()
+                            .startOf('week')
+                            .add(i, 'days');
+                          const x = dayjs.utc().localeData().weekdaysShort()[i];
+                          return (
+                            <ToggleButton
+                              key={x}
+                              value={i}
+                              sx={{ flex: 1 }}
+                              onChange={(_, v: number) => {
+                                if (field.value?.includes(v)) {
+                                  field.onChange(
+                                    field.value.filter(
+                                      (existing) => existing !== v,
+                                    ),
+                                  );
+                                } else {
+                                  field.onChange(
+                                    uniq([...(field.value ?? []), v]),
+                                  );
+                                }
+                              }}
+                            >
+                              {weekday.format('ddd')}
+                            </ToggleButton>
+                          );
+                        })}
+                      </ToggleButtonGroup>
+                    )}
+                  />
+                </Stack>
+              )}
+            </Stack>
+            <Stack direction={'row'} spacing={2}>
+              <Controller
+                control={control}
+                name="fillMode"
+                render={({ field }) => (
                   <FormControl fullWidth>
-                    <InputLabel>Order</InputLabel>
-                    <Select label="Order" {...field}>
-                      {opts.map(({ description, value }) => (
-                        <MenuItem key={value} value={value}>
-                          {description}
+                    <InputLabel>Fill Mode</InputLabel>
+                    <Select
+                      label="Fill Mode"
+                      value={field.value}
+                      onChange={(e) =>
+                        updateFillMode(
+                          e.target.value as FillMode,
+                          field.onChange,
+                        )
+                      }
+                    >
+                      {FillModes.map((type) => (
+                        <MenuItem key={type} value={type}>
+                          {capitalize(type)}
                         </MenuItem>
                       ))}
                     </Select>
                     <FormHelperText>
-                      Choose how to sort the programs in this slot.
-                      <br />
                       <Box component="ul" sx={{ pl: 1 }}>
                         <li>
-                          <strong>Next:</strong> play in order depending on slot
-                          type
+                          <strong>Fill:</strong> continuously pick programs from
+                          this slot until the next time-anchored slot.
                         </li>
                         <li>
-                          <strong>Ordered Shuffle:</strong> like "Next" but with
-                          a random start point
+                          <strong>Count:</strong> pick N programs.
+                        </li>
+                        <li>
+                          <strong>Duration:</strong> pick programs in order to
+                          fill a specific time duration.
                         </li>
                       </Box>
                     </FormHelperText>
-                    {helperText && (
-                      <FormHelperText>{helperText}</FormHelperText>
-                    )}
                   </FormControl>
-                );
-              }}
-            />
-            {(order === 'alphanumeric' ||
-              order === 'chronological' ||
-              order === 'ordered_shuffle') && (
-              <Controller
-                control={control}
-                name="slotConfig.direction"
-                render={({ field }) => (
-                  <ToggleButtonGroup
-                    exclusive
-                    value={field.value}
-                    onChange={(_, value) =>
-                      isNonEmptyString(value) ? field.onChange(value) : void 0
-                    }
-                  >
-                    <ToggleButton value="asc">Asc</ToggleButton>
-                    <ToggleButton value="desc">Desc</ToggleButton>
-                  </ToggleButtonGroup>
                 )}
               />
-            )}
-          </Stack>
-          <Stack direction={'row'} spacing={2}>
-            <FormControl fullWidth>
-              <InputLabel>Start Type</InputLabel>
-              <Controller
-                control={control}
-                name="anchorMode"
-                render={({ field }) => (
-                  <Select
-                    label="Start Type"
-                    {...field}
-                    value={field.value ?? 'dynamic'}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value === 'dynamic' ? null : e.target.value,
-                      )
-                    }
-                  >
-                    <MenuItem value="dynamic">Dynamic</MenuItem>
-                    {AnchorModeSchema.options.map((type) => (
-                      <MenuItem key={type} value={type}>
-                        {capitalize(type)}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-              <FormHelperText>
-                <Box component="ul" sx={{ pl: 1 }}>
-                  <li>
-                    <strong>Dynamic:</strong> this slot begins when the
-                    preceeding slot ends.
-                  </li>
-                  <li>
-                    <strong>Anchored:</strong> begin this slot at a fixed time.
-                  </li>
-                </Box>
-              </FormHelperText>
-            </FormControl>
-            {startType === 'hard' && (
-              <Controller
-                control={control}
-                name="anchorTime"
-                render={({ field }) => (
-                  <TimePicker
-                    format="H[h] m[m] s[s]"
-                    {...field}
-                    value={dayjs()
-                      .startOf('day')
-                      .add(field.value ?? 0)}
-                    onChange={(value) => updateSlotTime(value, field.onChange)}
-                    slotProps={{
-                      textField: { fullWidth: true, helperText: ' ' },
-                    }}
-                  />
-                )}
-              />
-            )}
-          </Stack>
-          <Stack direction={'row'} spacing={2}>
-            <Controller
-              control={control}
-              name="fillMode"
-              render={({ field }) => (
-                <FormControl fullWidth>
-                  <InputLabel>Fill Mode</InputLabel>
-                  <Select
-                    label="Fill Mode"
-                    value={field.value}
-                    onChange={(e) =>
-                      updateFillMode(e.target.value as FillMode, field.onChange)
-                    }
-                  >
-                    {FillModes.map((type) => (
-                      <MenuItem key={type} value={type}>
-                        {capitalize(type)}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <FormHelperText>
-                    <Box component="ul" sx={{ pl: 1 }}>
-                      <li>
-                        <strong>Fill:</strong> continuously pick programs from
-                        this slot until the next time-anchored slot.
-                      </li>
-                      <li>
-                        <strong>Count:</strong> pick N programs.
-                      </li>
-                      <li>
-                        <strong>Duration:</strong> pick programs in order to
-                        fill a specific time duration.
-                      </li>
-                    </Box>
-                  </FormHelperText>
-                </FormControl>
+              {fillMode === 'count' && (
+                <NumericFormControllerText
+                  control={control}
+                  name="fillValue"
+                  rules={{ min: fillMode === 'count' ? 1 : undefined }}
+                  TextFieldProps={{
+                    fullWidth: true,
+                    label: 'Count',
+                    helperText: ' ',
+                  }}
+                />
               )}
-            />
-            {fillMode === 'count' && (
-              <NumericFormControllerText
-                control={control}
-                name="fillValue"
-                rules={{ min: fillMode === 'count' ? 1 : undefined }}
-                TextFieldProps={{
-                  fullWidth: true,
-                  label: 'Count',
-                  helperText: ' ',
-                }}
-              />
-            )}
-            {fillMode === 'duration' && (
-              <Controller
-                control={control}
-                name="fillValue"
-                rules={{
-                  min: fillMode === 'duration' ? 1 : undefined,
-                }}
-                render={({ field, fieldState: { error } }) => {
-                  return (
-                    <TimeField
-                      format="H[h] m[m] s[s]"
-                      {...field}
-                      value={dayjs().startOf('day').add(field.value)}
-                      onChange={(value) =>
-                        updateSlotTime(value, field.onChange)
-                      }
-                      label="Duration"
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                          error: !isNil(error),
-                          helperText: betterHumanize(
-                            dayjs.duration(field.value),
-                            {
-                              exact: true,
-                              style: 'full',
-                            },
-                          ),
-                        },
-                      }}
-                    />
-                  );
-                }}
-              />
-            )}
+              {fillMode === 'duration' && (
+                <Controller
+                  control={control}
+                  name="fillValue"
+                  rules={{
+                    min: fillMode === 'duration' ? 1 : undefined,
+                  }}
+                  render={({ field, fieldState: { error } }) => {
+                    return (
+                      <TimeField
+                        format="H[h] m[m] s[s]"
+                        {...field}
+                        value={dayjs().startOf('day').add(field.value)}
+                        onChange={(value) =>
+                          updateSlotTime(value, field.onChange)
+                        }
+                        label="Duration"
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !isNil(error),
+                            helperText: betterHumanize(
+                              dayjs.duration(field.value),
+                              {
+                                exact: true,
+                                style: 'full',
+                              },
+                            ),
+                          },
+                        }}
+                      />
+                    );
+                  }}
+                />
+              )}
+            </Stack>
           </Stack>
-          <Stack spacing={2} direction="row" justifyContent="right">
-            {(isDirty || (isDirty && !isSubmitting)) && (
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  reset();
-                }}
-              >
-                Reset Changes
-              </Button>
-            )}
+        </TabPanel>
+        <TabPanel value={tab} index={1}>
+          <SlotFillerDialogPanel />
+        </TabPanel>
+        <Stack spacing={2} direction="row" justifyContent="right">
+          {(isDirty || (isDirty && !isSubmitting)) && (
             <Button
-              variant="contained"
-              disabled={!isValid || isSubmitting || (!isDirty && !!schedule)}
-              type="submit"
+              variant="outlined"
+              onClick={() => {
+                reset();
+              }}
             >
-              Save
+              Reset Changes
             </Button>
-          </Stack>
+          )}
+          <Button
+            variant="contained"
+            disabled={!isValid || isSubmitting || (!isDirty && !!schedule)}
+            type="submit"
+          >
+            Save
+          </Button>
         </Stack>
       </FormProvider>
     </Box>

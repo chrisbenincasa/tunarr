@@ -107,8 +107,6 @@ export class MaterializeScheduleCommand {
       return (
         match(slot)
           .returnType<MaterializedScheduleSlot | null>()
-          // TODO: We probably don't want movie slots anymore
-          .with({ type: 'movie' }, () => null)
           .with({ type: 'show' }, (showSlot) => {
             const materializedShow = materializedShows[showSlot.showId];
             if (

@@ -57,13 +57,6 @@ export const ShowSearchSlotProgrammingForm = ({
 
   return (
     <>
-      {/* <Controller
-        control={control}
-        name="showId"
-        rules={{ required: true }}
-        render={({ field }) => (
-        )}
-      /> */}
       <ProgramSearchAutocomplete
         value={show}
         searchQuery={search}
@@ -71,19 +64,10 @@ export const ShowSearchSlotProgrammingForm = ({
         includeItem={(item) => item.type === 'show'}
         onChange={(show) => {
           onShowChange(show);
-          // field.onChange(show.uuid);
-          // setValue('show', show);
-          // setValue('seasonFilter', []);
         }}
         onQueryChange={setSearchQuery}
         label="Show"
       />
-      {/* <Controller
-        control={control}
-        name="seasonFilter"
-        render={({ field }) => (
-        )}
-      /> */}
       <Autocomplete
         options={seasonAutocompleteOpts}
         value={
@@ -105,13 +89,7 @@ export const ShowSearchSlotProgrammingForm = ({
             helperText="Optionally schedule only specific seasons of the selected show"
           />
         )}
-        onChange={
-          (_, seasons) => onSeasonFilterChange(seasons)
-          // setValue(
-          //   'seasonFilter',
-          //   seasons.map((s) => s.index),
-          // )
-        }
+        onChange={(_, seasons) => onSeasonFilterChange(seasons)}
         filterSelectedOptions
       />
     </>

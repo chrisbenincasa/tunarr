@@ -1,3 +1,4 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { isAxiosError } from 'axios';
 import { getScheduleByIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
@@ -24,6 +25,9 @@ export const Route = createFileRoute('/schedules_/$scheduleId/')({
 });
 
 function RouteComponent() {
-  const schedule = Route.useLoaderData();
+  const params = Route.useParams();
+  const { data: schedule } = useSuspenseQuery({
+    ...getScheduleByIdOptions({ path: { id: params.scheduleId } }),
+  });
   return <EditSchedulePage schedule={schedule} />;
 }

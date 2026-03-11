@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
 import { RouterLink } from '../../components/base/RouterLink.tsx';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
+import { ChannelScheduleViewer } from '../../components/channel_config/ChannelScheduleViewer.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
 import { useChannelEditor } from '../../store/selectors.ts';
@@ -71,20 +72,18 @@ export default function ChannelProgrammingPage() {
           channel stop adhering to that schedule.
         </Alert>
       )}
-      <Paper sx={{ p: 2 }}>
-        {channel.scheduleId ? (
-          <Box></Box>
-        ) : (
-          <>
-            <ChannelProgrammingConfig />
-            <UnsavedNavigationAlert
-              isDirty={programsDirty}
-              exceptTargetPaths={['/channels/$channelId/programming/add']}
-              onProceed={() => resetLineup()}
-            />
-          </>
-        )}
-      </Paper>
+      {channel.scheduleId ? (
+        <ChannelScheduleViewer />
+      ) : (
+        <Paper sx={{ p: 2 }}>
+          <ChannelProgrammingConfig />
+          <UnsavedNavigationAlert
+            isDirty={programsDirty}
+            exceptTargetPaths={['/channels/$channelId/programming/add']}
+            onProceed={() => resetLineup()}
+          />
+        </Paper>
+      )}
     </div>
   );
 }

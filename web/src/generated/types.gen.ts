@@ -3347,6 +3347,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         };
         lineup: Array<{
@@ -3417,8 +3418,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -3432,8 +3431,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -3463,8 +3460,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 startTime: number;
                 padMs?: number;
@@ -3479,8 +3474,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             }>;
             timeZoneOffset: number;
@@ -3496,8 +3489,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -3518,8 +3509,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -3570,8 +3559,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -3611,8 +3598,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -3819,6 +3804,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         } | {
             type: 'custom';
             persisted: boolean;
@@ -3981,6 +3967,7 @@ export type PostApiChannelsByIdProgrammingData = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         } | {
             type: 'redirect';
@@ -4156,6 +4143,7 @@ export type PostApiChannelsByIdProgrammingData = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
             fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback';
         }>;
@@ -4190,8 +4178,6 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -4205,8 +4191,6 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -4236,8 +4220,6 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 startTime: number;
                 padMs?: number;
@@ -4252,8 +4234,6 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             }>;
             timeZoneOffset: number;
@@ -4275,8 +4255,6 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4297,8 +4275,6 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4349,8 +4325,6 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4390,8 +4364,6 @@ export type PostApiChannelsByIdProgrammingData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4608,6 +4580,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         };
         lineup: Array<{
@@ -4678,8 +4651,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -4693,8 +4664,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -4724,8 +4693,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 startTime: number;
                 padMs?: number;
@@ -4740,8 +4707,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             }>;
             timeZoneOffset: number;
@@ -4757,8 +4722,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4779,8 +4742,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4831,8 +4792,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -4872,8 +4831,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -5105,6 +5062,7 @@ export type GetChannelFallbacksResponses = {
             id: string;
         }>;
         canonicalId?: string;
+        startTime?: number;
     }>;
 };
 
@@ -5298,6 +5256,7 @@ export type GetApiChannelsAllLineupsResponses = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
             start: number;
             stop: number;
             isPaused: boolean;
@@ -5464,6 +5423,7 @@ export type GetApiChannelsAllLineupsResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
             start: number;
             stop: number;
@@ -5695,6 +5655,7 @@ export type GetApiChannelsByIdLineupResponses = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
             start: number;
             stop: number;
             isPaused: boolean;
@@ -5861,6 +5822,7 @@ export type GetApiChannelsByIdLineupResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
             start: number;
             stop: number;
@@ -6078,6 +6040,7 @@ export type GetApiChannelsByIdNowPlayingResponses = {
             id: string;
         }>;
         canonicalId?: string;
+        startTime?: number;
         start: number;
         stop: number;
         isPaused: boolean;
@@ -6244,6 +6207,7 @@ export type GetApiChannelsByIdNowPlayingResponses = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         };
         start: number;
         stop: number;
@@ -6363,8 +6327,6 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -6378,8 +6340,6 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -6409,8 +6369,6 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 startTime: number;
                 padMs?: number;
@@ -6425,8 +6383,6 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             }>;
             timeZoneOffset: number;
@@ -6662,6 +6618,7 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         };
     };
@@ -6682,8 +6639,6 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -6704,8 +6659,6 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -6756,8 +6709,6 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -6797,8 +6748,6 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -7051,6 +7000,7 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         };
     };
@@ -7089,8 +7039,6 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
             } | {
                 startTime: number;
@@ -7104,8 +7052,6 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 show: Show | null;
                 /**
@@ -7242,8 +7188,6 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 startTime: number;
                 padMs?: number;
@@ -7279,8 +7223,6 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 smartCollection: {
                     uuid: string;
@@ -7304,8 +7246,6 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -7326,8 +7266,6 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -7494,8 +7432,6 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -7547,8 +7483,6 @@ export type GetApiChannelsByIdScheduleResponses = {
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
                 }>;
                 cooldownMs: number;
                 periodMs?: number;
@@ -7598,39 +7532,22 @@ export type CreateScheduleForChannelData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode?: 'fill' | 'count' | 'duration';
-            fillValue?: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight?: number;
-            cooldownMs?: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7655,11 +7572,22 @@ export type CreateScheduleForChannelData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7684,11 +7612,22 @@ export type CreateScheduleForChannelData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7708,11 +7647,22 @@ export type CreateScheduleForChannelData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7731,11 +7681,22 @@ export type CreateScheduleForChannelData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7753,11 +7714,22 @@ export type CreateScheduleForChannelData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -7828,39 +7800,22 @@ export type CreateScheduleForChannelResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode: 'fill' | 'count' | 'duration';
-            fillValue: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight: number;
-            cooldownMs: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7885,11 +7840,22 @@ export type CreateScheduleForChannelResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7914,11 +7880,22 @@ export type CreateScheduleForChannelResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7938,11 +7915,22 @@ export type CreateScheduleForChannelResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7961,11 +7949,22 @@ export type CreateScheduleForChannelResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -7983,11 +7982,22 @@ export type CreateScheduleForChannelResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -8185,6 +8195,7 @@ export type GetApiCustomShowsResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         }>;
         totalDuration: number;
@@ -8350,6 +8361,7 @@ export type CreateCustomShowData = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         }>;
     };
     path?: never;
@@ -8581,6 +8593,7 @@ export type GetApiCustomShowsByIdResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         }>;
         totalDuration: number;
@@ -8746,6 +8759,7 @@ export type PutApiCustomShowsByIdData = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         }>;
     };
     path: {
@@ -8932,6 +8946,7 @@ export type PutApiCustomShowsByIdResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         }>;
         totalDuration: number;
@@ -9122,6 +9137,7 @@ export type GetApiCustomShowsByIdProgramsResponses = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         };
     }>;
 };
@@ -9297,6 +9313,7 @@ export type GetApiFillerListsResponses = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         } | {
             type: 'custom';
             persisted: boolean;
@@ -9459,6 +9476,7 @@ export type GetApiFillerListsResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         }>;
     }>;
@@ -9623,6 +9641,7 @@ export type PostApiFillerListsData = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         } | {
             type: 'custom';
             persisted: boolean;
@@ -9785,6 +9804,7 @@ export type PostApiFillerListsData = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         }>;
     };
@@ -10005,6 +10025,7 @@ export type GetApiFillerListsByIdResponses = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         } | {
             type: 'custom';
             persisted: boolean;
@@ -10167,6 +10188,7 @@ export type GetApiFillerListsByIdResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         }>;
     };
@@ -10331,6 +10353,7 @@ export type PutApiFillerListsByIdData = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         } | {
             type: 'custom';
             persisted: boolean;
@@ -10493,6 +10516,7 @@ export type PutApiFillerListsByIdData = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         }>;
     };
@@ -10672,6 +10696,7 @@ export type PutApiFillerListsByIdResponses = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         } | {
             type: 'custom';
             persisted: boolean;
@@ -10834,6 +10859,7 @@ export type PutApiFillerListsByIdResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         }>;
     };
@@ -11015,6 +11041,7 @@ export type GetApiFillerListsByIdProgramsResponses = {
             id: string;
         }>;
         canonicalId?: string;
+        startTime?: number;
     } | {
         type: 'custom';
         persisted: boolean;
@@ -11177,6 +11204,7 @@ export type GetApiFillerListsByIdProgramsResponses = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
         };
     }>;
 };
@@ -11849,6 +11877,7 @@ export type GetApiProgramsByIdDescendantsResponses = {
             id: string;
         }>;
         canonicalId?: string;
+        startTime?: number;
     }>;
 };
 
@@ -12719,6 +12748,7 @@ export type GetProgramByExternalIdResponses = {
             id: string;
         }>;
         canonicalId?: string;
+        startTime?: number;
     };
 };
 
@@ -13677,6 +13707,7 @@ export type GetApiDebugHelpersBuildGuideResponses = {
                 id: string;
             }>;
             canonicalId?: string;
+            startTime?: number;
             start: number;
             stop: number;
             isPaused: boolean;
@@ -13843,6 +13874,7 @@ export type GetApiDebugHelpersBuildGuideResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
             start: number;
             stop: number;
@@ -14820,6 +14852,7 @@ export type GetApiMediaLibrariesByLibraryIdProgramsResponses = {
             id: string;
         }>;
         canonicalId?: string;
+        startTime?: number;
     }>;
 };
 
@@ -16661,6 +16694,7 @@ export type GetApiGuideChannelsResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
                 start: number;
                 stop: number;
                 isPaused: boolean;
@@ -16827,6 +16861,7 @@ export type GetApiGuideChannelsResponses = {
                         id: string;
                     }>;
                     canonicalId?: string;
+                    startTime?: number;
                 };
                 start: number;
                 stop: number;
@@ -20249,39 +20284,22 @@ export type GetSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode: 'fill' | 'count' | 'duration';
-            fillValue: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight: number;
-            cooldownMs: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20306,11 +20324,22 @@ export type GetSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20335,11 +20364,22 @@ export type GetSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20359,11 +20399,22 @@ export type GetSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20382,11 +20433,22 @@ export type GetSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20404,11 +20466,22 @@ export type GetSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20451,39 +20524,22 @@ export type PostApiSchedulesData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode?: 'fill' | 'count' | 'duration';
-            fillValue?: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight?: number;
-            cooldownMs?: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20508,11 +20564,22 @@ export type PostApiSchedulesData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20537,11 +20604,22 @@ export type PostApiSchedulesData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20561,11 +20639,22 @@ export type PostApiSchedulesData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20584,11 +20673,22 @@ export type PostApiSchedulesData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20606,11 +20706,22 @@ export type PostApiSchedulesData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -20656,39 +20767,22 @@ export type PostApiSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode: 'fill' | 'count' | 'duration';
-            fillValue: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight: number;
-            cooldownMs: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20713,11 +20807,22 @@ export type PostApiSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20742,11 +20847,22 @@ export type PostApiSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20766,11 +20882,22 @@ export type PostApiSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20789,11 +20916,22 @@ export type PostApiSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20811,11 +20949,22 @@ export type PostApiSchedulesResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20880,11 +21029,22 @@ export type GetScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -20902,39 +21062,22 @@ export type GetScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode: 'fill' | 'count' | 'duration';
-            fillValue: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight: number;
-            cooldownMs: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21062,11 +21205,22 @@ export type GetScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21097,11 +21251,22 @@ export type GetScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21121,11 +21286,22 @@ export type GetScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21157,11 +21333,22 @@ export type GetScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21210,39 +21397,22 @@ export type UpdateScheduleByIdData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode?: 'fill' | 'count' | 'duration';
-            fillValue?: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight?: number;
-            cooldownMs?: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21267,11 +21437,22 @@ export type UpdateScheduleByIdData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21296,11 +21477,22 @@ export type UpdateScheduleByIdData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21320,11 +21512,22 @@ export type UpdateScheduleByIdData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21343,11 +21546,22 @@ export type UpdateScheduleByIdData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21365,11 +21579,22 @@ export type UpdateScheduleByIdData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -21424,39 +21649,22 @@ export type UpdateScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode: 'fill' | 'count' | 'duration';
-            fillValue: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight: number;
-            cooldownMs: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21481,11 +21689,22 @@ export type UpdateScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21510,11 +21729,22 @@ export type UpdateScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21534,11 +21764,22 @@ export type UpdateScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21557,11 +21798,22 @@ export type UpdateScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21579,11 +21831,22 @@ export type UpdateScheduleByIdResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -21636,39 +21899,22 @@ export type AddSlotToScheduleData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
-            }>;
-        } | null;
-        fillMode?: 'fill' | 'count' | 'duration';
-        fillValue?: number;
-        type: 'movie';
-        slotConfig?: {
-            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-            direction?: ('asc' | 'desc') | null;
-            seasonFilter?: Array<number> | null;
-            flexPreference?: ('distribute' | 'end') | null;
-        };
-    } | {
-        uuid?: string;
-        slotIndex: number;
-        anchorMode?: ('hard' | 'soft' | 'padded') | null;
-        anchorTime?: number | null;
-        anchorDays?: Array<number> | null;
-        weight?: number;
-        cooldownMs?: number;
-        padMs?: number | null;
-        padToMultiple?: number | null;
-        fillerConfig?: {
-            fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                fillerListId: string;
-                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21693,11 +21939,22 @@ export type AddSlotToScheduleData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21722,11 +21979,22 @@ export type AddSlotToScheduleData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21746,11 +22014,22 @@ export type AddSlotToScheduleData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21769,11 +22048,22 @@ export type AddSlotToScheduleData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21791,11 +22081,22 @@ export type AddSlotToScheduleData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -21832,39 +22133,22 @@ export type AddSlotToScheduleResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
-            }>;
-        } | null;
-        fillMode: 'fill' | 'count' | 'duration';
-        fillValue: number;
-        type: 'movie';
-        slotConfig?: {
-            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-            direction?: ('asc' | 'desc') | null;
-            seasonFilter?: Array<number> | null;
-            flexPreference?: ('distribute' | 'end') | null;
-        };
-    } | {
-        uuid?: string;
-        slotIndex: number;
-        anchorMode?: ('hard' | 'soft' | 'padded') | null;
-        anchorTime?: number | null;
-        anchorDays?: Array<number> | null;
-        weight: number;
-        cooldownMs: number;
-        padMs?: number | null;
-        padToMultiple?: number | null;
-        fillerConfig?: {
-            fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                fillerListId: string;
-                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21889,11 +22173,22 @@ export type AddSlotToScheduleResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21918,11 +22213,22 @@ export type AddSlotToScheduleResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21942,11 +22248,22 @@ export type AddSlotToScheduleResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21965,11 +22282,22 @@ export type AddSlotToScheduleResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -21987,11 +22315,22 @@ export type AddSlotToScheduleResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22022,39 +22361,22 @@ export type UpdateScheduleSlotData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
-            }>;
-        } | null;
-        fillMode?: 'fill' | 'count' | 'duration';
-        fillValue?: number;
-        type: 'movie';
-        slotConfig?: {
-            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-            direction?: ('asc' | 'desc') | null;
-            seasonFilter?: Array<number> | null;
-            flexPreference?: ('distribute' | 'end') | null;
-        };
-    } | {
-        uuid?: string;
-        slotIndex: number;
-        anchorMode?: ('hard' | 'soft' | 'padded') | null;
-        anchorTime?: number | null;
-        anchorDays?: Array<number> | null;
-        weight?: number;
-        cooldownMs?: number;
-        padMs?: number | null;
-        padToMultiple?: number | null;
-        fillerConfig?: {
-            fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                fillerListId: string;
-                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -22079,11 +22401,22 @@ export type UpdateScheduleSlotData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -22108,11 +22441,22 @@ export type UpdateScheduleSlotData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -22132,11 +22476,22 @@ export type UpdateScheduleSlotData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -22155,11 +22510,22 @@ export type UpdateScheduleSlotData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -22177,11 +22543,22 @@ export type UpdateScheduleSlotData = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode?: 'fill' | 'count' | 'duration';
@@ -22236,39 +22613,22 @@ export type UpdateScheduleSlotResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
-            }>;
-        } | null;
-        fillMode: 'fill' | 'count' | 'duration';
-        fillValue: number;
-        type: 'movie';
-        slotConfig?: {
-            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-            direction?: ('asc' | 'desc') | null;
-            seasonFilter?: Array<number> | null;
-            flexPreference?: ('distribute' | 'end') | null;
-        };
-    } | {
-        uuid?: string;
-        slotIndex: number;
-        anchorMode?: ('hard' | 'soft' | 'padded') | null;
-        anchorTime?: number | null;
-        anchorDays?: Array<number> | null;
-        weight: number;
-        cooldownMs: number;
-        padMs?: number | null;
-        padToMultiple?: number | null;
-        fillerConfig?: {
-            fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                fillerListId: string;
-                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22293,11 +22653,22 @@ export type UpdateScheduleSlotResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22322,11 +22693,22 @@ export type UpdateScheduleSlotResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22346,11 +22728,22 @@ export type UpdateScheduleSlotResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22369,11 +22762,22 @@ export type UpdateScheduleSlotResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22391,11 +22795,22 @@ export type UpdateScheduleSlotResponses = {
         padToMultiple?: number | null;
         fillerConfig?: {
             fillers?: Array<{
-                types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                 fillerListId: string;
                 fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                mode?: 'relaxed' | 'strict';
-                count?: number;
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
             }>;
         } | null;
         fillMode: 'fill' | 'count' | 'duration';
@@ -22468,6 +22883,7 @@ export type PreviewScheduleResponses = {
             createdAt?: number | null;
             itemType: 'filler';
             fillerListId: string;
+            programUuid?: string | null;
         } | {
             uuid: string;
             startTimeMs: number;
@@ -22634,6 +23050,7 @@ export type PreviewScheduleResponses = {
                     id: string;
                 }>;
                 canonicalId?: string;
+                startTime?: number;
             };
         };
     };
@@ -22718,39 +23135,22 @@ export type GetChannelScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode: 'fill' | 'count' | 'duration';
-            fillValue: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight: number;
-            cooldownMs: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22775,11 +23175,22 @@ export type GetChannelScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22804,11 +23215,22 @@ export type GetChannelScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22828,11 +23250,22 @@ export type GetChannelScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22851,11 +23284,22 @@ export type GetChannelScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22873,11 +23317,22 @@ export type GetChannelScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -22920,39 +23375,22 @@ export type UpdateInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode?: 'fill' | 'count' | 'duration';
-            fillValue?: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight?: number;
-            cooldownMs?: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -22977,11 +23415,22 @@ export type UpdateInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23006,11 +23455,22 @@ export type UpdateInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23030,11 +23490,22 @@ export type UpdateInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23053,11 +23524,22 @@ export type UpdateInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23075,11 +23557,22 @@ export type UpdateInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23138,39 +23631,22 @@ export type UpdateInfiniteScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode: 'fill' | 'count' | 'duration';
-            fillValue: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight: number;
-            cooldownMs: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -23195,11 +23671,22 @@ export type UpdateInfiniteScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -23224,11 +23711,22 @@ export type UpdateInfiniteScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -23248,11 +23746,22 @@ export type UpdateInfiniteScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -23271,11 +23780,22 @@ export type UpdateInfiniteScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -23293,11 +23813,22 @@ export type UpdateInfiniteScheduleResponses = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode: 'fill' | 'count' | 'duration';
@@ -23336,39 +23867,22 @@ export type PreviewInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
-                }>;
-            } | null;
-            fillMode?: 'fill' | 'count' | 'duration';
-            fillValue?: number;
-            type: 'movie';
-            slotConfig?: {
-                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
-                direction?: ('asc' | 'desc') | null;
-                seasonFilter?: Array<number> | null;
-                flexPreference?: ('distribute' | 'end') | null;
-            };
-        } | {
-            uuid?: string;
-            slotIndex: number;
-            anchorMode?: ('hard' | 'soft' | 'padded') | null;
-            anchorTime?: number | null;
-            anchorDays?: Array<number> | null;
-            weight?: number;
-            cooldownMs?: number;
-            padMs?: number | null;
-            padToMultiple?: number | null;
-            fillerConfig?: {
-                fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
-                    fillerListId: string;
-                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23393,11 +23907,22 @@ export type PreviewInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23422,11 +23947,22 @@ export type PreviewInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23446,11 +23982,22 @@ export type PreviewInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23469,11 +24016,22 @@ export type PreviewInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23491,11 +24049,22 @@ export type PreviewInfiniteScheduleData = {
             padToMultiple?: number | null;
             fillerConfig?: {
                 fillers?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                    mode?: 'relaxed' | 'strict';
-                    count?: number;
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
             } | null;
             fillMode?: 'fill' | 'count' | 'duration';
@@ -23558,6 +24127,7 @@ export type PreviewInfiniteScheduleResponses = {
             createdAt?: number | null;
             itemType: 'filler';
             fillerListId: string;
+            programUuid?: string | null;
         } | {
             uuid: string;
             startTimeMs: number;
@@ -23741,6 +24311,7 @@ export type GetInfiniteScheduleItemsResponses = {
             createdAt?: number | null;
             itemType: 'filler';
             fillerListId: string;
+            programUuid?: string | null;
         } | {
             uuid: string;
             startTimeMs: number;
@@ -23750,6 +24321,166 @@ export type GetInfiniteScheduleItemsResponses = {
             itemType: 'redirect';
             redirectChannelId: string;
         }>;
+        fromTimeMs: number;
+        toTimeMs: number;
+        contentPrograms: {
+            [key: string]: {
+                type: 'content';
+                persisted: boolean;
+                duration: number;
+                icon?: string;
+                id?: string;
+                subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
+                summary?: string;
+                date?: string;
+                year?: number;
+                rating?: string;
+                serverFileKey?: string;
+                serverFilePath?: string;
+                title: string;
+                showId?: string;
+                seasonId?: string;
+                seasonNumber?: number;
+                episodeNumber?: number;
+                albumId?: string;
+                artistId?: string;
+                index?: number;
+                parent?: {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'season';
+                } | {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'album';
+                };
+                grandparent?: {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'show';
+                    seasons?: Array<{
+                        id?: string;
+                        title?: string;
+                        index?: number;
+                        guids?: Array<string>;
+                        year?: number;
+                        externalKey?: string;
+                        externalIds: Array<{
+                            type: 'single';
+                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                            id: string;
+                        } | {
+                            type: 'multi';
+                            source: 'plex' | 'jellyfin' | 'emby';
+                            sourceId: string;
+                            id: string;
+                        }>;
+                        summary?: string;
+                    }>;
+                } | {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'artist';
+                    albums?: Array<{
+                        id?: string;
+                        title?: string;
+                        index?: number;
+                        guids?: Array<string>;
+                        year?: number;
+                        externalKey?: string;
+                        externalIds: Array<{
+                            type: 'single';
+                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                            id: string;
+                        } | {
+                            type: 'multi';
+                            source: 'plex' | 'jellyfin' | 'emby';
+                            sourceId: string;
+                            id: string;
+                        }>;
+                        summary?: string;
+                    }>;
+                };
+                externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                externalSourceName: string;
+                externalSourceId: string;
+                libraryId?: string;
+                externalKey: string;
+                uniqueId: string;
+                externalIds: Array<{
+                    type: 'single';
+                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                    id: string;
+                } | {
+                    type: 'multi';
+                    source: 'plex' | 'jellyfin' | 'emby';
+                    sourceId: string;
+                    id: string;
+                }>;
+                canonicalId?: string;
+                startTime?: number;
+            };
+        };
     };
 };
 

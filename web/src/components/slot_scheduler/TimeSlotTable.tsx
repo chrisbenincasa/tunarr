@@ -316,7 +316,7 @@ export const TimeSlotTable = () => {
         },
         Cell: ({ cell }) => {
           const filler = cell.getValue<SlotFiller[]>();
-          const fillerKinds = uniq(filler.flatMap((f) => f.types));
+          const fillerKinds = uniq(filler.map((f) => f.type));
           if (fillerKinds.length === 0) {
             return '-';
           }

@@ -54,20 +54,44 @@ export const SlotFillerTypes = z.enum([
 
 export type SlotFillerTypes = z.infer<typeof SlotFillerTypes>;
 
-export const SlotFiller = z.object({
-  types: z.array(SlotFillerTypes).nonempty(),
+export const FillerPlaybackMode = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('relaxed') }),
+  z.object({ type: z.literal('count'), count: z.number().int().positive() }),
+  z.object({
+    type: z.literal('duration'),
+    durationMs: z.number().int().positive(),
+  }),
+  z.object({
+    type: z.literal('random_count'),
+    min: z.number().int().min(1).optional(),
+    max: z.number().int().positive().optional(),
+  }),
+]);
+
+export type FillerPlaybackMode = z.infer<typeof FillerPlaybackMode>;
+
+export const LegacySlotFiller = z.object({
+  types: SlotFillerTypes.array(),
   fillerListId: z.uuid(),
   fillerOrder: SlotProgrammingFillerOrder.optional().default(
     'shuffle_prefer_short',
   ),
-  mode: z.enum(['relaxed', 'strict']).optional(),
-  count: z.number().int().positive().optional(),
+  // playbackMode: FillerPlaybackMode.optional().default({ type: 'relaxed' }),
+});
+
+export const SlotFiller = z.object({
+  type: SlotFillerTypes,
+  fillerListId: z.uuid(),
+  fillerOrder: SlotProgrammingFillerOrder.optional().default(
+    'shuffle_prefer_short',
+  ),
+  playbackMode: FillerPlaybackMode.optional().default({ type: 'relaxed' }),
 });
 
 export type SlotFiller = z.infer<typeof SlotFiller>;
 
 export const Slot = z.object({
-  filler: z.array(SlotFiller).optional(),
+  filler: z.array(LegacySlotFiller).optional(),
 });
 
 //

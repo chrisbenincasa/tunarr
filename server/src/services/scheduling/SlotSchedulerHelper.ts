@@ -144,6 +144,7 @@ export class SlotSchedulerHelper {
         continue;
       }
 
+      seenContentIds.add(program.uuid);
       slotPrograms.push({
         ...program,
         parentCustomShows: customShowContexts[program.uuid] ?? [],

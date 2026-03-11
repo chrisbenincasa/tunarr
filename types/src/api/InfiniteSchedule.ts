@@ -24,7 +24,6 @@ export const AnchorModeSchema = z.enum(['hard', 'soft', 'padded']);
 export type AnchorMode = z.infer<typeof AnchorModeSchema>;
 
 export const InfiniteSlotTypeSchema = z.enum([
-  'movie',
   'show',
   'custom-show',
   'filler',
@@ -116,11 +115,6 @@ export const BaseInfiniteSlotSchema = z.object({
 
 export type BaseScheduleSlot = z.infer<typeof BaseInfiniteSlotSchema>;
 
-export const MovieScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
-  type: z.literal('movie'),
-  slotConfig: InfiniteSlotConfigSchema.optional(),
-});
-
 export const ShowScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('show'),
   showId: z.uuid(),
@@ -155,7 +149,6 @@ export const SmartCollectionScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
 });
 
 export const ScheduleSlotSchema = z.discriminatedUnion('type', [
-  MovieScheduleSlotSchema,
   ShowScheduleSlotSchema,
   CustomShowScheduleSlotSchema,
   FillerScheduleSlotSchema,
@@ -231,7 +224,6 @@ export type MaterializedSmartCollectioScheduleSlot = z.infer<
 
 export const MaterializedScheduleSlotSchema = z.discriminatedUnion('type', [
   FlexScheduleSlotSchema,
-  MovieScheduleSlotSchema,
   MaterializedRedirectScheduleSlotSchema,
   MaterializedCustomShowScheduleSlotSchema,
   MaterializedFillerShowScheduleSlotSchema,
@@ -303,6 +295,7 @@ export const GeneratedFillerScheduleItemSchema =
   BaseGeneratedScheduleItemSchema.extend({
     itemType: z.literal('filler'),
     fillerListId: z.string(),
+    programUuid: z.string().uuid().nullish(),
   });
 
 export const GeneratedRedirectScheduleItemSchema =
@@ -403,15 +396,15 @@ export type InfiniteSchedulePreviewRequest = z.infer<
   typeof InfiniteSchedulePreviewRequestSchema
 >;
 
-export const InfiniteSchedulePreviewResponseSchema = z.object({
+export const InfiniteScheduleGenerationResponseSchema = z.object({
   items: z.array(GeneratedScheduleItemSchema),
   fromTimeMs: z.number(),
   toTimeMs: z.number(),
   contentPrograms: z.record(z.uuid(), ContentProgramSchema),
 });
 
-export type InfiniteSchedulePreviewResponse = z.infer<
-  typeof InfiniteSchedulePreviewResponseSchema
+export type InfiniteScheduleGenerationResponse = z.infer<
+  typeof InfiniteScheduleGenerationResponseSchema
 >;
 
 // Add/Update slot request

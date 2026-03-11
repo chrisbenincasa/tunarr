@@ -35,7 +35,7 @@ import type { SlotViewModel } from '../../model/SlotModels.ts';
 import { RouterLink } from '../base/RouterLink.tsx';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
-import { SlotFillerDialogPanel } from './SlotFillerDialogPanel.tsx';
+import { SlotFillerDialogPanel } from './LegacySlotFillerDialogPanel.tsx';
 
 type EditRandomSlotDialogContentProps = {
   slot: SlotViewModel;

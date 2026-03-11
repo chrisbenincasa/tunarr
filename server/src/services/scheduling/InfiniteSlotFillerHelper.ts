@@ -11,6 +11,7 @@ import dayjs from '@/util/dayjs.js';
 import { isNonEmptyArray } from '@/util/index.js';
 import type { FillerProgram } from '@tunarr/types';
 import type {
+  FillerPlaybackMode,
   FillerProgrammingSlot,
   SlotFiller,
   SlotFillerTypes,
@@ -41,8 +42,7 @@ type ListEntry = {
 
 type TypeEntry = {
   listId: string;
-  mode: 'relaxed' | 'strict';
-  count: number;
+  playbackMode: FillerPlaybackMode;
 };
 
 /**
@@ -71,8 +71,8 @@ export class InfiniteSlotFillerHelper {
     for (const def of fillerDefs) {
       const fillerListId = def.fillerListId;
       const fillerOrder = def.fillerOrder ?? 'shuffle_prefer_short';
-      const mode = def.mode ?? 'relaxed';
-      const count = def.count ?? 1;
+      const playbackMode: FillerPlaybackMode =
+        def.playbackMode ?? { type: 'relaxed' };
 
       if (!this.listEntries.has(fillerListId)) {
         const programs = programsByListId[fillerListId] ?? [];
@@ -159,14 +159,13 @@ export class InfiniteSlotFillerHelper {
         });
       }
 
-      // Map each type to this list entry (mode/count come from the def)
-      for (const type of def.types) {
-        const existing = this.fillerByType.get(type) ?? [];
-        // Avoid duplicate entries for the same fillerListId+type
-        if (!existing.some((e) => e.listId === fillerListId)) {
-          existing.push({ listId: fillerListId, mode, count });
-          this.fillerByType.set(type, existing);
-        }
+      // Map the singular type to this list entry
+      const type = def.type;
+      const existing = this.fillerByType.get(type) ?? [];
+      // Avoid duplicate entries for the same (fillerListId, type) pair
+      if (!existing.some((e) => e.listId === fillerListId)) {
+        existing.push({ listId: fillerListId, playbackMode });
+        this.fillerByType.set(type, existing);
       }
     }
   }
@@ -177,16 +176,13 @@ export class InfiniteSlotFillerHelper {
   }
 
   /**
-   * Returns the mode and count for the first config entry matching this type.
+   * Returns the playback mode for the first config entry matching this type.
    * Returns null if no entry exists for this type.
    */
-  modeAndCount(
-    type: SlotFillerTypes,
-  ): { mode: 'relaxed' | 'strict'; count: number } | null {
+  getPlaybackMode(type: SlotFillerTypes): FillerPlaybackMode | null {
     const entries = this.fillerByType.get(type);
     if (!entries || entries.length === 0) return null;
-    const first = entries[0]!;
-    return { mode: first.mode, count: first.count };
+    return entries[0]!.playbackMode;
   }
 
   /**
@@ -265,10 +261,13 @@ export class InfiniteSlotFillerHelper {
   }
 
   /**
-   * Emit filler items of the given type and return them along with total time
-   * consumed.  For strict mode, emits exactly `count` items (or fewer if
-   * nothing is available).  For relaxed mode, emits at most 1 item within
-   * `flexBudgetMs`.
+   * Emit filler items of the given type and return them along with total time consumed.
+   *
+   * Modes:
+   * - `relaxed`: emit at most 1 item within `flexBudgetMs`
+   * - `count`: emit exactly N items unconditionally
+   * - `duration`: emit items until `durationMs` time target is met
+   * - `random_count`: emit a random number of items between min and available count
    */
   emitFillerItems(
     type: SlotFillerTypes,
@@ -276,8 +275,7 @@ export class InfiniteSlotFillerHelper {
     scheduleUuid: string,
     slotUuid: string,
     startTimeMs: number,
-    strict: boolean,
-    count: number,
+    playbackMode: FillerPlaybackMode,
     flexBudgetMs: number,
     startSeqIndex: number,
   ): {
@@ -289,35 +287,38 @@ export class InfiniteSlotFillerHelper {
     let timeConsumed = 0;
     let seqIndex = startSeqIndex;
 
-    if (strict) {
-      for (let i = 0; i < count; i++) {
-        // For strict: use the list's maxDuration so all programs qualify
-        const sel = this.select(
-          type,
-          Number.MAX_SAFE_INTEGER,
-          startTimeMs + timeConsumed,
-        );
-        if (!sel) break;
-        items.push(
-          this.createFillerItem(
-            channelUuid,
-            scheduleUuid,
-            slotUuid,
-            sel.program,
-            type,
-            sel.fillerListId,
-            startTimeMs + timeConsumed,
-            sel.program.duration,
-            seqIndex++,
-          ),
-        );
-        timeConsumed += sel.program.duration;
+    switch (playbackMode.type) {
+      case 'relaxed': {
+        // At most 1 item within the flex budget
+        if (flexBudgetMs > 0) {
+          const sel = this.select(type, flexBudgetMs, startTimeMs);
+          if (sel) {
+            items.push(
+              this.createFillerItem(
+                channelUuid,
+                scheduleUuid,
+                slotUuid,
+                sel.program,
+                type,
+                sel.fillerListId,
+                startTimeMs,
+                sel.program.duration,
+                seqIndex++,
+              ),
+            );
+            timeConsumed += sel.program.duration;
+          }
+        }
+        break;
       }
-    } else {
-      // Relaxed: at most 1 item within the flex budget
-      if (flexBudgetMs > 0) {
-        const sel = this.select(type, flexBudgetMs, startTimeMs);
-        if (sel) {
+      case 'count': {
+        for (let i = 0; i < playbackMode.count; i++) {
+          const sel = this.select(
+            type,
+            Number.MAX_SAFE_INTEGER,
+            startTimeMs + timeConsumed,
+          );
+          if (!sel) break;
           items.push(
             this.createFillerItem(
               channelUuid,
@@ -326,13 +327,71 @@ export class InfiniteSlotFillerHelper {
               sel.program,
               type,
               sel.fillerListId,
-              startTimeMs,
+              startTimeMs + timeConsumed,
               sel.program.duration,
               seqIndex++,
             ),
           );
           timeConsumed += sel.program.duration;
         }
+        break;
+      }
+      case 'duration': {
+        const targetMs = playbackMode.durationMs;
+        while (timeConsumed < targetMs) {
+          const remaining = targetMs - timeConsumed;
+          const sel = this.select(type, remaining, startTimeMs + timeConsumed);
+          if (!sel) break;
+          items.push(
+            this.createFillerItem(
+              channelUuid,
+              scheduleUuid,
+              slotUuid,
+              sel.program,
+              type,
+              sel.fillerListId,
+              startTimeMs + timeConsumed,
+              sel.program.duration,
+              seqIndex++,
+            ),
+          );
+          timeConsumed += sel.program.duration;
+        }
+        break;
+      }
+      case 'random_count': {
+        const typeEntries = this.fillerByType.get(type) ?? [];
+        const totalSize = typeEntries.reduce((sum, { listId }) => {
+          const entry = this.listEntries.get(listId);
+          return sum + (entry?.programs.length ?? 0);
+        }, 0);
+        if (totalSize === 0) break;
+        const min = playbackMode.min ?? 1;
+        const max = Math.min(playbackMode.max ?? totalSize, totalSize);
+        const n = this.random.integer(min, Math.max(min, max));
+        for (let i = 0; i < n; i++) {
+          const sel = this.select(
+            type,
+            Number.MAX_SAFE_INTEGER,
+            startTimeMs + timeConsumed,
+          );
+          if (!sel) break;
+          items.push(
+            this.createFillerItem(
+              channelUuid,
+              scheduleUuid,
+              slotUuid,
+              sel.program,
+              type,
+              sel.fillerListId,
+              startTimeMs + timeConsumed,
+              sel.program.duration,
+              seqIndex++,
+            ),
+          );
+          timeConsumed += sel.program.duration;
+        }
+        break;
       }
     }
 

@@ -126,7 +126,7 @@ export function channelProgramUniqueId(program: ChannelProgram): string {
     case 'redirect':
       return `redirect.${program.channel}`;
     case 'filler':
-      return `filler.${program.fillerListId}`;
+      return `filler.${program.fillerListId}.${program.id}`;
     case 'flex':
       return 'flex';
   }
@@ -348,4 +348,22 @@ export function formatBytes(bytes: number, decimals: number = 2): string {
   const formatted = value.toFixed(decimals);
 
   return `${isNegative ? '-' : ''}${formatted} ${units[i]}`;
+}
+
+export function addIndexesAndCalculateOffsets<T extends { duration: number }>(
+  items: T[],
+  firstOffset: number = 0,
+  firstIndex: number = 0,
+): (T & UIIndex & { startTimeOffset: number })[] {
+  let runningOffset = firstOffset;
+  return map(items, (item, index) => {
+    const newItem = {
+      ...item,
+      originalIndex: firstIndex + index,
+      uiIndex: firstIndex + index,
+      startTimeOffset: runningOffset,
+    };
+    runningOffset += item.duration;
+    return newItem;
+  });
 }

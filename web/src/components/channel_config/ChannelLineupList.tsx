@@ -5,6 +5,7 @@ import {
   Directions,
   Expand,
   MusicVideo,
+  PlaylistPlay,
   VideoCameraBackOutlined,
 } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -194,13 +195,16 @@ const ProgramListItem = ({
       {titleFormatter(program)}
     </Box>,
   ];
-  const startTimeDate = !isUndefined(program.startTimeOffset)
-    ? dayjs(channel.startTime + program.startTimeOffset)
-    : program.startTime
-      ? dayjs(program.startTime)
+  const startTimeDate = program.startTime
+    ? dayjs(program.startTime)
+    : !isUndefined(program.startTimeOffset)
+      ? dayjs(channel.startTime + program.startTimeOffset)
       : undefined;
 
   const startTime = startTimeDate?.format(smallViewport ? 'L LT' : 'lll');
+  if (!startTime) {
+    console.log('hello', program);
+  }
   if (!smallViewport && showProgramStartTime && startTime) {
     if (startTime) {
       titleParts.push(<Box component="span">{startTime}</Box>);
@@ -220,6 +224,8 @@ const ProgramListItem = ({
       .with('other_video', () => <VideoCameraBackOutlined />)
       .with(P.nullish, () => null)
       .exhaustive();
+  } else if (program.type === 'filler') {
+    icon = <PlaylistPlay />;
   } else if (program.type === 'flex') {
     icon = <Expand />;
   } else if (program.type === 'redirect') {

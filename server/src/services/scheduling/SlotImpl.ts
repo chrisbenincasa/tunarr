@@ -37,12 +37,11 @@ export abstract class SlotImpl<
           continue;
         }
 
-        for (const type of filler.types) {
-          if (this.fillerIteratorsByType[type]) {
-            this.fillerIteratorsByType[type].push(it);
-          } else {
-            this.fillerIteratorsByType[type] = [it];
-          }
+        const type = filler.type;
+        if (this.fillerIteratorsByType[type]) {
+          this.fillerIteratorsByType[type].push(it);
+        } else {
+          this.fillerIteratorsByType[type] = [it];
         }
       }
     }

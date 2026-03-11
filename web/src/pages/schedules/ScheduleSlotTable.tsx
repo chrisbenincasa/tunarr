@@ -1,5 +1,5 @@
 import { Edit } from '@mui/icons-material';
-import { Stack } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type {
   MaterializedSchedule2,
@@ -13,8 +13,9 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
-import { useMemo } from 'react';
-import { useFormContext } from 'react-hook-form';
+import { useCallback, useMemo } from 'react';
+import type { FieldArrayWithId } from 'react-hook-form';
+import { useFieldArray, useFormContext } from 'react-hook-form';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import {
@@ -26,11 +27,17 @@ type Props = {
   schedule: MaterializedSchedule2;
 };
 
+type SlotRowType = FieldArrayWithId<Schedule, 'slots'>;
+
 export const ScheduleSlotTable = ({ schedule }: Props) => {
   const scheduleForm = useFormContext<Schedule>();
   const [slotPlaybackOrder] = scheduleForm.watch(['slotPlaybackOrder']);
+  const slotArray = useFieldArray({
+    control: scheduleForm.control,
+    name: 'slots',
+  });
 
-  const columns = useMemo((): MRT_ColumnDef<MaterializedScheduleSlot>[] => {
+  const columns = useMemo((): MRT_ColumnDef<SlotRowType>[] => {
     return [
       {
         header: 'Type',
@@ -55,7 +62,6 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
               { type: 'smart-collection' },
               (sc) => sc.smartCollection?.name,
             )
-            .with({ type: 'movie' }, () => 'Movie')
             .with({ type: 'filler' }, () => 'Filler')
             .with({ type: 'redirect' }, (r) => r.channel?.name)
             .exhaustive();
@@ -90,19 +96,27 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
         Cell({ row: { original } }) {
           const mode = original.anchorMode;
           const time = original.anchorTime;
+          const days = original.anchorDays ?? [];
           if (!mode || !time) {
             return '-';
           }
 
+          const utc = dayjs().utc();
+          const dayStrs: string[] = [];
+          for (const day of days) {
+            dayStrs.push(utc.weekday(day).format('dd'));
+          }
+          const dayStr = dayStrs.length > 0 ? ` ${dayStrs.join(',')}` : '';
+
           const pretty = capitalize(mode);
-          return `${pretty} @ ${dayjs().startOf('day').add(time).format('LT')}`;
+          return `${pretty} @ ${dayjs().startOf('day').add(time).format('LT')}${dayStr}`;
         },
       },
     ];
   }, []);
 
   const table = useMaterialReactTable({
-    data: schedule.slots,
+    data: slotArray.fields,
     columns,
     getRowId: (row) => row.uuid ?? v4(),
     enableRowActions: true,
@@ -111,6 +125,7 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
     enableFullScreenToggle: false,
     enableRowDragging: slotPlaybackOrder === 'ordered',
     enableSorting: slotPlaybackOrder !== 'ordered',
+    enableRowOrdering: slotPlaybackOrder === 'ordered',
     renderRowActions: ({ row }) => {
       return (
         <>
@@ -130,12 +145,12 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
         visibleInShowHideMenu: false,
       },
     },
-    muiRowDragHandleProps: () => ({
+    muiRowDragHandleProps: ({ table }) => ({
       onDragEnd: () => {
-        // const { draggingRow, hoveredRow } = table.getState();
-        // if (hoveredRow && draggingRow && !isUndefined(hoveredRow.index)) {
-        //   prefFields.swap(hoveredRow.index, draggingRow.index);
-        // }
+        const { draggingRow, hoveredRow } = table.getState();
+        if (hoveredRow && draggingRow) {
+          slotArray.swap(hoveredRow.index!, draggingRow.index);
+        }
       },
     }),
     renderTopToolbarCustomActions() {
@@ -163,5 +178,18 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
     }),
   });
 
-  return <MaterialReactTable table={table} />;
+  const stopBubble: React.DragEventHandler = useCallback((e) => {
+    e.stopPropagation();
+  }, []);
+
+  return (
+    <Box
+      onDragStart={stopBubble}
+      onDragEnter={stopBubble}
+      onDragOver={stopBubble}
+      onDrop={stopBubble}
+    >
+      <MaterialReactTable table={table} />
+    </Box>
+  );
 };

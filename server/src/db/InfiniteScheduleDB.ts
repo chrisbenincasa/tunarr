@@ -735,6 +735,22 @@ export class InfiniteScheduleDB {
   }
 
   /**
+   * Delete all generated items (across all channels) that have fully aired
+   * before the given time. Useful for periodic global cleanup.
+   */
+  async deleteAllGeneratedItemsBefore(beforeTimeMs: number): Promise<number> {
+    const result = await this.drizzle
+      .delete(GeneratedScheduleItem)
+      .where(
+        lt(
+          sql`${GeneratedScheduleItem.startTimeMs} + ${GeneratedScheduleItem.durationMs}`,
+          beforeTimeMs,
+        ),
+      );
+    return result.changes;
+  }
+
+  /**
    * Clear all generated items for a channel
    */
   async clearGeneratedItems(channelUuid: string): Promise<number> {

@@ -12,8 +12,6 @@ import type { Dictionary } from 'ts-essentials';
 import { useGetRouteDetails } from '../hooks/useRouteName.ts';
 import { RouterLink } from './base/RouterLink.tsx';
 
-const templateExtractor = /\{\{\s*(.*?)\s*\}\}/g;
-
 type Props = BreadcrumbsProps & {
   thisRouteName?: string;
   routeNameMap?: Dictionary<string>;
@@ -57,9 +55,6 @@ export default function Breadcrumbs(props: Props) {
             return null;
           }
 
-          console.log(route.name, [
-            ...route.name.matchAll(/\{\{\s*(.*?)\s*\}\}/g),
-          ]);
           const routeName = route.name.replaceAll(
             /\{\{\s*(.*?)\s*\}\}/g,
             (_, match) => {

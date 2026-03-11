@@ -29,7 +29,7 @@ import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
-import { SlotFillerDialogPanel } from './SlotFillerDialogPanel.tsx';
+import { SlotFillerDialogPanel } from './LegacySlotFillerDialogPanel.tsx';
 import { TimeSlotConfigDialogPanel } from './TimeSlotConfigDialogPanel.tsx';
 
 const DaysOfWeekMenuItems = [

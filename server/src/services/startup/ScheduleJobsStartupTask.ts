@@ -2,6 +2,7 @@ import { inject, injectable, interfaces } from 'inversify';
 import { filter, flatten, forEach, values } from 'lodash-es';
 import { container } from '../../container.ts';
 import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
+import { CleanupGeneratedScheduleItemsTask } from '../../tasks/CleanupGeneratedScheduleItemsTask.ts';
 import { CleanupSessionsTask } from '../../tasks/CleanupSessionsTask.ts';
 import { OnDemandChannelStateTask } from '../../tasks/OnDemandChannelStateTask.ts';
 import { RefreshMediaSourceLibraryTask } from '../../tasks/RefreshMediaSourceLibraryTask.ts';
@@ -45,6 +46,18 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
           KEYS.UpdateXmlTvTaskFactory,
         ),
         {},
+      ),
+    );
+
+    GlobalScheduler.scheduleTask(
+      CleanupGeneratedScheduleItemsTask.ID,
+      new ScheduledTask(
+        CleanupGeneratedScheduleItemsTask,
+        hoursCrontab(1),
+        container.get<interfaces.AutoFactory<CleanupGeneratedScheduleItemsTask>>(
+          CleanupGeneratedScheduleItemsTask.KEY,
+        ),
+        undefined,
       ),
     );
 

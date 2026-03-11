@@ -13,7 +13,6 @@ import { ProgramGrouping } from './ProgramGrouping.ts';
 import { SmartCollection } from './SmartCollection.ts';
 
 export const InfiniteSlotTypes = [
-  'movie',
   'show',
   'custom-show',
   'filler',
@@ -70,6 +69,8 @@ export const InfiniteScheduleSlot = sqliteTable(
     scheduleUuid: text()
       .notNull()
       .references(() => InfiniteSchedule.uuid, { onDelete: 'cascade' }),
+
+    // Generally only used for ordered playback mode
     slotIndex: integer().notNull(),
     slotType: text({ enum: InfiniteSlotTypes }).notNull(),
 
@@ -98,7 +99,7 @@ export const InfiniteScheduleSlot = sqliteTable(
     anchorMode: text({ enum: AnchorModes }),
     anchorDays: text({ mode: 'json' }).$type<number[]>(), // Days of week [0-6]
 
-    // For floating slots
+    // For floating slots used in shuffle mode
     weight: integer().default(1).notNull(),
     cooldownMs: integer().default(0).notNull(),
 

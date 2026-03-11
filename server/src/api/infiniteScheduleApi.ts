@@ -10,8 +10,8 @@ import {
   BasicIdParamSchema,
   CreateInfiniteScheduleRequestSchema,
   GeneratedScheduleItemSchema,
+  InfiniteScheduleGenerationResponseSchema,
   InfiniteSchedulePreviewRequestSchema,
-  InfiniteSchedulePreviewResponseSchema,
   MaterializedScheduleSchema,
   ScheduleAssignChannelsResultSchema,
   ScheduleSchema,
@@ -24,6 +24,7 @@ import { isNil, uniq } from 'lodash-es';
 import { v4 } from 'uuid';
 import { z } from 'zod/v4';
 import { MaterializeScheduleCommand } from '../commands/MaterializeScheduleCommand.ts';
+import { MaterializeScheduleGeneratedItems } from '../commands/scheduling/MaterializeScheduleGeneratedItems.ts';
 import { MaterializeScheduleGenerationResult } from '../commands/scheduling/MaterializeScheduleGenerationResult.ts';
 import { container } from '../container.ts';
 import { InfiniteScheduleGenerator } from '../services/scheduling/InfiniteScheduleGenerator.ts';
@@ -285,7 +286,7 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
             .default(() => +dayjs().add(1, 'day').startOf('day')),
         }),
         response: {
-          200: InfiniteSchedulePreviewResponseSchema,
+          200: InfiniteScheduleGenerationResponseSchema,
           400: BaseErrorSchema,
           404: z.void(),
         },
@@ -623,8 +624,7 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
 
       // For full/buffer resets, always start from now (state was cleared or
       // is being discarded).  For 'none', respect the caller-supplied fromTimeMs.
-      const fromTimeMs =
-        resetMode !== 'none' ? undefined : req.body.fromTimeMs;
+      const fromTimeMs = resetMode !== 'none' ? undefined : req.body.fromTimeMs;
 
       const generator = getGenerator();
       const result = await generator.generate(channel.uuid, fromTimeMs);
@@ -765,9 +765,7 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
           toTimeMs: z.coerce.number(),
         }),
         response: {
-          200: z.object({
-            items: z.array(GeneratedScheduleItemSchema),
-          }),
+          200: InfiniteScheduleGenerationResponseSchema,
           404: z.object({ error: z.string() }),
         },
       },
@@ -791,7 +789,16 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         req.query.toTimeMs,
       );
 
-      return res.send({ items: items.map(generatedScheduleItemToDto) });
+      const materialized = await container
+        .get(MaterializeScheduleGeneratedItems)
+        .run({ items });
+
+      return res.send({
+        contentPrograms: groupByUniq(materialized, (m) => m.id!),
+        fromTimeMs: req.query.fromTimeMs,
+        toTimeMs: req.query.toTimeMs,
+        items: items.map(generatedScheduleItemToDto),
+      });
     },
   );
 

@@ -211,6 +211,7 @@ export const ContentProgramSchema = CondensedContentProgramSchema.extend({
   uniqueId: z.string(), // If persisted, this is the ID. If not persisted, this is `externalSourceType|externalSourceName|externalKey`
   externalIds: z.array(ExternalIdSchema),
   canonicalId: z.string().optional(),
+  startTime: z.number().optional(),
 });
 
 export const CondensedCustomProgramSchema = BaseProgramSchema.extend({

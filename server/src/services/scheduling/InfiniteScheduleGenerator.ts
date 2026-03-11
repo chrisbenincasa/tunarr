@@ -277,7 +277,6 @@ export class InfiniteScheduleGenerator {
           );
         return Object.values(documents).flat();
       }
-      case 'movie': // Not supported currently
       case 'redirect':
       case 'flex':
         return [];
@@ -953,89 +952,51 @@ export class InfiniteScheduleGenerator {
 
       // ── Pre-content filler injection ──────────────────────────────────────
 
-      // (1) Strict head — fires once before the first content item in a run
+      // (1/2) Head — fires once before the first content item in a run
       if (fillerHelper && isFirstInRun) {
-        const mc = fillerHelper.modeAndCount('head');
-        if (mc?.mode === 'strict') {
-          const r = fillerHelper.emitFillerItems(
-            'head',
-            channelUuid,
-            schedule.uuid,
-            slot.uuid,
-            currentTimeMs,
-            true,
-            mc.count,
-            0,
-            sequenceIndex,
-          );
-          items.push(...r.items);
-          currentTimeMs += r.timeConsumedMs;
-          sequenceIndex = r.nextSeqIndex;
+        const pm = fillerHelper.getPlaybackMode('head');
+        if (pm) {
+          const isRelaxed = pm.type === 'relaxed';
+          if (!isRelaxed || flexBudget > 0) {
+            const r = fillerHelper.emitFillerItems(
+              'head',
+              channelUuid,
+              schedule.uuid,
+              slot.uuid,
+              currentTimeMs,
+              pm,
+              flexBudget,
+              sequenceIndex,
+            );
+            items.push(...r.items);
+            currentTimeMs += r.timeConsumedMs;
+            if (isRelaxed) flexBudget -= r.timeConsumedMs;
+            sequenceIndex = r.nextSeqIndex;
+          }
         }
       }
 
-      // (2) Relaxed head — fires within the flex budget before the first content item
-      if (fillerHelper && isFirstInRun && flexBudget > 0) {
-        const mc = fillerHelper.modeAndCount('head');
-        if (mc?.mode === 'relaxed') {
-          const r = fillerHelper.emitFillerItems(
-            'head',
-            channelUuid,
-            schedule.uuid,
-            slot.uuid,
-            currentTimeMs,
-            false,
-            1,
-            flexBudget,
-            sequenceIndex,
-          );
-          items.push(...r.items);
-          currentTimeMs += r.timeConsumedMs;
-          flexBudget -= r.timeConsumedMs;
-          sequenceIndex = r.nextSeqIndex;
-        }
-      }
-
-      // (3) Strict pre — fires before each content item
+      // (3/4) Pre — fires before each content item
       if (fillerHelper) {
-        const mc = fillerHelper.modeAndCount('pre');
-        if (mc?.mode === 'strict') {
-          const r = fillerHelper.emitFillerItems(
-            'pre',
-            channelUuid,
-            schedule.uuid,
-            slot.uuid,
-            currentTimeMs,
-            true,
-            mc.count,
-            0,
-            sequenceIndex,
-          );
-          items.push(...r.items);
-          currentTimeMs += r.timeConsumedMs;
-          sequenceIndex = r.nextSeqIndex;
-        }
-      }
-
-      // (4) Relaxed pre — fires within flex budget before each content item
-      if (fillerHelper && flexBudget > 0) {
-        const mc = fillerHelper.modeAndCount('pre');
-        if (mc?.mode === 'relaxed') {
-          const r = fillerHelper.emitFillerItems(
-            'pre',
-            channelUuid,
-            schedule.uuid,
-            slot.uuid,
-            currentTimeMs,
-            false,
-            1,
-            flexBudget,
-            sequenceIndex,
-          );
-          items.push(...r.items);
-          currentTimeMs += r.timeConsumedMs;
-          flexBudget -= r.timeConsumedMs;
-          sequenceIndex = r.nextSeqIndex;
+        const pm = fillerHelper.getPlaybackMode('pre');
+        if (pm) {
+          const isRelaxed = pm.type === 'relaxed';
+          if (!isRelaxed || flexBudget > 0) {
+            const r = fillerHelper.emitFillerItems(
+              'pre',
+              channelUuid,
+              schedule.uuid,
+              slot.uuid,
+              currentTimeMs,
+              pm,
+              flexBudget,
+              sequenceIndex,
+            );
+            items.push(...r.items);
+            currentTimeMs += r.timeConsumedMs;
+            if (isRelaxed) flexBudget -= r.timeConsumedMs;
+            sequenceIndex = r.nextSeqIndex;
+          }
         }
       }
 
@@ -1076,18 +1037,17 @@ export class InfiniteScheduleGenerator {
 
       // ── Post-content filler injection (relaxed — consume from flex budget) ─
 
-      // (7) Relaxed post
+      // (7) Post (relaxed)
       if (fillerHelper && flexBudget > 0) {
-        const mc = fillerHelper.modeAndCount('post');
-        if (mc?.mode === 'relaxed') {
+        const pm = fillerHelper.getPlaybackMode('post');
+        if (pm?.type === 'relaxed') {
           const r = fillerHelper.emitFillerItems(
             'post',
             channelUuid,
             schedule.uuid,
             slot.uuid,
             currentTimeMs,
-            false,
-            1,
+            pm,
             flexBudget,
             sequenceIndex,
           );
@@ -1098,18 +1058,17 @@ export class InfiniteScheduleGenerator {
         }
       }
 
-      // (8) Relaxed tail — fires within flex budget after the last content item
+      // (8) Tail (relaxed) — fires within flex budget after the last content item
       if (fillerHelper && isLastInRun && flexBudget > 0) {
-        const mc = fillerHelper.modeAndCount('tail');
-        if (mc?.mode === 'relaxed') {
+        const pm = fillerHelper.getPlaybackMode('tail');
+        if (pm?.type === 'relaxed') {
           const r = fillerHelper.emitFillerItems(
             'tail',
             channelUuid,
             schedule.uuid,
             slot.uuid,
             currentTimeMs,
-            false,
-            1,
+            pm,
             flexBudget,
             sequenceIndex,
           );
@@ -1153,20 +1112,19 @@ export class InfiniteScheduleGenerator {
         currentTimeMs += flexBudget;
       }
 
-      // ── Post-content filler injection (strict — unconditionally advances time) ─
+      // ── Post-content filler injection (non-relaxed — unconditionally advances time) ─
 
-      // (11) Strict post
+      // (11) Post (non-relaxed)
       if (fillerHelper) {
-        const mc = fillerHelper.modeAndCount('post');
-        if (mc?.mode === 'strict') {
+        const pm = fillerHelper.getPlaybackMode('post');
+        if (pm && pm.type !== 'relaxed') {
           const r = fillerHelper.emitFillerItems(
             'post',
             channelUuid,
             schedule.uuid,
             slot.uuid,
             currentTimeMs,
-            true,
-            mc.count,
+            pm,
             0,
             sequenceIndex,
           );
@@ -1176,18 +1134,17 @@ export class InfiniteScheduleGenerator {
         }
       }
 
-      // (12) Strict tail — fires unconditionally after the last content item
+      // (12) Tail (non-relaxed) — fires unconditionally after the last content item
       if (fillerHelper && isLastInRun) {
-        const mc = fillerHelper.modeAndCount('tail');
-        if (mc?.mode === 'strict') {
+        const pm = fillerHelper.getPlaybackMode('tail');
+        if (pm && pm.type !== 'relaxed') {
           const r = fillerHelper.emitFillerItems(
             'tail',
             channelUuid,
             schedule.uuid,
             slot.uuid,
             currentTimeMs,
-            true,
-            mc.count,
+            pm,
             0,
             sequenceIndex,
           );
@@ -1508,89 +1465,51 @@ export class InfiniteScheduleGenerator {
 
       // ── Pre-content filler (shuffle mode: head/pre fire around every program) ─
 
-      // (1) Strict head
+      // (1/2) Head
       if (fillerHelper && isFirstInRun) {
-        const mc = fillerHelper.modeAndCount('head');
-        if (mc?.mode === 'strict') {
-          const r = fillerHelper.emitFillerItems(
-            'head',
-            channelUuid,
-            schedule.uuid,
-            slot.uuid,
-            currentTimeMs,
-            true,
-            mc.count,
-            0,
-            sequenceIndex,
-          );
-          items.push(...r.items);
-          currentTimeMs += r.timeConsumedMs;
-          sequenceIndex = r.nextSeqIndex;
+        const pm = fillerHelper.getPlaybackMode('head');
+        if (pm) {
+          const isRelaxed = pm.type === 'relaxed';
+          if (!isRelaxed || flexBudget > 0) {
+            const r = fillerHelper.emitFillerItems(
+              'head',
+              channelUuid,
+              schedule.uuid,
+              slot.uuid,
+              currentTimeMs,
+              pm,
+              flexBudget,
+              sequenceIndex,
+            );
+            items.push(...r.items);
+            currentTimeMs += r.timeConsumedMs;
+            if (isRelaxed) flexBudget -= r.timeConsumedMs;
+            sequenceIndex = r.nextSeqIndex;
+          }
         }
       }
 
-      // (2) Relaxed head
-      if (fillerHelper && isFirstInRun && flexBudget > 0) {
-        const mc = fillerHelper.modeAndCount('head');
-        if (mc?.mode === 'relaxed') {
-          const r = fillerHelper.emitFillerItems(
-            'head',
-            channelUuid,
-            schedule.uuid,
-            slot.uuid,
-            currentTimeMs,
-            false,
-            1,
-            flexBudget,
-            sequenceIndex,
-          );
-          items.push(...r.items);
-          currentTimeMs += r.timeConsumedMs;
-          flexBudget -= r.timeConsumedMs;
-          sequenceIndex = r.nextSeqIndex;
-        }
-      }
-
-      // (3) Strict pre
+      // (3/4) Pre
       if (fillerHelper) {
-        const mc = fillerHelper.modeAndCount('pre');
-        if (mc?.mode === 'strict') {
-          const r = fillerHelper.emitFillerItems(
-            'pre',
-            channelUuid,
-            schedule.uuid,
-            slot.uuid,
-            currentTimeMs,
-            true,
-            mc.count,
-            0,
-            sequenceIndex,
-          );
-          items.push(...r.items);
-          currentTimeMs += r.timeConsumedMs;
-          sequenceIndex = r.nextSeqIndex;
-        }
-      }
-
-      // (4) Relaxed pre
-      if (fillerHelper && flexBudget > 0) {
-        const mc = fillerHelper.modeAndCount('pre');
-        if (mc?.mode === 'relaxed') {
-          const r = fillerHelper.emitFillerItems(
-            'pre',
-            channelUuid,
-            schedule.uuid,
-            slot.uuid,
-            currentTimeMs,
-            false,
-            1,
-            flexBudget,
-            sequenceIndex,
-          );
-          items.push(...r.items);
-          currentTimeMs += r.timeConsumedMs;
-          flexBudget -= r.timeConsumedMs;
-          sequenceIndex = r.nextSeqIndex;
+        const pm = fillerHelper.getPlaybackMode('pre');
+        if (pm) {
+          const isRelaxed = pm.type === 'relaxed';
+          if (!isRelaxed || flexBudget > 0) {
+            const r = fillerHelper.emitFillerItems(
+              'pre',
+              channelUuid,
+              schedule.uuid,
+              slot.uuid,
+              currentTimeMs,
+              pm,
+              flexBudget,
+              sequenceIndex,
+            );
+            items.push(...r.items);
+            currentTimeMs += r.timeConsumedMs;
+            if (isRelaxed) flexBudget -= r.timeConsumedMs;
+            sequenceIndex = r.nextSeqIndex;
+          }
         }
       }
 
@@ -1610,18 +1529,17 @@ export class InfiniteScheduleGenerator {
 
       iterator.next();
 
-      // (7) Relaxed post
+      // (7) Post (relaxed)
       if (fillerHelper && flexBudget > 0) {
-        const mc = fillerHelper.modeAndCount('post');
-        if (mc?.mode === 'relaxed') {
+        const pm = fillerHelper.getPlaybackMode('post');
+        if (pm?.type === 'relaxed') {
           const r = fillerHelper.emitFillerItems(
             'post',
             channelUuid,
             schedule.uuid,
             slot.uuid,
             currentTimeMs,
-            false,
-            1,
+            pm,
             flexBudget,
             sequenceIndex,
           );
@@ -1632,18 +1550,17 @@ export class InfiniteScheduleGenerator {
         }
       }
 
-      // (8) Relaxed tail
+      // (8) Tail (relaxed)
       if (fillerHelper && isLastInRun && flexBudget > 0) {
-        const mc = fillerHelper.modeAndCount('tail');
-        if (mc?.mode === 'relaxed') {
+        const pm = fillerHelper.getPlaybackMode('tail');
+        if (pm?.type === 'relaxed') {
           const r = fillerHelper.emitFillerItems(
             'tail',
             channelUuid,
             schedule.uuid,
             slot.uuid,
             currentTimeMs,
-            false,
-            1,
+            pm,
             flexBudget,
             sequenceIndex,
           );
@@ -1687,18 +1604,17 @@ export class InfiniteScheduleGenerator {
         currentTimeMs += flexBudget;
       }
 
-      // (11) Strict post
+      // (11) Post (non-relaxed)
       if (fillerHelper) {
-        const mc = fillerHelper.modeAndCount('post');
-        if (mc?.mode === 'strict') {
+        const pm = fillerHelper.getPlaybackMode('post');
+        if (pm && pm.type !== 'relaxed') {
           const r = fillerHelper.emitFillerItems(
             'post',
             channelUuid,
             schedule.uuid,
             slot.uuid,
             currentTimeMs,
-            true,
-            mc.count,
+            pm,
             0,
             sequenceIndex,
           );
@@ -1708,18 +1624,17 @@ export class InfiniteScheduleGenerator {
         }
       }
 
-      // (12) Strict tail
+      // (12) Tail (non-relaxed)
       if (fillerHelper && isLastInRun) {
-        const mc = fillerHelper.modeAndCount('tail');
-        if (mc?.mode === 'strict') {
+        const pm = fillerHelper.getPlaybackMode('tail');
+        if (pm && pm.type !== 'relaxed') {
           const r = fillerHelper.emitFillerItems(
             'tail',
             channelUuid,
             schedule.uuid,
             slot.uuid,
             currentTimeMs,
-            true,
-            mc.count,
+            pm,
             0,
             sequenceIndex,
           );
