@@ -21,7 +21,7 @@ import { seq } from '@tunarr/shared/util';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import type { interfaces } from 'inversify';
-import { filter, isEmpty, last, maxBy, sortBy } from 'lodash-es';
+import { filter, isEmpty, last, maxBy, sortBy, map } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
@@ -433,16 +433,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     const subtitleSegments = filter(
       seq.collect(
         filter(workingDirectoryFiles, (f) => extname(f) === '.vtt'),
-        (file) => {
-          const matches = file.match(/sub(\d+)\.vtt/);
-          if (matches && matches.length > 0) {
-            return {
-              file,
-              seq: parseInt(matches[1]!),
-            };
-          }
-          return;
-        },
+        (file) => this.extractSubtitleSegments(file),
       ),
       ({ seq }) => seq < sequenceNum,
     );
@@ -471,20 +462,25 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
     const numbers = seq.collect(
       filter(workingDirectoryFiles.get(), (f) => extname(f) === '.vtt'),
-      (file) => {
-        const matches = file.match(/sub(\d+)\.vtt/);
-        if (matches && matches.length > 0) {
-          return parseInt(matches[1]!);
-        }
-        return;
-      },
+      (file) => this.extractSubtitleSegments(file),
     );
 
     if (numbers.length === 0) {
       return this.#subtitleSegmentStartNumber;
     }
 
-    return (maxBy(numbers) ?? 0) + 1;
+    return (maxBy(map(numbers, 'seq')) ?? 0) + 1;
+  }
+
+  private extractSubtitleSegments(file: string) {
+    const matches = file.match(/sub(\d+)\.vtt/);
+    if (matches && matches.length > 0) {
+      return {
+        file,
+        seq: parseInt(matches[1]!),
+      };
+    }
+    return;
   }
 
   protected async stopStream(): Promise<void> {
