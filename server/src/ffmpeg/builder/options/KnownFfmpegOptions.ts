@@ -10,4 +10,6 @@ export const KnownFfmpegFilters = {
   TonemapVaapi: 'tonemap_vaapi',
   TonemapOpencl: 'tonemap_opencl',
   Libplacebo: 'libplacebo',
+  PadVaapi: 'pad_vaapi',
+  PadOpencl: 'pad_opencl',
 };
