@@ -260,7 +260,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       await programStream.start();
       const waitResult = await programStream.transcodeSession.wait();
       if (
-        getBooleanEnvVar(TUNARR_ENV_VARS.WEBVTT_SIDECAR, false) &&
+        getBooleanEnvVar(TUNARR_ENV_VARS.WEBVTT_SIDECAR_ENABLED, false) &&
         this.channel.subtitlesEnabled
       ) {
         this.#subtitleSegmentStartNumber =
@@ -298,7 +298,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     const hlsOptions = this.getHlsOptions();
 
     const subtitleOptions =
-      getBooleanEnvVar(TUNARR_ENV_VARS.WEBVTT_SIDECAR, false) &&
+      getBooleanEnvVar(TUNARR_ENV_VARS.WEBVTT_SIDECAR_ENABLED, false) &&
       this.channel.subtitlesEnabled
         ? {
             subtitlePlaylistPath: this._subtitlePlaylistPath,

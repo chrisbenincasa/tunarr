@@ -448,7 +448,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     // Sidecar mode is active when the output format carries subtitle options
     // (set by HlsSession) and the global env var is enabled.
     const isSidecarRequested =
-      getBooleanEnvVar(TUNARR_ENV_VARS.WEBVTT_SIDECAR, false) &&
+      getBooleanEnvVar(TUNARR_ENV_VARS.WEBVTT_SIDECAR_ENABLED, false) &&
       (outputFormat.type === OutputFormatTypes.Hls ||
         outputFormat.type === OutputFormatTypes.HlsDirectV2) &&
       (outputFormat as { subtitleOptions?: unknown }).subtitleOptions !==
