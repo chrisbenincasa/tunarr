@@ -5,22 +5,24 @@ import { OutputOption } from './OutputOption.ts';
  * This is added as a second output to the FFmpeg command when WebVTT sidecar
  * subtitle delivery is enabled.
  */
+type HlsWebVttOutputFormatOptions = {
+  subtitleInputIndex: number;
+  subtitleStreamIndex: number;
+  subtitlePlaylistPath: string;
+  subtitleSegmentTemplate: string;
+  subtitleBaseUrl: string;
+  segmentStartNumber: number;
+};
+
 export class HlsWebVttOutputFormat extends OutputOption {
-  constructor(
-    private subtitleInputIndex: number,
-    private subtitleStreamIndex: number,
-    private subtitlePlaylistPath: string,
-    private subtitleSegmentTemplate: string,
-    private subtitleBaseUrl: string,
-    private segmentStartNumber: number,
-  ) {
+  constructor(private opts: HlsWebVttOutputFormatOptions) {
     super();
   }
 
   options(): string[] {
     return [
       '-map',
-      `${this.subtitleInputIndex}:${this.subtitleStreamIndex}`,
+      `${this.opts.subtitleInputIndex}:${this.opts.subtitleStreamIndex}`,
       '-c:s',
       'webvtt',
       '-f',
@@ -30,16 +32,16 @@ export class HlsWebVttOutputFormat extends OutputOption {
       '-segment_time',
       '4',
       '-segment_list',
-      this.subtitlePlaylistPath,
+      this.opts.subtitlePlaylistPath,
       '-segment_list_flags',
       '+live',
       '-segment_list_entry_prefix',
-      this.subtitleBaseUrl,
+      this.opts.subtitleBaseUrl,
       '-segment_start_number',
-      String(this.segmentStartNumber),
+      String(this.opts.segmentStartNumber),
       '-break_non_keyframes',
       '1',
-      this.subtitleSegmentTemplate,
+      this.opts.subtitleSegmentTemplate,
     ];
   }
 }

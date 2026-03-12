@@ -637,14 +637,14 @@ export class FfmpegStreamFactory extends IFFMPEG {
       }
 
       pipeline.steps.push(
-        new HlsWebVttOutputFormat(
+        new HlsWebVttOutputFormat({
           subtitleInputIndex,
           subtitleStreamIndex,
-          subtitleOpts.subtitlePlaylistPath,
-          subtitleOpts.subtitleSegmentTemplate,
-          subtitleOpts.subtitleBaseUrl,
-          subtitleOpts.segmentStartNumber,
-        ),
+          subtitlePlaylistPath: subtitleOpts.subtitlePlaylistPath,
+          subtitleSegmentTemplate: subtitleOpts.subtitleSegmentTemplate,
+          subtitleBaseUrl: subtitleOpts.subtitleBaseUrl,
+          segmentStartNumber: subtitleOpts.segmentStartNumber,
+        }),
       );
     }
 
