@@ -34,7 +34,11 @@ import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBu
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { Maybe, Nullable } from '@/types/util.js';
-import { TONEMAP_ENABLED, getBooleanEnvVar } from '@/util/env.js';
+import {
+  TONEMAP_ENABLED,
+  TUNARR_ENV_VARS,
+  getBooleanEnvVar,
+} from '@/util/env.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { every, head, inRange } from 'lodash-es';
 import { P, match } from 'ts-pattern';
@@ -434,15 +438,24 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       return currentState;
     }
 
+    // Enabled by default
+    const disableHardwarePad = getBooleanEnvVar(
+      TUNARR_ENV_VARS.DISABLE_VAAPI_PAD,
+      false,
+    );
     let padFilter: Maybe<FilterOption>;
     if (this.context.videoStream.isHdr()) {
       padFilter = PadFilter.create(currentState, this.desiredState);
-    } else if (this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.PadVaapi)) {
+    } else if (
+      !disableHardwarePad &&
+      this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.PadVaapi)
+    ) {
       padFilter = new PadVaapiFilter(
         currentState,
         this.desiredState.paddedSize,
       );
     } else if (
+      !disableHardwarePad &&
       this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.PadOpencl)
     ) {
       padFilter = new PadOpenclFilter(

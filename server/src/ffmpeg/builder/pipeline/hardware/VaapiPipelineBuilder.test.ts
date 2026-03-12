@@ -1,4 +1,4 @@
-import { TONEMAP_ENABLED } from '@/util/env.js';
+import { TONEMAP_ENABLED, TUNARR_ENV_VARS } from '@/util/env.js';
 import { FileStreamSource } from '../../../../stream/types.ts';
 import { FfmpegCapabilities } from '../../capabilities/FfmpegCapabilities.ts';
 import {
@@ -461,6 +461,16 @@ describe('VaapiPipelineBuilder', () => {
 });
 
 describe('VaapiPipelineBuilder pad', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
   const fakeVersion = {
     versionString: 'n7.0.2',
     majorVersion: 7,
@@ -606,6 +616,53 @@ describe('VaapiPipelineBuilder pad', () => {
     const padVaapiIndex = args.indexOf('pad_vaapi');
     expect(hwuploadIndex).toBeGreaterThan(-1);
     expect(hwuploadIndex).toBeLessThan(padVaapiIndex);
+  });
+
+  test('falls back to software pad when TUNARR_DISABLE_VAAPI_PAD=true, even when pad_vaapi is available', () => {
+    process.env[TUNARR_ENV_VARS.DISABLE_VAAPI_PAD] = 'true';
+
+    const pipeline = buildWithPad({ videoStream: create43VideoStream() });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).not.toContain('pad_vaapi');
+    expect(args).toContain('pad=1920:1080');
+  });
+
+  test('falls back to software pad when TUNARR_DISABLE_VAAPI_PAD=true and only pad_opencl is available', () => {
+    process.env[TUNARR_ENV_VARS.DISABLE_VAAPI_PAD] = 'true';
+
+    const pipeline = buildWithPad({
+      videoStream: create43VideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.PadOpencl]),
+        new Set(),
+      ),
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).not.toContain('pad_opencl');
+    expect(args).toContain('pad=1920:1080');
+  });
+
+  test('uses pad_vaapi when TUNARR_DISABLE_VAAPI_PAD is not set', () => {
+    delete process.env[TUNARR_ENV_VARS.DISABLE_VAAPI_PAD];
+
+    const pipeline = buildWithPad({ videoStream: create43VideoStream() });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).toContain('pad_vaapi=w=1920:h=1080');
+  });
+
+  test('uses pad_vaapi when TUNARR_DISABLE_VAAPI_PAD=false', () => {
+    process.env[TUNARR_ENV_VARS.DISABLE_VAAPI_PAD] = 'false';
+
+    const pipeline = buildWithPad({ videoStream: create43VideoStream() });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).toContain('pad_vaapi=w=1920:h=1080');
+    expect(args).not.toContain('pad=1920:1080');
   });
 });
 
