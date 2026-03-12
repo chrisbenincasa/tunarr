@@ -457,6 +457,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     );
 
     if (workingDirectoryFiles.isFailure()) {
+      this.logger.error(
+        workingDirectoryFiles.error,
+        'Unable to read segment working directory',
+      );
       return this.#subtitleSegmentStartNumber;
     }
 
