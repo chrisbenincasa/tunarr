@@ -16,7 +16,7 @@ import type { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
-import { wait } from '@/util/index.js';
+import { isDefined, wait } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
@@ -473,7 +473,8 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       return this.#subtitleSegmentStartNumber;
     }
 
-    return (maxBy(map(numbers, 'seq')) ?? 0) + 1;
+    const max = maxBy(map(numbers, 'seq'));
+    return isDefined(max) ? max + 1 : 0;
   }
 
   private extractSubtitleSegments(file: string) {
