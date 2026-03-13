@@ -12,8 +12,10 @@ export class TonemapFilter extends FilterOption {
   public readonly affectsFrameState = true;
 
   public get filter(): string {
-    const tonemap =
-      'zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=s=bt709:t=bt709:m=bt709:r=tv,format=yuv420p';
+    const transfer = this.currentState.colorFormat?.colorTransfer;
+    // DV Profile 5 may have `color_transfer = null/unknown` explicitly specify so zscale does not incorrectly convert PQ when color transfer is unknown
+    const tinParam = transfer ? `:tin=${transfer}` : '';
+    const tonemap = `zscale=t=linear${tinParam}:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=s=bt709:t=bt709:m=bt709:r=tv,format=yuv420p`;
     return this.currentState.frameDataLocation === FrameDataLocation.Hardware
       ? `hwdownload,format=p010le|nv12,${tonemap}`
       : tonemap;

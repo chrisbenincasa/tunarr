@@ -982,4 +982,93 @@ describe('VaapiPipelineBuilder tonemap', () => {
     expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
     expect(hasSoftwareTonemapFilter(pipeline)).to.eq(true);
   });
+
+  test('applies tonemap_vaapi for Dolby Vision content (dvhe codec)', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const dvStream = VideoStream.create({
+      index: 0,
+      codec: 'dvhe',
+      profile: 'dvhe.08.09',
+      pixelFormat: new PixelFormatYuv420P10Le(),
+      frameSize: FrameSize.FourK,
+      displayAspectRatio: '16:9',
+      providedSampleAspectRatio: '1:1',
+      colorFormat: new ColorFormat({
+        colorRange: ColorRanges.Tv,
+        colorSpace: ColorSpaces.Bt2020nc,
+        colorPrimaries: ColorPrimaries.Bt2020,
+        colorTransfer: ColorTransferFormats.Smpte2084,
+      }),
+    });
+
+    const pipeline = buildWithTonemap({ videoStream: dvStream });
+
+    expect(hasTonemapFilter(pipeline)).to.eq(true);
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
+  });
+
+  test('applies software tonemap for Dolby Vision (dvhe codec) when hardware filters are disabled', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const dvStream = VideoStream.create({
+      index: 0,
+      codec: 'dvhe',
+      profile: 'dvhe.08.09',
+      pixelFormat: new PixelFormatYuv420P10Le(),
+      frameSize: FrameSize.FourK,
+      displayAspectRatio: '16:9',
+      providedSampleAspectRatio: '1:1',
+      colorFormat: new ColorFormat({
+        colorRange: ColorRanges.Tv,
+        colorSpace: ColorSpaces.Bt2020nc,
+        colorPrimaries: ColorPrimaries.Bt2020,
+        colorTransfer: ColorTransferFormats.Smpte2084,
+      }),
+    });
+
+    const pipeline = buildWithTonemap({
+      videoStream: dvStream,
+      disableHardwareFilters: true,
+    });
+
+    expect(hasTonemapFilter(pipeline)).to.eq(false);
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
+    expect(hasSoftwareTonemapFilter(pipeline)).to.eq(true);
+  });
+
+  test('applies software tonemap for Dolby Vision with profile string (hevc codec)', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const dvStream = VideoStream.create({
+      index: 0,
+      codec: 'hevc',
+      profile: 'dolby vision / hevc main 10',
+      pixelFormat: new PixelFormatYuv420P10Le(),
+      frameSize: FrameSize.FourK,
+      displayAspectRatio: '16:9',
+      providedSampleAspectRatio: '1:1',
+      colorFormat: new ColorFormat({
+        colorRange: ColorRanges.Tv,
+        colorSpace: ColorSpaces.Bt2020nc,
+        colorPrimaries: ColorPrimaries.Bt2020,
+        colorTransfer: ColorTransferFormats.Smpte2084,
+      }),
+    });
+
+    const pipeline = buildWithTonemap({
+      videoStream: dvStream,
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set(),
+        new Set(),
+      ),
+    });
+
+    // No hardware tonemap filter, falls back to software
+    expect(hasTonemapFilter(pipeline)).to.eq(false);
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
+    expect(hasSoftwareTonemapFilter(pipeline)).to.eq(true);
+  });
 });

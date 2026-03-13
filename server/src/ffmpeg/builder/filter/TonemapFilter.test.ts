@@ -1,10 +1,11 @@
 import {
-  ColorRanges,
-  ColorTransferFormats,
-  ColorSpaces,
   ColorPrimaries,
+  ColorRanges,
+  ColorSpaces,
+  ColorTransferFormats,
 } from '@/ffmpeg/builder/constants.js';
-import { TonemapFilter } from '@/ffmpeg/builder/filter/TonemapFilter.ts';
+import { TonemapFilter } from '@/ffmpeg/builder/filter/TonemapFilter.js';
+import { ColorFormat } from '@/ffmpeg/builder/format/ColorFormat.js';
 import {
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
@@ -111,5 +112,81 @@ describe('TonemapFilter', () => {
     const nextState = filter.nextState(currentState);
 
     expect(nextState.pixelFormat).toMatchPixelFormat(new PixelFormatYuv420P());
+  });
+
+  test('filter includes tin=smpte2084 when colorTransfer is smpte2084 (HDR10)', () => {
+    const currentState = new FrameState({
+      scaledSize: FrameSize.FHD,
+      paddedSize: FrameSize.FHD,
+      isAnamorphic: false,
+      pixelFormat: new PixelFormatYuv420P10Le(),
+      frameDataLocation: FrameDataLocation.Software,
+      colorFormat: new ColorFormat({
+        colorTransfer: ColorTransferFormats.Smpte2084,
+        colorSpace: ColorSpaces.Bt2020nc,
+        colorPrimaries: ColorPrimaries.Bt2020,
+        colorRange: ColorRanges.Tv,
+      }),
+    });
+
+    const filter = new TonemapFilter(currentState);
+
+    expect(filter.filter).toContain('zscale=t=linear:tin=smpte2084:npl=100');
+  });
+
+  test('filter includes tin=arib-std-b67 when colorTransfer is arib-std-b67 (HLG)', () => {
+    const currentState = new FrameState({
+      scaledSize: FrameSize.FHD,
+      paddedSize: FrameSize.FHD,
+      isAnamorphic: false,
+      pixelFormat: new PixelFormatYuv420P10Le(),
+      frameDataLocation: FrameDataLocation.Software,
+      colorFormat: new ColorFormat({
+        colorTransfer: ColorTransferFormats.AribStdB67,
+        colorSpace: ColorSpaces.Bt2020nc,
+        colorPrimaries: ColorPrimaries.Bt2020,
+        colorRange: ColorRanges.Tv,
+      }),
+    });
+
+    const filter = new TonemapFilter(currentState);
+
+    expect(filter.filter).toContain('zscale=t=linear:tin=arib-std-b67:npl=100');
+  });
+
+  test('filter omits tin= when colorTransfer is null', () => {
+    const currentState = new FrameState({
+      scaledSize: FrameSize.FHD,
+      paddedSize: FrameSize.FHD,
+      isAnamorphic: false,
+      pixelFormat: new PixelFormatYuv420P10Le(),
+      frameDataLocation: FrameDataLocation.Software,
+    });
+
+    const filter = new TonemapFilter(currentState);
+
+    expect(filter.filter).toContain('zscale=t=linear:npl=100');
+    expect(filter.filter).not.toContain('tin=');
+  });
+
+  test('hardware location with smpte2084 includes hwdownload prefix and tin=smpte2084', () => {
+    const currentState = new FrameState({
+      scaledSize: FrameSize.FHD,
+      paddedSize: FrameSize.FHD,
+      isAnamorphic: false,
+      pixelFormat: new PixelFormatYuv420P10Le(),
+      frameDataLocation: FrameDataLocation.Hardware,
+      colorFormat: new ColorFormat({
+        colorTransfer: ColorTransferFormats.Smpte2084,
+        colorSpace: ColorSpaces.Bt2020nc,
+        colorPrimaries: ColorPrimaries.Bt2020,
+        colorRange: ColorRanges.Tv,
+      }),
+    });
+
+    const filter = new TonemapFilter(currentState);
+
+    expect(filter.filter).toMatch(/^hwdownload,format=p010le\|nv12,/);
+    expect(filter.filter).toContain('zscale=t=linear:tin=smpte2084:npl=100');
   });
 });

@@ -83,6 +83,14 @@ export class VideoStream implements MediaStream {
     return this.colorFormat?.isHdr ?? false;
   }
 
+  isDolbyVision(): boolean {
+    return (
+      this.codec === VideoFormats.Dvhe ||
+      this.codec === VideoFormats.Dvh1 ||
+      (this.profile?.toLowerCase().includes('dolby vision') ?? false)
+    );
+  }
+
   get sampleAspectRatio(): string {
     const inputSar = this.providedSampleAspectRatio;
     if (isNull(inputSar) || isEmpty(inputSar) || inputSar === '0:0') {
