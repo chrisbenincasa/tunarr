@@ -3,7 +3,7 @@ import { serverOptions } from '@/globals.js';
 import { scheduleBackupJobs } from '@/services/Scheduler.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { getDefaultLogLevel } from '@/util/defaults.js';
-import { ifDefined } from '@/util/index.js';
+import { ifDefined, mapToObj } from '@/util/index.js';
 import {
   getEnvironmentLogLevel,
   getPrettyStreamOpts,
@@ -175,6 +175,22 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
         } else {
           system.logging.logLevel =
             req.body.logging?.logLevel ?? getDefaultLogLevel(false);
+        }
+
+        if (!req.body.logging?.categoryLogLevel?.scheduling) {
+          delete system.logging.categoryLogLevel?.scheduling;
+        } else {
+          system.logging.categoryLogLevel ??= {};
+          system.logging.categoryLogLevel.scheduling =
+            req.body.logging.categoryLogLevel.scheduling;
+        }
+
+        if (!req.body.logging?.categoryLogLevel?.streaming) {
+          delete system.logging.categoryLogLevel?.streaming;
+        } else {
+          system.logging.categoryLogLevel ??= {};
+          system.logging.categoryLogLevel.streaming =
+            req.body.logging.categoryLogLevel.streaming;
         }
 
         if (!isUndefined(req.body.backup)) {
@@ -474,6 +490,14 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       return res.send(obj);
     },
   );
+
+  fastify.get('/system/debug/loggers', (_, res) => {
+    return res.send(
+      mapToObj([...LoggerFactory.traverseHierarchy()], ([k, v]) => ({
+        [k]: v,
+      })),
+    );
+  });
 
   function getSystemSettingsResponse(
     settings: DeepReadonly<SystemSettings>,

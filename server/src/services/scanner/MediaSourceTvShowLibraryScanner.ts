@@ -223,7 +223,12 @@ export abstract class MediaSourceTvShowLibraryScanner<
     );
 
     if (upsertResult.isFailure()) {
-      this.logger.warn(upsertResult.error, 'Failed to upsert show');
+      this.logger.warn(
+        upsertResult.error,
+        'Failed to upsert show (%s ID = %s)',
+        groupingAndRelations.programGrouping.sourceType,
+        groupingAndRelations.programGrouping.externalKey,
+      );
       return upsertResult.recast();
     }
 

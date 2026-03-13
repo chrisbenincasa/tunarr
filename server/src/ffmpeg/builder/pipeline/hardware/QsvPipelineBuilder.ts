@@ -20,9 +20,9 @@ import { WatermarkScaleFilter } from '@/ffmpeg/builder/filter/watermark/Watermar
 import {
   PixelFormatNv12,
   PixelFormatP010,
+  PixelFormats,
   PixelFormatYuv420P10Le,
   PixelFormatYuva420P,
-  PixelFormats,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
 import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
 import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
@@ -39,6 +39,7 @@ import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { every, head, inRange, isNull, some } from 'lodash-es';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../../../../util/env.ts';
 import { H264QsvEncoder } from '../../encoder/qsv/H264QsvEncoder.ts';
 import { HevcQsvEncoder } from '../../encoder/qsv/HevcQsvEncoder.ts';
 import { Mpeg2QsvEncoder } from '../../encoder/qsv/Mpeg2QsvEncoder.ts';
@@ -47,6 +48,8 @@ import { ResetPtsFilter } from '../../filter/ResetPtsFilter.ts';
 import { SetFpsFilter } from '../../filter/SetFpsFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
+import { HardwareUploadQsvFilter } from '../../filter/qsv/HardwareUploadQsvFilter.ts';
+import { TonemapQsvFilter } from '../../filter/qsv/TonemapQsvFilter.ts';
 import type { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
 import { CopyTimestampInputOption } from '../../options/input/CopyTimestampInputOption.ts';
 import { FrameRateOutputOption } from '../../options/output/FrameRateOutputOption.ts';
@@ -94,8 +97,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
 
     if (
       canDecode &&
-      (this.context.videoStream.codec === VideoFormats.H264 ||
-        this.context.videoStream.codec === VideoFormats.Hevc) &&
+      this.context.videoStream.codec === VideoFormats.H264 &&
       this.context.videoStream.pixelFormat?.bitDepth === 10
     ) {
       canDecode = false;
@@ -191,6 +193,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
 
     currentState = this.setDeinterlace(currentState);
     currentState = this.setScale(currentState);
+    currentState = this.setTonemap(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
 
@@ -248,10 +251,12 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
   protected setDeinterlace(currentState: FrameState): FrameState {
     let nextState = currentState;
     if (this.context.shouldDeinterlace) {
-      const filter =
-        currentState.frameDataLocation === FrameDataLocation.Software
-          ? new DeinterlaceFilter(this.ffmpegState, currentState)
-          : new DeinterlaceQsvFilter(currentState);
+      let filter: FilterOption;
+      if (this.context.pipelineOptions.disableHardwareFilters) {
+        filter = new DeinterlaceFilter(this.ffmpegState, currentState);
+      } else {
+        filter = new DeinterlaceQsvFilter(currentState);
+      }
       nextState = filter.nextState(nextState);
       this.videoInputSource.filterSteps.push(filter);
     }
@@ -263,7 +268,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       return currentState;
     }
 
-    const { videoStream, ffmpegState, desiredState } = this.context;
+    const { ffmpegState, desiredState } = this.context;
     let nextState = currentState;
     const needsScale = !currentState.scaledSize.equals(desiredState.scaledSize);
     const noHardware =
@@ -285,11 +290,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
         desiredState.paddedSize,
       );
     } else {
-      scaleFilter = new ScaleQsvFilter(
-        videoStream,
-        nextState,
-        desiredState.scaledSize,
-      );
+      scaleFilter = new ScaleQsvFilter(nextState, desiredState.scaledSize);
     }
 
     if (isNonEmptyString(scaleFilter.filter)) {
@@ -534,6 +535,38 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
         }
       }
     }
+
+    return currentState;
+  }
+
+  protected setTonemap(currentState: FrameState): FrameState {
+    if (!this.context.videoStream?.isHdr()) {
+      return currentState;
+    }
+
+    if (!getBooleanEnvVar(TUNARR_ENV_VARS.TONEMAP_ENABLED, false)) {
+      return currentState;
+    }
+
+    if (this.context.pipelineOptions.disableHardwareFilters) {
+      if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
+        const hwDownload = new HardwareDownloadFilter(currentState);
+        currentState = hwDownload.nextState(currentState);
+        this.videoInputSource.addFilter(hwDownload);
+      }
+      // TODO: refactor this into a "strategy"
+      return super.setTonemap(currentState);
+    }
+
+    if (currentState.frameDataLocation === FrameDataLocation.Software) {
+      const hwUpload = new HardwareUploadQsvFilter(64);
+      currentState = hwUpload.nextState(currentState);
+      this.videoInputSource.addFilter(hwUpload);
+    }
+
+    const tonemap = new TonemapQsvFilter();
+    currentState = tonemap.nextState(currentState);
+    this.videoInputSource.addFilter(tonemap);
 
     return currentState;
   }

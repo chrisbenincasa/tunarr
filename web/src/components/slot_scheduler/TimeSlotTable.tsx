@@ -47,6 +47,7 @@ import { match, P } from 'ts-pattern';
 import { formatSlotOrder } from '../../helpers/slots.ts';
 import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
+import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import type {
   SlotWarning,
@@ -94,7 +95,7 @@ export const TimeSlotTable = () => {
   );
   const [selectedDay, setSelectedDay] = useState(0);
 
-  const [pagination, setPagination] = useState({
+  const tableState = useStoreBackedTableSettings('TimeSlots', {
     pageIndex: 0,
     pageSize: 25,
   });
@@ -399,6 +400,7 @@ export const TimeSlotTable = () => {
     enableGlobalFilter: false,
     enableFullScreenToggle: false,
     renderRowActions: renderActionCell,
+    ...tableState,
     renderTopToolbarCustomActions() {
       return (
         <Stack direction="row" alignItems="center" gap={2} useFlexGap>
@@ -420,10 +422,6 @@ export const TimeSlotTable = () => {
       density: 'compact',
     },
     autoResetPageIndex: false,
-    onPaginationChange: setPagination,
-    state: {
-      pagination,
-    },
   });
 
   return (

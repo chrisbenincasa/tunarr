@@ -12,12 +12,16 @@ import { useMemo } from 'react';
 import { Controller, useFieldArray } from 'react-hook-form';
 import { languageBy3LetterCode } from '../../helpers/language.ts';
 import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
+import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
 import { LanguageAutocomplete } from '../LanguageAutocomplete.tsx';
+
+const TableName = 'ChannelSubtitlePreferencesTable';
 
 export const ChannelSubtitlePreferencesTable = () => {
   const { watch, control, setValue } = useChannelFormContext();
   const prefFields = useFieldArray({ control, name: 'subtitlePreferences' });
   const prefs = watch('subtitlePreferences');
+  const tableSettings = useStoreBackedTableSettings(TableName);
 
   const columns = useMemo<MRT_ColumnDef<SubtitlePreference>[]>(() => {
     return [
@@ -191,6 +195,7 @@ export const ChannelSubtitlePreferencesTable = () => {
         }
       },
     }),
+    ...tableSettings,
   });
 
   return <MaterialReactTable table={table} />;

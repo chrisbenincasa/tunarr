@@ -1,4 +1,5 @@
 import type {
+  AnyFunction,
   DeepNonNullable,
   MarkRequired,
   StrictExclude,
@@ -56,3 +57,5 @@ export type PagedResult<T> = {
   total: number;
   results: Array<T>;
 };
+
+export type DataProps<T> = ExcludeByValueType<T, AnyFunction>;

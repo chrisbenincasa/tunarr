@@ -1,5 +1,6 @@
 import { Box, Stack, Typography } from '@mui/material';
 import { createFileRoute } from '@tanstack/react-router';
+import { ProgramViewToggleButton } from '../../../components/base/ProgramViewToggleButton.tsx';
 import { LibraryProgramGrid } from '../../../components/library/LibraryProgramGrid.tsx';
 import { SearchInput } from '../../../components/search/SearchInput.tsx';
 import {
@@ -27,8 +28,9 @@ function MediaSourceBrowserPage() {
   return (
     <Box>
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h4">
-          Media Source: "{library.mediaSource.name}"
+        <Typography variant="h4" sx={{ display: 'inline-flex', width: '100%' }}>
+          <span>Media Source: "{library.mediaSource.name}"</span>
+          <ProgramViewToggleButton sx={{ ml: { sm: undefined, md: 'auto' } }} />
         </Typography>
         <Typography variant="subtitle1">Library: {library.name}</Typography>
         <Typography variant="subtitle1">

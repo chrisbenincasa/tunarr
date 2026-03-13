@@ -52,6 +52,7 @@ import Migration1763749592_AddProgramState from './db/Migration1763749592_AddPro
 import Migration1764022266_AddCreditGroupingIndex from './db/Migration1764022266_AddCreditGroupingIndex.ts';
 import Migration1764022464_AddArtworkIndexes from './db/Migration1764022464_AddArtworkIndexes.ts';
 import Migration1767300603_AddExternalCollections from './db/Migration1767300603_AddExternalCollections.ts';
+import Migration1771271020_FixCustomShowContentKey from './db/Migration1771271020_FixCustomShowContentKey.ts';
 import { makeKyselyMigrationFromSqlFile } from './db/util.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
@@ -186,6 +187,20 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1768825617: makeKyselyMigrationFromSqlFile(
             './sql/0037_orange_bromley.sql',
           ),
+          migration1768876318: makeKyselyMigrationFromSqlFile(
+            './sql/0038_boring_maginty.sql',
+          ),
+          migration1769099084: makeKyselyMigrationFromSqlFile(
+            './sql/0039_famous_bloodscream.sql',
+          ),
+          migration1769361518: makeKyselyMigrationFromSqlFile(
+            './sql/0040_daffy_bishop.sql',
+            true,
+          ),
+          migration1770236998: makeKyselyMigrationFromSqlFile(
+            './sql/0041_easy_firebird.sql',
+          ),
+          migration1771271020: Migration1771271020_FixCustomShowContentKey,
         },
         wrapWithTransaction,
       ),

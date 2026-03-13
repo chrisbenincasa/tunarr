@@ -7,12 +7,15 @@ import { VaapiDecoder } from '@/ffmpeg/builder/decoder/vaapi/VaapiDecoder.js';
 import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js';
 import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.js';
+import { isHdrContent } from '@/ffmpeg/builder/filter/HdrDetection.js';
+import { TonemapOpenclFilter } from '@/ffmpeg/builder/filter/opencl/TonemapOpenclFilter.js';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import { PixelFormatFilter } from '@/ffmpeg/builder/filter/PixelFormatFilter.js';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
 import { DeinterlaceVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/DeinterlaceVaapiFilter.js';
 import { HardwareUploadVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/HardwareUploadVaapiFilter.js';
 import { ScaleVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/ScaleVaapiFilter.js';
+import { TonemapVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/TonemapVaapiFilter.js';
 import { VaapiFormatFilter } from '@/ffmpeg/builder/filter/vaapi/VaapiFormatFilter.js';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
 import { WatermarkOpacityFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkOpacityFilter.js';
@@ -26,12 +29,18 @@ import { ExtraHardwareFramesOption } from '@/ffmpeg/builder/options/hardwareAcce
 import { VaapiHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/VaapiOptions.js';
 import { DoNotIgnoreLoopInputOption } from '@/ffmpeg/builder/options/input/DoNotIgnoreLoopInputOption.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
+import { KnownFfmpegFilters } from '@/ffmpeg/builder/options/KnownFfmpegOptions.js';
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.js';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import type { Nullable } from '@/types/util.js';
+import type { Maybe, Nullable } from '@/types/util.js';
+import {
+  TONEMAP_ENABLED,
+  TUNARR_ENV_VARS,
+  getBooleanEnvVar,
+} from '@/util/env.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
-import { every, head, inRange, isUndefined } from 'lodash-es';
+import { every, head, inRange } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {
   H264VaapiEncoder,
@@ -39,8 +48,10 @@ import {
   Mpeg2VaapiEncoder,
 } from '../../encoder/vaapi/VaapiEncoders.ts';
 import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
+import { PadOpenclFilter } from '../../filter/opencl/PadOpenclFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
+import { PadVaapiFilter } from '../../filter/vaapi/PadVaapiFilter.ts';
 import { ScaleSubtitlesVaapiFilter } from '../../filter/vaapi/ScaleSubtitlesVaapiFilter.ts';
 import { VaapiOverlayFilter } from '../../filter/vaapi/VaapiOverlayFilter.ts';
 import { VaapiSubtitlePixelFormatFilter } from '../../filter/vaapi/VaapiSubtitlePixelFormatFilter.ts';
@@ -159,11 +170,13 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
       pixelFormat: videoStream.pixelFormat,
+      colorFormat: videoStream.colorFormat,
     });
 
     currentState = this.decoder?.nextState(currentState) ?? currentState;
 
     currentState = this.setDeinterlace(currentState);
+    currentState = this.setTonemap(currentState);
     currentState = this.setScale(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
@@ -336,6 +349,41 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     return nextState;
   }
 
+  protected setTonemap(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    const { videoStream, pipelineOptions } = this.context;
+
+    if (
+      !getBooleanEnvVar(TONEMAP_ENABLED, false) ||
+      !isHdrContent(videoStream)
+    ) {
+      return currentState;
+    }
+
+    let filter: FilterOption | undefined;
+    if (!pipelineOptions.disableHardwareFilters) {
+      if (this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapVaapi)) {
+        filter = new TonemapVaapiFilter(currentState);
+      } else if (
+        this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapOpencl)
+      ) {
+        filter = new TonemapOpenclFilter(currentState);
+      }
+    }
+
+    if (filter) {
+      const nextState = filter.nextState(currentState);
+      this.videoInputSource.filterSteps.push(filter);
+      return nextState;
+    }
+
+    // Fall back to software tonemap
+    return super.setTonemap(currentState);
+  }
+
   protected setScale(currentState: FrameState): FrameState {
     let nextState = currentState;
     const { desiredState, ffmpegState, shouldDeinterlace } = this.context;
@@ -379,16 +427,49 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
   }
 
   protected setPad(currentState: FrameState) {
-    let nextState = currentState;
     if (
-      isUndefined(this.desiredState.croppedSize) &&
-      !currentState.paddedSize.equals(this.desiredState.paddedSize)
+      this.desiredState.croppedSize &&
+      currentState.paddedSize.equals(this.desiredState.paddedSize)
     ) {
-      const padFilter = PadFilter.create(currentState, this.desiredState);
-      nextState = padFilter.nextState(currentState);
-      this.videoInputSource.filterSteps.push(padFilter);
+      return currentState;
     }
-    return nextState;
+
+    if (!this.context.videoStream) {
+      return currentState;
+    }
+
+    // Enabled by default
+    const disableHardwarePad = getBooleanEnvVar(
+      TUNARR_ENV_VARS.DISABLE_VAAPI_PAD,
+      false,
+    );
+    let padFilter: Maybe<FilterOption>;
+    if (this.context.videoStream.isHdr()) {
+      padFilter = PadFilter.create(currentState, this.desiredState);
+    } else if (
+      !disableHardwarePad &&
+      this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.PadVaapi)
+    ) {
+      padFilter = new PadVaapiFilter(
+        currentState,
+        this.desiredState.paddedSize,
+      );
+    } else if (
+      !disableHardwarePad &&
+      this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.PadOpencl)
+    ) {
+      padFilter = new PadOpenclFilter(
+        currentState,
+        this.desiredState.paddedSize,
+      );
+    } else {
+      padFilter = PadFilter.create(currentState, this.desiredState);
+    }
+
+    currentState = padFilter.nextState(currentState);
+    this.videoInputSource.filterSteps.push(padFilter);
+
+    return currentState;
   }
 
   protected addSubtitles(currentState: FrameState): FrameState {

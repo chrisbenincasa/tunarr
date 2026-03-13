@@ -6,6 +6,7 @@ import cors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
+import glob from 'fast-glob';
 import fastify, { FastifySchema } from 'fastify';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import fp from 'fastify-plugin';
@@ -21,6 +22,7 @@ import type { RouteOptions } from 'fastify/types/route.js';
 import { inject, injectable } from 'inversify';
 import {
   isArray,
+  isBoolean,
   isNumber,
   isString,
   isUndefined,
@@ -37,10 +39,12 @@ import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
+import { defaultHlsOptions } from './ffmpeg/builder/constants.ts';
 import { type ServerOptions, serverOptions } from './globals.js';
 import { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
-import { TUNARR_ENV_VARS } from './util/env.ts';
+import { Result } from './types/result.ts';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from './util/env.ts';
 import { filename, isDev, run, timeoutPromise } from './util/index.js';
 import { type Logger } from './util/logging/LoggerFactory.js';
 
@@ -63,6 +67,7 @@ export class Server {
       trustProxy: this.serverOptions.trustProxy,
     })
       .setValidatorCompiler(validatorCompiler)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       .setSerializerCompiler(serializerCompiler)
       .withTypeProvider<ZodTypeProvider>();
 
@@ -214,7 +219,16 @@ export class Server {
     );
 
     this.app.addHook('onResponse', (req, rep, done) => {
-      if (req.routeOptions.config.disableRequestLogging) {
+      if (
+        isBoolean(req.routeOptions.config.disableRequestLogging) &&
+        req.routeOptions.config.disableRequestLogging
+      ) {
+        return;
+      }
+
+      const onlyErrors =
+        req.routeOptions.config.disableRequestLogging === 'only-errors';
+      if (onlyErrors && rep.raw.statusCode < 400) {
         return;
       }
 
@@ -482,10 +496,10 @@ export class Server {
         level: 'warning',
       });
     } catch (e) {
-      this.logger.debug(e, 'Error sending shutdown signal to frontend');
+      this.logger.warn(e, 'Error sending shutdown signal to frontend');
     }
 
-    this.logger.debug('Canceling all active scans');
+    this.logger.info('Canceling all active scans');
     this.serverContext.mediaSourceScanCoordinator.cancelAll();
 
     try {
@@ -500,13 +514,13 @@ export class Server {
     this.serverContext.searchService.stop();
 
     try {
-      this.logger.debug('Pausing all on-demand channels');
+      this.logger.info('Pausing all on-demand channels');
       await this.serverContext.onDemandChannelService.pauseAllChannels();
     } catch (e) {
       this.logger.error(e, 'Error pausing on-demand channels');
     }
 
-    this.logger.debug('Shutting down all sessions');
+    this.logger.info('Shutting down all sessions');
     for (const session of values(
       this.serverContext.sessionManager.allSessions(),
     )) {
@@ -522,17 +536,31 @@ export class Server {
       }
     }
 
-    this.logger.debug('Shutting down all workers');
-    try {
-      await container.get<IWorkerPool>(KEYS.WorkerPool).shutdown(5_000);
-    } catch (e) {
-      this.logger.error(e, 'Error shutting down workers');
+    // TODO: This is a bug because in theory
+    // sessions can override this. But for the most part,
+    // it works
+    const baseStreamsDir = path.join(
+      serverOptions().databaseDirectory,
+      defaultHlsOptions.segmentBaseDirectory,
+    );
+    const transcodeDirs = await glob(path.join(`${baseStreamsDir}/*`));
+    await Promise.all(
+      transcodeDirs.map((dir) => Result.attemptAsync(() => fs.rmdir(dir))),
+    );
+
+    if (getBooleanEnvVar(TUNARR_ENV_VARS.USE_WORKER_POOL_ENV_VAR, false)) {
+      this.logger.info('Shutting down all workers');
+      try {
+        await container.get<IWorkerPool>(KEYS.WorkerPool).shutdown(5_000);
+      } catch (e) {
+        this.logger.error(e, 'Error shutting down workers');
+      }
     }
 
     this.serverContext.eventService.close();
 
     try {
-      this.logger.debug('Waiting for pending jobs to complete!');
+      this.logger.info('Waiting for pending jobs to complete!');
       await Promise.race([
         schedule.gracefulShutdown(),
         new Promise<boolean>((resolve) => {

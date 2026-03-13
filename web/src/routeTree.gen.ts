@@ -16,6 +16,7 @@ import { Route as SearchRouteImport } from './routes/search';
 import { Route as GuideRouteImport } from './routes/guide';
 import { Route as IndexRouteImport } from './routes/index';
 import { Route as SystemIndexRouteImport } from './routes/system/index';
+import { Route as Media_sourcesIndexRouteImport } from './routes/media_sources_/index';
 import { Route as LibraryIndexRouteImport } from './routes/library/index';
 import { Route as ChannelsIndexRouteImport } from './routes/channels_/index';
 import { Route as SystemTasksRouteImport } from './routes/system/tasks';
@@ -93,6 +94,11 @@ const SystemIndexRoute = SystemIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SystemRoute,
+} as any);
+const Media_sourcesIndexRoute = Media_sourcesIndexRouteImport.update({
+  id: '/media_sources_/',
+  path: '/media_sources/',
+  getParentRoute: () => rootRouteImport,
 } as any);
 const LibraryIndexRoute = LibraryIndexRouteImport.update({
   id: '/library/',
@@ -347,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/system/tasks': typeof SystemTasksRoute;
   '/channels': typeof ChannelsIndexRoute;
   '/library': typeof LibraryIndexRoute;
+  '/media_sources': typeof Media_sourcesIndexRoute;
   '/system/': typeof SystemIndexRoute;
   '/library/custom-shows/$showId': typeof LibraryCustomShowsShowIdRouteRouteWithChildren;
   '/library/custom-shows/new': typeof LibraryCustomShowsNewRouteRouteWithChildren;
@@ -396,6 +403,7 @@ export interface FileRoutesByTo {
   '/system/tasks': typeof SystemTasksRoute;
   '/channels': typeof ChannelsIndexRoute;
   '/library': typeof LibraryIndexRoute;
+  '/media_sources': typeof Media_sourcesIndexRoute;
   '/system': typeof SystemIndexRoute;
   '/library/custom-shows/$showId': typeof LibraryCustomShowsShowIdRouteRouteWithChildren;
   '/library/fillers/$fillerId': typeof LibraryFillersFillerIdRouteRouteWithChildren;
@@ -446,6 +454,7 @@ export interface FileRoutesById {
   '/system/tasks': typeof SystemTasksRoute;
   '/channels_/': typeof ChannelsIndexRoute;
   '/library/': typeof LibraryIndexRoute;
+  '/media_sources_/': typeof Media_sourcesIndexRoute;
   '/system/': typeof SystemIndexRoute;
   '/library/custom-shows_/$showId': typeof LibraryCustomShowsShowIdRouteRouteWithChildren;
   '/library/custom-shows_/new': typeof LibraryCustomShowsNewRouteRouteWithChildren;
@@ -499,6 +508,7 @@ export interface FileRouteTypes {
     | '/system/tasks'
     | '/channels'
     | '/library'
+    | '/media_sources'
     | '/system/'
     | '/library/custom-shows/$showId'
     | '/library/custom-shows/new'
@@ -548,6 +558,7 @@ export interface FileRouteTypes {
     | '/system/tasks'
     | '/channels'
     | '/library'
+    | '/media_sources'
     | '/system'
     | '/library/custom-shows/$showId'
     | '/library/fillers/$fillerId'
@@ -597,6 +608,7 @@ export interface FileRouteTypes {
     | '/system/tasks'
     | '/channels_/'
     | '/library/'
+    | '/media_sources_/'
     | '/system/'
     | '/library/custom-shows_/$showId'
     | '/library/custom-shows_/new'
@@ -641,6 +653,7 @@ export interface RootRouteChildren {
   LibraryFillersRoute: typeof LibraryFillersRoute;
   ChannelsIndexRoute: typeof ChannelsIndexRoute;
   LibraryIndexRoute: typeof LibraryIndexRoute;
+  Media_sourcesIndexRoute: typeof Media_sourcesIndexRoute;
   LibraryCustomShowsShowIdRouteRoute: typeof LibraryCustomShowsShowIdRouteRouteWithChildren;
   LibraryCustomShowsNewRouteRoute: typeof LibraryCustomShowsNewRouteRouteWithChildren;
   LibraryFillersFillerIdRouteRoute: typeof LibraryFillersFillerIdRouteRouteWithChildren;
@@ -703,6 +716,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/system/';
       preLoaderRoute: typeof SystemIndexRouteImport;
       parentRoute: typeof SystemRoute;
+    };
+    '/media_sources_/': {
+      id: '/media_sources_/';
+      path: '/media_sources';
+      fullPath: '/media_sources';
+      preLoaderRoute: typeof Media_sourcesIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
     '/library/': {
       id: '/library/';
@@ -1152,6 +1172,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryFillersRoute: LibraryFillersRoute,
   ChannelsIndexRoute: ChannelsIndexRoute,
   LibraryIndexRoute: LibraryIndexRoute,
+  Media_sourcesIndexRoute: Media_sourcesIndexRoute,
   LibraryCustomShowsShowIdRouteRoute:
     LibraryCustomShowsShowIdRouteRouteWithChildren,
   LibraryCustomShowsNewRouteRoute: LibraryCustomShowsNewRouteRouteWithChildren,

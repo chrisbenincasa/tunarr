@@ -1,4 +1,5 @@
-import type { Resolution, TupleToUnion } from '@tunarr/types';
+import type { LoudnormConfig } from '@tunarr/types';
+import { type Resolution, type TupleToUnion } from '@tunarr/types';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { inArray } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
@@ -7,6 +8,15 @@ import { v4 } from 'uuid';
 import { VideoFormats } from '../../ffmpeg/builder/constants.ts';
 import { booleanToNumber } from '../../util/sqliteUtil.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
+
+export const AllKnownHardwareAccelerationModes = [
+  'none',
+  'cuda',
+  'vaapi',
+  'qsv',
+  'videotoolbox',
+  'vulkan',
+] as const;
 
 export const HardwareAccelerationModes = [
   'none',
@@ -17,7 +27,7 @@ export const HardwareAccelerationModes = [
 ] as const;
 
 export type HardwareAccelerationMode = TupleToUnion<
-  typeof HardwareAccelerationModes
+  typeof AllKnownHardwareAccelerationModes
 >;
 
 export const HardwareAccelerationMode: Record<
@@ -29,6 +39,7 @@ export const HardwareAccelerationMode: Record<
   Qsv: 'qsv' as const,
   Videotoolbox: 'videotoolbox' as const,
   Vaapi: 'vaapi' as const,
+  Vulkan: 'vulkan' as const,
 } as const;
 
 export const VaapiDrivers = [
@@ -146,6 +157,7 @@ export const TranscodeConfig = sqliteTable(
     audioBufferSize: integer().notNull(),
     audioSampleRate: integer().notNull(),
     audioVolumePercent: integer().notNull().default(100), // Default 100
+    audioLoudnormConfig: text({ mode: 'json' }).$type<LoudnormConfig>(),
 
     normalizeFrameRate: integer({ mode: 'boolean' }).default(false),
     deinterlaceVideo: integer({ mode: 'boolean' }).default(true),

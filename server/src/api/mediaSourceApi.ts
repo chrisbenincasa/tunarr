@@ -34,6 +34,7 @@ import type { MarkOptional, StrictExtract } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
+import { DeleteMediaSourceCommand } from '../commands/media_source/DeleteMediaSourceCommand.ts';
 import { container } from '../container.ts';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { EntityMutex } from '../services/EntityMutex.ts';
@@ -734,10 +735,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const { deletedServer } =
-          await req.serverCtx.mediaSourceDB.deleteMediaSource(
-            tag(req.params.id),
-          );
+        const deletedServer = await container
+          .get<DeleteMediaSourceCommand>(DeleteMediaSourceCommand)
+          .run(tag(req.params.id));
 
         // Are these useful? What do they even do?
         req.serverCtx.eventService.push({

@@ -197,7 +197,7 @@ export type ShowMetadata = z.infer<typeof ShowMetadata>;
 export type OtherVideoMetadata = z.infer<typeof OtherVideoMetadata>;
 export type MusicArtistMetadata = z.infer<typeof MusicArtistMetadata>;
 export type MusicAlbumMetadata = z.infer<typeof MusicAlbumMetadata>;
-export type MusicTrackMetadata = z.infer<typeof MusicTrackMetadata>
+export type MusicTrackMetadata = z.infer<typeof MusicTrackMetadata>;
 
 export function isEpisodeWithHierarchy(
   f: TerminalProgram,
@@ -317,9 +317,13 @@ export function getChildCount(input: ProgramOrFolder): number | undefined {
     case 'other_video':
       return undefined;
     case 'show':
+      return input.seasons?.length ?? input.childCount;
     case 'season':
+      return input.episodes?.length ?? input.childCount;
     case 'album':
+      return input.tracks?.length ?? input.childCount;
     case 'artist':
+      return input.albums?.length ?? input.childCount;
     case 'folder':
     case 'collection':
     case 'playlist':

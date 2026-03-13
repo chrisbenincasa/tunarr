@@ -27,9 +27,11 @@ import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBu
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
-import type { Nullable } from '@/types/util.js';
+import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { head, isEmpty, isNil, isNull, reject, some } from 'lodash-es';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../../../../util/env.ts';
+import { VulkanDecoder } from '../../decoder/VulkanDecoder.ts';
 import {
   ImplicitNvidiaDecoder,
   NvidiaDecoder,
@@ -40,6 +42,7 @@ import {
 } from '../../encoder/nvidia/NvidiaEncoders.ts';
 import { HardwareDownloadFilter } from '../../filter/HardwareDownloadFilter.ts';
 import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
+import { LibplaceboTonemapFilter } from '../../filter/LibplaceboTonemapFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
 import { NvidiaCropBottomBitstreamFilter } from '../../filter/nvidia/NvidiaCropBottomBitstreamFilter.ts';
@@ -111,8 +114,20 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       canDecode = false;
     }
 
+    const needsTonemapWithVulkan =
+      getBooleanEnvVar(TUNARR_ENV_VARS.TONEMAP_ENABLED, false) &&
+      canDecode &&
+      this.ffmpegCapabilities.hasHardwareAccel(
+        HardwareAccelerationMode.Vulkan,
+      ) &&
+      this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.Libplacebo) &&
+      !!this.videoInputSource.streams?.[0]?.isHdr() &&
+      !getBooleanEnvVar(TUNARR_ENV_VARS.DISABLE_VULKAN, false);
+
     if (canDecode) {
-      pipelineSteps.push(new CudaHardwareAccelerationOption());
+      pipelineSteps.push(
+        new CudaHardwareAccelerationOption(needsTonemapWithVulkan),
+      );
     }
 
     ffmpegState.decoderHwAccelMode = canDecode
@@ -121,6 +136,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     ffmpegState.encoderHwAccelMode = canEncode
       ? HardwareAccelerationMode.Cuda
       : HardwareAccelerationMode.None;
+    ffmpegState.tonemapHdr = needsTonemapWithVulkan;
   }
 
   protected setupDecoder(): Nullable<Decoder> {
@@ -130,7 +146,12 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
 
     const { ffmpegState } = this.context;
     let decoder: Nullable<Decoder> = null;
-    if (ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda) {
+    if (ffmpegState.tonemapHdr) {
+      decoder = new VulkanDecoder();
+      this.videoInputSource.addOption(decoder);
+    } else if (
+      ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda
+    ) {
       decoder = new ImplicitNvidiaDecoder();
       this.videoInputSource.addOption(decoder);
     } else {
@@ -172,6 +193,10 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       );
       currentState = filter.nextState(currentState);
       this.videoInputSource.addFilter(filter);
+    }
+
+    if (this.ffmpegState.tonemapHdr) {
+      currentState = this.setTonemap(currentState);
     }
 
     currentState = NvidiaDeinterlacer.setDeinterlace(
@@ -770,6 +795,31 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
 
       this.context.filterChain.watermarkOverlayFilterSteps.push(overlayFilter);
       currentState = overlayFilter.nextState(currentState);
+    }
+
+    return currentState;
+  }
+
+  protected setTonemap(currentState: FrameState): FrameState {
+    if (!this.context.videoStream?.isHdr()) {
+      return currentState;
+    }
+
+    if (!this.desiredState.pixelFormat) {
+      return currentState;
+    }
+
+    let tonemapFilter: Maybe<FilterOption>;
+    if (this.ffmpegState.tonemapHdr) {
+      tonemapFilter = new LibplaceboTonemapFilter(
+        this.desiredState.pixelFormat,
+      );
+    }
+    // TODO: Software
+
+    if (tonemapFilter) {
+      this.videoInputSource.filterSteps.push(tonemapFilter);
+      currentState = tonemapFilter.nextState(currentState);
     }
 
     return currentState;

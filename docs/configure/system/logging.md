@@ -23,6 +23,37 @@ Additionally, Tunarr has custom levels for HTTP traffic:
 | `http` | 25 | Incoming HTTP request logging |
 | `http_out` | 15 | Outgoing HTTP request logging (to Plex, Jellyfin, etc.) |
 
+## Per-Category Log Levels
+
+In addition to the global log level, Tunarr supports setting independent log levels for specific subsystems. This is useful when debugging a particular area without flooding the logs with output from the entire application.
+
+The following log categories are available:
+
+| Category | Description |
+|----------|-------------|
+| `scheduling` | Logs from the channel scheduling and guide generation subsystem |
+| `streaming` | Logs from the streaming and transcode session subsystem |
+
+A category log level overrides the global level for that category only. For example, you can keep the global level at `info` while setting `streaming` to `debug` to get detailed stream logs without extra noise from elsewhere.
+
+Per-category log levels are configured in **Settings > System > Logging**, or via the API:
+
+```bash
+curl -X PUT "http://localhost:8000/api/system/settings" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "logging": {
+      "logLevel": "info",
+      "categoryLogLevel": {
+        "scheduling": "debug",
+        "streaming": "trace"
+      }
+    }
+  }'
+```
+
+Set a category's value to `null` or omit it to fall back to the global log level.
+
 ## Configuration
 
 ### Via Environment Variables
@@ -42,6 +73,7 @@ LOG_DIRECTORY=/path/to/logs
 Navigate to **Settings > System > Logging** to configure:
 
 - Log level
+- Per-category log levels
 - Log file directory
 - Log rolling settings
 

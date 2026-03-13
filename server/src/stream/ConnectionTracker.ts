@@ -70,6 +70,12 @@ export class ConnectionTracker<
       return false;
     }
 
+    if (delay <= 0) {
+      this.#logger.debug('Cleaning up channel session');
+      this.emit('cleanup');
+      return;
+    }
+
     this.#logger.debug('Scheduling session shutdown');
 
     // TODO: Use the scheduler to do this

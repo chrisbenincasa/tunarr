@@ -20,7 +20,7 @@ export const defaultHlsOptions: DeepRequired<HlsOptions> = {
   hlsDeleteThreshold: 3,
   segmentBaseDirectory: 'streams', // Relative to cwd
   streamBasePath: 'stream_%v',
-  segmentNameFormat: 'data%05d.ts',
+  segmentNameFormat: 'data%06d.ts',
   streamNameFormat: 'stream.m3u8',
   streamBaseUrl: 'hls/',
   deleteThreshold: 3,
@@ -44,6 +44,8 @@ export const defaultMpegDashOptions: DeepRequired<MpegDashOptions> = {
 export const VideoFormats = {
   Hevc: 'hevc',
   H264: 'h264',
+  Dvhe: 'dvhe',
+  Dvh1: 'dvh1',
   Mpeg1Video: 'mpeg1video',
   Mpeg2Video: 'mpeg2video',
   MsMpeg4V2: 'msmpeg4v2',
@@ -78,14 +80,60 @@ export const OutputFormatTypes = {
   MpegTs: 'mpegts',
   Mp4: 'mp4',
   Hls: 'hls',
+  HlsDirect: 'hls_direct',
+  HlsDirectV2: 'hls_direct_v2',
   Nut: 'nut',
   Dash: 'dash',
 } as const;
+
+export const ColorRanges = {
+  Tv: 'tv',
+};
+
+// https://trac.ffmpeg.org/wiki/colorspace#color_primaries
+export const ColorSpaces = {
+  Rgb: 'rgb',
+  Bt709: 'bt709',
+  Bt709bg: 'bt709bg',
+  Smpte170m: 'smpte170m',
+  Smpte240m: 'smpte240m',
+  Bt2020nc: 'bt2020nc',
+  Bt2020c: 'bt2020c',
+  Smpte2085: 'smpte2085',
+};
+
+export const ColorPrimaries = {
+  Bt709: 'bt709',
+  Bt709m: 'bt709m',
+  Bt709bg: 'bt709bg',
+  Smpte170m: 'smpte170m',
+  Smpte240m: 'smpte240m',
+  Bt2020: 'bt2020',
+};
+
+export const ColorTransferFormats = {
+  Bt709: 'bt709',
+  Unknown: 'unknown',
+  Gamma22: 'gamma22',
+  Gamma28: 'gamma28',
+  Smpte170m: 'smpte170m',
+  Smpte240m: 'smpte240m',
+  Smpte2084: 'smpte2084',
+  AribStdB67: 'arib-std-b67',
+} as const;
+
+export type ColorTransferFormat =
+  (typeof ColorTransferFormats)[keyof typeof ColorTransferFormats];
 
 export type OutputLocation = Lowercase<keyof typeof OutputLocation>;
 
 export type HlsOutputFormat = {
   type: typeof OutputFormatTypes.Hls;
+  hlsOptions: HlsOptions;
+};
+
+export type HlsDirectOutputFormat = {
+  type: typeof OutputFormatTypes.HlsDirectV2;
   hlsOptions: HlsOptions;
 };
 
@@ -133,6 +181,13 @@ export function HlsOutputFormat(opts: HlsOptions): HlsOutputFormat {
   };
 }
 
+export function HlsDirectOutputFormat(opts: HlsOptions): HlsDirectOutputFormat {
+  return {
+    type: OutputFormatTypes.HlsDirectV2,
+    hlsOptions: opts,
+  };
+}
+
 export function MpegDashOutputFormat(
   opts?: Partial<MpegDashOptions>,
 ): MpegDashOutputFormat {
@@ -144,8 +199,12 @@ export function MpegDashOutputFormat(
 
 export type OutputFormat =
   | HlsOutputFormat
+  | HlsDirectOutputFormat
   | NutOutputFormat
   | MkvOutputFormat
   | MpegDashOutputFormat
   | Mp4OutputFormat
   | MpegTsOutputFormat;
+
+export const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
+export const FiveMinutesMillis = 5 * 60 * 60 * 1000;

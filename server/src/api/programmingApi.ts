@@ -3,7 +3,11 @@ import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
-import { PagingParams, TruthyQueryParam } from '@/types/schemas.js';
+import {
+  BatchLookupExternalProgrammingSchema,
+  PagingParams,
+  TruthyQueryParam,
+} from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import {
   groupByUniq,
@@ -13,6 +17,7 @@ import {
   isHttpUrl,
   isNonEmptyString,
 } from '@/util/index.js';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from '@/util/env.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import type { Episode, MusicAlbum, MusicTrack, Season } from '@tunarr/types';
@@ -34,13 +39,11 @@ import type { HttpHeader } from 'fastify/types/utils.js';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   compact,
-  every,
   find,
   first,
   head,
   isNil,
   isNull,
-  isUndefined,
   map,
   omitBy,
   trimStart,
@@ -49,7 +52,6 @@ import {
 import type stream from 'node:stream';
 import z from 'zod/v4';
 import { container } from '../container.ts';
-import { programSourceTypeFromString } from '../db/custom_types/ProgramSourceType.ts';
 import {
   AllProgramFields,
   AllProgramGroupingFields,
@@ -78,23 +80,6 @@ const LookupExternalProgrammingSchema = z.object({
   externalId: z
     .string()
     .transform((s) => s.split('|', 3) as [string, string, string]),
-});
-
-const BatchLookupExternalProgrammingSchema = z.object({
-  externalIds: z
-    .array(z.string())
-    .transform(
-      (s) =>
-        new Set(
-          [...s].map((s0) => s0.split('|', 3) as [string, string, string]),
-        ),
-    )
-    .refine((set) => {
-      return every(
-        [...set],
-        (tuple) => !isUndefined(programSourceTypeFromString(tuple[0])),
-      );
-    }),
 });
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -459,7 +444,37 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           }
         }
 
-        return res.redirect(url.toString());
+        const fullUrl = url.toString();
+
+        if (getBooleanEnvVar(TUNARR_ENV_VARS.PROXY_ARTWORK_ENV_VAR, false)) {
+          try {
+            const proxyRes = await axios.request<stream.Readable>({
+              url: fullUrl,
+              responseType: 'stream',
+            });
+
+            let headers: Partial<Record<HttpHeader, string | string[]>>;
+            if (proxyRes.headers instanceof AxiosHeaders) {
+              headers = {
+                ...proxyRes.headers,
+             };
+            } else {
+              headers = { ...omitBy(proxyRes.headers, isNull) };
+            }
+
+            return res
+              .status(200)
+              .headers(headers)
+              .send(proxyRes.data);
+          } catch (e) {
+            if (isAxiosError(e) && e.response?.status === 404) {
+              return res.status(404).send();
+            }
+            throw e;
+          }
+        }
+
+        return res.redirect(fullUrl);
       } else {
         return res.sendFile(art.sourcePath);
       }
@@ -698,7 +713,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             }
 
             return res
-              .status(proxyRes.status)
+              .status(200)
               .headers(headers)
               .send(proxyRes.data);
           } catch (e) {

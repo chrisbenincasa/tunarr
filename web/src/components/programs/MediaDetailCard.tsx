@@ -68,7 +68,7 @@ export default function MediaDetailCard({ program }: Props) {
 
   const getArtworkUrl = useGetArtworkUrl();
 
-  const getProgramTitle = useMemo(() => {
+  const programTitle = useMemo(() => {
     let title, type, uuid;
     switch (program.type) {
       case 'season':
@@ -143,6 +143,7 @@ export default function MediaDetailCard({ program }: Props) {
         <Box
           sx={{
             position: 'relative',
+            minWidth: '25%',
             maxWidth: isMobile ? 'none' : 400,
           }}
         >
@@ -177,7 +178,7 @@ export default function MediaDetailCard({ program }: Props) {
 
           {program.sourceType !== 'local' && externalLink && (
             <Button
-              variant="contained"
+              variant="outlined"
               component="a"
               target="_blank"
               href={externalLink}
@@ -197,7 +198,7 @@ export default function MediaDetailCard({ program }: Props) {
         <Box maxWidth={700}>
           <Stack spacing={1}>
             <Stack direction={'row'} sx={{ alignItems: 'center' }}>
-              <Box flex={1}>{getProgramTitle}</Box>
+              <Box flex={1}>{programTitle}</Box>
               <IconButton
                 sx={{ width: 40, height: 40 }}
                 onClick={(e) => setMoreMenuAnchorEl(e.currentTarget)}
@@ -207,6 +208,7 @@ export default function MediaDetailCard({ program }: Props) {
             </Stack>
             <ProgramOperationsMenu
               programId={program.uuid}
+              programType={program.type}
               anchorEl={moreMenuAnchorEl}
               onClose={() => setMoreMenuAnchorEl(null)}
               open={!!moreMenuAnchorEl}

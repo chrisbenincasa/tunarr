@@ -12,6 +12,7 @@ export class ReadrateInputOption extends InputOption {
   constructor(
     private capabilities: FfmpegCapabilities,
     private initialBurstSeconds: number,
+    private readrate: number = 1.0,
   ) {
     super();
   }
@@ -32,7 +33,7 @@ export class ReadrateInputOption extends InputOption {
   }
 
   options(): string[] {
-    const opts = ['-readrate', '1.0'];
+    const opts = ['-readrate', `${this.readrate}`];
     if (this.shouldBurst()) {
       opts.push('-readrate_initial_burst', `${this.initialBurstSeconds}`);
     }

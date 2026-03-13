@@ -32,6 +32,7 @@ import {
 } from './builder/MediaStream.ts';
 import type { OutputFormat } from './builder/constants.ts';
 import { MpegTsOutputFormat, VideoFormats } from './builder/constants.ts';
+import { ColorFormat } from './builder/format/ColorFormat.ts';
 import type { PixelFormat } from './builder/format/PixelFormat.ts';
 import {
   KnownPixelFormats,
@@ -192,6 +193,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       providedSampleAspectRatio: '1:1',
       displayAspectRatio: '1:1',
       inputKind: 'video',
+      colorFormat: ColorFormat.bt709,
     });
 
     const videoInputSource = VideoInputSource.withStream(
@@ -350,6 +352,12 @@ export class FfmpegStreamFactory extends IFFMPEG {
           width: videoStreamDetails.width,
         }),
         frameRate: videoStreamDetails.framerate?.toString(),
+        colorFormat: new ColorFormat({
+          colorRange: videoStreamDetails.colorRange ?? null,
+          colorSpace: videoStreamDetails.colorSpace ?? null,
+          colorTransfer: videoStreamDetails.colorTransfer ?? null,
+          colorPrimaries: videoStreamDetails.colorPrimaries ?? null,
+        }),
       });
 
       videoInputSource = new VideoInputSource(streamSource, [videoStream]);
@@ -383,6 +391,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
       // Check if audio and video are coming from same location
       audioDuration:
         streamMode === 'hls_direct' ? null : duration.asMilliseconds(),
+      normalizeLoudness: false, // !!this.transcodeConfig.audioLoudnormConfig,
+      // loudnormConfig: this.transcodeConfig.audioLoudnormConfig,
     });
 
     let audioInput: AudioInputSource;
@@ -409,7 +419,11 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     let watermarkSource: Nullable<WatermarkInputSource> = null;
-    if (streamMode !== ChannelStreamModes.HlsDirect && watermark?.enabled) {
+    if (
+      streamMode !== ChannelStreamModes.HlsDirect &&
+      streamMode !== ChannelStreamModes.HlsDirectV2 &&
+      watermark?.enabled
+    ) {
       const watermarkUrl = watermark.url ?? makeLocalUrl('/images/tunarr.png');
       watermarkSource = new WatermarkInputSource(
         new HttpStreamSource(watermarkUrl),
@@ -709,6 +723,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         providedSampleAspectRatio: '1:1',
         displayAspectRatio: '1:1',
         pixelFormat: PixelFormatUnknown(),
+        colorFormat: ColorFormat.unknown,
       }),
     );
 

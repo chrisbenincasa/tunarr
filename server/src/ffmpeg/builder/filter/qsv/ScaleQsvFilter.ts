@@ -1,6 +1,5 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { PixelFormats } from '@/ffmpeg/builder/format/PixelFormat.js';
-import type { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { FrameSize } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
@@ -11,7 +10,6 @@ export class ScaleQsvFilter extends FilterOption {
   readonly affectsFrameState: boolean = true;
 
   constructor(
-    private videoStream: VideoStream,
     private currentState: FrameState,
     private scaledSize: FrameSize,
   ) {
@@ -51,12 +49,10 @@ export class ScaleQsvFilter extends FilterOption {
 
     if (!this.currentState.scaledSize.equals(this.scaledSize)) {
       const targetSize = `w=${this.scaledSize.width}:h=${this.scaledSize.height}`;
-      const sarValue =
-        this.videoStream.sampleAspectRatio?.replace(':', '/') ?? '1/1';
       let squareScale = '';
       let format = '';
       if (this.currentState.isAnamorphic) {
-        squareScale = `vpp_qsv=w=iw*${sarValue}:h=ih,setsar=1,`;
+        squareScale = `vpp_qsv=w=iw*sar:h=ih,setsar=1,`;
       } else {
         format = `,setsar=1`;
       }

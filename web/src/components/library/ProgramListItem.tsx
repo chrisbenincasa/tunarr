@@ -1,13 +1,19 @@
-import { Folder } from '@mui/icons-material';
+import { Info } from '@mui/icons-material';
 import {
   Button,
+  IconButton,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
 import type { ProgramOrFolder } from '@tunarr/types';
-import { isTerminalItemType } from '@tunarr/types';
+import {
+  getChildCount,
+  isStructuralItemType,
+  isTerminalItemType,
+} from '@tunarr/types';
+import { useToggle } from '@uidotdev/usehooks';
 import { map } from 'lodash-es';
 import type { MouseEvent } from 'react';
 import { Fragment, useCallback } from 'react';
@@ -22,6 +28,8 @@ import {
   useCurrentMediaSource,
   useSelectedMedia,
 } from '../../store/programmingSelector/selectors.ts';
+import { ProgramTypeIcon } from '../base/ProgramTypeIcon.tsx';
+import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 import { ProgramSubtitle } from './extractSubtitle.tsx';
 
 export interface ProgramListItemProps {
@@ -42,6 +50,7 @@ export const ProgramListItem = ({
   const selectedServer = useCurrentMediaSource();
   const selectedMedia = useSelectedMedia();
   const selectedMediaIds = map(selectedMedia, typedProperty('id'));
+  const [dialogOpen, setDialogOpen] = useToggle();
   const handleClick = () => {
     if (!isTerminalItemType(item)) {
       onPushParent(item);
@@ -101,11 +110,27 @@ export const ProgramListItem = ({
     },
     [item, selectedServer, selectedMediaIds],
   );
+
   return (
     <Fragment key={item.uuid}>
-      <ListItem divider disablePadding style={style}>
+      <ListItem
+        divider
+        disablePadding
+        style={style}
+        secondaryAction={
+          isStructuralItemType(item) ? null : (
+            <IconButton edge="end" onClick={() => setDialogOpen(true)}>
+              <Info />{' '}
+            </IconButton>
+          )
+        }
+      >
         <ListItemButton
-          disabled={!isTerminalItemType(item) && item.childCount === 0}
+          disabled={
+            !isTerminalItemType(item) &&
+            item.sourceType !== 'local' &&
+            (item.childCount === 0 || (getChildCount(item) ?? 0) === 0)
+          }
           onClick={handleClick}
           dense
           sx={{
@@ -113,11 +138,9 @@ export const ProgramListItem = ({
             cursor: isTerminalItemType(item) ? 'default' : undefined,
           }}
         >
-          {item.type === 'folder' && (
-            <ListItemIcon>
-              <Folder />
-            </ListItemIcon>
-          )}
+          <ListItemIcon>
+            <ProgramTypeIcon programType={item.type} />
+          </ListItemIcon>
           <ListItemText
             primary={item.title}
             secondary={ProgramSubtitle(item)}
@@ -139,6 +162,14 @@ export const ProgramListItem = ({
           )}
         </ListItemButton>
       </ListItem>
+      {!isStructuralItemType(item) && (
+        <ProgramDetailsDialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          programId={item.uuid}
+          programType={item.type}
+        />
+      )}
     </Fragment>
   );
 };

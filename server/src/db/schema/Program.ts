@@ -23,6 +23,7 @@ import { MediaSource } from './MediaSource.ts';
 import { MediaSourceLibrary } from './MediaSourceLibrary.ts';
 import { ProgramExternalId } from './ProgramExternalId.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
+import { ProgramPlayHistory } from './ProgramPlayHistory.ts';
 import { ProgramSubtitles } from './ProgramSubtitles.ts';
 import { ProgramVersion } from './ProgramVersion.ts';
 import { StudioEntity } from './Studio.ts';
@@ -166,6 +167,7 @@ export const ProgramRelations = relations(Program, ({ many, one }) => ({
   genres: many(EntityGenre),
   studios: many(StudioEntity),
   tags: many(TagRelations),
+  playHistory: many(ProgramPlayHistory),
 }));
 
 export type ProgramTable = KyselifyBetter<typeof Program>;

@@ -257,7 +257,10 @@ export class ProgramDaoMinter {
           uuid: v4(),
           bitsPerSample: stream.bitDepth,
           channels: stream.channels,
-          // TODO: color
+          colorRange: stream.colorRange ?? null,
+          colorSpace: stream.colorSpace ?? null,
+          colorTransfer: stream.colorTransfer ?? null,
+          colorPrimaries: stream.colorPrimaries ?? null,
           default: booleanToNumber(stream.default ?? false),
           //TODO: forced: stream.forced
           language: stream.languageCodeISO6392,

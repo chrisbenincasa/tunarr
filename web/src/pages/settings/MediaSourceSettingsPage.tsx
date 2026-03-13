@@ -43,6 +43,7 @@ import {
   putApiSettingsMediaSourceMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
+import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
 import type { Nullable } from '../../types/util.ts';
 
 export default function MediaSourceSettingsPage() {
@@ -50,6 +51,7 @@ export default function MediaSourceSettingsPage() {
   const { data: mediaSourceSettings } = useSuspenseQuery(
     getApiSettingsMediaSourceOptions(),
   );
+  const tableState = useStoreBackedTableSettings('MediaSourceSettings');
 
   const [editingMediaSource, setEditingMediaSource] =
     useState<Nullable<MediaSourceSettings>>(null);
@@ -147,6 +149,7 @@ export default function MediaSourceSettingsPage() {
         },
       },
     },
+    ...tableState,
     renderRowActions: ({ row }) => {
       return (
         <>
@@ -241,7 +244,7 @@ export default function MediaSourceSettingsPage() {
             sx={{ flexWrap: 'wrap' }}
           >
             <Typography
-              variant="h5"
+              variant="h3"
               sx={(theme) => ({
                 flexGrow: 1,
                 [theme.breakpoints.down('sm')]: {
@@ -256,8 +259,8 @@ export default function MediaSourceSettingsPage() {
             <Typography sx={{ width: '60%' }}>
               Media Sources are where Tunarr sources your content. Media can
               come from your filesystem or a remote server, like Plex or
-              Jellyfin. At least one Media Source is necessary to create channels
-              and play media in Tunarr.
+              Jellyfin. At least one Media Source is necessary to create
+              channels and play media in Tunarr.
             </Typography>
           </Stack>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>

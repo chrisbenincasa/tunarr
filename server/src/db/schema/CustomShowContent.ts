@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm';
 import {
+  foreignKey,
   integer,
   primaryKey,
   sqliteTable,
@@ -22,7 +23,19 @@ export const CustomShowContent = sqliteTable(
     index: integer().notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.contentUuid, table.customShowUuid] }),
+    primaryKey({
+      columns: [table.contentUuid, table.customShowUuid, table.index],
+    }),
+    foreignKey({
+      name: 'custom_show_content_content_uuid_foreign',
+      columns: [table.contentUuid],
+      foreignColumns: [Program.uuid],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'custom_show_content_custom_show_uuid_foreign',
+      columns: [table.customShowUuid],
+      foreignColumns: [CustomShow.uuid],
+    }).onDelete('cascade'),
   ],
 );
 

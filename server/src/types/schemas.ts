@@ -1,5 +1,6 @@
-import { isArray } from 'lodash-es';
+import { every, isArray, isUndefined } from 'lodash-es';
 import z from 'zod/v4';
+import { programSourceTypeFromString } from '../db/custom_types/ProgramSourceType.ts';
 import type { Nilable } from './util.ts';
 
 export const TruthyQueryParam = z
@@ -32,4 +33,20 @@ export function isJsonObject(t: Nilable<Json>): t is JsonObject {
 }
 export const mediaSourceParamsSchema = z.object({
   mediaSourceId: z.string(),
+});
+export const BatchLookupExternalProgrammingSchema = z.object({
+  externalIds: z
+    .array(z.string())
+    .transform(
+      (s) =>
+        new Set(
+          [...s].map((s0) => s0.split('|', 3) as [string, string, string]),
+        ),
+    )
+    .refine((set) => {
+      return every(
+        [...set],
+        (tuple) => !isUndefined(programSourceTypeFromString(tuple[0])),
+      );
+    }),
 });

@@ -6,16 +6,22 @@ import { isNonEmptyString } from '@/util/index.js';
 import retry from 'async-retry';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { filter, isError, isString, map, some } from 'lodash-es';
+import { filter, isError, isNaN, isString, map, minBy, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, extname } from 'node:path';
+import type { DeepRequired } from 'ts-essentials';
+import type { HlsOptions } from '../../ffmpeg/builder/constants.ts';
 import { defaultHlsOptions } from '../../ffmpeg/builder/constants.ts';
 import { serverOptions } from '../../globals.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 
+export const SegmentNameRegex = /data(\d{6})\..*/;
+
 export abstract class BaseHlsSession<
   HlsSessionOptsT extends BaseHlsSessionOptions = BaseHlsSessionOptions,
 > extends Session<HlsSessionOptsT> {
+  protected static SegmentNameFormat = 'data%06d.ts';
+
   // Working directory for m3u8 playlists and fragments
   protected _workingDirectory: string;
   // Absolute path to the stream directory
@@ -24,6 +30,16 @@ export abstract class BaseHlsSession<
   protected _serverPath: string;
 
   protected transcodedUntil: Dayjs;
+
+  protected _minByIp = new Map<string, number>();
+
+  protected get minSegmentRequested(): number {
+    if (this._minByIp.size === 0) {
+      return 0;
+    }
+
+    return minBy([...this._minByIp.entries()], ([_, seg]) => seg)?.[1] ?? 0;
+  }
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -60,6 +76,20 @@ export abstract class BaseHlsSession<
   get serverPath() {
     return this._serverPath;
   }
+
+  onSegmentRequested(clientIp: string, filename: string) {
+    const base = basename(filename);
+    const matches = base.match(SegmentNameRegex);
+    if (matches && matches.length > 1) {
+      const m = matches[1]!;
+      const parsed = parseInt(m);
+      if (!isNaN(parsed)) {
+        this._minByIp.set(clientIp, parsed);
+      }
+    }
+  }
+
+  protected abstract getHlsOptions(): DeepRequired<HlsOptions>;
 
   protected async initDirectories() {
     if (!(await fileExists(this.baseDirectory))) {

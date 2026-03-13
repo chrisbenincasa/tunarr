@@ -1,8 +1,14 @@
 import type { PaginationState } from '@tanstack/react-table';
+import type { DeepPartial } from 'ts-essentials';
 import type { StateCreator } from 'zustand';
 
 // Only these 2 are supported currently
 export type SupportedLocales = 'en' | 'en-gb';
+
+export interface TableSettings {
+  pagination: PaginationState;
+  columnModel: Record<string, boolean>;
+}
 
 export interface SettingsStateInternal {
   backendUri: string;
@@ -12,6 +18,8 @@ export interface SettingsStateInternal {
     i18n: {
       locale: SupportedLocales;
     };
+    tableSettings: Record<string, TableSettings>;
+    showAdvancedSettings: boolean;
   };
 }
 
@@ -19,20 +27,7 @@ export interface SettingsState {
   settings: SettingsStateInternal;
 }
 
-export type PersistedSettingsState = {
-  settings: {
-    backendUri: string;
-    ui: {
-      channelTablePagination: {
-        pageSize: number;
-      };
-      channelTableColumnModel: Record<string, boolean>;
-      i18n: {
-        locale: SupportedLocales;
-      };
-    };
-  };
-};
+export type PersistedSettingsState = DeepPartial<SettingsState>;
 
 // By default, the dev environment runs its web server on port
 // 5173. In 'prod' we assume that by default the user wants
@@ -56,6 +51,8 @@ export const createSettingsSlice: StateCreator<SettingsState> = () => ({
       i18n: {
         locale: 'en',
       },
+      tableSettings: {},
+      showAdvancedSettings: false,
     },
   },
 });

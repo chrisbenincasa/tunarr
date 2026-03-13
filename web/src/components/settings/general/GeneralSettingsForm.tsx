@@ -28,7 +28,11 @@ import {
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
-import type { LoggingSettings } from '@tunarr/types';
+import type {
+  LogCategories,
+  LoggingSettings,
+  TupleToUnion,
+} from '@tunarr/types';
 import {
   LogLevels,
   type CacheSettings,
@@ -48,6 +52,7 @@ import {
   useFieldArray,
   useForm,
 } from 'react-hook-form';
+import type { StrictOmit } from 'ts-essentials';
 import type { SettingsStateInternal } from '../../../store/settings/store.ts';
 import { BackupForm } from './BackupForm.tsx';
 import { LogRollForm } from './LogRollForm.tsx';
@@ -63,6 +68,28 @@ const LogLevelChoices = [
   })),
 ];
 
+const CategoryLogLevelChoices = [
+  {
+    description: 'Inherit default',
+    value: 'inherit',
+  },
+  ...map(LogLevels, (level) => ({
+    description: level === 'http_out' ? 'http (egress)' : level,
+    value: level,
+  })),
+];
+
+const LogCategorySelectInputs = [
+  {
+    category: 'streaming',
+    name: 'Streaming',
+  },
+  {
+    category: 'scheduling',
+    name: 'Scheduling',
+  },
+] as const;
+
 const getBaseFormValues = (
   settings: SettingsStateInternal,
   systemSettings: SystemSettings,
@@ -76,7 +103,20 @@ const getBaseFormValues = (
     enablePlexRequestCache: false,
   },
   server: systemSettings.server,
-  logging: systemSettings.logging,
+  logging: {
+    ...systemSettings.logging,
+    categoryLogLevel: {
+      ...(systemSettings.logging.categoryLogLevel ?? {}),
+      ...LogCategorySelectInputs.reduce(
+        (prev, { category }) => {
+          prev[category] ??=
+            systemSettings.logging.categoryLogLevel?.[category] ?? 'inherit';
+          return prev;
+        },
+        {} as Record<TupleToUnion<typeof LogCategories>, LogLevel | 'inherit'>,
+      ),
+    },
+  },
 });
 
 function getDefaultFormValues(
@@ -149,6 +189,16 @@ export function GeneralSettingsForm({
             ? Math.max(0, data.logging.logRollConfig.maxFileSizeBytes)
             : undefined,
           schedule: rollSchedule,
+        },
+        categoryLogLevel: {
+          scheduling:
+            data.logging.categoryLogLevel?.scheduling === 'inherit'
+              ? null
+              : data.logging.categoryLogLevel?.scheduling,
+          streaming:
+            data.logging.categoryLogLevel?.streaming === 'inherit'
+              ? null
+              : data.logging.categoryLogLevel?.streaming,
         },
       },
       backup: data.backup,
@@ -291,40 +341,81 @@ export function GeneralSettingsForm({
             <Typography variant="h6" sx={{ mb: 1 }}>
               Logging
             </Typography>
-            <Box>
-              <FormControl
-                sx={{
-                  width: ['100%', '50%'],
-                }}
-              >
-                <InputLabel id="log-level-label">Log Level</InputLabel>
-                <Controller
-                  name="logLevel"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      labelId="log-level-label"
-                      id="log-level"
-                      label="Log Level"
-                      {...field}
-                    >
-                      {map(LogLevelChoices, ({ value, description }) => (
-                        <MenuItem key={value} value={value}>
-                          {description}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  )}
-                />
-                <FormHelperText>
-                  Set the log level for the Tunarr server.
-                  <br />
-                  Selecting <strong>"Use environment settings"</strong> will
-                  instruct the server to use the <code>LOG_LEVEL</code>{' '}
-                  environment variable, if set, or system default "info".
-                </FormHelperText>
-              </FormControl>
-            </Box>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12 }}>
+                <FormControl
+                  sx={{
+                    width: ['100%', '50%'],
+                  }}
+                >
+                  <InputLabel id="log-level-label">Log Level</InputLabel>
+                  <Controller
+                    name="logLevel"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        labelId="log-level-label"
+                        id="log-level"
+                        label="Log Level"
+                        {...field}
+                      >
+                        {map(LogLevelChoices, ({ value, description }) => (
+                          <MenuItem key={value} value={value}>
+                            {description}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                  <FormHelperText>
+                    Set the log level for the Tunarr server.
+                    <br />
+                    Selecting <strong>"Use environment settings"</strong> will
+                    instruct the server to use the <code>LOG_LEVEL</code>{' '}
+                    environment variable, if set, or system default "info".
+                  </FormHelperText>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <Typography sx={{ mb: 1 }}>Category Log Levels</Typography>
+                <Typography variant="subtitle2">
+                  Change the verbosity of specific categories of logs. Useful if
+                  debugging a specific feature.
+                </Typography>
+              </Grid>
+              {LogCategorySelectInputs.map((category) => (
+                <Grid size={{ xs: 6 }} key={category.category}>
+                  <FormControl key={category.category} fullWidth>
+                    <InputLabel id={`${category.category}-log-level-label`}>
+                      {category.name} Log Level
+                    </InputLabel>
+                    <Controller
+                      name={`logging.categoryLogLevel.${category.category}`}
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          labelId={`${category.category}-log-level-label`}
+                          id={`${category.category}-log-level`}
+                          label={`${category.name} Log Level`}
+                          {...field}
+                        >
+                          {map(
+                            CategoryLogLevelChoices,
+                            ({ value, description }) => (
+                              <MenuItem key={value} value={value}>
+                                {description}
+                              </MenuItem>
+                            ),
+                          )}
+                        </Select>
+                      )}
+                    />
+                    <FormHelperText></FormHelperText>
+                  </FormControl>
+                </Grid>
+              ))}
+            </Grid>
+            <Divider />
             <Box>
               <LogRollForm />
             </Box>
@@ -412,7 +503,12 @@ export type GeneralSettingsFormData = {
   backup: BackupSettings;
   cache: CacheSettings;
   server: ServerSettings;
-  logging: LoggingSettings;
+  logging: StrictOmit<LoggingSettings, 'categoryLogLevel'> & {
+    categoryLogLevel?: Record<
+      TupleToUnion<typeof LogCategories>,
+      LogLevel | 'inherit'
+    >;
+  };
 };
 
 export type GeneralSetingsFormProps = {

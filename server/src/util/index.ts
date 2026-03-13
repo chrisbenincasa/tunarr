@@ -1,6 +1,7 @@
 import type { Func } from '@/types/func.js';
 import type { MarkNonNullable, Maybe, Nilable, Try } from '@/types/util.js';
 import { createExternalId } from '@tunarr/shared';
+import type { TupleToUnion } from '@tunarr/types';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import duration from 'dayjs/plugin/duration.js';
@@ -113,14 +114,14 @@ export function groupByUniqPropAndMapAsync<
 }
 
 export function groupByUniq<T, Key extends string | number | symbol>(
-  data: T[],
+  data: T[] | ReadonlyArray<T>,
   func: (item: T) => Key,
 ): Record<Key, T> {
   return groupByFunc(data, func);
 }
 
 export function groupByFunc<T, Key extends string | number | symbol, Value>(
-  data: T[],
+  data: T[] | ReadonlyArray<T>,
   func: (val: T) => Key,
   mapper: (val: T) => Value = identity,
 ): Record<Key, Value> {
@@ -561,10 +562,10 @@ export function makeWritable<T>(obj: DeepReadonly<T>): DeepWritable<T> {
   return obj as DeepWritable<T>; // here be hacks
 }
 
-export function inConstArr<Arr extends readonly string[], S extends string>(
+export function inConstArr<S extends string, Arr extends readonly [S, ...S[]]>(
   arr: Arr,
   typ: S,
-): boolean {
+): typ is TupleToUnion<Arr> {
   for (const value of arr) {
     if (value === typ) {
       return true;

@@ -69,9 +69,9 @@ export abstract class Task2<
     return this.#logger;
   }
 
-  protected set logger(logger: Logger) {
-    logger.setBindings({ caller: this.constructor.name });
-    this.#logger = logger;
+  protected set logger(newLogger: Logger) {
+    newLogger.setBindings({ caller: this.constructor.name });
+    this.#logger = newLogger;
   }
 
   async run(request: z.infer<RequestSchema>): Promise<Result<ResultT>> {

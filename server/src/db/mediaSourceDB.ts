@@ -1,4 +1,3 @@
-import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
@@ -25,7 +24,6 @@ import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
-import { MeilisearchService } from '../services/MeilisearchService.ts';
 import {
   withProgramChannels,
   withProgramCustomShows,
@@ -60,7 +58,6 @@ type MediaSourceUserInfo = {
 @injectable()
 export class MediaSourceDB {
   constructor(
-    @inject(KEYS.ChannelDB) private channelDb: IChannelDB,
     @inject(KEYS.MediaSourceApiFactory)
     private mediaSourceApiFactory: () => MediaSourceApiFactory,
     @inject(KEYS.Database) private db: Kysely<DB>,
@@ -68,12 +65,10 @@ export class MediaSourceDB {
     private mediaSourceLibraryRefresher: interfaces.AutoFactory<MediaSourceLibraryRefresher>,
     @inject(KEYS.DrizzleDB)
     private drizzleDB: DrizzleDBAccess,
-    @inject(MeilisearchService)
-    private searchService: MeilisearchService,
   ) {}
 
   async getAll(): Promise<MediaSourceWithRelations[]> {
-    return this.drizzleDB.query.mediaSource.findMany({
+    return await this.drizzleDB.query.mediaSource.findMany({
       with: {
         libraries: true,
         paths: true,
@@ -215,15 +210,10 @@ export class MediaSourceDB {
       .limit(1)
       .execute();
 
-    // This cannot happen in the transaction because the DB would be locked.
     const programIds = allPrograms.map((p) => p.uuid);
-    await this.channelDb.removeProgramsFromAllLineups(programIds);
     const groupingIds = allGroupings.map((p) => p.uuid);
-    await this.searchService.deleteByIds(programIds.concat(groupingIds));
 
-    this.mediaSourceApiFactory().deleteCachedClient(deletedServer);
-
-    return { deletedServer };
+    return { deletedServer, programIds, groupingIds };
   }
 
   async updateMediaSource(updateReq: UpdateMediaSourceRequest) {

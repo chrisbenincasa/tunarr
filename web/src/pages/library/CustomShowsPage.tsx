@@ -31,6 +31,7 @@ import { deleteCustomShowMutation } from '../../generated/@tanstack/react-query.
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
+import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
 
 export default function CustomShowsPage() {
   const { data: customShows } = useCustomShows();
@@ -40,6 +41,7 @@ export default function CustomShowsPage() {
     string | undefined
   >(undefined);
   const snackbar = useSnackbar();
+  const tableState = useStoreBackedTableSettings('CustomShows');
 
   const deleteShowMutation = useMutation({
     ...deleteCustomShowMutation(),
@@ -173,6 +175,7 @@ export default function CustomShowsPage() {
       },
     },
     positionActionsColumn: 'last',
+    ...tableState,
   });
 
   return (
