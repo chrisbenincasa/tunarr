@@ -85,7 +85,7 @@ import { fileExists } from '../util/fsUtil.ts';
 import { isNonEmptyString, isWindows, wait } from '../util/index.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { FileSystemService } from './FileSystemService.ts';
-import { ISearchService } from './ISearchService.ts';
+import { ISearchService, SearchHealthStatus } from './ISearchService.ts';
 import { SearchParser } from './search/SearchParser.ts';
 
 type FlattenArrayTypes<T> = {
@@ -390,6 +390,11 @@ export class MeilisearchService implements ISearchService {
   private proc?: ChildProcessWrapper;
   private port: number;
   #client: MeiliSearch;
+  private executablePath: string = '';
+  private spawnArgs: readonly string[] = [];
+  private logFilePath: string = '';
+  private healthStatus: SearchHealthStatus = 'starting';
+  private healthPollInterval?: NodeJS.Timeout;
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
@@ -521,13 +526,13 @@ export class MeilisearchService implements ISearchService {
           args.push('--experimental-reduce-indexing-memory-usage');
         }
 
-        const searchServerLogFile = path.join(
+        this.logFilePath = path.join(
           this.settingsDB.systemSettings().logging.logsDirectory,
           'meilisearch.log',
         );
 
-        if (await fileExists(searchServerLogFile)) {
-          await fs.truncate(searchServerLogFile);
+        if (await fileExists(this.logFilePath)) {
+          await fs.truncate(this.logFilePath);
         }
 
         let executablePath: Maybe<string>;
@@ -569,19 +574,26 @@ export class MeilisearchService implements ISearchService {
           );
         }
 
+        this.executablePath = executablePath;
+        this.spawnArgs = args;
+
         this.logger.trace(
           'Starting meilisearch with args: %s %s',
-          executablePath,
+          this.executablePath,
           args.join(' '),
         );
-        this.proc = await this.childProcessHelper.spawn(executablePath, args, {
-          maxAttempts: 3,
-          additionalOpts: {
-            cwd: this.serverOptions.databaseDirectory,
+        this.proc = await this.childProcessHelper.spawn(
+          this.executablePath,
+          this.spawnArgs,
+          {
+            maxAttempts: 3,
+            additionalOpts: {
+              cwd: this.serverOptions.databaseDirectory,
+            },
           },
-        });
+        );
         this.logger.info('Meilisearch service started on port %d', this.port);
-        const outStream = createWriteStream(searchServerLogFile);
+        const outStream = createWriteStream(this.logFilePath);
         this.proc.process?.stdout.pipe(outStream);
         this.proc.process?.stderr.pipe(outStream);
       }
@@ -594,16 +606,72 @@ export class MeilisearchService implements ISearchService {
         this.logger.debug('Got health result from Meilisearch: %O', result);
       });
 
+      this.healthStatus = 'healthy';
+      if (isMainThread) {
+        this.#startHealthPoll();
+      }
+
       return;
     });
   }
 
+  #startHealthPoll() {
+    this.healthPollInterval = setInterval(() => {
+      this.healthCheckFunc().catch(console.error);
+    }, 30_000);
+  }
+
+  private healthCheckFunc = async () => {
+    try {
+      await this.client().health();
+      this.healthStatus = 'healthy';
+    } catch (err) {
+      this.logger.warn(
+        err,
+        'Meilisearch health poll failed. Attempting restart.',
+      );
+      this.healthStatus = 'degraded';
+      // try {
+      //   await this.restart();
+      // } catch (restartErr) {
+      //   this.logger.fatal(restartErr, 'Meilisearch restart failed.');
+      //   this.healthStatus = 'error';
+      // }
+    }
+  };
+
   async restart() {
-    // TODO: implement
+    if (!isMainThread) return;
+    this.logger.info('Restarting Meilisearch process...');
+    this.proc?.kill();
+    this.proc = await this.childProcessHelper.spawn(
+      this.executablePath,
+      this.spawnArgs,
+      {
+        maxAttempts: 3,
+        additionalOpts: { cwd: this.serverOptions.databaseDirectory },
+      },
+    );
+    const outStream = createWriteStream(this.logFilePath, { flags: 'a' });
+    this.proc.process?.stdout.pipe(outStream);
+    this.proc.process?.stderr.pipe(outStream);
+    await retry(async () => {
+      await this.client().health();
+    });
+    this.healthStatus = 'healthy';
+    this.logger.info('Meilisearch restarted successfully.');
   }
 
   stop() {
+    if (this.healthPollInterval) {
+      clearInterval(this.healthPollInterval);
+      this.healthPollInterval = undefined;
+    }
     this.proc?.kill();
+  }
+
+  getHealthStatus(): SearchHealthStatus {
+    return this.healthStatus;
   }
 
   async getMeilisearchVersion(): Promise<Maybe<string>> {
