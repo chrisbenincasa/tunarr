@@ -27,20 +27,20 @@ import {
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { Nilable } from '../../types/util.ts';
-import { slotIteratorKey } from './ProgramIterator.ts';
 import type {
   PaddedProgram,
   SlotSchedulerProgram,
 } from './slotSchedulerUtil.js';
 import {
   addHeadAndTailFillerToSlot,
+  createFillerIterators,
   createPaddedProgram,
-  createProgramIterators,
   createProgramMap,
+  createSlotProgramIterator,
   deduplicatePrograms,
   distributeFlex,
+  getFillerIteratorsForSlot,
   maybeAddPrePostFiller,
-  slotFillerIterators,
 } from './slotSchedulerUtil.js';
 import { TimeSlotImpl } from './TimeSlotImpl.js';
 
@@ -100,9 +100,10 @@ export async function scheduleTimeSlots(
   // Load programs
   // TODO: include redirects and custom programs!
   const allPrograms = deduplicatePrograms(programs);
-  const contentProgramIteratorsById = createProgramIterators(
+  const programMap = createProgramMap(allPrograms);
+  const fillerIterators = createFillerIterators(
     schedule.slots,
-    createProgramMap(allPrograms),
+    programMap,
     random,
   );
 
@@ -117,9 +118,9 @@ export async function scheduleTimeSlots(
           ...slot,
           startTime: slot.startTime,
         },
-        contentProgramIteratorsById[slotIteratorKey(slot)]!,
+        createSlotProgramIterator(slot, programMap, random),
         random,
-        slotFillerIterators(slot, contentProgramIteratorsById),
+        getFillerIteratorsForSlot(slot, fillerIterators),
       ),
   );
 
