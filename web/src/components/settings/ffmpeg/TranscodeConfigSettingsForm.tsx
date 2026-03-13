@@ -1,5 +1,5 @@
 import { useAppForm } from '@/hooks/form.ts';
-import { Check } from '@mui/icons-material';
+import { Check, VisibilityOff } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -73,7 +73,12 @@ export const TranscodeConfigSettingsForm = ({
               onChange={() => setShowAdvancedSettings(!showAdvancedSettings)}
               sx={{ ml: 'auto' }}
             >
-              <Check sx={{ mr: 0.5 }} /> Show Advanced
+              {showAdvancedSettings ? (
+                <VisibilityOff sx={{ mr: 0.5 }} />
+              ) : (
+                <Check sx={{ mr: 0.5 }} />
+              )}{' '}
+              {showAdvancedSettings ? 'Hide' : 'Show'} Advanced
             </ToggleButton>
           </Stack>
           <Box>
@@ -201,8 +206,8 @@ export const TranscodeConfigSettingsForm = ({
             </Grid>
           </Box>
 
-          <Box>
-            <Typography component="h5" variant="h5" sx={{ mb: 2 }}>
+          <Stack spacing={2}>
+            <Typography component="h5" variant="h5">
               Video Options
             </Typography>
             <TranscodeConfigVideoSettingsForm initialConfig={initialConfig} />
@@ -222,12 +227,14 @@ export const TranscodeConfigSettingsForm = ({
                       dizqueTV transcode pipeline as well as to provide
                       mechanisms to aid in debugging streaming issues.
                     </Typography>
-                    <TranscodeConfigAdvancedOptions />
+                    <TranscodeConfigAdvancedOptions
+                      initialConfig={initialConfig}
+                    />
                   </Box>
                 )
               }
             />
-          </Box>
+          </Stack>
           <Box>
             <Typography component="h5" variant="h5" sx={{ mb: 2 }}>
               Audio Options
