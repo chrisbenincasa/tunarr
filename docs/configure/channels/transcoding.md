@@ -40,7 +40,19 @@ This mode does not perform any stream normalization. When the channel m3u8 playl
 
 #### Things to consider
 
-Because this mode does not perform stream normalization, there may be issues when transitioning between programs; the mode requires clients to essentially "reset" themselves between each program for transitions to function as expected. Some clients that are known to work in this mode are Jellyfin and MPV, but there are almost certainly others. 
+Because this mode does not perform stream normalization, there may be issues when transitioning between programs; the mode requires clients to essentially "reset" themselves between each program for transitions to function as expected. Some clients that are known to work in this mode are Jellyfin and MPV, but there are almost certainly others.
+
+### HLS Direct v2
+
+#### How does it work?
+
+HLS Direct v2 works like standard HLS mode, but without transcoding. Rather than returning a single-item m3u8 pointing directly to the program stream (as HLS Direct does), it produces a proper continuous HLS playlist of segmented chunks — the same structure as the regular HLS mode. No codec conversion or normalization is applied; the source content is remuxed directly into the segments.
+
+#### Things to consider
+
+Users who want direct streaming without transcoding may find this mode more compatible than HLS Direct, particularly with clients that do not rely on FFmpeg's HLS demuxer implementation. Because the output is a standard segmented HLS playlist, clients that expect that structure should handle program transitions more gracefully than they would with HLS Direct.
+
+As with HLS Direct, no stream normalization is applied, so mixed source formats (different codecs, resolutions, frame rates) across lineup items may cause playback issues depending on the client.
 
 ### MPEG-TS
 

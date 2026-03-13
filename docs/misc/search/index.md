@@ -21,6 +21,7 @@ Tunarr's search feature different typed fields, such as `string`, `number`, and 
 | `<` or `<=` | Starts With | `title <= A` |
 | `!=` | Not Equals | `title != "Sesame Street"` |
 | `~` | Contains | `title ~ Hours` |
+| `!~` | Not Contains | `title !~ "Sesame"` |
 | `in` | Set includes | `title IN ["30 Rock", "Arrested Development"]` |
 | `not in` | Set excludes | `genre NOT IN [comedy, horror]` |
 
@@ -75,3 +76,5 @@ Fields available for search:
 | `show_genre` | `string` | Genre of the show a program belongs to (only applicable to episodes) | comedy |
 | `show_tags` | `string` | Tag on the show the program belongs to (only applicable to episodes) | - |
 | `show_studio` | `string` | Studio on the show the program belongs to | - |
+| `media_source_name` | `string` | Name of the media source (Plex server, Jellyfin server, etc.) the program was imported from | `My Plex` |
+| `library_name` | `string` | Name of the library within the media source the program belongs to | `TV Shows` |

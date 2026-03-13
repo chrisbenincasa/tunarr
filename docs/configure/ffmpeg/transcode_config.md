@@ -30,13 +30,13 @@ Configure output video parameters including hardware acceleration, format, resol
 
 Hardware acceleration offloads video encoding and decoding from the CPU to dedicated hardware (GPU or media engine), dramatically reducing CPU usage and allowing real-time transcoding on modest hardware.
 
-| Mode | Platform | When to Use |
-|------|----------|-------------|
-| **None** | Any | Software-only transcoding. CPU-intensive. Only use if no hardware acceleration is available or for debugging. |
-| **CUDA** | NVIDIA GPUs (Linux/Windows) | Requires an NVIDIA GPU with NVENC support. The most reliable hardware path on Linux and Windows with NVIDIA hardware. |
-| **VAAPI** | Intel / AMD GPUs (Linux) | Uses the Video Acceleration API. Defaults to `/dev/dri/renderD128`. Supported drivers: `system`, `ihd`, `i965`, `radeonsi`, `nouveau`. **Recommended for Intel and AMD users on Linux.** |
-| **QSV** | Intel GPUs (Linux/Windows) | Intel Quick Sync Video. Cannot hardware-decode 10-bit H.264 or HEVC content. Generally less stable than VAAPI on Linux; may work well on Windows. |
-| **VideoToolbox** | macOS | Apple's hardware video codec framework. Works on both Apple Silicon and Intel Macs. Recommended for all macOS users. |
+| Mode | Platform | Tonemapping | When to Use |
+|------|----------|-------------|-------------|
+| **None** | Any | Software | Software-only transcoding. CPU-intensive. Only use if no hardware acceleration is available or for debugging. |
+| **CUDA** | NVIDIA GPUs (Linux/Windows) | Hardware (Vulkan) / Software fallback | Requires an NVIDIA GPU with NVENC support. The most reliable hardware path on Linux and Windows with NVIDIA hardware. |
+| **VAAPI** | Intel / AMD GPUs (Linux) | `tonemap_vaapi` / `tonemap_opencl` / Software fallback | Uses the Video Acceleration API. Defaults to `/dev/dri/renderD128`. Supported drivers: `system`, `ihd`, `i965`, `radeonsi`, `nouveau`. **Recommended for Intel and AMD users on Linux.** |
+| **QSV** | Intel GPUs (Linux/Windows) | Hardware (experimental) | Intel Quick Sync Video. Cannot hardware-decode 10-bit H.264 or HEVC content. Generally less stable than VAAPI on Linux; may work well on Windows. |
+| **VideoToolbox** | macOS | Not supported | Apple's hardware video codec framework. Works on both Apple Silicon and Intel Macs. Recommended for all macOS users. |
 
 !!! info "Linux with Intel GPU: VAAPI vs QSV"
     If you are running Tunarr on Linux with an Intel GPU, **VAAPI is the recommended choice** over QSV. VAAPI is generally more stable, better tested with Tunarr. QSV may work for some users but can produce compatibility issues with certain codecs and bit depths.
@@ -45,6 +45,8 @@ When **VAAPI** or **QSV** is selected, additional options appear:
 
 - **VAAPI Driver** — Select the driver your system uses (`system`, `ihd`, `i965`, `radeonsi`, `nouveau`). Leave as `system` unless you know you need a specific driver.
 - **VAAPI Device Path** — Path to the DRI render device (default: `/dev/dri/renderD128`). Change this only if your device is at a non-standard path (e.g., `/dev/dri/renderD129` when multiple GPUs are present).
+
+When **VAAPI** is selected, Tunarr will automatically use hardware-accelerated pad filters (`pad_vaapi`, or `pad_opencl` as a fallback) for letterboxing and pillarboxing operations. This keeps padding on the GPU and avoids a round-trip to software. If your hardware does not support these filters or you observe artifacts, you can force software padding by setting `TUNARR_DISABLE_VAAPI_PAD=true`.
 
 ### Video Format
 
@@ -84,6 +86,29 @@ When enabled, forces the output stream to a consistent frame rate (e.g., 23.976,
 ### Deinterlace Video
 
 Applies a deinterlace filter to the output. Enable this if your source content is interlaced — common with recordings from broadcast or cable TV. The specific deinterlace filter used is configured globally in FFmpeg settings. This setting has no effect on progressive (non-interlaced) source content.
+
+### HDR Tonemapping
+
+!!! warning "Experimental"
+    HDR tonemapping is an experimental feature. Results may vary depending on hardware, driver version, and source content. It may cause stream errors on some configurations. Monitor logs closely when first enabling it.
+
+When Tunarr encounters HDR content (HDR10 or HLG), it can convert it to SDR during transcoding. This is useful when playback devices or clients do not support HDR, or when a consistent SDR output is required regardless of source content.
+
+Tonemapping is **disabled by default**. To enable it, set the `TUNARR_TONEMAP_ENABLED` environment variable (see [Environment Variables](../../getting-started/run.md#transcoding)).
+
+When enabled, Tunarr automatically selects the best available tonemapping method for the configured hardware acceleration mode:
+
+| Hardware Mode | Method | Notes |
+|---|---|---|
+| **VAAPI** | `tonemap_vaapi` → `tonemap_opencl` → software | Falls back through the chain based on what filters are supported by your hardware and FFmpeg build. |
+| **CUDA** | Hardware tonemapping via Vulkan | Requires Vulkan support on the host. If Vulkan is unavailable or causing stream errors, set `TUNARR_DISABLE_VULKAN=true` to fall back to software tonemapping. |
+| **QSV** | Hardware tonemapping | Experimental. May not work reliably on all hardware. |
+| **None (Software)** | Software tonemapping | Used as the final fallback for all modes. More CPU-intensive than hardware paths. |
+
+Tonemapping is only applied to content Tunarr identifies as HDR (HDR10 or HLG). SDR content is unaffected.
+
+!!! info "Color Metadata"
+    Tonemapping relies on color metadata (color space, color transfer, color primaries) stored in Tunarr's database for each program. This metadata is populated automatically when media is scanned or imported from a media source. If tonemapping is not being applied to content you expect to be HDR, try re-scanning the relevant library to ensure the metadata has been recorded.
 
 ---
 
@@ -135,6 +160,23 @@ Adjusts the output volume relative to the source.
 
 !!! info
     This setting has no effect when **Audio Format** is set to **Copy**, since the audio stream is passed through without processing.
+
+### Loudness Normalization
+
+Tunarr supports [EBU R128](https://en.wikipedia.org/wiki/EBU_R_128) loudness normalization via FFmpeg's `loudnorm` filter. This provides more perceptually consistent loudness leveling across different programs, compared to the simple volume percentage adjustment above.
+
+When enabled, the following parameters can be configured:
+
+| Parameter | Range | Default | Description |
+|---|---|---|---|
+| **Integrated Loudness (I)** | -70.0 to -5.0 LUFS | -24.0 | Target integrated loudness. EBU R128 broadcast standard is -23 LUFS; -24 is a common streaming target. |
+| **Loudness Range (LRA)** | 1.0 to 50.0 LU | 7.0 | Target loudness range (dynamic range). Lower values compress dynamics more aggressively. |
+| **Max True Peak (TP)** | -9.0 to 0.0 dBTP | -2.0 | Maximum allowed true peak level, preventing clipping. |
+
+Loudness normalization and **Audio Volume %** can be used independently of each other.
+
+!!! info
+    Loudness normalization has no effect when **Audio Format** is set to **Copy**, since the audio stream is passed through without processing.
 
 ---
 

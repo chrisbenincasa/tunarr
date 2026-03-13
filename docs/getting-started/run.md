@@ -86,6 +86,20 @@ Tunarr has various command line / environment variables for configuration. These
 | `TUNARR_SEARCH_REDUCE_INDEXER_MEMORY_USAGE` | N/A | `true` | Reduces Meilisearch memory usage during indexing. See [Meilisearch docs](https://www.meilisearch.com/docs/learn/self_hosted/configure_meilisearch_at_launch#reduce-indexing-memory-usage). May [impact file storage](https://github.com/chrisbenincasa/tunarr/issues/1558). Not available on Windows. |
 | `TUNARR_DISABLE_SEARCH_SNAPSHOT_IN_BACKUP` | N/A | `false` | When set to `true`, excludes Meilisearch snapshots from backups. The search index will be rebuilt on restore. |
 
+### Artwork
+
+| Environment Variable | Command Line Flag | Default | Description |
+| -------------------- | ----------------- | ------- | ----------- |
+| `TUNARR_PROXY_ARTWORK` | N/A | `false` | When set to `true`, Tunarr proxies artwork requests through itself rather than redirecting clients directly to the media server URL. Useful when clients cannot reach your media server directly (e.g., behind a firewall or on a different network segment). |
+
+### Transcoding
+
+| Environment Variable | Command Line Flag | Default | Description |
+| -------------------- | ----------------- | ------- | ----------- |
+| `TUNARR_TONEMAP_ENABLED` | N/A | `false` | Enable experimental HDR tonemapping. When set to `true`, Tunarr will apply HDR-to-SDR tonemapping when HDR source content is detected. See [HDR Tonemapping](../configure/ffmpeg/transcode_config.md#hdr-tonemapping). |
+| `TUNARR_DISABLE_VULKAN` | N/A | `false` | Disable Vulkan-based tonemapping in the CUDA pipeline. Use if Vulkan is not available on your system or is causing stream failures; Tunarr will fall back to software tonemapping. |
+| `TUNARR_DISABLE_VAAPI_PAD` | N/A | `false` | Disable hardware pad filters (`pad_vaapi`/`pad_opencl`) for VAAPI and fall back to software padding. Use if hardware padding causes artifacts or stream errors on your hardware. |
+
 ### Performance
 
 | Environment Variable | Command Line Flag | Default | Description |
