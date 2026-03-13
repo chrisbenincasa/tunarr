@@ -14,6 +14,7 @@ import type {
   BaseSlot,
   FillerProgrammingSlot,
   SlotFillerTypes,
+  SlotGroupBy,
 } from '@tunarr/types/api';
 import { FillerTypes } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
@@ -345,18 +346,37 @@ export function createProgramIterators(
               .with({ type: 'movie' }, () => 'movie')
               .with({ type: 'show' }, (show) => `show.${show.showId}`)
               .exhaustive();
+            const groupByConfig =
+              slot.type === 'movie' ? slot.groupBy : undefined;
             return getContentProgramIterator(
               programBySlotType,
               slotId,
               slot,
               random,
+              groupByConfig,
             );
           })
           .with({ type: 'smart-collection' }, (slot) => {
-            const programs =
+            let programs =
               programBySlotType.smartCollection[
                 smartCollectionId(slot.smartCollectionId)
               ] ?? [];
+            if (slot.groupBy) {
+              programs = groupProgramsByTag(
+                programs,
+                slot.groupBy,
+                slot.order,
+                random,
+              );
+              const indexMap = new Map(
+                programs.map((p, i) => [p.uuid, i]),
+              );
+              return new ContentProgramOrderedIterator(
+                programs,
+                (p) => indexMap.get(p.uuid) ?? 0,
+                true,
+              );
+            }
             switch (slot.order) {
               case 'next':
               case 'alphanumeric':
@@ -474,11 +494,128 @@ export function slotFillerIterators(
   return out;
 }
 
+/**
+ * Groups programs by their tags for marathon-style playback.
+ * Programs within each group are always sorted chronologically.
+ * Group order is determined by the slot's order setting.
+ *
+ * When order is 'shuffle', groups are shuffled using the provided Random.
+ * When order is 'alphanumeric', groups are sorted A-Z by tag name.
+ * When order is 'next' or 'chronological', groups are sorted by earliest year.
+ * When order is 'ordered_shuffle', groups are sorted then rotated randomly.
+ */
+export function groupProgramsByTag(
+  programs: SlotSchedulerProgram[],
+  groupBy: SlotGroupBy,
+  order: string,
+  random: Random,
+): SlotSchedulerProgram[] {
+  const groups = new Map<string, SlotSchedulerProgram[]>();
+  const ungrouped: SlotSchedulerProgram[] = [];
+
+  for (const program of programs) {
+    const tags = program.tags?.map((t) => t.tag.tag).filter(Boolean) ?? [];
+
+    if (tags.length === 0) {
+      if (groupBy.ungrouped === 'include') {
+        ungrouped.push(program);
+      }
+      continue;
+    }
+
+    const tagsToUse =
+      groupBy.multiTagBehavior === 'first' ? [tags[0]!] : tags;
+
+    for (const tag of tagsToUse) {
+      const existing = groups.get(tag) ?? [];
+      existing.push(program);
+      groups.set(tag, existing);
+    }
+  }
+
+  // Sort programs within each group chronologically by year
+  const sortChronologically = (
+    a: SlotSchedulerProgram,
+    b: SlotSchedulerProgram,
+  ) => {
+    const aDate = a.year ?? 0;
+    const bDate = b.year ?? 0;
+    return aDate - bDate;
+  };
+
+  for (const [, groupPrograms] of groups) {
+    groupPrograms.sort(sortChronologically);
+  }
+
+  // Order the groups based on the slot's order setting
+  let orderedGroupKeys = [...groups.keys()];
+
+  switch (order) {
+    case 'alphanumeric':
+      orderedGroupKeys.sort();
+      break;
+    case 'next':
+    case 'chronological': {
+      // Sort groups by earliest year in the group
+      orderedGroupKeys.sort((a, b) => {
+        const aMin = groups.get(a)![0]?.year ?? 0;
+        const bMin = groups.get(b)![0]?.year ?? 0;
+        return aMin - bMin;
+      });
+      break;
+    }
+    case 'shuffle':
+      // Shuffle the group order
+      orderedGroupKeys = random.shuffle(orderedGroupKeys);
+      break;
+    case 'ordered_shuffle': {
+      // Sort then rotate randomly
+      orderedGroupKeys.sort((a, b) => {
+        const aMin = groups.get(a)![0]?.year ?? 0;
+        const bMin = groups.get(b)![0]?.year ?? 0;
+        return aMin - bMin;
+      });
+      if (orderedGroupKeys.length > 1) {
+        const rotation = random.integer(0, orderedGroupKeys.length - 1);
+        orderedGroupKeys = [
+          ...orderedGroupKeys.slice(rotation),
+          ...orderedGroupKeys.slice(0, rotation),
+        ];
+      }
+      break;
+    }
+  }
+
+  // Flatten groups into final program list, deduplicating programs
+  // that appear in multiple groups (when multiTagBehavior === 'all')
+  const result: SlotSchedulerProgram[] = [];
+  const seen = new Set<string>();
+  for (const key of orderedGroupKeys) {
+    for (const program of groups.get(key)!) {
+      if (!seen.has(program.uuid)) {
+        seen.add(program.uuid);
+        result.push(program);
+      }
+    }
+  }
+
+  // Append ungrouped programs as individual entries
+  for (const program of ungrouped) {
+    if (!seen.has(program.uuid)) {
+      seen.add(program.uuid);
+      result.push(program);
+    }
+  }
+
+  return result;
+}
+
 function getContentProgramIterator(
   programBySlotType: ProgramMapping,
   contentSlotId: ContentSlotId,
   slot: BaseMovieProgrammingSlot | BaseShowProgrammingSlot,
   random: Random,
+  groupBy?: SlotGroupBy,
 ) {
   let programs = uniqBy(
     programBySlotType.content[contentSlotId] ?? [],
@@ -490,6 +627,18 @@ function getContentProgramIterator(
       const season = program.season?.index ?? program.seasonNumber;
       return season && slot.seasonFilter.includes(season);
     });
+  }
+
+  if (groupBy) {
+    programs = groupProgramsByTag(programs, groupBy, slot.order, random);
+    // When grouping is active, use an ordered iterator that preserves
+    // the pre-computed group order. Build an index map for O(1) lookups.
+    const indexMap = new Map(programs.map((p, i) => [p.uuid, i]));
+    return new ContentProgramOrderedIterator(
+      programs,
+      (p) => indexMap.get(p.uuid) ?? 0,
+      true, // Always asc since groupProgramsByTag already ordered correctly
+    );
   }
 
   switch (slot.order) {

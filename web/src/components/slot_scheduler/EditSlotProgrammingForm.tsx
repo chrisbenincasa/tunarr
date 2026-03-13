@@ -13,6 +13,7 @@ import { CustomShowSlotProgrammingForm } from './CustomShowSlotProgrammingForm.t
 import { FillerListSlotProgrammingForm } from './FillerListSlotProgrammingForm.tsx';
 import { RedirectProgrammingForm } from './RedirectProgrammingForm.tsx';
 import { ShowSearchSlotProgrammingForm } from './ShowSearchSlotProgrammingForm.tsx';
+import { SlotGroupByFormControl } from './SlotGroupByFormControl.tsx';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 import { SmartCollectionSlotProgrammingForm } from './SmartCollectionSlotProgrammingForm.tsx';
 
@@ -79,7 +80,12 @@ export const EditSlotProgrammingForm = <
       {typeSelectValue === 'filler' && <FillerListSlotProgrammingForm />}
       {typeSelectValue === 'show' && <ShowSearchSlotProgrammingForm />}
       {typeSelectValue === 'redirect' && <RedirectProgrammingForm />}
-      {typeSelectValue === 'movie' && <SlotOrderFormControl />}
+      {typeSelectValue === 'movie' && (
+        <>
+          <SlotOrderFormControl />
+          <SlotGroupByFormControl />
+        </>
+      )}
     </>
   );
 };

@@ -4,6 +4,7 @@ import type { RandomSlotForm } from './SlotModels.ts';
 import {
   BaseSlotOrdering,
   SlotFiller,
+  SlotGroupBySchema,
   SlotProgrammingFillerOrder,
 } from '@tunarr/types/api';
 import {
@@ -21,6 +22,7 @@ export const WithSlotFiller = z.object({
 
 export const CommonMovieSlotViewModel = z.object({
   type: z.literal('movie'),
+  groupBy: SlotGroupBySchema.optional(),
 });
 
 export const CommonCustomShowSlotViewModel = z.object({
@@ -81,6 +83,7 @@ export const CommonSmartCollectionViewModel = z.object({
   smartCollectionId: z.uuid(),
   smartCollection: SmartCollection.nullable(),
   isMissing: z.boolean().optional().default(false),
+  groupBy: SlotGroupBySchema.optional(),
 });
 
 export type CommonSmartCollectionViewModel = z.infer<
