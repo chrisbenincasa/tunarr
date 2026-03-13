@@ -44,6 +44,8 @@ export const defaultMpegDashOptions: DeepRequired<MpegDashOptions> = {
 export const VideoFormats = {
   Hevc: 'hevc',
   H264: 'h264',
+  Dvhe: 'dvhe',
+  Dvh1: 'dvh1',
   Mpeg1Video: 'mpeg1video',
   Mpeg2Video: 'mpeg2video',
   MsMpeg4V2: 'msmpeg4v2',
