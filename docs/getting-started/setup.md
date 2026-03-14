@@ -2,7 +2,7 @@
 
 ## Initial Setup
 
-Upon first launching Tunarr, you will see the Welcome page with a few required setup steps.
+Upon first launching Tunarr, you will see the Welcome page with a few required setup steps. By default, Tunarr will be available at http://localhost:8000.
 
 ![Welcome Page Plex-Jellyfin](../assets/add-media-source.png)
 
