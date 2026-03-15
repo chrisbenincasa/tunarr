@@ -1,4 +1,7 @@
+import { Watermark } from '@tunarr/types';
+import dayjs from 'dayjs';
 import { FileStreamSource } from '../../../../stream/types.ts';
+import { readTestFile } from '../../../../testing/util.ts';
 import { TUNARR_ENV_VARS } from '../../../../util/env.ts';
 import { EmptyFfmpegCapabilities } from '../../capabilities/FfmpegCapabilities.ts';
 import {
@@ -14,6 +17,7 @@ import {
   ColorTransferFormats,
 } from '../../constants.ts';
 import { HardwareUploadQsvFilter } from '../../filter/qsv/HardwareUploadQsvFilter.ts';
+import { QsvFormatFilter } from '../../filter/qsv/QsvFormatFilter.ts';
 import { TonemapQsvFilter } from '../../filter/qsv/TonemapQsvFilter.ts';
 import { TonemapFilter } from '../../filter/TonemapFilter.ts';
 import { ColorFormat } from '../../format/ColorFormat.ts';
@@ -36,6 +40,7 @@ import {
 } from '../../state/FfmpegState.ts';
 import { FrameState } from '../../state/FrameState.ts';
 import { FrameSize } from '../../types.ts';
+import { PipelineBuilderContext } from '../BasePipelineBuilder.ts';
 import { QsvPipelineBuilder } from './QsvPipelineBuilder.ts';
 
 describe('QsvPipelineBuilder', () => {
@@ -100,7 +105,7 @@ describe('QsvPipelineBuilder', () => {
       state,
       new FrameState({
         isAnamorphic: false,
-        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        scaledSize: video.streams[0]!.squarePixelFrameSize(FrameSize.FHD),
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
         frameRate: 24,
@@ -181,7 +186,7 @@ describe('QsvPipelineBuilder', () => {
       state,
       new FrameState({
         isAnamorphic: false,
-        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        scaledSize: video.streams[0]!.squarePixelFrameSize(FrameSize.FHD),
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
         videoFormat: 'h264',
@@ -259,7 +264,7 @@ describe('QsvPipelineBuilder', () => {
       state,
       new FrameState({
         isAnamorphic: false,
-        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        scaledSize: video.streams[0]!.squarePixelFrameSize(FrameSize.FHD),
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
         videoFormat: 'h264',
@@ -341,7 +346,7 @@ describe('QsvPipelineBuilder', () => {
       state,
       new FrameState({
         isAnamorphic: false,
-        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        scaledSize: video.streams[0]!.squarePixelFrameSize(FrameSize.FHD),
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
         videoFormat: 'h264',
@@ -577,5 +582,315 @@ describe('QsvPipelineBuilder', () => {
       );
       expect(softwareTonemapFilter).toBeDefined();
     });
+  });
+
+  describe('initial current state', () => {
+    const ffmpegVersion = {
+      versionString: 'n7.0.2-15-g0458a86656-20240904',
+      majorVersion: 7,
+      minorVersion: 0,
+      patchVersion: 2,
+      isUnknown: false,
+    } as const;
+
+    const hdrColorFormat = new ColorFormat({
+      colorRange: ColorRanges.Tv,
+      colorSpace: ColorSpaces.Bt2020nc,
+      colorTransfer: ColorTransferFormats.Smpte2084,
+      colorPrimaries: ColorPrimaries.Bt2020,
+    });
+
+    const emptyCapabilities = new VaapiHardwareCapabilities([]);
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    test('initializes with the input pixel format when it matches the desired format', () => {
+      const video = VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video.mkv'),
+        VideoStream.create({
+          codec: 'h264',
+          displayAspectRatio: '16:9',
+          frameSize: FrameSize.FHD,
+          index: 0,
+          pixelFormat: new PixelFormatYuv420P(),
+          providedSampleAspectRatio: null,
+          colorFormat: ColorFormat.unknown,
+        }),
+      );
+
+      const builder = new QsvPipelineBuilder(
+        emptyCapabilities,
+        EmptyFfmpegCapabilities,
+        video,
+        null,
+        null,
+        null,
+        null,
+      );
+
+      const out = builder.build(
+        FfmpegState.create({ version: ffmpegVersion }),
+        new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.FHD,
+          paddedSize: FrameSize.FHD,
+          pixelFormat: new PixelFormatYuv420P(),
+        }),
+        DefaultPipelineOptions,
+      );
+
+      // No format conversion filter should be needed — the initial currentState
+      // correctly reflects the input pixel format (yuv420p), which matches desired.
+      const pixelFormatFilterSteps =
+        out.getComplexFilter()?.filterChain.pixelFormatFilterSteps ?? [];
+      expect(
+        pixelFormatFilterSteps.some((s) => s instanceof QsvFormatFilter),
+      ).toBe(false);
+    });
+
+    test('initializes with the input pixel format when it differs from the desired format', () => {
+      const video = VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video.mkv'),
+        VideoStream.create({
+          codec: 'hevc',
+          profile: 'main 10',
+          displayAspectRatio: '16:9',
+          frameSize: FrameSize.FHD,
+          index: 0,
+          pixelFormat: new PixelFormatYuv420P10Le(),
+          providedSampleAspectRatio: null,
+          colorFormat: ColorFormat.unknown,
+        }),
+      );
+
+      const builder = new QsvPipelineBuilder(
+        emptyCapabilities,
+        EmptyFfmpegCapabilities,
+        video,
+        null,
+        null,
+        null,
+        null,
+      );
+
+      const out = builder.build(
+        FfmpegState.create({ version: ffmpegVersion }),
+        new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.FHD,
+          paddedSize: FrameSize.FHD,
+          pixelFormat: new PixelFormatYuv420P(),
+        }),
+        {
+          ...DefaultPipelineOptions,
+          disableHardwareDecoding: true,
+          disableHardwareEncoding: true,
+        },
+      );
+
+      // A QsvFormatFilter should be present because the initial currentState
+      // correctly reflects the 10-bit input pixel format (yuv420p10le), which
+      // differs from the desired 8-bit output (yuv420p).
+      const pixelFormatFilterSteps =
+        out.getComplexFilter()?.filterChain.pixelFormatFilterSteps ?? [];
+      expect(
+        pixelFormatFilterSteps.some((s) => s instanceof QsvFormatFilter),
+      ).toBe(true);
+    });
+
+    test('initializes with the input color format, used by software tonemap', () => {
+      vi.stubEnv(TUNARR_ENV_VARS.TONEMAP_ENABLED, 'true');
+
+      const video = VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video.mkv'),
+        VideoStream.create({
+          codec: 'hevc',
+          profile: 'main 10',
+          displayAspectRatio: '16:9',
+          frameSize: FrameSize.FHD,
+          index: 0,
+          pixelFormat: new PixelFormatYuv420P10Le(),
+          providedSampleAspectRatio: null,
+          colorFormat: hdrColorFormat,
+        }),
+      );
+
+      const builder = new QsvPipelineBuilder(
+        emptyCapabilities,
+        EmptyFfmpegCapabilities,
+        video,
+        null,
+        null,
+        null,
+        null,
+      );
+
+      const out = builder.build(
+        FfmpegState.create({ version: ffmpegVersion }),
+        new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.FHD,
+          paddedSize: FrameSize.FHD,
+          pixelFormat: new PixelFormatYuv420P(),
+        }),
+        {
+          ...DefaultPipelineOptions,
+          disableHardwareDecoding: true,
+          disableHardwareFilters: true,
+        },
+      );
+
+      const videoFilterSteps =
+        out.getComplexFilter()?.filterChain.videoFilterSteps ?? [];
+      const tonemapFilter = videoFilterSteps.find(
+        (s) => s instanceof TonemapFilter,
+      );
+
+      // TonemapFilter.filter uses currentState.colorFormat.colorTransfer to
+      // build the tin= parameter. If initial currentState.colorFormat was not
+      // set from the input stream, the transfer function would be wrong/missing.
+      expect(tonemapFilter).toBeDefined();
+      expect(tonemapFilter?.filter).toContain(
+        `tin=${ColorTransferFormats.Smpte2084}`,
+      );
+    });
+  });
+
+  test('hwdownload bug', async () => {
+    const context = JSON.parse(
+      (await readTestFile('hwdownload_qsv_bug.json')).toString('utf-8'),
+    ) as PipelineBuilderContext;
+
+    const wm = new WatermarkInputSource(
+      new FileStreamSource('/path/to/img'),
+      StillImageStream.create({
+        frameSize: FrameSize.withDimensions(100, 100),
+        index: 1,
+      }),
+      {
+        duration: 0,
+        enabled: true,
+        horizontalMargin: 0,
+        opacity: 1,
+        position: 'bottom-right',
+        verticalMargin: 0,
+        width: 100,
+      } satisfies Watermark,
+    );
+
+    const builder = new QsvPipelineBuilder(
+      new VaapiHardwareCapabilities([
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.H264Main,
+          VaapiEntrypoint.Decode,
+        ),
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.H264Main,
+          VaapiEntrypoint.Encode,
+        ),
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain10,
+          VaapiEntrypoint.Decode,
+        ),
+      ]),
+      EmptyFfmpegCapabilities,
+      VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video'),
+        VideoStream.create({
+          index: 0,
+          codec: 'hevc',
+          profile: 'main 10',
+          pixelFormat: new PixelFormatYuv420P10Le(),
+          frameSize: FrameSize.withDimensions(1440, 1080),
+          frameRate: '29.97',
+          inputKind: 'video',
+          colorFormat: ColorFormat.bt709,
+          providedSampleAspectRatio: '1:1',
+          displayAspectRatio: '1',
+        }),
+      ),
+      null,
+      null,
+      wm,
+      null,
+    );
+
+    const x = builder.build(
+      FfmpegState.create({
+        version: {
+          versionString: 'n7.1.1-56-gc2184b65d2-20250716',
+          majorVersion: 7,
+          minorVersion: 1,
+          patchVersion: 1,
+          versionDetails: '56-gc2184b65d2-20250716',
+          isUnknown: false,
+        },
+        threadCount: 0,
+        start: dayjs.duration({ minutes: 5, seconds: 19.253 }),
+        duration: dayjs.duration({ minutes: 18, seconds: 2.348 }),
+        logLevel: 'debug',
+        mapMetadata: false,
+        metadataServiceName: null,
+        metadataServiceProvider: null,
+        decoderHwAccelMode: 'none',
+        encoderHwAccelMode: 'none',
+        softwareScalingAlgorithm: 'bicubic',
+        softwareDeinterlaceFilter: 'none',
+        vaapiDevice: null,
+        vaapiDriver: null,
+        outputFormat: {
+          type: 'hls',
+          hlsOptions: {
+            hlsDeleteThreshold: 3,
+            streamNameFormat: 'stream.m3u8',
+            segmentNameFormat: 'data%06d.ts',
+            segmentBaseDirectory:
+              'C:\\Users\\plex-svc\\AppData\\Roaming\\tunarr\\streams',
+            streamBasePath: 'stream_ffe8a40c-6545-41c2-881a-988bcb8eb2b7',
+            streamBaseUrl:
+              '/stream/channels/ffe8a40c-6545-41c2-881a-988bcb8eb2b7/hls/',
+            hlsTime: 4,
+            hlsListSize: 0,
+            deleteThreshold: null,
+            appendSegments: true,
+          },
+        },
+        outputLocation: 'stdout',
+        ptsOffset: 0,
+        tonemapHdr: false,
+      }),
+      new FrameState({
+        scaledSize: FrameSize.withDimensions(1440, 1080),
+        paddedSize: FrameSize.withDimensions(1920, 1080),
+        isAnamorphic: false,
+        realtime: false,
+        videoFormat: 'h264',
+        videoPreset: null,
+        videoProfile: null,
+        frameRate: null,
+        videoTrackTimescale: 90000,
+        videoBitrate: 10000,
+        videoBufferSize: 20000,
+        frameDataLocation: 'unknown',
+        deinterlace: false,
+        pixelFormat: new PixelFormatYuv420P(),
+        colorFormat: ColorFormat.bt709,
+        infiniteLoop: false,
+        forceSoftwareOverlay: false,
+      }),
+      {
+        decoderThreadCount: 0,
+        encoderThreadCount: 0,
+        filterThreadCount: null,
+        disableHardwareDecoding: false,
+        disableHardwareEncoding: false,
+        disableHardwareFilters: false,
+        vaapiDevice: null,
+        vaapiDriver: null,
+      },
+    );
+    console.log(x.getCommandArgs().join(' '));
   });
 });

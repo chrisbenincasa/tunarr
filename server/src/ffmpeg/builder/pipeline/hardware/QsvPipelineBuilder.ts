@@ -159,6 +159,8 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       isAnamorphic: videoStream.isAnamorphic,
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
+      pixelFormat: videoStream.pixelFormat,
+      colorFormat: videoStream.colorFormat,
     });
 
     if (this.decoder) {
