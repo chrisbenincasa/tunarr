@@ -1742,6 +1742,25 @@ export class MeilisearchService implements ISearchService {
     return this.waitForTaskResult(task.taskUid);
   }
 
+  async waitForPendingIndexTasks(): Promise<void> {
+    if (!this.started) return;
+    // TODO: paginate if > 1000 tasks (requires multiple getTasks calls)
+    const tasks = await this.client().tasks.getTasks({
+      indexUids: [ProgramsIndex.name],
+      statuses: ['enqueued', 'processing'],
+      limit: 1000,
+    });
+    if (tasks.results.length === 0) return;
+    this.logger.debug(
+      'Waiting for %d pending index task(s) before collection scan',
+      tasks.results.length,
+    );
+    await this.client().tasks.waitForTasks(
+      tasks.results.map((t) => t.uid),
+      { timeout: 0 },
+    );
+  }
+
   private async waitForTaskResult(
     taskId: number,
     canceledIsOk: boolean = false,
