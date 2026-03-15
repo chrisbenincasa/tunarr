@@ -30,8 +30,15 @@ import {
   SubtitleMethods,
   VideoStream,
 } from './builder/MediaStream.ts';
+import { HlsWebVttOutputFormat } from './builder/options/HlsWebVttOutputFormat.ts';
 import type { OutputFormat } from './builder/constants.ts';
-import { MpegTsOutputFormat, VideoFormats } from './builder/constants.ts';
+import {
+  MpegTsOutputFormat,
+  OutputFormatTypes,
+  VideoFormats,
+} from './builder/constants.ts';
+import { TUNARR_ENV_VARS, getBooleanEnvVar } from '../util/env.ts';
+import { isImageBasedSubtitle } from '../stream/util.ts';
 import { ColorFormat } from './builder/format/ColorFormat.ts';
 import type { PixelFormat } from './builder/format/PixelFormat.ts';
 import {
@@ -438,6 +445,15 @@ export class FfmpegStreamFactory extends IFFMPEG {
       );
     }
 
+    // Sidecar mode is active when the output format carries subtitle options
+    // (set by HlsSession) and the global env var is enabled.
+    const isSidecarRequested =
+      getBooleanEnvVar(TUNARR_ENV_VARS.WEBVTT_SIDECAR_ENABLED, false) &&
+      (outputFormat.type === OutputFormatTypes.Hls ||
+        outputFormat.type === OutputFormatTypes.HlsDirectV2) &&
+      (outputFormat as { subtitleOptions?: unknown }).subtitleOptions !==
+        undefined;
+
     let subtitleSource: Nullable<SubtitlesInputSource> = null;
     if (
       isDefined(streamDetails.subtitleDetails) &&
@@ -449,45 +465,62 @@ export class FfmpegStreamFactory extends IFFMPEG {
         subtitlePreferences,
         lineupItem,
         streamDetails.subtitleDetails,
+        isSidecarRequested,
       );
 
       if (pickedSubtitleStream) {
         this.logger.trace('Using subtitle stream: %O', pickedSubtitleStream);
 
-        const source = match(pickedSubtitleStream.path)
-          .with(
-            P.string.startsWith('http'),
-            (path) => new HttpStreamSource(path),
-          )
-          .with(P.string, (path) => new FileStreamSource(path))
-          .otherwise(() => streamSource);
-
-        const stream = match(pickedSubtitleStream.type)
-          .with(
-            'embedded',
-            () =>
-              new EmbeddedSubtitleStream(
-                pickedSubtitleStream.codec,
-                pickedSubtitleStream.index ?? 0,
-                SubtitleMethods.Burn,
-              ),
-          )
-          .with(
-            'external',
-            () =>
-              new ExternalSubtitleStream(
-                pickedSubtitleStream.codec,
-                SubtitleMethods.Burn,
-              ),
-          )
-          .otherwise(() => null);
-
-        if (stream) {
-          subtitleSource = new SubtitlesInputSource(
-            source,
-            [stream],
-            SubtitleMethods.Burn,
+        // In sidecar mode, skip image-based subtitles (PGS, VOBSUB, etc.)
+        // since they cannot be converted to WebVTT.
+        if (
+          isSidecarRequested &&
+          isImageBasedSubtitle(pickedSubtitleStream.codec)
+        ) {
+          this.logger.debug(
+            'Skipping image-based subtitle stream for sidecar mode (codec=%s)',
+            pickedSubtitleStream.codec,
           );
+        } else {
+          const subtitleMethod = isSidecarRequested
+            ? SubtitleMethods.Sidecar
+            : SubtitleMethods.Burn;
+
+          const source = match(pickedSubtitleStream.path)
+            .with(
+              P.string.startsWith('http'),
+              (path) => new HttpStreamSource(path),
+            )
+            .with(P.string, (path) => new FileStreamSource(path))
+            .otherwise(() => streamSource);
+
+          const stream = match(pickedSubtitleStream.type)
+            .with(
+              'embedded',
+              () =>
+                new EmbeddedSubtitleStream(
+                  pickedSubtitleStream.codec,
+                  pickedSubtitleStream.index ?? 0,
+                  subtitleMethod,
+                ),
+            )
+            .with(
+              'external',
+              () =>
+                new ExternalSubtitleStream(
+                  pickedSubtitleStream.codec,
+                  subtitleMethod,
+                ),
+            )
+            .otherwise(() => null);
+
+          if (stream) {
+            subtitleSource = new SubtitlesInputSource(
+              source,
+              [stream],
+              subtitleMethod,
+            );
+          }
         }
       }
     }
@@ -554,6 +587,66 @@ export class FfmpegStreamFactory extends IFFMPEG {
       }),
       pipelineOptions,
     );
+
+    // Append the WebVTT subtitle segment output when sidecar mode is active
+    // and a subtitle stream was picked.
+    if (isSidecarRequested && subtitleSource) {
+      const subtitleOpts = (
+        outputFormat as {
+          subtitleOptions: {
+            subtitlePlaylistPath: string;
+            subtitleSegmentTemplate: string;
+            subtitleBaseUrl: string;
+            segmentStartNumber: number;
+          };
+        }
+      ).subtitleOptions;
+
+      // Compute which -i input index corresponds to the subtitle source.
+      // The ordering matches FfmpegCommandGenerator: video, audio, watermark,
+      // then (for external sidecar) the subtitle file.
+      const inputPaths: string[] = [];
+      if (pipeline.inputs.videoInput) {
+        inputPaths.push(pipeline.inputs.videoInput.path);
+      }
+      if (
+        pipeline.inputs.audioInput &&
+        !inputPaths.includes(pipeline.inputs.audioInput.path)
+      ) {
+        inputPaths.push(pipeline.inputs.audioInput.path);
+      }
+      if (
+        pipeline.inputs.watermarkInput &&
+        !inputPaths.includes(pipeline.inputs.watermarkInput.path)
+      ) {
+        inputPaths.push(pipeline.inputs.watermarkInput.path);
+      }
+
+      let subtitleInputIndex: number;
+      let subtitleStreamIndex: number;
+      const subtitleStream = subtitleSource.streams[0];
+
+      if (inputPaths.includes(subtitleSource.path)) {
+        // Embedded: same source as video (index 0), use global stream index
+        subtitleInputIndex = inputPaths.indexOf(subtitleSource.path);
+        subtitleStreamIndex = subtitleStream?.index ?? 0;
+      } else {
+        // External: added as a new -i by FfmpegCommandGenerator
+        subtitleInputIndex = inputPaths.length;
+        subtitleStreamIndex = 0;
+      }
+
+      pipeline.steps.push(
+        new HlsWebVttOutputFormat({
+          subtitleInputIndex,
+          subtitleStreamIndex,
+          subtitlePlaylistPath: subtitleOpts.subtitlePlaylistPath,
+          subtitleSegmentTemplate: subtitleOpts.subtitleSegmentTemplate,
+          subtitleBaseUrl: subtitleOpts.subtitleBaseUrl,
+          segmentStartNumber: subtitleOpts.segmentStartNumber,
+        }),
+      );
+    }
 
     return new FfmpegTranscodeSession(
       new FfmpegProcess(

@@ -26,6 +26,8 @@ export abstract class BaseHlsSession<
   protected _workingDirectory: string;
   // Absolute path to the stream directory
   protected _m3u8PlaylistPath: string;
+  // Absolute path to the subtitle media playlist (WebVTT sidecar)
+  protected _subtitlePlaylistPath: string;
   // The path to request streaming assets from the server
   protected _serverPath: string;
 
@@ -52,6 +54,10 @@ export abstract class BaseHlsSession<
       `stream_${this.channel.uuid}`,
     );
     this._m3u8PlaylistPath = path.join(this._workingDirectory, 'stream.m3u8');
+    this._subtitlePlaylistPath = path.join(
+      this._workingDirectory,
+      'subtitles.m3u8',
+    );
     // Direct players back to the /hls URL which will return the playlist
     this._serverPath = `/stream/channels/${this.channel.uuid}.m3u8`;
   }
@@ -213,6 +219,10 @@ export abstract class BaseHlsSession<
 
   get m3uPlaylistPath() {
     return this._m3u8PlaylistPath;
+  }
+
+  get subtitlePlaylistPath() {
+    return this._subtitlePlaylistPath;
   }
 }
 

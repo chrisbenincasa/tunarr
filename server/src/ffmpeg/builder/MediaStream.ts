@@ -278,6 +278,7 @@ export const SubtitleMethods = {
   Burn: 'burn',
   Convert: 'convert',
   Copy: 'copy',
+  Sidecar: 'sidecar',
 } as const;
 
 export type SubtitleMethod =
