@@ -3,7 +3,11 @@ import type {
   ReadableFfmpegSettings,
 } from '@/db/interfaces/ISettingsDB.js';
 import type { ChannelOrm } from '@/db/schema/Channel.js';
-import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
+import type {
+  TranscodeAudioOutputFormat,
+  TranscodeConfigOrm,
+} from '@/db/schema/TranscodeConfig.js';
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
 import type { AudioStreamDetails } from '@/stream/types.js';
 import { FileStreamSource, HttpStreamSource } from '@/stream/types.js';
@@ -31,7 +35,11 @@ import {
   VideoStream,
 } from './builder/MediaStream.ts';
 import type { OutputFormat } from './builder/constants.ts';
-import { MpegTsOutputFormat, VideoFormats } from './builder/constants.ts';
+import {
+  AudioFormats,
+  MpegTsOutputFormat,
+  VideoFormats,
+} from './builder/constants.ts';
 import { ColorFormat } from './builder/format/ColorFormat.ts';
 import type { PixelFormat } from './builder/format/PixelFormat.ts';
 import {
@@ -295,6 +303,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       realtime,
       watermark,
       streamMode,
+      encoding,
     },
     lineupItem,
   }: StreamSessionCreateArgs): Promise<Maybe<FfmpegTranscodeSession>> {
@@ -302,11 +311,16 @@ export class FfmpegStreamFactory extends IFFMPEG {
       throw new Error('Unsupported stream source format: ' + streamSource.type);
     }
 
-    const calculator = new FfmpegPlaybackParamsCalculator(
-      this.transcodeConfig,
-      streamMode ?? this.channel.streamMode,
-    );
-    const playbackParams = calculator.calculateForStream(streamDetails);
+    const isRemux = encoding?.mode === 'remux';
+
+    // In remux mode we bypass the transcode config entirely and copy the
+    // source streams directly into the output container.
+    const playbackParams = isRemux
+      ? null
+      : new FfmpegPlaybackParamsCalculator(
+          this.transcodeConfig,
+          streamMode ?? this.channel.streamMode,
+        ).calculateForStream(streamDetails);
 
     let videoStream: VideoStream;
     let videoInputSource: VideoInputSource;
@@ -381,24 +395,42 @@ export class FfmpegStreamFactory extends IFFMPEG {
       throw new Error('Streams with no video are not currently supported.');
     }
 
-    const audioState = AudioState.create({
-      audioEncoder: playbackParams.audioFormat,
-      audioChannels: playbackParams.audioChannels,
-      audioBitrate: playbackParams.audioBitrate,
-      audioBufferSize: playbackParams.audioBufferSize,
-      audioSampleRate: playbackParams.audioSampleRate,
-      audioVolume: this.transcodeConfig.audioVolumePercent,
-      // Check if audio and video are coming from same location
-      audioDuration:
-        streamMode === 'hls_direct' ? null : duration.asMilliseconds(),
-      normalizeLoudness: false, // !!this.transcodeConfig.audioLoudnormConfig,
-      // loudnormConfig: this.transcodeConfig.audioLoudnormConfig,
-    });
-
     let audioInput: AudioInputSource;
     if (isDefined(streamDetails.audioDetails)) {
       // Find the best matching audio stream based on language preferences
       const audioStream = this.findBestAudioStream(streamDetails.audioDetails);
+
+      let audioFormat: TranscodeAudioOutputFormat;
+      if (isRemux) {
+        // Direct remux: copy audio unless the codec is incompatible with the
+        // output container (DTS/TrueHD are not valid in MPEG-TS and are not
+        // supported by AVPlayer on Apple devices).
+        audioFormat =
+          audioStream.codec === AudioFormats.Dca ||
+          audioStream.codec === AudioFormats.TrueHd
+            ? AudioFormats.Ac3
+            : AudioFormats.Copy;
+      } else {
+        audioFormat = playbackParams!.audioFormat;
+      }
+
+      const audioState = AudioState.create({
+        audioEncoder: audioFormat,
+        audioChannels: isRemux ? undefined : playbackParams!.audioChannels,
+        audioBitrate: isRemux ? undefined : playbackParams!.audioBitrate,
+        audioBufferSize: isRemux ? undefined : playbackParams!.audioBufferSize,
+        audioSampleRate: isRemux ? undefined : playbackParams!.audioSampleRate,
+        audioVolume: isRemux
+          ? undefined
+          : this.transcodeConfig.audioVolumePercent,
+        // Check if audio and video are coming from same location
+        audioDuration:
+          streamMode === ChannelStreamModes.HlsDirect ||
+          streamMode === ChannelStreamModes.HlsDirectV2
+            ? null
+            : duration.asMilliseconds(),
+        normalizeLoudness: false,
+      });
 
       audioInput = new AudioInputSource(
         streamSource,
@@ -412,6 +444,18 @@ export class FfmpegStreamFactory extends IFFMPEG {
         audioState,
       );
     } else {
+      const audioState = AudioState.create({
+        audioEncoder: isRemux ? AudioFormats.Copy : playbackParams!.audioFormat,
+        audioChannels: isRemux ? undefined : playbackParams!.audioChannels,
+        audioBitrate: isRemux ? undefined : playbackParams!.audioBitrate,
+        audioBufferSize: isRemux ? undefined : playbackParams!.audioBufferSize,
+        audioSampleRate: isRemux ? undefined : playbackParams!.audioSampleRate,
+        audioVolume: isRemux
+          ? undefined
+          : this.transcodeConfig.audioVolumePercent,
+        audioDuration: duration.asMilliseconds(),
+        normalizeLoudness: false,
+      });
       audioInput = new NullAudioInputSource({
         ...audioState,
         audioDuration: duration.asMilliseconds(),
@@ -420,6 +464,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     let watermarkSource: Nullable<WatermarkInputSource> = null;
     if (
+      !isRemux &&
       streamMode !== ChannelStreamModes.HlsDirect &&
       streamMode !== ChannelStreamModes.HlsDirectV2 &&
       watermark?.enabled
@@ -440,6 +485,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     let subtitleSource: Nullable<SubtitlesInputSource> = null;
     if (
+      !isRemux &&
       isDefined(streamDetails.subtitleDetails) &&
       this.channel.subtitlesEnabled
     ) {
@@ -492,35 +538,54 @@ export class FfmpegStreamFactory extends IFFMPEG {
       }
     }
 
+    // For remux, use the source video's actual dimensions so no scaling or
+    // padding filters are injected. For normal transcode, use the transcode
+    // config's target resolution.
+    const sourceFrameSize =
+      isRemux && streamDetails.videoDetails
+        ? FrameSize.create({
+            height: streamDetails.videoDetails[0].height,
+            width: streamDetails.videoDetails[0].width,
+          })
+        : null;
+
+    const scaledSize =
+      sourceFrameSize ??
+      videoStream.squarePixelFrameSize(
+        FrameSize.fromResolution(this.transcodeConfig.resolution),
+      );
+
+    const paddedSize =
+      sourceFrameSize ??
+      FrameSize.fromResolution(this.transcodeConfig.resolution);
+
+    const effectiveHwAccel = isRemux
+      ? HardwareAccelerationMode.None
+      : playbackParams!.hwAccel;
+
     const builder = await this.pipelineBuilderFactory(this.transcodeConfig)
-      .setHardwareAccelerationMode(playbackParams.hwAccel)
+      .setHardwareAccelerationMode(effectiveHwAccel)
       .setVideoInputSource(videoInputSource)
       .setAudioInputSource(audioInput)
       .setWatermarkInputSource(watermarkSource)
       .setSubtitleInputSource(subtitleSource)
       .build();
 
-    const scaledSize = videoStream.squarePixelFrameSize(
-      FrameSize.fromResolution(this.transcodeConfig.resolution),
-    );
-
-    const paddedSize = FrameSize.fromResolution(
-      this.transcodeConfig.resolution,
-    );
-
-    const pipelineOptions: PipelineOptions = {
-      ...DefaultPipelineOptions,
-      decoderThreadCount: this.transcodeConfig.threadCount,
-      encoderThreadCount: this.transcodeConfig.threadCount,
-      vaapiDevice: this.getVaapiDevice(),
-      vaapiDriver: this.getVaapiDriver(),
-      disableHardwareDecoding:
-        this.transcodeConfig.disableHardwareDecoder ?? false,
-      disableHardwareEncoding:
-        this.transcodeConfig.disableHardwareEncoding ?? false,
-      disableHardwareFilters:
-        this.transcodeConfig.disableHardwareFilters ?? false,
-    };
+    const pipelineOptions: PipelineOptions = isRemux
+      ? DefaultPipelineOptions
+      : {
+          ...DefaultPipelineOptions,
+          decoderThreadCount: this.transcodeConfig.threadCount,
+          encoderThreadCount: this.transcodeConfig.threadCount,
+          vaapiDevice: this.getVaapiDevice(),
+          vaapiDriver: this.getVaapiDriver(),
+          disableHardwareDecoding:
+            this.transcodeConfig.disableHardwareDecoder ?? false,
+          disableHardwareEncoding:
+            this.transcodeConfig.disableHardwareEncoding ?? false,
+          disableHardwareFilters:
+            this.transcodeConfig.disableHardwareFilters ?? false,
+        };
 
     const pipeline = builder.build(
       FfmpegState.create({
@@ -528,28 +593,36 @@ export class FfmpegStreamFactory extends IFFMPEG {
         start: startTime,
         duration,
         ptsOffset,
-        threadCount: this.transcodeConfig.threadCount,
+        threadCount: isRemux ? 0 : this.transcodeConfig.threadCount,
         outputFormat,
-        softwareDeinterlaceFilter: this.ffmpegSettings.deinterlaceFilter,
-        softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
-        vaapiDevice: this.getVaapiDevice(),
-        vaapiDriver: this.getVaapiDriver(),
+        softwareDeinterlaceFilter: isRemux
+          ? undefined
+          : this.ffmpegSettings.deinterlaceFilter,
+        softwareScalingAlgorithm: isRemux
+          ? undefined
+          : this.ffmpegSettings.scalingAlgorithm,
+        vaapiDevice: isRemux ? null : this.getVaapiDevice(),
+        vaapiDriver: isRemux ? null : this.getVaapiDriver(),
         logLevel: this.ffmpegSettings.logLevel,
       }),
       new FrameState({
         isAnamorphic: false,
         scaledSize,
-        paddedSize, // TODO
-        videoBitrate: playbackParams.videoBitrate,
-        videoBufferSize: playbackParams.videoBufferSize,
-        pixelFormat: playbackParams.pixelFormat ?? new PixelFormatYuv420P(), //match(), TODO: Make this customizable...
-        bitDepth: 8, // TODO: Make this customizable
-        frameRate: playbackParams.frameRate,
-        videoTrackTimescale: playbackParams.videoTrackTimeScale,
+        paddedSize,
+        videoBitrate: isRemux ? undefined : playbackParams!.videoBitrate,
+        videoBufferSize: isRemux ? undefined : playbackParams!.videoBufferSize,
+        pixelFormat: isRemux
+          ? new PixelFormatYuv420P()
+          : (playbackParams!.pixelFormat ?? new PixelFormatYuv420P()),
+        bitDepth: 8,
+        frameRate: isRemux ? undefined : playbackParams!.frameRate,
+        videoTrackTimescale: isRemux
+          ? 90000
+          : playbackParams!.videoTrackTimeScale,
         realtime,
-        videoFormat: playbackParams.videoFormat,
-        videoProfile: null, // 'main', // TODO:
-        deinterlace: playbackParams.deinterlace,
+        videoFormat: isRemux ? VideoFormats.Copy : playbackParams!.videoFormat,
+        videoProfile: null,
+        deinterlace: isRemux ? false : playbackParams!.deinterlace,
         infiniteLoop: lineupItem.infiniteLoop,
       }),
       pipelineOptions,

@@ -134,6 +134,7 @@ export class JellyfinProgramStream extends ProgramStream {
         extraInputHeaders: {},
         outputFormat: this.outputFormat,
         streamMode: this.context.streamMode,
+        encoding: this.context.encoding,
         ...(opts ?? {}),
       },
       lineupItem,

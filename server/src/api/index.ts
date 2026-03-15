@@ -18,6 +18,7 @@ import { container } from '../container.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { isNonEmptyString, run } from '../util/index.js';
 import { channelsApi } from './channelsApi.js';
+import { nativePlaybackApi } from './nativePlaybackApi.js';
 import { CreditsApiController } from './creditsApi.ts';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
@@ -61,6 +62,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     })
     .register(tasksApiRouter)
     .register(channelsApi)
+    .register(nativePlaybackApi)
     .register(customShowsApiV2)
     .register(fillerListsApi)
     .register(programmingApi)
