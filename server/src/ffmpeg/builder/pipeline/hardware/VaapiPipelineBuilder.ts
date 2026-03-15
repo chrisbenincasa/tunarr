@@ -444,7 +444,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       false,
     );
     let padFilter: Maybe<FilterOption>;
-    if (this.context.videoStream.isHdr()) {
+    if (isHdrContent(this.context.videoStream)) {
       padFilter = PadFilter.create(currentState, this.desiredState);
     } else if (
       !disableHardwarePad &&
