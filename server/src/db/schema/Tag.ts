@@ -30,12 +30,23 @@ export const TagRelations = sqliteTable(
     groupingId: text().references(() => ProgramGrouping.uuid, {
       onDelete: 'cascade',
     }),
+    source: text({ enum: ['media', 'collection'] })
+      .notNull()
+      .default('media'),
   },
   (table) => [
     index('tag_relations_program_id_idx').on(table.programId),
     index('tag_relations_grouping_id_idx').on(table.groupingId),
-    unique('tag_program_id_unique_idx').on(table.tagId, table.programId),
-    unique('tag_grouping_id_unique_idx').on(table.tagId, table.groupingId),
+    unique('tag_program_id_unique_idx').on(
+      table.tagId,
+      table.programId,
+      table.source,
+    ),
+    unique('tag_grouping_id_unique_idx').on(
+      table.tagId,
+      table.groupingId,
+      table.source,
+    ),
   ],
 );
 
