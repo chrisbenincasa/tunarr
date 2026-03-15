@@ -14,21 +14,15 @@ import {
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
-import { chunk, isNil, orderBy, partition } from 'lodash-es';
+import { chunk, isNil, orderBy, partition, uniqBy } from 'lodash-es';
 import { v4 } from 'uuid';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
-import {
-  AllProgramJoins,
-  withCustomShowPrograms,
-} from './programQueryHelpers.ts';
+import { withCustomShowPrograms } from './programQueryHelpers.ts';
 import { MediaSourceId, MediaSourceType } from './schema/base.ts';
 import type { NewCustomShow } from './schema/CustomShow.ts';
 import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
 import { DB } from './schema/db.ts';
-import {
-  ProgramWithRelations,
-  ProgramWithRelationsOrm,
-} from './schema/derivedTypes.ts';
+import { ProgramWithRelationsOrm } from './schema/derivedTypes.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()
@@ -72,14 +66,29 @@ export class CustomShowDB {
       });
   }
 
-  async getShowPrograms(id: string): Promise<ProgramWithRelations[]> {
-    const programs = await this.db
-      .selectFrom('customShow')
-      .where('customShow.uuid', '=', id)
-      .select((eb) => withCustomShowPrograms(eb, { joins: AllProgramJoins }))
-      .executeTakeFirst();
-
-    return programs?.customShowContent ?? [];
+  async getShowPrograms(id: string): Promise<ProgramWithRelationsOrm[]> {
+    const result = await this.drizzle.query.customShowContent.findMany({
+      where: (fields, { eq }) => eq(fields.customShowUuid, id),
+      orderBy: (fields, { asc }) => asc(fields.index),
+      with: {
+        program: {
+          with: {
+            show: true,
+            season: true,
+            album: true,
+            artist: true,
+            artwork: true,
+            externalIds: true,
+            tags: {
+              with: {
+                tag: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    return result.map((r) => r.program);
   }
 
   async getShowProgramsOrm(id: string): Promise<ProgramWithRelationsOrm[]> {
@@ -242,14 +251,15 @@ export class CustomShowDB {
       programs,
       (p) => p.persisted && isNonEmptyString(p.id),
     );
-    const upsertedPrograms =
-      await this.programDB.upsertContentPrograms(needsPersist);
+    const upsertedPrograms = await this.programDB.upsertContentPrograms(
+      uniqBy(needsPersist, (p) => p.uniqueId),
+    );
     const allPrograms: {
       uuid: string;
       sourceType: MediaSourceType;
       mediaSourceId: MediaSourceId;
       externalKey: string;
-    }[] = persisted
+    }[] = uniqBy(persisted, (p) => p.id!)
       .map((p) => ({
         uuid: p.id!,
         sourceType: p.externalSourceType,
@@ -283,10 +293,7 @@ export class CustomShowDB {
       }),
       (csc) => csc.index,
       'asc',
-    ).map((csc, idx) => {
-      csc.index = idx;
-      return csc;
-    });
+    );
 
     await this.db.transaction().execute(async (tx) => {
       if (allNewCustomContent.length > 0) {

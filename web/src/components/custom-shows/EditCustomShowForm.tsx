@@ -3,6 +3,7 @@ import useStore from '@/store';
 import {
   moveProgramInCustomShow,
   resetCustomShowProgramming,
+  setCustomShowProgramDirty,
   updateCurrentCustomShow,
 } from '@/store/customShowEditor/actions.ts';
 import { removeCustomShowProgram } from '@/store/entityEditor/util';
@@ -23,7 +24,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { type CustomShow } from '@tunarr/types';
 import { useEffect } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
-import { getApiCustomShowsQueryKey } from '../../generated/@tanstack/react-query.gen.ts';
+import {
+  getApiCustomShowsByIdProgramsQueryKey,
+  getApiCustomShowsByIdQueryKey,
+  getApiCustomShowsQueryKey,
+} from '../../generated/@tanstack/react-query.gen.ts';
 import {
   createCustomShow,
   putApiCustomShowsById,
@@ -87,11 +92,24 @@ export function EditCustomShowsForm({
         });
       }
     },
-    onSuccess: async () => {
+    onSuccess: async (updatedShow) => {
+      reset({ name: updatedShow.data.name });
       await queryClient.invalidateQueries({
         queryKey: getApiCustomShowsQueryKey(),
-        exact: false,
       });
+      await queryClient.invalidateQueries({
+        queryKey: getApiCustomShowsByIdQueryKey({
+          path: { id: updatedShow.data.id },
+        }),
+        exact: true,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: getApiCustomShowsByIdProgramsQueryKey({
+          path: { id: updatedShow.data.id },
+        }),
+        exact: true,
+      });
+      setCustomShowProgramDirty(false);
     },
   });
 

@@ -7843,6 +7843,173 @@ export type CreateCustomShowResponses = {
      */
     201: {
         id: string;
+        name: string;
+        contentCount: number;
+        programs?: Array<{
+            type: 'custom';
+            persisted: boolean;
+            duration: number;
+            icon?: string;
+            id: string;
+            customShowId: string;
+            index: number;
+            program?: {
+                type: 'content';
+                persisted: boolean;
+                duration: number;
+                icon?: string;
+                id?: string;
+                subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
+                summary?: string;
+                date?: string;
+                year?: number;
+                rating?: string;
+                serverFileKey?: string;
+                serverFilePath?: string;
+                title: string;
+                showId?: string;
+                seasonId?: string;
+                seasonNumber?: number;
+                episodeNumber?: number;
+                albumId?: string;
+                artistId?: string;
+                index?: number;
+                parent?: {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'season';
+                } | {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'album';
+                };
+                grandparent?: {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'show';
+                    seasons?: Array<{
+                        id?: string;
+                        title?: string;
+                        index?: number;
+                        guids?: Array<string>;
+                        year?: number;
+                        externalKey?: string;
+                        externalIds: Array<{
+                            type: 'single';
+                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                            id: string;
+                        } | {
+                            type: 'multi';
+                            source: 'plex' | 'jellyfin' | 'emby';
+                            sourceId: string;
+                            id: string;
+                        }>;
+                        summary?: string;
+                    }>;
+                } | {
+                    id?: string;
+                    title?: string;
+                    index?: number;
+                    guids?: Array<string>;
+                    year?: number;
+                    externalKey?: string;
+                    externalIds: Array<{
+                        type: 'single';
+                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                        id: string;
+                    } | {
+                        type: 'multi';
+                        source: 'plex' | 'jellyfin' | 'emby';
+                        sourceId: string;
+                        id: string;
+                    }>;
+                    summary?: string;
+                    type: 'artist';
+                    albums?: Array<{
+                        id?: string;
+                        title?: string;
+                        index?: number;
+                        guids?: Array<string>;
+                        year?: number;
+                        externalKey?: string;
+                        externalIds: Array<{
+                            type: 'single';
+                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                            id: string;
+                        } | {
+                            type: 'multi';
+                            source: 'plex' | 'jellyfin' | 'emby';
+                            sourceId: string;
+                            id: string;
+                        }>;
+                        summary?: string;
+                    }>;
+                };
+                externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                externalSourceName: string;
+                externalSourceId: string;
+                libraryId?: string;
+                externalKey: string;
+                uniqueId: string;
+                externalIds: Array<{
+                    type: 'single';
+                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
+                    id: string;
+                } | {
+                    type: 'multi';
+                    source: 'plex' | 'jellyfin' | 'emby';
+                    sourceId: string;
+                    id: string;
+                }>;
+                canonicalId?: string;
+            };
+        }>;
+        totalDuration: number;
     };
 };
 
