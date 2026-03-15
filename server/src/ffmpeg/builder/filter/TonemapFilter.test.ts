@@ -28,7 +28,7 @@ describe('TonemapFilter', () => {
     expect(filter.filter).to.eq(
       'zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,' +
         'tonemap=tonemap=hable:desat=0,' +
-        'zscale=s=bt709:t=bt709:m=bt709:r=tv,format=yuv420p',
+        'zscale=t=bt709:m=bt709:r=tv,format=yuv420p',
     );
   });
 
@@ -47,7 +47,7 @@ describe('TonemapFilter', () => {
       'hwdownload,format=p010le|nv12,' +
         'zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,' +
         'tonemap=tonemap=hable:desat=0,' +
-        'zscale=s=bt709:t=bt709:m=bt709:r=tv,format=yuv420p',
+        'zscale=t=bt709:m=bt709:r=tv,format=yuv420p',
     );
   });
 
