@@ -1,7 +1,6 @@
 import { Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { FileStreamSource } from '../../../../stream/types.ts';
-import { readTestFile } from '../../../../testing/util.ts';
 import { TUNARR_ENV_VARS } from '../../../../util/env.ts';
 import { EmptyFfmpegCapabilities } from '../../capabilities/FfmpegCapabilities.ts';
 import {
@@ -40,7 +39,6 @@ import {
 } from '../../state/FfmpegState.ts';
 import { FrameState } from '../../state/FrameState.ts';
 import { FrameSize } from '../../types.ts';
-import { PipelineBuilderContext } from '../BasePipelineBuilder.ts';
 import { QsvPipelineBuilder } from './QsvPipelineBuilder.ts';
 
 describe('QsvPipelineBuilder', () => {
@@ -759,10 +757,6 @@ describe('QsvPipelineBuilder', () => {
   });
 
   test('hwdownload bug', async () => {
-    const context = JSON.parse(
-      (await readTestFile('hwdownload_qsv_bug.json')).toString('utf-8'),
-    ) as PipelineBuilderContext;
-
     const wm = new WatermarkInputSource(
       new FileStreamSource('/path/to/img'),
       StillImageStream.create({

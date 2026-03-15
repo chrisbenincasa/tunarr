@@ -3,7 +3,6 @@ import {
   type DataTag,
   type DefinedInitialDataOptions,
   useQueries,
-  useSuspenseQueries,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { type CustomProgram, type CustomShow } from '@tunarr/types';
@@ -105,7 +104,7 @@ export function useCustomShowWithProgramming<CustomShowSelectT = CustomShow>(
   id: string,
   opts?: OverridableCustomShowByIdQueryOptions<CustomShowSelectT>,
 ) {
-  return useSuspenseQueries({
+  return useQueries({
     queries: [customShowQuery(id, opts), customShowProgramsQuery(id)],
   });
 }

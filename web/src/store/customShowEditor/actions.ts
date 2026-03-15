@@ -124,3 +124,8 @@ export const resetCustomShowProgramming = () =>
     customShowEditor.programList = customShowEditor.originalProgramList;
     customShowEditor.dirty.programs = false;
   });
+
+export const setCustomShowProgramDirty = (isDirty: boolean) =>
+  useStore.setState((state) => {
+    state.customShowEditor.dirty.programs = isDirty;
+  });

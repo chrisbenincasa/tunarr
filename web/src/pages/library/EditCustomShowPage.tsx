@@ -2,6 +2,7 @@ import { EditCustomShowsForm } from '@/components/custom-shows/EditCustomShowFor
 import { useCustomShowWithProgramming } from '@/hooks/useCustomShows.ts';
 import { Route } from '@/routes/library/custom-shows_/$showId/edit.tsx';
 import useStore from '@/store/index.ts';
+import { LinearProgress } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -13,14 +14,15 @@ export default function EditCustomShowPage({ isNew }: Props) {
   const { showId } = Route.useParams();
   const [{ data: customShow }] = useCustomShowWithProgramming(showId);
   const customShowPrograms = useStore((s) => s.customShowEditor.programList);
-  const header = isNew ? 'New Custom Show' : customShow.name;
 
-  return (
+  return !customShow ? (
+    <LinearProgress />
+  ) : (
     <Box>
       <Box>
         <Breadcrumbs />
         <Typography variant="h4" sx={{ mb: 2 }}>
-          {header}
+          {isNew ? 'New Custom Show' : customShow.name}
         </Typography>
       </Box>
       <PaddedPaper sx={{ mb: 2 }}>

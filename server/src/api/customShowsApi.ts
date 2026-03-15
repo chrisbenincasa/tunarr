@@ -132,7 +132,10 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       );
       const result = seq.collect(csc, (csc, idx) => {
         const program =
-          req.serverCtx.programConverter.programDaoToContentProgram(csc, []);
+          req.serverCtx.programConverter.programOrmToContentProgram(
+            csc,
+            csc.externalIds,
+          );
         if (!program) {
           return;
         }
@@ -159,14 +162,25 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         description: 'Creates a new Custom Show',
         body: CreateCustomShowRequestSchema,
         response: {
-          201: z.object({ id: z.string() }),
+          201: CustomShowSchema,
         },
       },
     },
     async (req, res) => {
       const newId = await req.serverCtx.customShowDB.createShow(req.body);
+      const newShow = await req.serverCtx.customShowDB.getShow(newId);
+      if (!newShow) {
+        throw new Error(
+          `New show doesn't exist right after inserting, ID = ${newId}`,
+        );
+      }
 
-      return res.status(201).send({ id: newId });
+      return res.status(201).send({
+        id: newShow.uuid,
+        name: newShow.name,
+        contentCount: newShow.customShowContent.length,
+        totalDuration: sumBy(newShow.customShowContent, (c) => c.duration ?? 0),
+      });
     },
   );
 
