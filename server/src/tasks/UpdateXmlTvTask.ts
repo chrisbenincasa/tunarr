@@ -1,4 +1,5 @@
 import { defaultXmlTvSettings } from '@/db/SettingsDB.js';
+import type { IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
@@ -13,6 +14,7 @@ import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import z from 'zod';
+import { EventService } from '../services/EventService.ts';
 import { GlobalScheduler } from '../services/Scheduler.ts';
 import { Maybe } from '../types/util.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
@@ -45,6 +47,8 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
     @inject(new LazyServiceIdentifier(() => MediaSourceApiFactory))
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(LineupCreator) private lineupCreator: LineupCreator,
+    @inject(EventService) private eventService: EventService,
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
   ) {
     super(logger);
     this.logger.setBindings({ task: UpdateXmlTvTask.ID });
@@ -95,6 +99,24 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
         .catch((err) => this.logger.error(err));
 
       this.logger.info('XMLTV Updated at %s', dayjs().format());
+
+      // Notify native clients that the schedule has changed
+      if (isNonEmptyString(channelId)) {
+        this.eventService.push({
+          type: 'channel_schedule_changed',
+          level: 'info',
+          channelId,
+        });
+      } else {
+        const allChannels = await this.channelDB.getAllChannels();
+        for (const channel of allChannels) {
+          this.eventService.push({
+            type: 'channel_schedule_changed',
+            level: 'info',
+            channelId: channel.uuid,
+          });
+        }
+      }
     } catch (err) {
       this.logger.error(err, 'Unable to update TV guide');
       return;

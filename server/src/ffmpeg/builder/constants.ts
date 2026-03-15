@@ -70,6 +70,8 @@ export const AudioFormats = {
   Copy: 'copy',
   PCMS16LE: 'pcm_s16le',
   Flac: 'flac',
+  Dca: 'dca',
+  TrueHd: 'truehd',
 } as const;
 
 export type StdoutOutputLocation = {

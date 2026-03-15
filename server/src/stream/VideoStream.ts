@@ -12,6 +12,7 @@ import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { ChannelStreamMode } from '@tunarr/types';
+import type { StreamEncoding } from '../ffmpeg/ffmpegBase.ts';
 import { inject, injectable } from 'inversify';
 import { isNil, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
@@ -43,6 +44,7 @@ type StartVideoStreamRequest = {
   audioOnly: boolean;
   streamMode: ChannelStreamMode;
   sessionToken?: string;
+  encoding?: StreamEncoding;
 };
 
 /**
@@ -68,6 +70,7 @@ export class VideoStream {
       audioOnly,
       streamMode,
       sessionToken,
+      encoding,
     }: StartVideoStreamRequest,
     startTimestamp: number,
     allowSkip: boolean,
@@ -137,6 +140,7 @@ export class VideoStream {
             true,
             channel.transcodeConfig,
             streamMode,
+            encoding ?? { mode: 'transcode' },
           );
 
           let outputFormat: OutputFormat = MpegTsOutputFormat;

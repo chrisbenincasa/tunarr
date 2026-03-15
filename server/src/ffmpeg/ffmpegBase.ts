@@ -82,6 +82,20 @@ export type ConcatOptions = {
   mode: ChannelConcatStreamMode;
   outputFormat: OutputFormat;
 };
+
+/**
+ * Describes how the ffmpeg pipeline should encode a stream.
+ *
+ * - `transcode`: honour the channel's transcode config (default behaviour).
+ * - `remux`: copy video and audio streams directly into the output container
+ *   without re-encoding. Audio codecs that are incompatible with the target
+ *   container (e.g. DTS / TrueHD in MPEG-TS) are transcoded to AC-3.
+ *
+ * Future modes (e.g. `adaptive` with per-client capability negotiation) can
+ * be added here without touching call sites.
+ */
+export type StreamEncoding = { mode: 'transcode' } | { mode: 'remux' };
+
 export type StreamOptions = {
   startTime: Duration;
   duration: Duration;
@@ -91,4 +105,6 @@ export type StreamOptions = {
   outputFormat: OutputFormat;
   ptsOffset?: number;
   streamMode: ChannelStreamMode;
+  /** How the pipeline should encode this stream. Defaults to 'transcode'. */
+  encoding?: StreamEncoding;
 };

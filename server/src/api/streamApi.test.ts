@@ -1,4 +1,8 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
+
+vi.mock('../container.js', () => ({ container: { get: vi.fn() } }));
+vi.mock('@/stream/VideoStream.js', () => ({ VideoStream: class {} }));
+
 import { injectTimestampMap } from './streamApi.js';
 
 describe('injectTimestampMap', () => {
