@@ -44,10 +44,15 @@ export class TagRepo {
         uniq(programIds).map((id) => ({
           tagId,
           programId: id,
+          source: 'collection' as const,
         })),
       )
       .onConflictDoNothing({
-        target: [TagRelations.tagId, TagRelations.programId],
+        target: [
+          TagRelations.tagId,
+          TagRelations.programId,
+          TagRelations.source,
+        ],
       });
   }
 
@@ -62,6 +67,7 @@ export class TagRepo {
         and(
           eq(TagRelations.tagId, tagId),
           inArray(TagRelations.programId, programIds),
+          eq(TagRelations.source, 'collection'),
         ),
       );
   }
@@ -77,6 +83,7 @@ export class TagRepo {
         and(
           eq(TagRelations.tagId, tagId),
           inArray(TagRelations.groupingId, groupingIds),
+          eq(TagRelations.source, 'collection'),
         ),
       );
   }
@@ -96,10 +103,15 @@ export class TagRepo {
         uniq(groupingIds).map((id) => ({
           tagId,
           groupingId: id,
+          source: 'collection' as const,
         })),
       )
       .onConflictDoNothing({
-        target: [TagRelations.tagId, TagRelations.groupingId],
+        target: [
+          TagRelations.tagId,
+          TagRelations.groupingId,
+          TagRelations.source,
+        ],
       });
   }
 }

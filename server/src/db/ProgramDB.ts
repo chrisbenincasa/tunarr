@@ -1648,6 +1648,7 @@ export class ProgramDB implements IProgramDB {
         tagId,
         programId: entityType === 'program' ? joinId : null,
         groupingId: entityType === 'grouping' ? joinId : null,
+        source: 'media',
       });
     }
 
@@ -1656,7 +1657,9 @@ export class ProgramDB implements IProgramDB {
         entityType === 'grouping'
           ? TagRelations.groupingId
           : TagRelations.programId;
-      await tx.delete(TagRelations).where(eq(col, joinId));
+      await tx
+        .delete(TagRelations)
+        .where(and(eq(col, joinId), eq(TagRelations.source, 'media')));
       if (newTagNames.size > 0) {
         await tx
           .insert(Tag)

@@ -155,6 +155,7 @@ export class PlexCollectionScanner extends ExternalCollectionScanner<PlexApiClie
   }
 
   private async scanLibraryInternal(ctx: Context) {
+    await this.searchService.waitForPendingIndexTasks();
     this.logger.debug(
       'Scanning Plex library "%s" for collections',
       ctx.library.name,
