@@ -1,6 +1,7 @@
 import type { Channel } from '@/db/schema/Channel.js';
 import type { BaseHlsSession } from '@/stream/hls/BaseHlsSession.js';
 import { HlsPlaylistCreator } from '@/stream/hls/HlsPlaylistCreator.js';
+import { VideoStream } from '@/stream/VideoStream.js';
 import type { Result } from '@/types/result.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -20,6 +21,7 @@ import { format } from 'node:util';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
+import { container } from '../container.ts';
 
 export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({
@@ -415,4 +417,68 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       });
     },
   });
+
+  /**
+   * Returns a finite MPEG-TS stream for a single lineup item, identified by
+   * the epoch ms timestamp when that item started playing (`t`).
+   * Designed for native clients (tvOS, Android TV) using AVQueuePlayer /
+   * ConcatenatingMediaSource for gapless, item-by-item playback.
+   */
+  fastify.get(
+    '/stream/channels/:id/item-stream.ts',
+    {
+      schema: {
+        tags: ['Native'],
+        description:
+          'Returns a finite MPEG-TS stream for the single lineup item that started at time t (epoch ms). Stream closes cleanly at EOF when the item ends.',
+        params: z.object({
+          id: z.uuid(),
+        }),
+        querystring: z.object({
+          t: z.coerce.number().int(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send('Channel not found.');
+      }
+
+      const videoStream = container.get(VideoStream);
+      const startTimestamp = req.query.t;
+
+      const rawStreamResult = await videoStream.startStream(
+        {
+          channel: req.params.id,
+          audioOnly: false,
+          streamMode: 'mpegts',
+          encoding: { mode: 'remux' },
+        },
+        startTimestamp,
+        false,
+      );
+
+      if (rawStreamResult.type === 'error') {
+        logger.error(
+          rawStreamResult.error ?? null,
+          'Error starting item stream for channel %s at t=%d: %s',
+          req.params.id,
+          startTimestamp,
+          rawStreamResult.message,
+        );
+        return res.status(rawStreamResult.httpStatus).send(rawStreamResult.message);
+      }
+
+      req.raw.on('close', () => {
+        logger.debug(
+          { channel: req.params.id, t: startTimestamp },
+          'Native item stream client disconnected, stopping stream.',
+        );
+        rawStreamResult.stop();
+      });
+
+      return res.header('Content-Type', 'video/mp2t').send(rawStreamResult.stream);
+    },
+  );
 };

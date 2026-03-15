@@ -9,6 +9,7 @@ export const EventTypeSchema = z.union([
   z.literal('lifecycle'),
   z.literal('xmltv'),
   z.literal('settings-update'),
+  z.literal('channel_schedule_changed'),
 ]);
 
 const BaseEventSchema = z.object({
@@ -61,10 +62,16 @@ export const StreamSessionEventSchema = BaseEventSchema.extend({
   }),
 });
 
+export const ChannelScheduleChangedEventSchema = BaseEventSchema.extend({
+  type: z.literal('channel_schedule_changed'),
+  channelId: z.string().uuid(),
+});
+
 export const TunarrEventSchema = z.discriminatedUnion('type', [
   SettingsUpdateEventSchema,
   HeartbeatEventSchema,
   LifecycleEventSchema,
   XmlTvEventSchema,
   StreamSessionEventSchema,
+  ChannelScheduleChangedEventSchema,
 ]);
