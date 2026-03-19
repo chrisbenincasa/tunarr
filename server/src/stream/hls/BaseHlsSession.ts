@@ -120,17 +120,8 @@ export abstract class BaseHlsSession<
         'Cleaning up existing working directory: %s',
         this._workingDirectory,
       );
-      const allItems = await fs.readdir(this._workingDirectory);
       await fs.rmdir(this._workingDirectory, { recursive: true });
       await fs.mkdir(this._workingDirectory);
-      // await Promise.all(
-      //   map(allItems, (item) =>
-      //     fs.rm(path.join(this._workingDirectory, item), {
-      //       recursive: true,
-      //       force: true,
-      //     }),
-      //   ),
-      // );
     } catch (err) {
       return this.logger.error(
         err,
