@@ -7,7 +7,6 @@ import {
   first,
   isEmpty,
   last,
-  merge,
   nth,
   reject,
   take,
@@ -15,15 +14,14 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { basename } from 'node:path';
-import type { DeepRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
-import { defaultHlsOptions } from '../../ffmpeg/builder/constants.ts';
 import { SegmentNameRegex } from './BaseHlsSession.ts';
 
 type MutateOptions = {
-  maxSegmentsToKeep?: number;
-  endWithDiscontinuity?: boolean;
-  targetDuration?: number;
+  maxSegmentsToKeep: number;
+  endWithDiscontinuity: boolean;
+  targetDuration: number;
+  previousDiscontinuitySequence?: number;
 };
 
 type FilterBeforeDate = {
@@ -41,34 +39,25 @@ export type HlsPlaylistFilterOptions =
   | FilterBeforeDate
   | FilterBeforeSegmentNumber;
 
-const defaultMutateOptions: DeepRequired<MutateOptions> = {
-  maxSegmentsToKeep: 10,
-  endWithDiscontinuity: false,
-  targetDuration: defaultHlsOptions.hlsTime,
-};
-
 export class HlsPlaylistMutator {
   trimPlaylist(
     start: Dayjs,
     filter: HlsPlaylistFilterOptions,
     playlistLines: string[],
-    opts: MutateOptions = defaultMutateOptions,
-    // maxSegments: number = 10,
-    // endWithDiscontinuity: boolean = false,
+    opts: MutateOptions,
   ): TrimPlaylistResult {
-    const mergedOpts = merge({}, defaultMutateOptions, opts);
-    const { items, discontinuitySeq } = this.parsePlaylist(
+    const items = this.parsePlaylist(
       start,
       playlistLines,
-      mergedOpts.endWithDiscontinuity,
+      opts.endWithDiscontinuity,
     );
 
     const generateResult = this.generatePlaylist(
       items,
       filter,
-      discontinuitySeq,
-      mergedOpts.maxSegmentsToKeep,
-      mergedOpts.targetDuration,
+      opts.maxSegmentsToKeep,
+      opts.targetDuration,
+      opts.previousDiscontinuitySequence,
     );
 
     return {
@@ -76,6 +65,7 @@ export class HlsPlaylistMutator {
       sequence: generateResult.startSequence,
       playlist: generateResult.playlist,
       segmentCount: generateResult.count,
+      discontinuitySequence: generateResult.discontinuitySequence,
     };
   }
 
@@ -83,11 +73,9 @@ export class HlsPlaylistMutator {
     start: Dayjs,
     playlistLines: string[],
     endWithDiscontinuity: boolean,
-  ) {
+  ): PlaylistLine[] {
     const items: PlaylistLine[] = [];
 
-    // Find discontinuity items leading up the first segments
-    let discontinuitySeq = 0;
     let i = 0;
     let currentTime = start;
 
@@ -95,16 +83,14 @@ export class HlsPlaylistMutator {
       i < playlistLines.length &&
       !playlistLines[i]!.startsWith('#EXTINF:')
     ) {
-      const line = playlistLines[i]!;
-      if (line.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE')) {
-        const parsed = parseInt(line.split(':')[1]!);
-        if (!isNaN(parsed)) {
-          discontinuitySeq = parsed;
-        }
-      } else if (line.startsWith('#EXT-X-DISCONTINUITY')) {
-        items.push(PlaylistDiscontinuity());
-      }
-
+      // Skip header lines — DISCs in the header are FFmpeg artifacts from
+      // process restarts (discont_start), not actual program boundaries.
+      // The DISC-SEQ header is also ignored because with hls_list_size=0
+      // all DISCs are in the body; counting both would double-count.
+      // This is beacuse Tunarr has discrete ffmpeg processes continuouly write
+      // to the same underlying playlist file.
+      // TODO: We could consider writing out the trimmed playlist periodically
+      // in the session manager to keep things cleaner
       i++;
     }
 
@@ -133,21 +119,19 @@ export class HlsPlaylistMutator {
       items.push(PlaylistDiscontinuity());
     }
 
-    return {
-      items,
-      discontinuitySeq,
-    };
+    return items;
   }
 
   private generatePlaylist(
     items: PlaylistLine[],
     filterOptions: HlsPlaylistFilterOptions,
-    discontinuitySequence: number,
     maxSegmentsToKeep: number,
     targetDuration: number,
+    previousDiscontinuitySequence?: number,
   ) {
     // Count and remove leading discontinuities
     let leadingDiscontinuities = 0;
+    let discontinuitySequence = 0;
     while (items[leadingDiscontinuities]?.type === 'discontinuity') {
       leadingDiscontinuities++;
     }
@@ -221,6 +205,20 @@ export class HlsPlaylistMutator {
       }
     }
 
+    // Cap disc-seq so it never jumps by more than 1 between consecutive polls.
+    // When a short program is entirely filtered out of the sliding window between
+    // client polls, all its boundary DISCs are folded at once, jumping by >1.
+    // The client never saw the intermediate period, so it errors. Cap at +1 and
+    // emit a trailing DISC to pre-create the next period for the following poll.
+    let emitTrailingDisc = false;
+    if (
+      previousDiscontinuitySequence !== undefined &&
+      discontinuitySequence > previousDiscontinuitySequence + 1
+    ) {
+      discontinuitySequence = previousDiscontinuitySequence + 1;
+      emitTrailingDisc = true;
+    }
+
     const lines = [
       '#EXTM3U',
       '#EXT-X-VERSION:6',
@@ -269,6 +267,10 @@ export class HlsPlaylistMutator {
       }
     }
 
+    if (emitTrailingDisc && hasEmittedSegment) {
+      lines.push('#EXT-X-DISCONTINUITY');
+    }
+
     const playlist = lines.join('\n');
     const nextPlaylistStart = first(allSegments)?.startTime ?? dayjs();
     return {
@@ -276,6 +278,7 @@ export class HlsPlaylistMutator {
       nextPlaylistStart,
       startSequence,
       count: allSegments.length,
+      discontinuitySequence,
     };
   }
 }
@@ -322,4 +325,5 @@ type TrimPlaylistResult = {
   sequence: number;
   playlist: string;
   segmentCount: number;
+  discontinuitySequence: number;
 };

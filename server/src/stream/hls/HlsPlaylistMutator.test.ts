@@ -6,6 +6,12 @@ import { HlsPlaylistMutator } from './HlsPlaylistMutator.ts';
 describe('HlsPlaylistMutator', () => {
   const mutator = new HlsPlaylistMutator();
 
+  const defaultOpts = {
+    maxSegmentsToKeep: 10,
+    endWithDiscontinuity: false,
+    targetDuration: 4,
+  };
+
   // Helper to create a minimal playlist
   // Note: SegmentNameRegex expects 6-digit segment numbers (data000000.ts)
   function createPlaylist(segments: number, startNum = 0): string[] {
@@ -32,12 +38,11 @@ describe('HlsPlaylistMutator', () => {
 
       const result = mutator.parsePlaylist(start, lines, false);
 
-      expect(result.discontinuitySeq).toBe(0);
-      expect(result.items).toHaveLength(3);
-      expect(result.items.every((item) => item.type === 'segment')).toBe(true);
+      expect(result).toHaveLength(3);
+      expect(result.every((item) => item.type === 'segment')).toBe(true);
     });
 
-    it('should parse discontinuity sequences', () => {
+    it('should ignore discontinuity sequence header (FFmpeg artifact with hls_list_size=0)', () => {
       const lines = [
         '#EXTM3U',
         '#EXT-X-VERSION:3',
@@ -52,7 +57,10 @@ describe('HlsPlaylistMutator', () => {
 
       const result = mutator.parsePlaylist(start, lines, false);
 
-      expect(result.discontinuitySeq).toBe(5);
+      // Header DISC-SEQ is ignored — with hls_list_size=0 all DISCs are in the body.
+      // Only the segment should be parsed, no DISC items.
+      expect(result).toHaveLength(1);
+      expect(result[0]?.type).toBe('segment');
     });
 
     it('should parse discontinuity tags between segments', () => {
@@ -73,10 +81,10 @@ describe('HlsPlaylistMutator', () => {
 
       const result = mutator.parsePlaylist(start, lines, false);
 
-      expect(result.items).toHaveLength(3);
-      expect(result.items[0]?.type).toBe('segment');
-      expect(result.items[1]?.type).toBe('discontinuity');
-      expect(result.items[2]?.type).toBe('segment');
+      expect(result).toHaveLength(3);
+      expect(result[0]?.type).toBe('segment');
+      expect(result[1]?.type).toBe('discontinuity');
+      expect(result[2]?.type).toBe('segment');
     });
 
     it('should add discontinuity at end when endWithDiscontinuity is true', () => {
@@ -85,7 +93,7 @@ describe('HlsPlaylistMutator', () => {
 
       const result = mutator.parsePlaylist(start, lines, true);
 
-      expect(result.items[result.items.length - 1]?.type).toBe('discontinuity');
+      expect(result[result.length - 1]?.type).toBe('discontinuity');
     });
 
     it('should not duplicate discontinuity at end if already present', () => {
@@ -104,13 +112,13 @@ describe('HlsPlaylistMutator', () => {
       const result = mutator.parsePlaylist(start, lines, true);
 
       // Should have 1 segment + 1 discontinuity, not 1 segment + 2 discontinuities
-      const discontinuities = result.items.filter(
+      const discontinuities = result.filter(
         (item) => item.type === 'discontinuity',
       );
       expect(discontinuities).toHaveLength(1);
     });
 
-    it('should parse leading discontinuities before segments', () => {
+    it('should ignore leading discontinuities in header (FFmpeg artifacts)', () => {
       const lines = [
         '#EXTM3U',
         '#EXT-X-VERSION:3',
@@ -126,10 +134,9 @@ describe('HlsPlaylistMutator', () => {
 
       const result = mutator.parsePlaylist(start, lines, false);
 
-      // Should capture leading discontinuities
-      expect(result.items[0]?.type).toBe('discontinuity');
-      expect(result.items[1]?.type).toBe('discontinuity');
-      expect(result.items[2]?.type).toBe('segment');
+      // Header DISCs are FFmpeg artifacts from process restarts, not program boundaries
+      expect(result).toHaveLength(1);
+      expect(result[0]?.type).toBe('segment');
     });
 
     it('should skip empty lines', () => {
@@ -151,7 +158,7 @@ describe('HlsPlaylistMutator', () => {
 
       const result = mutator.parsePlaylist(start, lines, false);
 
-      const segments = result.items.filter((item) => item.type === 'segment');
+      const segments = result.filter((item) => item.type === 'segment');
       expect(segments).toHaveLength(2);
     });
   });
@@ -166,7 +173,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: filterBefore },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
       expect(result.segmentCount).toBe(10);
@@ -182,7 +189,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 5 },
+        { ...defaultOpts, maxSegmentsToKeep: 5 },
       );
 
       expect(result.segmentCount).toBe(5);
@@ -196,7 +203,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
       expect(result.segmentCount).toBe(5);
@@ -214,7 +221,7 @@ describe('HlsPlaylistMutator', () => {
           segmentsToKeepBefore: 3,
         },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
       expect(result.segmentCount).toBeLessThanOrEqual(10);
@@ -228,7 +235,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 5 },
+        { ...defaultOpts, maxSegmentsToKeep: 5 },
       );
 
       // Should start from the correct sequence
@@ -243,7 +250,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
       const programDateTimes = result.playlist
@@ -260,7 +267,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 10, targetDuration: 6 },
+        { ...defaultOpts, targetDuration: 6 },
       );
 
       expect(result.playlist).toContain('#EXT-X-TARGETDURATION:6');
@@ -289,7 +296,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
       expect(result.playlist).toContain('#EXT-X-DISCONTINUITY');
@@ -304,14 +311,14 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: filterBefore },
         lines,
-        { maxSegmentsToKeep: 5 },
+        { ...defaultOpts, maxSegmentsToKeep: 5 },
       );
 
       // playlistStart should be the start time of the first included segment
       expect(result.playlistStart.isValid()).toBe(true);
     });
 
-    it('should include discontinuity sequence in output', () => {
+    it('should include discontinuity sequence in output (header value ignored)', () => {
       const lines = [
         '#EXTM3U',
         '#EXT-X-VERSION:3',
@@ -328,10 +335,11 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
-      expect(result.playlist).toMatch(/#EXT-X-DISCONTINUITY-SEQUENCE:\d+/);
+      // Header DISC-SEQ is ignored, so output should be 0 (no body DISCs)
+      expect(result.playlist).toContain('#EXT-X-DISCONTINUITY-SEQUENCE:0');
     });
 
     it('should include independent segments tag', () => {
@@ -342,7 +350,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
       expect(result.playlist).toContain('#EXT-X-INDEPENDENT-SEGMENTS');
@@ -358,7 +366,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: filterBefore },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
       // Should still have maxSegmentsToKeep segments by taking from the end
@@ -367,7 +375,7 @@ describe('HlsPlaylistMutator', () => {
   });
 
   describe('bug fixes', () => {
-    it('should not mutate defaultMutateOptions between calls', () => {
+    it('should not mutate options between calls', () => {
       const mutator1 = new HlsPlaylistMutator();
       const mutator2 = new HlsPlaylistMutator();
       const lines = createPlaylist(15);
@@ -378,19 +386,18 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 3 },
+        { ...defaultOpts, maxSegmentsToKeep: 3 },
       );
 
-      // Second call with default options (should use default maxSegmentsToKeep of 10)
+      // Second call with default maxSegmentsToKeep of 10
       const result2 = mutator2.trimPlaylist(
         start,
         { type: 'before_date', before: start },
         lines,
-        {}, // Empty opts - should use defaults
+        defaultOpts,
       );
 
       expect(result1.segmentCount).toBe(3);
-      // BUG: If defaultMutateOptions is mutated, this would be 3 instead of 10
       expect(result2.segmentCount).toBe(10);
     });
 
@@ -407,7 +414,7 @@ describe('HlsPlaylistMutator', () => {
           segmentsToKeepBefore: 5, // Should keep segments >= 15
         },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
       // With Math.max: Math.max(20-5, 0) = 15, keeping segments >= 15
@@ -436,7 +443,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
       // BUG: Regex [ts|mp4] is a character class, not alternation
@@ -445,7 +452,7 @@ describe('HlsPlaylistMutator', () => {
       expect(result.sequence).toBe(5);
     });
 
-    it('should correctly count multiple leading discontinuities for discontinuity sequence', () => {
+    it('should ignore header discontinuities — disc-seq stays 0', () => {
       const lines = [
         '#EXTM3U',
         '#EXT-X-VERSION:3',
@@ -465,13 +472,12 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start },
         lines,
-        { maxSegmentsToKeep: 10 },
+        defaultOpts,
       );
 
-      // BUG: Only first discontinuity is counted (discontinuitySequence++),
-      // but all 3 are dropped by dropWhile
-      // The discontinuity sequence should be 0 + 3 = 3
-      expect(result.playlist).toContain('#EXT-X-DISCONTINUITY-SEQUENCE:3');
+      // Header DISCs are ignored — they are FFmpeg artifacts, not program boundaries.
+      // disc-seq should be 0 since no body DISCs exist.
+      expect(result.playlist).toContain('#EXT-X-DISCONTINUITY-SEQUENCE:0');
     });
   });
 
@@ -514,7 +520,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_segment_number', segmentNumber, segmentsToKeepBefore },
         createTransitionPlaylist(),
-        { maxSegmentsToKeep: 20 },
+        { ...defaultOpts, maxSegmentsToKeep: 20 },
       );
     }
 
@@ -622,7 +628,11 @@ describe('HlsPlaylistMutator', () => {
           segmentsToKeepBefore: 10,
         },
         lines,
-        { maxSegmentsToKeep: 20 },
+        {
+          ...defaultOpts,
+          maxSegmentsToKeep: 20,
+          previousDiscontinuitySequence: 1,
+        },
       );
 
       expect(discSeq(result.playlist)).toBe(2); // DISC1 + DISC2 both counted
@@ -677,7 +687,7 @@ describe('HlsPlaylistMutator', () => {
           segmentsToKeepBefore: 10,
         },
         createLongPlaylist(),
-        { maxSegmentsToKeep: 20 },
+        { ...defaultOpts, maxSegmentsToKeep: 20 },
       );
     }
 
@@ -745,6 +755,171 @@ describe('HlsPlaylistMutator', () => {
     });
   });
 
+  describe('disc-seq capping', () => {
+    const start = dayjs('2024-10-18T14:00:00.000-0400');
+
+    // Three programs: A (15 segs), B (5 segs), C (30 segs)
+    function createThreeProgramPlaylist(): string[] {
+      const lines = [
+        '#EXTM3U',
+        '#EXT-X-VERSION:3',
+        '#EXT-X-TARGETDURATION:4',
+        '#EXT-X-MEDIA-SEQUENCE:0',
+      ];
+      // Program A: segs 0-14
+      for (let i = 0; i < 15; i++) {
+        lines.push(
+          '#EXTINF:4.004000,',
+          '#EXT-X-PROGRAM-DATE-TIME:2024-10-18T14:00:00.000-0400',
+          `/stream/channels/test/hls/data${String(i).padStart(6, '0')}.ts`,
+        );
+      }
+      lines.push('#EXT-X-DISCONTINUITY');
+      // Program B: segs 15-19
+      for (let i = 15; i < 20; i++) {
+        lines.push(
+          '#EXTINF:4.004000,',
+          '#EXT-X-PROGRAM-DATE-TIME:2024-10-18T14:01:00.000-0400',
+          `/stream/channels/test/hls/data${String(i).padStart(6, '0')}.ts`,
+        );
+      }
+      lines.push('#EXT-X-DISCONTINUITY');
+      // Program C: segs 20-49
+      for (let i = 20; i < 50; i++) {
+        lines.push(
+          '#EXTINF:4.004000,',
+          '#EXT-X-PROGRAM-DATE-TIME:2024-10-18T14:02:00.000-0400',
+          `/stream/channels/test/hls/data${String(i).padStart(6, '0')}.ts`,
+        );
+      }
+      return lines;
+    }
+
+    function discSeq(playlist: string): number {
+      const m = playlist.match(/#EXT-X-DISCONTINUITY-SEQUENCE:(\d+)/);
+      return m ? parseInt(m[1]!) : -1;
+    }
+
+    function discTagCount(playlist: string): number {
+      return playlist.split('\n').filter((l) => l === '#EXT-X-DISCONTINUITY')
+        .length;
+    }
+
+    function hasTrailingDisc(playlist: string): boolean {
+      const lines = playlist.split('\n').filter((l) => l.length > 0);
+      return lines[lines.length - 1] === '#EXT-X-DISCONTINUITY';
+    }
+
+    it('disc-seq capped when it would jump by more than 1', () => {
+      // Filter to only C segments: minSeg = max(35-10,0)=25, segs 25-49 (25 segs >= 20) → take 20 = 25-44
+      // Both DISC1 (before B) and DISC2 (before C) are before first selected seg.
+      // Without cap: disc-seq = 2. With previousDiscontinuitySequence=0: cap to 1, trailing DISC emitted.
+      const result = mutator.trimPlaylist(
+        start,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 35,
+          segmentsToKeepBefore: 10,
+        },
+        createThreeProgramPlaylist(),
+        {
+          ...defaultOpts,
+          maxSegmentsToKeep: 20,
+          previousDiscontinuitySequence: 0,
+        },
+      );
+
+      expect(discSeq(result.playlist)).toBe(1);
+      expect(result.discontinuitySequence).toBe(1);
+      expect(hasTrailingDisc(result.playlist)).toBe(true);
+    });
+
+    it('gradual disc-seq catch-up over multiple polls', () => {
+      const playlist = createThreeProgramPlaylist();
+
+      // Poll 1: previousDiscontinuitySequence=0 with natural disc-seq=2 → cap to 1
+      const poll1 = mutator.trimPlaylist(
+        start,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 35,
+          segmentsToKeepBefore: 10,
+        },
+        playlist,
+        {
+          ...defaultOpts,
+          maxSegmentsToKeep: 20,
+          previousDiscontinuitySequence: 0,
+        },
+      );
+
+      expect(discSeq(poll1.playlist)).toBe(1);
+      expect(hasTrailingDisc(poll1.playlist)).toBe(true);
+
+      // Poll 2: previous=1 → disc-seq=2, no cap needed, no trailing DISC
+      const poll2 = mutator.trimPlaylist(
+        start,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 35,
+          segmentsToKeepBefore: 10,
+        },
+        playlist,
+        {
+          ...defaultOpts,
+          maxSegmentsToKeep: 20,
+          previousDiscontinuitySequence: poll1.discontinuitySequence,
+        },
+      );
+      expect(discSeq(poll2.playlist)).toBe(2);
+      expect(hasTrailingDisc(poll2.playlist)).toBe(false);
+    });
+
+    it('no trailing DISC when disc-seq does not need capping', () => {
+      // Single program transition (0→1): no cap needed
+      const lines = [
+        '#EXTM3U',
+        '#EXT-X-VERSION:3',
+        '#EXT-X-TARGETDURATION:4',
+        '#EXT-X-MEDIA-SEQUENCE:0',
+      ];
+      for (let i = 0; i < 30; i++) {
+        lines.push(
+          '#EXTINF:4.004000,',
+          '#EXT-X-PROGRAM-DATE-TIME:2024-10-18T14:00:00.000-0400',
+          `/stream/channels/test/hls/data${String(i).padStart(6, '0')}.ts`,
+        );
+      }
+      lines.push('#EXT-X-DISCONTINUITY');
+      for (let i = 30; i < 60; i++) {
+        lines.push(
+          '#EXTINF:4.004000,',
+          '#EXT-X-PROGRAM-DATE-TIME:2024-10-18T14:02:00.000-0400',
+          `/stream/channels/test/hls/data${String(i).padStart(6, '0')}.ts`,
+        );
+      }
+
+      // Window past the DISC: disc-seq=1, previous=0 → increase is exactly 1, no cap
+      const result = mutator.trimPlaylist(
+        start,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 45,
+          segmentsToKeepBefore: 10,
+        },
+        lines,
+        {
+          ...defaultOpts,
+          maxSegmentsToKeep: 20,
+          previousDiscontinuitySequence: 0,
+        },
+      );
+
+      expect(discSeq(result.playlist)).toBe(1);
+      expect(hasTrailingDisc(result.playlist)).toBe(false);
+    });
+  });
+
   describe('integration with real test file', () => {
     it('should parse and trim the test.m3u8 file', async () => {
       const lines = (await readTestFile('test.m3u8'))
@@ -756,7 +931,7 @@ describe('HlsPlaylistMutator', () => {
         start,
         { type: 'before_date', before: start.subtract(30, 'seconds') },
         lines,
-        { maxSegmentsToKeep: 10, endWithDiscontinuity: true },
+        { ...defaultOpts, endWithDiscontinuity: true },
       );
 
       expect(result.segmentCount).toBeLessThanOrEqual(10);
@@ -764,7 +939,7 @@ describe('HlsPlaylistMutator', () => {
       expect(result.sequence).toBeGreaterThanOrEqual(0);
     });
 
-    it('should handle playlist with leading discontinuities from test file', async () => {
+    it('should ignore leading discontinuities from test file (FFmpeg artifacts)', async () => {
       const lines = (await readTestFile('test.m3u8'))
         .toString('utf-8')
         .split('\n');
@@ -772,11 +947,9 @@ describe('HlsPlaylistMutator', () => {
 
       const parsed = mutator.parsePlaylist(start, lines, false);
 
-      // The test file has 2 leading discontinuities
-      expect(parsed.items[0]?.type).toBe('discontinuity');
-      expect(parsed.items[1]?.type).toBe('discontinuity');
-      // First segment should be at index 2
-      expect(parsed.items[2]?.type).toBe('segment');
+      // The test file has 2 leading discontinuities in the header — these are
+      // FFmpeg artifacts and should be ignored. First item should be a segment.
+      expect(parsed[0]?.type).toBe('segment');
     });
   });
 });

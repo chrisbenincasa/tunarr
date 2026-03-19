@@ -6,7 +6,7 @@ import { isNonEmptyString } from '@/util/index.js';
 import retry from 'async-retry';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { filter, isError, isNaN, isString, map, minBy, some } from 'lodash-es';
+import { filter, isError, isNaN, isString, minBy, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
@@ -121,14 +121,16 @@ export abstract class BaseHlsSession<
         this._workingDirectory,
       );
       const allItems = await fs.readdir(this._workingDirectory);
-      await Promise.all(
-        map(allItems, (item) =>
-          fs.rm(path.join(this._workingDirectory, item), {
-            recursive: true,
-            force: true,
-          }),
-        ),
-      );
+      await fs.rmdir(this._workingDirectory, { recursive: true });
+      await fs.mkdir(this._workingDirectory);
+      // await Promise.all(
+      //   map(allItems, (item) =>
+      //     fs.rm(path.join(this._workingDirectory, item), {
+      //       recursive: true,
+      //       force: true,
+      //     }),
+      //   ),
+      // );
     } catch (err) {
       return this.logger.error(
         err,

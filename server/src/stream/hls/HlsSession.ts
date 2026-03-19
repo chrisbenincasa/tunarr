@@ -53,6 +53,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #isFirstTranscode = true;
+  #lastDiscontinuitySequence: number | undefined;
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -93,8 +94,11 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
             {
               maxSegmentsToKeep: 20,
               targetDuration: this.getHlsOptions().hlsTime,
+              previousDiscontinuitySequence: this.#lastDiscontinuitySequence,
+              endWithDiscontinuity: false,
             },
           );
+          this.#lastDiscontinuitySequence = trimResult.discontinuitySequence;
           const now = dayjs();
           if (now.isAfter(this.#lastDelete.add(30, 'seconds'))) {
             this.logger.debug(
