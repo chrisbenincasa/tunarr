@@ -234,6 +234,7 @@ export class StreamProgramCalculator {
         currentProgram,
         streamDuration,
         channelContext,
+        startTime,
       );
       this.logger.trace('Got lineup item: %O', lineupItem);
     }
@@ -412,15 +413,11 @@ export class StreamProgramCalculator {
     };
   }
 
-  // The naming is also kinda terrible - maybe it changed over time? This function seems to do one of:
-  // 1. If the current item is an error item, return it with the time remaining until next up
-  // 2. If the current program is "offline" type, try to pick best fitting content among fillter
-  // 2b. If no fillter content is found, then pad with more offline time
-  // 3. Return the currently playing "real" program
   async createLineupItem(
     { program, timeElapsed }: ProgramAndTimeElapsed,
     streamDuration: number,
     channel: ChannelOrm,
+    effectiveNow: number,
   ): Promise<StreamLineupItem> {
     if (program.type === 'redirect') {
       throw new Error(
@@ -469,6 +466,7 @@ export class StreamProgramCalculator {
         channel,
         fillerPrograms,
         streamDuration,
+        effectiveNow,
       );
       this.logger.trace('Got filler picker result: %O', randomResult);
       filler = randomResult.filler;
