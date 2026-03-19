@@ -1,5 +1,5 @@
+import dayjs from '@/util/dayjs.js';
 import { faker } from '@faker-js/faker';
-import dayjs from 'dayjs';
 import { v4 } from 'uuid';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProgramPlayHistoryDB } from '../../db/ProgramPlayHistoryDB.ts';
@@ -800,10 +800,13 @@ describe('FillerPickerV2', () => {
       // (timeSincePlayed defaults to OneDayMillis) but the filler list was in cooldown.
       const now = Date.now();
       const programUuid = v4();
-      const listCooldown = 60000; // 1 minute list cooldown
+      const listCooldown = dayjs.duration({ minutes: 1 }).asSeconds();
       const filler = createFiller({ cooldown: listCooldown });
       filler.fillerContent = [
-        createProgram({ uuid: programUuid, duration: 10000 }),
+        createProgram({
+          uuid: programUuid,
+          duration: dayjs.duration({ seconds: 10 }).asMilliseconds(),
+        }),
       ];
 
       // Filler list was played 30 seconds ago (still in cooldown),
@@ -822,14 +825,15 @@ describe('FillerPickerV2', () => {
       const result = await picker.pickFiller(
         mockChannel,
         [filler],
-        600000, // 10 minutes max
+        dayjs.duration({ minutes: 10 }).asMilliseconds(), // 10 minutes max
         now,
       );
 
-      // minimumWait should be ~30 seconds (time until list cooldown expires)
-      // NOT a large negative value like (60000 - OneDayMillis)
       expect(result.minimumWait).toBeGreaterThanOrEqual(0);
-      expect(result.minimumWait).toBeLessThanOrEqual(listCooldown);
+      // Played filler 30 seconds ago, cooldown is a minute. program is 10 seconds long = 40 seconds
+      expect(result.minimumWait).toEqual(
+        dayjs.duration({ seconds: 40 }).asMilliseconds(),
+      );
     });
 
     it('always returns a valid FillerPickResult structure', async () => {
