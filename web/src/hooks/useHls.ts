@@ -27,6 +27,7 @@ export const useHls = () => {
           'http://localhost:5173',
         );
       },
+      debug: true, //import.meta.env.DEV,
     });
 
     newHls.on(Hls.Events.MANIFEST_PARSED, function (_, data) {

@@ -38,7 +38,7 @@
     "color": "^5.0.0",
     "colorjs.io": "^0.5.2",
     "dayjs": "catalog:",
-    "hls.js": "^1.4.12",
+    "hls.js": "^1.6.15",
     "immer": "^10.0.3",
     "lodash-es": "catalog:",
     "material-react-table": "^3.2.1",

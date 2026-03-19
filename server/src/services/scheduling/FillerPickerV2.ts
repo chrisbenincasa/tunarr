@@ -107,6 +107,7 @@ export class FillerPickerV2 implements IFillerPicker {
             fillerRepeatCooldownMs - timeSincePlayed;
           if (program.duration + timeUntilProgramCanPlay <= maxDuration) {
             minimumWait = Math.min(minimumWait, timeUntilProgramCanPlay);
+            this.logger.trace('New minimumWait: %d', minimumWait);
           }
         } else if (!pickedFiller) {
           // Need to see if we can even use this list.
@@ -141,6 +142,7 @@ export class FillerPickerV2 implements IFillerPicker {
                 minimumWait,
                 program.duration + timeUntilListIsCandidate,
               );
+              this.logger.trace('New minimumWait: %d', minimumWait);
             }
             // Cannot use this list because cooldown is in effect
             break;

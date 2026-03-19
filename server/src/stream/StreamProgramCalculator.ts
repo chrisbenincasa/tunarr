@@ -126,7 +126,6 @@ export class StreamProgramCalculator {
       currentProgram.program.duration - currentProgram.timeElapsed;
     const endTimeMs = req.startTime + maxDuration;
     let streamDuration = maxDuration;
-    console.log(maxDuration);
 
     while (currentProgram.program.type === 'redirect') {
       redirectChannels.push(channelContext.uuid);
@@ -236,6 +235,7 @@ export class StreamProgramCalculator {
         streamDuration,
         channelContext,
       );
+      this.logger.trace('Got lineup item: %O', lineupItem);
     }
 
     await this.channelCache.recordPlayback(
@@ -431,7 +431,7 @@ export class StreamProgramCalculator {
     timeElapsed = Math.round(timeElapsed);
 
     if (program.type === 'error') {
-      return {
+      const item = {
         type: 'error',
         // title: 'Error',
         error: program.error,
@@ -440,7 +440,9 @@ export class StreamProgramCalculator {
         startOffset: 0,
         // beginningOffset,
         programBeginMs: program.programBeginMs,
-      };
+      } satisfies StreamLineupItem;
+      this.logger.trace('Playing error stream: %O', item);
+      return item;
     }
 
     if (program.type === 'offline') {
@@ -468,6 +470,7 @@ export class StreamProgramCalculator {
         fillerPrograms,
         streamDuration,
       );
+      this.logger.trace('Got filler picker result: %O', randomResult);
       filler = randomResult.filler;
       fillerListId = randomResult.fillerListId;
 
