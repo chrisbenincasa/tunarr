@@ -130,13 +130,15 @@ export class FillerPickerV2 implements IFillerPicker {
             }
           } else {
             this.logger.trace(
-              'Cannot pick filler list %s (%s) because cooldown is in effect (%d < %d)',
+              'Cannot pick filler list %s (%s) because cooldown is in effect (%d < %d), last played at %s',
               filler.fillerShowUuid,
               filler.fillerShow.name,
               timeSincePlayedFiller,
               fillerCooldownMs,
+              lastPlay?.playedAt ? dayjs(lastPlay.playedAt).format() : 'never',
             );
-            const timeUntilListIsCandidate = cooldown - timeSincePlayedFiller;
+            const timeUntilListIsCandidate =
+              fillerCooldownMs - timeSincePlayedFiller;
             if (program.duration + timeUntilListIsCandidate <= maxDuration) {
               minimumWait = Math.min(
                 minimumWait,
@@ -170,7 +172,7 @@ export class FillerPickerV2 implements IFillerPicker {
     return {
       filler: null,
       fillerListId: null,
-      minimumWait,
+      minimumWait: minimumWait < 0 ? 15_000 : minimumWait,
     };
   }
 
