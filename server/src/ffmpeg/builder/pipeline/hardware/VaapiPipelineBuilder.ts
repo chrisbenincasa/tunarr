@@ -565,6 +565,11 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       return currentState;
     }
 
+    if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
+      const hwdownload = new HardwareDownloadFilter(currentState);
+      currentState = this.addFilterToVideoChain(currentState, hwdownload);
+    }
+
     const watermarkInput = this.watermarkInputSource!;
 
     for (const watermark of watermarkInput.streams ?? []) {
