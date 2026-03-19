@@ -43,6 +43,9 @@
     "generate-env": {},
     "test": {
       "dependsOn": ["^build"]
+    },
+    "test:local": {
+      "dependsOn": ["^build"]
     }
   }
 }

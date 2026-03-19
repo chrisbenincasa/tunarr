@@ -83,6 +83,16 @@ const RootModule = new ContainerModule((bind) => {
   bind<ISettingsDB>(KEYS.SettingsDB).toDynamicValue((ctx) => {
     return ctx.container.get<() => ISettingsDB>('Factory<ISettingsDB>')();
   });
+  bind<string>(KEYS.FFmpegPath).toDynamicValue(
+    (ctx) =>
+      ctx.container.get<ISettingsDB>(KEYS.SettingsDB).ffmpegSettings()
+        .ffmpegExecutablePath,
+  );
+  bind<string>(KEYS.FFprobePath).toDynamicValue(
+    (ctx) =>
+      ctx.container.get<ISettingsDB>(KEYS.SettingsDB).ffmpegSettings()
+        .ffprobeExecutablePath,
+  );
 
   bind<typeof LoggerFactory>(KEYS.LoggerFactory).toConstantValue(LoggerFactory);
 

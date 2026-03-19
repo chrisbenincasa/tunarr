@@ -61,11 +61,11 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { filter, first, isNil, isNull, isUndefined, merge } from 'lodash-es';
 import type { DeepReadonly, MarkRequired } from 'ts-essentials';
-import { P, match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 import {
   AudioFormats,
   OutputFormatTypes,
-  OutputLocation,
+  OutputLocations,
   VideoFormats,
 } from '../constants.ts';
 import {
@@ -93,6 +93,7 @@ import {
 } from '../options/AudioOutputOptions.ts';
 import {
   HideBannerOption,
+  makeConstantGlobalOption,
   NoStdInOption,
   StandardFormatFlags,
   ThreadCountOption,
@@ -101,6 +102,7 @@ import {
   ClosedGopOutputOption,
   DoNotMapMetadataOutputOption,
   FastStartOutputOption,
+  makeConstantOutputOption,
   MapAllStreamsOutputOption,
   MatroskaOutputFormatOption,
   MetadataServiceNameOutputOption,
@@ -775,13 +777,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.context.videoStream.codec === VideoFormats.Mpeg2Video ||
       this.desiredState.videoFormat === VideoFormats.Mpeg2Video ||
       this.ffmpegState.decoderHwAccelMode ===
-        HardwareAccelerationMode.Videotoolbox
-    ) {
-      this.pipelineSteps.push(NoSceneDetectOutputOption(1_000_000_000));
-    } else if (
+        HardwareAccelerationMode.Videotoolbox ||
       this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None
     ) {
-      this.pipelineSteps.push(NoSceneDetectOutputOption(0));
+      this.pipelineSteps.push(NoSceneDetectOutputOption(1_000_000_000));
     }
   }
 
@@ -874,10 +873,18 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.ffmpegState.outputFormat.type !== OutputFormatTypes.Hls &&
       this.ffmpegState.outputFormat.type !== OutputFormatTypes.HlsDirectV2
     ) {
-      switch (this.ffmpegState.outputLocation) {
-        case OutputLocation.Stdout:
+      switch (this.ffmpegState.outputLocation.type) {
+        case OutputLocations.Stdout:
           this.pipelineSteps.push(PipeProtocolOutputOption());
           break;
+        case OutputLocations.File: {
+          this.pipelineSteps.push(
+            makeConstantOutputOption([this.ffmpegState.outputLocation.path]),
+          );
+          if (this.ffmpegState.outputLocation.overwrite) {
+            this.pipelineSteps.push(makeConstantGlobalOption('-y'));
+          }
+        }
       }
     }
   }

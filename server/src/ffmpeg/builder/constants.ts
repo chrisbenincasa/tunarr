@@ -70,9 +70,37 @@ export const AudioFormats = {
   Flac: 'flac',
 } as const;
 
-export const OutputLocation = {
+export type StdoutOutputLocation = {
+  type: 'stdout';
+};
+
+export const StdoutOutputLocation: StdoutOutputLocation = {
+  type: 'stdout',
+};
+
+export type FileOutputLocation = {
+  type: 'file';
+  path: string;
+  overwrite: boolean;
+};
+
+export function FileOutputLocation(
+  path: string,
+  overwrite: boolean = false,
+): FileOutputLocation {
+  return {
+    type: 'file',
+    path,
+    overwrite,
+  };
+}
+
+export const OutputLocations = {
   Stdout: 'stdout',
-} as const;
+  File: 'file',
+} satisfies Record<Capitalize<OutputLocation['type']>, OutputLocation['type']>;
+
+export type OutputLocation = FileOutputLocation | StdoutOutputLocation;
 
 export const OutputFormatTypes = {
   None: 'none',
@@ -124,8 +152,6 @@ export const ColorTransferFormats = {
 
 export type ColorTransferFormat =
   (typeof ColorTransferFormats)[keyof typeof ColorTransferFormats];
-
-export type OutputLocation = Lowercase<keyof typeof OutputLocation>;
 
 export type HlsOutputFormat = {
   type: typeof OutputFormatTypes.Hls;
