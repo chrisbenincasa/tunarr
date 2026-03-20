@@ -42,6 +42,8 @@ export class HlsOutputFormat extends OutputOption {
       this.segmentTemplate,
       '-hls_base_url',
       this.baseStreamUrl,
+      '-master_pl_name',
+      'playlist.m3u8',
     ];
 
     if (this.isFirstTranscode) {

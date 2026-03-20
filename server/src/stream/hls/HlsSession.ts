@@ -77,6 +77,20 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     return this.readPlaylist();
   }
 
+  async getMasterPlaylist(): Promise<Result<string | undefined>> {
+    return Result.attemptAsync(async () => {
+      if (!(await fileExists(this._masterPlaylistPath))) {
+        return undefined;
+      }
+      const content = await fs.readFile(this._masterPlaylistPath, 'utf-8');
+      const variantAbsUrl = `${this.getHlsOptions().streamBaseUrl}stream.m3u8`;
+      return content
+        .split('\n')
+        .map((line) => (line.trim() === 'stream.m3u8' ? variantAbsUrl : line))
+        .join('\n');
+    });
+  }
+
   async trimPlaylist(filterOpts?: HlsPlaylistFilterOptions) {
     filterOpts ??= {
       type: 'before_segment_number',
