@@ -16,9 +16,12 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { getSubtitleCacheFilePath } from '../util/subtitles.ts';
 
 export class SubtitleStreamPicker {
-  private static logger = LoggerFactory.child({
-    className: SubtitleStreamPicker.name,
-  });
+  private static _logger: ReturnType<typeof LoggerFactory.child> | undefined;
+  private static get logger() {
+    return (this._logger ??= LoggerFactory.child({
+      className: SubtitleStreamPicker.name,
+    }));
+  }
 
   private static getCacheFolder() {
     // TODO: Fix, inject?

@@ -36,9 +36,12 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { titleToSortTitle } from '../util/programs.ts';
 
 export class ApiProgramConverters {
-  private static logger = LoggerFactory.child({
-    className: ApiProgramConverters.name,
-  });
+  private static _logger: ReturnType<typeof LoggerFactory.child> | undefined;
+  private static get logger() {
+    return (this._logger ??= LoggerFactory.child({
+      className: ApiProgramConverters.name,
+    }));
+  }
 
   private constructor() {}
 

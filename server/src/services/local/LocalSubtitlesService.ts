@@ -10,9 +10,12 @@ import { LanguageService } from '../LanguageService.ts';
 
 @injectable()
 export class LocalSubtitlesService {
-  private static logger = LoggerFactory.child({
-    className: LocalSubtitlesService.name,
-  });
+  private static _logger: ReturnType<typeof LoggerFactory.child> | undefined;
+  private static get logger() {
+    return (this._logger ??= LoggerFactory.child({
+      className: LocalSubtitlesService.name,
+    }));
+  }
   constructor() {}
 
   async findExternalSubtitles(fullItemPath: string) {
