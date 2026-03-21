@@ -7,9 +7,11 @@ import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
 import type { AudioStreamDetails } from '@/stream/types.js';
 import { FileStreamSource, HttpStreamSource } from '@/stream/types.js';
+import { isImageBasedSubtitle } from '../stream/util.ts';
 import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { getBooleanEnvVar, WEBVTT_SIDECAR_ENABLED } from '@/util/env.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamModes } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -439,20 +441,32 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     let subtitleSource: Nullable<SubtitlesInputSource> = null;
+    let subtitleRendition: FfmpegTranscodeSession['subtitleRendition'];
+
     if (
       isDefined(streamDetails.subtitleDetails) &&
       this.channel.subtitlesEnabled
     ) {
+      const sidecarEnabled = getBooleanEnvVar(WEBVTT_SIDECAR_ENABLED, false);
+
       const subtitlePreferences =
         await this.channelDB.getChannelSubtitlePreferences(this.channel.uuid);
+
       const pickedSubtitleStream = await SubtitleStreamPicker.pickSubtitles(
         subtitlePreferences,
         lineupItem,
         streamDetails.subtitleDetails,
+        { preferTextBased: sidecarEnabled },
       );
 
       if (pickedSubtitleStream) {
         this.logger.trace('Using subtitle stream: %O', pickedSubtitleStream);
+
+        const useSidecar =
+          sidecarEnabled && !isImageBasedSubtitle(pickedSubtitleStream.codec);
+        const method = useSidecar
+          ? SubtitleMethods.Convert
+          : SubtitleMethods.Burn;
 
         const source = match(pickedSubtitleStream.path)
           .with(
@@ -469,25 +483,28 @@ export class FfmpegStreamFactory extends IFFMPEG {
               new EmbeddedSubtitleStream(
                 pickedSubtitleStream.codec,
                 pickedSubtitleStream.index ?? 0,
-                SubtitleMethods.Burn,
+                method,
               ),
           )
           .with(
             'external',
             () =>
-              new ExternalSubtitleStream(
-                pickedSubtitleStream.codec,
-                SubtitleMethods.Burn,
-              ),
+              new ExternalSubtitleStream(pickedSubtitleStream.codec, method),
           )
           .otherwise(() => null);
 
         if (stream) {
-          subtitleSource = new SubtitlesInputSource(
-            source,
-            [stream],
-            SubtitleMethods.Burn,
-          );
+          subtitleSource = new SubtitlesInputSource(source, [stream], method);
+
+          if (useSidecar) {
+            subtitleRendition = {
+              language: pickedSubtitleStream.languageCodeISO6392 ?? 'und',
+              languageName: pickedSubtitleStream.language,
+              default: pickedSubtitleStream.default,
+              forced: pickedSubtitleStream.forced,
+              sdh: pickedSubtitleStream.sdh,
+            };
+          }
         }
       }
     }
@@ -555,7 +572,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       pipelineOptions,
     );
 
-    return new FfmpegTranscodeSession(
+    const transcodeSession = new FfmpegTranscodeSession(
       new FfmpegProcess(
         this.ffmpegSettings,
         `channel-${this.channel.number}-transcode`,
@@ -566,6 +583,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
       duration,
       dayjs().add(duration),
     );
+    transcodeSession.subtitleRendition = subtitleRendition;
+    return transcodeSession;
   }
 
   async createErrorSession(

@@ -43,6 +43,13 @@ export interface HlsSessionOptions extends BaseHlsSessionOptions {
   streamMode: 'hls' | 'hls_direct_v2';
 }
 
+type SubtitleRenditionInfo = {
+  language: string;
+  languageName?: string;
+  default: boolean;
+  forced: boolean;
+};
+
 /**
  * Initializes an ffmpeg process that concatenates via the /playlist
  * endpoint and outputs an HLS format + segments
@@ -54,6 +61,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
+  #currentSubtitleRendition: SubtitleRenditionInfo | null = null;
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -84,14 +92,33 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       }
       const content = await fs.readFile(this._masterPlaylistPath, 'utf-8');
       const variantAbsUrl = `${this.getHlsOptions().streamBaseUrl}${this.getHlsOptions().streamNameFormat}`;
-      return content
-        .split('\n')
-        .map((line) =>
-          line.trim() === this.getHlsOptions().streamNameFormat
-            ? variantAbsUrl
-            : line,
-        )
-        .join('\n');
+      const rendition = this.#currentSubtitleRendition;
+
+      const lines = content.split('\n').map((line) => {
+        if (line.trim() === this.getHlsOptions().streamNameFormat) return variantAbsUrl;
+        if (
+          rendition &&
+          line.startsWith('#EXT-X-STREAM-INF:') &&
+          !line.includes('SUBTITLES=')
+        ) {
+          return line + ',SUBTITLES="subs"';
+        }
+
+        return line;
+      });
+
+      if (rendition) {
+        const subsUrl = `${this.getHlsOptions().streamBaseUrl}subs.m3u8`;
+        const langName = rendition.languageName ?? rendition.language;
+        const yesNo = (v: boolean) => (v ? 'YES' : 'NO');
+        const mediaTag = `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${rendition.language}",NAME="${langName}",DEFAULT=${yesNo(rendition.default)},AUTOSELECT=${yesNo(rendition.default)},FORCED=${yesNo(rendition.forced)},URI="${subsUrl}"`;
+        const insertBefore = lines.findIndex((l) =>
+          l.startsWith('#EXT-X-STREAM-INF:'),
+        );
+        if (insertBefore >= 0) lines.splice(insertBefore, 0, mediaTag);
+      }
+
+      return lines.join('\n');
     });
   }
 
@@ -272,6 +299,15 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           transcodeSession.streamDuration,
         );
         this.#currentSession = transcodeSession;
+        const sr = transcodeSession.subtitleRendition;
+        this.#currentSubtitleRendition = sr
+          ? {
+              language: sr.language,
+              languageName: sr.languageName,
+              default: sr.default,
+              forced: sr.forced,
+            }
+          : null;
       });
 
       if (this.sessionOptions.streamMode === 'hls') {
@@ -289,6 +325,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     }
 
     this.logger.debug('Stream ended.');
+  }
+
+  protected override getAdditionalRequiredFiles(): string[] {
+    return this.#currentSubtitleRendition ? ['subs.m3u8'] : [];
   }
 
   protected getHlsOptions(): DeepRequired<HlsOptions> {
@@ -394,10 +434,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       seq.collect(
         filter(workingDirectoryFiles, (f) => {
           const ext = extname(f);
-          return ext === '.ts' || ext === '.mp4';
+          return ext === '.ts' || ext === '.mp4' || ext === '.vtt';
         }),
         (file) => {
-          const matches = file.match(/[A-z/]+(\d+)\.[ts|mp4]/);
+          const matches = file.match(/\D+(\d+)\.(ts|mp4|vtt)/);
           if (matches && matches.length > 0) {
             return {
               file,

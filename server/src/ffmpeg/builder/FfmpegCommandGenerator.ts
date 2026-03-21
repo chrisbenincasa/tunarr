@@ -7,6 +7,7 @@ import { ComplexFilter } from './filter/ComplexFilter.ts';
 import { StreamSeekFilter } from './filter/StreamSeekFilter.ts';
 import type { AudioInputSource } from './input/AudioInputSource.ts';
 import type { ConcatInputSource } from './input/ConcatInputSource.ts';
+import type { SubtitlesInputSource } from './input/SubtitlesInputSource.ts';
 import type { VideoInputSource } from './input/VideoInputSource.ts';
 import type { WatermarkInputSource } from './input/WatermarkInputSource.ts';
 import type { PipelineStep } from './types/PipelineStep.ts';
@@ -34,6 +35,7 @@ export class FfmpegCommandGenerator {
     videoInputSource: Nullable<VideoInputSource>,
     audioInputSource: Nullable<AudioInputSource>,
     watermarkInputSource: Nullable<WatermarkInputSource>,
+    subtitleInputSource: Nullable<SubtitlesInputSource>,
     concatInputSource: Nullable<ConcatInputSource>,
     steps: PipelineStep[],
   ): string[] {
@@ -68,6 +70,15 @@ export class FfmpegCommandGenerator {
         '-i',
         watermarkInputSource.path,
       );
+    }
+
+    if (
+      subtitleInputSource &&
+      subtitleInputSource.method === 'convert' &&
+      !includedPaths.has(subtitleInputSource.path)
+    ) {
+      includedPaths.add(subtitleInputSource.path);
+      args.push('-i', subtitleInputSource.path);
     }
 
     if (concatInputSource) {
