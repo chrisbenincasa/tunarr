@@ -14,9 +14,12 @@ import { VainfoProcessHelper } from './VainfoProcessHelper.ts';
 export class VaapiHardwareCapabilitiesFactory
   implements FfmpegHardwareCapabilitiesFactory
 {
-  private static logger = LoggerFactory.child({
-    className: VaapiHardwareCapabilitiesFactory.name,
-  });
+  private static _logger: ReturnType<typeof LoggerFactory.child> | undefined;
+  private static get logger() {
+    return (this._logger ??= LoggerFactory.child({
+      className: VaapiHardwareCapabilitiesFactory.name,
+    }));
+  }
 
   private static cache = new NodeCache({
     stdTTL: +dayjs.duration({ hours: 1 }),

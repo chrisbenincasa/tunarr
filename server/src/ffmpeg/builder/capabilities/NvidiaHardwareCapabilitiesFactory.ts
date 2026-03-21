@@ -28,9 +28,12 @@ type NvidiaGpuDetectionResponse = {
 export class NvidiaHardwareCapabilitiesFactory
   implements FfmpegHardwareCapabilitiesFactory
 {
-  private static logger = LoggerFactory.child({
-    className: NvidiaHardwareCapabilitiesFactory.name,
-  });
+  private static _logger: Logger | undefined;
+  private static get logger() {
+    return (this._logger ??= LoggerFactory.child({
+      className: NvidiaHardwareCapabilitiesFactory.name,
+    }));
+  }
 
   private static cache = new NodeCache({
     stdTTL: +dayjs.duration({ hours: 1 }),
