@@ -12,11 +12,12 @@ import {
   SubtitlesCacheFolderName,
 } from '../util/constants.ts';
 import { fileExists } from '../util/fsUtil.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { getSubtitleCacheFilePath } from '../util/subtitles.ts';
 
 export class SubtitleStreamPicker {
-  private static _logger: ReturnType<typeof LoggerFactory.child> | undefined;
+  private static _logger?: Logger;
   private static get logger() {
     return (this._logger ??= LoggerFactory.child({
       className: SubtitleStreamPicker.name,
