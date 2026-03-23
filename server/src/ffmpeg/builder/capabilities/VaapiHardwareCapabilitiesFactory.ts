@@ -6,6 +6,7 @@ import { VaapiHardwareCapabilitiesParser } from '@/ffmpeg/builder/capabilities/V
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
 import { attempt, isLinux, isNonEmptyString, isWindows } from '@/util/index.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { isEmpty, isError, isNull, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
@@ -14,7 +15,7 @@ import { VainfoProcessHelper } from './VainfoProcessHelper.ts';
 export class VaapiHardwareCapabilitiesFactory
   implements FfmpegHardwareCapabilitiesFactory
 {
-  private static _logger: ReturnType<typeof LoggerFactory.child> | undefined;
+  private static _logger?: Logger;
   private static get logger() {
     return (this._logger ??= LoggerFactory.child({
       className: VaapiHardwareCapabilitiesFactory.name,

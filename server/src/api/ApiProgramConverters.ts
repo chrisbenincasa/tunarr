@@ -32,11 +32,12 @@ import type {
 } from '../services/MeilisearchService.ts';
 import type { Maybe, Nullable } from '../types/util.ts';
 import { isNonEmptyString } from '../util/index.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { titleToSortTitle } from '../util/programs.ts';
 
 export class ApiProgramConverters {
-  private static _logger: ReturnType<typeof LoggerFactory.child> | undefined;
+  private static _logger?: Logger;
   private static get logger() {
     return (this._logger ??= LoggerFactory.child({
       className: ApiProgramConverters.name,
