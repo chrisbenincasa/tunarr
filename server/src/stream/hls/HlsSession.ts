@@ -83,10 +83,14 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         return undefined;
       }
       const content = await fs.readFile(this._masterPlaylistPath, 'utf-8');
-      const variantAbsUrl = `${this.getHlsOptions().streamBaseUrl}stream.m3u8`;
+      const variantAbsUrl = `${this.getHlsOptions().streamBaseUrl}${this.getHlsOptions().streamNameFormat}`;
       return content
         .split('\n')
-        .map((line) => (line.trim() === 'stream.m3u8' ? variantAbsUrl : line))
+        .map((line) =>
+          line.trim() === this.getHlsOptions().streamNameFormat
+            ? variantAbsUrl
+            : line,
+        )
         .join('\n');
     });
   }
