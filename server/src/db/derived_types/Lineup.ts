@@ -22,6 +22,7 @@ export const ContentLineupItemSchema = z
     customShowId: z.uuid().optional(),
     fillerListId: z.uuid().optional(),
     fillerType: FillerType.optional(),
+    startOffsetMs: z.number().nonnegative().optional(),
   })
   .merge(BaseLineupItemSchema);
 
@@ -82,7 +83,7 @@ export const OnDemandChannelConfigSchema = z.object({
 
 export type OnDemandChannelConfig = z.infer<typeof OnDemandChannelConfigSchema>;
 
-export const CurrentLineupSchemaVersion = 4;
+export const CurrentLineupSchemaVersion = 5;
 
 export const LineupSchema = z.object({
   version: z

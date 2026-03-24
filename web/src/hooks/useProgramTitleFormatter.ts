@@ -46,10 +46,7 @@ export const useProgramTitleFormatter = () => {
         )
         .with({ type: 'redirect' }, (p) => `Redirect to "${p.channelName}"`)
         .with({ type: 'flex' }, () => 'Flex')
-        .with(
-          { type: 'filler' },
-          (p) => `${fillerLists[p.fillerListId]?.name ?? 'Filler List'} - `,
-        )
+        .with({ type: 'filler' }, () => '')
         .with({ type: 'content' }, ({ program }) => {
           switch (program.type) {
             case 'movie':
@@ -100,10 +97,19 @@ export const useProgramTitleFormatter = () => {
       ) {
         title += ` ${baseItemTitleFormatter(program.program)}`;
       }
-      const dur = betterHumanize(
-        dayjs.duration({ milliseconds: program.duration }),
-        { exact: true },
-      );
+
+      let dur: string;
+      if (program.type === 'content' && program.startOffsetMs) {
+        dur = betterHumanize(
+          dayjs.duration(program.duration - program.startOffsetMs),
+          { exact: true },
+        );
+      } else {
+        dur = betterHumanize(
+          dayjs.duration({ milliseconds: program.duration }),
+          { exact: true },
+        );
+      }
 
       return `${title} - (${dur})`;
     },

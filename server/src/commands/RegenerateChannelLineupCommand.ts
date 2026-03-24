@@ -105,6 +105,7 @@ function channelProgramToLineupItem(p: ChannelProgram) {
       type: 'content',
       id: program.id,
       durationMs: program.duration,
+      startOffsetMs: program.startOffsetMs,
     }))
     .with({ type: 'custom' }, (program) => ({
       type: 'content', // Custom program

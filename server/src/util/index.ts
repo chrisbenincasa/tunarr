@@ -504,6 +504,13 @@ export function isDefined<T>(x: T | undefined): x is T {
   return !isUndefined(x);
 }
 
+export function isDefinedAnd<T>(
+  x: T | undefined,
+  iff: (value: T) => boolean,
+): x is T {
+  return isDefined(x) && iff(x);
+}
+
 export function nullToUndefined<T>(x: T | null | undefined): T | undefined {
   if (isNull(x)) {
     return undefined;

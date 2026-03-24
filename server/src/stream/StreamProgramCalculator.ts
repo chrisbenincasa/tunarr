@@ -130,6 +130,9 @@ export class StreamProgramCalculator {
       );
 
       if (redirectChannels.includes(currentProgram.program.channel)) {
+        return Result.failure(
+          `Recursive channel redirect found: ${redirectChannels.join(' -> ')} -> ${currentProgram.program.channel}`,
+        );
       }
 
       const nextChannelId = currentProgram.program.channel;
@@ -324,11 +327,13 @@ export class StreamProgramCalculator {
         durationMs: OneDayMillis,
       };
     }
+
     let program: StreamLineupItem;
     switch (lineupItem.type) {
       case 'content': {
         // Defer program lookup
         const backingItem = await this.programDB.getProgramById(lineupItem.id);
+
         program = {
           duration: lineupItem.durationMs,
           type: 'offline',
@@ -351,12 +356,14 @@ export class StreamProgramCalculator {
               type: 'commercial',
               fillerListId: lineupItem.fillerListId,
               infiniteLoop: backingItem.duration < streamDuration,
+              startOffset: lineupItem.startOffsetMs ?? 0,
             } satisfies CommercialStreamLineupItem;
           } else {
             program = {
               ...baseItem,
               type: 'program',
               infiniteLoop: false,
+              startOffset: lineupItem.startOffsetMs ?? 0,
             } satisfies ProgramStreamLineupItem;
           }
         } else if (backingItem) {
@@ -542,7 +549,7 @@ export class StreamProgramCalculator {
     if (program.type === 'commercial') {
       return {
         ...program,
-        startOffset: timeElapsed,
+        startOffset: timeElapsed + (program.startOffset ?? 0),
         streamDuration,
       };
     }
@@ -550,7 +557,7 @@ export class StreamProgramCalculator {
     return {
       ...program,
       type: 'program',
-      startOffset: timeElapsed,
+      startOffset: timeElapsed + (program.startOffset ?? 0),
       streamDuration,
     };
   }

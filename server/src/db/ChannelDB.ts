@@ -15,11 +15,16 @@ import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import type { ContentProgramType } from '@tunarr/types/schemas';
 import { inject, injectable } from 'inversify';
 import type { MarkRequired } from 'ts-essentials';
+import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
+import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
+import { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
+import { LineupRepository } from './channel/LineupRepository.ts';
 import type {
   Lineup,
   LineupItem,
   PendingProgram,
 } from './derived_types/Lineup.ts';
+import type { PageParams } from './interfaces/IChannelDB.ts';
 import type { Channel, ChannelOrm } from './schema/Channel.ts';
 import type { ProgramExternalId } from './schema/ProgramExternalId.ts';
 import type { ChannelSubtitlePreferences } from './schema/SubtitlePreferences.ts';
@@ -33,11 +38,6 @@ import type {
   ProgramWithRelationsOrm,
   TvShowOrm,
 } from './schema/derivedTypes.ts';
-import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
-import { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
-import { LineupRepository } from './channel/LineupRepository.ts';
-import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
-import type { PageParams } from './interfaces/IChannelDB.ts';
 
 @injectable()
 export class ChannelDB implements IChannelDB {
@@ -174,10 +174,7 @@ export class ChannelDB implements IChannelDB {
     return this.channelProgram.getChannelFallbackPrograms(uuid);
   }
 
-  replaceChannelPrograms(
-    channelId: string,
-    programIds: string[],
-  ): void {
+  replaceChannelPrograms(channelId: string, programIds: string[]): void {
     this.channelProgram.replaceChannelPrograms(channelId, programIds);
   }
 
@@ -271,11 +268,7 @@ export class ChannelDB implements IChannelDB {
     startTime?: number,
   ): Promise<ChannelOrm | null> {
     // TODO: Update LineupRepository.setChannelPrograms to return ChannelOrm
-    return this.lineup.setChannelPrograms(
-      channel,
-      lineup,
-      startTime,
-    );
+    return this.lineup.setChannelPrograms(channel, lineup, startTime);
   }
 
   addPendingPrograms(

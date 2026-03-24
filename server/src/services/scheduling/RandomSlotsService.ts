@@ -36,6 +36,7 @@ import type {
 } from './slotSchedulerUtil.js';
 import {
   addHeadAndTailFillerToSlot,
+  applyMidRollBreaks,
   createPaddedProgram,
   createProgramIterators,
   createProgramMap,
@@ -252,7 +253,19 @@ export class RandomSlotScheduler {
         paddedPrograms = maybePrograms;
       }
 
-      const totalDuration = sum(map(paddedPrograms, (p) => p.totalDuration));
+      const expandedPrograms = paddedPrograms.flatMap((pp) =>
+        applyMidRollBreaks(
+          pp,
+          currSlot,
+          currSlot.midRollConfig,
+          currSlot.durationSpec.type === 'fixed'
+            ? currSlot.durationSpec.durationMs
+            : undefined,
+          context.timeCursor.valueOf(),
+        ),
+      );
+
+      const totalDuration = sum(map(expandedPrograms, (p) => p.totalDuration));
       let remainingTimeInSlot = 0;
       const startOfNextBlock = +context.timeCursor.add(totalDuration);
       if (
@@ -269,16 +282,16 @@ export class RandomSlotScheduler {
       // TODO: Implement greedy filling.
       if (flexPreference === 'distribute' && padStyle === 'episode') {
         distributeFlex(
-          paddedPrograms,
+          expandedPrograms,
           this.schedule.padMs,
           remainingTimeInSlot,
         );
       } else if (flexPreference === 'distribute') {
         // We pad the slot as a whole here. We must find the first content-type
         // program to add the padding to.
-        const div = Math.floor(remainingTimeInSlot / paddedPrograms.length);
+        const div = Math.floor(remainingTimeInSlot / expandedPrograms.length);
         let totalAdded = 0;
-        forEach(paddedPrograms, (paddedProgram) => {
+        forEach(expandedPrograms, (paddedProgram) => {
           if (paddedProgram.program.type === 'filler') {
             return;
           }
@@ -286,19 +299,24 @@ export class RandomSlotScheduler {
           totalAdded += div;
         });
         const firstContent = find(
-          paddedPrograms,
+          expandedPrograms,
           ({ program }) => program.type !== 'filler',
         );
         if (firstContent) {
           firstContent.padMs += remainingTimeInSlot - totalAdded;
         }
       } else {
-        const lastProgram = last(paddedPrograms)!;
+        const lastProgram = last(expandedPrograms)!;
         lastProgram.padMs += remainingTimeInSlot;
       }
 
       let done = false;
-      for (const { program, padMs, totalDuration, filler } of paddedPrograms) {
+      for (const {
+        program,
+        padMs,
+        totalDuration,
+        filler,
+      } of expandedPrograms) {
         if (+context.timeCursor + program.duration > +upperLimit) {
           done = true;
           break;

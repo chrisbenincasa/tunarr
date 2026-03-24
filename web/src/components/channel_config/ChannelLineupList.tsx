@@ -1,19 +1,11 @@
 import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts';
 import { useSuspendedStore } from '@/hooks/useSuspendedStore.ts';
 import { deleteProgram } from '@/store/entityEditor/util.ts';
-import {
-  Directions,
-  Expand,
-  MusicVideo,
-  VideoCameraBackOutlined,
-} from '@mui/icons-material';
+
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import Edit from '@mui/icons-material/Edit';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
-import MusicNote from '@mui/icons-material/MusicNote';
-import TheatersIcon from '@mui/icons-material/Theaters';
-import TvIcon from '@mui/icons-material/Tv';
 import {
   ListItemIcon,
   Typography,
@@ -23,17 +15,16 @@ import {
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { type Channel, type ChannelProgram } from '@tunarr/types';
 import Color from 'colorjs.io';
 import dayjs, { type Dayjs } from 'dayjs';
-import { findIndex, isString, isUndefined, map, maxBy, sumBy } from 'lodash-es';
+import { findIndex, isString, isUndefined, maxBy, sumBy } from 'lodash-es';
 import React, {
-  type CSSProperties,
   useCallback,
   useMemo,
   useState,
+  type CSSProperties,
 } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
@@ -42,9 +33,13 @@ import {
   type ListChildComponentProps,
 } from 'react-window';
 import { type MarkRequired } from 'ts-essentials';
-import { match, P } from 'ts-pattern';
-import { getTextContrast } from '../../helpers/colors.ts';
+import {
+  buildFlatDisplayList,
+  groupMidRollItems,
+  type FlatDisplayItem,
+} from '../../helpers/midRollGrouping.ts';
 import { channelProgramUniqueId, grayBackground } from '../../helpers/util.ts';
+import { useChannelListItemIcon } from '../../hooks/channel_config/useChannelItemIcon.tsx';
 import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { moveProgramInCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore, { type State } from '../../store/index.ts';
@@ -57,6 +52,8 @@ import {
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
 import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
+import { ChannelLineupListItem } from './ChannelLineupListItem.tsx';
+import { MidRollGroupRow } from './MidRollGroupRow.tsx';
 
 export type CommonProps = {
   moveProgram?: (originalIndex: number, toIndex: number) => void;
@@ -119,6 +116,7 @@ type ListItemProps = {
   channel: Channel;
   showProgramStartTime?: boolean;
   relativeDuration?: number;
+  indented?: boolean;
 };
 
 type ListDragItem = {
@@ -143,6 +141,7 @@ const ProgramListItem = ({
   channel,
   showProgramStartTime,
   relativeDuration,
+  indented,
 }: ListItemProps) => {
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -166,7 +165,7 @@ const ProgramListItem = ({
   const [, drop] = useDrop(() => ({
     accept: 'Program',
     hover: ({ id: draggedId }: ListDragItem) => {
-      if (draggedId !== program.originalIndex) {
+      if (enableDrag && draggedId !== program.originalIndex) {
         moveProgram(draggedId, findProgram(program.originalIndex).index);
       }
     },
@@ -205,90 +204,25 @@ const ProgramListItem = ({
     }
   }
 
-  let icon: React.ReactElement | null = null;
-
-  if (program.type === 'content' || program.type === 'custom') {
-    const underlyingProgram =
-      program.type === 'content' ? program : program.program;
-    icon = match(underlyingProgram?.program.type)
-      .with('movie', () => <TheatersIcon />)
-      .with('episode', () => <TvIcon />)
-      .with('track', () => <MusicNote />)
-      .with('music_video', () => <MusicVideo />)
-      .with('other_video', () => <VideoCameraBackOutlined />)
-      .with(P.nullish, () => null)
-      .exhaustive();
-  } else if (program.type === 'flex') {
-    icon = <Expand />;
-  } else if (program.type === 'redirect') {
-    icon = <Directions />;
-  }
-
-  if (icon !== null) {
-    icon = (
-      <ListItemIcon sx={{ color: 'currentcolor', minWidth: 0, pr: 1 }}>
-        {icon}
-      </ListItemIcon>
-    );
-  }
-
+  const icon = useChannelListItemIcon(program);
   const bgColorPicker = useRandomProgramBackgroundColor();
   const backgroundColor =
     program.type === 'flex'
       ? new Color(grayBackground(theme.palette.mode))
       : bgColorPicker(program);
-  const relativePct = relativeDuration ? relativeDuration * 100.0 : null;
-  const bgHex = backgroundColor.toString({ format: 'hex' });
-  const bgDarker = new Color(backgroundColor.clone().darken(0.1));
-
-  let bg: string;
-  if (program.type === 'flex') {
-    const contrastColor = new Color(backgroundColor.clone().darken(0.05));
-    bg = `repeating-linear-gradient(-45deg,
-              ${bgHex},
-              ${bgHex} 10px,
-              ${contrastColor.toString()} 10px,
-              ${contrastColor.toString()} 20px)`;
-  } else if (relativePct) {
-    bg = `linear-gradient(to right, ${bgDarker.display()} 0%, ${bgDarker.display()} ${relativePct}%, ${bgHex} ${relativePct}%, ${bgHex} 100%)`;
-  } else {
-    bg = bgHex;
-  }
 
   return (
-    <ListItem
-      style={{
-        ...(style ?? {}),
-        border: enableDrag
-          ? isDragging
-            ? '1px dashed gray'
-            : undefined
-          : undefined,
-        cursor: enableDrag ? (isDragging ? 'grabbing' : 'grab') : 'default',
-      }}
+    <ChannelLineupListItem
+      backgroundColor={backgroundColor}
+      isDragging={isDragging}
+      enableDrag={enableDrag}
+      program={program}
       divider
-      sx={{
-        color: getTextContrast(bgDarker, theme.palette.mode),
-        background: bg,
-        '&:hover': {
-          background: (theme) =>
-            isDragging
-              ? 'transparent'
-              : new Color(
-                  backgroundColor
-                    .clone()
-                    .lighten(theme.palette.mode === 'dark' ? 0.025 : 0.05),
-                ).toString({ format: 'hex' }),
-        },
-        borderBottom: 'thin solid',
-        borderBottomColor: new Color(
-          backgroundColor.clone().darken(0.2),
-        ).toString({
-          format: 'hex',
-        }),
-        pr: enableDelete ? '96px' : undefined,
-      }}
       key={startTime ?? index.toString()}
+      relativeDuration={relativeDuration}
+      style={style}
+      enableDelete={enableDelete}
+      indented={indented}
       secondaryAction={
         enableDrag && isDragging ? null : (
           <>
@@ -361,6 +295,9 @@ const ProgramListItem = ({
             secondary={smallViewport ? startTime : null}
             sx={{
               fontStyle: program.persisted ? 'normal' : 'italic',
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
             }}
             slotProps={{
               primary: {
@@ -374,7 +311,7 @@ const ProgramListItem = ({
           />
         </>
       )}
-    </ListItem>
+    </ChannelLineupListItem>
   );
 };
 
@@ -430,11 +367,12 @@ export default function ChannelLineupList(props: Props) {
         return;
       }
 
-      console.log(program);
       setFocusedProgramDetails(program);
       const start = dayjs(startTimeDate);
       if (startTimeDate) {
-        const stop = start.add(program.duration);
+        const programOffset =
+          program.type === 'content' ? (program.startOffsetMs ?? 0) : 0;
+        const stop = start.add(program.duration - programOffset);
         setStartStop({ start, stop });
       }
     },
@@ -448,61 +386,103 @@ export default function ChannelLineupList(props: Props) {
     [],
   );
 
+  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
+
+  const toggleGroup = useCallback((groupKey: number) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+      return next;
+    });
+  }, []);
+
+  const displayItems = useMemo(
+    () => groupMidRollItems(programList),
+    [programList],
+  );
+
+  const flatDisplayList = useMemo(
+    () => buildFlatDisplayList(displayItems, expandedGroups),
+    [displayItems, expandedGroups],
+  );
+
   const [, drop] = useDrop(() => ({ accept: 'Program' }));
 
-  const renderProgram = (idx: number, style?: CSSProperties) => {
-    const program = programList[idx];
+  const renderDisplayItem = (idx: number, style?: CSSProperties) => {
+    const item = flatDisplayList[idx];
+
+    if (item.kind === 'group-header') {
+      return (
+        <MidRollGroupRow
+          key={`mid-roll-group-${item.group.groupKey}`}
+          group={item.group}
+          expanded={item.expanded}
+          onToggle={() => toggleGroup(item.group.groupKey)}
+          style={style}
+          titleFormatter={titleFormatter}
+          channel={channel!}
+          showProgramStartTime={showProgramStartTime}
+        />
+      );
+    }
+
+    const program = item.program;
+    const isGroupChild = item.kind === 'group-child';
+    const programListIdx = findProgram(program.originalIndex).index;
     const maxDurationMs = maxDuration?.duration ?? 0;
     const relativeDuration =
-      maxDurationMs > 0 ? program.duration / maxDurationMs : undefined;
+      !isGroupChild && maxDurationMs > 0
+        ? program.duration / maxDurationMs
+        : undefined;
 
     return (
       <ProgramListItem
-        index={idx}
-        // This is probably not ideal, but coming up with a custom
-        // key may be harder
-        key={idx.toString()}
+        index={programListIdx}
+        key={`${isGroupChild ? 'child-' : ''}${programListIdx}`}
         program={program}
         style={style}
         channel={channel!}
         moveProgram={moveProgram}
         findProgram={findProgram}
         deleteProgram={deleteProgram}
-        enableDrag={!!enableDnd}
-        enableDelete={props.enableRowDelete ?? true}
-        enableEdit={props.enableRowEdit ?? true}
+        enableDrag={!!enableDnd && !isGroupChild}
+        enableDelete={(props.enableRowDelete ?? true) && !isGroupChild}
+        enableEdit={(props.enableRowEdit ?? true) && !isGroupChild}
         onInfoClicked={() => openDetailsDialog(program)}
         onEditClicked={openEditDialog}
         titleFormatter={titleFormatter}
         showProgramStartTime={showProgramStartTime}
         relativeDuration={relativeDuration}
+        indented={isGroupChild}
       />
     );
   };
 
-  const renderPrograms = () => {
-    return map(programList, (_, idx) => renderProgram(idx));
+  const renderDisplayItems = () => {
+    return flatDisplayList.map((_, idx) => renderDisplayItem(idx));
   };
 
-  const ProgramRow = ({ index, style }: ListChildComponentProps) => {
-    return renderProgram(index, style);
+  const DisplayRow = ({ index, style }: ListChildComponentProps) => {
+    return renderDisplayItem(index, style);
   };
 
   const renderList = () => {
-    function itemKey(index: number, data: UIChannelProgram[]) {
-      // Find the item at the specified index.
-      // In this case "data" is an Array that was passed to List as "itemData".
-
+    function displayItemKey(index: number, data: FlatDisplayItem[]) {
       const item = data[index];
-
-      // Return a value that uniquely identifies this item.
-      // Typically this will be a UID of some sort.
+      if (item.kind === 'group-header') {
+        return `mid-roll-group-${item.group.groupKey}`;
+      }
+      const program = item.program;
       const key =
-        item.type != 'flex'
-          ? channelProgramUniqueId(item)
-          : `flex-${item.originalIndex}`;
-
-      return `${key}_${item.startTimeOffset}`;
+        program.type !== 'flex'
+          ? channelProgramUniqueId(program)
+          : `flex-${program.originalIndex}`;
+      const prefix = item.kind === 'group-child' ? 'child-' : '';
+      return `${prefix}${key}_${program.startTimeOffset}`;
     }
 
     if (programList.length === 0) {
@@ -554,15 +534,15 @@ export default function ChannelLineupList(props: Props) {
           {virtualListProps ? (
             <FixedSizeList
               {...virtualListProps}
-              itemCount={programList.length}
-              itemKey={itemKey}
-              itemData={programList}
+              itemCount={flatDisplayList.length}
+              itemKey={displayItemKey}
+              itemData={flatDisplayList}
             >
-              {ProgramRow}
+              {DisplayRow}
             </FixedSizeList>
           ) : (
             <Box ref={drop} sx={{ flex: 1, maxHeight: 600, overflowY: 'auto' }}>
-              <List dense>{renderPrograms()}</List>
+              <List dense>{renderDisplayItems()}</List>
             </Box>
           )}
         </Box>

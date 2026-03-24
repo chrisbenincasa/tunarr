@@ -25,7 +25,7 @@ import type { RandomSlot } from '@tunarr/types/api';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { find, isNil, map } from 'lodash-es';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import type { StrictOmit } from 'ts-essentials';
 import { match } from 'ts-pattern';
@@ -35,6 +35,7 @@ import type { SlotViewModel } from '../../model/SlotModels.ts';
 import { RouterLink } from '../base/RouterLink.tsx';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
+import { MidRollConfigPanel } from './MidRollConfigPanel.tsx';
 import { SlotFillerDialogPanel } from './SlotFillerDialogPanel.tsx';
 
 type EditRandomSlotDialogContentProps = {
@@ -72,9 +73,33 @@ export const EditRandomSlotDialogContent = ({
 
   const { control, getValues, setValue, watch, formState } = formMethods;
   const { isValid, isDirty } = formState;
-  const [durationSpec, programType] = watch(['durationSpec', 'type']);
+  const [durationSpec, programType, fillerValues] = watch([
+    'durationSpec',
+    'type',
+    'filler',
+  ]);
+  const hasMidFiller =
+    (fillerValues as { types?: string[] }[] | undefined)?.some((f) =>
+      f.types?.includes('mid'),
+    ) ?? false;
   const [tab, setTab] = useState(0);
   const { data: fillerLists } = useFillerLists();
+
+  useEffect(() => {
+    if (!hasMidFiller && tab === 2) {
+      setTab(0);
+    }
+    if (hasMidFiller && !getValues('midRoll' as never)) {
+      setValue('midRoll.intervalMs' as never, (30 * 60 * 1000) as never);
+      setValue('midRoll.breakDurationMs' as never, (3 * 60 * 1000) as never);
+      setValue('midRoll.maxBreaks' as never, 0 as never);
+      setValue(
+        'midRoll.minProgramDurationMs' as never,
+        (60 * 60 * 1000) as never,
+      );
+      setValue('midRoll.programTypes' as never, [] as never);
+    }
+  }, [hasMidFiller, tab, getValues, setValue]);
 
   const [weightValue, setWeightValue] = useState(getValues('weight'));
 
@@ -268,6 +293,7 @@ export const EditRandomSlotDialogContent = ({
           >
             <Tab label="Programming" value={0} />
             {programType !== 'flex' && <Tab label="Filler" value={1} />}
+            {hasMidFiller && <Tab label="Mid-Roll" value={2} />}
           </Tabs>
           <TabPanel value={tab} index={0}>
             <Stack gap={2} useFlexGap>
@@ -420,6 +446,11 @@ export const EditRandomSlotDialogContent = ({
                 <SlotFillerDialogPanel />
               </FormProvider>
             )}
+          </TabPanel>
+          <TabPanel value={tab} index={2}>
+            <FormProvider {...formMethods}>
+              <MidRollConfigPanel />
+            </FormProvider>
           </TabPanel>
         </Box>
       </DialogContent>

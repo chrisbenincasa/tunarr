@@ -10,6 +10,7 @@ import { ProgramConverter } from '../db/converters/ProgramConverter.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { KEYS } from '../types/inject.ts';
 import { groupByUniq } from '../util/index.ts';
+import { MaterializeProgramsCommand } from './MaterializeProgramsCommand.ts';
 
 type MaterializeLineupCommandRequest = {
   lineup: CondensedChannelProgram[];
@@ -20,6 +21,8 @@ export class MaterializeLineupCommand {
   constructor(
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(ProgramConverter) private programConverter: ProgramConverter,
+    @inject(MaterializeProgramsCommand)
+    private materializePrograms: MaterializeProgramsCommand,
   ) {}
 
   async execute(
@@ -37,9 +40,12 @@ export class MaterializeLineupCommand {
     );
 
     const dbPrograms = await this.programDB.getProgramsByIds([...programIds]);
+    const materializedPrograms =
+      await this.materializePrograms.execute(dbPrograms);
+
     return groupByUniq(
-      seq.collect(dbPrograms, (p) =>
-        this.programConverter.programOrmToContentProgram(p),
+      materializedPrograms.map((program) =>
+        this.programConverter.materializedProgramToContentProgram(program),
       ),
       (p) => p.id,
     );
@@ -51,10 +57,30 @@ export class MaterializeLineupCommand {
   ): ChannelProgram[] {
     return seq.collect(lineup, (lineupItem) => {
       return match(lineupItem)
-        .with(
-          { type: P.union('content', 'custom', 'filler') },
-          (c) => programsById[c.id ?? ''],
-        )
+        .with({ type: 'content' }, (c) => {
+          const program = programsById[c.id ?? ''];
+          if (!program) return;
+          return {
+            ...c,
+            ...program,
+            // We have to keep the lineup program's duration
+            // here and not just override with the whole duration
+            duration: c.duration,
+          } satisfies ContentProgram;
+        })
+        .with({ type: 'custom' }, (c) => {
+          const program = programsById[c.id ?? ''];
+          if (!program) return;
+          return { ...c, ...program };
+        })
+        .with({ type: 'filler' }, (f) => {
+          const program = programsById[f.id];
+          if (!program) return null;
+          return {
+            ...f,
+            program,
+          } satisfies ChannelProgram;
+        })
         .with({ type: P._ }, (p) => p)
         .exhaustive();
     });
