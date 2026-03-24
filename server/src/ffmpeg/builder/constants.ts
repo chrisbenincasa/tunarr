@@ -10,6 +10,7 @@ export type HlsOptions = {
   streamBaseUrl: string;
   segmentNameFormat: string;
   streamNameFormat: string;
+  subtitleStreamNameFormat: string;
   deleteThreshold: Nullable<number>;
   appendSegments: boolean;
 };
@@ -22,6 +23,7 @@ export const defaultHlsOptions: DeepRequired<HlsOptions> = {
   streamBasePath: 'stream_%v',
   segmentNameFormat: 'data%06d.ts',
   streamNameFormat: 'stream.m3u8',
+  subtitleStreamNameFormat: 'subs.m3u8',
   streamBaseUrl: 'hls/',
   deleteThreshold: 3,
   appendSegments: false,

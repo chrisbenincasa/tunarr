@@ -95,7 +95,8 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       const rendition = this.#currentSubtitleRendition;
 
       const lines = content.split('\n').map((line) => {
-        if (line.trim() === this.getHlsOptions().streamNameFormat) return variantAbsUrl;
+        if (line.trim() === this.getHlsOptions().streamNameFormat)
+          return variantAbsUrl;
         if (
           rendition &&
           line.startsWith('#EXT-X-STREAM-INF:') &&
@@ -108,7 +109,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       });
 
       if (rendition) {
-        const subsUrl = `${this.getHlsOptions().streamBaseUrl}subs.m3u8`;
+        const subsUrl = `${this.getHlsOptions().streamBaseUrl}${this.getHlsOptions().subtitleStreamNameFormat}`;
         const langName = rendition.languageName ?? rendition.language;
         const yesNo = (v: boolean) => (v ? 'YES' : 'NO');
         const mediaTag = `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${rendition.language}",NAME="${langName}",DEFAULT=${yesNo(rendition.default)},AUTOSELECT=${yesNo(rendition.default)},FORCED=${yesNo(rendition.forced)},URI="${subsUrl}"`;
@@ -328,13 +329,16 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   protected override getAdditionalRequiredFiles(): string[] {
-    return this.#currentSubtitleRendition ? ['subs.m3u8'] : [];
+    return this.#currentSubtitleRendition
+      ? [this.getHlsOptions().subtitleStreamNameFormat]
+      : [];
   }
 
   protected getHlsOptions(): DeepRequired<HlsOptions> {
     return {
       hlsDeleteThreshold: 3,
       streamNameFormat: 'stream.m3u8',
+      subtitleStreamNameFormat: 'subs.m3u8',
       segmentNameFormat: BaseHlsSession.SegmentNameFormat,
       segmentBaseDirectory: dirname(this.workingDirectory),
       streamBasePath: basename(this.workingDirectory),
