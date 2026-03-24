@@ -20,6 +20,7 @@ import { format } from 'node:util';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
+import type { HlsSession } from '@/stream/hls/HlsSession.js';
 
 export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({
@@ -283,6 +284,26 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       session.recordHeartbeat(req.ip);
+
+      if (
+        req.params.file.endsWith('.m3u8') &&
+        (req.params.sessionType === 'hls' ||
+          req.params.sessionType === 'hls_direct_v2')
+      ) {
+        const playlistResult = await (session as HlsSession).trimPlaylist();
+        if (playlistResult.isFailure()) {
+          logger.error(playlistResult.error);
+          return res.status(500).send('Error retrieving variant playlist');
+        }
+        const playlist = playlistResult.get();
+        if (!playlist) {
+          return res.status(404).send('Variant playlist not found');
+        }
+        return res
+          .type('application/vnd.apple.mpegurl')
+          .send(playlist.playlist);
+      }
+
       session.onSegmentRequested(req.ip, req.params.file);
 
       return res.sendFile(req.params.file, session.workingDirectory);
@@ -344,23 +365,23 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             .then((result) =>
               result.mapAsync(async (session) => {
                 session.recordHeartbeat(req.ip);
-                const playlistResult = await session.trimPlaylist();
+                const masterResult = await session.getMasterPlaylist();
 
-                if (playlistResult.isFailure()) {
-                  logger.error(playlistResult.error);
+                if (masterResult.isFailure()) {
+                  logger.error(masterResult.error);
                   throw new Error(
-                    'Error retrieving HLS playlist for playback',
-                    { cause: playlistResult.error },
+                    'Error retrieving HLS master playlist for playback',
+                    { cause: masterResult.error },
                   );
                 }
 
-                const playlist = playlistResult.get();
+                const masterPlaylist = masterResult.get();
 
-                if (!playlist) {
+                if (!masterPlaylist) {
                   const fmtError = format(
-                    'No playlist found for channel %s at path %s. This could mean the stream is not ready.',
+                    'No master playlist found for channel %s at path %s. This could mean the stream is not ready.',
                     channelId,
-                    session.m3uPlaylistPath,
+                    session.masterPlaylistPath,
                   );
                   logger.error(fmtError);
                   throw new Error(fmtError);
@@ -368,7 +389,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
 
                 return res
                   .type('application/vnd.apple.mpegurl')
-                  .send(playlist.playlist);
+                  .send(masterPlaylist);
               }),
             );
 

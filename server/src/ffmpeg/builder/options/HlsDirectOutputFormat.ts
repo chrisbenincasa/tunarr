@@ -35,6 +35,8 @@ export class HlsDirectOutputFormat extends OutputOption {
       '-hls_base_url',
       this.baseStreamUrl,
       '-copyts', // Preserve original timestamps
+      '-master_pl_name',
+      'playlist.m3u8',
     ];
 
     if (this.isFirstTranscode) {
