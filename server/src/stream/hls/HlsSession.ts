@@ -48,6 +48,7 @@ type SubtitleRenditionInfo = {
   languageName?: string;
   default: boolean;
   forced: boolean;
+  title?: string;
 };
 
 /**
@@ -111,8 +112,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       if (rendition) {
         const subsUrl = `${this.getHlsOptions().streamBaseUrl}${this.getHlsOptions().subtitleStreamNameFormat}`;
         const langName = rendition.languageName ?? rendition.language;
+        const title = rendition.title ?? langName;
         const yesNo = (v: boolean) => (v ? 'YES' : 'NO');
-        const mediaTag = `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${rendition.language}",NAME="${langName}",DEFAULT=${yesNo(rendition.default)},AUTOSELECT=${yesNo(rendition.default)},FORCED=${yesNo(rendition.forced)},URI="${subsUrl}"`;
+        const mediaTag = `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${rendition.language}",NAME="${title}",DEFAULT=${yesNo(rendition.default)},AUTOSELECT=${yesNo(rendition.default)},FORCED=${yesNo(rendition.forced)},URI="${subsUrl}"`;
         const insertBefore = lines.findIndex((l) =>
           l.startsWith('#EXT-X-STREAM-INF:'),
         );
@@ -307,6 +309,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
               languageName: sr.languageName,
               default: sr.default,
               forced: sr.forced,
+              title: sr.title,
             }
           : null;
       });

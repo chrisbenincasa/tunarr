@@ -21,6 +21,7 @@ export type SubtitleRenditionMetadata = {
   default: boolean;
   forced: boolean;
   sdh: boolean;
+  title?: string;
 };
 
 /**

@@ -503,6 +503,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
               default: pickedSubtitleStream.default,
               forced: pickedSubtitleStream.forced,
               sdh: pickedSubtitleStream.sdh,
+              title: pickedSubtitleStream.title,
             };
           }
         }
