@@ -3,7 +3,7 @@ import {
   type CondensedChannelProgram,
   type ContentProgram,
 } from '@tunarr/types';
-import { isNil, isUndefined } from 'lodash-es';
+import { isNil } from 'lodash-es';
 import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { UIChannelProgramWithOffset } from '../types/index.ts';
@@ -25,10 +25,11 @@ export const materializeProgramList = (
   return seq.collect(lineup, (p) => {
     let content: UIChannelProgramWithOffset | null = null;
     if (p.type === 'content') {
-      if (!isUndefined(p.id) && !isNil(programLookup[p.id])) {
+      const program = programLookup[p.id ?? ''] ?? programLookup[p.uniqueId];
+      if (program) {
         content = {
           ...p,
-          ...programLookup[p.id],
+          ...program,
           startTimeOffset: offset,
         };
       }

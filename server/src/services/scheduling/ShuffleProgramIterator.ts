@@ -46,6 +46,7 @@ export class ContentProgramShuffleIterator extends ShuffleProgramIterator<Conden
       duration: program.duration,
       persisted: true,
       id: program.uuid,
+      uniqueId: program.uuid,
     };
   }
 }

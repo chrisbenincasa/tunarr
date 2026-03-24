@@ -1,5 +1,5 @@
 import { ChannelOrm } from '@/db/schema/Channel.js';
-import type { ProgramWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
+import type { ProgramOrmWithExternalIds } from '@/db/schema/derivedTypes.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { Maybe, Nullable } from '@/types/util.js';
@@ -7,8 +7,8 @@ import { binarySearchRange } from '@/util/binarySearch.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
-import { inject, injectable, named } from 'inversify';
-import { first, inRange, isEmpty, isNil, isNull, sumBy } from 'lodash-es';
+import { inject, injectable } from 'inversify';
+import { inRange, isNil, isNull, sumBy } from 'lodash-es';
 import { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
 import {
   CommercialStreamLineupItem,
@@ -25,7 +25,6 @@ import { ProgramPlayHistoryDB } from '../db/ProgramPlayHistoryDB.ts';
 import { OneDayMillis } from '../ffmpeg/builder/constants.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
-import { FillerPickerV2 } from '../services/scheduling/FillerPickerV2.ts';
 import { WrappedError } from '../types/errors.ts';
 import { devAssert } from '../util/debug.ts';
 import { isNonEmptyString } from '../util/index.js';
@@ -80,7 +79,6 @@ export class StreamProgramCalculator {
     @inject(KEYS.ChannelCache) private channelCache: IStreamLineupCache,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(KEYS.FillerPicker)
-    @named(FillerPickerV2.name)
     private fillerPicker: IFillerPicker,
     @inject(ProgramPlayHistoryDB)
     private programPlayHistoryDB: ProgramPlayHistoryDB,
@@ -449,16 +447,16 @@ export class StreamProgramCalculator {
         channel.uuid,
       );
 
-      let filler: Nullable<RawProgramEntity> = null;
+      let filler: Nullable<ProgramOrmWithExternalIds> = null;
       let fillerListId: Nullable<string> = null;
-      let fallbackProgram: Nullable<RawProgramEntity> = null;
+      let fallbackProgram: Nullable<ProgramOrmWithExternalIds> = null;
 
       // See if we have any fallback programs set
-      const fallbackPrograms = await this.channelDB.getChannelFallbackPrograms(
+      const channelFallback = await this.channelDB.getChannelFallbackPrograms(
         channel.uuid,
       );
-      if (channel.offline?.mode === 'clip' && !isEmpty(fallbackPrograms)) {
-        fallbackProgram = first(fallbackPrograms)!;
+      if (channel.offline?.mode === 'clip' && channelFallback) {
+        fallbackProgram = channelFallback;
       }
 
       // Pick a random filler, too

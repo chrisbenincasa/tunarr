@@ -34,6 +34,7 @@ import type { MarkOptional, StrictExtract } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
+import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { DeleteMediaSourceCommand } from '../commands/media_source/DeleteMediaSourceCommand.ts';
 import { container } from '../container.ts';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
@@ -323,11 +324,14 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           req.params.libraryId,
         );
 
+      const materialized = await container
+        .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
+        .execute(programs);
+
       return res.send(
-        seq.collect(programs, (program) =>
-          req.serverCtx.programConverter.programDaoToContentProgram(
+        seq.collect(materialized, (program) =>
+          req.serverCtx.programConverter.materializedProgramToContentProgram(
             program,
-            program.externalIds ?? [],
           ),
         ),
       );

@@ -15,6 +15,7 @@ import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import { chunk, isNil, orderBy, partition, uniqBy } from 'lodash-es';
+import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
 import { withCustomShowPrograms } from './programQueryHelpers.ts';
@@ -66,17 +67,35 @@ export class CustomShowDB {
       });
   }
 
-  async getShowPrograms(id: string): Promise<ProgramWithRelationsOrm[]> {
+  async getShowPrograms(
+    id: string,
+  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
     const result = await this.drizzle.query.customShowContent.findMany({
       where: (fields, { eq }) => eq(fields.customShowUuid, id),
       orderBy: (fields, { asc }) => asc(fields.index),
       with: {
         program: {
           with: {
-            show: true,
-            season: true,
-            album: true,
-            artist: true,
+            show: {
+              with: {
+                externalIds: true,
+              },
+            },
+            season: {
+              with: {
+                externalIds: true,
+              },
+            },
+            album: {
+              with: {
+                externalIds: true,
+              },
+            },
+            artist: {
+              with: {
+                externalIds: true,
+              },
+            },
             artwork: true,
             externalIds: true,
             tags: {
@@ -89,25 +108,6 @@ export class CustomShowDB {
       },
     });
     return result.map((r) => r.program);
-  }
-
-  async getShowProgramsOrm(id: string): Promise<ProgramWithRelationsOrm[]> {
-    const results = await this.drizzle.query.customShowContent.findMany({
-      where: (fields, { eq }) => eq(fields.customShowUuid, id),
-      with: {
-        program: {
-          with: {
-            album: true,
-            artist: true,
-            externalIds: true,
-            season: true,
-            show: true,
-          },
-        },
-      },
-      orderBy: (fields, { asc }) => asc(fields.index),
-    });
-    return results.map((result) => result.program);
   }
 
   async saveShow(id: string, updateRequest: UpdateCustomShowRequest) {
@@ -226,7 +226,7 @@ export class CustomShowDB {
       if (
         (program.persisted ||
           isCustomProgram(program) ||
-          program.externalSourceType === 'local') &&
+          program.program.sourceType === 'local') &&
         isNonEmptyString(program.id)
       ) {
         const existing = newProgramIndexesById.get(program.id) ?? [];
@@ -234,12 +234,12 @@ export class CustomShowDB {
         newProgramIndexesById.set(program.id, existing);
       } else if (
         isContentProgram(program) &&
-        program.externalSourceType !== 'local'
+        program.program.sourceType !== 'local'
       ) {
         const key = createExternalId(
-          program.externalSourceType,
-          tag(program.externalSourceId),
-          program.externalKey,
+          program.program.sourceType,
+          tag(program.program.mediaSourceId),
+          program.program.externalId,
         );
         const existing = newProgramIndexesById.get(key) ?? [];
         existing.push(i);
@@ -262,9 +262,9 @@ export class CustomShowDB {
     }[] = uniqBy(persisted, (p) => p.id!)
       .map((p) => ({
         uuid: p.id!,
-        sourceType: p.externalSourceType,
-        mediaSourceId: tag<MediaSourceId>(p.externalSourceId),
-        externalKey: p.externalKey,
+        sourceType: p.program.sourceType,
+        mediaSourceId: tag<MediaSourceId>(p.program.mediaSourceId),
+        externalKey: p.program.externalId,
       }))
       .concat(upsertedPrograms);
 

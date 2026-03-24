@@ -10,7 +10,7 @@ import {
   type FlexProgram,
   type RedirectProgram,
 } from '@tunarr/types';
-import type { MarkRequired } from 'ts-essentials';
+import type { MarkRequired, StrictOmit } from 'ts-essentials';
 import type { Emby, Imported, Jellyfin, Plex } from './MediaSource';
 
 export type UIIndex = { uiIndex: number; originalIndex: number };
@@ -63,6 +63,12 @@ export type UIChannelProgramWithOffset<
 > = MarkRequired<UIChannelProgram<T>, 'startTimeOffset'>;
 
 export type UIContentProgram = UIChannelProgram<ContentProgram>;
+export type SpecificTypeUIContentProgram<ProgramT extends string> =
+  UIChannelProgram<
+    StrictOmit<ContentProgram, 'program'> & {
+      program: Extract<TerminalProgram, { type: ProgramT }>;
+    }
+  >;
 export type UIFlexProgram = UIChannelProgram<FlexProgram>;
 export type UICustomProgram = UIChannelProgram<CustomProgram>;
 export type UIRedirectProgram = UIChannelProgram<RedirectProgram>;

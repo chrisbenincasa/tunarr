@@ -9,6 +9,8 @@ import {
 import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
 import { isNil, isNull, map, sumBy } from 'lodash-es';
 import { z } from 'zod/v4';
+import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
+import { container } from '../container.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
@@ -130,11 +132,13 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       const csc = await req.serverCtx.customShowDB.getShowPrograms(
         req.params.id,
       );
-      const result = seq.collect(csc, (csc, idx) => {
+      const materialized = await container
+        .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
+        .execute(csc);
+      const result = seq.collect(materialized, (csc, idx) => {
         const program =
-          req.serverCtx.programConverter.programOrmToContentProgram(
+          req.serverCtx.programConverter.materializedProgramToContentProgram(
             csc,
-            csc.externalIds,
           );
         if (!program) {
           return;

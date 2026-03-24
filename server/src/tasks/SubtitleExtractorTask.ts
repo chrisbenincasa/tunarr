@@ -157,9 +157,7 @@ export class SubtitleExtractorTask extends Task2<
         }
 
         const mediaSource = mediaSources.find(
-          (ms) =>
-            ms.uuid === program.externalSourceId ||
-            ms.name === program.externalSourceName,
+          (ms) => ms.uuid === program.program.mediaSourceId,
         );
         if (!mediaSource) {
           // log
@@ -230,7 +228,15 @@ export class SubtitleExtractorTask extends Task2<
             return;
           }
 
-          const filePath = getSubtitleCacheFilePath(program, subtitle);
+          const filePath = getSubtitleCacheFilePath(
+            {
+              externalKey: program.program.externalId,
+              externalSourceId: program.program.mediaSourceId,
+              externalSourceType: program.program.sourceType,
+              id: program.uniqueId,
+            },
+            subtitle,
+          );
           if (!filePath) {
             return;
           }
@@ -248,7 +254,7 @@ export class SubtitleExtractorTask extends Task2<
             'Skipping existing subtitle extraction (stream index = %d) path for program %s (%s). File already exists: %s',
             subtitle.index,
             program.id,
-            program.title,
+            program.program.title,
             fullPath,
           );
           return;

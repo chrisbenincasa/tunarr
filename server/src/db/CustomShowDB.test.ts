@@ -17,6 +17,7 @@ import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
 import { CustomShowContent } from './schema/CustomShowContent.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
 import { MediaSource } from './schema/MediaSource.ts';
+import { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
 import type { NewProgramDao } from './schema/Program.ts';
 import { Program } from './schema/Program.ts';
 
@@ -41,6 +42,7 @@ vi.mock('@/tasks/TaskQueue.js', () => ({
 type Fixture = {
   db: string;
   mediaSourceId: MediaSourceId;
+  mediaLibraryId: string;
   customShowDb: CustomShowDB;
   drizzle: DrizzleDBAccess;
 };
@@ -75,6 +77,19 @@ const test = baseTest.extend<Fixture>({
     });
     await use(uuid);
   },
+  mediaLibraryId: async ({ mediaSourceId }, use) => {
+    const drizzle = DBAccess.instance.getConnection(':memory:')!.drizzle!;
+    const uuid = v4();
+    await drizzle.insert(MediaSourceLibrary).values({
+      uuid,
+      name: 'Test Movie Library',
+      mediaType: 'movies',
+      mediaSourceId,
+      externalKey: 'test-library-key',
+      enabled: true,
+    });
+    await use(uuid);
+  },
   customShowDb: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
     const logger = LoggerFactory.child({ className: 'ProgramDB' });
@@ -82,39 +97,61 @@ const test = baseTest.extend<Fixture>({
     const mockTaskFactory = () => ({ enqueue: async () => {} }) as any;
 
     // Minimal stub of ProgramDaoMinter — only implements what upsertContentPrograms
-    // needs when converting non-persisted ContentPrograms to DB rows.
+    // needs when converting non-persisted TerminalPrograms to DB rows.
     const mockMinterFactory = () => ({
-      contentProgramDtoToDao(
-        program: ContentProgram,
-      ): NewProgramDao | undefined {
+      mint2(mediaSource: any, library: any, program: any) {
         if (!program.canonicalId) return undefined;
         const now = +dayjs();
         return {
-          uuid: v4(),
-          sourceType: program.externalSourceType,
-          externalSourceId: tag<MediaSourceName>(program.externalSourceName),
-          mediaSourceId: tag<MediaSourceId>(program.externalSourceId),
-          externalKey: program.externalKey,
-          canonicalId: program.canonicalId,
-          libraryId: null,
-          duration: program.duration,
-          title: program.title,
-          type: program.subtype,
-          state: 'ok',
-          createdAt: now,
-          updatedAt: now,
-          rating: program.rating ?? null,
-          summary: program.summary ?? null,
-          originalAirDate: program.date ?? null,
-          year: program.year ?? null,
-          episode: null,
-          plexRatingKey: null,
-          plexFilePath: null,
-          filePath: null,
-          parentExternalKey: null,
-          grandparentExternalKey: null,
-          showTitle: null,
-          seasonNumber: null,
+          program: {
+            uuid: v4(),
+            sourceType: program.sourceType,
+            externalSourceId: tag<MediaSourceName>(mediaSource.name),
+            mediaSourceId: tag<MediaSourceId>(program.mediaSourceId),
+            externalKey: program.externalId,
+            canonicalId: program.canonicalId,
+            libraryId: library?.uuid ?? null,
+            duration: program.duration,
+            title: program.title ?? null,
+            type: program.type,
+            state: 'ok',
+            createdAt: now,
+            updatedAt: now,
+            rating: null,
+            summary: null,
+            plot: null,
+            tagline: null,
+            originalAirDate: null,
+            year: null,
+            episode: null,
+            episodeIcon: null,
+            plexRatingKey: null,
+            plexFilePath: null,
+            filePath: null,
+            parentExternalKey: null,
+            grandparentExternalKey: null,
+            showTitle: null,
+            seasonNumber: null,
+            seasonIcon: null,
+            seasonUuid: null,
+            showIcon: null,
+            tvShowUuid: null,
+            albumName: null,
+            albumUuid: null,
+            artistName: null,
+            artistUuid: null,
+            icon: null,
+            localMediaFolderId: null,
+            localMediaSourcePathId: null,
+          },
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          versions: [],
+          subtitles: [],
+          tags: [],
         };
       },
       mintExternalIds() {
@@ -201,39 +238,45 @@ async function insertProgram(drizzle: DrizzleDBAccess, program: NewProgramDao) {
 function makePersistedContentProgram(program: NewProgramDao): ContentProgram {
   return {
     type: 'content',
-    subtype: 'movie',
     id: program.uuid,
+    uniqueId: program.uuid,
     persisted: true,
     duration: program.duration,
-    title: program.title!,
-    externalSourceType: program.sourceType as 'plex',
-    externalSourceName: String(program.externalSourceId),
-    externalSourceId: String(program.mediaSourceId),
-    externalKey: program.externalKey,
-    uniqueId: program.uuid,
-    externalIds: [],
+    program: {
+      type: 'movie',
+      sourceType: program.sourceType,
+      mediaSourceId: program.mediaSourceId,
+      externalId: program.externalKey,
+      canonicalId: program.canonicalId,
+      libraryId: program.libraryId ?? '',
+      title: program.title ?? '',
+    } as ContentProgram['program'],
   };
 }
 
 function makeNewContentProgram(
   mediaSourceId: MediaSourceId,
-  overrides?: Partial<ContentProgram>,
+  mediaLibraryId: string,
+  overrides?: { title?: string; externalKey?: string },
 ): ContentProgram {
-  const externalKey = faker.string.alphanumeric(10);
+  const externalKey = overrides?.externalKey ?? faker.string.alphanumeric(10);
+  const canonicalId = v4();
+  const duration = faker.number.int({ min: 60000, max: 7200000 });
   return {
     type: 'content',
-    subtype: 'movie',
     persisted: false,
-    duration: faker.number.int({ min: 60000, max: 7200000 }),
-    title: faker.word.words(3),
-    externalSourceType: 'plex',
-    externalSourceName: 'Test Plex Server',
-    externalSourceId: mediaSourceId,
-    externalKey,
+    duration,
     uniqueId: `plex|${mediaSourceId}|${externalKey}`,
-    externalIds: [],
-    canonicalId: v4(),
-    ...overrides,
+    program: {
+      type: 'movie',
+      sourceType: 'plex',
+      mediaSourceId,
+      externalId: externalKey,
+      canonicalId,
+      libraryId: mediaLibraryId,
+      title: overrides?.title ?? faker.word.words(3),
+      duration,
+    } as ContentProgram['program'],
   };
 }
 
@@ -336,7 +379,7 @@ describe('CustomShowDB', () => {
     });
   });
 
-  describe('getShowProgramsOrm', () => {
+  describe('getShowPrograms', () => {
     test('should return programs in index order', async ({
       customShowDb,
       drizzle,
@@ -364,7 +407,7 @@ describe('CustomShowDB', () => {
         { customShowUuid: show.uuid, contentUuid: programB.uuid, index: 1 },
       ]);
 
-      const programs = await customShowDb.getShowProgramsOrm(show.uuid);
+      const programs = await customShowDb.getShowPrograms(show.uuid);
 
       expect(programs).toHaveLength(3);
       expect(programs[0]!.title).toBe('Program A');
@@ -394,7 +437,7 @@ describe('CustomShowDB', () => {
         { customShowUuid: show.uuid, contentUuid: programA.uuid, index: 2 },
       ]);
 
-      const programs = await customShowDb.getShowProgramsOrm(show.uuid);
+      const programs = await customShowDb.getShowPrograms(show.uuid);
 
       expect(programs).toHaveLength(3);
       expect(programs[0]!.title).toBe('Repeat Me');
@@ -405,7 +448,7 @@ describe('CustomShowDB', () => {
     test('should return empty array for nonexistent show', async ({
       customShowDb,
     }) => {
-      const programs = await customShowDb.getShowProgramsOrm(v4());
+      const programs = await customShowDb.getShowPrograms(v4());
       expect(programs).toHaveLength(0);
     });
   });
@@ -696,10 +739,15 @@ describe('CustomShowDB', () => {
       customShowDb,
       drizzle,
       mediaSourceId,
+      mediaLibraryId,
     }) => {
       const programs = [
-        makeNewContentProgram(mediaSourceId, { externalKey: 'key-aaa' }),
-        makeNewContentProgram(mediaSourceId, { externalKey: 'key-bbb' }),
+        makeNewContentProgram(mediaSourceId, mediaLibraryId, {
+          externalKey: 'key-aaa',
+        }),
+        makeNewContentProgram(mediaSourceId, mediaLibraryId, {
+          externalKey: 'key-bbb',
+        }),
       ];
 
       const showId = await customShowDb.createShow({
@@ -729,12 +777,13 @@ describe('CustomShowDB', () => {
       customShowDb,
       drizzle,
       mediaSourceId,
+      mediaLibraryId,
     }) => {
       const existingProgram = await insertProgram(
         drizzle,
         createProgram(mediaSourceId, { title: 'Already In DB' }),
       );
-      const newProgram = makeNewContentProgram(mediaSourceId, {
+      const newProgram = makeNewContentProgram(mediaSourceId, mediaLibraryId, {
         title: 'Needs Inserting',
         externalKey: 'brand-new-key',
       });

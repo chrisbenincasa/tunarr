@@ -27,7 +27,6 @@ import { ContainerModule } from 'inversify';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
-import { FillerPicker } from '../services/FillerPicker.ts';
 import { FillerPickerV2 } from '../services/scheduling/FillerPickerV2.ts';
 import type { UpdatePlexPlayStatusScheduledTaskFactory } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
 import { UpdatePlexPlayStatusScheduledTask } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
@@ -255,14 +254,7 @@ const configure: interfaces.ContainerModuleCallBack = (bind) => {
 
   bind(PersistentChannelCache).toSelf().inSingletonScope();
 
-  bind(KEYS.FillerPicker)
-    .to(FillerPicker)
-    .inSingletonScope()
-    .whenTargetIsDefault();
-  bind(KEYS.FillerPicker)
-    .to(FillerPickerV2)
-    .inSingletonScope()
-    .whenTargetNamed('FillerPickerV2');
+  bind(KEYS.FillerPicker).to(FillerPickerV2).inSingletonScope();
 };
 
 class StreamModule extends ContainerModule {

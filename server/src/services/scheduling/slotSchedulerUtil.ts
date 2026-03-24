@@ -3,7 +3,6 @@ import { isNonEmptyString } from '@tunarr/shared/util';
 import {
   isFlexProgram,
   type CondensedChannelProgram,
-  type ContentProgram,
   type FillerProgram,
   type FlexProgram,
 } from '@tunarr/types';
@@ -104,42 +103,6 @@ const fillerSlotId = (id: string): `filler.${typeof id}` =>
   `filler.${id}` as const;
 const smartCollectionId = (id: string): `smart-collection.${string}` =>
   `smart-collection.${id}` as const;
-
-export const getSlotIdForProgram = (
-  program: CondensedChannelProgram,
-  lookup: Record<string, ContentProgram>,
-): SlotId | undefined => {
-  switch (program.type) {
-    case 'content': {
-      if (isNonEmptyString(program.id)) {
-        const materialized = lookup[program.id];
-        if (materialized) {
-          switch (materialized.subtype) {
-            case 'movie':
-            case 'music_video':
-            case 'other_video':
-              return materialized.subtype;
-            case 'episode':
-              return isNonEmptyString(materialized.showId)
-                ? `show.${materialized.showId}`
-                : undefined;
-            case 'track':
-              return;
-          }
-        }
-      }
-      return;
-    }
-    case 'filler':
-      return `filler.${program.fillerListId}`;
-    case 'custom':
-      return `custom-show.${program.customShowId}`;
-    case 'redirect':
-      return `redirect.${program.channel}`;
-    case 'flex':
-      return 'flex';
-  }
-};
 
 export function deduplicatePrograms(
   programs: SlotSchedulerProgram[],

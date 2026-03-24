@@ -24,6 +24,8 @@ import { range } from 'lodash-es';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { P, match } from 'ts-pattern';
 import { getTextContrast } from '../../helpers/colors.ts';
+import { programSeasonAndEpisode } from '../../helpers/formatters.ts';
+import { extractProgramGrandparent } from '../../helpers/programUtil.ts';
 import { useGetProgramsForDayFunc } from '../../hooks/calendarHooks.ts';
 import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
@@ -173,14 +175,15 @@ export const ProgramWeekCalendarView = ({
               }}
             >
               {program.type === 'content'
-                ? (program.grandparent?.title ?? program.title)
+                ? (extractProgramGrandparent(program.program)?.title ??
+                  program.program.title)
                 : ''}
             </Box>
             {dataRows > 1 && (
               <>
                 <br />
                 {program.type === 'content' &&
-                  program.subtype === 'episode' && (
+                  program.program.type === 'episode' && (
                     <Box
                       component="span"
                       sx={{
@@ -191,23 +194,24 @@ export const ProgramWeekCalendarView = ({
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {`S${program.parent?.index?.toString().padStart(2, '0')}E${program.index?.toString().padStart(2, '0')}`}
+                      {programSeasonAndEpisode(program.program)}
                     </Box>
                   )}
-                {program.type === 'content' && program.subtype === 'movie' && (
-                  <Box
-                    component="span"
-                    sx={{
-                      fontSize: 'small',
-                      fontWeight: 'bold',
-                      textOverflow: 'clip',
-                      overflowX: 'hidden',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {actualStartTime.format('LT')}
-                  </Box>
-                )}
+                {program.type === 'content' &&
+                  program.program.type === 'movie' && (
+                    <Box
+                      component="span"
+                      sx={{
+                        fontSize: 'small',
+                        fontWeight: 'bold',
+                        textOverflow: 'clip',
+                        overflowX: 'hidden',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {actualStartTime.format('LT')}
+                    </Box>
+                  )}
               </>
             )}
           </Paper>
@@ -408,7 +412,7 @@ export const ProgramWeekCalendarView = ({
           openProgramDetails?.uniqueId)) && (
         <ProgramDetailsDialog
           programId={openProgramDetails?.uniqueId}
-          programType={openProgramDetails?.subtype}
+          programType={openProgramDetails?.program.type}
           open={!!openProgramDetails}
           onClose={() => setOpenProgramDetails(null)}
         />

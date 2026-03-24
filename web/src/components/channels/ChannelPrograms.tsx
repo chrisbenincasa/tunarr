@@ -8,6 +8,10 @@ import {
 } from '@tunarr/types/schemas';
 import { groupBy, isNil, keys, mapValues, omitBy } from 'lodash-es';
 import { useMemo, useState } from 'react';
+import {
+  extractProgramGrandparent,
+  extractProgramParent,
+} from '../../helpers/programUtil.ts';
 import { useChannelAndProgramming } from '../../hooks/useChannelLineup.ts';
 import { TabPanel } from '../TabPanel.tsx';
 import { ChannelProgramGrid } from './ChannelProgramGrid.tsx';
@@ -107,7 +111,7 @@ export const ChannelPrograms = ({ channelId }: Props) => {
           }
           return;
         }),
-        (p) => p.subtype,
+        ({ program }) => program.type,
       ),
     [lineup, programs],
   ) as Record<ContentProgramType, ContentProgram[]>;
@@ -116,14 +120,20 @@ export const ChannelPrograms = ({ channelId }: Props) => {
   const [epsByShow] = useMemo(() => {
     const epsByProgram = mapValues(
       omitBy(
-        groupBy(programsByType['episode'], (ep) => ep.grandparent?.id),
+        groupBy(
+          programsByType['episode'],
+          ({ program }) => extractProgramGrandparent(program)?.uuid,
+        ),
         isNil,
       ),
       (p) => p.length,
     );
     const epsBySeason = mapValues(
       omitBy(
-        groupBy(programsByType['episode'], (ep) => ep.parent?.id),
+        groupBy(
+          programsByType['episode'],
+          ({ program }) => extractProgramParent(program)?.uuid,
+        ),
         isNil,
       ),
       (p) => p.length,
@@ -134,14 +144,20 @@ export const ChannelPrograms = ({ channelId }: Props) => {
   const [tracksByArtist] = useMemo(() => {
     const epsByProgram = mapValues(
       omitBy(
-        groupBy(programsByType['track'], (ep) => ep.grandparent?.id),
+        groupBy(
+          programsByType['track'],
+          ({ program }) => extractProgramGrandparent(program)?.uuid,
+        ),
         isNil,
       ),
       (p) => p.length,
     );
     const epsBySeason = mapValues(
       omitBy(
-        groupBy(programsByType['track'], (ep) => ep.parent?.id),
+        groupBy(
+          programsByType['track'],
+          ({ program }) => extractProgramParent(program)?.uuid,
+        ),
         isNil,
       ),
       (p) => p.length,

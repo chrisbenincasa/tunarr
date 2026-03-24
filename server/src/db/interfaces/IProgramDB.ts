@@ -22,8 +22,8 @@ import type {
   NewProgramWithRelations,
   ProgramGroupingOrmWithRelations,
   ProgramGroupingWithExternalIds,
+  ProgramOrmWithExternalIds,
   ProgramWithExternalIds,
-  ProgramWithRelations,
   ProgramWithRelationsOrm,
   TvSeasonOrm,
 } from '@/db/schema/derivedTypes.js';
@@ -65,7 +65,7 @@ export interface IProgramDB {
   getProgramsByIds(
     ids: string[] | readonly string[],
     batchSize?: number,
-  ): Promise<ProgramWithRelationsOrm[]>;
+  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
 
   getProgramGrouping(
     id: string,
@@ -198,7 +198,7 @@ export interface IProgramDB {
 
   getMediaSourceLibraryPrograms(
     libraryId: string,
-  ): Promise<ProgramWithRelations[]>;
+  ): Promise<ProgramOrmWithExternalIds[]>;
 
   getProgramInfoForMediaSource(
     mediaSourceId: MediaSourceId,
@@ -244,7 +244,7 @@ export interface IProgramDB {
   getProgramGroupingDescendants(
     groupId: string,
     groupTypeHint?: ProgramGroupingType,
-  ): Promise<ProgramWithRelationsOrm[]>;
+  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
 
   updateProgramsState(
     programIds: string[],

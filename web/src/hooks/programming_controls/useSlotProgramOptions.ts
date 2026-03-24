@@ -116,7 +116,7 @@ export const useSlotProgramOptions = (channelId?: string) => {
     };
 
     if (contentPrograms.length) {
-      if (some(contentPrograms, (p) => p.subtype === 'movie')) {
+      if (some(contentPrograms, ({ program }) => program.type === 'movie')) {
         opts.push({ description: 'Movies', value: 'movie', type: 'movie' });
       }
     }

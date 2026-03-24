@@ -6,6 +6,10 @@ import {
   ChannelCustomShowRelations,
 } from './ChannelCustomShow.ts';
 import {
+  ChannelFallback,
+  ChannelFallbackRelations,
+} from './ChannelFallback.ts';
+import {
   ChannelFillerShow,
   ChannelFillerShowRelations,
 } from './ChannelFillerShow.ts';
@@ -97,6 +101,8 @@ export const schema = {
   channelPrograms: ChannelPrograms,
   channelCustomShows: ChannelCustomShow,
   channelCustomShowRelations: ChannelCustomShowRelations,
+  channelFallback: ChannelFallback,
+  channelFallbackRelations: ChannelFallbackRelations,
   channelFillerShow: ChannelFillerShow,
   channelFillerShowRelations: ChannelFillerShowRelations,
   channelProgramRelations: ChannelProgramsRelations,

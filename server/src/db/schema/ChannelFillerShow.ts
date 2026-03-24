@@ -1,3 +1,4 @@
+import type { InferSelectModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import {
   integer,
@@ -31,6 +32,7 @@ export const ChannelFillerShow = sqliteTable(
 export type ChannelFillerShowTable = KyselifyBetter<typeof ChannelFillerShow>;
 export type ChannelFillerShow = Selectable<ChannelFillerShowTable>;
 export type NewChannelFillerShow = Insertable<ChannelFillerShowTable>;
+export type ChannelFillerShowOrm = InferSelectModel<typeof ChannelFillerShow>;
 
 export const ChannelFillerShowRelations = relations(
   ChannelFillerShow,

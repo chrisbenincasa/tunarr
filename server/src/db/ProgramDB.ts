@@ -23,7 +23,11 @@ import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
   ContentProgram,
+  EpisodeWithHierarchy,
   isContentProgram,
+  isEpisodeWithHierarchy,
+  isMusicTrackWithHierarchy,
+  MusicTrackWithHierarchy,
   untag,
 } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
@@ -46,13 +50,7 @@ import {
   SQLiteSelectBuilder,
 } from 'drizzle-orm/sqlite-core';
 import { inject, injectable, interfaces } from 'inversify';
-import {
-  CaseWhenBuilder,
-  InsertResult,
-  Kysely,
-  NotNull,
-  UpdateResult,
-} from 'kysely';
+import { CaseWhenBuilder, Kysely, NotNull, UpdateResult } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
@@ -70,7 +68,6 @@ import {
   isEmpty,
   isNil,
   isNull,
-  isUndefined,
   keys,
   last,
   map,
@@ -125,7 +122,6 @@ import {
   ProgramUpsertFields,
   selectProgramsBuilder,
   withProgramByExternalId,
-  withProgramExternalIds,
 } from './programQueryHelpers.ts';
 import { Artwork, NewArtwork } from './schema/Artwork.ts';
 import { ChannelPrograms } from './schema/ChannelPrograms.ts';
@@ -136,9 +132,9 @@ import {
   NewGenre,
   NewGenreEntity,
 } from './schema/Genre.ts';
-import { RemoteMediaSourceType } from './schema/MediaSource.ts';
+import { MediaSourceOrm, RemoteMediaSourceType } from './schema/MediaSource.ts';
+import { MediaSourceLibraryOrm } from './schema/MediaSourceLibrary.ts';
 import {
-  NewProgramDao,
   Program,
   ProgramDao,
   ProgramType,
@@ -153,7 +149,6 @@ import {
   toInsertableProgramExternalId,
 } from './schema/ProgramExternalId.ts';
 import {
-  NewProgramGrouping,
   NewProgramGroupingOrm,
   ProgramGrouping,
   ProgramGroupingOrm,
@@ -189,13 +184,13 @@ import {
 import { NewTag, NewTagRelation, Tag, TagRelations } from './schema/Tag.ts';
 import {
   MediaSourceId,
-  MediaSourceName,
   MediaSourceType,
   ProgramState,
   RemoteSourceType,
 } from './schema/base.js';
 import { DB } from './schema/db.ts';
 import type {
+  MediaSourceWithLibraries,
   MusicAlbumOrm,
   NewProgramGroupingWithRelations,
   NewProgramVersion,
@@ -209,16 +204,9 @@ import type {
 import { DrizzleDBAccess, schema } from './schema/index.ts';
 
 type MintedNewProgramInfo = {
-  program: NewProgramDao;
+  program: NewProgramWithRelations;
   externalIds: NewSingleOrMultiExternalId[];
   apiProgram: ContentProgram;
-};
-
-type ContentProgramWithHierarchy = Omit<
-  MarkRequired<ContentProgram, 'grandparent' | 'parent'>,
-  'subtype'
-> & {
-  subtype: 'episode' | 'track';
 };
 
 type ProgramRelationCaseBuilder = CaseWhenBuilder<
@@ -230,10 +218,9 @@ type ProgramRelationCaseBuilder = CaseWhenBuilder<
 
 type RelevantProgramWithHierarchy = {
   program: RawProgram;
-  programWithHierarchy: ContentProgramWithHierarchy & {
-    grandparentKey: string;
-    parentKey: string;
-  };
+  programWithHierarchy: EpisodeWithHierarchy | MusicTrackWithHierarchy;
+  grandparentKey: string;
+  parentKey: string;
 };
 
 // Keep this low to make bun sqlite happy.
@@ -253,6 +240,8 @@ export class ProgramDB implements IProgramDB {
     @inject(KEYS.ProgramDaoMinterFactory)
     private programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
+    @inject(ProgramGroupingMinter)
+    private programGroupingMinter: ProgramGroupingMinter,
   ) {
     this.timer = new Timer(this.logger);
   }
@@ -315,23 +304,32 @@ export class ProgramDB implements IProgramDB {
 
   async getProgramsByIds(
     ids: string[] | readonly string[],
-    // joins: DBQueryConfig<'many', true, (typeof schema)['programRelations']>['with'],
     batchSize: number = 500,
-  ): Promise<ProgramWithRelationsOrm[]> {
-    const results: ProgramWithRelationsOrm[] = [];
+  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+    const results: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[] = [];
     for (const idChunk of chunk(ids, batchSize)) {
       const res = await this.drizzleDB.query.program.findMany({
         where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
         with: {
           album: {
             with: {
+              externalIds: true,
               artwork: true,
             },
           },
-          artist: true,
-          season: true,
+          artist: {
+            with: {
+              externalIds: true,
+            },
+          },
+          season: {
+            with: {
+              externalIds: true,
+            },
+          },
           show: {
             with: {
+              externalIds: true,
               artwork: true,
             },
           },
@@ -801,10 +799,26 @@ export class ProgramDB implements IProgramDB {
         with: {
           program: {
             with: {
-              album: true,
-              artist: true,
-              season: true,
-              show: true,
+              album: {
+                with: {
+                  externalIds: true,
+                },
+              },
+              artist: {
+                with: {
+                  externalIds: true,
+                },
+              },
+              season: {
+                with: {
+                  externalIds: true,
+                },
+              },
+              show: {
+                with: {
+                  externalIds: true,
+                },
+              },
               externalIds: true,
               tags: {
                 with: {
@@ -1017,11 +1031,13 @@ export class ProgramDB implements IProgramDB {
 
     const [contentPrograms, invalidPrograms] = partition(
       uniqBy(filter(nonPersisted, isContentProgram), (p) => p.uniqueId),
-      (p) =>
-        isNonEmptyString(p.externalSourceType) &&
-        isNonEmptyString(p.externalSourceId) &&
-        isNonEmptyString(p.externalKey) &&
-        p.duration > 0,
+      ({ program }) =>
+        isNonEmptyString(program.sourceType) &&
+        isNonEmptyString(program.mediaSourceId) &&
+        isNonEmptyString(program.externalId) &&
+        program.duration > 0 &&
+        isNonEmptyString(program.canonicalId) &&
+        isNonEmptyString(program.libraryId),
     );
 
     if (!isEmpty(invalidPrograms)) {
@@ -1032,38 +1048,71 @@ export class ProgramDB implements IProgramDB {
       );
     }
 
+    const mediaSourcesAndLibraries =
+      await this.drizzleDB.query.mediaSource.findMany({
+        with: {
+          libraries: true,
+        },
+      });
+    const mediaSourcesById = groupByUniq(mediaSourcesAndLibraries, (ms) =>
+      untag(ms.uuid),
+    );
+    const libraryById = groupByUniq(
+      mediaSourcesAndLibraries.flatMap((ms) => ms.libraries),
+      (lib) => lib.uuid,
+    );
+
     const programsToPersist: MintedNewProgramInfo[] = seq.collect(
       contentPrograms,
       (p) => {
-        const program = minter.contentProgramDtoToDao(p);
+        const mediaSource = mediaSourcesById[p.program.mediaSourceId];
+        if (!mediaSource) {
+          this.logger.warn(
+            'No media source with ID %s found on program when attempting to upsert.\n%O',
+            p.program.mediaSourceId,
+            p.program,
+          );
+          return;
+        }
+
+        const library = libraryById[p.program.libraryId];
+        if (!library) {
+          this.logger.warn(
+            'No library with ID %s found on program when attempting to upsert.\n%O',
+            p.program.libraryId,
+            p.program,
+          );
+          return;
+        }
+
+        const program = minter.mint2(mediaSource, library, p.program);
         if (!program) {
           return;
         }
-        const externalIds = minter.mintExternalIds(
-          program.externalSourceId,
-          program.mediaSourceId,
-          program.uuid,
-          p,
-        );
+
+        const externalIds = program.externalIds;
         return { program, externalIds, apiProgram: p };
       },
     );
 
     const programInfoByUniqueId = groupByUniq(
       programsToPersist,
-      ({ program }) => programExternalIdString(program),
+      ({ program }) => programExternalIdString(program.program),
     );
 
     this.logger.debug('Upserting %d programs', programsToPersist.length);
 
     const upsertedPrograms: MarkNonNullable<ProgramDao, 'mediaSourceId'>[] = [];
     await this.timer.timeAsync('programUpsert', async () => {
-      for (const c of chunk(programsToPersist, programUpsertBatchSize)) {
+      for (const chunkToInsert of chunk(
+        programsToPersist,
+        programUpsertBatchSize,
+      )) {
         upsertedPrograms.push(
           ...(await this.db.transaction().execute((tx) =>
             tx
               .insertInto('program')
-              .values(map(c, 'program'))
+              .values(chunkToInsert.map(({ program: { program } }) => program))
               // .onConflict((oc) =>
               //   oc
               //     .columns(['sourceType', 'externalSourceId', 'externalKey'])
@@ -1101,7 +1150,11 @@ export class ProgramDB implements IProgramDB {
     });
 
     await this.timer.timeAsync('programGroupings', () =>
-      this.handleProgramGroupings(upsertedPrograms, programInfoByUniqueId),
+      this.handleProgramGroupings(
+        upsertedPrograms,
+        programInfoByUniqueId,
+        mediaSourcesAndLibraries,
+      ),
     );
 
     const [requiredExternalIds, backgroundExternalIds] = partition(
@@ -1975,11 +2028,32 @@ export class ProgramDB implements IProgramDB {
   }
 
   async getMediaSourceLibraryPrograms(libraryId: string) {
-    return selectProgramsBuilder(this.db, { includeGroupingExternalIds: true })
-      .where('libraryId', '=', libraryId)
-      .selectAll()
-      .select(withProgramExternalIds)
-      .execute();
+    return this.drizzleDB.query.program.findMany({
+      where: (fields, { eq }) => eq(fields.libraryId, libraryId),
+      with: {
+        album: {
+          with: {
+            externalIds: true,
+          },
+        },
+        artist: {
+          with: {
+            externalIds: true,
+          },
+        },
+        season: {
+          with: {
+            externalIds: true,
+          },
+        },
+        show: {
+          with: {
+            externalIds: true,
+          },
+        },
+        externalIds: true,
+      },
+    });
   }
 
   async getProgramInfoForMediaSource(
@@ -2501,7 +2575,7 @@ export class ProgramDB implements IProgramDB {
   async getProgramGroupingDescendants(
     groupId: string,
     groupTypeHint?: ProgramGroupingType,
-  ): Promise<ProgramWithRelationsOrm[]> {
+  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
     const programs = await this.drizzleDB.query.program.findMany({
       where: (fields, { or, eq }) => {
         if (groupTypeHint) {
@@ -2525,30 +2599,26 @@ export class ProgramDB implements IProgramDB {
         }
       },
       with: {
-        album:
-          isUndefined(groupTypeHint) ||
-          groupTypeHint === 'album' ||
-          groupTypeHint === 'artist'
-            ? true
-            : undefined,
-        artist:
-          isUndefined(groupTypeHint) ||
-          groupTypeHint === 'album' ||
-          groupTypeHint === 'artist'
-            ? true
-            : undefined,
-        season:
-          isUndefined(groupTypeHint) ||
-          groupTypeHint === 'show' ||
-          groupTypeHint === 'season'
-            ? true
-            : undefined,
-        show:
-          isUndefined(groupTypeHint) ||
-          groupTypeHint === 'show' ||
-          groupTypeHint === 'season'
-            ? true
-            : undefined,
+        album: {
+          with: {
+            externalIds: true,
+          },
+        },
+        artist: {
+          with: {
+            externalIds: true,
+          },
+        },
+        season: {
+          with: {
+            externalIds: true,
+          },
+        },
+        show: {
+          with: {
+            externalIds: true,
+          },
+        },
         externalIds: true,
       },
     });
@@ -2605,31 +2675,38 @@ export class ProgramDB implements IProgramDB {
   private async handleProgramGroupings(
     upsertedPrograms: MarkNonNullable<ProgramDao, 'mediaSourceId'>[],
     programInfos: Record<string, MintedNewProgramInfo>,
+    mediaSourcesAndLibraries: MediaSourceWithLibraries[],
   ) {
-    const programsBySourceAndServer = mapValues(
-      groupBy(upsertedPrograms, 'sourceType'),
-      (ps) => groupBy(ps, typedProperty('mediaSourceId')),
+    const mediaSourceById = groupByUniq(mediaSourcesAndLibraries, (ms) =>
+      untag(ms.uuid),
     );
 
-    for (const [sourceType, byServerId] of Object.entries(
-      programsBySourceAndServer,
+    const programsBySourceAndLibrary = mapValues(
+      groupBy(upsertedPrograms, typedProperty('mediaSourceId')),
+      (ps) => groupBy(ps, typedProperty('libraryId')),
+    );
+
+    for (const [sourceId, byLibraryId] of Object.entries(
+      programsBySourceAndLibrary,
     )) {
-      for (const [serverId, programs] of Object.entries(byServerId)) {
-        // Making an assumption that these are all the same... this field will
-        // go away soon anyway
-        const serverName = head(programs)!.externalSourceId;
-        // This is just extra safety because lodash erases the type in groupBy
-        const typ = programSourceTypeFromString(sourceType);
-        if (!typ) {
-          return;
+      const mediaSource = mediaSourceById[sourceId];
+      if (!mediaSource || mediaSource.type === 'local') {
+        continue;
+      }
+
+      for (const [libraryId, programs] of Object.entries(byLibraryId)) {
+        const library = mediaSource.libraries.find(
+          (lib) => lib.uuid === libraryId,
+        );
+        if (!library) {
+          continue;
         }
 
         await this.handleSingleSourceProgramGroupings(
           programs,
           programInfos,
-          typ,
-          serverName,
-          serverId as MediaSourceId, // We know this is true above, types get lost from Object.entries
+          mediaSource,
+          library,
         );
       }
     }
@@ -2638,9 +2715,8 @@ export class ProgramDB implements IProgramDB {
   private async handleSingleSourceProgramGroupings(
     upsertedPrograms: MarkNonNullable<ProgramDao, 'mediaSourceId'>[],
     programInfos: Record<string, MintedNewProgramInfo>,
-    mediaSourceType: ProgramSourceType,
-    mediaSourceName: MediaSourceName,
-    mediaSourceId: MediaSourceId,
+    mediaSource: MediaSourceOrm,
+    library: MediaSourceLibraryOrm,
   ) {
     const grandparentRatingKeyToParentRatingKey: Record<
       string,
@@ -2653,9 +2729,9 @@ export class ProgramDB implements IProgramDB {
       upsertedPrograms,
       (program) => {
         if (
-          program.type === ProgramType.Movie ||
-          program.type === ProgramType.MusicVideo ||
-          program.type === ProgramType.OtherVideo
+          (['movie', 'other_video', 'music_video'] as ProgramType[]).includes(
+            program.type,
+          )
         ) {
           return;
         }
@@ -2666,34 +2742,33 @@ export class ProgramDB implements IProgramDB {
         }
 
         if (
-          info.apiProgram.subtype === ProgramType.Movie ||
-          info.apiProgram.subtype === ProgramType.MusicVideo ||
-          info.apiProgram.subtype === ProgramType.OtherVideo
+          (['movie', 'other_video', 'music_video'] as ProgramType[]).includes(
+            info.apiProgram.program.type,
+          )
         ) {
           return;
         }
 
-        const [grandparentKey, parentKey] = [
-          info.apiProgram.grandparent?.externalKey,
-          info.apiProgram.parent?.externalKey,
-        ];
+        if (
+          isEpisodeWithHierarchy(info.apiProgram.program) ||
+          isMusicTrackWithHierarchy(info.apiProgram.program)
+        ) {
+          const grandparentKey = isEpisodeWithHierarchy(info.apiProgram.program)
+            ? extractShowId(info.apiProgram.program)
+            : extractArtistId(info.apiProgram.program);
+          const parentKey = isEpisodeWithHierarchy(info.apiProgram.program)
+            ? info.apiProgram.program.season.externalId
+            : info.apiProgram.program.album.externalId;
 
-        if (!grandparentKey || !parentKey) {
-          this.logger.warn(
-            'Unexpected null/empty parent keys: %O',
-            info.apiProgram,
-          );
-          return;
-        }
-
-        return {
-          program,
-          programWithHierarchy: {
-            ...(info.apiProgram as ContentProgramWithHierarchy),
+          return {
+            program,
+            programWithHierarchy: info.apiProgram.program,
             grandparentKey,
             parentKey,
-          },
-        };
+          };
+        }
+
+        return;
       },
     );
 
@@ -2702,10 +2777,7 @@ export class ProgramDB implements IProgramDB {
       'uuid',
     );
 
-    for (const {
-      program,
-      programWithHierarchy: { grandparentKey, parentKey },
-    } of relevantPrograms) {
+    for (const { program, grandparentKey, parentKey } of relevantPrograms) {
       if (isNonEmptyString(grandparentKey)) {
         (grandparentRatingKeyToProgramId[grandparentKey] ??= new Set()).add(
           program.uuid,
@@ -2734,8 +2806,11 @@ export class ProgramDB implements IProgramDB {
         this.drizzleDB.query.programGroupingExternalId.findMany({
           where: (fields, { eq, and, inArray }) =>
             and(
-              eq(fields.sourceType, mediaSourceType),
-              eq(fields.mediaSourceId, mediaSourceId),
+              // this is always true, appease the typechecker
+              mediaSource.type !== 'local'
+                ? eq(fields.sourceType, mediaSource.type)
+                : undefined,
+              eq(fields.mediaSourceId, mediaSource.uuid),
               inArray(fields.externalKey, allGroupingKeys),
             ),
           with: {
@@ -2764,7 +2839,8 @@ export class ProgramDB implements IProgramDB {
     for (const group of existingGroupings) {
       for (const {
         program: upsertedProgram,
-        programWithHierarchy: { grandparentKey, parentKey },
+        grandparentKey,
+        parentKey,
       } of relevantPrograms) {
         if (group.externalKey === grandparentKey) {
           switch (upsertedProgram.type) {
@@ -2819,27 +2895,33 @@ export class ProgramDB implements IProgramDB {
     }
 
     // New ones
-    const groupings: NewProgramGrouping[] = [];
-    const externalIds: NewProgramGroupingExternalId[] = [];
+    const groupings: NewProgramGroupingWithRelations[] = [];
     for (const missingGrandparent of missingGrandparents) {
       const matchingPrograms = filter(
         relevantPrograms,
-        ({ programWithHierarchy: { grandparentKey } }) =>
-          grandparentKey === missingGrandparent,
+        ({ grandparentKey }) => grandparentKey === missingGrandparent,
       );
 
       if (isEmpty(matchingPrograms)) {
         continue;
       }
 
-      const grandparentGrouping = ProgramGroupingMinter.mintGrandparentGrouping(
-        matchingPrograms[0]!.programWithHierarchy,
-      );
+      // match( matchingPrograms[0]!.programWithHierarchy.program)
+      // .with({type: ''})
+      const grandparentGroupingAndRelations =
+        this.programGroupingMinter.mintGrandparentGrouping(
+          matchingPrograms[0]!.programWithHierarchy,
+          mediaSource,
+          library,
+        );
 
-      if (isNull(grandparentGrouping)) {
+      if (isNull(grandparentGroupingAndRelations)) {
         devAssert(false);
         continue;
       }
+
+      const { programGrouping: grandparentGrouping } =
+        grandparentGroupingAndRelations;
 
       matchingPrograms.forEach(({ program }) => {
         if (grandparentGrouping.type === ProgramGroupingType.Artist) {
@@ -2895,13 +2977,18 @@ export class ProgramDB implements IProgramDB {
           () => uniq(map(programs, ({ program: p }) => p.type)).length === 1,
         );
 
-        const parentGrouping = ProgramGroupingMinter.mintParentGrouping(
-          programs[0]!.programWithHierarchy,
-        );
+        const parentGroupingWithRelations =
+          this.programGroupingMinter.mintParentGrouping(
+            programs[0]!.programWithHierarchy,
+            mediaSource,
+            library,
+          );
 
-        if (!parentGrouping) {
+        if (!parentGroupingWithRelations) {
           continue;
         }
+
+        const { programGrouping: parentGrouping } = parentGroupingWithRelations;
 
         programs.forEach(({ program }) => {
           if (program.type === ProgramType.Episode) {
@@ -2919,56 +3006,16 @@ export class ProgramDB implements IProgramDB {
           parentGrouping.artistUuid = grandparentGrouping.uuid;
         }
 
-        groupings.push(parentGrouping);
-        externalIds.push(
-          ...ProgramGroupingMinter.mintGroupingExternalIds(
-            programs[0]!.programWithHierarchy,
-            parentGrouping.uuid,
-            mediaSourceName,
-            mediaSourceId,
-            'parent',
-          ),
-        );
+        groupings.push(parentGroupingWithRelations);
       }
 
-      groupings.push(grandparentGrouping);
-      externalIds.push(
-        ...ProgramGroupingMinter.mintGroupingExternalIds(
-          matchingPrograms[0]!.programWithHierarchy,
-          grandparentGrouping.uuid,
-          mediaSourceName,
-          mediaSourceId,
-          'grandparent',
-        ),
-      );
+      groupings.push(grandparentGroupingAndRelations);
     }
 
     if (!isEmpty(groupings)) {
       await this.timer.timeAsync('upsert program_groupings', () =>
-        this.db
-          .transaction()
-          .execute((tx) =>
-            tx
-              .insertInto('programGrouping')
-              .values(groupings)
-              .executeTakeFirstOrThrow(),
-          ),
-      );
-    }
-
-    if (!isEmpty(externalIds)) {
-      await this.timer.timeAsync('upsert program_grouping external ids', () =>
-        Promise.all(
-          chunk(
-            externalIds, //.map(toInsertableProgramGroupingExternalId),
-            100,
-          ).map((externalIds) =>
-            this.db
-              .transaction()
-              .execute((tx) =>
-                this.upsertProgramGroupingExternalIdsChunk(externalIds, tx),
-              ),
-          ),
+        mapAsyncSeq(groupings, (grouping) =>
+          this.upsertProgramGrouping(grouping),
         ),
       );
     }
@@ -3201,66 +3248,6 @@ export class ProgramDB implements IProgramDB {
     return (await Promise.all(promises)).flat();
   }
 
-  private async upsertProgramGroupingExternalIdsChunk(
-    ids: (
-      | NewSingleOrMultiProgramGroupingExternalId
-      | NewProgramGroupingExternalId
-    )[],
-    tx: Kysely<DB> = this.db,
-  ): Promise<void> {
-    if (ids.length === 0) {
-      return;
-    }
-
-    const [singles, multiples] = partition(ids, (id) =>
-      isValidSingleExternalIdType(id.sourceType),
-    );
-
-    const promises: Promise<InsertResult>[] = [];
-
-    if (singles.length > 0) {
-      promises.push(
-        tx
-          .insertInto('programGroupingExternalId')
-          .values(singles.map(toInsertableProgramGroupingExternalId))
-          .onConflict((oc) =>
-            oc
-              .columns(['groupUuid', 'sourceType'])
-              .where('mediaSourceId', 'is', null)
-              .doUpdateSet((eb) => ({
-                updatedAt: eb.ref('excluded.updatedAt'),
-                externalFilePath: eb.ref('excluded.externalFilePath'),
-                groupUuid: eb.ref('excluded.groupUuid'),
-                externalKey: eb.ref('excluded.externalKey'),
-              })),
-          )
-          .executeTakeFirstOrThrow(),
-      );
-    }
-
-    if (multiples.length > 0) {
-      promises.push(
-        tx
-          .insertInto('programGroupingExternalId')
-          .values(multiples.map(toInsertableProgramGroupingExternalId))
-          .onConflict((oc) =>
-            oc
-              .columns(['groupUuid', 'sourceType', 'mediaSourceId'])
-              .where('mediaSourceId', 'is not', null)
-              .doUpdateSet((eb) => ({
-                updatedAt: eb.ref('excluded.updatedAt'),
-                externalFilePath: eb.ref('excluded.externalFilePath'),
-                groupUuid: eb.ref('excluded.groupUuid'),
-                externalKey: eb.ref('excluded.externalKey'),
-              })),
-          )
-          .executeTakeFirstOrThrow(),
-      );
-    }
-
-    await Promise.all(promises);
-  }
-
   private schedulePlexExternalIdsTask(upsertedPrograms: ProgramDao[]) {
     PlexTaskQueue.pause();
     this.timer.timeSync('schedule Plex external IDs tasks', () => {
@@ -3317,4 +3304,12 @@ export class ProgramDB implements IProgramDB {
       );
     });
   }
+}
+
+function extractShowId(program: EpisodeWithHierarchy) {
+  return program.show?.externalId ?? program.season?.show.externalId;
+}
+
+function extractArtistId(program: MusicTrackWithHierarchy) {
+  return program.artist?.externalId ?? program.album?.artist.externalId;
 }

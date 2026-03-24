@@ -1,37 +1,63 @@
 import { createExternalId } from '@tunarr/shared';
 import type {
+  Episode,
+  MusicAlbum,
+  MusicArtist,
+  MusicTrack,
   ProgramGrouping,
   ProgramOrFolder,
+  Season,
+  Show,
   TerminalProgram,
 } from '@tunarr/types';
+import { isTerminalItemType, tag, type ChannelProgram } from '@tunarr/types';
 import {
-  isTerminalItemType,
-  tag,
-  type ChannelProgram,
-  type ContentProgram,
-} from '@tunarr/types';
-import type { SearchRequest } from '@tunarr/types/schemas';
+  isValidSingleExternalIdType,
+  type SearchRequest,
+} from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
+import { isEmpty, isNil } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { postApiProgramsSearch } from '../generated/sdk.gen.ts';
-import type { Nullable } from '../types/util.ts';
+import type { Maybe, Nullable } from '../types/util.ts';
 import { prettyItemDuration } from './util.ts';
 
-function getGrandparentExternalId(program: ContentProgram) {
-  const sourceType = program.externalSourceType;
-  const grandparentId = program.grandparent?.externalIds.find(
-    (eid) => eid.source === sourceType,
+export function extractProgramGrandparent(
+  program: TerminalProgram,
+): Maybe<Show | MusicArtist> {
+  return match(program)
+    .with({ type: 'episode' }, (ep) => ep.show ?? ep.season?.show)
+    .with({ type: 'track' }, (track) => track.artist ?? track.album?.artist)
+    .otherwise(() => undefined);
+}
+
+export function extractProgramParent(
+  program: TerminalProgram,
+): Maybe<Season | MusicAlbum> {
+  return match(program)
+    .with({ type: 'episode' }, (ep) => ep.season)
+    .with({ type: 'track' }, (track) => track.album)
+    .otherwise(() => undefined);
+}
+
+function getGrandparentExternalId(program: TerminalProgram) {
+  const sourceType = program.sourceType;
+  const grandparentId = extractProgramGrandparent(program)?.identifiers.find(
+    (eid) => eid.type === sourceType,
   );
   if (!grandparentId) {
     return 'unknown';
   }
-  if (grandparentId.type === 'single') {
+  if (
+    isValidSingleExternalIdType(grandparentId.type) ||
+    isEmpty(grandparentId.sourceId)
+  ) {
     return 'unknown;';
   }
 
   return createExternalId(
-    grandparentId.source,
-    tag(grandparentId.sourceId),
+    grandparentId.type,
+    tag(grandparentId.sourceId!),
     grandparentId.id,
   );
 }
@@ -46,10 +72,11 @@ export function getProgramGroupingKey(program: ChannelProgram): string {
         },
         (typ) => typ,
       )
-      .with({ type: 'content' }, (program) => {
+      .with({ type: 'content' }, ({ program }) => {
         const grandparentId =
-          program.grandparent?.id ?? getGrandparentExternalId(program);
-        return `${program.subtype === 'episode' ? 'show' : 'artist'}.${grandparentId}`;
+          extractProgramGrandparent(program)?.uuid ??
+          getGrandparentExternalId(program);
+        return `${program.type === 'episode' ? 'show' : 'artist'}.${grandparentId}`;
       })
       // .with({type: 'content', persisted: false}, program => {
       //   const grandparentId = program.grandparent
@@ -165,7 +192,9 @@ export function getProgramReleaseDate(
     case 'show':
     case 'other_video':
     case 'music_video':
-      dateValue = program.year;
+      dateValue = program.releaseDate
+        ? dayjs(program.releaseDate).format(dateFormat)
+        : program.year;
       break;
     case 'season':
       dateValue = program.show?.releaseDate
@@ -184,4 +213,49 @@ export function getProgramReleaseDate(
   }
 
   return dateValue;
+}
+
+export function getEpisodeShowId(episode: Episode) {
+  return episode.show?.uuid ?? episode.season?.show?.uuid;
+}
+
+export function getTrackArtistId(track: MusicTrack) {
+  return track.artist?.uuid ?? track.album?.artist?.uuid;
+}
+
+export function getCanonicalOrderIndex(program: TerminalProgram) {
+  switch (program.type) {
+    case 'movie':
+    case 'other_video':
+    case 'music_video':
+      return 1;
+    case 'episode':
+    case 'track': {
+      let n = 1;
+      const parent = extractProgramParent(program)?.index;
+      if (!isNil(parent)) {
+        n *= parent * 1e4;
+      }
+      if (program.type === 'episode' && !isNil(program.episodeNumber)) {
+        n += program.episodeNumber * 1e2;
+      } else if (program.type === 'track' && !isNil(program.trackNumber)) {
+        n += program.trackNumber * 1e2;
+      }
+
+      return n;
+    }
+  }
+}
+
+export function extractProgramIndex(program: TerminalProgram) {
+  switch (program.type) {
+    case 'movie':
+    case 'other_video':
+    case 'music_video':
+      return 1;
+    case 'episode':
+      return program.episodeNumber;
+    case 'track':
+      return program.trackNumber;
+  }
 }

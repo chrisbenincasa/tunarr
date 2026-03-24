@@ -18,19 +18,13 @@ export function createPendingProgramIndexMap(
     (acc, p) => {
       if ((p.persisted || isCustomProgram(p)) && isNonEmptyString(p.id)) {
         acc[p.id] = idx++;
-        // TODO handle other types of programs
-      } else if (
-        isContentProgram(p) &&
-        isNonEmptyString(p.externalSourceId) &&
-        isNonEmptyString(p.externalSourceType) &&
-        isNonEmptyString(p.externalKey) &&
-        p.externalSourceType !== 'local'
-      ) {
+        // TODO: handle other types of programs
+      } else if (isContentProgram(p) && p.program.sourceType !== 'local') {
         acc[
           createExternalId(
-            p.externalSourceType,
-            tag(p.externalSourceId),
-            p.externalKey,
+            p.program.sourceType,
+            tag(p.program.mediaSourceId),
+            p.program.externalId,
           )
         ] = idx++;
       }

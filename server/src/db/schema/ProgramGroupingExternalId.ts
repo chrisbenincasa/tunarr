@@ -86,8 +86,9 @@ export type NewSingleProgramGroupingExternalId = StrictOmit<
   'externalSourceId' | 'mediaSourceId'
 > & { type: 'single' };
 export type NewMultiProgramGroupingId = MarkNotNilable<
-  Insertable<ProgramGroupingExternalIdTable>,
-  'externalSourceId' | 'mediaSourceId'
+  // Do not allow inserting new items with externalSourceId, a deprecated field
+  StrictOmit<Insertable<ProgramGroupingExternalIdTable>, 'externalSourceId'>,
+  'mediaSourceId'
 > & { type: 'multi' };
 export type NewSingleOrMultiProgramGroupingExternalId =
   | NewSingleProgramGroupingExternalId

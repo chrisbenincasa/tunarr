@@ -210,7 +210,7 @@ const ProgramListItem = ({
   if (program.type === 'content' || program.type === 'custom') {
     const underlyingProgram =
       program.type === 'content' ? program : program.program;
-    icon = match(underlyingProgram?.subtype)
+    icon = match(underlyingProgram?.program.type)
       .with('movie', () => <TheatersIcon />)
       .with('episode', () => <TvIcon />)
       .with('track', () => <MusicNote />)
@@ -533,9 +533,9 @@ export default function ChannelLineupList(props: Props) {
 
     const programType =
       focusedProgramDetails?.type === 'custom'
-        ? focusedProgramDetails.program?.subtype
+        ? focusedProgramDetails.program?.program.type
         : focusedProgramDetails?.type === 'content'
-          ? focusedProgramDetails?.subtype
+          ? focusedProgramDetails?.program.type
           : null;
 
     return (
