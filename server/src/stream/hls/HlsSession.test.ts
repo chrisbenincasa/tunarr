@@ -7,8 +7,6 @@ import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import tmp from 'tmp';
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { HlsSession } from './HlsSession.js';
 
 vi.mock('@/util/logging/LoggerFactory.js', () => ({
@@ -76,54 +74,6 @@ describe('HlsSession', () => {
       const result = await session.getMasterPlaylist();
       expect(result.isSuccess()).toBe(true);
       expect(result.get()).toBeUndefined();
-    });
-
-    test('rewrites stream.m3u8 line to absolute variant URL', async () => {
-      const session = makeSession(dir.name);
-      const workingDir = path.join(dir.name, `stream_${channelUuid}`);
-      await fs.mkdir(workingDir, { recursive: true });
-
-      const masterContent = [
-        '#EXTM3U',
-        '#EXT-X-VERSION:3',
-        '#EXT-X-STREAM-INF:BANDWIDTH=2000000,CODECS="avc1.640028,mp4a.40.2"',
-        'stream.m3u8',
-      ].join('\n');
-      await fs.writeFile(path.join(workingDir, 'playlist.m3u8'), masterContent);
-
-      const result = await session.getMasterPlaylist();
-      expect(result.isSuccess()).toBe(true);
-      const content = result.get();
-      expect(content).toBeDefined();
-      expect(content).toContain(
-        `/stream/channels/${channelUuid}/hls/stream.m3u8`,
-      );
-      expect(content).not.toMatch(/\nstream\.m3u8/);
-    });
-
-    test('preserves non-URI lines unchanged', async () => {
-      const session = makeSession(dir.name);
-      const workingDir = path.join(dir.name, `stream_${channelUuid}`);
-      await fs.mkdir(workingDir, { recursive: true });
-
-      const lines = [
-        '#EXTM3U',
-        '#EXT-X-VERSION:3',
-        '#EXT-X-STREAM-INF:BANDWIDTH=2000000,CODECS="avc1.640028,mp4a.40.2"',
-        'stream.m3u8',
-      ];
-      await fs.writeFile(
-        path.join(workingDir, 'playlist.m3u8'),
-        lines.join('\n'),
-      );
-
-      const result = await session.getMasterPlaylist();
-      const content = result.get()!;
-      expect(content).toContain('#EXTM3U');
-      expect(content).toContain('#EXT-X-VERSION:3');
-      expect(content).toContain(
-        '#EXT-X-STREAM-INF:BANDWIDTH=2000000,CODECS="avc1.640028,mp4a.40.2"',
-      );
     });
   });
 });

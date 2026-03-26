@@ -28,6 +28,8 @@ import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
 import { BaseHlsSession } from './BaseHlsSession.js';
 import type { HlsPlaylistFilterOptions } from './HlsPlaylistMutator.js';
 import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
+import { HlsMasterPlaylistMutator } from './HlsMasterPlaylistMutator.js';
+import type { SubtitleRenditionInfo } from './HlsMasterPlaylistMutator.js';
 
 export type HlsSessionProvider = (
   channel: ChannelOrmWithTranscodeConfig,
@@ -42,14 +44,6 @@ export type HlsSlowerSessionProvider = (
 export interface HlsSessionOptions extends BaseHlsSessionOptions {
   streamMode: 'hls' | 'hls_direct_v2';
 }
-
-type SubtitleRenditionInfo = {
-  language: string;
-  languageName?: string;
-  default: boolean;
-  forced: boolean;
-  title?: string;
-};
 
 /**
  * Initializes an ffmpeg process that concatenates via the /playlist
@@ -92,35 +86,20 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         return undefined;
       }
       const content = await fs.readFile(this._masterPlaylistPath, 'utf-8');
-      const variantAbsUrl = `${this.getHlsOptions().streamBaseUrl}${this.getHlsOptions().streamNameFormat}`;
       const rendition = this.#currentSubtitleRendition;
-
-      const lines = content.split('\n').map((line) => {
-        if (line.trim() === this.getHlsOptions().streamNameFormat)
-          return variantAbsUrl;
-        if (
-          rendition &&
-          line.startsWith('#EXT-X-STREAM-INF:') &&
-          !line.includes('SUBTITLES=')
-        ) {
-          return line + ',SUBTITLES="subs"';
-        }
-
-        return line;
-      });
-
+      const hlsOptions = this.getHlsOptions();
+      const lines = HlsMasterPlaylistMutator.rewriteVariantPlaylistUrls(
+        content,
+        rendition,
+        hlsOptions,
+      );
       if (rendition) {
-        const subsUrl = `${this.getHlsOptions().streamBaseUrl}${this.getHlsOptions().subtitleStreamNameFormat}`;
-        const langName = rendition.languageName ?? rendition.language;
-        const title = rendition.title ?? langName;
-        const yesNo = (v: boolean) => (v ? 'YES' : 'NO');
-        const mediaTag = `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${rendition.language}",NAME="${title}",DEFAULT=${yesNo(rendition.default)},AUTOSELECT=${yesNo(rendition.default)},FORCED=${yesNo(rendition.forced)},URI="${subsUrl}"`;
-        const insertBefore = lines.findIndex((l) =>
-          l.startsWith('#EXT-X-STREAM-INF:'),
+        HlsMasterPlaylistMutator.injectSubtitleMediaTag(
+          lines,
+          rendition,
+          hlsOptions,
         );
-        if (insertBefore >= 0) lines.splice(insertBefore, 0, mediaTag);
       }
-
       return lines.join('\n');
     });
   }
