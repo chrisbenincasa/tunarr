@@ -34,6 +34,7 @@ import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInput
 import { HlsConcatOutputFormat } from '@/ffmpeg/builder/options/HlsConcatOutputFormat.js';
 import { HlsDirectOutputFormat } from '@/ffmpeg/builder/options/HlsDirectOutputFormat.js';
 import { HlsOutputFormat } from '@/ffmpeg/builder/options/HlsOutputFormat.js';
+import { HlsSubtitleOutputFormat } from '@/ffmpeg/builder/options/HlsSubtitleOutputFormat.js';
 import { LogLevelOption } from '@/ffmpeg/builder/options/LogLevelOption.js';
 import { NoStatsOption } from '@/ffmpeg/builder/options/NoStatsOption.js';
 import { ConcatHttpReconnectOptions } from '@/ffmpeg/builder/options/input/ConcatHttpReconnectOptions.js';
@@ -60,6 +61,7 @@ import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { filter, first, isNil, isNull, isUndefined, merge } from 'lodash-es';
+import path from 'node:path';
 import type { DeepReadonly, MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
 import {
@@ -276,8 +278,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     return new Pipeline(pipelineSteps, {
       videoInput: null,
       audioInput: null,
-      concatInput: input,
       watermarkInput: null,
+      subtitleInput: null,
+      concatInput: input,
     });
   }
 
@@ -319,8 +322,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     return new Pipeline(pipelineSteps, {
       videoInput: null,
       audioInput: null,
-      concatInput: input,
       watermarkInput: null,
+      subtitleInput: null,
+      concatInput: input,
     });
   }
 
@@ -500,6 +504,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       videoInput: this.videoInputSource,
       audioInput: this.audioInputSource,
       watermarkInput: this.watermarkInputSource,
+      subtitleInput: this.subtitleInputSource,
       concatInput: this.concatInputSource,
     });
   }
@@ -832,6 +837,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
           isNonEmptyString(this.ffmpegState.hlsSegmentTemplate) &&
           isNonEmptyString(this.ffmpegState.hlsBaseStreamUrl)
         ) {
+          const isFirst =
+            isNil(this.ffmpegState.ptsOffset) ||
+            this.ffmpegState.ptsOffset === 0;
           this.pipelineSteps.push(
             new HlsOutputFormat(
               this.desiredState,
@@ -839,12 +847,28 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
               this.ffmpegState.hlsPlaylistPath,
               this.ffmpegState.hlsSegmentTemplate,
               this.ffmpegState.hlsBaseStreamUrl,
-              isNil(this.ffmpegState.ptsOffset) ||
-                this.ffmpegState.ptsOffset === 0,
+              isFirst,
               this.ffmpegState.encoderHwAccelMode ===
                 HardwareAccelerationMode.Qsv,
             ),
           );
+          if (this.subtitleInputSource?.method === SubtitleMethods.Convert) {
+            this.pipelineSteps.push(
+              new HlsSubtitleOutputFormat(
+                path.join(
+                  path.dirname(this.ffmpegState.hlsPlaylistPath),
+                  'subs.m3u8',
+                ),
+                path.join(
+                  path.dirname(this.ffmpegState.hlsSegmentTemplate),
+                  'sub%06d.vtt',
+                ),
+                this.ffmpegState.hlsBaseStreamUrl,
+                this.computeSubtitleMapRef(),
+                this.computeSubtitlePtsOffsetSeconds(),
+              ),
+            );
+          }
         }
         break;
       }
@@ -854,15 +878,34 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
           isNonEmptyString(this.ffmpegState.hlsSegmentTemplate) &&
           isNonEmptyString(this.ffmpegState.hlsBaseStreamUrl)
         ) {
+          const isFirst =
+            isNil(this.ffmpegState.ptsOffset) ||
+            this.ffmpegState.ptsOffset === 0;
           this.pipelineSteps.push(
             new HlsDirectOutputFormat(
               this.ffmpegState.hlsPlaylistPath,
               this.ffmpegState.hlsSegmentTemplate,
               this.ffmpegState.hlsBaseStreamUrl,
-              isNil(this.ffmpegState.ptsOffset) ||
-                this.ffmpegState.ptsOffset === 0,
+              isFirst,
             ),
           );
+          if (this.subtitleInputSource?.method === SubtitleMethods.Convert) {
+            this.pipelineSteps.push(
+              new HlsSubtitleOutputFormat(
+                path.join(
+                  path.dirname(this.ffmpegState.hlsPlaylistPath),
+                  'subs.m3u8',
+                ),
+                path.join(
+                  path.dirname(this.ffmpegState.hlsSegmentTemplate),
+                  'sub%06d.vtt',
+                ),
+                this.ffmpegState.hlsBaseStreamUrl,
+                this.computeSubtitleMapRef(),
+                this.computeSubtitlePtsOffsetSeconds(),
+              ),
+            );
+          }
         }
         break;
       }
@@ -942,5 +985,47 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     const nextState = filter.nextState(currentState);
     this.videoInputSource.frameDataLocation = nextState.frameDataLocation;
     return nextState;
+  }
+
+  // Returns the subtitle PTS offset in seconds matching the video -output_ts_offset,
+  // so subtitle cue timestamps stay aligned with the video MPEG-TS PTS across
+  // transcode boundaries (enabling a constant X-TIMESTAMP-MAP=MPEGTS:0,LOCAL:00:00:00.000).
+  private computeSubtitlePtsOffsetSeconds(): number {
+    const ptsOffset = this.ffmpegState.ptsOffset ?? 0;
+    const timescale = this.desiredState.videoTrackTimescale;
+    if (
+      this.desiredState.videoFormat === 'copy' ||
+      ptsOffset <= 0 ||
+      timescale === null
+    ) {
+      return 0;
+    }
+    return ptsOffset / timescale;
+  }
+
+  private computeSubtitleMapRef(): string {
+    const subtitleInput = this.subtitleInputSource!;
+    const stream = first(subtitleInput.streams)!;
+
+    const includedPaths: string[] = [this.videoInputSource.path];
+    if (
+      this.audioInputSource?.path &&
+      !includedPaths.includes(this.audioInputSource.path)
+    ) {
+      includedPaths.push(this.audioInputSource.path);
+    }
+    if (
+      this.watermarkInputSource?.path &&
+      !includedPaths.includes(this.watermarkInputSource.path)
+    ) {
+      includedPaths.push(this.watermarkInputSource.path);
+    }
+
+    const subtitlePath = subtitleInput.path;
+    const existingIndex = includedPaths.indexOf(subtitlePath);
+    const inputIndex =
+      existingIndex >= 0 ? existingIndex : includedPaths.length;
+
+    return `${inputIndex}:${stream.index}`;
   }
 }

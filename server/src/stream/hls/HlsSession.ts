@@ -28,6 +28,8 @@ import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
 import { BaseHlsSession } from './BaseHlsSession.js';
 import type { HlsPlaylistFilterOptions } from './HlsPlaylistMutator.js';
 import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
+import { HlsMasterPlaylistMutator } from './HlsMasterPlaylistMutator.js';
+import type { SubtitleRenditionInfo } from './HlsMasterPlaylistMutator.js';
 
 export type HlsSessionProvider = (
   channel: ChannelOrmWithTranscodeConfig,
@@ -54,6 +56,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
+  #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -83,15 +86,21 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         return undefined;
       }
       const content = await fs.readFile(this._masterPlaylistPath, 'utf-8');
-      const variantAbsUrl = `${this.getHlsOptions().streamBaseUrl}${this.getHlsOptions().streamNameFormat}`;
-      return content
-        .split('\n')
-        .map((line) =>
-          line.trim() === this.getHlsOptions().streamNameFormat
-            ? variantAbsUrl
-            : line,
-        )
-        .join('\n');
+      const rendition = this.#currentSubtitleRendition;
+      const hlsOptions = this.getHlsOptions();
+      const lines = HlsMasterPlaylistMutator.rewriteVariantPlaylistUrls(
+        content,
+        rendition,
+        hlsOptions,
+      );
+      if (rendition) {
+        HlsMasterPlaylistMutator.injectSubtitleMediaTag(
+          lines,
+          rendition,
+          hlsOptions,
+        );
+      }
+      return lines.join('\n');
     });
   }
 
@@ -272,6 +281,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           transcodeSession.streamDuration,
         );
         this.#currentSession = transcodeSession;
+        this.#currentSubtitleRendition = transcodeSession.subtitleRendition;
       });
 
       if (this.sessionOptions.streamMode === 'hls') {
@@ -291,10 +301,17 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     this.logger.debug('Stream ended.');
   }
 
+  protected override getAdditionalRequiredFiles(): string[] {
+    return this.#currentSubtitleRendition
+      ? [this.getHlsOptions().subtitleStreamNameFormat]
+      : [];
+  }
+
   protected getHlsOptions(): DeepRequired<HlsOptions> {
     return {
       hlsDeleteThreshold: 3,
       streamNameFormat: 'stream.m3u8',
+      subtitleStreamNameFormat: 'subs.m3u8',
       segmentNameFormat: BaseHlsSession.SegmentNameFormat,
       segmentBaseDirectory: dirname(this.workingDirectory),
       streamBasePath: basename(this.workingDirectory),
@@ -394,10 +411,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       seq.collect(
         filter(workingDirectoryFiles, (f) => {
           const ext = extname(f);
-          return ext === '.ts' || ext === '.mp4';
+          return ext === '.ts' || ext === '.mp4' || ext === '.vtt';
         }),
         (file) => {
-          const matches = file.match(/[A-z/]+(\d+)\.[ts|mp4]/);
+          const matches = file.match(/\D+(\d+)\.(ts|mp4|vtt)/);
           if (matches && matches.length > 0) {
             return {
               file,

@@ -37,18 +37,23 @@ export class SubtitleStreamPicker {
     subtitlePreferences: ChannelSubtitlePreferences[],
     lineupItem: ContentBackedStreamLineupItem,
     subtitleStreams: NonEmptyArray<SubtitleStreamDetails>,
+    opts: { preferTextBased?: boolean } = {},
   ): Promise<Maybe<SubtitleStreamDetails>> {
+    const orderedStreams = opts.preferTextBased
+      ? orderBy(subtitleStreams, (s) => isImageBasedSubtitle(s.codec), 'desc')
+      : subtitleStreams;
     if (subtitlePreferences.length === 0) {
       this.logger.debug(
         'No subtitle preferences for channel. Attempting to use default stream.',
       );
-      let foundStream = subtitleStreams.find((stream) => stream.default);
+      let foundStream = orderedStreams.find((stream) => stream.default);
       if (!foundStream) {
         this.logger.debug('Could not find default subtitle stream');
         return;
       }
 
       if (
+        !opts.preferTextBased &&
         !isImageBasedSubtitle(foundStream.codec) &&
         foundStream.type === 'embedded'
       ) {
@@ -76,7 +81,7 @@ export class SubtitleStreamPicker {
       }
 
       // Try to find a match
-      for (const stream of subtitleStreams) {
+      for (const stream of orderedStreams) {
         // TODO: map a present 2 letter code to its 3 letter code and check that.
         if (stream.languageCodeISO6392 !== pref.languageCode) {
           this.logger.debug(
@@ -121,6 +126,9 @@ export class SubtitleStreamPicker {
         // TODO: check if embedded text based are extracted and continue searching
         // for a fallback if they are not.
         if (!isImageBasedSubtitle(stream.codec) && stream.type === 'embedded') {
+          if (opts.preferTextBased) {
+            return stream;
+          }
           const streamWithUpdatedPath =
             await this.getSubtitleDetailsWithExtractedPath(lineupItem, stream);
           if (streamWithUpdatedPath) {

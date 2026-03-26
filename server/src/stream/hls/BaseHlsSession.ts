@@ -102,6 +102,15 @@ export abstract class BaseHlsSession<
 
   protected abstract getHlsOptions(): DeepRequired<HlsOptions>;
 
+  /**
+   * Returns additional filenames (basenames only) that must exist in the
+   * working directory before the stream is considered ready. Subclasses
+   * override this to gate on e.g. the subtitle playlist.
+   */
+  protected getAdditionalRequiredFiles(): string[] {
+    return [];
+  }
+
   protected async initDirectories() {
     if (!(await fileExists(this.baseDirectory))) {
       this.logger.debug(
@@ -181,15 +190,22 @@ export abstract class BaseHlsSession<
             (f) => f === basename(this._m3u8PlaylistPath),
           );
 
+          const additionalRequired = this.getAdditionalRequiredFiles();
+          const additionalExist = additionalRequired.every((f) =>
+            some(workingDirectoryFiles.get(), (wf) => wf === f),
+          );
+
           if (
             numSegments < this.sessionOptions.initialSegmentCount ||
-            !playlistExists
+            !playlistExists ||
+            !additionalExist
           ) {
             this.logger.debug(
-              'Still waiting for stream session to start. (num segments=%d < %d, playlist exists? %s)',
+              'Still waiting for stream session to start. (num segments=%d < %d, playlist exists? %s, additional=%j)',
               numSegments,
               this.sessionOptions.initialSegmentCount,
               playlistExists,
+              additionalRequired,
             );
             throw new Error('Stream not ready yet. Retry');
           }

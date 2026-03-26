@@ -22,6 +22,18 @@ import { v4 } from 'uuid';
 import z from 'zod/v4';
 import type { HlsSession } from '@/stream/hls/HlsSession.js';
 
+// Inject X-TIMESTAMP-MAP after the WEBVTT header line so AVPlayer/IINA
+// can sync subtitle cue timestamps to the video MPEG-TS PTS clock.
+// The constant MPEGTS:0 is correct because HlsSubtitleOutputFormat applies
+// the same -output_ts_offset as the video output, keeping cue timestamps
+// aligned with the 90kHz PTS timeline starting at 0.
+export function injectTimestampMap(vttContent: string): string {
+  return vttContent.replace(
+    /^(WEBVTT[^\n]*)(\r?\n)/,
+    '$1$2X-TIMESTAMP-MAP=MPEGTS:0,LOCAL:00:00:00.000\n',
+  );
+}
+
 export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({
     caller: import.meta,
@@ -286,7 +298,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       session.recordHeartbeat(req.ip);
 
       if (
-        req.params.file.endsWith('.m3u8') &&
+        req.params.file === 'stream.m3u8' &&
         (req.params.sessionType === 'hls' ||
           req.params.sessionType === 'hls_direct_v2')
       ) {
@@ -305,6 +317,18 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       session.onSegmentRequested(req.ip, req.params.file);
+
+      if (req.params.file.endsWith('.vtt')) {
+        const filePath = join(session.workingDirectory, req.params.file);
+        const content = await fs.readFile(filePath, 'utf-8');
+        return res.type('text/vtt').send(injectTimestampMap(content));
+      }
+
+      if (req.params.file.endsWith('.m3u8')) {
+        const filePath = join(session.workingDirectory, req.params.file);
+        const content = await fs.readFile(filePath);
+        return res.type('application/vnd.apple.mpegurl').send(content);
+      }
 
       return res.sendFile(req.params.file, session.workingDirectory);
     },

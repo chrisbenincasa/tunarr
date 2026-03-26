@@ -21,6 +21,7 @@ export class Pipeline {
       this.inputs.videoInput,
       this.inputs.audioInput,
       this.inputs.watermarkInput,
+      this.inputs.subtitleInput,
       this.inputs.concatInput,
       this.steps,
     );
