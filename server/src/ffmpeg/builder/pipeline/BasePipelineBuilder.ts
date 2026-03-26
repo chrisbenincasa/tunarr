@@ -677,7 +677,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         this.audioInputSource?.filterSteps.push(
           new LoudnormFilter(
             this.desiredAudioState.loudnormConfig,
-            this.desiredAudioState.audioSampleRate ?? 48_000,
+            this.desiredAudioState.audioSampleRate ?? 48,
           ),
         );
       }
