@@ -40,10 +40,7 @@ export class SubtitleStreamPicker {
     opts: { preferTextBased?: boolean } = {},
   ): Promise<Maybe<SubtitleStreamDetails>> {
     const orderedStreams = opts.preferTextBased
-      ? [
-          ...subtitleStreams.filter((s) => !isImageBasedSubtitle(s.codec)),
-          ...subtitleStreams.filter((s) => isImageBasedSubtitle(s.codec)),
-        ]
+      ? orderBy(subtitleStreams, (s) => isImageBasedSubtitle(s.codec), 'desc')
       : subtitleStreams;
     if (subtitlePreferences.length === 0) {
       this.logger.debug(

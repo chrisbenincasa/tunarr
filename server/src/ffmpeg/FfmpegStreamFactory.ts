@@ -22,7 +22,11 @@ import { match, P } from 'ts-pattern';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
-import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
+import type {
+  SubtitleRenditionMetadata} from './FfmpegTrancodeSession.ts';
+import {
+  FfmpegTranscodeSession
+} from './FfmpegTrancodeSession.ts';
 import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
 import {
   AudioStream,
@@ -441,7 +445,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     let subtitleSource: Nullable<SubtitlesInputSource> = null;
-    let subtitleRendition: FfmpegTranscodeSession['subtitleRendition'];
+    let subtitleRendition: SubtitleRenditionMetadata | undefined;
 
     if (
       isDefined(streamDetails.subtitleDetails) &&

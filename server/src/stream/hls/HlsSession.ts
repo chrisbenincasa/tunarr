@@ -62,7 +62,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
-  #currentSubtitleRendition: SubtitleRenditionInfo | null = null;
+  #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -302,16 +302,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           transcodeSession.streamDuration,
         );
         this.#currentSession = transcodeSession;
-        const sr = transcodeSession.subtitleRendition;
-        this.#currentSubtitleRendition = sr
-          ? {
-              language: sr.language,
-              languageName: sr.languageName,
-              default: sr.default,
-              forced: sr.forced,
-              title: sr.title,
-            }
-          : null;
+        this.#currentSubtitleRendition = transcodeSession.subtitleRendition;
       });
 
       if (this.sessionOptions.streamMode === 'hls') {
