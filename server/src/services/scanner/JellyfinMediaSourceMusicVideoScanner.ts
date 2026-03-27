@@ -1,29 +1,29 @@
-import { MediaSourceType } from '@/db/schema/base.js';
 import { inject, injectable, interfaces } from 'inversify';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
+import { MediaSourceType } from '../../db/schema/base.ts';
+import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
-import type { JellyfinT } from '../../types/internal.ts';
-import type { JellyfinOtherVideo } from '../../types/Media.ts';
+import { JellyfinT } from '../../types/internal.ts';
+import { JellyfinMusicVideo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
-import { MediaSourceOtherVideoScanner } from './MediaSourceOtherVideoScanner.ts';
+import { MediaSourceMusicVideoScanner } from './MediaSourceMusicVideoScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import type { ScanContext } from './MediaSourceScanner.ts';
+import { ScanContext } from './MediaSourceScanner.ts';
 
 @injectable()
-export class JellyfinMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScanner<
+export class JellyfinMediaSourceMusicVideoScanner extends MediaSourceMusicVideoScanner<
   JellyfinT,
   JellyfinApiClient,
-  JellyfinOtherVideo
+  JellyfinMusicVideo
 > {
-  readonly type = 'other_videos';
+  readonly type = 'music_videos';
   readonly mediaSourceType = MediaSourceType.Jellyfin;
 
   constructor(
@@ -48,19 +48,19 @@ export class JellyfinMediaSourceOtherVideoScanner extends MediaSourceOtherVideoS
     );
   }
 
-  protected getVideos(
-    libraryId: string,
-    context: ScanContext<JellyfinApiClient>,
-  ): AsyncIterable<JellyfinOtherVideo> {
-    return context.apiClient.getOtherVideoLibraryContents(libraryId);
-  }
-
   protected getApiClient(
     mediaSource: MediaSourceWithRelations,
   ): Promise<JellyfinApiClient> {
     return this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
       mediaSource,
     );
+  }
+
+  protected getVideos(
+    libraryId: string,
+    context: ScanContext<JellyfinApiClient>,
+  ): AsyncIterable<JellyfinMusicVideo> {
+    return context.apiClient.getMusicVideoLibraryContents(libraryId);
   }
 
   protected async getLibrarySize(
@@ -73,11 +73,11 @@ export class JellyfinMediaSourceOtherVideoScanner extends MediaSourceOtherVideoS
 
   protected async scanVideo(
     context: ScanContext<JellyfinApiClient>,
-    incomingVideo: JellyfinOtherVideo,
-  ): Promise<Result<JellyfinOtherVideo>> {
+    incomingVideo: JellyfinMusicVideo,
+  ): Promise<Result<JellyfinMusicVideo>> {
     const convertedItem = await context.apiClient.getItem(
       incomingVideo.externalId,
-      'Video',
+      'MusicVideo',
     );
     return convertedItem.flatMap((item) => {
       if (!item) {
@@ -86,10 +86,10 @@ export class JellyfinMediaSourceOtherVideoScanner extends MediaSourceOtherVideoS
             `Could not find Jellyfin item id ${incomingVideo.externalId}`,
           ),
         );
-      } else if (item.type !== 'other_video') {
+      } else if (item.type !== 'music_video') {
         return Result.failure(
           WrappedError.forMessage(
-            `Expected item type to be other_video for ID ${incomingVideo.externalId} but got ${item.type}`,
+            `Expected item type to be music_video for ID ${incomingVideo.externalId} but got ${item.type}`,
           ),
         );
       }
@@ -98,7 +98,7 @@ export class JellyfinMediaSourceOtherVideoScanner extends MediaSourceOtherVideoS
     });
   }
 
-  protected getExternalKey(video: JellyfinOtherVideo): string {
+  protected getExternalKey(video: JellyfinMusicVideo): string {
     return video.externalId;
   }
 }

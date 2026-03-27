@@ -16,6 +16,8 @@ import { LocalMediaCanonicalizer } from './LocalMediaCanonicalizer.ts';
 import { PlexMediaCanonicalizer } from './PlexMediaCanonicalizers.ts';
 import { EmbyMediaSourceMovieScanner } from './scanner/EmbyMediaSourceMovieScanner.ts';
 import { EmbyMediaSourceMusicScanner } from './scanner/EmbyMediaSourceMusicScanner.ts';
+import { EmbyMediaSourceMusicVideoScanner } from './scanner/EmbyMediaSourceMusicVideoScanner.ts';
+import { EmbyMediaSourceOtherVideoScanner } from './scanner/EmbyMediaSourceOtherVideoScanner.ts';
 import { EmbyMediaSourceTvShowScanner } from './scanner/EmbyMediaSourceTvShowScanner.ts';
 import type { GenericExternalCollectionScanner } from './scanner/ExternalCollectionScanner.ts';
 import type {
@@ -24,6 +26,7 @@ import type {
 } from './scanner/FileSystemScanner.ts';
 import { JellyfinMediaSourceMovieScanner } from './scanner/JellyfinMediaSourceMovieScanner.ts';
 import { JellyfinMediaSourceMusicScanner } from './scanner/JellyfinMediaSourceMusicScanner.ts';
+import { JellyfinMediaSourceMusicVideoScanner } from './scanner/JellyfinMediaSourceMusicVideoScanner.ts';
 import { JellyfinMediaSourceOtherVideoScanner } from './scanner/JellyfinMediaSourceOtherVideoScanner.ts';
 import { JellyfinMediaSourceTvShowScanner } from './scanner/JellyfinMediaSourceTvShowScanner.ts';
 import { LocalMovieScanner } from './scanner/LocalMovieScanner.ts';
@@ -32,6 +35,7 @@ import { LocalOtherVideoScanner } from './scanner/LocalOtherVideoScanner.ts';
 import { LocalTvShowScanner } from './scanner/LocalTvShowScanner.ts';
 import type { GenericMediaSourceMovieLibraryScanner } from './scanner/MediaSourceMovieLibraryScanner.ts';
 import type { GenericMediaSourceMusicLibraryScanner } from './scanner/MediaSourceMusicArtistScanner.ts';
+import type { GenericMediaSourceMusicVideoLibraryScanner } from './scanner/MediaSourceMusicVideoScanner.ts';
 import type { GenericMediaSourceOtherVideoLibraryScanner } from './scanner/MediaSourceOtherVideoScanner.ts';
 import { MediaSourceProgressService } from './scanner/MediaSourceProgressService.ts';
 import { MediaSourceScanCoordinator } from './scanner/MediaSourceScanCoordinator.ts';
@@ -103,6 +107,22 @@ export const ServicesModule = new ContainerModule((bind) => {
   )
     .to(JellyfinMediaSourceOtherVideoScanner)
     .whenTargetNamed(MediaSourceType.Jellyfin);
+  bind<EmbyMediaSourceOtherVideoScanner>(
+    KEYS.MediaSourceOtherVideoLibraryScanner,
+  )
+    .to(EmbyMediaSourceOtherVideoScanner)
+    .whenTargetNamed(MediaSourceType.Emby);
+
+  bind<JellyfinMediaSourceMusicVideoScanner>(
+    KEYS.MediaSourceMusicVideoLibraryScanner,
+  )
+    .to(JellyfinMediaSourceMusicVideoScanner)
+    .whenTargetNamed(MediaSourceType.Jellyfin);
+  bind<EmbyMediaSourceMusicVideoScanner>(
+    KEYS.MediaSourceMusicVideoLibraryScanner,
+  )
+    .to(EmbyMediaSourceMusicVideoScanner)
+    .whenTargetNamed(MediaSourceType.Emby);
 
   bind<GenericMediaSourceScannerFactory>(
     KEYS.MediaSourceLibraryScanner,
@@ -132,7 +152,10 @@ export const ServicesModule = new ContainerModule((bind) => {
           sourceType,
         );
       case 'music_videos':
-        throw new Error('No binding set for library type ' + libraryType);
+        return ctx.container.getNamed<GenericMediaSourceMusicVideoLibraryScanner>(
+          KEYS.MediaSourceMusicVideoLibraryScanner,
+          sourceType,
+        );
     }
   });
 

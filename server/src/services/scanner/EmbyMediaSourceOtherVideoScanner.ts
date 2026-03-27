@@ -4,12 +4,12 @@ import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
-import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
+import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
-import type { JellyfinT } from '../../types/internal.ts';
-import type { JellyfinOtherVideo } from '../../types/Media.ts';
+import type { EmbyT } from '../../types/internal.ts';
+import type { EmbyOtherVideo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
@@ -18,13 +18,13 @@ import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext } from './MediaSourceScanner.ts';
 
 @injectable()
-export class JellyfinMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScanner<
-  JellyfinT,
-  JellyfinApiClient,
-  JellyfinOtherVideo
+export class EmbyMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScanner<
+  EmbyT,
+  EmbyApiClient,
+  EmbyOtherVideo
 > {
   readonly type = 'other_videos';
-  readonly mediaSourceType = MediaSourceType.Jellyfin;
+  readonly mediaSourceType = MediaSourceType.Emby;
 
   constructor(
     @inject(KEYS.Logger) logger: Logger,
@@ -50,46 +50,39 @@ export class JellyfinMediaSourceOtherVideoScanner extends MediaSourceOtherVideoS
 
   protected getVideos(
     libraryId: string,
-    context: ScanContext<JellyfinApiClient>,
-  ): AsyncIterable<JellyfinOtherVideo> {
+    context: ScanContext<EmbyApiClient>,
+  ): AsyncIterable<EmbyOtherVideo> {
     return context.apiClient.getOtherVideoLibraryContents(libraryId);
   }
 
   protected getApiClient(
     mediaSource: MediaSourceWithRelations,
-  ): Promise<JellyfinApiClient> {
-    return this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
+  ): Promise<EmbyApiClient> {
+    return this.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
       mediaSource,
     );
   }
 
   protected async getLibrarySize(
     libraryKey: string,
-    context: ScanContext<JellyfinApiClient>,
+    context: ScanContext<EmbyApiClient>,
   ): Promise<number> {
     const _ = await context.apiClient.getChildItemCount(libraryKey, 'Video');
     return _.getOrThrow();
   }
 
   protected async scanVideo(
-    context: ScanContext<JellyfinApiClient>,
-    incomingVideo: JellyfinOtherVideo,
-  ): Promise<Result<JellyfinOtherVideo>> {
-    const convertedItem = await context.apiClient.getItem(
+    context: ScanContext<EmbyApiClient>,
+    incomingVideo: EmbyOtherVideo,
+  ): Promise<Result<EmbyOtherVideo>> {
+    const convertedItem = await context.apiClient.getVideo(
       incomingVideo.externalId,
-      'Video',
     );
     return convertedItem.flatMap((item) => {
       if (!item) {
         return Result.failure(
           WrappedError.forMessage(
-            `Could not find Jellyfin item id ${incomingVideo.externalId}`,
-          ),
-        );
-      } else if (item.type !== 'other_video') {
-        return Result.failure(
-          WrappedError.forMessage(
-            `Expected item type to be other_video for ID ${incomingVideo.externalId} but got ${item.type}`,
+            `Could not find Emby item id ${incomingVideo.externalId}`,
           ),
         );
       }
@@ -98,7 +91,7 @@ export class JellyfinMediaSourceOtherVideoScanner extends MediaSourceOtherVideoS
     });
   }
 
-  protected getExternalKey(video: JellyfinOtherVideo): string {
+  protected getExternalKey(video: EmbyOtherVideo): string {
     return video.externalId;
   }
 }

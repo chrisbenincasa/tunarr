@@ -76,6 +76,9 @@ const KEYS = {
   MediaSourceOtherVideoLibraryScanner: Symbol.for(
     'MediaSourceOtherVideoLibraryScanner',
   ),
+  MediaSourceMusicVideoLibraryScanner: Symbol.for(
+    'MediaSourceMusicVideoLibraryScanner',
+  ),
   MediaSourceLibraryScanner: Symbol.for('MediaSourceLibraryScanner'),
   LocalMediaSourceScanner: Symbol.for('LocalMediaSourceScanner'),
   ExternalCollectionScanner: Symbol.for('ExternalCollectionScanner'),
