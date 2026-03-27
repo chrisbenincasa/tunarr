@@ -126,6 +126,7 @@ export class PlexProgramStream extends ProgramStream {
         realtime: this.context.realtime,
         outputFormat: this.outputFormat,
         streamMode: this.context.streamMode,
+        encoding: this.context.encoding,
         ...(opts ?? {}),
       },
       lineupItem,
