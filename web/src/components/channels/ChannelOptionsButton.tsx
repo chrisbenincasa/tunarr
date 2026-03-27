@@ -21,7 +21,6 @@ export const ChannelOptionsButton = ({ channel, hideItems }: Props) => {
     event: React.MouseEvent<HTMLElement>,
     channel: Channel,
   ) => {
-    console.log(channel);
     setAnchorEl(event.currentTarget);
     setChannelMenu(channel);
   };

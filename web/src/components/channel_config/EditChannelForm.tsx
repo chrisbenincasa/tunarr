@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type {
   Channel,
@@ -20,6 +21,7 @@ import {
   type SubmitHandler,
 } from 'react-hook-form';
 import type { DeepRequired, NonEmptyArray } from 'ts-essentials';
+import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useCreateChannel } from '../../hooks/useCreateChannel.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
@@ -129,12 +131,19 @@ export function EditChannelForm({
     defaultValues: getDefaultFormValues(channel),
   });
 
+  const queryClient = useQueryClient();
+
   const createUpdateSuccessCallback = useCallback(
-    (data: Channel) => {
+    async (data: Channel) => {
       formMethods.reset(getDefaultFormValues(data), {
         keepDefaultValues: false,
         keepDirty: false,
       });
+
+      await queryClient.invalidateQueries({
+        predicate: invalidateTaggedQueries('Channels'),
+      });
+
       if (isNew) {
         navigate({
           to: `/channels/$channelId/programming`,
@@ -142,7 +151,7 @@ export function EditChannelForm({
         }).catch(console.warn);
       }
     },
-    [formMethods, isNew, navigate],
+    [formMethods, isNew, navigate, queryClient],
   );
 
   const updateChannelMutation = useUpdateChannel({
@@ -172,8 +181,6 @@ export function EditChannelForm({
             ...pref,
             priority: idx,
           }));
-
-    console.log(data);
 
     const dataTransform = {
       ...data,

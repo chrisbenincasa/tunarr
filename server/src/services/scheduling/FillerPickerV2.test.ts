@@ -265,64 +265,102 @@ describe('FillerPickerV2', () => {
       expect(result.filler).toBeNull();
     });
 
-    it('accumulates weight across all fillers regardless of cooldown', async () => {
-      const now = Date.now();
-
-      // First filler in cooldown
-      const filler1 = createFiller({ weight: 50, cooldown: 60 }); // 1 minute in seconds
-      // Second filler not in cooldown
+    it('accumulates weight across eligible fillers for reservoir sampling', async () => {
+      // Both fillers are eligible (not on cooldown). The reservoir sampling
+      // loop should accumulate weights across all eligible lists.
+      const filler1 = createFiller({ weight: 50, cooldown: 0 });
       const filler2 = createFiller({ weight: 50, cooldown: 0 });
 
-      // Return history that puts filler1 in cooldown
-      vi.mocked(mockPlayHistoryDB.getFillerHistory).mockResolvedValue([
-        createPlayHistory(v4(), new Date(now - 30000), filler1.fillerShowUuid), // In cooldown
-      ]);
+      vi.mocked(mockPlayHistoryDB.getFillerHistory).mockResolvedValue([]);
 
-      // Track the weight values passed to random.bool
       const boolCalls: Array<{ weight: number; totalWeight: number }> = [];
 
-      let programCalls = 0,
-        fillerCalls = 0;
       vi.spyOn(picker, 'weightedPick').mockImplementation(
         (reason, num, den) => {
           if (reason === 'filler') {
-            fillerCalls++;
             boolCalls.push({
               weight: num,
               totalWeight: den,
             });
             return true;
           } else if (reason === 'program') {
-            programCalls++;
-            return programCalls > 1;
+            return true;
           }
           return false;
         },
       );
 
-      await picker.pickFiller(mockChannel, [filler1, filler2], 60000, now);
+      await picker.pickFiller(mockChannel, [filler1, filler2], 60000);
 
-      // The second filler should see accumulated weight from first filler
-      // filler1 adds 50 to listWeight, then filler2 adds 50 more = 100 total
+      // Both fillers are eligible, so both should get weighted picks.
+      // filler1: weight=50, totalWeight=50
+      // filler2: weight=50, totalWeight=100
+      expect(boolCalls).toHaveLength(2);
       const listSelectionCall = boolCalls.find((c) => c.totalWeight === 100);
       expect(listSelectionCall).toBeDefined();
     });
 
-    it('breaks out of loop after selecting a filler list', async () => {
+    it('skips list with all programs on cooldown and picks from another list', async () => {
+      const now = Date.now();
+
+      // List A: single program on repeat cooldown
+      const programA = createProgram({ duration: 10000 });
+      const fillerA = createFiller({ weight: 100 });
+      fillerA.fillerContent = [programA];
+
+      // List B: single program NOT on cooldown (never played)
+      const programB = createProgram({ duration: 10000 });
+      const fillerB = createFiller({ weight: 100 });
+      fillerB.fillerContent = [programB];
+
+      // programA was played 10 minutes ago (within 30-min default cooldown)
+      vi.mocked(mockPlayHistoryDB.getFillerHistory).mockResolvedValue([
+        createPlayHistory(
+          programA.uuid,
+          new Date(now - 10 * 60 * 1000),
+          fillerA.fillerShowUuid,
+        ),
+      ]);
+
+      vi.mocked(random.bool).mockReturnValue(true);
+
+      const result = await picker.pickFiller(
+        mockChannel,
+        [fillerA, fillerB],
+        60000,
+        now,
+      );
+
+      // List A should be skipped (all programs on cooldown).
+      // List B should be picked instead — not null.
+      expect(result.filler).not.toBeNull();
+      expect(result.fillerListId).toBe(fillerB.fillerShowUuid);
+      expect(result.filler?.uuid).toBe(programB.uuid);
+    });
+
+    it('considers all eligible filler lists via reservoir sampling', async () => {
       const filler1 = createFiller({ weight: 100 });
       const filler2 = createFiller({ weight: 100 });
 
-      let boolCallCount = 0;
-      vi.mocked(random.bool).mockImplementation(() => {
-        boolCallCount++;
-        return true; // Always select
+      let fillerCalls = 0;
+      let programCalls = 0;
+      vi.spyOn(picker, 'weightedPick').mockImplementation((reason) => {
+        if (reason === 'filler') {
+          fillerCalls++;
+          return true;
+        } else if (reason === 'program') {
+          programCalls++;
+          return true;
+        }
+        return false;
       });
 
       await picker.pickFiller(mockChannel, [filler1, filler2], 60000);
 
-      // Should break after first filler is selected
-      // One call for list selection, one for program selection
-      expect(boolCallCount).toBeLessThanOrEqual(2);
+      // Both filler lists should be considered (reservoir sampling),
+      // then one program pick from the selected list.
+      expect(fillerCalls).toBe(2);
+      expect(programCalls).toBe(1);
     });
   });
 
@@ -505,13 +543,13 @@ describe('FillerPickerV2', () => {
       const filler = createFiller();
       filler.fillerContent = [program1, program2];
 
-      // With current implementation, list selection and program selection happen together.
-      // First random.bool selects the list and the first program in one pass.
+      // random.bool returning true selects the list (phase 1), then the
+      // first eligible program from the shuffled list (phase 2).
       vi.mocked(random.bool).mockReturnValue(true);
 
       const result = await picker.pickFiller(mockChannel, [filler], 60000);
 
-      // Should pick the first program when random.bool returns true
+      // Should pick the first program (shuffle is mocked as identity)
       expect(result.filler).not.toBeNull();
       expect(result.filler?.uuid).toBe(program1.uuid);
     });
@@ -962,8 +1000,8 @@ describe('FillerPickerV2', () => {
 
       const weightCalls: Array<{ weight: number; total: number }> = [];
 
-      // In current implementation, list selection and program selection happen
-      // in the same random.bool call sequence. First call picks list and first program.
+      // List selection (phase 1) and program selection (phase 2) are separate
+      // passes. Both use weightedPick which delegates to random.bool.
       vi.mocked(random.bool).mockImplementation((weight, totalWeight) => {
         weightCalls.push({
           weight: weight as number,

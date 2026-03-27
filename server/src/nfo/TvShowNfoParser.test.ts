@@ -57,4 +57,20 @@ describe('TvShowNfoParser', () => {
     expect(output.tvshow.title).toBe('1024');
     expect(output.tvshow.season).toBe(2);
   });
+
+  test('parse nfo with single uniqueid tag', async () => {
+    const input = `
+    <?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<tvshow>
+  <title>다큐 인사이트</title>
+  <uniqueid type="tvdb" default="true">381143</uniqueid>
+  <genre>Documentary</genre>
+</tvshow>
+    `;
+
+    const result = await new TvShowNfoParser().parse(input);
+
+    expect(result.isSuccess()).toBeTruthy();
+    expect(result.get().tvshow.uniqueid).toHaveLength(1);
+  });
 });
