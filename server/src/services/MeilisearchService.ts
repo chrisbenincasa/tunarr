@@ -2,6 +2,7 @@ import { nullToUndefined, seq } from '@tunarr/shared/util';
 import {
   FindChild,
   MediaStream,
+  MusicVideo,
   tag,
   Tag,
   TerminalProgram,
@@ -51,7 +52,6 @@ import { ServerOptions } from '../globals.ts';
 import { KEYS } from '../types/inject.ts';
 import {
   AlbumWithArtist,
-  Episode,
   EpisodeWithAncestors2,
   HasMediaSourceAndLibraryId,
   MediaSourceEpisode,
@@ -61,7 +61,6 @@ import {
   Movie,
   MusicAlbum,
   MusicArtist,
-  MusicTrack,
   MusicTrackWithAncestors,
   OtherVideo,
   Season,
@@ -783,6 +782,21 @@ export class MeilisearchService implements ISearchService {
     );
   }
 
+  async indexMusicVideo(programs: (MusicVideo & HasMediaSourceAndLibraryId)[]) {
+    if (isEmpty(programs)) {
+      return;
+    }
+
+    return await Promise.all(
+      this.client()
+        .index<ProgramSearchDocument>(ProgramsIndex.name)
+        .addDocumentsInBatches(
+          programs.map((p) => this.convertProgramToSearchDocument(p)),
+          100,
+        ),
+    );
+  }
+
   async indexShow(show: Show & HasMediaSourceAndLibraryId) {
     const externalIds = show.identifiers.map((eid) => ({
       id: eid.id,
@@ -1475,8 +1489,7 @@ export class MeilisearchService implements ISearchService {
   }
 
   private convertProgramToSearchDocument<
-    ProgramT extends (Movie | Episode | MusicTrack | OtherVideo) &
-      HasMediaSourceAndLibraryId,
+    ProgramT extends TerminalProgram & HasMediaSourceAndLibraryId,
   >(
     program: ProgramT,
   ): TerminalProgramSearchDocument<NoInfer<ProgramT['type']>> {
@@ -1529,6 +1542,7 @@ export class MeilisearchService implements ISearchService {
         break;
       case 'track':
       case 'other_video':
+      case 'music_video':
         summary = null;
         break;
     }
@@ -1543,6 +1557,7 @@ export class MeilisearchService implements ISearchService {
         break;
       case 'track':
       case 'other_video':
+      case 'music_video':
         rating = null;
         break;
     }

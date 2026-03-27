@@ -8,6 +8,7 @@ import type {
   MusicAlbum,
   MusicArtist,
   MusicTrack,
+  MusicVideo,
   OtherVideo,
   ProgramGrouping,
   Season,
@@ -141,8 +142,7 @@ export class ApiProgramConverters {
       ),
     } satisfies Partial<TerminalProgram>;
 
-    const result = match(program)
-      .returnType<TerminalProgram | null>()
+    return match(program)
       .with(
         { type: 'episode' },
         (ep) =>
@@ -188,16 +188,18 @@ export class ApiProgramConverters {
             originalTitle: null,
           }) satisfies OtherVideo,
       )
-      .otherwise(() => null);
-
-    if (!result) {
-      throw new Error(
-        'Could not convert program result for incoming document: ' +
-          JSON.stringify(program),
-      );
-    }
-
-    return result;
+      .with(
+        {
+          type: 'music_video',
+        },
+        () =>
+          ({
+            ...base,
+            type: 'music_video',
+            originalTitle: null,
+          }) satisfies MusicVideo,
+      )
+      .exhaustive();
   }
 
   static convertProgramGrouping(

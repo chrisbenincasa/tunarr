@@ -615,6 +615,80 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     );
   }
 
+  getOtherVideoLibraryContents(
+    libraryId: string,
+    pageSize?: number,
+  ): AsyncIterable<EmbyOtherVideo> {
+    return this.getChildContents(
+      'Video',
+      (series) => this.embyApiOtherVideoInjection(series),
+      (page) =>
+        this.getRawItems(
+          null,
+          libraryId,
+          ['Video'],
+          [
+            'Path',
+            'Genres',
+            'Tags',
+            'DateCreated',
+            'Etag',
+            'Overview',
+            'Taglines',
+            'Studios',
+            'People',
+            'ProductionYear',
+            'PremiereDate',
+            'MediaSources',
+            'OfficialRating',
+            'ProviderIds',
+          ],
+          {
+            offset: page * (pageSize ?? 50),
+            limit: pageSize ?? 50,
+          },
+        ),
+      pageSize,
+    );
+  }
+
+  getMusicVideoLibraryContents(
+    libraryId: string,
+    pageSize?: number,
+  ): AsyncIterable<EmbyMusicVideo> {
+    return this.getChildContents(
+      'MusicVideo',
+      (series) => this.embyApiMusicVideoInjection(series),
+      (page) =>
+        this.getRawItems(
+          null,
+          libraryId,
+          ['MusicVideo'],
+          [
+            'Path',
+            'Genres',
+            'Tags',
+            'DateCreated',
+            'Etag',
+            'Overview',
+            'Taglines',
+            'Studios',
+            'People',
+            'ProductionYear',
+            'PremiereDate',
+            'MediaSources',
+            'OfficialRating',
+            'ProviderIds',
+          ],
+          {
+            offset: page * (pageSize ?? 50),
+            limit: pageSize ?? 50,
+          },
+        ),
+      pageSize,
+    );
+  }
+
   async getMovie(externalKey: string): Promise<QueryResult<EmbyMovie>> {
     return this.getItemOfType(externalKey, 'Movie', (movie) =>
       this.embyApiMovieInjection(movie),
@@ -796,6 +870,20 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
   async getMusicTrack(key: string): Promise<QueryResult<EmbyMusicTrack>> {
     return this.getItemOfType(key, 'Audio', (track) =>
       this.embyApiMusicTrackInjection(track),
+    );
+  }
+
+  async getVideo(externalKey: string): Promise<QueryResult<EmbyOtherVideo>> {
+    return this.getItemOfType(externalKey, 'Video', (video) =>
+      this.embyApiOtherVideoInjection(video),
+    );
+  }
+
+  async getMusicVideo(
+    externalKey: string,
+  ): Promise<QueryResult<EmbyMusicVideo>> {
+    return this.getItemOfType(externalKey, 'MusicVideo', (video) =>
+      this.embyApiMusicVideoInjection(video),
     );
   }
 

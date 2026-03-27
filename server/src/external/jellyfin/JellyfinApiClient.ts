@@ -596,6 +596,20 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
     );
   }
 
+  getMusicVideoLibraryContents(
+    parentId: string,
+    pageSize: number = 50,
+  ): AsyncIterable<JellyfinMusicVideo> {
+    return this.getChildContents(
+      parentId,
+      'MusicVideo',
+      (video) => this.jellyfinApiMusicVideoInjection(video),
+      [],
+      {},
+      pageSize,
+    );
+  }
+
   getTvShowLibraryContents(
     parentId: string,
     pageSize: number = 50,

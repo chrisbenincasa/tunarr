@@ -65,6 +65,7 @@ export class MediaSourceLibraryRefresher {
         await this.handleEmby(source);
         break;
       case 'local':
+        break;
     }
 
     return;

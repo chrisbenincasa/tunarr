@@ -1,3 +1,4 @@
+import type { MusicVideo } from '@tunarr/types';
 import { differenceWith, head, round, values } from 'lodash-es';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
@@ -5,7 +6,7 @@ import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { RemoteMediaSourceType } from '../../db/schema/MediaSource.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
-import type { HasMediaSourceInfo, OtherVideo } from '../../types/Media.ts';
+import type { HasMediaSourceInfo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
@@ -13,19 +14,19 @@ import type { MediaSourceProgressService } from './MediaSourceProgressService.ts
 import type { ScanContext } from './MediaSourceScanner.ts';
 import { MediaSourceScanner } from './MediaSourceScanner.ts';
 
-export type GenericMediaSourceOtherVideoLibraryScanner<
-  VideoT extends OtherVideo = OtherVideo,
-> = MediaSourceOtherVideoScanner<
+export type GenericMediaSourceMusicVideoLibraryScanner<
+  VideoT extends MusicVideo = MusicVideo,
+> = MediaSourceMusicVideoScanner<
   RemoteMediaSourceType,
   MediaSourceApiClient,
   VideoT
 >;
 
-export abstract class MediaSourceOtherVideoScanner<
+export abstract class MediaSourceMusicVideoScanner<
   MediaSourceTypeT extends RemoteMediaSourceType,
   ApiClientTypeT extends MediaSourceApiClient,
-  OtherVideoTypeT extends OtherVideo,
-> extends MediaSourceScanner<'other_videos', MediaSourceTypeT, ApiClientTypeT> {
+  MusicVideoTypeT extends MusicVideo,
+> extends MediaSourceScanner<'music_videos', MediaSourceTypeT, ApiClientTypeT> {
   constructor(
     logger: Logger,
     mediaSourceDB: MediaSourceDB,
@@ -47,7 +48,7 @@ export abstract class MediaSourceOtherVideoScanner<
     const existingPrograms =
       await this.programDB.getProgramInfoForMediaSourceLibrary(
         library.uuid,
-        ProgramType.OtherVideo,
+        ProgramType.MusicVideo,
       );
 
     const seenVideos = new Set<string>();
@@ -99,7 +100,7 @@ export abstract class MediaSourceOtherVideoScanner<
           continue;
         }
 
-        const minted = this.programMinter.mintOtherVideo(
+        const minted = this.programMinter.mintMusicVideo(
           mediaSource,
           library,
           fullMetadata,
@@ -119,7 +120,6 @@ export abstract class MediaSourceOtherVideoScanner<
           continue;
         }
 
-        // const [fullApiVideo, upsertedDbVideos] = result.get();
         const dbVideo = head(upsertResult.get());
         if (dbVideo) {
           this.logger.debug(
@@ -128,7 +128,7 @@ export abstract class MediaSourceOtherVideoScanner<
             dbVideo?.uuid,
           );
 
-          await this.searchService.indexOtherVideo([
+          await this.searchService.indexMusicVideo([
             {
               ...fullMetadata,
               uuid: dbVideo.uuid,
@@ -167,10 +167,10 @@ export abstract class MediaSourceOtherVideoScanner<
   protected abstract getVideos(
     libraryId: string,
     context: ScanContext<ApiClientTypeT>,
-  ): AsyncIterable<OtherVideoTypeT>;
+  ): AsyncIterable<MusicVideoTypeT>;
 
   protected abstract scanVideo(
     context: ScanContext<ApiClientTypeT>,
-    incomingVideo: OtherVideoTypeT,
-  ): Promise<Result<OtherVideoTypeT & HasMediaSourceInfo>>;
+    incomingVideo: MusicVideoTypeT,
+  ): Promise<Result<MusicVideoTypeT & HasMediaSourceInfo>>;
 }
