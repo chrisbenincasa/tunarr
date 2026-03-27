@@ -25,7 +25,6 @@ import {
 } from 'lodash-es';
 import NodeCache from 'node-cache';
 import { format } from 'node:util';
-import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { attempt, isNonEmptyString, parseIntOrNull } from '../util/index.ts';
 import { FfmpegCapabilities } from './builder/capabilities/FfmpegCapabilities.ts';
 
@@ -73,17 +72,10 @@ export class FfmpegInfo {
   }
 
   constructor(
-    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(KEYS.FFmpegPath) private ffmpegPath: string,
+    @inject(KEYS.FFprobePath) private ffprobePath: string,
     @inject(KEYS.Logger) private logger: Logger,
   ) {}
-
-  private get ffmpegPath() {
-    return this.settingsDB.ffmpegSettings().ffmpegExecutablePath;
-  }
-
-  private get ffprobePath() {
-    return this.settingsDB.ffmpegSettings().ffprobeExecutablePath;
-  }
 
   async seed() {
     this.logger.debug('Seeding ffmpeg info');

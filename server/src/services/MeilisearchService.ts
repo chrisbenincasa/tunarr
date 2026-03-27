@@ -1141,7 +1141,6 @@ export class MeilisearchService implements ISearchService {
         index,
         await this.searchParser.preprocessSearchFilter(request.filter),
       );
-      console.log('filter', filter);
     }
 
     if (

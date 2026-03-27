@@ -34,6 +34,7 @@ import fs from 'node:fs/promises';
 import { networkInterfaces } from 'node:os';
 import path, { dirname } from 'node:path';
 import 'reflect-metadata';
+import { match, P } from 'ts-pattern';
 import { z } from 'zod/v4';
 import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
@@ -61,6 +62,19 @@ export class Server {
   ) {}
 
   async configureServer() {
+    if (this.serverOptions.trustProxy) {
+      const trustProxyString = match(this.serverOptions.trustProxy)
+        .with(P.string, (str) => str.replaceAll(',', ', '))
+        .with(P.number, (n) => `${n}th hop`)
+        .with(P.array(P.string), (arr) => arr.join(', '))
+        .with(true, () => `all proxies`)
+        .exhaustive();
+      this.logger.info(
+        'Initializing Tunarr with trust proxy setting: %s',
+        trustProxyString,
+      );
+    }
+
     this.app = fastify({
       logger: false,
       bodyLimit: 50 * 1024 * 1024,

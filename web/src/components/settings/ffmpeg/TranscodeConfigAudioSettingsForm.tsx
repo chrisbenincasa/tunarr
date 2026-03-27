@@ -59,7 +59,7 @@ export const TranscodeConfigAudioSettingsForm = ({
           LoudnormConfigSchema.decode({}),
         );
       } else {
-        form.setFieldValue('audioLoudnormConfig', undefined);
+        form.setFieldValue('audioLoudnormConfig', null);
       }
     },
     [form],

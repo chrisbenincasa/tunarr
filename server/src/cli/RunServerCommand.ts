@@ -2,6 +2,7 @@ import { container } from '@/container.js';
 import assert from 'node:assert';
 import { type MarkOptional } from 'ts-essentials';
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
+import z from 'zod';
 import { App } from '../App.ts';
 import { DBAccess } from '../db/DBAccess.ts';
 import { type ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
@@ -9,16 +10,19 @@ import { setServerOptions } from '../globals.ts';
 import { KEYS } from '../types/inject.ts';
 import {
   getBooleanEnvVar,
+  getEnvVar,
   getNumericEnvVar,
   TUNARR_ENV_VARS,
 } from '../util/env.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import type { GlobalArgsType } from './types.ts';
 
+const trustProxySchema = z.stringbool().or(z.coerce.number()).or(z.string());
+
 export type ServerArgsType = GlobalArgsType & {
   port: number;
   printRoutes: boolean;
-  trustProxy: boolean;
+  trustProxy?: string | string[] | number | boolean;
   searchPort?: number;
 };
 
@@ -33,16 +37,22 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
     },
     printRoutes: {
       type: 'boolean',
+      description: 'Whether to print all available routes at startup.',
       default: () =>
         getBooleanEnvVar(TUNARR_ENV_VARS.PRINT_ROUTES_ENV_VAR, false),
     },
     trustProxy: {
-      type: 'boolean',
-      default: () =>
-        getBooleanEnvVar(TUNARR_ENV_VARS.TRUST_PROXY_ENV_VAR, false),
+      type: 'string',
+      description:
+        'Trust proxy passed directly to Fastify. See valid options here: https://fastify.dev/docs/latest/Reference/Server/#trustproxy',
+      default: () => getEnvVar(TUNARR_ENV_VARS.TRUST_PROXY_ENV_VAR),
+      coerce: (arg) => {
+        return trustProxySchema.parse(arg);
+      },
     },
     searchPort: {
       type: 'number',
+      description: 'Statically define the port to start the search server on.',
     },
   },
   handler: async (

@@ -14,6 +14,6 @@ export function transcodeConfigOrmToDto(
     disableHardwareDecoder: config.disableHardwareDecoder ?? false,
     disableHardwareEncoding: config.disableHardwareEncoding ?? false,
     disableHardwareFilters: config.disableHardwareFilters ?? false,
-    audioLoudnormConfig: config.audioLoudnormConfig ?? undefined,
+    audioLoudnormConfig: config.audioLoudnormConfig,
   } satisfies TranscodeConfig;
 }

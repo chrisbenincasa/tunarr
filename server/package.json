@@ -26,6 +26,7 @@
     "run-fixer": "dotenv -e .env.development -- tsx src/index.ts fixer",
     "test:watch": "vitest --typecheck.tsconfig tsconfig.test.json --watch",
     "test": "vitest --typecheck.tsconfig tsconfig.test.json --run",
+    "test:local": "vitest --config vitest.local.config.ts --typecheck.tsconfig tsconfig.test.json --run",
     "tunarr": "dotenv -e .env.development -- tsx src/index.ts",
     "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --noEmit --diagnostics"
   },

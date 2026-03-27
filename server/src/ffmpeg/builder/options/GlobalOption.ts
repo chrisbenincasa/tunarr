@@ -55,3 +55,9 @@ export class StandardFormatFlags extends ConstantGlobalOption {
     super(['-fflags', '+genpts+discardcorrupt+igndts']);
   }
 }
+
+export function makeConstantGlobalOption(
+  ...args: [string, ...string[]]
+): ConstantGlobalOption {
+  return new (class extends ConstantGlobalOption {})(args);
+}

@@ -50,11 +50,11 @@ export function Root({ children }: { children?: React.ReactNode }) {
           disableGutters
           maxWidth="xl"
           sx={{
-            mt: 4,
+            mt: [2, 4],
             mb: ['56px', 4],
-            px: [undefined, 5],
+            px: [2, 5],
             pb: [4, undefined],
-            maxWidth: 'calc(100vw - 240px)',
+            maxWidth: { xs: '100vw', sm: 'calc(100vw - 240px)' },
             flexGrow: 1,
           }}
         >

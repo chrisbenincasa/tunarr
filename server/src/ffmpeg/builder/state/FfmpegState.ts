@@ -7,11 +7,11 @@ import type { Duration } from 'dayjs/plugin/duration.js';
 import { merge } from 'lodash-es';
 import path from 'node:path';
 import type { MarkRequired } from 'ts-essentials';
-import type { OutputFormat } from '../constants.ts';
+import type { OutputFormat, OutputLocation } from '../constants.ts';
 import {
   MpegTsOutputFormat,
   OutputFormatTypes,
-  OutputLocation,
+  StdoutOutputLocation,
 } from '../constants.ts';
 
 export const VaapiTonemapType = ['vaapi', 'opencl'] as const;
@@ -88,7 +88,7 @@ export class FfmpegState {
   vaapiDevice: Nullable<string> = null;
   vaapiDriver: Nullable<string> = null;
   outputFormat: OutputFormat = MpegTsOutputFormat; // TODO: No
-  outputLocation: OutputLocation = OutputLocation.Stdout;
+  outputLocation: OutputLocation = StdoutOutputLocation;
   ptsOffset?: number;
   tonemapHdr: boolean = false;
 

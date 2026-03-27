@@ -42,3 +42,9 @@ web/.tanstack
 
 :memory:*
 .serena/
+
+# JetBrains IDEs
+.idea/
+*.iws
+*.iml
+*.ipr

@@ -86,6 +86,15 @@ export abstract class MediaSourceScanner<
 
       devAssert(mediaSource.type === this.mediaSourceType);
 
+      this.logger.info(
+        'Scanning %s library (ID = %s, name = %s, force = %s, filter = %s)',
+        mediaSource.type,
+        library.uuid,
+        library.name,
+        force,
+        pathFilter,
+      );
+
       await this.scanInternal({
         library,
         mediaSource,

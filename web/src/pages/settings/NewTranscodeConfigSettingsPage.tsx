@@ -33,6 +33,7 @@ const defaultNewTranscodeConfig: TranscodeConfig = {
   disableHardwareDecoder: false,
   disableHardwareEncoding: false,
   disableHardwareFilters: false,
+  audioLoudnormConfig: null,
 };
 
 export const NewTranscodeConfigSettingsPage = () => {

@@ -11,37 +11,16 @@ export default defineConfig({
   test: {
     globals: true,
     watch: false,
-    includeSource: ['src/**/*.test.ts'],
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/.{idea,git,cache,output,temp}/**',
-      // Comment this out if developing locally and you want
-      // to easily debug tests right in an editor like VS Code
-      '**/*.local.test.ts',
-    ],
-    setupFiles: [
-      'src/testing/matchers/PixelFormatMatcher.ts',
-      'src/testing/matchers/FrameSizeMatcher.ts',
-    ],
-    coverage: {
-      provider: 'v8',
-    },
+    include: ['src/**/*.local.test.ts'],
+    testTimeout: 60_000,
+    silent: false,
+    reporters: ['verbose'],
     typecheck: {
       tsconfig: 'tsconfig.test.json',
     },
-    silent: true,
-    reporters: ['dot'],
   },
   define: {
     'import.meta.vitest': false,
-  },
-  build: {
-    lib: {
-      formats: ['es', 'cjs'],
-      entry: './index.ts',
-      fileName: 'index',
-    },
   },
   plugins: [
     swc({

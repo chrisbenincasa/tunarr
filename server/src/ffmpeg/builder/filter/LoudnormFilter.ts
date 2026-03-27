@@ -14,6 +14,6 @@ export class LoudnormFilter extends FilterOption {
     const gain = isDefined(this.loudnormConfig.offsetGain)
       ? `:offset=${this.loudnormConfig.offsetGain}`
       : '';
-    return `loudnorm=I=${this.loudnormConfig.i}:LRA=${this.loudnormConfig.lra}:TP=${this.loudnormConfig.tp}${gain},aresample=${this.sampleRate}`;
+    return `loudnorm=I=${this.loudnormConfig.i}:LRA=${this.loudnormConfig.lra}:TP=${this.loudnormConfig.tp}${gain},aresample=${this.sampleRate * 1000}`;
   }
 }

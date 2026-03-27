@@ -215,7 +215,7 @@ describe('BasePipelineBuilder', () => {
         audioBitrate: 192,
         audioBufferSize: 192 * 2,
         audioChannels: 2,
-        audioSampleRate: 44100,
+        audioSampleRate: 44.1,
         loudnormConfig: { i: -24, lra: 7, tp: -2 },
       }),
     );
@@ -280,42 +280,39 @@ describe('BasePipelineBuilder', () => {
     { desc: 'lra too high', config: { i: -24, lra: 50.1, tp: -2 } },
     { desc: 'tp too low', config: { i: -24, lra: 7, tp: -9.1 } },
     { desc: 'tp too high', config: { i: -24, lra: 7, tp: 0.1 } },
-  ])(
-    'do not add loudnorm filter when $desc',
-    ({ config }) => {
-      const audio = AudioInputSource.withStream(
-        new FileStreamSource('/path/to/song.flac'),
-        AudioStream.create({
-          channels: 2,
-          codec: 'flac',
-          index: 0,
-        }),
-        AudioState.create({
-          audioBitrate: 192,
-          audioBufferSize: 192 * 2,
-          audioChannels: 2,
-          loudnormConfig: config,
-        }),
-      );
+  ])('do not add loudnorm filter when $desc', ({ config }) => {
+    const audio = AudioInputSource.withStream(
+      new FileStreamSource('/path/to/song.flac'),
+      AudioStream.create({
+        channels: 2,
+        codec: 'flac',
+        index: 0,
+      }),
+      AudioState.create({
+        audioBitrate: 192,
+        audioBufferSize: 192 * 2,
+        audioChannels: 2,
+        loudnormConfig: config,
+      }),
+    );
 
-      const pipeline = new NoopPipelineBuilder(
-        video,
-        audio,
-        null,
-        null,
-        null,
-        EmptyFfmpegCapabilities,
-      );
+    const pipeline = new NoopPipelineBuilder(
+      video,
+      audio,
+      null,
+      null,
+      null,
+      EmptyFfmpegCapabilities,
+    );
 
-      const result = pipeline.build(state, frameState, DefaultPipelineOptions);
+    const result = pipeline.build(state, frameState, DefaultPipelineOptions);
 
-      const loudnormFilter = result.inputs.audioInput?.filterSteps.find(
-        (step) => step instanceof LoudnormFilter,
-      );
+    const loudnormFilter = result.inputs.audioInput?.filterSteps.find(
+      (step) => step instanceof LoudnormFilter,
+    );
 
-      expect(loudnormFilter).toBeUndefined();
-    },
-  );
+    expect(loudnormFilter).toBeUndefined();
+  });
 
   test.each([
     { desc: 'i at lower bound', config: { i: -70, lra: 7, tp: -2 } },
@@ -324,42 +321,39 @@ describe('BasePipelineBuilder', () => {
     { desc: 'lra at upper bound', config: { i: -24, lra: 50, tp: -2 } },
     { desc: 'tp at lower bound', config: { i: -24, lra: 7, tp: -9 } },
     { desc: 'tp at upper bound', config: { i: -24, lra: 7, tp: 0 } },
-  ])(
-    'add loudnorm filter when $desc',
-    ({ config }) => {
-      const audio = AudioInputSource.withStream(
-        new FileStreamSource('/path/to/song.flac'),
-        AudioStream.create({
-          channels: 2,
-          codec: 'flac',
-          index: 0,
-        }),
-        AudioState.create({
-          audioBitrate: 192,
-          audioBufferSize: 192 * 2,
-          audioChannels: 2,
-          loudnormConfig: config,
-        }),
-      );
+  ])('add loudnorm filter when $desc', ({ config }) => {
+    const audio = AudioInputSource.withStream(
+      new FileStreamSource('/path/to/song.flac'),
+      AudioStream.create({
+        channels: 2,
+        codec: 'flac',
+        index: 0,
+      }),
+      AudioState.create({
+        audioBitrate: 192,
+        audioBufferSize: 192 * 2,
+        audioChannels: 2,
+        loudnormConfig: config,
+      }),
+    );
 
-      const pipeline = new NoopPipelineBuilder(
-        video,
-        audio,
-        null,
-        null,
-        null,
-        EmptyFfmpegCapabilities,
-      );
+    const pipeline = new NoopPipelineBuilder(
+      video,
+      audio,
+      null,
+      null,
+      null,
+      EmptyFfmpegCapabilities,
+    );
 
-      const result = pipeline.build(state, frameState, DefaultPipelineOptions);
+    const result = pipeline.build(state, frameState, DefaultPipelineOptions);
 
-      const loudnormFilter = result.inputs.audioInput?.filterSteps.find(
-        (step) => step instanceof LoudnormFilter,
-      );
+    const loudnormFilter = result.inputs.audioInput?.filterSteps.find(
+      (step) => step instanceof LoudnormFilter,
+    );
 
-      expect(loudnormFilter).toBeDefined();
-    },
-  );
+    expect(loudnormFilter).toBeDefined();
+  });
 
   test('do not add loudnorm filter when loudnormConfig is not set', () => {
     const audio = AudioInputSource.withStream(
