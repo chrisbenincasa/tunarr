@@ -28,6 +28,7 @@ import {
   isEpisodeWithHierarchy,
   isMusicTrackWithHierarchy,
   MusicTrackWithHierarchy,
+  tag,
   untag,
 } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
@@ -1062,6 +1063,9 @@ export class ProgramDB implements IProgramDB {
       (lib) => lib.uuid,
     );
 
+    const seenUniqueExternalSourceId = new Set<string>();
+    const seenUniqueMediaSourceId = new Set<string>();
+
     const programsToPersist: MintedNewProgramInfo[] = seq.collect(
       contentPrograms,
       (p) => {
@@ -1090,6 +1094,27 @@ export class ProgramDB implements IProgramDB {
           return;
         }
 
+        const mediaSourceIdUnique = programExternalIdString(program.program);
+        if (seenUniqueMediaSourceId.has(mediaSourceIdUnique)) {
+          return;
+        } else {
+          seenUniqueMediaSourceId.add(mediaSourceIdUnique);
+        }
+
+        const externalSourceIdUnique =
+          program.program.sourceType === 'local'
+            ? program.program.externalKey
+            : createExternalId(
+                program.program.sourceType,
+                tag(program.program.externalSourceId),
+                program.program.externalKey,
+              );
+        if (seenUniqueExternalSourceId.has(externalSourceIdUnique)) {
+          return;
+        } else {
+          seenUniqueExternalSourceId.add(externalSourceIdUnique);
+        }
+
         const externalIds = program.externalIds;
         return { program, externalIds, apiProgram: p };
       },
@@ -1108,34 +1133,45 @@ export class ProgramDB implements IProgramDB {
         programsToPersist,
         programUpsertBatchSize,
       )) {
-        upsertedPrograms.push(
-          ...(await this.db.transaction().execute((tx) =>
-            tx
-              .insertInto('program')
-              .values(chunkToInsert.map(({ program: { program } }) => program))
-              // .onConflict((oc) =>
-              //   oc
-              //     .columns(['sourceType', 'externalSourceId', 'externalKey'])
-              //     .doUpdateSet((eb) =>
-              //       mapToObj(ProgramUpsertFields, (f) => ({
-              //         [f.replace('excluded.', '')]: eb.ref(f),
-              //       })),
-              //     ),
-              // )
-              .onConflict((oc) =>
-                oc
-                  .columns(['sourceType', 'mediaSourceId', 'externalKey'])
-                  .doUpdateSet((eb) =>
-                    mapToObj(ProgramUpsertFields, (f) => ({
-                      [f.replace('excluded.', '')]: eb.ref(f),
-                    })),
-                  ),
-              )
-              .returningAll()
-              .$narrowType<{ mediaSourceId: NotNull }>()
-              .execute(),
-          )),
+        const programsToUpsert = chunkToInsert.map(
+          ({ program: { program } }) => program,
         );
+        try {
+          upsertedPrograms.push(
+            ...(await this.db.transaction().execute((tx) =>
+              tx
+                .insertInto('program')
+                .values(programsToUpsert)
+                // .onConflict((oc) =>
+                //   oc
+                //     .columns(['sourceType', 'externalSourceId', 'externalKey'])
+                //     .doUpdateSet((eb) =>
+                //       mapToObj(ProgramUpsertFields, (f) => ({
+                //         [f.replace('excluded.', '')]: eb.ref(f),
+                //       })),
+                //     ),
+                // )
+                .onConflict((oc) =>
+                  oc
+                    .columns(['sourceType', 'mediaSourceId', 'externalKey'])
+                    .doUpdateSet((eb) =>
+                      mapToObj(ProgramUpsertFields, (f) => ({
+                        [f.replace('excluded.', '')]: eb.ref(f),
+                      })),
+                    ),
+                )
+                .returningAll()
+                .$narrowType<{ mediaSourceId: NotNull }>()
+                .execute(),
+            )),
+          );
+        } catch (e) {
+          this.logger.error(
+            e,
+            'Error while inserting batch %j',
+            programsToUpsert,
+          );
+        }
       }
     });
 
@@ -1912,35 +1948,41 @@ export class ProgramDB implements IProgramDB {
       singleIdPromise = mapAsyncSeq(
         chunk(singles, chunkSize),
         (singleChunk) => {
-          return this.db.transaction().execute((tx) =>
-            tx
-              .insertInto('programExternalId')
-              .values(singleChunk.map(toInsertableProgramExternalId))
-              // .onConflict((oc) =>
-              //   oc
-              //     .columns(['programUuid', 'sourceType', 'externalSourceId'])
-              //     .where('externalSourceId', 'is', null)
-              //     .doUpdateSet((eb) => ({
-              //       updatedAt: eb.ref('excluded.updatedAt'),
-              //       externalFilePath: eb.ref('excluded.externalFilePath'),
-              //       directFilePath: eb.ref('excluded.directFilePath'),
-              //       programUuid: eb.ref('excluded.programUuid'),
-              //     })),
-              // )
-              .onConflict((oc) =>
-                oc
-                  .columns(['programUuid', 'sourceType'])
-                  .where('mediaSourceId', 'is', null)
-                  .doUpdateSet((eb) => ({
-                    updatedAt: eb.ref('excluded.updatedAt'),
-                    externalFilePath: eb.ref('excluded.externalFilePath'),
-                    directFilePath: eb.ref('excluded.directFilePath'),
-                    programUuid: eb.ref('excluded.programUuid'),
-                  })),
-              )
-              .returningAll()
-              .execute(),
-          );
+          const eids = singleChunk.map(toInsertableProgramExternalId);
+          try {
+            return this.db.transaction().execute((tx) =>
+              tx
+                .insertInto('programExternalId')
+                .values(eids)
+                // .onConflict((oc) =>
+                //   oc
+                //     .columns(['programUuid', 'sourceType', 'externalSourceId'])
+                //     .where('externalSourceId', 'is', null)
+                //     .doUpdateSet((eb) => ({
+                //       updatedAt: eb.ref('excluded.updatedAt'),
+                //       externalFilePath: eb.ref('excluded.externalFilePath'),
+                //       directFilePath: eb.ref('excluded.directFilePath'),
+                //       programUuid: eb.ref('excluded.programUuid'),
+                //     })),
+                // )
+                .onConflict((oc) =>
+                  oc
+                    .columns(['programUuid', 'sourceType'])
+                    .where('mediaSourceId', 'is', null)
+                    .doUpdateSet((eb) => ({
+                      updatedAt: eb.ref('excluded.updatedAt'),
+                      externalFilePath: eb.ref('excluded.externalFilePath'),
+                      directFilePath: eb.ref('excluded.directFilePath'),
+                      programUuid: eb.ref('excluded.programUuid'),
+                    })),
+                )
+                .returningAll()
+                .execute(),
+            );
+          } catch (e) {
+            this.logger.error(e, 'Failed to upsert eids: %j', eids);
+            throw e;
+          }
         },
       ).then(flatten);
     } else {
@@ -1952,35 +1994,41 @@ export class ProgramDB implements IProgramDB {
       multiIdPromise = mapAsyncSeq(
         chunk(multiples, chunkSize),
         (multiChunk) => {
-          return this.db.transaction().execute((tx) =>
-            tx
-              .insertInto('programExternalId')
-              .values(multiChunk.map(toInsertableProgramExternalId))
-              // .onConflict((oc) =>
-              //   oc
-              //     .columns(['programUuid', 'sourceType', 'externalSourceId'])
-              //     .where('externalSourceId', 'is not', null)
-              //     .doUpdateSet((eb) => ({
-              //       updatedAt: eb.ref('excluded.updatedAt'),
-              //       externalFilePath: eb.ref('excluded.externalFilePath'),
-              //       directFilePath: eb.ref('excluded.directFilePath'),
-              //       programUuid: eb.ref('excluded.programUuid'),
-              //     })),
-              // )
-              .onConflict((oc) =>
-                oc
-                  .columns(['programUuid', 'sourceType', 'mediaSourceId'])
-                  .where('mediaSourceId', 'is not', null)
-                  .doUpdateSet((eb) => ({
-                    updatedAt: eb.ref('excluded.updatedAt'),
-                    externalFilePath: eb.ref('excluded.externalFilePath'),
-                    directFilePath: eb.ref('excluded.directFilePath'),
-                    programUuid: eb.ref('excluded.programUuid'),
-                  })),
-              )
-              .returningAll()
-              .execute(),
-          );
+          const eids = multiChunk.map(toInsertableProgramExternalId);
+          try {
+            return this.db.transaction().execute((tx) =>
+              tx
+                .insertInto('programExternalId')
+                .values(eids)
+                // .onConflict((oc) =>
+                //   oc
+                //     .columns(['programUuid', 'sourceType', 'externalSourceId'])
+                //     .where('externalSourceId', 'is not', null)
+                //     .doUpdateSet((eb) => ({
+                //       updatedAt: eb.ref('excluded.updatedAt'),
+                //       externalFilePath: eb.ref('excluded.externalFilePath'),
+                //       directFilePath: eb.ref('excluded.directFilePath'),
+                //       programUuid: eb.ref('excluded.programUuid'),
+                //     })),
+                // )
+                .onConflict((oc) =>
+                  oc
+                    .columns(['programUuid', 'sourceType', 'mediaSourceId'])
+                    .where('mediaSourceId', 'is not', null)
+                    .doUpdateSet((eb) => ({
+                      updatedAt: eb.ref('excluded.updatedAt'),
+                      externalFilePath: eb.ref('excluded.externalFilePath'),
+                      directFilePath: eb.ref('excluded.directFilePath'),
+                      programUuid: eb.ref('excluded.programUuid'),
+                    })),
+                )
+                .returningAll()
+                .execute(),
+            );
+          } catch (e) {
+            this.logger.error(e, 'Error while inserting ID batch: %j', eids);
+            throw e;
+          }
         },
       ).then(flatten);
     } else {

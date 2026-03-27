@@ -164,6 +164,8 @@ export class GetMaterializedChannelScheduleCommand {
                 ? {
                     ...customShow,
                     id: customShow.uuid,
+                    lastSyncedAt: customShow.lastSyncedAt?.getTime(),
+                    isSyncing: false,
                   }
                 : null,
               isMissing: !customShow,
@@ -311,6 +313,8 @@ export class GetMaterializedChannelScheduleCommand {
                 ? {
                     ...customShow,
                     id: customShow.uuid,
+                    lastSyncedAt: customShow.lastSyncedAt?.getTime(),
+                    isSyncing: false,
                   }
                 : null,
               isMissing: !customShow,

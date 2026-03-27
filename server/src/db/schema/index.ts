@@ -1,10 +1,7 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { Artwork, ArtworkRelations } from './Artwork.ts';
 import { Channel, ChannelRelations } from './Channel.ts';
-import {
-  ChannelCustomShow,
-  ChannelCustomShowRelations,
-} from './ChannelCustomShow.ts';
+
 import {
   ChannelFallback,
   ChannelFallbackRelations,
@@ -99,8 +96,6 @@ export const schema = {
   channels: Channel,
   channelRelations: ChannelRelations,
   channelPrograms: ChannelPrograms,
-  channelCustomShows: ChannelCustomShow,
-  channelCustomShowRelations: ChannelCustomShowRelations,
   channelFallback: ChannelFallback,
   channelFallbackRelations: ChannelFallbackRelations,
   channelFillerShow: ChannelFillerShow,

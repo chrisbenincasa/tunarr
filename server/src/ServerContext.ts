@@ -11,6 +11,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { CustomShowDB } from './db/CustomShowDB.ts';
 import { FillerDB } from './db/FillerListDB.ts';
 import { SmartCollectionsDB } from './db/SmartCollectionsDB.ts';
+import { CustomShowSyncService } from './services/CustomShowSyncService.ts';
 import { TranscodeConfigDB } from './db/TranscodeConfigDB.ts';
 import { ProgramConverter } from './db/converters/ProgramConverter.ts';
 import { MediaSourceDB } from './db/mediaSourceDB.ts';
@@ -91,6 +92,9 @@ export class ServerContext {
 
   @inject(SmartCollectionsDB)
   public readonly smartCollectionsDB!: SmartCollectionsDB;
+
+  @inject(CustomShowSyncService)
+  public readonly customShowSyncService!: CustomShowSyncService;
 }
 
 export class ServerRequestContext {

@@ -16,7 +16,6 @@ import {
   type ChannelTranscodingSettings,
   type ChannelWatermark,
 } from './base.ts';
-import { ChannelCustomShow } from './ChannelCustomShow.ts';
 import { ChannelFillerShow } from './ChannelFillerShow.ts';
 import { ChannelPrograms } from './ChannelPrograms.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
@@ -77,7 +76,6 @@ export type ChannelOrm = InferSelectModel<typeof Channel>;
 
 export const ChannelRelations = relations(Channel, ({ many, one }) => ({
   channelPrograms: many(ChannelPrograms),
-  channelCustomShows: many(ChannelCustomShow),
   channelFillerShow: many(ChannelFillerShow),
   playHistory: many(ProgramPlayHistory),
   transcodeConfig: one(TranscodeConfig, {
