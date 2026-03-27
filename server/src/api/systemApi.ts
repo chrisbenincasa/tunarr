@@ -12,10 +12,13 @@ import {
 import TailFile from '@logdna/tail-file';
 import { seq } from '@tunarr/shared/util';
 import type { LoggingSettings, SystemSettings } from '@tunarr/types';
+import { FeatureFlagMetadata } from '@tunarr/types';
 import type { SystemSettingsResponse } from '@tunarr/types/api';
 import {
+  GetFeatureFlagsResponseSchema,
   SystemSettingsResponseSchema,
   UpdateBackupSettingsRequestSchema,
+  UpdateFeatureFlagsRequestSchema,
   UpdateSystemSettingsRequestSchema,
 } from '@tunarr/types/api';
 import type { BackupSettings } from '@tunarr/types/schemas';
@@ -44,8 +47,24 @@ import {
   isRunningInContainer,
 } from '../util/containerUtil.ts';
 import { getEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
+import { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import { streamFileBackwards } from '../util/fsUtil.ts';
 import { take } from '../util/streams.ts';
+
+function buildFeatureFlagsResponse(featureFlagService: FeatureFlagService) {
+  const flags = featureFlagService.getAll();
+  const overrides = featureFlagService.getEnvOverrides();
+  return {
+    flags,
+    metadata: FeatureFlagMetadata.map((m) => ({
+      key: m.key,
+      displayName: m.displayName,
+      description: m.description,
+      category: m.category,
+      envOverride: overrides[m.key] ?? false,
+    })),
+  };
+}
 
 export const systemApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -238,6 +257,44 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
 
       return res.send(
         req.serverCtx.settings.backup as Writable<BackupSettings>,
+      );
+    },
+  );
+
+  fastify.get(
+    '/system/feature-flags',
+    {
+      schema: {
+        tags: ['System', 'Settings'],
+        response: {
+          200: GetFeatureFlagsResponseSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      return res.send(
+        buildFeatureFlagsResponse(req.serverCtx.featureFlagService),
+      );
+    },
+  );
+
+  fastify.put(
+    '/system/feature-flags',
+    {
+      schema: {
+        tags: ['System', 'Settings'],
+        body: UpdateFeatureFlagsRequestSchema,
+        response: {
+          200: GetFeatureFlagsResponseSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      await req.serverCtx.settings.directUpdate((file) => {
+        Object.assign(file.featureFlags, req.body);
+      });
+      return res.send(
+        buildFeatureFlagsResponse(req.serverCtx.featureFlagService),
       );
     },
   );

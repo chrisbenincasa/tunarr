@@ -11,7 +11,6 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { CustomShowDB } from './db/CustomShowDB.ts';
 import { FillerDB } from './db/FillerListDB.ts';
 import { SmartCollectionsDB } from './db/SmartCollectionsDB.ts';
-import { CustomShowSyncService } from './services/CustomShowSyncService.ts';
 import { TranscodeConfigDB } from './db/TranscodeConfigDB.ts';
 import { ProgramConverter } from './db/converters/ProgramConverter.ts';
 import { MediaSourceDB } from './db/mediaSourceDB.ts';
@@ -19,7 +18,9 @@ import { DB } from './db/schema/db.ts';
 import { DrizzleDBAccess } from './db/schema/index.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { IWorkerPool } from './interfaces/IWorkerPool.ts';
+import { CustomShowSyncService } from './services/CustomShowSyncService.ts';
 import { EventService } from './services/EventService.ts';
+import { FeatureFlagService } from './services/FeatureFlagService.ts';
 import { FileCacheService } from './services/FileCacheService.ts';
 import { HdhrService } from './services/HDHRService.ts';
 import { HealthCheckService } from './services/HealthCheckService.js';
@@ -95,6 +96,9 @@ export class ServerContext {
 
   @inject(CustomShowSyncService)
   public readonly customShowSyncService!: CustomShowSyncService;
+
+  @inject(FeatureFlagService)
+  public readonly featureFlagService!: FeatureFlagService;
 }
 
 export class ServerRequestContext {

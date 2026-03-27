@@ -3,6 +3,10 @@ import {
   TranscodeAudioOutputFormat,
 } from '@/db/schema/TranscodeConfig.js';
 import {
+  FeatureFlagService,
+  resolveFeatureFlagFromEnv,
+} from '../../../services/FeatureFlagService.ts';
+import {
   SubtitleMethods,
   type AudioStream,
   type SubtitleStream,
@@ -218,6 +222,14 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   });
   protected decoder: Nullable<Decoder> = null;
   protected context: PipelineBuilderContext;
+  protected featureFlagService: Pick<FeatureFlagService, 'get'> = {
+    get: resolveFeatureFlagFromEnv,
+  };
+
+  setFeatureFlagService(svc: FeatureFlagService): this {
+    this.featureFlagService = svc;
+    return this;
+  }
 
   constructor(
     protected nullableVideoInputSource: Nullable<VideoInputSource>,

@@ -7365,6 +7365,23 @@ export type GetApiDebugHeapResponses = {
     200: unknown;
 };
 
+export type GetApiDebugLogData = {
+    body?: never;
+    path?: never;
+    query?: {
+        level?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
+        log?: string;
+    };
+    url: '/api/debug/log';
+};
+
+export type GetApiDebugLogResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
+
 export type GetApiDebugHelpersPlayingAtData = {
     body?: never;
     path?: never;
@@ -9833,6 +9850,77 @@ export type PutApiSystemSettingsBackupResponses = {
 };
 
 export type PutApiSystemSettingsBackupResponse = PutApiSystemSettingsBackupResponses[keyof PutApiSystemSettingsBackupResponses];
+
+export type GetApiSystemFeatureFlagsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/system/feature-flags';
+};
+
+export type GetApiSystemFeatureFlagsResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        flags: {
+            proxyArtwork: boolean;
+            tonemapEnabled: boolean;
+            webvttSidecarEnabled: boolean;
+            disableSearchSnapshotInBackup: boolean;
+            disableVulkan: boolean;
+            disableVaapiPad: boolean;
+        };
+        metadata: Array<{
+            key: string;
+            displayName: string;
+            description: string;
+            category: 'experimental' | 'escape-hatch';
+            envOverride: boolean;
+        }>;
+    };
+};
+
+export type GetApiSystemFeatureFlagsResponse = GetApiSystemFeatureFlagsResponses[keyof GetApiSystemFeatureFlagsResponses];
+
+export type PutApiSystemFeatureFlagsData = {
+    body?: {
+        proxyArtwork?: boolean;
+        tonemapEnabled?: boolean;
+        webvttSidecarEnabled?: boolean;
+        disableSearchSnapshotInBackup?: boolean;
+        disableVulkan?: boolean;
+        disableVaapiPad?: boolean;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/system/feature-flags';
+};
+
+export type PutApiSystemFeatureFlagsResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        flags: {
+            proxyArtwork: boolean;
+            tonemapEnabled: boolean;
+            webvttSidecarEnabled: boolean;
+            disableSearchSnapshotInBackup: boolean;
+            disableVulkan: boolean;
+            disableVaapiPad: boolean;
+        };
+        metadata: Array<{
+            key: string;
+            displayName: string;
+            description: string;
+            category: 'experimental' | 'escape-hatch';
+            envOverride: boolean;
+        }>;
+    };
+};
+
+export type PutApiSystemFeatureFlagsResponse = PutApiSystemFeatureFlagsResponses[keyof PutApiSystemFeatureFlagsResponses];
 
 export type GetApiSystemDebugNvidiaData = {
     body?: never;

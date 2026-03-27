@@ -42,6 +42,11 @@ export function SettingsLayout({ currentTab = '/general' }: Props) {
               to="/settings/sources"
             />
             <RouterTabLink label="HDHR" value="/hdhr" to="/settings/hdhr" />
+            <RouterTabLink
+              label="Features"
+              value="/features"
+              to="/settings/features"
+            />
           </Tabs>
         </Box>
 

@@ -14,7 +14,6 @@ import { DrizzleDBAccess } from '../db/schema/index.ts';
 import { globalOptions } from '../globals.ts';
 import { KEYS } from '../types/inject.ts';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 
 @injectable()
 export class CreditsApiController {
@@ -178,7 +177,7 @@ export class CreditsApiController {
 
           const fullUrl = url.toString();
 
-          if (getBooleanEnvVar(TUNARR_ENV_VARS.PROXY_ARTWORK_ENV_VAR, false)) {
+          if (req.serverCtx.featureFlagService.get('proxyArtwork')) {
             try {
               const proxyRes = await axios.request<stream.Readable>({
                 url: fullUrl,

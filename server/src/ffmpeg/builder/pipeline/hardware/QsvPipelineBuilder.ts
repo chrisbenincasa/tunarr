@@ -40,7 +40,6 @@ import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { every, head, inRange, isNull, some } from 'lodash-es';
-import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../../../../util/env.ts';
 import { H264QsvEncoder } from '../../encoder/qsv/H264QsvEncoder.ts';
 import { HevcQsvEncoder } from '../../encoder/qsv/HevcQsvEncoder.ts';
 import { Mpeg2QsvEncoder } from '../../encoder/qsv/Mpeg2QsvEncoder.ts';
@@ -598,7 +597,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       return currentState;
     }
 
-    if (!getBooleanEnvVar(TUNARR_ENV_VARS.TONEMAP_ENABLED, false)) {
+    if (!this.featureFlagService.get('tonemapEnabled')) {
       return currentState;
     }
 

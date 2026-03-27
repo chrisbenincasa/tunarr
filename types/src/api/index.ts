@@ -1,4 +1,5 @@
 import { z } from 'zod/v4';
+import { FeatureFlagsSchema } from '../FeatureFlags.js';
 import {
   CacheSettingsSchema,
   LogCategoriesSchema,
@@ -493,3 +494,30 @@ export const MaterializedSchedule = z.discriminatedUnion('type', [
 ]);
 
 export type MaterializedSchedule = z.infer<typeof MaterializedSchedule>;
+
+export const FeatureFlagResponseMetaSchema = z.object({
+  key: z.string(),
+  displayName: z.string(),
+  description: z.string(),
+  category: z.enum(['experimental', 'escape-hatch']),
+  envOverride: z.boolean(),
+});
+
+export type FeatureFlagResponseMeta = z.infer<
+  typeof FeatureFlagResponseMetaSchema
+>;
+
+export const GetFeatureFlagsResponseSchema = z.object({
+  flags: FeatureFlagsSchema,
+  metadata: z.array(FeatureFlagResponseMetaSchema),
+});
+
+export type GetFeatureFlagsResponse = z.infer<
+  typeof GetFeatureFlagsResponseSchema
+>;
+
+export const UpdateFeatureFlagsRequestSchema = FeatureFlagsSchema.partial();
+
+export type UpdateFeatureFlagsRequest = z.infer<
+  typeof UpdateFeatureFlagsRequestSchema
+>;

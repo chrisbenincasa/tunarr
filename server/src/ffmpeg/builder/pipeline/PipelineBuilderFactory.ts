@@ -13,6 +13,7 @@ import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import type { Nullable } from '@/types/util.js';
 import { ContainerModule } from 'inversify';
 import { isUndefined } from 'lodash-es';
+import { FeatureFlagService } from '../../../services/FeatureFlagService.ts';
 import { KEYS } from '../../../types/inject.ts';
 import { bindFactoryFunc } from '../../../util/inject.ts';
 import type { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
@@ -34,11 +35,13 @@ export const FfmpegPipelineBuilderModule = new ContainerModule((bind) => {
     (ctx) => {
       const settingsDB = ctx.container.get<ISettingsDB>(KEYS.SettingsDB);
       const ffmpegInfo = ctx.container.get(FfmpegInfo);
+      const featureFlagService = ctx.container.get(FeatureFlagService);
       return (config) =>
         new PipelineBuilderFactory$Builder(
           settingsDB.ffmpegSettings(),
           ffmpegInfo,
           config,
+          featureFlagService,
         );
     },
   );
@@ -57,6 +60,7 @@ class PipelineBuilderFactory$Builder {
     private ffmpegSettings: ReadableFfmpegSettings,
     private ffmpegInfo: FfmpegInfo,
     private transcodeConfig: TranscodeConfigOrm,
+    private featureFlagService: FeatureFlagService,
   ) {}
 
   setVideoInputSource(
@@ -122,7 +126,7 @@ class PipelineBuilderFactory$Builder {
           this.concatInputSource,
           this.watermarkInputSource,
           this.subtiitleInputSource,
-        );
+        ).setFeatureFlagService(this.featureFlagService);
       case HardwareAccelerationMode.Qsv:
         return new QsvPipelineBuilder(
           hardwareCapabilities,
@@ -132,7 +136,7 @@ class PipelineBuilderFactory$Builder {
           this.concatInputSource,
           this.watermarkInputSource,
           this.subtiitleInputSource,
-        );
+        ).setFeatureFlagService(this.featureFlagService);
       case HardwareAccelerationMode.Vaapi:
         return new VaapiPipelineBuilder(
           hardwareCapabilities,
@@ -142,7 +146,7 @@ class PipelineBuilderFactory$Builder {
           this.watermarkInputSource,
           this.subtiitleInputSource,
           this.concatInputSource,
-        );
+        ).setFeatureFlagService(this.featureFlagService);
       case HardwareAccelerationMode.Videotoolbox:
         return new VideoToolboxPipelineBuilder(
           hardwareCapabilities,
@@ -152,7 +156,7 @@ class PipelineBuilderFactory$Builder {
           this.concatInputSource,
           this.watermarkInputSource,
           this.subtiitleInputSource,
-        );
+        ).setFeatureFlagService(this.featureFlagService);
       default:
         return new SoftwarePipelineBuilder(
           this.videoInputSource,
@@ -161,7 +165,7 @@ class PipelineBuilderFactory$Builder {
           this.subtiitleInputSource,
           this.concatInputSource,
           binaryCapabilities,
-        );
+        ).setFeatureFlagService(this.featureFlagService);
     }
   }
 }
