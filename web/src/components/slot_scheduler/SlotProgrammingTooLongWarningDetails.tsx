@@ -27,6 +27,7 @@ import { map, round, sum, uniqBy, values } from 'lodash-es';
 import pluralize from 'pluralize';
 import type { ListChildComponentProps } from 'react-window';
 import { FixedSizeList } from 'react-window';
+import { getEpisodeShowId } from '../../helpers/programUtil.ts';
 
 type Props = {
   slot: BaseSlot & SlotTableWarnings;
@@ -85,7 +86,7 @@ export const SlotProgrammingTooLongWarningDetails = ({
   switch (slot.type) {
     case 'movie': {
       const durations = seq.collect(values(programLookup), (program) => {
-        if (program.type === 'content' && program.subtype === 'movie') {
+        if (program.type === 'content' && program.program.type === 'movie') {
           return program.duration;
         }
         return;
@@ -102,8 +103,8 @@ export const SlotProgrammingTooLongWarningDetails = ({
       const durations = seq.collect(values(programLookup), (program) => {
         if (
           program.type === 'content' &&
-          program.subtype === 'episode' &&
-          program.showId === showId
+          program.program.type === 'episode' &&
+          getEpisodeShowId(program.program) === showId
         ) {
           return program.duration;
         }

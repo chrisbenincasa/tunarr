@@ -34,6 +34,7 @@ import type { HTMLAttributes } from 'react';
 import { useMemo, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { useCounter } from 'usehooks-ts';
+import { extractProgramGrandparent } from '../../helpers/programUtil.ts';
 import type { RemoveProgrammingRequest } from '../../hooks/programming_controls/useRemoveProgramming';
 import { useRemoveProgramming } from '../../hooks/programming_controls/useRemoveProgramming';
 import useStore from '../../store';
@@ -58,7 +59,10 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
   );
   const programs = useStore(materializedProgramListSelector);
   const hasMovies = useMemo(() => {
-    return some(programs, (p) => p.type === 'content' && p.subtype === 'movie');
+    return some(
+      programs,
+      (p) => p.type === 'content' && p.program.type === 'movie',
+    );
   }, [programs]);
 
   const numAndDurationById = useMemo(() => {
@@ -69,12 +73,21 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
           .with(
             {
               type: 'content',
-              subtype: P.select(P.union('movie', 'music_video', 'other_video')),
+              program: {
+                type: P.select(P.union('movie', 'music_video', 'other_video')),
+              },
             },
             identity,
           )
-          .with({ type: 'content', subtype: 'episode' }, (curr) => curr.showId)
-          .with({ type: 'content', subtype: 'track' }, (curr) => curr.artistId)
+          .with(
+            { type: 'content', program: { type: 'episode' } },
+            ({ program }) => program.show?.uuid ?? program.season?.show?.uuid,
+          )
+          .with(
+            { type: 'content', program: { type: 'track' } },
+            ({ program }) =>
+              program.artist?.uuid ?? program.album?.artist?.uuid,
+          )
           .with({ type: P._ }, () => undefined)
           .exhaustive();
 
@@ -99,18 +112,22 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
         seq.collect(programs, (program) => {
           if (
             program.type === 'content' &&
-            program.subtype === 'episode' &&
-            isNonEmptyString(program.showId)
+            program.program.type === 'episode' &&
+            isNonEmptyString(
+              program.program.show?.uuid ?? program.program.season?.show?.uuid,
+            )
           ) {
             return program;
           }
           return;
         }),
-        'showId',
+        ({ program }) => extractProgramGrandparent(program)?.uuid,
       ),
-      (program) => ({
-        id: program.showId!,
-        title: program.grandparent?.title ?? program.title,
+      ({ program }) => ({
+        // Verified safe above
+        // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+        id: extractProgramGrandparent(program)?.uuid!,
+        title: extractProgramGrandparent(program)?.title ?? program.title,
       }),
     );
   }, [programs]);
@@ -121,18 +138,20 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
         seq.collect(programs, (program) => {
           if (
             program.type === 'content' &&
-            program.subtype === 'track' &&
-            isNonEmptyString(program.artistId)
+            program.program.type === 'track' &&
+            isNonEmptyString(extractProgramGrandparent(program.program)?.uuid)
           ) {
             return program;
           }
           return;
         }),
-        'artistId',
+        ({ program }) => extractProgramGrandparent(program)?.uuid,
       ),
-      (program) => ({
-        id: program.artistId!,
-        title: program.grandparent?.title ?? program.title,
+      ({ program }) => ({
+        // Verified safe above
+        // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+        id: extractProgramGrandparent(program)?.uuid!,
+        title: extractProgramGrandparent(program)?.title ?? program.title,
       }),
     );
   }, [programs]);

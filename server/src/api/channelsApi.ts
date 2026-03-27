@@ -9,7 +9,6 @@ import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '@/util/perf.js';
-import { seq } from '@tunarr/shared/util';
 import { type ChannelSession, type CreateChannelRequest } from '@tunarr/types';
 import {
   BasicIdParamSchema,
@@ -568,18 +567,23 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         tags: ['Channels'],
         querystring: ChannelLineupQuery,
         response: {
-          200: z.array(ContentProgramSchema),
+          200: ContentProgramSchema.optional(),
           404: z.object({ error: z.string() }),
         },
       },
     },
     async (req, res) => {
-      const fallbacks =
-        await req.serverCtx.channelDB.getChannelFallbackPrograms(req.params.id);
-      const converted = seq.collect(fallbacks, (p) =>
-        req.serverCtx.programConverter.programDaoToContentProgram(p, []),
+      const fallback = await req.serverCtx.channelDB.getChannelFallbackPrograms(
+        req.params.id,
       );
-      return res.send(converted);
+      if (fallback) {
+        const converted =
+          req.serverCtx.programConverter.programOrmToContentProgram(fallback);
+        if (converted) {
+          return res.send(converted);
+        }
+      }
+      return res.send();
     },
   );
 

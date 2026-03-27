@@ -8,9 +8,12 @@ import type { DeepNullable, MarkRequired, StrictOmit } from 'ts-essentials';
 import type { Artwork, NewArtwork } from './Artwork.ts';
 import type { MediaSourceType } from './base.ts';
 import type { Channel, ChannelOrm } from './Channel.ts';
-import type { ChannelFillerShow } from './ChannelFillerShow.ts';
+import type {
+  ChannelFillerShow,
+  ChannelFillerShowOrm,
+} from './ChannelFillerShow.ts';
 import type { Credit, NewCredit } from './Credit.ts';
-import type { FillerShow } from './FillerShow.ts';
+import type { FillerShowOrm } from './FillerShow.ts';
 import type { Genre, GenreEntity, NewGenre } from './Genre.ts';
 import type {
   LocalMediaSourcePath,
@@ -115,10 +118,10 @@ export type TagRelationWithTag = TagRelation & {
 };
 
 export type ProgramWithRelationsOrm = ProgramOrm & {
-  show?: DeepNullable<Partial<ProgramGroupingOrmWithRelations>> | null;
-  season?: DeepNullable<Partial<ProgramGroupingOrmWithRelations>> | null;
-  artist?: DeepNullable<Partial<ProgramGroupingOrmWithRelations>> | null;
-  album?: DeepNullable<Partial<ProgramGroupingOrmWithRelations>> | null;
+  show?: ProgramGroupingOrmWithRelations | null;
+  season?: ProgramGroupingOrmWithRelations | null;
+  artist?: ProgramGroupingOrmWithRelations | null;
+  album?: ProgramGroupingOrmWithRelations | null;
   // Require minimum data from externalId
   externalIds?: ProgramExternalIdOrm[];
   versions?: ProgramVersionOrmWithRelations[];
@@ -130,6 +133,11 @@ export type ProgramWithRelationsOrm = ProgramOrm & {
   studios?: StudioEntityWithStudio[];
   tags?: TagRelationWithTag[];
 };
+
+export type ProgramOrmWithExternalIds = MarkRequired<
+  ProgramWithRelationsOrm,
+  'externalIds'
+>;
 
 export type SpecificProgramOrmType<
   Typ extends ProgramType,
@@ -182,7 +190,7 @@ export type ChannelWithRelations = Channel & {
 };
 
 export type ChannelOrmWithRelations = ChannelOrm & {
-  programs?: ProgramWithRelationsOrm[];
+  programs?: ProgramOrmWithExternalIds[];
   fillerContent?: ProgramWithRelationsOrm[];
   fillerShows?: ChannelFillerShow[];
   transcodeConfig?: TranscodeConfigOrm;
@@ -212,9 +220,9 @@ export type ChannelOrmWithTranscodeConfig = MarkRequired<
   'transcodeConfig'
 >;
 
-export type ChannelFillerShowWithRelations = ChannelFillerShow & {
-  fillerShow: MarkNonNullable<DeepNullable<FillerShow>, 'uuid'>;
-  fillerContent?: ProgramWithRelations[];
+export type ChannelFillerShowWithRelations = ChannelFillerShowOrm & {
+  fillerShow: MarkNonNullable<DeepNullable<FillerShowOrm>, 'uuid'>;
+  fillerContent?: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[];
 };
 
 export type ChannelFillerShowWithContent = MarkRequired<
@@ -261,6 +269,10 @@ export type NewProgramWithExternalIds = NewProgramDao & {
 export type NewMovieProgram = SpecificProgramType<'movie', NewProgramDao>;
 export type NewOtherVideoProgram = SpecificProgramType<
   'other_video',
+  NewProgramDao
+>;
+export type NewMusicVideoProgram = SpecificProgramType<
+  'music_video',
   NewProgramDao
 >;
 
@@ -387,16 +399,20 @@ export type MediaSourceWithLibrariesDirect = MediaSource & {
   paths: LocalMediaSourcePath[];
 };
 
+export type MediaSourceWithLibraries = MediaSourceOrm & {
+  libraries: MediaSourceLibraryOrm[];
+};
+
 export type MediaSourceWithRelations = MediaSourceOrm & {
   libraries: MediaSourceLibraryOrm[];
   paths: LocalMediaSourcePathOrm[];
   replacePaths: MediaSourceLibraryReplacePath[];
 };
 
-export type SpecificMediaSourceType<Typ extends MediaSourceType> = StrictOmit<
-  MediaSourceWithRelations,
-  'type'
-> & {
+export type SpecificMediaSourceType<
+  Typ extends MediaSourceType,
+  MediaSourceT extends MediaSourceOrm = MediaSourceWithRelations,
+> = StrictOmit<MediaSourceT, 'type'> & {
   type: Typ;
 };
 

@@ -12,7 +12,12 @@ import {
   shuffle,
   values,
 } from 'lodash-es';
-import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
+import { match } from 'ts-pattern';
+import {
+  extractProgramGrandparent,
+  extractProgramParent,
+  getProgramGroupingKey,
+} from '../../helpers/programUtil.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
 import {
@@ -55,17 +60,19 @@ function sortProgram(
 ) {
   switch (by) {
     case 'release_date': {
-      const ts = p.date ? new Date(p.date).getTime() : 0;
-      return ts;
+      return p.program.releaseDate ?? 0;
     }
     case 'index': {
-      const seasonNumber = p.parent?.index ?? p.seasonNumber ?? 1;
-      const episodeNumber = p.index ?? p.episodeNumber ?? 1;
+      const seasonNumber = extractProgramParent(p.program)?.index ?? 1;
+      const episodeNumber = match(p.program)
+        .with({ type: 'episode' }, (ep) => ep.episodeNumber)
+        .with({ type: 'track' }, (track) => track.trackNumber)
+        .otherwise(() => 1);
       return seasonNumber * (1e5 + episodeNumber);
     }
 
     case 'alpha':
-      return p.grandparent?.title ?? p.title;
+      return extractProgramGrandparent(p.program)?.title ?? p.program.title;
   }
 }
 

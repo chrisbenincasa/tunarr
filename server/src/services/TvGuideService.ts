@@ -1,7 +1,13 @@
 import { ChannelDB } from '@/db/ChannelDB.js';
 import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
-import { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
+import {
+  isContentItem,
+  isOfflineItem,
+  isRedirectItem,
+  Lineup,
+  LineupItem,
+} from '@/db/derived_types/Lineup.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
@@ -46,6 +52,7 @@ import {
 import { DeepReadonly } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
 import { ChannelOrm } from '../db/schema/Channel.ts';
@@ -152,6 +159,8 @@ export class TVGuideService {
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(OnDemandChannelService)
     private onDemandChannelService: OnDemandChannelService,
+    @inject(MaterializeProgramsCommand)
+    private materializeProgramsCommand: MaterializeProgramsCommand,
   ) {
     this.timer = new Timer(this.logger);
     this.cachedGuide = {};
@@ -1019,6 +1028,7 @@ export class TVGuideService {
     channelIdFilter?: string[],
   ) {
     const allChannels = await this.channelDB.getAllChannels();
+    const channelsById = groupByUniq(allChannels, (c) => c.uuid);
     const startTime = dateRange.from ?? dayjs();
     const endTime = dateRange.to;
     const lineups = await Promise.all(
@@ -1060,31 +1070,72 @@ export class TVGuideService {
       ),
     );
 
-    const materializedPrograms = groupByUniqProp(
-      await this.programDB.getProgramsByIds(programIds),
+    const dbPrograms = await this.programDB.getProgramsByIds(programIds);
+
+    const materializedPrograms =
+      await this.materializeProgramsCommand.execute(dbPrograms);
+    const materializedProgramById = groupByUniqProp(
+      materializedPrograms,
       'uuid',
     );
 
-    return map(lineups, ({ channel, programs }) => {
+    return map(lineups, ({ channel, programs: guideItems }) => {
+      const programs = guideItems.map((guideItem) => {
+        const channelItem = match(guideItem.lineupItem)
+          .when(isOfflineItem, (item) =>
+            this.programConverter.offlineLineupItemToProgram(
+              channel,
+              item,
+              true,
+            ),
+          )
+          .when(isRedirectItem, (item) => {
+            // const redirectChannel = find(channelReferences, { uuid: item.channel });
+            const targetChannel = channelsById[item.channel];
+
+            if (isNil(targetChannel)) {
+              this.logger.warn(
+                'Dangling redirect channel reference. Source channel = %s, target channel = %s',
+                channel.uuid,
+                item.channel,
+              );
+              return this.programConverter.offlineLineupItemToProgram(channel, {
+                type: 'offline',
+                durationMs: item.durationMs,
+              });
+            }
+            return this.programConverter.redirectLineupItemToProgram(
+              item,
+              targetChannel,
+            );
+          })
+          .when(isContentItem, (item) => {
+            const program = materializedProgramById[item.id];
+            if (!program) {
+              this.logger.warn(
+                'Program in lineup with ID %s not found in database',
+                item.id,
+              );
+              return this.programConverter.offlineLineupItemToProgram(channel, {
+                type: 'offline',
+                durationMs: item.durationMs,
+              });
+            }
+            return this.programConverter.materializedProgramToContentProgram(
+              program,
+            );
+          })
+          .exhaustive();
+
+        return this.guideItemToProgram(channel, guideItem, channelItem);
+      });
+
       return {
         icon: channel.icon,
         name: channel.name,
         number: channel.number,
         id: channel.uuid,
-        programs: map(programs, (program) => {
-          return this.guideItemToProgram(
-            channel,
-            program,
-            this.programConverter.lineupItemToChannelProgramOrm(
-              channel,
-              program.lineupItem,
-              allChannels,
-              program.lineupItem.type === 'content'
-                ? materializedPrograms[program.lineupItem.id]
-                : undefined,
-            ),
-          );
-        }),
+        programs,
       };
     });
   }
@@ -1151,7 +1202,16 @@ export class TVGuideService {
       guideItem.isPaused &&
       (program.type === 'content' || program.type === 'flex')
     ) {
-      program.title += ' (paused)';
+      switch (program.type) {
+        case 'content':
+          program.program.title += ' (paused)';
+          break;
+        case 'flex':
+          program.title += ' (paused)';
+          break;
+        default:
+          break;
+      }
       program.isPaused = true;
     }
 

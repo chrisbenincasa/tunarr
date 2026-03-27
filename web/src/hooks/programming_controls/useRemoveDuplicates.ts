@@ -9,6 +9,7 @@ import {
   isRedirectProgram,
   tag,
 } from '@tunarr/types';
+import { isValidMultiExternalIdType } from '@tunarr/types/schemas';
 import { forEach, reject, some } from 'lodash-es';
 import { useCallback } from 'react';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
@@ -66,9 +67,12 @@ export const removeDuplicatePrograms = (programs: UIChannelProgram[]) => {
       return false;
     }
 
-    const externalIds = seq.collect(p.externalIds, (id) => {
-      if (id.type === 'multi') {
-        return createExternalId(id.source, tag(id.sourceId), id.id);
+    const externalIds = seq.collect(p.program.identifiers, (id) => {
+      if (
+        isValidMultiExternalIdType(id.type) &&
+        isNonEmptyString(id.sourceId)
+      ) {
+        return createExternalId(id.type, tag(id.sourceId), id.id);
       }
       return;
     });

@@ -25,7 +25,6 @@ import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
-  ChannelProgramming,
   CondensedChannelProgram,
   CondensedChannelProgramming,
   ContentProgram,
@@ -56,7 +55,6 @@ import {
   map,
   mapValues,
   nth,
-  omit,
   omitBy,
   partition,
   reject,
@@ -73,6 +71,7 @@ import { MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
+import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import {
   createManyRelationAgg,
@@ -105,15 +104,7 @@ import {
 } from './interfaces/IChannelDB.ts';
 import { SchemaBackedDbAdapter } from './json/SchemaBackedJsonDBAdapter.ts';
 import { calculateStartTimeOffsets } from './lineupUtil.ts';
-import {
-  AllProgramGroupingFields,
-  withFallbackPrograms,
-  withPrograms,
-  withTrackAlbum,
-  withTrackArtist,
-  withTvSeason,
-  withTvShow,
-} from './programQueryHelpers.ts';
+import { withPrograms } from './programQueryHelpers.ts';
 import { Artwork } from './schema/Artwork.ts';
 import {
   Channel,
@@ -254,6 +245,8 @@ export class ChannelDB implements IChannelDB {
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
     @inject(MaterializeLineupCommand)
     private materializeLineupCommand: MaterializeLineupCommand,
+    @inject(MaterializeProgramsCommand)
+    private materializeProgramsCommand: MaterializeProgramsCommand,
   ) {}
 
   async channelExists(channelId: string) {
@@ -342,10 +335,26 @@ export class ChannelDB implements IChannelDB {
           with: {
             program: {
               with: {
-                show: true,
-                season: true,
-                artist: true,
-                album: true,
+                show: {
+                  with: {
+                    externalIds: true,
+                  },
+                },
+                season: {
+                  with: {
+                    externalIds: true,
+                  },
+                },
+                artist: {
+                  with: {
+                    externalIds: true,
+                  },
+                },
+                album: {
+                  with: {
+                    externalIds: true,
+                  },
+                },
                 externalIds: true,
               },
             },
@@ -657,10 +666,26 @@ export class ChannelDB implements IChannelDB {
           where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
           with: {
             externalIds: true,
-            album: true,
-            artist: true,
-            season: true,
-            show: true,
+            album: {
+              with: {
+                externalIds: true,
+              },
+            },
+            artist: {
+              with: {
+                externalIds: true,
+              },
+            },
+            season: {
+              with: {
+                externalIds: true,
+              },
+            },
+            show: {
+              with: {
+                externalIds: true,
+              },
+            },
             artwork: true,
             subtitles: true,
             credits: true,
@@ -694,13 +719,18 @@ export class ChannelDB implements IChannelDB {
   }
 
   async getChannelFallbackPrograms(uuid: string) {
-    const result = await this.db
-      .selectFrom('channelFallback')
-      .where('channelFallback.channelUuid', '=', uuid)
-      .select(withFallbackPrograms)
-      .groupBy('channelFallback.channelUuid')
-      .executeTakeFirst();
-    return result?.programs ?? [];
+    const result = await this.drizzleDB.query.channelFallback.findFirst({
+      where: (fields, { eq }) => eq(fields.channelUuid, uuid),
+      with: {
+        program: {
+          with: {
+            externalIds: true,
+          },
+        },
+      },
+    });
+
+    return result?.program;
   }
 
   async saveChannel(createReq: SaveableChannel) {
@@ -1079,68 +1109,6 @@ export class ChannelDB implements IChannelDB {
         orderBy: (fields, { asc }) => asc(fields.number),
       })
       .execute();
-    // return this.db
-    //   .selectFrom('channel')
-    //   .selectAll()
-    //   .orderBy('channel.number asc')
-    //   .$if(isDefined(pageParams) && pageParams.offset >= 0, (qb) =>
-    //     qb
-    //       .offset(pageParams!.offset)
-    //       .$if(pageParams!.limit >= 0, (qb) => qb.limit(pageParams!.limit)),
-    //   )
-    //   .execute();
-  }
-
-  async getAllChannelsAndPrograms(): Promise<ChannelOrmWithPrograms[]> {
-    return await this.drizzleDB.query.channels
-      .findMany({
-        with: {
-          channelPrograms: {
-            with: {
-              program: {
-                with: {
-                  album: true,
-                  artist: true,
-                  show: true,
-                  season: true,
-                  externalIds: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: (fields, { asc }) => asc(fields.number),
-      })
-      .then((result) => {
-        return result.map((channel) => {
-          const withoutJoinTable = omit(channel, 'channelPrograms');
-          return {
-            ...withoutJoinTable,
-            programs: channel.channelPrograms.map((cp) => cp.program),
-          } satisfies ChannelOrmWithPrograms;
-        });
-      });
-    // return await this.db
-    //   .selectFrom('channel')
-    //   .selectAll(['channel'])
-    //   .leftJoin(
-    //     'channelPrograms',
-    //     'channelPrograms.channelUuid',
-    //     'channel.uuid',
-    //   )
-    //   .select((eb) => [
-    //     withPrograms(eb, {
-    //       joins: {
-    //         trackAlbum: MinimalProgramGroupingFields,
-    //         trackArtist: MinimalProgramGroupingFields,
-    //         tvShow: MinimalProgramGroupingFields,
-    //         tvSeason: MinimalProgramGroupingFields,
-    //       },
-    //     }),
-    //   ])
-    //   .groupBy('channel.uuid')
-    //   .orderBy('channel.number asc')
-    //   .execute();
   }
 
   async replaceChannelPrograms(
@@ -1597,36 +1565,6 @@ export class ChannelDB implements IChannelDB {
     return db.data;
   }
 
-  async loadAndMaterializeLineup(
-    channelId: string,
-    offset: number = 0,
-    limit: number = -1,
-  ): Promise<ChannelProgramming | null> {
-    const channel = await this.getChannelAndProgramsOld(channelId);
-    if (isNil(channel)) {
-      return null;
-    }
-
-    const lineup = await this.loadLineup(channelId);
-    const len = lineup.items.length;
-    const cleanOffset = offset < 0 ? 0 : offset;
-    const cleanLimit = limit < 0 ? len : limit;
-
-    const { lineup: apiLineup, offsets } = await this.buildApiLineup(
-      channel,
-      take(drop(lineup.items, cleanOffset), cleanLimit),
-    );
-
-    return {
-      icon: channel.icon,
-      name: channel.name,
-      number: channel.number,
-      totalPrograms: len,
-      programs: apiLineup,
-      startTimeOffsets: offsets,
-    };
-  }
-
   async loadCondensedLineup(
     channelId: string,
     offset: number = 0,
@@ -1651,44 +1589,60 @@ export class ChannelDB implements IChannelDB {
 
     const contentItems = filter(pagedLineup, isContentItem);
 
-    const directPrograms = await this.timer.timeAsync('direct', () =>
-      this.db
-        .selectFrom('channelPrograms')
-        .where('channelUuid', '=', channelId)
-        .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
-        .selectAll('program')
-        .select((eb) => [
-          withTvShow(eb, AllProgramGroupingFields, true),
-          withTvSeason(eb, AllProgramGroupingFields, true),
-          withTrackAlbum(eb, AllProgramGroupingFields, true),
-          withTrackArtist(eb, AllProgramGroupingFields, true),
-        ])
-        .execute(),
-    );
+    const directPrograms = (
+      await this.timer.timeAsync('select programs', () =>
+        this.drizzleDB.query.channelPrograms.findMany({
+          where: (fields, { eq }) => eq(fields.channelUuid, channelId),
+          with: {
+            program: {
+              with: {
+                show: {
+                  with: {
+                    externalIds: true,
+                  },
+                },
+                season: {
+                  with: {
+                    externalIds: true,
+                  },
+                },
+                album: {
+                  with: {
+                    externalIds: true,
+                  },
+                },
+                artist: {
+                  with: {
+                    externalIds: true,
+                  },
+                },
+                externalIds: true,
+              },
+            },
+          },
+        }),
+      )
+    ).map(({ program }) => program);
 
-    const externalIds = await this.timer.timeAsync('eids', () =>
-      this.getChannelProgramExternalIds(channelId),
+    const programsById = groupByUniqProp(
+      await this.materializeProgramsCommand.execute(directPrograms),
+      'uuid',
     );
-
-    const externalIdsByProgramId = groupBy(
-      externalIds,
-      (eid) => eid.programUuid,
-    );
-
-    const programsById = groupByUniqProp(directPrograms, 'uuid');
 
     const materializedPrograms = this.timer.timeSync('program convert', () => {
       const ret: Record<string, ContentProgram> = {};
       forEach(uniqBy(contentItems, 'id'), (item) => {
         const program = programsById[item.id];
         if (!program) {
+          this.logger.warn(
+            'Failed to materialize program with ID %s, this could mean it is missing a media source ID or library ID',
+            item.id,
+          );
           return;
         }
 
-        const converted = this.programConverter.programDaoToContentProgram(
-          program,
-          externalIdsByProgramId[program.uuid] ?? [],
-        );
+        const converted =
+          this.programConverter.materializedProgramToContentProgram(program);
 
         if (converted) {
           ret[converted.id] = converted;
@@ -1703,7 +1657,7 @@ export class ChannelDB implements IChannelDB {
       () =>
         this.buildCondensedLineup(
           channel,
-          new Set([...seq.collect(directPrograms, (p) => p.uuid)]),
+          new Set([...Object.keys(programsById)]),
           pagedLineup,
         ),
     );
@@ -1940,51 +1894,6 @@ export class ChannelDB implements IChannelDB {
     }
   }
 
-  private async buildApiLineup(
-    channel: ChannelWithPrograms,
-    lineup: LineupItem[],
-  ): Promise<{ lineup: ChannelProgram[]; offsets: number[] }> {
-    const allChannels = await this.db
-      .selectFrom('channel')
-      .select(['channel.uuid', 'channel.number', 'channel.name'])
-      .execute();
-    let lastOffset = 0;
-    const offsets: number[] = [];
-
-    const programsById = groupByUniqProp(channel.programs, 'uuid');
-
-    const programs: ChannelProgram[] = [];
-
-    for (const item of lineup) {
-      const apiItem = match(item)
-        .with({ type: 'content' }, (contentItem) => {
-          const fullProgram = programsById[contentItem.id];
-          if (!fullProgram) {
-            return null;
-          }
-          return this.programConverter.programDaoToContentProgram(
-            fullProgram,
-            fullProgram.externalIds ?? [],
-          );
-        })
-        .otherwise((item) =>
-          this.programConverter.lineupItemToChannelProgram(
-            channel,
-            item,
-            allChannels,
-          ),
-        );
-
-      if (apiItem) {
-        offsets.push(lastOffset);
-        lastOffset += item.durationMs;
-        programs.push(apiItem);
-      }
-    }
-
-    return { lineup: programs, offsets };
-  }
-
   private async buildCondensedLineup(
     channel: Channel,
     dbProgramIds: Set<string>,
@@ -2079,6 +1988,7 @@ export class ChannelDB implements IChannelDB {
             persisted: true,
             type: 'content',
             id: item.id,
+            uniqueId: item.id,
             duration: item.durationMs,
           };
         }

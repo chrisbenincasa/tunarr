@@ -18,6 +18,8 @@ import {
   CondensedChannelProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
+} from '../schemas/lineups.js';
+import {
   Episode,
   ItemOrFolder,
   MusicAlbum,

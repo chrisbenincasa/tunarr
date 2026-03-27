@@ -1,7 +1,11 @@
 import { random } from '@/helpers/random.ts';
 import { removeDuplicatePrograms } from '@/hooks/programming_controls/useRemoveDuplicates.ts';
 import { groupBy, mapValues, orderBy } from 'lodash-es';
-import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
+import {
+  extractProgramIndex,
+  extractProgramParent,
+  getProgramGroupingKey,
+} from '../../helpers/programUtil.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import { useChannelEditorLazy } from '../../store/selectors.ts';
 import type {
@@ -28,7 +32,10 @@ export function useCyclicShuffle() {
         if (firstProgram.type === 'content') {
           programs = orderBy(
             programs as UIContentProgram[],
-            [(p) => p.parent?.index, (p) => p.index],
+            [
+              ({ program }) => extractProgramParent(program)?.index,
+              ({ program }) => extractProgramIndex(program),
+            ],
             'asc',
           );
         } else if (firstProgram.type === 'custom') {

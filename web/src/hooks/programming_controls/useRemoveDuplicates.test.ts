@@ -1,4 +1,9 @@
-import type { ContentProgram, CustomProgram, FlexProgram, RedirectProgram } from '@tunarr/types';
+import type {
+  ContentProgram,
+  CustomProgram,
+  FlexProgram,
+  RedirectProgram,
+} from '@tunarr/types';
 import { describe, expect, test } from 'vitest';
 import type { UIChannelProgram } from '../../types/index';
 import { removeDuplicatePrograms } from './useRemoveDuplicates';
@@ -9,11 +14,10 @@ const createContentProgram = (
 ): UIChannelProgram<ContentProgram> => ({
   type: 'content',
   id,
+  uniqueId: id,
   persisted: true,
-  subtype: 'movie',
-  title: `Movie ${id}`,
   duration: 3600000,
-  externalIds: [],
+  program: { type: 'movie', identifiers: [] } as ContentProgram['program'],
   uiIndex: 0,
   originalIndex: 0,
   ...overrides,
@@ -27,7 +31,9 @@ const createFlexProgram = (): UIChannelProgram<FlexProgram> => ({
   originalIndex: 0,
 });
 
-const createRedirectProgram = (channel: string): UIChannelProgram<RedirectProgram> => ({
+const createRedirectProgram = (
+  channel: string,
+): UIChannelProgram<RedirectProgram> => ({
   type: 'redirect',
   channel,
   duration: 3600000,
@@ -87,18 +93,19 @@ describe('removeDuplicatePrograms', () => {
     const programWithExternalId = (
       internalId: string,
       externalId: string,
-    ): UIChannelProgram<ContentProgram> =>
-      createContentProgram(internalId, {
-        persisted: false,
-        externalIds: [
-          {
-            type: 'multi',
-            source: 'plex',
-            sourceId: 'server-1',
-            id: externalId,
-          },
-        ],
-      });
+    ): UIChannelProgram<ContentProgram> => ({
+      type: 'content',
+      id: internalId,
+      uniqueId: internalId,
+      persisted: false,
+      duration: 3600000,
+      program: {
+        type: 'movie',
+        identifiers: [{ type: 'plex', sourceId: 'server-1', id: externalId }],
+      } as ContentProgram['program'],
+      uiIndex: 0,
+      originalIndex: 0,
+    });
 
     const programs: UIChannelProgram[] = [
       programWithExternalId('a', 'plex-123'),

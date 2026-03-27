@@ -7,6 +7,10 @@ import { range } from 'lodash-es';
 import { useCallback, useRef, useState } from 'react';
 import { getTextContrast } from '../../helpers/colors.ts';
 import { OneDayMillis } from '../../helpers/constants.ts';
+import {
+  programSeasonAndEpisode,
+  programTitle,
+} from '../../helpers/formatters.ts';
 import { useGetProgramsForDayFunc } from '../../hooks/calendarHooks.ts';
 import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
@@ -132,15 +136,13 @@ export const ProgramDayCalendarView = ({
                 whiteSpace: 'nowrap',
               }}
             >
-              {program.type === 'content'
-                ? (program.grandparent?.title ?? program.title)
-                : ''}
+              {program.type === 'content' ? programTitle(program) : ''}
             </Box>
             {dataRows > 1 && (
               <>
                 <br />
                 {program.type === 'content' &&
-                  program.subtype === 'episode' && (
+                  program.program.type === 'episode' && (
                     <Box
                       component="span"
                       sx={{
@@ -151,23 +153,24 @@ export const ProgramDayCalendarView = ({
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {`S${program.parent?.index}E${program.index}`}
+                      {programSeasonAndEpisode(program.program)}
                     </Box>
                   )}
-                {program.type === 'content' && program.subtype === 'movie' && (
-                  <Box
-                    component="span"
-                    sx={{
-                      fontSize: 'small',
-                      fontWeight: 'bold',
-                      textOverflow: 'clip',
-                      overflowX: 'hidden',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {actualStartTime.format('LT')}
-                  </Box>
-                )}
+                {program.type === 'content' &&
+                  program.program.type === 'movie' && (
+                    <Box
+                      component="span"
+                      sx={{
+                        fontSize: 'small',
+                        fontWeight: 'bold',
+                        textOverflow: 'clip',
+                        overflowX: 'hidden',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {actualStartTime.format('LT')}
+                    </Box>
+                  )}
               </>
             )}
           </Paper>

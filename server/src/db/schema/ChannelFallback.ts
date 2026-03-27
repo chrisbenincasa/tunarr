@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import { primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Selectable } from 'kysely';
 import { Channel } from './Channel.ts';
@@ -5,7 +6,7 @@ import type { KyselifyBetter } from './KyselifyBetter.ts';
 import { Program } from './Program.ts';
 
 export const ChannelFallback = sqliteTable(
-  'channel_custom_show',
+  'channel_fallback',
   {
     channelUuid: text()
       .notNull()
@@ -15,6 +16,20 @@ export const ChannelFallback = sqliteTable(
       .references(() => Program.uuid, { onDelete: 'cascade' }),
   },
   (table) => [primaryKey({ columns: [table.channelUuid, table.programUuid] })],
+);
+
+export const ChannelFallbackRelations = relations(
+  ChannelFallback,
+  ({ one }) => ({
+    channel: one(Channel, {
+      fields: [ChannelFallback.channelUuid],
+      references: [Channel.uuid],
+    }),
+    program: one(Program, {
+      fields: [ChannelFallback.programUuid],
+      references: [Program.uuid],
+    }),
+  }),
 );
 
 export type ChannelFallbackTable = KyselifyBetter<typeof ChannelFallback>;

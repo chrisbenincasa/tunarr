@@ -22,10 +22,10 @@ export const sortPrograms = (
   let newProgramSort: ChannelProgram[] = [];
   newProgramSort = programs.sort((a, b) => {
     if (isContentProgram(a) && isContentProgram(b)) {
-      if (a.title < b.title) {
+      if (a.program.title < b.program.title) {
         return -1;
       }
-      if (a.title > b.title) {
+      if (a.program.title > b.program.title) {
         return 1;
       }
       return 0;

@@ -8,11 +8,10 @@ const createContentProgram = (
 ): ContentProgram => ({
   type: 'content',
   id: `id-${title}`,
+  uniqueId: `id-${title}`,
   persisted: true,
-  subtype: 'movie',
-  title,
   duration: 3600000,
-  externalIds: [],
+  program: { type: 'movie', title } as ContentProgram['program'],
   ...overrides,
 });
 
@@ -39,11 +38,9 @@ describe('sortPrograms', () => {
 
     const { newProgramSort } = sortPrograms(programs, 'asc');
 
-    expect(newProgramSort.map((p) => (p as ContentProgram).title)).toEqual([
-      'Alpha',
-      'Bravo',
-      'Charlie',
-    ]);
+    expect(
+      newProgramSort.map((p) => (p as ContentProgram).program.title),
+    ).toEqual(['Alpha', 'Bravo', 'Charlie']);
   });
 
   test('sorts content programs alphabetically in descending order', () => {
@@ -55,11 +52,9 @@ describe('sortPrograms', () => {
 
     const { newProgramSort } = sortPrograms(programs, 'desc');
 
-    expect(newProgramSort.map((p) => (p as ContentProgram).title)).toEqual([
-      'Charlie',
-      'Bravo',
-      'Alpha',
-    ]);
+    expect(
+      newProgramSort.map((p) => (p as ContentProgram).program.title),
+    ).toEqual(['Charlie', 'Bravo', 'Alpha']);
   });
 
   test('content programs appear before non-content programs (flex, redirect)', () => {
@@ -74,9 +69,9 @@ describe('sortPrograms', () => {
 
     // Content programs should come first, sorted alphabetically
     expect(newProgramSort[0].type).toBe('content');
-    expect((newProgramSort[0] as ContentProgram).title).toBe('Apple');
+    expect((newProgramSort[0] as ContentProgram).program.title).toBe('Apple');
     expect(newProgramSort[1].type).toBe('content');
-    expect((newProgramSort[1] as ContentProgram).title).toBe('Zebra');
+    expect((newProgramSort[1] as ContentProgram).program.title).toBe('Zebra');
     // Non-content programs come after
     expect(newProgramSort[2].type).not.toBe('content');
     expect(newProgramSort[3].type).not.toBe('content');
@@ -96,7 +91,9 @@ describe('sortPrograms', () => {
     const { newProgramSort } = sortPrograms(programs, 'asc');
 
     expect(newProgramSort).toHaveLength(1);
-    expect((newProgramSort[0] as ContentProgram).title).toBe('Only One');
+    expect((newProgramSort[0] as ContentProgram).program.title).toBe(
+      'Only One',
+    );
   });
 
   test('handles programs with identical titles', () => {
@@ -109,6 +106,10 @@ describe('sortPrograms', () => {
     const { newProgramSort } = sortPrograms(programs, 'asc');
 
     expect(newProgramSort).toHaveLength(3);
-    expect(newProgramSort.every((p) => (p as ContentProgram).title === 'Same')).toBe(true);
+    expect(
+      newProgramSort.every(
+        (p) => (p as ContentProgram).program.title === 'Same',
+      ),
+    ).toBe(true);
   });
 });

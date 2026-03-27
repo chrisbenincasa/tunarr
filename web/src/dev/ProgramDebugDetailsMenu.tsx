@@ -4,8 +4,12 @@ import { IconButton, Link, ListItemIcon, Menu, MenuItem } from '@mui/material';
 import type { ChannelProgram } from '@tunarr/types';
 import { constant, isUndefined } from 'lodash-es';
 import { useState } from 'react';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 import { useCopyToClipboard } from 'usehooks-ts';
+import {
+  extractProgramGrandparent,
+  extractProgramParent,
+} from '../helpers/programUtil.ts';
 
 type Props = {
   program: ChannelProgram;
@@ -25,13 +29,25 @@ const ProgramDebugDetailsMenuImpl = ({ program }: Props) => {
     .otherwise(defaultUndefined);
 
   const parentId = match(program)
-    .with({ type: 'content' }, (p) => p.seasonId ?? p.albumId)
-    .with({ type: 'custom' }, (p) => p.program?.seasonId ?? p.program?.albumId)
+    .with(
+      { type: 'content' },
+      ({ program }) => extractProgramParent(program)?.uuid,
+    )
+    .with(
+      { type: 'custom', program: P.nonNullable },
+      ({ program: { program } }) => extractProgramParent(program)?.uuid,
+    )
     .otherwise(defaultUndefined);
 
   const grandparentId = match(program)
-    .with({ type: 'content' }, (p) => p.showId ?? p.artistId)
-    .with({ type: 'custom' }, (p) => p.program?.showId ?? p.program?.artistId)
+    .with(
+      { type: 'content' },
+      ({ program }) => extractProgramGrandparent(program)?.uuid,
+    )
+    .with(
+      { type: 'custom', program: P.nonNullable },
+      ({ program: { program } }) => extractProgramGrandparent(program)?.uuid,
+    )
     .otherwise(defaultUndefined);
 
   const handleCopy = (id: string) => {

@@ -57,6 +57,11 @@ const test = baseTest.extend<Fixture>({
       execute: async () => {},
     } as any;
 
+    const mockMaterializeProgramsCommand = {
+      execute: async (programs: any[]) =>
+        programs.map((p: any) => ({ uuid: p.uuid, type: 'movie' })),
+    } as any;
+
     const channelDb = new ChannelDB(
       new ProgramConverter(
         LoggerFactory.child({ className: ProgramConverter.name }),
@@ -69,6 +74,7 @@ const test = baseTest.extend<Fixture>({
       new FileSystemService(globalOptions()),
       dbAccess.drizzle!, // Drizzle instance
       mockMaterializeLineupCommand,
+      mockMaterializeProgramsCommand,
     );
 
     await use(channelDb);

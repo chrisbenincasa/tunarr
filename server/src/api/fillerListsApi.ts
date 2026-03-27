@@ -10,6 +10,8 @@ import {
 } from '@tunarr/types/schemas';
 import { isNil, map } from 'lodash-es';
 import { z } from 'zod/v4';
+import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
+import { container } from '../container.ts';
 
 // We can't use the built-in zod brand because we have our own custom
 // tagged type.
@@ -151,9 +153,18 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      return res
-        .status(200)
-        .send(await req.serverCtx.fillerDB.getFillerPrograms(req.params.id));
+      const fillerContent = await req.serverCtx.fillerDB.getFillerPrograms(
+        req.params.id,
+      );
+      const materializedContent = await container
+        .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
+        .execute(fillerContent);
+      const responsePrograms = materializedContent.map((program) =>
+        req.serverCtx.programConverter.materializedProgramToContentProgram(
+          program,
+        ),
+      );
+      return res.status(200).send(responsePrograms);
     },
   );
 };

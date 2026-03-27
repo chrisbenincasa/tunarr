@@ -9,6 +9,7 @@ import {
   TruthyQueryParam,
 } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from '@/util/env.js';
 import {
   groupByUniq,
   groupByUniqAndMap,
@@ -17,7 +18,6 @@ import {
   isHttpUrl,
   isNonEmptyString,
 } from '@/util/index.js';
-import { getBooleanEnvVar, TUNARR_ENV_VARS } from '@/util/env.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import type { Episode, MusicAlbum, MusicTrack, Season } from '@tunarr/types';
@@ -129,10 +129,24 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           req.params.id,
         );
         if (program) {
+          const materializedProgram = head(
+            await container
+              .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
+              .execute([program]),
+          );
+
+          if (!materializedProgram) {
+            logger.warn(
+              'Failed to materialize program with ID %s.',
+              program.uuid,
+            );
+            return res.status(404).send();
+          }
+
           return res.send(
             compact([
-              req.serverCtx.programConverter.programOrmToContentProgram(
-                program,
+              req.serverCtx.programConverter.materializedProgramToContentProgram(
+                materializedProgram,
               ),
             ]),
           );
@@ -147,8 +161,14 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           grouping.type,
         );
 
-      const apiPrograms = seq.collect(programs, (program) =>
-        req.serverCtx.programConverter.programOrmToContentProgram(program),
+      const materializedPrograms = await container
+        .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
+        .execute(programs);
+
+      const apiPrograms = materializedPrograms.map((program) =>
+        req.serverCtx.programConverter.materializedProgramToContentProgram(
+          program,
+        ),
       );
 
       return res.send(apiPrograms);
@@ -457,15 +477,12 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             if (proxyRes.headers instanceof AxiosHeaders) {
               headers = {
                 ...proxyRes.headers,
-             };
+              };
             } else {
               headers = { ...omitBy(proxyRes.headers, isNull) };
             }
 
-            return res
-              .status(200)
-              .headers(headers)
-              .send(proxyRes.data);
+            return res.status(200).headers(headers).send(proxyRes.data);
           } catch (e) {
             if (isAxiosError(e) && e.response?.status === 404) {
               return res.status(404).send();
@@ -712,10 +729,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               headers = { ...omitBy(proxyRes.headers, isNull) };
             }
 
-            return res
-              .status(200)
-              .headers(headers)
-              .send(proxyRes.data);
+            return res.status(200).headers(headers).send(proxyRes.data);
           } catch (e) {
             if (isAxiosError(e) && e.response?.status === 404) {
               logger.error(
@@ -982,7 +996,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         operationId: 'getProgramByExternalId',
         params: LookupExternalProgrammingSchema,
         response: {
-          200: ContentProgramSchema,
+          200: TerminalProgramSchema,
           400: z.object({ message: z.string() }),
           404: z.void(),
           500: z.string(),
@@ -998,7 +1012,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const result = await req.serverCtx.programDB.lookupByExternalIds(
-        new Set([[sourceType as RemoteSourceType, tag(rawServerId), id]]),
+        new Set([[sourceType, tag(rawServerId), id]]),
       );
       const program = first(values(result));
 
@@ -1006,10 +1020,11 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send();
       }
 
-      const converted =
-        req.serverCtx.programConverter.programOrmToContentProgram(program);
+      const converted = await container
+        .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
+        .execute([program]);
 
-      if (!converted) {
+      if (converted.length === 0) {
         return res
           .status(500)
           .send(
@@ -1017,7 +1032,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           );
       }
 
-      return res.send(converted);
+      return res.send(head(converted));
     },
   );
 

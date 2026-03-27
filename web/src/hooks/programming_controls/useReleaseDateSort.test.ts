@@ -10,32 +10,48 @@ describe('useReleaseDateSort', () => {
       two = v4(),
       three = v4();
 
-    const before: Partial<ChannelProgram>[] = [
+    const before = [
       {
         type: 'content',
-        subtype: 'episode',
-        date: '2024-04-20',
         id: one,
-        seasonNumber: 3,
-        episodeNumber: 7,
+        persisted: false,
+        duration: 0,
+        uniqueId: one,
+        program: {
+          type: 'episode',
+          releaseDate: 0,
+          episodeNumber: 7,
+          season: { index: 3 },
+        },
       },
       {
         type: 'content',
-        date: '2024-04-20',
-        subtype: 'episode',
         id: two,
-        seasonNumber: 2,
-        episodeNumber: 1,
+        persisted: false,
+        duration: 0,
+        uniqueId: two,
+        program: {
+          type: 'episode',
+          releaseDate: 0,
+          episodeNumber: 1,
+          season: { index: 2 },
+        },
       },
       {
         type: 'content',
-        date: '2024-04-20',
-        subtype: 'episode',
         id: three,
-        seasonNumber: 3,
-        episodeNumber: 2,
+        persisted: false,
+        duration: 0,
+        uniqueId: three,
+        program: {
+          type: 'episode',
+          releaseDate: 0,
+          episodeNumber: 2,
+          season: { index: 3 },
+        },
       },
-    ];
+    ] as ChannelProgram[];
+
     const sortedPrograms = sortProgramsByReleaseDate(before, 'asc');
 
     expect(map(sortedPrograms, 'id')).toEqual([two, three, one]);

@@ -3,6 +3,12 @@ import { seq } from '@tunarr/shared/util';
 import type { ChannelProgram, ContentProgram } from '@tunarr/types';
 import { isEmpty } from 'lodash-es';
 import { match, P } from 'ts-pattern';
+import {
+  extractProgramGrandparent,
+  extractProgramParent,
+  getEpisodeShowId,
+  getTrackArtistId,
+} from '../../helpers/programUtil.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
@@ -55,24 +61,28 @@ export const removeProgramming = (
       match(program)
         // TODO: Handle these other types separately
         .with(
-          { subtype: P.union('movie', 'music_video', 'other_video') },
+          { program: { type: P.union('movie', 'music_video', 'other_video') } },
           () => request.movies ?? false,
         )
-        .with({ subtype: 'episode' }, () => {
+        .with({ program: P.select({ type: 'episode' }) }, (ep) => {
           const basedOnShow = isEmpty(request.showIds)
             ? false
             : showIdsSet.has(
-                program.showId ?? program.grandparent?.title ?? '',
+                getEpisodeShowId(ep) ??
+                  extractProgramGrandparent(ep)?.title ??
+                  '',
               );
           const basedOnSpecial =
-            !!request.specials && program.seasonNumber === 0;
+            !!request.specials && extractProgramParent(ep)?.index === 0;
           return basedOnShow || basedOnSpecial;
         })
-        .with({ subtype: 'track' }, () => {
+        .with({ program: P.select({ type: 'track' }) }, (track) => {
           return isEmpty(request.artistIds)
             ? false
             : artistsSet.has(
-                program.artistId ?? program.grandparent?.title ?? '',
+                getTrackArtistId(track) ??
+                  extractProgramGrandparent(track)?.title ??
+                  '',
               );
         })
         .exhaustive()

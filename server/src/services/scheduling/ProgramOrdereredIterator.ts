@@ -35,6 +35,7 @@ export class ContentProgramOrderedIterator extends ProgramOrdereredIterator<Cond
       duration: program.duration,
       persisted: true,
       id: program.uuid,
+      uniqueId: program.uuid,
     };
   }
 }

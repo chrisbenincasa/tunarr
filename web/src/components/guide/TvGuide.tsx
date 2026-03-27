@@ -19,6 +19,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { useInterval } from 'usehooks-ts';
 import { betterHumanize } from '../../helpers/dayjs.ts';
+import { extractProgramGrandparent } from '../../helpers/programUtil.ts';
 import { alternateColors, isNonEmptyString } from '../../helpers/util';
 import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
@@ -189,13 +190,17 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
     ) => {
       const title = match(program)
         .with(
-          { type: 'content', grandparent: { title: P.nonNullable } },
-          ({ grandparent }) => grandparent.title,
+          { type: 'content' },
+          ({ program }) => !!extractProgramGrandparent(program),
+          ({ program }) => extractProgramGrandparent(program)!.title,
         )
-        .with({ type: 'content' }, (p) => p.title)
+        .with({ type: 'content' }, ({ program }) => program.title)
         .with(
-          { type: 'custom', program: { title: P.nonNullable } },
-          ({ program: { title } }) => title,
+          {
+            type: 'custom',
+            program: { program: P.select({ title: P.nonNullable }) },
+          },
+          ({ title }) => title,
         )
         .with({ type: 'custom' }, () => 'Custom Program')
         .with({ type: 'redirect' }, (p) => `Redirect to Channel ${p.channel}`)
@@ -204,28 +209,35 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
 
       const episodeTitle = match(program)
         .with(
-          { type: 'custom', program: { subtype: 'movie' } },
-          ({ program }) =>
-            compact([program.date ? dayjs(program.date).year() : null]).join(
+          { type: 'custom', program: { program: { type: 'movie' } } },
+          ({ program: { program: p } }) =>
+            compact([p.releaseDate ? dayjs(p.releaseDate).year() : null]).join(
               ',',
             ),
         )
-        .with({ type: 'content', subtype: 'episode' }, (p) => {
-          const epTitle = p.title;
-          if (isUndefined(p.parent?.index) || isUndefined(p.index)) {
-            return epTitle;
-          }
-          const season = p.parent.index.toString().padStart(2, '0');
-          const epIndex = p.index.toString().padStart(2, '0');
-          return `S${season}E${epIndex} - ${epTitle}`;
-        })
-        .with({ type: 'content', subtype: 'movie' }, (p) =>
-          compact([p.date ? dayjs(p.date).year() : null]).join(','),
-        )
-        .with({ type: 'content' }, (p) => p.title)
         .with(
-          { type: 'custom', program: P.nonNullable },
-          ({ program }) => program.title,
+          { type: 'content', program: { type: 'episode' } },
+          ({ program: p }) => {
+            const epTitle = p.title;
+            if (isUndefined(p.season?.index) || isUndefined(p.episodeNumber)) {
+              return epTitle;
+            }
+            const season = p.season.index.toString().padStart(2, '0');
+            const epIndex = p.episodeNumber.toString().padStart(2, '0');
+            return `S${season}E${epIndex} - ${epTitle}`;
+          },
+        )
+        .with(
+          { type: 'content', program: { type: 'movie' } },
+          ({ program: p }) =>
+            compact([p.releaseDate ? dayjs(p.releaseDate).year() : null]).join(
+              ',',
+            ),
+        )
+        .with({ type: 'content' }, ({ program: p }) => p.title)
+        .with(
+          { type: 'custom', program: { program: P.select(P.nonNullable) } },
+          (program) => program.title,
         )
         .with({ type: 'custom' }, () => '')
         .otherwise(() => '');
@@ -430,9 +442,9 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
 
   const programType =
     modalProgram?.type === 'custom'
-      ? modalProgram.program?.subtype
+      ? modalProgram.program?.program.type
       : modalProgram?.type === 'content'
-        ? modalProgram?.subtype
+        ? modalProgram?.program.type
         : null;
 
   return (

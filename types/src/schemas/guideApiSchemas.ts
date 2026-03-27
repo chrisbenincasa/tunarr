@@ -1,11 +1,11 @@
 import z from 'zod/v4';
-import { ChannelIconSchema } from './index.js';
 import {
+  ChannelIconSchema,
   ContentProgramSchema,
   CustomProgramSchema,
   FlexProgramSchema,
   RedirectProgramSchema,
-} from './programmingSchema.js';
+} from './index.js';
 
 // Guide programs are just like regular programs, but they have a start
 // and and end time

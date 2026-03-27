@@ -1,5 +1,6 @@
 import { type ChannelProgram, isContentProgram } from '@tunarr/types';
-import { isNil, orderBy } from 'lodash-es';
+import { orderBy } from 'lodash-es';
+import { getCanonicalOrderIndex } from '../../helpers/programUtil.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
 import useStore from '../../store/index.ts';
@@ -11,7 +12,7 @@ import { type SortOrder } from '../../types/index.ts';
 
 function releaseDateOrderer(p: ChannelProgram) {
   if (isContentProgram(p)) {
-    return p.date ? new Date(p.date).getTime() : 0;
+    return p.program.releaseDate ?? 0;
   } else {
     return Number.MAX_VALUE;
   }
@@ -19,28 +20,7 @@ function releaseDateOrderer(p: ChannelProgram) {
 
 function seasonEpisodeTiebreaker(p: ChannelProgram) {
   if (isContentProgram(p)) {
-    let n = 1;
-    if (p.subtype === 'episode') {
-      const seasonNumber = p.parent?.index ?? p.seasonNumber;
-      if (!isNil(seasonNumber)) {
-        n *= seasonNumber * 1e4;
-      }
-
-      const episodeNumber = p.index ?? p.episodeNumber;
-      if (!isNil(episodeNumber)) {
-        n += episodeNumber * 1e2;
-      }
-    } else if (p.subtype === 'track') {
-      if (!isNil(p.parent?.index)) {
-        n *= p.parent?.index * 1e4;
-      }
-
-      if (!isNil(p.index)) {
-        n += p.index * 1e2;
-      }
-    }
-
-    return n;
+    return getCanonicalOrderIndex(p.program);
   } else {
     return 0;
   }

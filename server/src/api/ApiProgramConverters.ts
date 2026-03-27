@@ -49,8 +49,8 @@ export class ApiProgramConverters {
   static convertProgram(
     program: ProgramWithRelationsOrm,
     searchDoc: Maybe<TerminalProgramSearchDocument>,
-    mediaSource: MediaSourceWithRelations,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaSource?: MediaSourceWithRelations,
+    mediaLibrary?: MediaSourceLibraryOrm,
   ): Nullable<TerminalProgram> {
     if (!program.canonicalId) {
       this.logger.warn(`Program %s doesn't have a canonicalId!`, program.uuid);
@@ -60,6 +60,18 @@ export class ApiProgramConverters {
 
     if (!externalId && program.sourceType !== 'local') {
       throw new Error('No external Id found');
+    }
+
+    if (!program.mediaSourceId && !mediaSource) {
+      this.logger.warn(
+        'Attempted to convert program without mediaSourceId without passing media source.',
+      );
+      return null;
+    } else if (!program.libraryId && !mediaLibrary) {
+      this.logger.warn(
+        'Attempted to convert program without libraryId without passing media library.',
+      );
+      return null;
     }
 
     const parsed = dayjs(
@@ -87,13 +99,13 @@ export class ApiProgramConverters {
     const uuid = program.uuid;
 
     const base = {
-      mediaSourceId: mediaSource.uuid,
-      libraryId: mediaLibrary.uuid,
+      mediaSourceId: program.mediaSourceId ?? mediaSource!.uuid,
+      libraryId: program.libraryId ?? mediaLibrary!.uuid,
       // externalLibraryId: mediaLibrary.externalKey,
       releaseDate: releaseDate,
       releaseDateString: program.originalAirDate,
       externalId: externalId ?? program.externalKey,
-      sourceType: mediaSource.type,
+      sourceType: program.sourceType,
       sortTitle: titleToSortTitle(program.title),
       artwork:
         program.artwork?.map(

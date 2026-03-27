@@ -1,6 +1,5 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
 import type { TimeSlotViewModel } from '@/model/TimeSlotModels.ts';
-import type { Maybe } from '@/types/util.ts';
 import type {
   ChannelProgram,
   CondensedChannelProgram,
@@ -12,6 +11,7 @@ import { some } from 'lodash-es';
 import type { StrictExclude, StrictExtract } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import type { DropdownOption } from './DropdownOption';
+import { extractProgramGrandparent } from './programUtil.ts';
 
 export type CustomShowProgramOption = DropdownOption<string> & {
   type: 'custom-show';
@@ -97,8 +97,8 @@ export const lineupItemAppearsInSchedule = (
         return item.type === 'flex';
       case 'movie':
         return (
-          (item.type === 'content' && item.subtype === 'movie') ||
-          (item.type === 'custom' && item.program?.subtype === 'movie')
+          (item.type === 'content' && item.program.type === 'movie') ||
+          (item.type === 'custom' && item.program?.program.type === 'movie')
         );
       case 'smart-collection':
         return true;
@@ -106,8 +106,10 @@ export const lineupItemAppearsInSchedule = (
         const showTitle = slot.showId;
         return (
           item.type === 'content' &&
-          item.subtype === 'episode' &&
-          showTitle === (item.showId ?? item.title)
+          item.program.type === 'episode' &&
+          showTitle ===
+            (extractProgramGrandparent(item.program)?.uuid ??
+              extractProgramGrandparent(item.program)?.title)
         );
       }
     }
@@ -301,21 +303,21 @@ export const getRandomSlotId = (programming: RandomSlot): SlotId => {
 export const getSlotIdForProgram = (
   program: CondensedChannelProgram,
   lookup: Record<string, ContentProgram>,
-): Maybe<SlotId> => {
+): SlotId | undefined => {
   switch (program.type) {
     case 'content': {
       if (isNonEmptyString(program.id)) {
         const materialized = lookup[program.id];
         if (materialized) {
-          switch (materialized.subtype) {
+          switch (materialized.program.type) {
             case 'movie':
-              return 'movie';
-            case 'episode':
-              return isNonEmptyString(materialized.showId)
-                ? `show.${materialized.showId}`
-                : undefined;
             case 'music_video':
             case 'other_video':
+              return 'movie';
+            case 'episode':
+              return isNonEmptyString(materialized.program.show?.uuid)
+                ? `show.${materialized.program.show?.uuid}`
+                : undefined;
             case 'track':
               return;
           }
@@ -323,10 +325,10 @@ export const getSlotIdForProgram = (
       }
       return;
     }
-    case 'custom':
-      return `custom-show.${program.customShowId}`;
     case 'filler':
       return `filler.${program.fillerListId}`;
+    case 'custom':
+      return `custom-show.${program.customShowId}`;
     case 'redirect':
       return `redirect.${program.channel}`;
     case 'flex':

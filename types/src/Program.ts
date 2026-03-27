@@ -1,4 +1,21 @@
 import type z from 'zod/v4';
+import type {
+  BaseProgramSchema,
+  ChannelProgrammingSchema,
+  ChannelProgramSchema,
+  CondensedChannelProgramSchema,
+  CondensedContentProgramSchema,
+  ContentProgramParentSchema,
+  ContentProgramSchema,
+  CustomProgramSchema,
+  FillerProgramSchema,
+  FlexProgramSchema,
+  MusicAlbumContentProgramSchema,
+  MusicArtistContentProgramSchema,
+  RedirectProgramSchema,
+  TvSeasonContentProgramSchema,
+  TvShowContentProgramSchema,
+} from './schemas/lineups.js';
 import { type CondensedChannelProgrammingSchema } from './schemas/lineups.js';
 import type {
   Actor,
@@ -7,7 +24,6 @@ import type {
   Episode,
   EpisodeMetadata,
   EpisodeWithHierarchy,
-  FillerProgramSchema,
   Folder,
   Genre,
   IdentifierSchema,
@@ -22,10 +38,8 @@ import type {
   Movie,
   MovieMetadata,
   MusicAlbum,
-  MusicAlbumContentProgramSchema,
   MusicAlbumMetadata,
   MusicArtist,
-  MusicArtistContentProgramSchema,
   MusicArtistMetadata,
   MusicTrack,
   MusicTrackMetadata,
@@ -37,6 +51,8 @@ import type {
   Person,
   Playlist,
   ProgramGroupingSchema,
+  ProgramSchema,
+  ProgramTypeSchema,
   Season,
   SeasonMetadata,
   Show,
@@ -44,23 +60,7 @@ import type {
   StructuralProgramGroupingSchema,
   Studio,
   TerminalProgramSchema,
-  TvSeasonContentProgramSchema,
-  TvShowContentProgramSchema,
   Writer,
-} from './schemas/programmingSchema.js';
-import {
-  type BaseProgramSchema,
-  type ChannelProgramSchema,
-  type ChannelProgrammingSchema,
-  type CondensedChannelProgramSchema,
-  type CondensedContentProgramSchema,
-  type ContentProgramParentSchema,
-  type ContentProgramSchema,
-  type CustomProgramSchema,
-  type FlexProgramSchema,
-  type ProgramSchema,
-  type ProgramTypeSchema,
-  type RedirectProgramSchema,
 } from './schemas/programmingSchema.js';
 import { type ExternalIdSchema } from './schemas/utilSchemas.js';
 

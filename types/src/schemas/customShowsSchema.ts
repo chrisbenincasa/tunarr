@@ -1,8 +1,5 @@
 import { z } from 'zod/v4';
-import {
-  ContentProgramSchema,
-  CustomProgramSchema,
-} from './programmingSchema.js';
+import { ContentProgramSchema, CustomProgramSchema } from './lineupPrograms.js';
 
 export const CustomShowProgrammingSchema = z.array(
   z.discriminatedUnion('type', [ContentProgramSchema, CustomProgramSchema]),

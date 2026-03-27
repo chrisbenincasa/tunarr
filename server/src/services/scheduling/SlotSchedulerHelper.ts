@@ -131,7 +131,7 @@ export class SlotSchedulerHelper {
       await Promise.all(
         [...slottedCustomShows].map((show) =>
           this.customShowDB
-            .getShowProgramsOrm(show)
+            .getShowPrograms(show)
             .then((programs) => [show, programs] as const),
         ),
       ),
@@ -175,7 +175,7 @@ export class SlotSchedulerHelper {
       await Promise.all(
         [...slottedFillerLists].map((list) =>
           this.fillerDB
-            .getFillerProgramsOrm(list)
+            .getFillerPrograms(list)
             .then((programs) => [list, programs] as const),
         ),
       ),

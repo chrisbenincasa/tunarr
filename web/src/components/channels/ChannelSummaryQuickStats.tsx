@@ -34,8 +34,8 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
       uniq(
         seq.collect(lineup.lineup, (p) =>
           match(p)
-            .with({ type: 'content' }, (p) => p.id)
-            .with({ type: 'custom' }, (p) => p.program?.id)
+            .with({ type: 'content' }, ({ id }) => id)
+            .with({ type: 'custom' }, ({ program }) => program?.id)
             .otherwise(() => null),
         ),
       ).length,
