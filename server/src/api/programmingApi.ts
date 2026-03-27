@@ -9,7 +9,6 @@ import {
   TruthyQueryParam,
 } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { getBooleanEnvVar, TUNARR_ENV_VARS } from '@/util/env.js';
 import {
   groupByUniq,
   groupByUniqAndMap,
@@ -466,7 +465,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
         const fullUrl = url.toString();
 
-        if (getBooleanEnvVar(TUNARR_ENV_VARS.PROXY_ARTWORK_ENV_VAR, false)) {
+        if (req.serverCtx.featureFlagService.get('proxyArtwork')) {
           try {
             const proxyRes = await axios.request<stream.Readable>({
               url: fullUrl,

@@ -27,6 +27,7 @@ import { Route as SettingsSourcesRouteImport } from './routes/settings/sources';
 import { Route as SettingsHdhrRouteImport } from './routes/settings/hdhr';
 import { Route as SettingsGeneralRouteImport } from './routes/settings/general';
 import { Route as SettingsFfmpegRouteImport } from './routes/settings/ffmpeg';
+import { Route as SettingsFeaturesRouteImport } from './routes/settings/features';
 import { Route as LibraryFillersRouteImport } from './routes/library/fillers';
 import { Route as LibraryCustomShowsRouteImport } from './routes/library/custom-shows';
 import { Route as ChannelsTestRouteImport } from './routes/channels_/test';
@@ -148,6 +149,11 @@ const SettingsGeneralRoute = SettingsGeneralRouteImport.update({
 const SettingsFfmpegRoute = SettingsFfmpegRouteImport.update({
   id: '/ffmpeg',
   path: '/ffmpeg',
+  getParentRoute: () => SettingsRoute,
+} as any);
+const SettingsFeaturesRoute = SettingsFeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
   getParentRoute: () => SettingsRoute,
 } as any);
 const LibraryFillersRoute = LibraryFillersRouteImport.update({
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/channels/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
   '/library/fillers': typeof LibraryFillersRoute;
+  '/settings/features': typeof SettingsFeaturesRoute;
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
   '/settings/hdhr': typeof SettingsHdhrRoute;
@@ -393,6 +400,7 @@ export interface FileRoutesByTo {
   '/channels/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
   '/library/fillers': typeof LibraryFillersRoute;
+  '/settings/features': typeof SettingsFeaturesRoute;
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
   '/settings/hdhr': typeof SettingsHdhrRoute;
@@ -444,6 +452,7 @@ export interface FileRoutesById {
   '/channels_/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
   '/library/fillers': typeof LibraryFillersRoute;
+  '/settings/features': typeof SettingsFeaturesRoute;
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
   '/settings/hdhr': typeof SettingsHdhrRoute;
@@ -498,6 +507,7 @@ export interface FileRouteTypes {
     | '/channels/test'
     | '/library/custom-shows'
     | '/library/fillers'
+    | '/settings/features'
     | '/settings/ffmpeg'
     | '/settings/general'
     | '/settings/hdhr'
@@ -548,6 +558,7 @@ export interface FileRouteTypes {
     | '/channels/test'
     | '/library/custom-shows'
     | '/library/fillers'
+    | '/settings/features'
     | '/settings/ffmpeg'
     | '/settings/general'
     | '/settings/hdhr'
@@ -598,6 +609,7 @@ export interface FileRouteTypes {
     | '/channels_/test'
     | '/library/custom-shows'
     | '/library/fillers'
+    | '/settings/features'
     | '/settings/ffmpeg'
     | '/settings/general'
     | '/settings/hdhr'
@@ -792,6 +804,13 @@ declare module '@tanstack/react-router' {
       path: '/ffmpeg';
       fullPath: '/settings/ffmpeg';
       preLoaderRoute: typeof SettingsFfmpegRouteImport;
+      parentRoute: typeof SettingsRoute;
+    };
+    '/settings/features': {
+      id: '/settings/features';
+      path: '/features';
+      fullPath: '/settings/features';
+      preLoaderRoute: typeof SettingsFeaturesRouteImport;
       parentRoute: typeof SettingsRoute;
     };
     '/library/fillers': {
@@ -1022,6 +1041,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface SettingsRouteChildren {
+  SettingsFeaturesRoute: typeof SettingsFeaturesRoute;
   SettingsFfmpegRoute: typeof SettingsFfmpegRoute;
   SettingsGeneralRoute: typeof SettingsGeneralRoute;
   SettingsHdhrRoute: typeof SettingsHdhrRoute;
@@ -1032,6 +1052,7 @@ interface SettingsRouteChildren {
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsFeaturesRoute: SettingsFeaturesRoute,
   SettingsFfmpegRoute: SettingsFfmpegRoute,
   SettingsGeneralRoute: SettingsGeneralRoute,
   SettingsHdhrRoute: SettingsHdhrRoute,

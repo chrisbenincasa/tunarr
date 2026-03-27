@@ -12,8 +12,8 @@ import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/Infinite
 import type { AudioStreamDetails } from '@/stream/types.js';
 import { FileStreamSource, HttpStreamSource } from '@/stream/types.js';
 import type { Maybe, Nullable } from '@/types/util.js';
-import { getBooleanEnvVar, WEBVTT_SIDECAR_ENABLED } from '@/util/env.js';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.js';
+import { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamModes } from '@tunarr/types';
@@ -89,6 +89,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     private settingsDB: ISettingsDB,
     private pipelineBuilderFactory: PipelineBuilderFactory,
     private channelDB: IChannelDB,
+    private featureFlagService: FeatureFlagService,
   ) {
     super();
   }
@@ -494,7 +495,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       isDefined(streamDetails.subtitleDetails) &&
       this.channel.subtitlesEnabled
     ) {
-      const sidecarEnabled = getBooleanEnvVar(WEBVTT_SIDECAR_ENABLED, false);
+      const sidecarEnabled = this.featureFlagService.get('webvttSidecarEnabled');
 
       const subtitlePreferences =
         await this.channelDB.getChannelSubtitlePreferences(this.channel.uuid);

@@ -7,6 +7,7 @@ import type { ChannelStreamMode } from '@tunarr/types';
 import { ContainerModule } from 'inversify';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { ChannelOrm } from '../db/schema/Channel.ts';
+import { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 import type { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
@@ -20,6 +21,7 @@ export type FFmpegFactory = (
 const FFmpegModule = new ContainerModule((bind) => {
   bindFactoryFunc<FFmpegFactory>(bind, KEYS.FFmpegFactory, (ctx) => {
     const settingsDB = ctx.container.get<ISettingsDB>(KEYS.SettingsDB);
+    const featureFlagService = ctx.container.get(FeatureFlagService);
     return (transcodeConfig, channel) => {
       return new FfmpegStreamFactory(
         settingsDB.ffmpegSettings(),
@@ -29,6 +31,7 @@ const FFmpegModule = new ContainerModule((bind) => {
         settingsDB,
         ctx.container.get<PipelineBuilderFactory>(KEYS.PipelineBuilderFactory),
         ctx.container.get<IChannelDB>(KEYS.ChannelDB),
+        featureFlagService,
       );
     };
   }).whenTargetNamed(FfmpegStreamFactory.name);

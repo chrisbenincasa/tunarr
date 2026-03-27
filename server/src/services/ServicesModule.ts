@@ -39,6 +39,7 @@ import type { GenericMediaSourceMovieLibraryScanner } from './scanner/MediaSourc
 import type { GenericMediaSourceMusicLibraryScanner } from './scanner/MediaSourceMusicArtistScanner.ts';
 import type { GenericMediaSourceMusicVideoLibraryScanner } from './scanner/MediaSourceMusicVideoScanner.ts';
 import type { GenericMediaSourceOtherVideoLibraryScanner } from './scanner/MediaSourceOtherVideoScanner.ts';
+import { FeatureFlagService } from './FeatureFlagService.ts';
 import { MediaSourceProgressService } from './scanner/MediaSourceProgressService.ts';
 import { MediaSourceScanCoordinator } from './scanner/MediaSourceScanCoordinator.ts';
 import type {
@@ -208,4 +209,5 @@ export const ServicesModule = new ContainerModule((bind) => {
 
   bind(MediaSourceProgressService).toSelf().inSingletonScope();
   bind(MediaSourceScanCoordinator).toSelf().inSingletonScope();
+  bind(FeatureFlagService).toSelf().inSingletonScope();
 });

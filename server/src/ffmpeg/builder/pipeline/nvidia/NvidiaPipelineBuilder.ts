@@ -30,7 +30,6 @@ import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { head, isEmpty, isNil, isNull, reject, some } from 'lodash-es';
-import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../../../../util/env.ts';
 import { VulkanDecoder } from '../../decoder/VulkanDecoder.ts';
 import {
   ImplicitNvidiaDecoder,
@@ -115,14 +114,14 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     const needsTonemapWithVulkan =
-      getBooleanEnvVar(TUNARR_ENV_VARS.TONEMAP_ENABLED, false) &&
+      this.featureFlagService.get('tonemapEnabled') &&
       canDecode &&
       this.ffmpegCapabilities.hasHardwareAccel(
         HardwareAccelerationMode.Vulkan,
       ) &&
       this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.Libplacebo) &&
       !!this.videoInputSource.streams?.[0]?.isHdr() &&
-      !getBooleanEnvVar(TUNARR_ENV_VARS.DISABLE_VULKAN, false);
+      !this.featureFlagService.get('disableVulkan');
 
     if (canDecode) {
       pipelineSteps.push(

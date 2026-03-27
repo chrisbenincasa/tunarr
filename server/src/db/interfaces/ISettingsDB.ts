@@ -4,6 +4,7 @@ import type {
   SettingsFile,
 } from '@/db/SettingsDB.js';
 import type {
+  FeatureFlags,
   FfmpegSettings,
   HdhrSettings,
   PlexStreamSettings,
@@ -40,6 +41,8 @@ export interface ISettingsDB extends TypedEventEmitter<SettingsChangeEvents> {
   ffprobePath: string;
 
   systemSettings(): DeepReadonly<SystemSettings>;
+
+  featureFlags(): DeepReadonly<FeatureFlags>;
 
   directUpdate(
     fn: (settings: SettingsFile) => SettingsFile | void,

@@ -14,7 +14,6 @@ import { ColorFormat } from '@/ffmpeg/builder/format/ColorFormat.js';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
-import { TONEMAP_ENABLED, getBooleanEnvVar } from '@/util/env.js';
 import dayjs from '@/util/dayjs.js';
 import type { Watermark } from '@tunarr/types';
 import { filter, first, isEmpty, isNull, some } from 'lodash-es';
@@ -284,7 +283,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     }
     const { videoStream } = this.context;
     if (
-      !getBooleanEnvVar(TONEMAP_ENABLED, false) ||
+      !this.featureFlagService.get('tonemapEnabled') ||
       !isHdrContent(videoStream)
     ) {
       return currentState;

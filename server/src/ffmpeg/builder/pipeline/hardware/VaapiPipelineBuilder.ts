@@ -34,11 +34,6 @@ import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBu
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { Maybe, Nullable } from '@/types/util.js';
-import {
-  TONEMAP_ENABLED,
-  TUNARR_ENV_VARS,
-  getBooleanEnvVar,
-} from '@/util/env.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { every, head, inRange } from 'lodash-es';
 import { P, match } from 'ts-pattern';
@@ -121,7 +116,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       const { pipelineOptions } = this.context;
       this.willUseOpenclTonemap =
         !pipelineOptions?.disableHardwareFilters &&
-        getBooleanEnvVar(TONEMAP_ENABLED, false) &&
+        this.featureFlagService.get('tonemapEnabled') &&
         isVideoPipelineContext(this.context) &&
         isHdrContent(this.context.videoStream) &&
         (pipelineOptions?.vaapiPipelineOptions?.tonemapPreference ??
@@ -496,7 +491,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     // Enabled by default
     const disableHardwarePad =
-      getBooleanEnvVar(TUNARR_ENV_VARS.DISABLE_VAAPI_PAD, false) ||
+      this.featureFlagService.get('disableVaapiPad') ||
       this.context.pipelineOptions.disableHardwareFilters;
     let padFilter: Maybe<FilterOption>;
     if (isHdrContent(this.context.videoStream)) {
@@ -676,7 +671,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
   private shouldPerformTonemap(videoStream: VideoStream) {
     return (
-      getBooleanEnvVar(TONEMAP_ENABLED, false) && isHdrContent(videoStream)
+      this.featureFlagService.get('tonemapEnabled') && isHdrContent(videoStream)
     );
   }
 
@@ -685,7 +680,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       return false;
     }
     const disableHardwarePad =
-      getBooleanEnvVar(TUNARR_ENV_VARS.DISABLE_VAAPI_PAD, false) ||
+      this.featureFlagService.get('disableVaapiPad') ||
       this.context.pipelineOptions.disableHardwareFilters;
 
     if (disableHardwarePad) {
