@@ -9,7 +9,7 @@ export default defineConfig({
     },
   },
   test: {
-    name: 'ffmpeg_integration',
+    name: '@tunarr/server#integration',
     globals: true,
     watch: false,
     include: ['src/**/*.local.test.ts'],

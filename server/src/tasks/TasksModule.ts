@@ -35,6 +35,7 @@ import { RemoveDanglingProgramsFromSearchTask } from './RemoveDanglingProgramsFr
 import { RollLogFileTask } from './RollLogFileTask.ts';
 import { ScanLibrariesTask } from './ScanLibrariesTask.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
+import { SyncCustomShowsTask } from './SyncCustomShowsTask.ts';
 
 export type ReconcileProgramDurationsTaskFactory = (
   request?: ReconcileProgramDurationsTaskRequest,
@@ -147,6 +148,11 @@ const TasksModule = new ContainerModule((bind) => {
   );
 
   bind<RefreshMediaSourceLibraryTask>(RefreshMediaSourceLibraryTask).toSelf();
+
+  bind(SyncCustomShowsTask).toSelf();
+  bind<interfaces.Factory<SyncCustomShowsTask>>(
+    SyncCustomShowsTask.KEY,
+  ).toAutoFactory(SyncCustomShowsTask);
 });
 
 export { TasksModule };

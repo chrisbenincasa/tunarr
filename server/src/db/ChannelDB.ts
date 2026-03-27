@@ -993,22 +993,6 @@ export class ChannelDB implements IChannelDB {
             .where('channelPrograms.channelUuid', '=', channel.uuid),
         )
         .executeTakeFirstOrThrow();
-
-      // Copy custom shows
-      await tx
-        .insertInto('channelCustomShows')
-        .columns(['channelUuid', 'customShowUuid'])
-        .expression((eb) =>
-          eb
-            .selectFrom('channelCustomShows')
-            .select([
-              eb.val(newChannelId).as('channelUuid'),
-              'channelCustomShows.customShowUuid',
-            ])
-            .where('channelCustomShows.channelUuid', '=', channel.uuid),
-        )
-        .executeTakeFirstOrThrow();
-
       return newChannel;
     });
 

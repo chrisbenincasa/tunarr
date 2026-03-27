@@ -1748,6 +1748,42 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         this.plexArtworkInject(plexAlbum.thumb, 'poster'),
         this.plexArtworkInject(plexAlbum.art, 'banner'),
       ]),
+      artist: plexAlbum.parentRatingKey
+        ? ({
+            externalId: plexAlbum.parentRatingKey,
+            identifiers: compact([
+              plexAlbum.parentRatingKey
+                ? {
+                    id: plexAlbum.parentRatingKey,
+                    type: 'plex',
+                    sourceId: this.options.mediaSource.uuid,
+                  }
+                : null,
+              plexAlbum.parentGuid
+                ? {
+                    id: plexAlbum.parentGuid,
+                    type: 'plex-guid',
+                  }
+                : null,
+            ]),
+            mediaSourceId: this.options.mediaSource.uuid,
+            libraryId: mediaLibrary.uuid,
+            plot: null,
+            sourceType: 'plex',
+            title: plexAlbum.parentTitle ?? '',
+            sortTitle: plexAlbum.parentTitle
+              ? titleToSortTitle(plexAlbum.parentTitle)
+              : '',
+            summary: null,
+            tagline: null,
+            tags: [],
+            uuid: v4(),
+            type: 'artist',
+            canonicalId: '???',
+            genres: [],
+            artwork: [],
+          } satisfies PlexArtist)
+        : undefined,
     });
   }
 

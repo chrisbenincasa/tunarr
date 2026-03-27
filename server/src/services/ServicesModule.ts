@@ -8,6 +8,7 @@ import type { MediaLibraryType } from '../db/schema/MediaSource.ts';
 import { KEYS } from '../types/inject.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 import type { Canonicalizer } from './Canonicalizer.ts';
+import { CustomShowSyncService } from './CustomShowSyncService.ts';
 import { EmbyItemCanonicalizer } from './EmbyItemCanonicalizer.ts';
 import { JellyfinItemCanonicalizer } from './JellyfinItemCanonicalizer.ts';
 import type { FolderAndContents } from './LocalFolderCanonicalizer.ts';
@@ -124,6 +125,10 @@ export const ServicesModule = new ContainerModule((bind) => {
   )
     .to(EmbyMediaSourceMusicVideoScanner)
     .whenTargetNamed(MediaSourceType.Emby);
+
+  bind<CustomShowSyncService>(CustomShowSyncService)
+    .toSelf()
+    .inSingletonScope();
 
   bind<GenericMediaSourceScannerFactory>(
     KEYS.MediaSourceLibraryScanner,

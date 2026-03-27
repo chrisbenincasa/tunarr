@@ -9,6 +9,7 @@ import { ScanLibrariesTask } from '../../tasks/ScanLibrariesTask.ts';
 import { ScheduledTask } from '../../tasks/ScheduledTask.ts';
 import { ScheduleDynamicChannelsTask } from '../../tasks/ScheduleDynamicChannelsTask.ts';
 import { SubtitleExtractorTask } from '../../tasks/SubtitleExtractorTask.ts';
+import { SyncCustomShowsTask } from '../../tasks/SyncCustomShowsTask.ts';
 import { UpdateXmlTvTask } from '../../tasks/UpdateXmlTvTask.ts';
 import { autoFactoryKey, KEYS } from '../../types/inject.ts';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.ts';
@@ -127,6 +128,20 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
         ),
         container.get<interfaces.AutoFactory<ScanLibrariesTask>>(
           ScanLibrariesTask.KEY,
+        ),
+        undefined,
+      ),
+    );
+
+    GlobalScheduler.scheduleTask(
+      SyncCustomShowsTask.ID,
+      new ScheduledTask(
+        SyncCustomShowsTask,
+        hoursCrontab(
+          this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
+        ),
+        container.get<interfaces.AutoFactory<SyncCustomShowsTask>>(
+          SyncCustomShowsTask.KEY,
         ),
         undefined,
       ),

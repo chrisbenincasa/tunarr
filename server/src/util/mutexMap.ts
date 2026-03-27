@@ -34,4 +34,8 @@ export class MutexMap {
   getLockSync(id: string): Maybe<MutexInterface> {
     return this.#keyedLocks[id];
   }
+
+  isLocked(id: string) {
+    return this.#keyedLocks[id]?.isLocked() ?? false;
+  }
 }

@@ -1,6 +1,5 @@
 import type { CachedImageTable } from './CachedImage.js';
 import type { ChannelTable } from './Channel.ts';
-import type { ChannelCustomShowsTable } from './ChannelCustomShow.ts';
 import type { ChannelFallbackTable } from './ChannelFallback.ts';
 import type { ChannelFillerShowTable } from './ChannelFillerShow.ts';
 import type { ChannelProgramsTable } from './ChannelPrograms.ts';
@@ -33,7 +32,6 @@ export interface DB {
   channelPrograms: ChannelProgramsTable;
   channelSubtitlePreferences: ChannelSubtitlePreferencesTable;
   channelFallback: ChannelFallbackTable;
-  channelCustomShows: ChannelCustomShowsTable;
   channelFillerShow: ChannelFillerShowTable;
   customShow: CustomShowTable;
   customShowContent: CustomShowContentTable;

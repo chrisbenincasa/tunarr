@@ -210,7 +210,7 @@ export function isEpisodeWithHierarchy(
 export function isMusicTrackWithHierarchy(
   f: TerminalProgram,
 ): f is MusicTrackWithHierarchy {
-  return f.type === 'track' && !!f.album && (!!f.album?.artist || !!f.artist);
+  return f.type === 'track' && !!f.album && !!(f.album?.artist ?? f.artist);
 }
 
 export function getChildItemType(typ: ProgramOrFolder['type']) {

@@ -13,7 +13,7 @@ import { map } from 'lodash-es';
 import type { IChannelDB } from '../../db/interfaces/IChannelDB.js';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.js';
 import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
-import { PlexItemEnumerator } from '../PlexItemEnumerator.js';
+import { PlexHierarchyTraversal } from '../PlexItemEnumerator.js';
 import { ContentSourceUpdater } from './ContentSourceUpdater.js';
 
 export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicContentConfigPlexSource> {
@@ -69,13 +69,10 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       ),
     );
 
-    const enumerator = new PlexItemEnumerator(this.#plex);
+    const enumerator = new PlexHierarchyTraversal(this.#plex);
 
     const enumeratedItems = await this.#timer.timeAsync('enumerate items', () =>
-      enumerator.enumerateItems(
-        this.#mediaSource,
-        plexResult.getOrThrow().result,
-      ),
+      enumerator.expandDescendants(plexResult.getOrThrow().result),
     );
 
     const channelPrograms: ContentProgram[] = seq.collect(

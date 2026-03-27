@@ -1,4 +1,4 @@
-import { Delete, Edit } from '@mui/icons-material';
+import { Delete, Edit, Sync } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import {
   Dialog,
@@ -140,6 +140,16 @@ export default function CustomShowsPage() {
       {
         header: 'Name',
         accessorKey: 'name',
+        Cell: ({ row }) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {row.original.name}
+            {row.original.syncMediaSourceId && (
+              <Tooltip title="Synced with external playlist">
+                <Sync fontSize="small" color="primary" />
+              </Tooltip>
+            )}
+          </Box>
+        ),
       },
       {
         header: '# Programs',

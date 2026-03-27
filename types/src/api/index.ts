@@ -85,7 +85,10 @@ export const BatchLookupExternalProgrammingSchema = z.object({
 
 export const CreateCustomShowRequestSchema = z.object({
   name: z.string(),
-  programs: z.array(ContentProgramSchema),
+  programs: z.array(ContentProgramSchema).default([]),
+  syncMediaSourceId: z.string().nullable(),
+  syncMediaSourceType: z.enum(['plex']).nullable(),
+  syncExternalPlaylistId: z.string().nullable(),
 });
 
 export type CreateCustomShowRequest = z.infer<
@@ -93,7 +96,9 @@ export type CreateCustomShowRequest = z.infer<
 >;
 
 export const UpdateCustomShowRequestSchema =
-  CreateCustomShowRequestSchema.partial();
+  CreateCustomShowRequestSchema.partial().extend({
+    enableSync: z.boolean(),
+  });
 
 export type UpdateCustomShowRequest = z.infer<
   typeof UpdateCustomShowRequestSchema

@@ -5593,6 +5593,11 @@ export type GetApiChannelsByIdScheduleResponses = {
                     id: string;
                     name: string;
                     contentCount: number;
+                    syncMediaSourceId?: string | null;
+                    syncMediaSourceType?: 'plex' | null;
+                    syncExternalPlaylistId?: string | null;
+                    lastSyncedAt?: number | null;
+                    isSyncing: boolean;
                 } | null;
                 isMissing: boolean;
             } | {
@@ -5849,6 +5854,11 @@ export type GetApiChannelsByIdScheduleResponses = {
                     id: string;
                     name: string;
                     contentCount: number;
+                    syncMediaSourceId?: string | null;
+                    syncMediaSourceType?: 'plex' | null;
+                    syncExternalPlaylistId?: string | null;
+                    lastSyncedAt?: number | null;
+                    isSyncing: boolean;
                 } | null;
                 isMissing: boolean;
             } | {
@@ -5907,6 +5917,80 @@ export type GetApiChannelsByIdScheduleResponses = {
 
 export type GetApiChannelsByIdScheduleResponse = GetApiChannelsByIdScheduleResponses[keyof GetApiChannelsByIdScheduleResponses];
 
+export type GetApiChannelsByIdNativePlaybackData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/channels/{id}/native-playback';
+};
+
+export type GetApiChannelsByIdNativePlaybackErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type GetApiChannelsByIdNativePlaybackResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        channelId: string;
+        channelNumber: number;
+        channelName: string;
+        serverTimeMs: number;
+        current: {
+            kind: 'content';
+            itemStartedAtMs: number;
+            seekOffsetMs: number;
+            remainingMs: number;
+            programId: string;
+            title: string;
+            episodeTitle?: string;
+            seasonNumber?: number;
+            episodeNumber?: number;
+            summary?: string;
+            thumb?: string;
+            streamUrl: string;
+        } | {
+            kind: 'flex';
+            remainingMs: number;
+            itemStartedAtMs: number;
+        } | {
+            kind: 'error';
+            message: string;
+            retryAfterMs: number;
+        };
+        next?: {
+            kind: 'content';
+            itemStartedAtMs: number;
+            seekOffsetMs: number;
+            remainingMs: number;
+            programId: string;
+            title: string;
+            episodeTitle?: string;
+            seasonNumber?: number;
+            episodeNumber?: number;
+            summary?: string;
+            thumb?: string;
+            streamUrl: string;
+        } | {
+            kind: 'flex';
+            remainingMs: number;
+            itemStartedAtMs: number;
+        } | {
+            kind: 'error';
+            message: string;
+            retryAfterMs: number;
+        };
+    };
+};
+
+export type GetApiChannelsByIdNativePlaybackResponse = GetApiChannelsByIdNativePlaybackResponses[keyof GetApiChannelsByIdNativePlaybackResponses];
+
 export type GetApiCustomShowsData = {
     body?: never;
     path?: never;
@@ -5942,6 +6026,11 @@ export type GetApiCustomShowsResponses = {
             };
         }>;
         totalDuration: number;
+        syncMediaSourceId?: string | null;
+        syncMediaSourceType?: 'plex' | null;
+        syncExternalPlaylistId?: string | null;
+        lastSyncedAt?: number | null;
+        isSyncing: boolean;
     }>;
 };
 
@@ -5950,7 +6039,7 @@ export type GetApiCustomShowsResponse = GetApiCustomShowsResponses[keyof GetApiC
 export type CreateCustomShowData = {
     body: {
         name: string;
-        programs: Array<{
+        programs?: Array<{
             type: 'content';
             persisted: boolean;
             duration: number;
@@ -5960,6 +6049,9 @@ export type CreateCustomShowData = {
             startOffsetMs?: number;
             program: TerminalProgramInput;
         }>;
+        syncMediaSourceId: string | null;
+        syncMediaSourceType: 'plex' | null;
+        syncExternalPlaylistId: string | null;
     };
     path?: never;
     query?: never;
@@ -5994,6 +6086,11 @@ export type CreateCustomShowResponses = {
             };
         }>;
         totalDuration: number;
+        syncMediaSourceId?: string | null;
+        syncMediaSourceType?: 'plex' | null;
+        syncExternalPlaylistId?: string | null;
+        lastSyncedAt?: number | null;
+        isSyncing: boolean;
     };
 };
 
@@ -6070,13 +6167,18 @@ export type GetApiCustomShowsByIdResponses = {
             };
         }>;
         totalDuration: number;
+        syncMediaSourceId?: string | null;
+        syncMediaSourceType?: 'plex' | null;
+        syncExternalPlaylistId?: string | null;
+        lastSyncedAt?: number | null;
+        isSyncing: boolean;
     };
 };
 
 export type GetApiCustomShowsByIdResponse = GetApiCustomShowsByIdResponses[keyof GetApiCustomShowsByIdResponses];
 
 export type PutApiCustomShowsByIdData = {
-    body?: {
+    body: {
         name?: string;
         programs?: Array<{
             type: 'content';
@@ -6088,6 +6190,10 @@ export type PutApiCustomShowsByIdData = {
             startOffsetMs?: number;
             program: TerminalProgramInput;
         }>;
+        syncMediaSourceId?: string | null;
+        syncMediaSourceType?: 'plex' | null;
+        syncExternalPlaylistId?: string | null;
+        enableSync: boolean;
     };
     path: {
         id: string;
@@ -6131,6 +6237,11 @@ export type PutApiCustomShowsByIdResponses = {
             };
         }>;
         totalDuration: number;
+        syncMediaSourceId?: string | null;
+        syncMediaSourceType?: 'plex' | null;
+        syncExternalPlaylistId?: string | null;
+        lastSyncedAt?: number | null;
+        isSyncing: boolean;
     };
 };
 
@@ -6178,6 +6289,68 @@ export type GetApiCustomShowsByIdProgramsResponses = {
 };
 
 export type GetApiCustomShowsByIdProgramsResponse = GetApiCustomShowsByIdProgramsResponses[keyof GetApiCustomShowsByIdProgramsResponses];
+
+export type SyncCustomShowData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/custom-shows/{id}/sync';
+};
+
+export type SyncCustomShowErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        error: string;
+    };
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type SyncCustomShowError = SyncCustomShowErrors[keyof SyncCustomShowErrors];
+
+export type SyncCustomShowResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        id: string;
+        name: string;
+        contentCount: number;
+        programs?: Array<{
+            type: 'custom';
+            persisted: boolean;
+            duration: number;
+            icon?: string;
+            id: string;
+            customShowId: string;
+            index: number;
+            program?: {
+                type: 'content';
+                persisted: boolean;
+                duration: number;
+                icon?: string;
+                id?: string;
+                uniqueId: string;
+                startOffsetMs?: number;
+                program: TerminalProgram;
+            };
+        }>;
+        totalDuration: number;
+        syncMediaSourceId?: string | null;
+        syncMediaSourceType?: 'plex' | null;
+        syncExternalPlaylistId?: string | null;
+        lastSyncedAt?: number | null;
+        isSyncing: boolean;
+    };
+};
+
+export type SyncCustomShowResponse = SyncCustomShowResponses[keyof SyncCustomShowResponses];
 
 export type GetApiFillerListsData = {
     body?: never;
@@ -12082,6 +12255,24 @@ export type HeadStreamChannelsByIdM3U8Data = {
 };
 
 export type HeadStreamChannelsByIdM3U8Responses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
+
+export type GetStreamChannelsByIdItemStreamTsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query: {
+        t: number;
+    };
+    url: '/stream/channels/{id}/item-stream.ts';
+};
+
+export type GetStreamChannelsByIdItemStreamTsResponses = {
     /**
      * Default Response
      */

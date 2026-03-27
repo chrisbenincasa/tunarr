@@ -1,5 +1,5 @@
 import { KEYS } from '@/types/inject.js';
-import { isNonEmptyString } from '@/util/index.js';
+import { isNonEmptyString, parseFloatOrNull } from '@/util/index.js';
 import { createExternalId } from '@tunarr/shared';
 import {
   ContentProgram,
@@ -12,19 +12,23 @@ import {
   UpdateCustomShowRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
+import { count, eq, sum } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import { chunk, isNil, orderBy, partition, uniqBy } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
-import { withCustomShowPrograms } from './programQueryHelpers.ts';
 import { MediaSourceId, MediaSourceType } from './schema/base.ts';
-import type { NewCustomShow } from './schema/CustomShow.ts';
-import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
+import { CustomShow, type NewCustomShow } from './schema/CustomShow.ts';
+import {
+  CustomShowContent,
+  type NewCustomShowContent,
+} from './schema/CustomShowContent.ts';
 import { DB } from './schema/db.ts';
 import { ProgramWithRelationsOrm } from './schema/derivedTypes.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
+import { Program } from './schema/Program.ts';
 
 @injectable()
 export class CustomShowDB {
@@ -35,16 +39,21 @@ export class CustomShowDB {
   ) {}
 
   async getShow(id: string) {
-    return this.db
-      .selectFrom('customShow')
-      .selectAll()
-      .where('customShow.uuid', '=', id)
-      .select((eb) =>
-        withCustomShowPrograms(eb, {
-          fields: ['program.uuid', 'program.duration'],
-        }),
-      )
-      .executeTakeFirst();
+    return await this.drizzle.query.customShow.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, id),
+      with: {
+        content: {
+          with: {
+            program: {
+              columns: {
+                uuid: true,
+                duration: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
   async getShows(ids: string[]) {
@@ -121,12 +130,32 @@ export class CustomShowDB {
       await this.upsertCustomShowContent(show.uuid, updateRequest.programs);
     }
 
+    const updates: Partial<NewCustomShow> = {};
     if (updateRequest.name) {
+      updates.name = updateRequest.name;
+    }
+
+    if (!updateRequest.enableSync) {
+      updates.syncExternalPlaylistId = null;
+      updates.syncMediaSourceId = null;
+      updates.syncMediaSourceType = null;
+    } else {
+      updates.syncMediaSourceId = updateRequest.syncMediaSourceId ?? null;
+      updates.syncMediaSourceType = updateRequest.syncMediaSourceType ?? null;
+      updates.syncExternalPlaylistId =
+        updateRequest.syncExternalPlaylistId ?? null;
+    }
+
+    if (Object.keys(updates).length > 0) {
       await this.db
         .updateTable('customShow')
         .where('uuid', '=', show.uuid)
         .limit(1)
-        .set({ name: updateRequest.name })
+        .set({
+          ...updates,
+          // Do not allow clients to set this.
+          lastSyncedAt: undefined,
+        })
         .execute();
     }
 
@@ -140,11 +169,16 @@ export class CustomShowDB {
       createdAt: now,
       updatedAt: now,
       name: createRequest.name,
+      syncMediaSourceId: createRequest.syncMediaSourceId ?? null,
+      syncMediaSourceType: createRequest.syncMediaSourceType ?? null,
+      syncExternalPlaylistId: createRequest.syncExternalPlaylistId ?? null,
     } satisfies NewCustomShow;
 
     await this.db.insertInto('customShow').values(show).execute();
 
-    await this.upsertCustomShowContent(show.uuid, createRequest.programs);
+    if (createRequest.programs.length > 0) {
+      await this.upsertCustomShowContent(show.uuid, createRequest.programs);
+    }
 
     return show.uuid;
   }
@@ -156,11 +190,6 @@ export class CustomShowDB {
     }
 
     await this.db.transaction().execute(async (tx) => {
-      // TODO: Do this deletion in the DB with foreign keys.
-      await tx
-        .deleteFrom('channelCustomShows')
-        .where('customShowUuid', '=', show.uuid)
-        .execute();
       await tx
         .deleteFrom('customShowContent')
         .where('customShowContent.customShowUuid', '=', show.uuid)
@@ -184,39 +213,61 @@ export class CustomShowDB {
   }
 
   async getAllShowsInfo() {
-    const showsAndContentCount = await this.db
-      .selectFrom('customShow')
-      .selectAll('customShow')
-      .innerJoin(
-        'customShowContent',
-        'customShow.uuid',
-        'customShowContent.customShowUuid',
+    const showsAndContentCount = await this.drizzle
+      .select({
+        customShow: CustomShow,
+        contentCount: count(CustomShowContent.contentUuid),
+        totalDuration: sum(
+          this.drizzle
+            .select({ duration: Program.duration })
+            .from(Program)
+            .where(eq(Program.uuid, CustomShowContent.contentUuid)),
+        ),
+      })
+      .from(CustomShow)
+      .leftJoin(
+        CustomShowContent,
+        eq(CustomShow.uuid, CustomShowContent.customShowUuid),
       )
-      .groupBy('customShow.uuid')
-      .select((eb) => [
-        eb.fn.count<number>('customShowContent.contentUuid').as('contentCount'),
-        eb.fn
-          .sum<number>(
-            eb
-              .selectFrom('program')
-              .whereRef('program.uuid', '=', 'customShowContent.contentUuid')
-              .select('duration'),
-          )
-          .as('totalDuration'),
-      ])
-      .execute();
-    return showsAndContentCount.map((f) => ({
-      id: f.uuid,
-      name: f.name,
-      count: f.contentCount,
-      totalDuration: f.totalDuration,
-    }));
+      .groupBy(CustomShow.uuid);
+
+    return showsAndContentCount.map(
+      ({ customShow, totalDuration, contentCount }) => ({
+        id: customShow.uuid,
+        name: customShow.name,
+        count: contentCount,
+        totalDuration: totalDuration
+          ? (parseFloatOrNull(totalDuration) ?? 0)
+          : 0,
+        syncMediaSourceId: customShow.syncMediaSourceId,
+        syncMediaSourceType: customShow.syncMediaSourceType,
+        syncExternalPlaylistId: customShow.syncExternalPlaylistId,
+        lastSyncedAt: customShow.lastSyncedAt,
+      }),
+    );
   }
 
-  private async upsertCustomShowContent(
+  async getSyncedShows() {
+    return this.db
+      .selectFrom('customShow')
+      .selectAll()
+      .where('syncMediaSourceId', 'is not', null)
+      .where('syncExternalPlaylistId', 'is not', null)
+      .execute();
+  }
+
+  async updateLastSyncedAt(id: string) {
+    await this.db
+      .updateTable('customShow')
+      .where('uuid', '=', id)
+      .set({ lastSyncedAt: +dayjs() })
+      .execute();
+  }
+
+  async upsertCustomShowContent(
     customShowId: string,
     programs: ContentProgram[],
-  ) {
+  ): Promise<void> {
     if (programs.length === 0) {
       return;
     }

@@ -11,6 +11,7 @@ export const Route = createFileRoute('/library/custom-shows_/new/')({
       name: '',
       contentCount: 0,
       totalDuration: 0,
+      isSyncing: false,
     };
 
     const existingNewFiller =

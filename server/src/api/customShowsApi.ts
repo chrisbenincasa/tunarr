@@ -7,10 +7,11 @@ import {
   UpdateCustomShowRequestSchema,
 } from '@tunarr/types/api';
 import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
-import { isNil, isNull, map, sumBy } from 'lodash-es';
+import { isNil, isNull, isNumber, sumBy } from 'lodash-es';
 import { z } from 'zod/v4';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { container } from '../container.ts';
+import { parseFloatOrNull } from '../util/index.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
@@ -38,11 +39,18 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       const customShows = await req.serverCtx.customShowDB.getAllShowsInfo();
 
       return res.send(
-        map(customShows, (cs) => ({
+        customShows.map((cs) => ({
           id: cs.id,
           name: cs.name,
           contentCount: cs.count,
-          totalDuration: cs.totalDuration,
+          totalDuration: isNumber(cs.totalDuration)
+            ? cs.totalDuration
+            : (parseFloatOrNull(cs.totalDuration) ?? 0),
+          syncMediaSourceId: cs.syncMediaSourceId ?? undefined,
+          syncMediaSourceType: cs.syncMediaSourceType ?? undefined,
+          syncExternalPlaylistId: cs.syncExternalPlaylistId ?? undefined,
+          lastSyncedAt: cs.lastSyncedAt?.getTime() ?? undefined,
+          isSyncing: req.serverCtx.customShowSyncService.isShowSyncing(cs.id),
         })),
       );
     },
@@ -72,10 +80,17 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       return res.status(200).send({
         id: customShow.uuid,
         name: customShow.name,
-        contentCount: customShow.customShowContent.length,
+        contentCount: customShow.content.length,
         totalDuration: sumBy(
-          customShow.customShowContent,
-          (c) => c.duration ?? 0,
+          customShow.content,
+          ({ program }) => program.duration ?? 0,
+        ),
+        syncMediaSourceId: customShow.syncMediaSourceId ?? undefined,
+        syncMediaSourceType: customShow.syncMediaSourceType ?? undefined,
+        syncExternalPlaylistId: customShow.syncExternalPlaylistId ?? undefined,
+        lastSyncedAt: customShow.lastSyncedAt?.getTime() ?? undefined,
+        isSyncing: req.serverCtx.customShowSyncService.isShowSyncing(
+          customShow.uuid,
         ),
       });
     },
@@ -107,10 +122,17 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       return res.status(200).send({
         id: customShow.uuid,
         name: customShow.name,
-        contentCount: customShow.customShowContent.length,
+        contentCount: customShow.content.length,
         totalDuration: sumBy(
-          customShow.customShowContent,
-          (c) => c.duration ?? 0,
+          customShow.content,
+          ({ program }) => program.duration ?? 0,
+        ),
+        syncMediaSourceId: customShow.syncMediaSourceId ?? undefined,
+        syncMediaSourceType: customShow.syncMediaSourceType ?? undefined,
+        syncExternalPlaylistId: customShow.syncExternalPlaylistId ?? undefined,
+        lastSyncedAt: customShow.lastSyncedAt?.getTime() ?? undefined,
+        isSyncing: req.serverCtx.customShowSyncService.isShowSyncing(
+          customShow.uuid,
         ),
       });
     },
@@ -172,6 +194,16 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const newId = await req.serverCtx.customShowDB.createShow(req.body);
+
+      // If this is a synced custom show, trigger an immediate sync
+      if (req.body.syncMediaSourceId && req.body.syncExternalPlaylistId) {
+        try {
+          await req.serverCtx.customShowSyncService.syncShow(newId);
+        } catch (e) {
+          logger.error(e, 'Failed initial sync for new custom show %s', newId);
+        }
+      }
+
       const newShow = await req.serverCtx.customShowDB.getShow(newId);
       if (!newShow) {
         throw new Error(
@@ -182,8 +214,18 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       return res.status(201).send({
         id: newShow.uuid,
         name: newShow.name,
-        contentCount: newShow.customShowContent.length,
-        totalDuration: sumBy(newShow.customShowContent, (c) => c.duration ?? 0),
+        contentCount: newShow.content.length,
+        totalDuration: sumBy(
+          newShow.content,
+          ({ program }) => program.duration ?? 0,
+        ),
+        syncMediaSourceId: newShow.syncMediaSourceId ?? undefined,
+        syncMediaSourceType: newShow.syncMediaSourceType ?? undefined,
+        syncExternalPlaylistId: newShow.syncExternalPlaylistId ?? undefined,
+        lastSyncedAt: newShow.lastSyncedAt?.getTime() ?? undefined,
+        isSyncing: req.serverCtx.customShowSyncService.isShowSyncing(
+          newShow.uuid,
+        ),
       });
     },
   );
@@ -214,6 +256,58 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       await req.serverCtx.customShowDB.deleteShow(req.params.id);
 
       return res.status(200).send({ id: req.params.id });
+    },
+  );
+
+  fastify.post(
+    '/custom-shows/:id/sync',
+    {
+      schema: {
+        tags: ['Custom Shows'],
+        operationId: 'syncCustomShow',
+        description:
+          'Triggers an immediate sync for a custom show linked to an external playlist',
+        params: IdPathParamSchema,
+        response: {
+          200: CustomShowSchema,
+          400: z.object({ error: z.string() }),
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const show = await req.serverCtx.customShowDB.getShow(req.params.id);
+
+      if (isNil(show)) {
+        return res.status(404).send();
+      }
+
+      if (!show.syncMediaSourceId || !show.syncExternalPlaylistId) {
+        return res
+          .status(400)
+          .send({ error: 'Custom show is not configured for sync' });
+      }
+
+      await req.serverCtx.customShowSyncService.syncShow(show.uuid);
+
+      const updatedShow = await req.serverCtx.customShowDB.getShow(show.uuid);
+      if (!updatedShow) {
+        throw new Error('Show disappeared after sync');
+      }
+
+      return res.status(200).send({
+        id: updatedShow.uuid,
+        name: updatedShow.name,
+        contentCount: updatedShow.content.length,
+        totalDuration: sumBy(
+          updatedShow.content,
+          ({ program }) => program.duration ?? 0,
+        ),
+        syncMediaSourceId: updatedShow.syncMediaSourceId ?? undefined,
+        syncMediaSourceType: updatedShow.syncMediaSourceType ?? undefined,
+        syncExternalPlaylistId: updatedShow.syncExternalPlaylistId ?? undefined,
+        lastSyncedAt: updatedShow.lastSyncedAt?.getTime() ?? undefined,
+      });
     },
   );
 };
