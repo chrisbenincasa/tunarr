@@ -76,7 +76,6 @@ export const TranscodeConfigAudioSettingsForm = ({
                 formControlProps={{ fullWidth: true }}
                 selectProps={{
                   label: 'Audio Format',
-                  disabled: field.form.state.values.audioFormat === 'copy',
                 }}
                 options={AudioFormats}
                 helperText={
