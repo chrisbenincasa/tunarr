@@ -11,6 +11,7 @@ import {
   discoverNvidiaCapabilities,
   discoverQsvCapabilities,
   discoverVaapiDevice,
+  discoverVaapiOpenclSupport,
   type VaapiDeviceInfo,
 } from './FfmpegIntegrationHelper.ts';
 
@@ -25,6 +26,11 @@ export const qsvInfo = binaries
 export const nvidiaCaps = binaries
   ? discoverNvidiaCapabilities(binaries.ffmpeg)
   : null;
+
+export const vaapiOpenclSupported =
+  binaries && vaapiInfo
+    ? discoverVaapiOpenclSupport(binaries.ffmpeg, vaapiInfo.device)
+    : false;
 
 const noopLogger = pino({ level: 'silent' }) as Logger;
 

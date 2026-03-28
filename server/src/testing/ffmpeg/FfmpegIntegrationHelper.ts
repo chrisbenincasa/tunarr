@@ -11,6 +11,20 @@ import type { VaapiHardwareCapabilities } from '../../ffmpeg/builder/capabilitie
 import { VaapiHardwareCapabilitiesParser } from '../../ffmpeg/builder/capabilities/VaapiHardwareCapabilitiesParser.ts';
 import { FfprobeMediaInfoSchema } from '../../types/ffmpeg.ts';
 
+function whichFirst(...candidates: string[]): string {
+  for (const candidate of candidates) {
+    try {
+      const result = execFileSync('which', [candidate], {
+        encoding: 'utf-8' as const,
+      }).trim();
+      if (result) return result;
+    } catch {
+      // not found, try next
+    }
+  }
+  return '';
+}
+
 export function discoverFfmpegBinaries(): {
   ffmpeg: string;
   ffprobe: string;
@@ -18,11 +32,11 @@ export function discoverFfmpegBinaries(): {
   try {
     const ffmpeg =
       process.env['TUNARR_TEST_FFMPEG'] ??
-      execFileSync('which', ['ffmpeg'], { encoding: 'utf-8' as const }).trim();
+      whichFirst('ffmpeg7.1', 'ffmpeg');
 
     const ffprobe =
       process.env['TUNARR_TEST_FFPROBE'] ??
-      execFileSync('which', ['ffprobe'], { encoding: 'utf-8' as const }).trim();
+      whichFirst('ffprobe7.1', 'ffprobe');
 
     if (!ffmpeg || !ffprobe) {
       return null;
@@ -123,6 +137,47 @@ export function probeFile(
 // ---------------------------------------------------------------------------
 // Hardware discovery helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Returns true if an OpenCL device can be derived from the given VAAPI device,
+ * which is the prerequisite for tonemap_opencl pipelines.
+ *
+ * Uses -init_hw_device vaapi=va:<device> -init_hw_device opencl=ocl@va — the
+ * same device-init approach the pipeline builder uses when OpenCL tonemap is
+ * active. A synthetic lavfi source is used so no input file is required; we
+ * only care that device initialisation succeeds (exit 0), not that any filter
+ * chain runs.
+ */
+export function discoverVaapiOpenclSupport(
+  ffmpegPath: string,
+  device: string,
+): boolean {
+  try {
+    const result = spawnSync(
+      ffmpegPath,
+      [
+        '-hide_banner',
+        '-init_hw_device',
+        `vaapi=va:${device}`,
+        '-init_hw_device',
+        'opencl=ocl@va',
+        '-f',
+        'lavfi',
+        '-i',
+        'nullsrc=s=64x64',
+        '-frames:v',
+        '1',
+        '-f',
+        'null',
+        '-',
+      ],
+      { encoding: 'utf-8' as const },
+    );
+    return result.status === 0;
+  } catch {
+    return false;
+  }
+}
 
 export type VaapiDeviceInfo = {
   device: string;
