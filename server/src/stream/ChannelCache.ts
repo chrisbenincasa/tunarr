@@ -101,15 +101,27 @@ export class ChannelCache implements IStreamLineupCache {
       remaining = lineupItem.duration - (lineupItem.startOffset ?? 0);
     }
 
+    const playTime = t0 + remaining;
+
+    if (!Number.isFinite(playTime)) {
+      this.logger.warn(
+        'Refusing to write non-finite playTime for channel %s (t0=%s, remaining=%s)',
+        channelId,
+        t0,
+        remaining,
+      );
+      return;
+    }
+
     if (lineupItem.type === 'program') {
       const key = this.getKey(channelId, lineupItem.program.uuid);
-      await this.persistentChannelCache.setProgramPlayTime(key, t0 + remaining);
+      await this.persistentChannelCache.setProgramPlayTime(key, playTime);
     }
 
     if (isCommercialLineupItem(lineupItem)) {
       await this.persistentChannelCache.setFillerPlayTime(
         this.getKey(channelId, lineupItem.fillerListId),
-        t0 + remaining,
+        playTime,
       );
     }
   }
