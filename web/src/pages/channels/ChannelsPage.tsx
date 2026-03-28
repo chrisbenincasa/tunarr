@@ -7,6 +7,9 @@ import type { BoxProps } from '@mui/material';
 import {
   Box,
   Button,
+  Card,
+  CardActionArea,
+  CardContent,
   Dialog,
   DialogActions,
   DialogContent,
@@ -14,7 +17,9 @@ import {
   DialogTitle,
   IconButton,
   Paper,
+  Stack,
   TableContainer,
+  TablePagination,
   Tooltip,
   Typography,
   useMediaQuery,
@@ -88,6 +93,7 @@ export default function ChannelsPage() {
   });
   const { data: transcodeConfigs } = useTranscodeConfigs();
   const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -386,6 +392,146 @@ export default function ChannelsPage() {
     [transcodeConfigs],
   );
 
+  const renderSessionStatus = (channel: ChannelRow) => {
+    const sessions = channel.sessions;
+    if (!sessions || isEmpty(sessions)) {
+      return (
+        <Tooltip placement="top" title="No active sessions">
+          <Box
+            sx={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              backgroundColor: red[200],
+              flexShrink: 0,
+            }}
+          />
+        </Tooltip>
+      );
+    }
+    const totalConnections = sum(map(sessions, (s) => s.numConnections));
+    const lameDuck = totalConnections === 0 && sessions.length > 0;
+    return (
+      <Tooltip
+        placement="top"
+        title={
+          <Box component="span" sx={{ textAlign: 'center' }}>
+            {sessions.length} {pluralize('session', sessions.length)}
+            <br />
+            {totalConnections} {totalConnections > 1 ? 'total' : ''}
+            {pluralize('connection', totalConnections)}
+          </Box>
+        }
+      >
+        <GlowingCircle
+          sx={{ width: '10px', height: '10px', flexShrink: 0 }}
+          color={lameDuck ? yellow[400] : green[400]}
+          glowColor={lameDuck ? yellow[200] : green[200]}
+          onClick={(e) => {
+            e.stopPropagation();
+            setSessionDetailDialog(channel);
+          }}
+        />
+      </Tooltip>
+    );
+  };
+
+  const renderMobileCards = () => {
+    const { pageIndex, pageSize } = tableSettings.state.pagination;
+    const pagedChannels = channels.slice(
+      pageIndex * pageSize,
+      (pageIndex + 1) * pageSize,
+    );
+    return (
+      <>
+        <Stack spacing={1}>
+          {pagedChannels.map((channel) => (
+            <Card key={channel.id}>
+              <CardActionArea
+                onClick={() =>
+                  navigate({
+                    to: '/channels/$channelId',
+                    params: { channelId: channel.id },
+                  }).catch(console.error)
+                }
+              >
+                <CardContent
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    py: 1.5,
+                    '&:last-child': { pb: 1.5 },
+                  }}
+                >
+                  {renderSessionStatus(channel)}
+                  <Box
+                    sx={{
+                      flexShrink: 0,
+                      width: 40,
+                      height: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {isNonEmptyString(channel.icon?.path) ? (
+                      <img
+                        style={{ maxHeight: '32px', maxWidth: '40px' }}
+                        src={channel.icon.path}
+                      />
+                    ) : (
+                      <TunarrLogo style={{ width: '40px', height: '32px' }} />
+                    )}
+                  </Box>
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle2" noWrap>
+                      Ch {channel.number} · {channel.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {channel.programCount}{' '}
+                      {pluralize('program', channel.programCount)} ·{' '}
+                      {betterHumanize(dayjs.duration(channel.duration), {
+                        style: 'short',
+                      })}
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    size="small"
+                    sx={{ flexShrink: 0 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenMenu(e, channel.id);
+                    }}
+                  >
+                    <MoreVert />
+                  </IconButton>
+                  {renderChannelMenu(channel)}
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          ))}
+        </Stack>
+        <Paper variant="outlined" sx={{ mt: 1 }}>
+          <TablePagination
+            component="div"
+            count={channels.length}
+            page={pageIndex}
+            rowsPerPage={pageSize}
+            onPageChange={(_, newPage) =>
+              tableSettings.onPaginationChange({ pageIndex: newPage, pageSize })
+            }
+            onRowsPerPageChange={(e) =>
+              tableSettings.onPaginationChange({
+                pageIndex: 0,
+                pageSize: parseInt(e.target.value, 10),
+              })
+            }
+          />
+        </Paper>
+      </>
+    );
+  };
+
   const table = useMaterialReactTable({
     columns: columnsNew,
     data: channels,
@@ -428,9 +574,13 @@ export default function ChannelsPage() {
         </RouterButtonLink>
       </Box>
 
-      <TableContainer component={Paper} sx={{ width: '100%' }}>
-        <MaterialReactTable table={table} />
-      </TableContainer>
+      {smallViewport ? (
+        renderMobileCards()
+      ) : (
+        <TableContainer component={Paper} sx={{ width: '100%' }}>
+          <MaterialReactTable table={table} />
+        </TableContainer>
+      )}
 
       <NoChannelsCreated />
       <ChannelSessionsDialog
