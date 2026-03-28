@@ -123,7 +123,7 @@ There are many ways to enable usage of an Nvidia GPU in a Docker container. The 
 
 ```
 docker run \
-    --runtime nvidia
+    --runtime nvidia \
     -v "$(pwd)"/tunarr:/config/tunarr \
     -e "TZ=America/New_York" \
     -p 8000:8000 \
