@@ -8,17 +8,16 @@ export class PadVaapiFilter extends FilterOption {
   private preprocessFilters: FilterOption[] = [];
 
   constructor(
-    private currentState: FrameState,
+    currentState: FrameState,
     private paddedSize: FrameSize,
   ) {
     super();
+    if (currentState.frameDataLocation === FrameDataLocation.Software) {
+      this.preprocessFilters.push(new HardwareUploadVaapiFilter(true));
+    }
   }
 
   get filter(): string {
-    if (this.currentState.frameDataLocation === FrameDataLocation.Software) {
-      this.preprocessFilters.push(new HardwareUploadVaapiFilter(true));
-    }
-
     const pad = `pad_vaapi=w=${this.paddedSize.width}:h=${this.paddedSize.height}:x=-1:y=-1:color=black`;
 
     return this.preprocessFilters
@@ -34,6 +33,7 @@ export class PadVaapiFilter extends FilterOption {
     );
     return currentState.update({
       paddedSize: this.paddedSize,
+      frameDataLocation: FrameDataLocation.Hardware,
     });
   }
 

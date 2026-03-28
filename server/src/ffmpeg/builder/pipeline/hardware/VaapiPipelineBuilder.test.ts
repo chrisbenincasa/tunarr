@@ -791,8 +791,19 @@ describe('VaapiPipelineBuilder pad', () => {
       }),
     });
 
-    const args = pipeline.getCommandArgs();
-    console.log(args.join(' '));
+    const args = pipeline.getCommandArgs().join(' ');
+    // pad_vaapi must be present
+    expect(args).toContain('pad_vaapi');
+    // hwdownload must appear after pad_vaapi (before the software overlay)
+    expect(args).toContain('hwdownload');
+    const padIdx = args.indexOf('pad_vaapi');
+    const dlIdx = args.indexOf('hwdownload');
+    expect(dlIdx).toBeGreaterThan(padIdx);
+    // any second hwupload (to re-enter hw for encoding) must come AFTER hwdownload
+    const secondHwuploadIdx = args.indexOf('hwupload', dlIdx);
+    if (secondHwuploadIdx !== -1) {
+      expect(secondHwuploadIdx).toBeGreaterThan(dlIdx);
+    }
   });
 });
 
@@ -1539,13 +1550,22 @@ describe('VaapiPipelineBuilder scale', () => {
     deinterlace?: boolean;
   }): Pipeline {
     const capabilities = new VaapiHardwareCapabilities([
-      new VaapiProfileEntrypoint(VaapiProfiles.H264Main, VaapiEntrypoint.Decode),
-      new VaapiProfileEntrypoint(VaapiProfiles.H264Main, VaapiEntrypoint.Encode),
+      new VaapiProfileEntrypoint(
+        VaapiProfiles.H264Main,
+        VaapiEntrypoint.Decode,
+      ),
+      new VaapiProfileEntrypoint(
+        VaapiProfiles.H264Main,
+        VaapiEntrypoint.Encode,
+      ),
       new VaapiProfileEntrypoint(
         VaapiProfiles.HevcMain10,
         VaapiEntrypoint.Decode,
       ),
-      new VaapiProfileEntrypoint(VaapiProfiles.HevcMain, VaapiEntrypoint.Encode),
+      new VaapiProfileEntrypoint(
+        VaapiProfiles.HevcMain,
+        VaapiEntrypoint.Encode,
+      ),
     ]);
 
     const binaryCapabilities =
@@ -1697,7 +1717,10 @@ describe('VaapiPipelineBuilder scale', () => {
         new Set(),
         new Map(),
         // TonemapOpencl matches default vaapiPipelineOptions.tonemapPreference='opencl'
-        new Set([KnownFfmpegFilters.PadVaapi, KnownFfmpegFilters.TonemapOpencl]),
+        new Set([
+          KnownFfmpegFilters.PadVaapi,
+          KnownFfmpegFilters.TonemapOpencl,
+        ]),
         new Set(),
       ),
       disableHardwareDecoding: true,
