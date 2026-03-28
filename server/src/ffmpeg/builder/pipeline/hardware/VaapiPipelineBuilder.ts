@@ -71,6 +71,11 @@ import {
 import { FrameDataLocation, RateControlMode } from '../../types.ts';
 
 export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
+  // Set in setHardwareAccelState(); used in setScale() to avoid a
+  // hwdownload+hwupload cycle that breaks with the named init_hw_device setup
+  // required for tonemap_opencl.
+  private willUseOpenclTonemap = false;
+
   constructor(
     private hardwareCapabilities: BaseFfmpegHardwareCapabilities,
     binaryCapabilities: FfmpegCapabilities,
@@ -109,8 +114,26 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     if (isNonEmptyString(ffmpegState.vaapiDevice)) {
+      // Use OpenCL device derivation when tonemap_opencl will be selected.
+      // The named init_hw_device approach is required for hwmap=derive_device=opencl
+      // to resolve the parent VAAPI device. Only enable it when the binary
+      // actually supports tonemap_opencl (i.e. OpenCL is available on the host).
+      const { pipelineOptions } = this.context;
+      this.willUseOpenclTonemap =
+        !pipelineOptions?.disableHardwareFilters &&
+        getBooleanEnvVar(TONEMAP_ENABLED, false) &&
+        isVideoPipelineContext(this.context) &&
+        isHdrContent(this.context.videoStream) &&
+        (pipelineOptions?.vaapiPipelineOptions?.tonemapPreference ??
+          'opencl') === 'opencl' &&
+        this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapOpencl);
+
       this.pipelineSteps.push(
-        new VaapiHardwareAccelerationOption(ffmpegState.vaapiDevice, canDecode),
+        new VaapiHardwareAccelerationOption(
+          ffmpegState.vaapiDevice,
+          canDecode,
+          this.willUseOpenclTonemap,
+        ),
       );
 
       if (isNonEmptyString(ffmpegState.vaapiDriver)) {
@@ -327,7 +350,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
           HardwareAccelerationMode.Vaapi &&
         currentState.frameDataLocation === FrameDataLocation.Software
       ) {
-        steps.push(new HardwareUploadVaapiFilter(needsVaapiSetFormat, 64));
+        steps.push(new HardwareUploadVaapiFilter(needsVaapiSetFormat));
       }
     }
 
@@ -399,10 +422,15 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     }
     let nextState = currentState;
 
-    const { desiredState, ffmpegState, shouldDeinterlace, videoStream } =
+    const { desiredState, ffmpegState, shouldDeinterlace, pipelineOptions } =
       this.context;
 
     let scaleOption: FilterOption;
+    const willNeedPad = !desiredState.scaledSize.equals(
+      desiredState.paddedSize,
+    );
+    const canPadOnHardware = this.canPadOnHardware();
+
     if (
       !currentState.scaledSize.equals(desiredState.scaledSize) &&
       ((ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.None &&
@@ -412,8 +440,16 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
         // performed a software decode, we'll have had to upload to hardware to tonemap anyway (most likely)
         // so try to continue on hardware if possible
         (ffmpegState.decoderHwAccelMode !== HardwareAccelerationMode.Vaapi &&
-          !this.shouldPerformTonemap(videoStream) &&
-          this.canTonemapOnHardware()))
+          currentState.frameDataLocation === FrameDataLocation.Hardware) ||
+        // Use software scale only when frames are not already on hardware.
+        // If frames are on hardware (from hw decode or tonemap), keep them
+        // there and use scale_vaapi — downloading for a software scale and
+        // re-uploading is wasteful, and breaks the named-device init_hw_device
+        // setup used for tonemap_opencl. Pad capability does not affect the
+        // scale decision: if padding requires software, it can hwdownload after.
+        ((!willNeedPad || !canPadOnHardware) &&
+          currentState.frameDataLocation !== FrameDataLocation.Hardware) ||
+        pipelineOptions.disableHardwareFilters)
     ) {
       scaleOption = ScaleFilter.create(
         currentState,
@@ -459,10 +495,9 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     // Enabled by default
-    const disableHardwarePad = getBooleanEnvVar(
-      TUNARR_ENV_VARS.DISABLE_VAAPI_PAD,
-      false,
-    );
+    const disableHardwarePad =
+      getBooleanEnvVar(TUNARR_ENV_VARS.DISABLE_VAAPI_PAD, false) ||
+      this.context.pipelineOptions.disableHardwareFilters;
     let padFilter: Maybe<FilterOption>;
     if (isHdrContent(this.context.videoStream)) {
       padFilter = PadFilter.create(currentState, this.desiredState);
@@ -645,11 +680,25 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     );
   }
 
-  private canTonemapOnHardware() {
+  private canPadOnHardware() {
+    if (!isVideoPipelineContext(this.context)) {
+      return false;
+    }
+    const disableHardwarePad =
+      getBooleanEnvVar(TUNARR_ENV_VARS.DISABLE_VAAPI_PAD, false) ||
+      this.context.pipelineOptions.disableHardwareFilters;
+
+    if (disableHardwarePad) {
+      return false;
+    }
+
+    if (isHdrContent(this.context.videoStream)) {
+      return false;
+    }
+
     return (
-      !this.context.pipelineOptions.disableHardwareFilters &&
-      (this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapVaapi) ||
-        this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapOpencl))
+      this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.PadVaapi) ||
+      this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.PadOpencl)
     );
   }
 }
