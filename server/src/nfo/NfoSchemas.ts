@@ -8,7 +8,7 @@ export const NfoFieldWithAttrs = z.object({
 
 export type NfoFieldWithAttrs = z.infer<typeof NfoFieldWithAttrs>;
 
-export const NfoThumb = NfoFieldWithAttrs.extend({
+const NfoThumb = NfoFieldWithAttrs.extend({
   // '@_aspect': z.enum([
   //   'banner',
   //   'clearart',
@@ -18,10 +18,11 @@ export const NfoThumb = NfoFieldWithAttrs.extend({
   //   'landscape',
   //   'poster',
   // ]),
-  '@_aspect': z.string(),
+  '@_aspect': z.string().optional(),
+  preview: z.string().optional(),
 });
 
-export const NfoUniqueId = NfoFieldWithAttrs.extend({
+const NfoUniqueId = NfoFieldWithAttrs.extend({
   '@_type': z.string(), //z.enum(['imdb', 'tmdb', 'tvdb']),
   '@_default': z.stringbool().optional(),
 });
@@ -32,7 +33,7 @@ export const NfoAudioStream = z.object({
   channels: z.coerce.number(),
 });
 
-export const NfoVideoStream = z.object({
+const NfoVideoStream = z.object({
   codec: z.string().optional(),
   aspect: z.coerce.number().or(z.string()).optional(),
   width: z.coerce.number().optional(),
@@ -42,11 +43,11 @@ export const NfoVideoStream = z.object({
   hdrtype: z.enum(['', 'hdr10', 'dolbyvision', 'hlg']).nullish().catch(''),
 });
 
-export const NfoSubtitleStream = z.object({
+const NfoSubtitleStream = z.object({
   language: z.string().optional(),
 });
 
-export const NfoFileInfo = z.object({
+const NfoFileInfo = z.object({
   streamdetails: z.object({
     video: NfoVideoStream.optional(),
     audio: z.array(NfoAudioStream).or(NfoAudioStream).optional(),
@@ -232,3 +233,18 @@ export function unwrapOtherVideoNfoContainer(
   }
   return head(container.episodedetails);
 }
+
+export const MusicVideoNfo = z.object({
+  title: z.string(),
+  artist: z.string().array(),
+  album: z.string().optional(),
+  plot: z.string().optional(),
+  premiered: z.string().optional(),
+  genre: z.array(z.string()).optional(),
+  thumb: NfoThumb.array().optional(),
+  year: z.coerce.number().int().optional(),
+});
+
+export const MusicVideoNfoContainer = z.object({
+  musicvideo: MusicVideoNfo,
+});
