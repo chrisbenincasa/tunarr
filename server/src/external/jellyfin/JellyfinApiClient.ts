@@ -369,6 +369,12 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
     );
   }
 
+  getOtherVideo(key: string): Promise<QueryResult<JellyfinOtherVideo>> {
+    return this.getItemOfType(key, 'Video', (video) =>
+      this.jellyfinApiOtherVideoInjection(video),
+    );
+  }
+
   private async getItemOfType<ItemTypeT extends JellyfinItemKind, OutType>(
     itemId: string,
     itemType: ItemTypeT,

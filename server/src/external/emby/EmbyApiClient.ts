@@ -799,6 +799,50 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     );
   }
 
+  getOtherVideoLibraryContents(
+    libraryId: string,
+    pageSize?: number,
+  ): AsyncIterable<EmbyOtherVideo> {
+    return this.getChildContents(
+      'Video',
+      (video) => this.embyApiOtherVideoInjection(video),
+      (page) =>
+        this.getRawItems(
+          null,
+          libraryId,
+          ['Video'],
+          [
+            'Path',
+            'Genres',
+            'Tags',
+            'DateCreated',
+            'Etag',
+            'Overview',
+            'Taglines',
+            'Studios',
+            'People',
+            'ProductionYear',
+            'PremiereDate',
+            'MediaSources',
+            'OfficialRating',
+            'ProviderIds',
+            'Chapters',
+          ],
+          {
+            offset: page * (pageSize ?? 50),
+            limit: pageSize ?? 50,
+          },
+        ),
+      pageSize,
+    );
+  }
+
+  getOtherVideo(key: string): Promise<QueryResult<EmbyOtherVideo>> {
+    return this.getItemOfType(key, 'Video', (video) =>
+      this.embyApiOtherVideoInjection(video),
+    );
+  }
+
   private async getItemOfType<
     ItemTypeT extends EmbyItemKind,
     OutType = SpecificEmbyType<ItemTypeT>,

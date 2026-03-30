@@ -8,18 +8,16 @@ import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
-import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 import { PlexT } from '../../types/internal.ts';
 import { PlexAlbum, PlexArtist, PlexTrack } from '../../types/Media.ts';
-import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
-import { MediaSourceMusicArtistScanner } from './MediaSourceMusicArtistScanner.ts';
+import { MediaSourceCompatibleMusicScanner } from './MediaSourceCompatibleMusicScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
 @injectable()
-export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
+export class PlexMediaSourceMusicScanner extends MediaSourceCompatibleMusicScanner<
   PlexT,
   PlexArtist,
   PlexAlbum,
@@ -56,46 +54,12 @@ export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
     );
   }
 
-  protected getArtists(
-    libraryId: string,
-    context: ScanContext<PlexApiClient>,
-  ): AsyncIterable<PlexArtist> {
-    return context.apiClient.getMusicLibraryContents(libraryId);
-  }
-
-  protected getAlbums(
-    show: PlexArtist,
-    context: ScanContext<PlexApiClient>,
-  ): AsyncIterable<PlexAlbum> {
-    return context.apiClient.getArtistAlbums(show.externalId);
-  }
-
-  protected getAlbumTracks(
-    season: PlexAlbum,
-    context: ScanContext<PlexApiClient>,
-  ): AsyncIterable<PlexTrack> {
-    return context.apiClient.getAlbumTracks(season.externalId);
-  }
-
-  protected getFullTrackMetadata(
-    episodeT: PlexTrack,
-    context: ScanContext<PlexApiClient>,
-  ): Promise<Result<PlexTrack, WrappedError>> {
-    return context.apiClient.getMusicTrack(episodeT.externalId);
-  }
-
   protected getApiClient(
     mediaSource: MediaSourceWithRelations,
   ): Promise<PlexApiClient> {
     return this.mediaSourceApiFactory.getPlexApiClientForMediaSource(
       mediaSource,
     );
-  }
-
-  protected getEntityExternalKey(
-    show: PlexArtist | PlexAlbum | PlexTrack,
-  ): string {
-    return show.externalId;
   }
 
   protected getLibrarySize(

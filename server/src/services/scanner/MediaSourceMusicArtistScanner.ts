@@ -52,7 +52,7 @@ export type GenericMediaSourceMusicLibraryScanner<
   MediaSourceApiClient<ProgramTypeMapForMusic<ArtistT, AlbumT, TrackT>>
 >;
 
-type ProgramTypeMapForMusic<
+export type ProgramTypeMapForMusic<
   ArtistT extends MediaSourceMusicArtist,
   AlbumT extends MediaSourceMusicAlbum<ArtistT>,
   TrackT extends MediaSourceMusicTrack<ArtistT, AlbumT>,

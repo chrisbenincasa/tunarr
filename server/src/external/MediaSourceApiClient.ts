@@ -2,19 +2,19 @@ import type { ProgramType } from '../db/schema/Program.ts';
 import type { ProgramGroupingType } from '../db/schema/ProgramGrouping.ts';
 import type {
   Episode,
+  MediaSourceShow,
   Movie,
   MusicAlbum,
   MusicArtist,
   MusicTrack,
   Season,
-  Show,
 } from '../types/Media.ts';
 import type { ApiClientOptions, QueryResult } from './BaseApiClient.ts';
 import { BaseApiClient } from './BaseApiClient.ts';
 
 export type ProgramTypeMap<
   MovieType extends Movie = Movie,
-  ShowType extends Show = Show,
+  ShowType extends MediaSourceShow = MediaSourceShow,
   SeasonType extends Season<ShowType> = Season<ShowType>,
   EpisodeType extends Episode<ShowType, SeasonType> = Episode<
     ShowType,
@@ -46,9 +46,13 @@ export type ExtractMediaType<
     : never;
 
 export type ExtractShowType<Client extends MediaSourceApiClient> =
-  ExtractMediaType<Client, 'show'> extends MusicArtist
-    ? ExtractMediaType<Client, 'show'>
-    : never;
+  Client['_programTypes']['show'];
+
+export type ExtractSeasonType<Client extends MediaSourceApiClient> =
+  Client['_programTypes']['season'];
+
+export type ExtractEpisodeType<Client extends MediaSourceApiClient> =
+  Client['_programTypes']['episode'];
 
 export type MediaSourceApiClientFactory<
   Type extends MediaSourceApiClient,
@@ -65,6 +69,8 @@ export abstract class MediaSourceApiClient<
   ProgramTypes extends ProgramTypeMap = ProgramTypeMap,
   OptionsType extends ApiClientOptions = ApiClientOptions,
 > extends BaseApiClient<OptionsType> {
+  readonly _programTypes: ProgramTypes;
+
   abstract getMovieLibraryContents(
     libraryId: string,
     pageSize?: number,

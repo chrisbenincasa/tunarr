@@ -16,6 +16,7 @@ import { LocalMediaCanonicalizer } from './LocalMediaCanonicalizer.ts';
 import { PlexMediaCanonicalizer } from './PlexMediaCanonicalizers.ts';
 import { EmbyMediaSourceMovieScanner } from './scanner/EmbyMediaSourceMovieScanner.ts';
 import { EmbyMediaSourceMusicScanner } from './scanner/EmbyMediaSourceMusicScanner.ts';
+import { EmbyMediaSourceOtherVideoScanner } from './scanner/EmbyMediaSourceOtherVideoScanner.ts';
 import { EmbyMediaSourceTvShowScanner } from './scanner/EmbyMediaSourceTvShowScanner.ts';
 import type { GenericExternalCollectionScanner } from './scanner/ExternalCollectionScanner.ts';
 import type {
@@ -103,6 +104,11 @@ export const ServicesModule = new ContainerModule((bind) => {
   )
     .to(JellyfinMediaSourceOtherVideoScanner)
     .whenTargetNamed(MediaSourceType.Jellyfin);
+  bind<EmbyMediaSourceOtherVideoScanner>(
+    KEYS.MediaSourceOtherVideoLibraryScanner,
+  )
+    .to(EmbyMediaSourceOtherVideoScanner)
+    .whenTargetNamed(MediaSourceType.Emby);
 
   bind<GenericMediaSourceScannerFactory>(
     KEYS.MediaSourceLibraryScanner,
