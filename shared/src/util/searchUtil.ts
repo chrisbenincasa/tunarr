@@ -234,7 +234,16 @@ const SearchExpressionLexer = new Lexer({
   defaultMode: 'normalMode',
 });
 
-const StringOps = ['=', '!=', '<', '<=', 'in', 'not in', 'contains', 'not contains'] as const;
+const StringOps = [
+  '=',
+  '!=',
+  '<',
+  '<=',
+  'in',
+  'not in',
+  'contains',
+  'not contains',
+] as const;
 type StringOps = TupleToUnion<typeof StringOps>;
 const NumericOps = ['=', '!=', '<', '<=', '>', '>=', 'between'] as const;
 type NumericOps = TupleToUnion<typeof NumericOps>;
@@ -364,6 +373,7 @@ const indexOperatorToSyntax: Dictionary<string> = {
   contains: '~',
   'not contains': '!~',
   to: 'between',
+  'starts with': '<',
 };
 
 function normalizeReleaseDate(value: string) {

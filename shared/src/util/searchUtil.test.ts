@@ -627,4 +627,31 @@ describe('searchFilterToString', () => {
     const request = parsedSearchToRequest(query);
     expect(searchFilterToString(request)).toEqual('genre in ["comedy"]');
   });
+
+  test('starts with renders as < not literal "starts with"', () => {
+    const filter = {
+      type: 'value',
+      fieldSpec: {
+        key: 'title',
+        name: 'title',
+        op: 'starts with',
+        type: 'string',
+        value: ['The'],
+      },
+    } satisfies SearchFilter;
+
+    expect(searchFilterToString(filter)).toEqual('title < "The"');
+  });
+
+  test('round-trips starts with through parse and stringify', () => {
+    const input = 'title < "The"';
+    const lexerResult = tokenizeSearchQuery(input);
+    expect(lexerResult.errors).toHaveLength(0);
+    const parser = new SearchParser();
+    parser.input = lexerResult.tokens;
+    const query = parser.searchExpression();
+    expect(parser.errors).toHaveLength(0);
+    const request = parsedSearchToRequest(query);
+    expect(searchFilterToString(request)).toEqual(input);
+  });
 });
