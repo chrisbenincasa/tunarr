@@ -1,13 +1,21 @@
 import { MoreVert, PlayArrowOutlined } from '@mui/icons-material';
 import {
   Box,
+  Card,
+  CardContent,
+  Divider,
   IconButton,
+  List,
+  ListItem,
   ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
   Stack,
+  Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import type { Task } from '@tunarr/types';
@@ -25,6 +33,8 @@ import type { Nullable } from '../../types/util.ts';
 
 export default function TaskSettingsPage() {
   const snackbar = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { data: tasks } = useSuspenseQuery({
     ...getApiTasksOptions(),
     refetchInterval: 60 * 1000, // Check tasks every minute
@@ -172,6 +182,83 @@ export default function TaskSettingsPage() {
     },
   });
 
+  const renderMobileList = () => (
+    <List disablePadding>
+      {(tasks ?? []).map((task, idx) => {
+        const lastEpoch = maxBy(
+          task.scheduledTasks,
+          (t) => t.lastExecutionEpoch,
+        )?.lastExecutionEpoch;
+        const nextEpoch = minBy(
+          task.scheduledTasks,
+          (t) => t.nextExecutionEpoch,
+        )?.nextExecutionEpoch;
+
+        return (
+          <Box key={task.id}>
+            {idx > 0 && <Divider />}
+            <ListItem
+              disableGutters
+              secondaryAction={
+                <Tooltip title="Run now">
+                  <IconButton
+                    edge="end"
+                    onClick={() => runTaskNow(task.id)}
+                    sx={{ mr: 1 }}
+                  >
+                    <PlayArrowOutlined />
+                  </IconButton>
+                </Tooltip>
+              }
+            >
+              <Card
+                elevation={0}
+                sx={{ flex: 1, mr: 6, bgcolor: 'transparent' }}
+              >
+                <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    {task.name}
+                  </Typography>
+                  {task.description && (
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      {task.description}
+                    </Typography>
+                  )}
+                  <Stack direction="row" gap={2} mt={0.5} flexWrap="wrap">
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Last run
+                      </Typography>
+                      <Typography variant="body2">
+                        {lastEpoch
+                          ? dayjs(lastEpoch * 1000).format('lll')
+                          : '-'}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Next run
+                      </Typography>
+                      <Typography variant="body2">
+                        {nextEpoch
+                          ? dayjs(nextEpoch * 1000).format('lll')
+                          : '-'}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </ListItem>
+          </Box>
+        );
+      })}
+    </List>
+  );
+
   return (
     <Stack gap={2}>
       <Box>
@@ -181,7 +268,7 @@ export default function TaskSettingsPage() {
           operations.
         </Typography>
       </Box>
-      <MRT_Table table={table} />
+      {isMobile ? renderMobileList() : <MRT_Table table={table} />}
       {/* <TableContainer>
         <Table>
           <TableHead>
