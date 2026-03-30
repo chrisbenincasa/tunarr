@@ -6,7 +6,7 @@ import {
   ContentProgramTypeSchema,
   type ContentProgramType,
 } from '@tunarr/types/schemas';
-import { groupBy, isNil, keys, mapValues, omitBy } from 'lodash-es';
+import { groupBy, isNil, keys, mapValues, omitBy, uniqBy } from 'lodash-es';
 import { useMemo, useState } from 'react';
 import { useChannelAndProgramming } from '../../hooks/useChannelLineup.ts';
 import { TabPanel } from '../TabPanel.tsx';
@@ -99,14 +99,17 @@ export const ChannelPrograms = ({ channelId }: Props) => {
   const programsByType = useMemo(
     () =>
       groupBy(
-        seq.collect(lineup, (p) => {
-          if (p.type === 'content' && p.id) {
-            return programs[p.id];
-          } else if (p.type === 'custom') {
-            return programs[p.id];
-          }
-          return;
-        }),
+        uniqBy(
+          seq.collect(lineup, (p) => {
+            if (p.type === 'content' && p.id) {
+              return programs[p.id];
+            } else if (p.type === 'custom') {
+              return programs[p.id];
+            }
+            return;
+          }),
+          (p) => p.id,
+        ),
         (p) => p.subtype,
       ),
     [lineup, programs],
