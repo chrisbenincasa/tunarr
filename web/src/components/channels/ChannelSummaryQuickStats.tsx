@@ -79,7 +79,7 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
         },
       }}
     >
-      <Grid size={{ xs: 12, md: 4 }} sx={{ p: 1 }}>
+      <Grid size={{ xs: 12, md: 4 }} sx={{ p: [0.5, 1] }}>
         <Stack direction="row">
           <div>
             <Typography variant="overline">Total Runtime</Typography>
@@ -88,7 +88,7 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
           <Box></Box>
         </Stack>
       </Grid>
-      <Grid size={{ xs: 12, md: 4 }} sx={{ p: 1 }}>
+      <Grid size={{ xs: 12, md: 4 }} sx={{ p: [0.5, 1] }}>
         <Stack direction="row">
           <div>
             <Typography variant="overline">Programs</Typography>
@@ -96,7 +96,7 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
           </div>
         </Stack>
       </Grid>
-      <Grid size={{ xs: 12, md: 2 }} sx={{ p: 1 }}>
+      <Grid size={{ xs: 12, md: 2 }} sx={{ p: [0.5, 1] }}>
         <Box sx={{ flex: 1 }}>
           <Typography variant="overline">Stream Mode</Typography>
           <Typography variant="h5">
@@ -104,7 +104,7 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
           </Typography>
         </Box>
       </Grid>
-      <Grid size={{ xs: 12, md: 2 }} sx={{ p: 1 }}>
+      <Grid size={{ xs: 12, md: 2 }} sx={{ p: [0.5, 1] }}>
         <Box sx={{ flex: 1 }}>
           <Typography variant="overline">
             Transcode Config{' '}

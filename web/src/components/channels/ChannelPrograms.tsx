@@ -172,7 +172,12 @@ export const ChannelPrograms = ({ channelId }: Props) => {
 
   return (
     <>
-      <Tabs value={tab} onChange={(_, v) => setTab(v as number)}>
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v as number)}
+        variant="scrollable"
+        allowScrollButtonsMobile
+      >
         {Object.values(ContentProgramTypeSchema.enum).map((v, idx) => (
           <ProgramTypeTab
             key={v}

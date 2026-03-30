@@ -193,12 +193,33 @@ export default function ProgramInfoBar({ program, time }: Props) {
     seasonTitle,
   ]);
 
-  return compact(itemInfoBar).map((chip, index) => (
-    <React.Fragment key={index}>
-      <Box display="inline-block">{chip}</Box>
-      {index < itemInfoBar.length - 1 && (
-        <Box display="inline-block">&nbsp;&nbsp;&bull;&nbsp;&nbsp;</Box>
-      )}
-    </React.Fragment>
-  ));
+  const compacted = compact(itemInfoBar);
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        rowGap: 0.5,
+      }}
+    >
+      {compacted.map((chip, index) => (
+        <React.Fragment key={index}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>{chip}</Box>
+          {index < compacted.length - 1 && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mx: 0.75,
+                userSelect: 'none',
+              }}
+            >
+              &bull;
+            </Box>
+          )}
+        </React.Fragment>
+      ))}
+    </Box>
+  );
 }

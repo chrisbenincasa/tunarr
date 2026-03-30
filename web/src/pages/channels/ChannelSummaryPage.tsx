@@ -38,8 +38,10 @@ export const ChannelSummaryPage = () => {
           )}
         </Box>
 
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h4">{channel.name}</Typography>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant={smallViewport ? 'h5' : 'h4'} noWrap>
+            {channel.name}
+          </Typography>
           <Typography variant="subtitle1">Channel #{channel.number}</Typography>
         </Box>
       </Stack>

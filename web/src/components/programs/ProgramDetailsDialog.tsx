@@ -110,10 +110,20 @@ function ProgramDetailsDialogContent({
         </Skeleton>
       ) : (
         <DialogTitle
-          variant="h4"
+          variant={smallViewport ? 'h6' : 'h4'}
           sx={{ display: 'flex', alignItems: 'center' }}
         >
-          <Box sx={{ flex: 1 }}>{title}</Box>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {title}
+          </Box>
 
           <IconButton
             onClick={(e) => setMoreMenuAnchorEl(e.currentTarget)}
@@ -149,6 +159,8 @@ function ProgramDetailsDialogContent({
           <Tabs
             value={tab}
             onChange={(_, v) => setTab(v as Panels)}
+            variant="scrollable"
+            allowScrollButtonsMobile
             sx={{ mb: 2 }}
           >
             {visibility.metadata && <Tab value={'metadata'} label="Overview" />}
@@ -332,7 +344,11 @@ export default function ProgramDetailsDialog(props: Props) {
             backgroundSize: 'cover',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
-            minHeight: programType === 'episode' ? 450 : 575,
+            minHeight: smallViewport
+              ? undefined
+              : programType === 'episode'
+                ? 450
+                : 575,
           },
         },
       }}

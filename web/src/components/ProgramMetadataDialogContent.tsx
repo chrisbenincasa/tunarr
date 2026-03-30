@@ -14,7 +14,7 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { capitalize } from 'lodash-es';
 import type { ReactEventHandler } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useSettings } from '../store/settings/selectors.ts';
 import ProgramInfoBar from './programs/ProgramInfoBar.tsx';
 
@@ -32,18 +32,26 @@ export const ProgramMetadataDialogContent = ({
   stop,
 }: Props) => {
   const settings = useSettings();
-  const [thumbLoadState, setThumbLoadState] =
-    useState<ThumbLoadState>('loading');
+
+  const thumbnailImage = useMemo(() => {
+    return `${settings.backendUri}/api/programs/${program.uuid}/artwork/poster`;
+  }, [settings.backendUri, program]);
+
+  const [imageState, setImageState] = useState<{
+    url: string | undefined;
+    state: ThumbLoadState;
+  }>({ url: undefined, state: 'loading' });
+
+  // Derive load state: if the stored URL doesn't match the current thumbnail,
+  // the image hasn't loaded yet — treat it as loading without a useEffect reset.
+  const thumbLoadState: ThumbLoadState =
+    imageState.url === thumbnailImage ? imageState.state : 'loading';
 
   const imageRef = useRef<HTMLImageElement>(null);
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const isEpisode = program && program.type === 'episode';
   const imageWidth = smallViewport ? (isEpisode ? '100%' : '55%') : 240;
-
-  const thumbnailImage = useMemo(() => {
-    return `${settings.backendUri}/api/programs/${program.uuid}/artwork/poster`;
-  }, [settings.backendUri, program]);
 
   const externalLink = useMemo(() => {
     return `${settings.backendUri}/api/programs/${program.uuid}/external-link`;
@@ -53,18 +61,17 @@ export const ProgramMetadataDialogContent = ({
     return `${window.location.origin}/web/media/${program.type}/${program.uuid}`;
   }, [program]);
 
-  useEffect(() => {
-    setThumbLoadState('loading');
+  const onLoad = useCallback(() => {
+    setImageState({ url: thumbnailImage, state: 'success' });
   }, [thumbnailImage]);
 
-  const onLoad = useCallback(() => {
-    setThumbLoadState('success');
-  }, [setThumbLoadState]);
-
-  const onError: ReactEventHandler<HTMLImageElement> = useCallback((e) => {
-    console.error(e);
-    setThumbLoadState('error');
-  }, []);
+  const onError: ReactEventHandler<HTMLImageElement> = useCallback(
+    (e) => {
+      console.error(e);
+      setImageState({ url: thumbnailImage, state: 'error' });
+    },
+    [thumbnailImage],
+  );
 
   const summary = useMemo(() => {
     return getProgramSummary(program);
@@ -159,6 +166,7 @@ export const ProgramMetadataDialogContent = ({
               borderTop: `1px solid`,
               borderBottom: `1px solid`,
               my: 1,
+              py: 1,
               textAlign: ['center', 'left'],
             }}
           >
