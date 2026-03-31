@@ -22,6 +22,7 @@ const KEYS = {
   ProgramDB: Symbol.for('ProgramDB'),
   FillerListDB: Symbol.for('FillerListDB'),
   SettingsDB: Symbol.for('SettingsDB'),
+  TranscodeConfigDB: Symbol.for('TranscodeConfigDB'),
   MediaSourceApiFactory: Symbol.for('MediaSourceApiFactory'),
   TimeSlotSchedulerServiceFactory: Symbol.for(
     'TimeSlotSchedulerServiceFactory',

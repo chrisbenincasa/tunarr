@@ -6,6 +6,7 @@ import {
   type IChannelDB,
 } from '@/db/interfaces/IChannelDB.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { ITranscodeConfigDB } from '@/db/ITranscodeConfigDB.js';
 import { globalOptions } from '@/globals.js';
 import { FileSystemService } from '@/services/FileSystemService.js';
 import { CacheImageService } from '@/services/cacheImageService.js';
@@ -254,7 +255,25 @@ export class ChannelDB implements IChannelDB {
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
     @inject(MaterializeLineupCommand)
     private materializeLineupCommand: MaterializeLineupCommand,
+    @inject(KEYS.TranscodeConfigDB)
+    private transcodeConfigDB: ITranscodeConfigDB,
   ) {}
+
+  /**
+   * Resolves the transcodeConfigId, converting "default" to the actual default config UUID.
+   */
+  private async resolveTranscodeConfigId(
+    transcodeConfigId: string,
+  ): Promise<string> {
+    if (transcodeConfigId === 'default') {
+      const defaultConfig = await this.transcodeConfigDB.getDefaultConfig();
+      if (!defaultConfig) {
+        throw new Error('No default transcode config found');
+      }
+      return defaultConfig.uuid;
+    }
+    return transcodeConfigId;
+  }
 
   async channelExists(channelId: string) {
     const channel = await this.db
@@ -711,10 +730,18 @@ export class ChannelDB implements IChannelDB {
       );
     }
 
+    // Resolve "default" to actual transcode config UUID
+    const resolvedReq = {
+      ...createReq,
+      transcodeConfigId: await this.resolveTranscodeConfigId(
+        createReq.transcodeConfigId,
+      ),
+    };
+
     const channel = await this.db.transaction().execute(async (tx) => {
       const channel = await tx
         .insertInto('channel')
-        .values(createRequestToChannel(createReq))
+        .values(createRequestToChannel(resolvedReq))
         .returningAll()
         .executeTakeFirst();
 
@@ -788,7 +815,15 @@ export class ChannelDB implements IChannelDB {
       throw new ChannelNotFoundError(id);
     }
 
-    const update = updateRequestToChannel(updateReq);
+    // Resolve "default" to actual transcode config UUID
+    const resolvedReq = {
+      ...updateReq,
+      transcodeConfigId: await this.resolveTranscodeConfigId(
+        updateReq.transcodeConfigId,
+      ),
+    };
+
+    const update = updateRequestToChannel(resolvedReq);
 
     if (
       isNonEmptyString(updateReq.watermark?.url) &&
