@@ -9,7 +9,10 @@ import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { globalOptions } from '@/globals.js';
 import { FileSystemService } from '@/services/FileSystemService.js';
 import { CacheImageService } from '@/services/cacheImageService.js';
-import { ChannelNotFoundError } from '@/types/errors.js';
+import {
+  ChannelNotFoundError,
+  TranscodeConfigNotFoundError,
+} from '@/types/errors.js';
 import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
 import { Result } from '@/types/result.js';
@@ -263,6 +266,23 @@ export class ChannelDB implements IChannelDB {
       .select('uuid')
       .executeTakeFirst();
     return !isNil(channel);
+  }
+
+  /**
+   * Validates that the given transcodeConfigId exists in the database.
+   * @throws TranscodeConfigNotFoundError if the config doesn't exist
+   */
+  private async validateTranscodeConfigId(
+    transcodeConfigId: string,
+  ): Promise<void> {
+    const config = await this.db
+      .selectFrom('transcodeConfig')
+      .where('transcodeConfig.uuid', '=', transcodeConfigId)
+      .select('uuid')
+      .executeTakeFirst();
+    if (isNil(config)) {
+      throw new TranscodeConfigNotFoundError(transcodeConfigId);
+    }
   }
 
   getChannelOrm(
@@ -711,6 +731,9 @@ export class ChannelDB implements IChannelDB {
       );
     }
 
+    // Validate transcodeConfigId exists before creating channel
+    await this.validateTranscodeConfigId(createReq.transcodeConfigId);
+
     const channel = await this.db.transaction().execute(async (tx) => {
       const channel = await tx
         .insertInto('channel')
@@ -787,6 +810,9 @@ export class ChannelDB implements IChannelDB {
     if (isNil(channel)) {
       throw new ChannelNotFoundError(id);
     }
+
+    // Validate transcodeConfigId exists before updating channel
+    await this.validateTranscodeConfigId(updateReq.transcodeConfigId);
 
     const update = updateRequestToChannel(updateReq);
 
