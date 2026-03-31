@@ -45,6 +45,7 @@ import type {
   MusicTrackMetadata,
   MusicTrackWithHierarchy,
   MusicVideo,
+  MusicVideoMetadata,
   NamedEntity,
   OtherVideo,
   OtherVideoMetadata,
@@ -195,6 +196,7 @@ export type EpisodeMetadata = z.infer<typeof EpisodeMetadata>;
 export type SeasonMetadata = z.infer<typeof SeasonMetadata>;
 export type ShowMetadata = z.infer<typeof ShowMetadata>;
 export type OtherVideoMetadata = z.infer<typeof OtherVideoMetadata>;
+export type MusicVideoMetadata = z.infer<typeof MusicVideoMetadata>;
 export type MusicArtistMetadata = z.infer<typeof MusicArtistMetadata>;
 export type MusicAlbumMetadata = z.infer<typeof MusicAlbumMetadata>;
 export type MusicTrackMetadata = z.infer<typeof MusicTrackMetadata>;

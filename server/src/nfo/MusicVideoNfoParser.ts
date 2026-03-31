@@ -1,7 +1,14 @@
 import { BaseNfoParser } from './BaseNfoParser.ts';
 import { MusicVideoNfoContainer } from './NfoSchemas.ts';
 
-const ArrayTags = ['musicvideo.artist', 'musicvideo.thumb', 'musicvideo.genre'];
+const ArrayTags = [
+  'musicvideo.artist',
+  'musicvideo.thumb',
+  'musicvideo.genre',
+  'musicvideo.directory',
+  'musicvideo.tag',
+  'musicvideo.studio',
+];
 
 export class MusicVideoNfoParser extends BaseNfoParser<
   typeof MusicVideoNfoContainer

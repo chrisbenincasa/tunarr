@@ -2,6 +2,7 @@ import type {
   MusicAlbum,
   MusicArtist,
   MusicTrack,
+  MusicVideo,
   OtherVideo,
 } from '@tunarr/types';
 import {
@@ -39,7 +40,7 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
       case 'track':
         return this.getMusicTrackCanonicalId(input);
       case 'music_video':
-        throw new Error('Unsupported');
+        return this.getMusicVideoCanonicalId(input);
     }
   }
 
@@ -98,6 +99,12 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
   private getOtherVideoCanonicalId(otherVideo: OtherVideo): string {
     const hash = crypto.createHash('sha1');
     this.updateHashForBaseItem(otherVideo, hash);
+    return hash.digest('hex');
+  }
+
+  private getMusicVideoCanonicalId(mv: MusicVideo): string {
+    const hash = crypto.createHash('sha1');
+    this.updateHashForBaseItem(mv, hash);
     return hash.digest('hex');
   }
 
