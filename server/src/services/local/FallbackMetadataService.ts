@@ -2,6 +2,7 @@ import {
   MovieMetadata,
   MusicAlbumMetadata,
   MusicArtistMetadata,
+  MusicVideoMetadata,
   OtherVideoMetadata,
   ShowMetadata,
 } from '@tunarr/types';
@@ -112,6 +113,25 @@ export class FallbackMetadataService {
       title,
       tags: [],
       type: 'other_video',
+      uuid: v4(),
+      year: null,
+      artwork: [],
+      state: 'ok',
+    };
+  }
+
+  getMusicVideoFallbackMetadata(filePath: string): MusicVideoMetadata {
+    const title = basename(filePath, extname(filePath));
+    return {
+      identifiers: [],
+      originalTitle: null,
+      releaseDate: null,
+      releaseDateString: null,
+      sortTitle: titleToSortTitle(title),
+      sourceType: 'local',
+      title,
+      tags: [],
+      type: 'music_video',
       uuid: v4(),
       year: null,
       artwork: [],

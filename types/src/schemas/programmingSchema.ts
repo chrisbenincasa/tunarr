@@ -450,11 +450,15 @@ export const MusicTrackWithHierarchy = z.object({
   album: MusicAlbumWithArtist,
 });
 
-export const MusicVideo = z.object({
+export const MusicVideoMetadata = z.object({
   ...BaseProgram.shape,
+  type: z.literal('music_video'),
+});
+
+export const MusicVideo = z.object({
+  ...MusicVideoMetadata.shape,
   ...WithTunarrMetadata.shape,
   ...WithMediaItemMetadata.shape,
-  type: z.literal('music_video'),
 });
 
 export const OtherVideoMetadata = z.object({

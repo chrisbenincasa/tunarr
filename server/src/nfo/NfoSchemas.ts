@@ -234,7 +234,7 @@ export function unwrapOtherVideoNfoContainer(
   return head(container.episodedetails);
 }
 
-export const MusicVideoNfo = z.object({
+const MusicVideoNfo = z.object({
   title: z.string(),
   artist: z.string().array(),
   album: z.string().optional(),
@@ -243,7 +243,12 @@ export const MusicVideoNfo = z.object({
   genre: z.array(z.string()).optional(),
   thumb: NfoThumb.array().optional(),
   year: z.coerce.number().int().optional(),
+  director: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
+  tag: z.array(z.string()).optional(),
+  studio: z.string().optional().catch(undefined),
 });
+
+export type MusicVideoNfo = z.infer<typeof MusicVideoNfo>;
 
 export const MusicVideoNfoContainer = z.object({
   musicvideo: MusicVideoNfo,
