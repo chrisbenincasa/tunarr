@@ -17,6 +17,11 @@ import type { IChannelDB } from './interfaces/IChannelDB.ts';
 import { ChannelPrograms } from './schema/ChannelPrograms.ts';
 import { Program } from './schema/Program.ts';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
+import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
+import { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
+import { LineupRepository } from './channel/LineupRepository.ts';
+import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
+import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
 
 type Fixture = {
   db: string;
@@ -51,24 +56,51 @@ const test = baseTest.extend<Fixture>({
           }
           return task;
         },
+        queueTask: async (task: any) => {
+          return { result: task };
+        },
       }) as any;
 
     const mockMaterializeLineupCommand = {
-      execute: async () => {},
+      execute: async () => ({}),
     } as any;
 
-    const channelDb = new ChannelDB(
-      new ProgramConverter(
-        LoggerFactory.child({ className: ProgramConverter.name }),
-        dbAccess.db!,
-      ),
-      mock<IProgramDB>(),
-      mock(CacheImageService),
-      dbAccess.db!, // Kysely instance
+    const fileSystemService = new FileSystemService(globalOptions());
+
+    const programConverter = new ProgramConverter(
+      LoggerFactory.child({ className: ProgramConverter.name }),
+      dbAccess.db!,
+    );
+
+    const lineupRepo = new LineupRepository(
+      dbAccess.db!,
+      dbAccess.drizzle!,
+      fileSystemService,
       mockWorkerPoolFactory,
-      new FileSystemService(globalOptions()),
-      dbAccess.drizzle!, // Drizzle instance
       mockMaterializeLineupCommand,
+      mock<IProgramDB>(),
+      programConverter,
+    );
+
+    const basicChannelRepo = new BasicChannelRepository(
+      dbAccess.db!,
+      dbAccess.drizzle!,
+      mock(CacheImageService),
+      lineupRepo,
+    );
+
+    const channelProgramRepo = new ChannelProgramRepository(
+      dbAccess.db!,
+      dbAccess.drizzle!,
+    );
+
+    const channelConfigRepo = new ChannelConfigRepository(dbAccess.db!);
+
+    const channelDb = new ChannelDB(
+      basicChannelRepo,
+      channelProgramRepo,
+      lineupRepo,
+      channelConfigRepo,
     );
 
     await use(channelDb);

@@ -86,6 +86,22 @@ const KEYS = {
   // Tasks
   Task: Symbol.for('Task'),
   StartupTasks: Symbol.for('StartupTasks'),
+
+  // ProgramDB repositories
+  BasicProgramRepository: Symbol.for('BasicProgramRepository'),
+  ProgramGroupingRepository: Symbol.for('ProgramGroupingRepository'),
+  ProgramExternalIdRepository: Symbol.for('ProgramExternalIdRepository'),
+  ProgramUpsertRepository: Symbol.for('ProgramUpsertRepository'),
+  ProgramMetadataRepository: Symbol.for('ProgramMetadataRepository'),
+  ProgramGroupingUpsertRepository: Symbol.for('ProgramGroupingUpsertRepository'),
+  ProgramSearchRepository: Symbol.for('ProgramSearchRepository'),
+  ProgramStateRepository: Symbol.for('ProgramStateRepository'),
+
+  // ChannelDB repositories
+  BasicChannelRepository: Symbol.for('BasicChannelRepository'),
+  ChannelProgramRepository: Symbol.for('ChannelProgramRepository'),
+  LineupRepository: Symbol.for('LineupRepository'),
+  ChannelConfigRepository: Symbol.for('ChannelConfigRepository'),
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

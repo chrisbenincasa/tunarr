@@ -11,6 +11,14 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { CustomShowDB } from './CustomShowDB.ts';
 import { DBAccess } from './DBAccess.ts';
 import { ProgramDB } from './ProgramDB.ts';
+import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
+import { ProgramExternalIdRepository } from './program/ProgramExternalIdRepository.ts';
+import { ProgramGroupingRepository } from './program/ProgramGroupingRepository.ts';
+import { ProgramGroupingUpsertRepository } from './program/ProgramGroupingUpsertRepository.ts';
+import { ProgramMetadataRepository } from './program/ProgramMetadataRepository.ts';
+import { ProgramSearchRepository } from './program/ProgramSearchRepository.ts';
+import { ProgramStateRepository } from './program/ProgramStateRepository.ts';
+import { ProgramUpsertRepository } from './program/ProgramUpsertRepository.ts';
 import type { MediaSourceId, MediaSourceName } from './schema/base.ts';
 import { CustomShow } from './schema/CustomShow.ts';
 import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
@@ -122,13 +130,49 @@ const test = baseTest.extend<Fixture>({
       },
     });
 
-    const programDb = new ProgramDB(
+    const metadataRepo = new ProgramMetadataRepository(
+      dbAccess.getConnection(':memory:')!.drizzle!,
+    );
+    const externalIdRepo = new ProgramExternalIdRepository(
       logger,
-      mockTaskFactory,
-      mockTaskFactory,
       dbAccess.getKyselyDatabase(':memory:')!,
+      dbAccess.getConnection(':memory:')!.drizzle!,
+    );
+    const groupingUpsertRepo = new ProgramGroupingUpsertRepository(
+      dbAccess.getKyselyDatabase(':memory:')!,
+      dbAccess.getConnection(':memory:')!.drizzle!,
+      metadataRepo,
+    );
+    const upsertRepo = new ProgramUpsertRepository(
+      logger,
+      dbAccess.getKyselyDatabase(':memory:')!,
+      dbAccess.getConnection(':memory:')!.drizzle!,
+      mockTaskFactory,
+      mockTaskFactory,
       mockMinterFactory as any,
-      dbAccess.getConnection(':memory:')?.drizzle!,
+      externalIdRepo,
+      metadataRepo,
+      groupingUpsertRepo,
+    );
+    const programDb = new ProgramDB(
+      new BasicProgramRepository(
+        dbAccess.getKyselyDatabase(':memory:')!,
+        dbAccess.getConnection(':memory:')!.drizzle!,
+      ),
+      new ProgramGroupingRepository(
+        logger,
+        dbAccess.getKyselyDatabase(':memory:')!,
+        dbAccess.getConnection(':memory:')!.drizzle!,
+      ),
+      externalIdRepo,
+      upsertRepo,
+      metadataRepo,
+      groupingUpsertRepo,
+      new ProgramSearchRepository(
+        dbAccess.getKyselyDatabase(':memory:')!,
+        dbAccess.getConnection(':memory:')!.drizzle!,
+      ),
+      new ProgramStateRepository(dbAccess.getConnection(':memory:')!.drizzle!),
     );
 
     const customShowDb = new CustomShowDB(
