@@ -4,7 +4,7 @@ import type { ContentProgramType } from '@tunarr/types/schemas';
 import { and, asc, count, countDistinct, eq, isNotNull } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
-import { chunk, flatten, groupBy, sum, uniq } from 'lodash-es';
+import { chunk, flatten, groupBy, omit, sum, uniq } from 'lodash-es';
 import type { MarkRequired } from 'ts-essentials';
 import {
   createManyRelationAgg,
@@ -13,6 +13,7 @@ import {
 import type { PageParams } from '../interfaces/IChannelDB.ts';
 import { withFallbackPrograms, withPrograms } from '../programQueryHelpers.ts';
 import { Artwork } from '../schema/Artwork.ts';
+import { ChannelOrm } from '../schema/Channel.ts';
 import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
 import type { ProgramDao } from '../schema/Program.ts';
 import { Program, ProgramType } from '../schema/Program.ts';
@@ -27,6 +28,7 @@ import type {
   ChannelOrmWithPrograms,
   ChannelOrmWithRelations,
   ChannelWithPrograms,
+  MusicAlbumOrm,
   MusicArtistOrm,
   MusicArtistWithExternalIds,
   ProgramGroupingOrmWithRelations,
@@ -466,7 +468,6 @@ export class ChannelProgramRepository {
       })
       .then((result) => {
         return result.map((channel) => {
-          const { omit } = require('lodash-es');
           const withoutJoinTable = omit(channel, 'channelPrograms');
           return {
             ...withoutJoinTable,

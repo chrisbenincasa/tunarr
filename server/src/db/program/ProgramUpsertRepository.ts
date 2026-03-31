@@ -7,76 +7,78 @@ import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExte
 import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import type { MarkNonNullable, Maybe } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
-import {
-    devAssert,
-} from '@/util/debug.js';
+import { devAssert } from '@/util/debug.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import type { ChannelProgram, ContentProgram } from '@tunarr/types';
 import { isContentProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, interfaces } from 'inversify';
-import type { Kysely, NotNull } from 'kysely';
+import type { CaseWhenBuilder, Kysely, NotNull } from 'kysely';
 import { UpdateResult } from 'kysely';
 import {
-    chunk,
-    concat,
-    difference,
-    filter,
-    flatMap,
-    flatten,
-    forEach,
-    groupBy,
-    head,
-    isArray,
-    isEmpty,
-    keys,
-    map,
-    mapValues,
-    omit,
-    partition,
-    reduce,
-    reject,
-    round,
-    some,
-    uniq,
-    uniqBy,
+  chunk,
+  concat,
+  difference,
+  filter,
+  flatMap,
+  flatten,
+  forEach,
+  groupBy,
+  head,
+  isArray,
+  isEmpty,
+  keys,
+  map,
+  mapValues,
+  omit,
+  partition,
+  reduce,
+  reject,
+  round,
+  some,
+  uniq,
+  uniqBy,
 } from 'lodash-es';
 import type { Dictionary, MarkRequired } from 'ts-essentials';
 import { typedProperty } from '../../types/path.ts';
 import { getNumericEnvVar, TUNARR_ENV_VARS } from '../../util/env.ts';
 import {
-    groupByUniq,
-    groupByUniqProp,
-    isNonEmptyString,
-    mapToObj,
-    unzip as myUnzip,
-    programExternalIdString,
-    run,
+  groupByUniq,
+  groupByUniqProp,
+  isNonEmptyString,
+  mapToObj,
+  unzip as myUnzip,
+  programExternalIdString,
+  run,
 } from '../../util/index.ts';
 import { ProgramGroupingMinter } from '../converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../converters/ProgramMinter.ts';
 import {
-    ProgramSourceType,
-    programSourceTypeFromString,
+  ProgramSourceType,
+  programSourceTypeFromString,
 } from '../custom_types/ProgramSourceType.ts';
-import {
-    ProgramUpsertFields,
-} from '../programQueryHelpers.ts';
+import { ProgramUpsertFields } from '../programQueryHelpers.ts';
 import type { NewArtwork } from '../schema/Artwork.ts';
 import type { NewCredit } from '../schema/Credit.ts';
 import type { NewGenre } from '../schema/Genre.ts';
+import type { NewProgramDao, ProgramDao } from '../schema/Program.ts';
 import type {
-    NewProgramDao,
-    ProgramDao,
-} from '../schema/Program.ts';
-import type { NewProgramChapter, ProgramChapter } from '../schema/ProgramChapter.ts';
+  NewProgramChapter,
+  ProgramChapter,
+} from '../schema/ProgramChapter.ts';
 import type { NewSingleOrMultiExternalId } from '../schema/ProgramExternalId.ts';
 import type { NewProgramGrouping } from '../schema/ProgramGrouping.ts';
 import { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
 import type { NewSingleOrMultiProgramGroupingExternalId } from '../schema/ProgramGroupingExternalId.ts';
-import type { NewProgramMediaFile } from '../schema/ProgramMediaFile.ts';
-import type { NewProgramMediaStream, ProgramMediaStream } from '../schema/ProgramMediaStream.ts';
+import type {
+  NewProgramMediaFile,
+  ProgramMediaFile,
+} from '../schema/ProgramMediaFile.ts';
+import type {
+  NewProgramMediaStream,
+  ProgramMediaStream,
+} from '../schema/ProgramMediaStream.ts';
 import type { NewProgramSubtitles } from '../schema/ProgramSubtitles.ts';
 import type { ProgramVersion } from '../schema/ProgramVersion.ts';
 import type { NewStudio } from '../schema/Studio.ts';
@@ -84,9 +86,9 @@ import type { NewTag } from '../schema/Tag.ts';
 import type { MediaSourceId, MediaSourceName } from '../schema/base.ts';
 import type { DB } from '../schema/db.ts';
 import type {
-    NewProgramVersion,
-    NewProgramWithRelations,
-    ProgramWithExternalIds,
+  NewProgramVersion,
+  NewProgramWithRelations,
+  ProgramWithExternalIds,
 } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
 import { ProgramExternalIdRepository } from './ProgramExternalIdRepository.ts';
@@ -247,7 +249,8 @@ export class ProgramUpsertRepository {
 
     await this.timer.timeAsync(
       `upsert ${requiredExternalIds.length} external ids`,
-      () => this.externalIdRepo.upsertProgramExternalIds(requiredExternalIds, 200),
+      () =>
+        this.externalIdRepo.upsertProgramExternalIds(requiredExternalIds, 200),
     );
 
     this.schedulePlexExternalIdsTask(upsertedPrograms);
@@ -274,7 +277,10 @@ export class ProgramUpsertRepository {
         AnonymousTask('UpsertExternalIds', () =>
           this.timer.timeAsync(
             `background external ID upsert (${backgroundExternalIds.length} ids)`,
-            () => this.externalIdRepo.upsertProgramExternalIds(backgroundExternalIds),
+            () =>
+              this.externalIdRepo.upsertProgramExternalIds(
+                backgroundExternalIds,
+              ),
           ),
         ),
       );
@@ -884,7 +890,10 @@ export class ProgramUpsertRepository {
             this.db
               .transaction()
               .execute((tx) =>
-                this.groupingUpsertRepo.upsertProgramGroupingExternalIdsChunk(externalIdsChunk, tx),
+                this.groupingUpsertRepo.upsertProgramGroupingExternalIdsChunk(
+                  externalIdsChunk,
+                  tx,
+                ),
               ),
           ),
         ),
