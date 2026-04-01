@@ -3013,10 +3013,28 @@ export class ProgramDB implements IProgramDB {
     }
 
     if (!isEmpty(groupings)) {
+      // Have to insert grandparents first so their IDs exist in the DB
+      // for foreign keys set on their descendents.
+      const sortedGroupings = orderBy(
+        groupings,
+        (group) =>
+          group.programGrouping.type === 'artist' ||
+          group.programGrouping.type === 'show',
+        'desc',
+      );
       await this.timer.timeAsync('upsert program_groupings', () =>
-        mapAsyncSeq(groupings, (grouping) =>
-          this.upsertProgramGrouping(grouping),
-        ),
+        mapAsyncSeq(sortedGroupings, (grouping) => {
+          try {
+            return this.upsertProgramGrouping(grouping);
+          } catch (e) {
+            this.logger.error(
+              e,
+              'Failed to upsert program grouping: %j',
+              grouping,
+            );
+            throw e;
+          }
+        }),
       );
     }
 
