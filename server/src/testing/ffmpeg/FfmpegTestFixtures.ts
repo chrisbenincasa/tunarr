@@ -35,6 +35,7 @@ const fixturesDir = path.join(
 
 export const Fixtures = {
   video720p: path.join(fixturesDir, '720p_h264.ts'),
+  videoHdr720p: path.join(fixturesDir, '720p_hevc_hdr10.ts'),
   video1080p: path.join(fixturesDir, '1080p_h264.ts'),
   video480p43: path.join(fixturesDir, '480p_h264.ts'),
   videoHevc720p: path.join(fixturesDir, '720p_hevc_hdr10.ts'),

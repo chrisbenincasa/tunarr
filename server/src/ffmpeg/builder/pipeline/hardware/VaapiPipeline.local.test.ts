@@ -2313,13 +2313,6 @@ describe.skipIf(!binaries || !vaapiInfo)(
 
 // ─── Tonemapping ─────────────────────────────────────────────────────────────
 
-const canDecodeHdr =
-  vaapiInfo?.capabilities.canDecode(
-    VideoFormats.Hevc,
-    'main 10',
-    new PixelFormatYuv420P10Le(),
-  ) ?? false;
-
 describe.skipIf(!binaries || !vaapiInfo || !canDecodeHdr)(
   'VaapiPipelineBuilder tonemap integration',
   () => {

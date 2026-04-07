@@ -9,6 +9,7 @@ export default defineConfig({
     },
   },
   test: {
+    name: 'ffmpeg_integration',
     globals: true,
     watch: false,
     include: ['src/**/*.local.test.ts'],
