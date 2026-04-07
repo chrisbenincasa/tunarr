@@ -4,7 +4,6 @@ import { useMediaSources } from '@/hooks/settingsHooks.ts';
 import { Delete, Edit, Refresh, VideoLibrary } from '@mui/icons-material';
 import {
   Box,
-  Button,
   Divider,
   IconButton,
   Link,
@@ -12,22 +11,15 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { MediaSourceSettings } from '@tunarr/types';
-import type { GlobalMediaSourceSettings } from '@tunarr/types/schemas';
 import { capitalize } from 'lodash-es';
 import type { MRT_ColumnDef } from 'material-react-table';
 import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
-import { useSnackbar } from 'notistack';
-import { useCallback, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useMemo, useState } from 'react';
 import { DeleteConfirmationDialog } from '../../components/DeleteConfirmationDialog.tsx';
 import { EditMediaSourceLibrariesDialog } from '../../components/settings/media_source/EditMediaSourceLibrariesDialog.tsx';
 import { EmbyServerEditDialog } from '../../components/settings/media_source/EmbyServerEditDialog.tsx';
@@ -35,12 +27,9 @@ import { JellyfinServerEditDialog } from '../../components/settings/media_source
 import { LocalMediaEditDialog } from '../../components/settings/media_source/LocalMediaEditDialog.tsx';
 import { MediaSourceHealthyTableCell } from '../../components/settings/media_source/MediaSourceHealthyTableCell.tsx';
 import { PlexServerEditDialog } from '../../components/settings/media_source/PlexServerEditDialog.tsx';
-import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import {
   deleteApiMediaSourcesByIdMutation,
-  getApiSettingsMediaSourceOptions,
   postApiMediaSourcesByIdLibrariesRefreshMutation,
-  putApiSettingsMediaSourceMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
@@ -48,9 +37,6 @@ import type { Nullable } from '../../types/util.ts';
 
 export default function MediaSourceSettingsPage() {
   const { data: servers } = useMediaSources();
-  const { data: mediaSourceSettings } = useSuspenseQuery(
-    getApiSettingsMediaSourceOptions(),
-  );
   const tableState = useStoreBackedTableSettings('MediaSourceSettings');
 
   const [editingMediaSource, setEditingMediaSource] =
@@ -191,48 +177,6 @@ export default function MediaSourceSettingsPage() {
     positionActionsColumn: 'last',
   });
 
-  const snackbar = useSnackbar();
-
-  const settingsForm = useForm<GlobalMediaSourceSettings>({
-    defaultValues: mediaSourceSettings,
-  });
-
-  const updateMediaSourceSettingsMut = useMutation({
-    ...putApiSettingsMediaSourceMutation(),
-    onSuccess: (returned) => {
-      settingsForm.reset(returned);
-      snackbar.enqueueSnackbar({
-        variant: 'success',
-        message: 'Successfully updated Media Source settings.',
-      });
-    },
-    onError: (err) => {
-      console.error(err);
-      snackbar.enqueueSnackbar({
-        variant: 'error',
-        message:
-          'Failed to update Media Source settings. Please check server and browser logs for details.',
-      });
-    },
-  });
-
-  const onSubmit = useCallback(
-    (data: GlobalMediaSourceSettings) => {
-      updateMediaSourceSettingsMut.mutate({
-        body: data,
-      });
-    },
-    [updateMediaSourceSettingsMut],
-  );
-
-  const onError = useCallback(() => {
-    snackbar.enqueueSnackbar({
-      variant: 'error',
-      message:
-        'There was an error submitting the request to update Media Source settings. Please check the form and try again',
-    });
-  }, [snackbar]);
-
   return (
     <>
       <Stack divider={<Divider />} gap={2}>
@@ -265,33 +209,6 @@ export default function MediaSourceSettingsPage() {
           </Stack>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>
           <MaterialReactTable table={table} />
-        </Box>
-        <Box
-          component="form"
-          onSubmit={settingsForm.handleSubmit(onSubmit, onError)}
-        >
-          <Stack gap={2}>
-            <Typography variant="h5">Scanner Settings</Typography>
-            <NumericFormControllerText
-              control={settingsForm.control}
-              name="rescanIntervalHours"
-              prettyFieldName="Rescan Interval (hours)"
-              TextFieldProps={{
-                label: 'Rescan Interval (hours)',
-                helperText:
-                  'How frequently libraries should be scanned (starting from midnight).',
-              }}
-            />
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={!settingsForm.formState.isDirty}
-              >
-                Save
-              </Button>
-            </Box>
-          </Stack>
         </Box>
       </Stack>
       {editingMediaSource?.type === 'plex' && (

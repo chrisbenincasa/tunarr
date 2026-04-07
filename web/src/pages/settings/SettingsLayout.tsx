@@ -37,9 +37,9 @@ export function SettingsLayout({ currentTab = '/general' }: Props) {
               to="/settings/ffmpeg"
             />
             <RouterTabLink
-              label="Sources"
-              value="/sources"
-              to="/settings/sources"
+              label="Scanner"
+              value="/scanner"
+              to="/settings/scanner"
             />
             <RouterTabLink label="HDHR" value="/hdhr" to="/settings/hdhr" />
           </Tabs>

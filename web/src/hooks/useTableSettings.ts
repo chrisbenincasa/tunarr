@@ -69,6 +69,7 @@ export const useTableSettings = (
       if (isFunction(updater)) {
         sortState[1]((prev) => {
           const next = updater(prev);
+          console.log(next);
           setTableSortState(tableName, next);
           return next;
         });
@@ -111,9 +112,12 @@ export const useStoreBackedTableSettings = <Data extends MRT_RowData>(
     state: {
       columnVisibility: tableState.colVisibilityState.current,
       pagination: tableState.paginationState.current,
+      sorting: tableState.sortState.current,
     },
     initialState: {
       pagination: tableState.paginationState.current,
+      columnVisibility: tableState.colVisibilityState.current,
+      sorting: tableState.sortState.current,
     },
     onColumnVisibilityChange: (updater) => {
       tableState.colVisibilityState.setter(updater);

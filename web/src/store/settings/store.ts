@@ -1,4 +1,3 @@
-import type { PaginationState } from '@tanstack/react-table';
 import type { TupleToUnion } from '@tunarr/types';
 import type { DeepPartial } from 'ts-essentials';
 import { z } from 'zod';
@@ -8,27 +7,24 @@ import type { StateCreator } from 'zustand';
 export const SupportedLocales = ['en', 'en-gb'] as const;
 export type SupportedLocales = TupleToUnion<typeof SupportedLocales>;
 
-export interface TableSettings {
-  pagination: PaginationState;
-  columnModel: Record<string, boolean>;
-}
-
-export const CurrentSettingsSchemaVersion = 1;
+const CurrentSettingsSchemaVersion = 1;
 
 const PaginationStateSchema = z.object({
   pageIndex: z.int(),
   pageSize: z.int(),
 });
 
-export const TableSettingsSchema = z.object({
-  pagination: PaginationStateSchema,
-  columnModel: z.record(z.string(), z.boolean()),
-  sortState: z.array(
-    z.object({
-      desc: z.boolean(),
-      id: z.string(),
-    }),
-  ),
+const TableSettingsSchema = z.object({
+  pagination: PaginationStateSchema.optional(),
+  columnModel: z.record(z.string(), z.boolean()).optional(),
+  sortState: z
+    .array(
+      z.object({
+        desc: z.boolean(),
+        id: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export const SettingsStateInternalSchema = z.object({
