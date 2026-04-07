@@ -75,6 +75,21 @@ const useStore = create<State>()(
               'settings',
             ) as unknown;
 
+            // let parsedSettings: Maybe<SettingsStateInternal>;
+            // if (persistedSettings) {
+            //   const result =
+            //     SettingsStateInternalSchema.safeParse(persistedSettings);
+            //   if (result.error) {
+            //     console.error(
+            //       'Could not hydrate persisted settings',
+            //       result.error,
+            //     );
+            //   } else {
+            //     parsedSettings = result.data;
+            //   }
+            // }
+            // console.log(parsedSettings);
+
             // Migrate to new setting.
             if (
               isObject(persistedTheme) &&
