@@ -1,17 +1,17 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import {
-  Genre,
-  MusicAlbumMetadata,
-  MusicArtist,
-  MusicArtistMetadata,
-  MusicTrackMetadata,
-  MusicTrackWithHierarchy,
+    Genre,
+    MusicAlbumMetadata,
+    MusicArtist,
+    MusicArtistMetadata,
+    MusicTrackMetadata,
+    MusicTrackWithHierarchy,
 } from '@tunarr/types';
 import glob from 'fast-glob';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { chunk, compact, head, isNil, uniq, uniqBy, uniqWith } from 'lodash-es';
-import { IAudioMetadata, parseStream } from 'music-metadata';
-import { createReadStream, Dirent } from 'node:fs';
+import { IAudioMetadata, parseFile } from 'music-metadata';
+import { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { extname } from 'node:path';
 import { format } from 'node:util';
@@ -20,8 +20,8 @@ import { v4 } from 'uuid';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import {
-  IProgramDB,
-  ProgramCanonicalIdLookupResult,
+    IProgramDB,
+    ProgramCanonicalIdLookupResult,
 } from '../../db/interfaces/IProgramDB.ts';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
@@ -529,7 +529,7 @@ export class LocalMusicScanner extends FileSystemScanner {
     const trackPath = path.join(trackDirent.parentPath, trackDirent.name);
     const fileDetails = (await this.getMediaItem(trackPath)).getOrThrow();
     const parsedTrackMetadataResult = await Result.attemptAsync(() =>
-      parseStream(createReadStream(trackPath), undefined, {
+      parseFile(trackPath, {
         skipCovers: true,
       }),
     );
