@@ -17,8 +17,8 @@ in
 
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    nodejs_22
-    (nodePackages.pnpm.override { nodejs = nodejs_22; })
+    nodejs_24
+    (nodePackages.pnpm.override { nodejs = nodejs_24; })
 
     gcc
     gnumake
