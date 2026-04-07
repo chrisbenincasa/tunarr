@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { FileStreamSource } from '../../../../stream/types.ts';
 import {
   createTempWorkdir,
@@ -9,6 +8,7 @@ import {
 import {
   binaries,
   ffmpegTest,
+  Fixtures,
 } from '../../../../testing/ffmpeg/FfmpegTestFixtures.ts';
 import { AudioFormats, FileOutputLocation } from '../../constants.ts';
 import { PixelFormatYuv420P } from '../../format/PixelFormat.ts';
@@ -24,15 +24,6 @@ import { FrameState } from '../../state/FrameState.ts';
 import { FrameSize } from '../../types.ts';
 import { SoftwarePipelineBuilder } from './SoftwarePipelineBuilder.ts';
 
-const fixturesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../../../testing/ffmpeg/fixtures',
-);
-
-const Fixtures = {
-  video720p: path.join(fixturesDir, '720p_h264.ts'),
-  video1080p: path.join(fixturesDir, '1080p_h264.ts'),
-} as const;
 
 describe.skipIf(!binaries)('SoftwarePipelineBuilder integration', () => {
   let workdir: string;

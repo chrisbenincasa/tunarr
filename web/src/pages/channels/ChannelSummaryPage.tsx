@@ -29,21 +29,21 @@ export const ChannelSummaryPage = () => {
   return (
     <Stack spacing={2}>
       <Breadcrumbs />
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <Box>
-          {isNonEmptyString(channel.icon.path) ? (
-            <Box component="img" width={[32, 132]} src={channel.icon.path} />
-          ) : (
-            <TunarrLogo style={{ width: smallViewport ? '32px' : '132px' }} />
-          )}
-        </Box>
-
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h4">{channel.name}</Typography>
+      <Stack direction="row" alignItems="flex-start" spacing={1}>
+        <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+          <Box>
+            {isNonEmptyString(channel.icon.path) ? (
+              <Box component="img" width={[48, 132]} src={channel.icon.path} />
+            ) : (
+              <TunarrLogo style={{ width: smallViewport ? '48px' : '132px' }} />
+            )}
+          </Box>
+          <Typography variant={smallViewport ? 'h5' : 'h4'} noWrap>
+            {channel.name}
+          </Typography>
           <Typography variant="subtitle1">Channel #{channel.number}</Typography>
-        </Box>
-      </Stack>
-      <Stack direction="row" spacing={1} justifyContent="right">
+        </Stack>
+
         <ChannelOptionsButton
           channel={channel}
           hideItems={['duplicate', 'delete']}

@@ -31,7 +31,6 @@ import { FillerPickerV2 } from '../services/scheduling/FillerPickerV2.ts';
 import type { UpdatePlexPlayStatusScheduledTaskFactory } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
 import { UpdatePlexPlayStatusScheduledTask } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
-import { PersistentChannelCache } from './ChannelCache.ts';
 import type { ProgramStreamFactory } from './ProgramStreamFactory.ts';
 import { ExternalStreamDetailsFetcherFactory } from './StreamDetailsFetcher.ts';
 import { EmbyProgramStream } from './emby/EmbyProgramStream.ts';
@@ -251,8 +250,6 @@ const configure: interfaces.ContainerModuleCallBack = (bind) => {
   });
 
   bind(ExternalStreamDetailsFetcherFactory).toSelf().inSingletonScope();
-
-  bind(PersistentChannelCache).toSelf().inSingletonScope();
 
   bind(KEYS.FillerPicker).to(FillerPickerV2).inSingletonScope();
 };

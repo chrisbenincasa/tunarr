@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { FileStreamSource } from '../../../../stream/types.ts';
 import {
   createTempWorkdir,
@@ -8,6 +7,7 @@ import {
 } from '../../../../testing/ffmpeg/FfmpegIntegrationHelper.ts';
 import {
   binaries,
+  Fixtures,
   nvidiaCaps,
   nvidiaTest,
 } from '../../../../testing/ffmpeg/FfmpegTestFixtures.ts';
@@ -25,15 +25,6 @@ import { FrameState } from '../../state/FrameState.ts';
 import { FrameSize } from '../../types.ts';
 import { NvidiaPipelineBuilder } from './NvidiaPipelineBuilder.ts';
 
-const fixturesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../../../testing/ffmpeg/fixtures',
-);
-
-const Fixtures = {
-  video720p: path.join(fixturesDir, '720p_h264.ts'),
-  video1080p: path.join(fixturesDir, '1080p_h264.ts'),
-} as const;
 
 describe.skipIf(!binaries || !nvidiaCaps)(
   'NvidiaPipelineBuilder integration',

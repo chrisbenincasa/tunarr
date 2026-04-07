@@ -1,7 +1,7 @@
 import type { channelListOptions } from '@/types/index.ts';
 import { Settings } from '@mui/icons-material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import { Button } from '@mui/material';
+import { Button, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import type { Channel } from '@tunarr/types';
 import { isNull } from 'lodash-es';
 import { useState } from 'react';
@@ -16,6 +16,8 @@ export const ChannelOptionsButton = ({ channel, hideItems }: Props) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [channelMenu, setChannelMenu] = useState<Channel>();
   const open = !isNull(anchorEl);
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleClick = (
     event: React.MouseEvent<HTMLElement>,
@@ -31,19 +33,30 @@ export const ChannelOptionsButton = ({ channel, hideItems }: Props) => {
 
   return (
     <>
-      <Button
-        variant="outlined"
-        startIcon={<Settings />}
-        aria-controls={open ? 'channel-nav-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
-        disableRipple
-        disableElevation
-        onClick={(event) => handleClick(event, channel)}
-        endIcon={<KeyboardArrowDownIcon />}
-      >
-        Options
-      </Button>
+      {smallViewport ? (
+        <IconButton
+          aria-controls={open ? 'channel-nav-menu' : undefined}
+          aria-haspopup="true"
+          aria-expanded={open ? 'true' : undefined}
+          onClick={(event) => handleClick(event, channel)}
+        >
+          <Settings />
+        </IconButton>
+      ) : (
+        <Button
+          variant="outlined"
+          startIcon={<Settings />}
+          aria-controls={open ? 'channel-nav-menu' : undefined}
+          aria-haspopup="true"
+          aria-expanded={open ? 'true' : undefined}
+          disableRipple
+          disableElevation
+          onClick={(event) => handleClick(event, channel)}
+          endIcon={<KeyboardArrowDownIcon />}
+        >
+          Options
+        </Button>
+      )}
       {channelMenu && (
         <ChannelOptionsMenu
           anchorEl={anchorEl}

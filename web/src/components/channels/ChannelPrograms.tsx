@@ -6,7 +6,7 @@ import {
   ContentProgramTypeSchema,
   type ContentProgramType,
 } from '@tunarr/types/schemas';
-import { groupBy, isNil, keys, mapValues, omitBy } from 'lodash-es';
+import { groupBy, isNil, keys, mapValues, omitBy, uniqBy } from 'lodash-es';
 import { useMemo, useState } from 'react';
 import {
   extractProgramGrandparent,
@@ -103,14 +103,17 @@ export const ChannelPrograms = ({ channelId }: Props) => {
   const programsByType = useMemo(
     () =>
       groupBy(
-        seq.collect(lineup, (p) => {
-          if (p.type === 'content' && p.id) {
-            return programs[p.id];
-          } else if (p.type === 'custom') {
-            return programs[p.id];
-          }
-          return;
-        }),
+        uniqBy(
+          seq.collect(lineup, (p) => {
+            if (p.type === 'content' && p.id) {
+              return programs[p.id];
+            } else if (p.type === 'custom') {
+              return programs[p.id];
+            }
+            return;
+          }),
+          (p) => p.id,
+        ),
         ({ program }) => program.type,
       ),
     [lineup, programs],
@@ -188,7 +191,12 @@ export const ChannelPrograms = ({ channelId }: Props) => {
 
   return (
     <>
-      <Tabs value={tab} onChange={(_, v) => setTab(v as number)}>
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v as number)}
+        variant="scrollable"
+        allowScrollButtonsMobile
+      >
         {Object.values(ContentProgramTypeSchema.enum).map((v, idx) => (
           <ProgramTypeTab
             key={v}

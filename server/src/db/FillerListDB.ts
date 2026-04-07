@@ -1,5 +1,4 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import { ChannelCache } from '@/stream/ChannelCache.js';
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString, programExternalIdString } from '@/util/index.js';
 import {
@@ -49,7 +48,6 @@ import { DrizzleDBAccess } from './schema/index.ts';
 @injectable()
 export class FillerDB implements IFillerListDB {
   constructor(
-    @inject(ChannelCache) private channelCache: ChannelCache,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
@@ -324,7 +322,6 @@ export class FillerDB implements IFillerListDB {
         .execute();
     });
 
-    this.channelCache.clear();
     return;
   }
 

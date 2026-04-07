@@ -26,7 +26,7 @@ type MediaStreamFields<T extends MediaStream> = Omit<
 // semantics with class construction, but still enabling us
 // to have hierarchies, methods, etc.
 type AudioStreamFields = MediaStreamFields<AudioStream>;
-type VideoStreamFields = StrictOmit<
+export type VideoStreamFields = StrictOmit<
   MediaStreamFields<VideoStream>,
   'isAnamorphic' | 'sampleAspectRatio'
 >;

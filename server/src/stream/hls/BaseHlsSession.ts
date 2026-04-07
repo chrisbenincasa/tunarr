@@ -15,7 +15,7 @@ import { defaultHlsOptions } from '../../ffmpeg/builder/constants.ts';
 import { serverOptions } from '../../globals.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 
-export const SegmentNameRegex = /data(\d{6})\..*/;
+export const SegmentNameRegex = /\D+(\d+)\.(ts|mp4|vtt)/;
 
 export abstract class BaseHlsSession<
   HlsSessionOptsT extends BaseHlsSessionOptions = BaseHlsSessionOptions,

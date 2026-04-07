@@ -25,6 +25,7 @@ interface ILoggerWrapper {
     args: GetChildLoggerArgs,
     opts?: ChildLoggerOptions<LogLevels>,
   ): ILoggerWrapper;
+  updateLevel(level: LogLevels, streams: MultiStreamRes<LogLevels>): void;
   updateStreams(streams: MultiStreamRes<LogLevels>): void;
   logger: Logger;
   traverseHierarchy(): Generator<readonly [string, SerializedLogger]>;
@@ -32,7 +33,7 @@ interface ILoggerWrapper {
 }
 
 abstract class BaseLoggerWrapper implements ILoggerWrapper {
-  protected children: Record<string, WeakRef<ILoggerWrapper>> = {};
+  protected children: Record<string, ILoggerWrapper> = {};
 
   constructor(protected wrappedLogger: Logger) {}
 
@@ -41,14 +42,20 @@ abstract class BaseLoggerWrapper implements ILoggerWrapper {
     opts?: ChildLoggerOptions<LogLevels>,
   ): ILoggerWrapper;
 
+  updateLevel(level: LogLevels, streams: MultiStreamRes<LogLevels>) {
+    this.wrappedLogger.level = level;
+    Object.assign(this.wrappedLogger[symbols.streamSym], streams);
+
+    for (const child of Object.values(this.children)) {
+      child.updateLevel(level, streams);
+    }
+  }
+
   updateStreams(streams: MultiStreamRes<LogLevels>) {
     Object.assign(this.wrappedLogger[symbols.streamSym], streams);
 
-    for (const childRef of Object.values(this.children)) {
-      const child = childRef.deref();
-      if (child) {
-        child.updateStreams(streams);
-      }
+    for (const child of Object.values(this.children)) {
+      child.updateStreams(streams);
     }
   }
 
@@ -67,8 +74,8 @@ abstract class BaseLoggerWrapper implements ILoggerWrapper {
   }
 
   *traverseHierarchy() {
-    for (const [loggerName, ref] of Object.entries(this.children)) {
-      const child = ref.deref();
+    for (const [loggerName, child] of Object.entries(this.children)) {
+      // const child = ref.deref();
       if (!child) {
         continue;
       }
@@ -110,7 +117,7 @@ export class RootLoggerWrapper extends BaseLoggerWrapper {
         { level: initialLogSettings?.categoryLogLevel?.[category] },
       );
       const wrapped = new LoggerWrapper(categoryLogger);
-      this.children[`category:${category}`] = new WeakRef(wrapped);
+      this.children[`category:${category}`] = wrapped;
       this.loggerByCategory.set(category, wrapped);
     }
   }
@@ -121,7 +128,7 @@ export class RootLoggerWrapper extends BaseLoggerWrapper {
   ): ILoggerWrapper {
     const { caller, className, category, ...rest } = args;
 
-    const ref = this.children[className]?.deref();
+    const ref = this.children[className]; //?.deref();
     if (ref) {
       return ref;
     }
@@ -145,13 +152,9 @@ export class RootLoggerWrapper extends BaseLoggerWrapper {
     } else {
       const newLogger = this.wrappedLogger.child(childOpts, opts);
       const wrapped = new LoggerWrapper(newLogger);
-      this.children[className] = new WeakRef(wrapped);
+      this.children[className] = wrapped;
       return wrapped;
     }
-  }
-
-  set level(newLevel: LogLevels) {
-    this.wrappedLogger.level = newLevel;
   }
 
   updateCategoryLevel(
@@ -164,8 +167,7 @@ export class RootLoggerWrapper extends BaseLoggerWrapper {
       return;
     }
 
-    rootCategoryLogger.logger.level = newLevel;
-    rootCategoryLogger.updateStreams(newStreamFn());
+    rootCategoryLogger.updateLevel(newLevel, newStreamFn());
   }
 }
 
@@ -189,7 +191,7 @@ export class LoggerWrapper extends BaseLoggerWrapper {
   ): ILoggerWrapper {
     const { caller, className, ...rest } = args;
 
-    const ref = this.children[className]?.deref();
+    const ref = this.children[className]; //?.deref();
     if (ref) {
       return ref;
     }
@@ -208,7 +210,7 @@ export class LoggerWrapper extends BaseLoggerWrapper {
     const newChild = new LoggerWrapper(
       this.wrappedLogger.child(childOpts, opts),
     );
-    this.children[className] = new WeakRef(newChild);
+    this.children[className] = newChild;
     return newChild;
   }
 }

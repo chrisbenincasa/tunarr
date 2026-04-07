@@ -13,7 +13,6 @@ import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
 import { ProgramPlayHistoryDB } from '../db/ProgramPlayHistoryDB.ts';
 import { MediaSourceId } from '../db/schema/base.ts';
-import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import {
   createChannelOrm,
@@ -31,7 +30,6 @@ describe('StreamProgramCalculator', () => {
     const channelDB = mock<IChannelDB>();
     const programDB = mock<IProgramDB>();
     const fillerPicker = mock<IFillerPicker>();
-    const channelCache = mock<IStreamLineupCache>();
     const playHistoryDB = mock<ProgramPlayHistoryDB>();
 
     const startTime = dayjs(new Date(2025, 8, 17, 8));
@@ -106,7 +104,6 @@ describe('StreamProgramCalculator', () => {
       LoggerFactory.root,
       instance(fillerDB),
       instance(channelDB),
-      instance(channelCache),
       instance(programDB),
       instance(fillerPicker),
       instance(playHistoryDB),
@@ -130,9 +127,13 @@ describe('StreamProgramCalculator', () => {
       startOffset: +dayjs.duration(16, 'minutes'),
     });
 
+    // Wait for async play history recording
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     verify(
-      channelCache.recordPlayback(channel.uuid, +startTime, out.lineupItem),
+      playHistoryDB.isProgramCurrentlyPlaying(channelId, programId1, +startTime),
     ).once();
+    verify(playHistoryDB.create(anything())).once();
   });
 
   baseTest('getCurrentLineupItem filler lineup item', async () => {
@@ -140,7 +141,6 @@ describe('StreamProgramCalculator', () => {
     const channelDB = mock<IChannelDB>();
     const programDB = mock<IProgramDB>();
     const fillerPicker = mock<IFillerPicker>();
-    const channelCache = mock<IStreamLineupCache>();
     const playHistoryDB = mock<ProgramPlayHistoryDB>();
 
     const startTime = dayjs(new Date(2025, 8, 17, 8));
@@ -217,7 +217,6 @@ describe('StreamProgramCalculator', () => {
       LoggerFactory.root,
       instance(fillerDB),
       instance(channelDB),
-      instance(channelCache),
       instance(programDB),
       instance(fillerPicker),
       instance(playHistoryDB),
@@ -243,9 +242,13 @@ describe('StreamProgramCalculator', () => {
       type: 'commercial',
     });
 
+    // Wait for async play history recording
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     verify(
-      channelCache.recordPlayback(channel.uuid, +startTime, out.lineupItem),
+      playHistoryDB.isProgramCurrentlyPlaying(channelId, programId1, +startTime),
     ).once();
+    verify(playHistoryDB.create(anything())).once();
   });
 
   baseTest('getCurrentLineupItem loop filler lineup item', async () => {
@@ -253,7 +256,6 @@ describe('StreamProgramCalculator', () => {
     const channelDB = mock<IChannelDB>();
     const programDB = mock<IProgramDB>();
     const fillerPicker = mock<IFillerPicker>();
-    const channelCache = mock<IStreamLineupCache>();
     const playHistoryDB = mock<ProgramPlayHistoryDB>();
 
     const startTime = dayjs(new Date(2025, 8, 17, 8));
@@ -330,7 +332,6 @@ describe('StreamProgramCalculator', () => {
       LoggerFactory.root,
       instance(fillerDB),
       instance(channelDB),
-      instance(channelCache),
       instance(programDB),
       instance(fillerPicker),
       instance(playHistoryDB),
@@ -355,9 +356,13 @@ describe('StreamProgramCalculator', () => {
       duration: +dayjs.duration(22, 'minutes'),
     });
 
+    // Wait for async play history recording
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     verify(
-      channelCache.recordPlayback(channel.uuid, +startTime, out.lineupItem),
+      playHistoryDB.isProgramCurrentlyPlaying(channelId, programId1, +startTime),
     ).once();
+    verify(playHistoryDB.create(anything())).once();
   });
 
   baseTest('records play history for new playback', async () => {
@@ -365,7 +370,6 @@ describe('StreamProgramCalculator', () => {
     const channelDB = mock<IChannelDB>();
     const programDB = mock<IProgramDB>();
     const fillerPicker = mock<IFillerPicker>();
-    const channelCache = mock<IStreamLineupCache>();
     const playHistoryDB = mock<ProgramPlayHistoryDB>();
 
     const startTime = dayjs(new Date(2025, 8, 17, 8));
@@ -440,7 +444,6 @@ describe('StreamProgramCalculator', () => {
       LoggerFactory.root,
       instance(fillerDB),
       instance(channelDB),
-      instance(channelCache),
       instance(programDB),
       instance(fillerPicker),
       instance(playHistoryDB),
@@ -475,7 +478,6 @@ describe('StreamProgramCalculator', () => {
       const channelDB = mock<IChannelDB>();
       const programDB = mock<IProgramDB>();
       const fillerPicker = mock<IFillerPicker>();
-      const channelCache = mock<IStreamLineupCache>();
       const playHistoryDB = mock<ProgramPlayHistoryDB>();
 
       const startTime = dayjs(new Date(2025, 8, 17, 8));
@@ -547,7 +549,6 @@ describe('StreamProgramCalculator', () => {
         LoggerFactory.root,
         instance(fillerDB),
         instance(channelDB),
-        instance(channelCache),
         instance(programDB),
         instance(fillerPicker),
         instance(playHistoryDB),

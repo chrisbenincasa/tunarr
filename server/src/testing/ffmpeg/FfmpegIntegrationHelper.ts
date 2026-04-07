@@ -31,23 +31,22 @@ export function discoverFfmpegBinaries(): {
 } | null {
   try {
     const ffmpeg =
-      process.env['TUNARR_TEST_FFMPEG'] ??
-      whichFirst('ffmpeg7.1', 'ffmpeg');
+      process.env['TUNARR_TEST_FFMPEG'] ?? whichFirst('ffmpeg7.1', 'ffmpeg');
 
     const ffprobe =
-      process.env['TUNARR_TEST_FFPROBE'] ??
-      whichFirst('ffprobe7.1', 'ffprobe');
+      process.env['TUNARR_TEST_FFPROBE'] ?? whichFirst('ffprobe7.1', 'ffprobe');
 
     if (!ffmpeg || !ffprobe) {
       return null;
     }
+
+    console.debug('Resolved ffmpeg binaries: ', ffmpeg, ffprobe);
 
     return { ffmpeg, ffprobe };
   } catch {
     return null;
   }
 }
-
 
 export async function createTempWorkdir(): Promise<{
   dir: string;

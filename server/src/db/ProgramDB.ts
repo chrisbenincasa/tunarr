@@ -2408,6 +2408,7 @@ export class ProgramDB implements IProgramDB {
       releaseDate: incoming.releaseDate,
       tagline: incoming.tagline,
       updatedAt: incoming.updatedAt,
+      state: incoming.state,
     };
 
     return head(

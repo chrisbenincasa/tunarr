@@ -6,7 +6,8 @@ import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExte
 import { DateTimeRange } from '@/types/DateTimeRange.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { tag } from '@tunarr/types';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { LogLevels, tag } from '@tunarr/types';
 import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
@@ -43,6 +44,23 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get('/debug/heap', async (_, res) => {
     return res.send(getHeapStatistics());
   });
+
+  fastify.get(
+    '/debug/log',
+    {
+      schema: {
+        querystring: z.object({
+          level: z.enum(LogLevels).default('debug'),
+          log: z.string().optional(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const logger = LoggerFactory.root;
+      logger[req.query.level](req.query.log ?? 'Test log');
+      return res.send('ok');
+    },
+  );
 
   fastify.get(
     '/debug/helpers/playing_at',

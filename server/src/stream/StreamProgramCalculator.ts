@@ -23,7 +23,6 @@ import { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { ProgramPlayHistoryDB } from '../db/ProgramPlayHistoryDB.ts';
 import { OneDayMillis } from '../ffmpeg/builder/constants.ts';
-import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import { WrappedError } from '../types/errors.ts';
 import { devAssert } from '../util/debug.ts';
@@ -76,7 +75,6 @@ export class StreamProgramCalculator {
     @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.FillerListDB) private fillerDB: IFillerListDB,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
-    @inject(KEYS.ChannelCache) private channelCache: IStreamLineupCache,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(KEYS.FillerPicker)
     private fillerPicker: IFillerPicker,
@@ -132,15 +130,6 @@ export class StreamProgramCalculator {
       );
 
       if (redirectChannels.includes(currentProgram.program.channel)) {
-        await this.channelCache.recordPlayback(channelContext.uuid, startTime, {
-          type: 'error',
-          error:
-            'Recursive channel redirect found: ' + redirectChannels.join(', '),
-          duration: 60_000,
-          streamDuration: 60_000,
-          startOffset: 0,
-          programBeginMs: req.startTime,
-        });
       }
 
       const nextChannelId = currentProgram.program.channel;
@@ -236,12 +225,6 @@ export class StreamProgramCalculator {
       );
       this.logger.trace('Got lineup item: %O', lineupItem);
     }
-
-    await this.channelCache.recordPlayback(
-      channel.uuid,
-      req.startTime,
-      lineupItem,
-    );
 
     // Record play history for content-backed items (programs and commercials/fillers)
     // Only record if this is a new playback (not a duplicate request for an already-playing program)

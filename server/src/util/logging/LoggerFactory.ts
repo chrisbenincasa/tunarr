@@ -31,11 +31,6 @@ import type { SerializedLogger } from './LoggerWrapper.ts';
 import { RootLoggerWrapper } from './LoggerWrapper.ts';
 import { RollingLogDestination } from './RollingDestination.ts';
 
-export const LogConfigEnvVars = {
-  level: 'LOG_LEVEL',
-  directory: 'LOG_DIRECTORY',
-} as const;
-
 export function getEnvironmentLogLevel(envVar?: string): Maybe<LogLevels> {
   const envLevel = trim(
     toLower(process.env[envVar ?? TUNARR_ENV_VARS.LOG_LEVEL_ENV_VAR]),
@@ -108,12 +103,12 @@ export const LogCategories = ['streaming', 'scheduling'] as const;
 export type LogCategory = TupleToUnion<typeof LogCategories>;
 
 class LoggerFactoryImpl {
-  private settingsDB: SettingsDB;
+  private settingsDB?: SettingsDB;
   // private rootLogger: PinoLogger<ExtraLogLevels>;
   private rootLogger!: RootLoggerWrapper;
   private initialized = false;
   private children: Record<string, WeakRef<Logger>> = {};
-  private currentStreams: MultiStreamRes<LogLevels>;
+  private currentStreams?: MultiStreamRes<LogLevels>;
   private roller?: RollingLogDestination;
 
   constructor() {
@@ -136,7 +131,7 @@ class LoggerFactoryImpl {
         }
 
         const currentSettings =
-          this.settingsDB.systemSettings().logging.logRollConfig;
+          this.settingsDB?.systemSettings().logging.logRollConfig;
 
         const { level: newLevel } = this.logLevel;
         const perCategoryLogLevel = this.perCategoryLogLevel;
@@ -272,12 +267,11 @@ class LoggerFactoryImpl {
       return;
     }
 
-    // Reset the level of the root logger and all children
-    // We do this by setting the level on the instance directly
-    // but then for multistream to work, we have to manually reset the streams
-    // by cloning them with new levels.
-    this.rootLogger.level = newLevel;
-    this.rootLogger.updateStreams(this.createLogStreams(newLevel));
+    // Reset the level of the root logger and all children.
+    // We set the level on every logger instance directly because pino children
+    // snapshot the parent's level at creation time and don't follow changes.
+    // For multistream to work, we also have to manually reset the streams.
+    this.rootLogger.updateLevel(newLevel, this.createLogStreams(newLevel));
   }
 
   private createStreams(logLevel: LogLevels): StreamEntry<LogLevels>[] {

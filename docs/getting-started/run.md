@@ -7,7 +7,6 @@ This page describes how to get Tunarr running with various methods and installat
 ```
 docker run \
     -v "$(pwd)"/tunarr:/config/tunarr \
-    -v "$(pwd)"/.dizquetv:/.dizquetv \
     -e "TZ=America/New_York" \
     -p 8000:8000 \
     chrisbenincasa/tunarr
@@ -23,25 +22,15 @@ services:
     container_name: tunarr
     ports:
       - ${TUNARR_SERVER_PORT:-8000}:8000
-    # Uncomment if using the Nvidia container
-    # runtime: nvidia
     environment:
       - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
       # Replace this with your timezone to ensure accurate guide
       # data and scheduling.
       - TZ=America/New_York
-      # Uncomment if you'd like to adjust default config path
-      # - TUNARR_DATABASE_PATH=/your/path/tunarr
     volumes:
       # Choose a path on your host to map to /config/tunarr. This ensures
       # that restarting the container will not delete your settings or DB.
       - /path/to/tunarr/data:/config/tunarr
-    # The host path is relative to the location of the compose file
-    # This can also use an absolute path.
-    #
-    # Uncomment if migrating from dizquetv. Chnage the host path
-    # to the location of your dizquetv "database"
-    # - ./.dizquetv:/.dizquetv
 ```
 
 ### Docker Desktop
@@ -140,17 +129,21 @@ services:
     container_name: tunarr
     ports:
       - ${TUNARR_SERVER_PORT:-8000}:8000
-    runtime: nvidia
     environment:
-      - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
+      - TUNARR_LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
       - NVIDIA_VISIBLE_DEVICES=all
       - TZ=America/New_York
-    # Uncomment if you'd like to adjust default config path
-    # - TUNARR_DATABASE_PATH=/your/path/tunarr
     volumes:
       # Choose a path on your host to map to /config/tunarr. This ensures
       # that restarting the container will not delete your settings or DB.
       - /path/to/tunarr/data:/config/tunarr
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, video, utility]
 ```
 
 ### QSV (Intel) / VA-API (Video Acceleration API)
@@ -179,7 +172,7 @@ services:
     ports:
       - ${TUNARR_SERVER_PORT:-8000}:8000
     environment:
-      - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
+      - TUNARR_LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
       - TZ=America/New_York
     # Pass all render devices to container
     devices:
