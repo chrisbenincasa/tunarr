@@ -1,5 +1,6 @@
 import { CompiledQuery, sql, type Kysely } from 'kysely';
 import { copyTable, swapTables } from '../../db/migrationUtil.ts';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 export default {
   fullCopy: true,
@@ -278,4 +279,5 @@ CREATE TABLE IF NOT EXISTS "program_grouping_tmp" (
   },
 
   async down() {},
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

@@ -1,3 +1,4 @@
+import { DrizzleMigrator } from '@/migration/DrizzleMigrator.js';
 import { attempt, isNonEmptyString } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -12,7 +13,7 @@ import {
   ParseJSONResultsPlugin,
   SqliteDialect,
 } from 'kysely';
-import { findIndex, has, isError, last, map, slice } from 'lodash-es';
+import { findIndex, isError, last, map, slice } from 'lodash-es';
 import { DatabaseCopyMigrator } from '../migration/db/DatabaseCopyMigrator.ts';
 import {
   DirectMigrationProvider,
@@ -113,8 +114,12 @@ class Connection {
       const tables = await this.db.introspection.getTables({
         withInternalKyselyTables: true,
       });
+
+      const migrator = this.getDrizzleMigrator();
       if (!tables.some((table) => table.name === MigrationTableName)) {
-        return this.getMigrator().getMigrations();
+        // Trigger internal Kysely code to create the migration table.
+        await this.getMigrator().migrateUp();
+        return migrator.getMigrations();
       }
 
       const executedMigrations =
@@ -127,8 +132,7 @@ class Connection {
       const executedMigrationNames = executedMigrations.map(
         (migration) => migration.name as string,
       );
-      const migrator = this.getMigrator();
-      const knownMigrations = await migrator.getMigrations();
+      const knownMigrations = migrator.getMigrations();
       return knownMigrations.filter(
         (migration) => !executedMigrationNames.includes(migration.name),
       );
@@ -148,6 +152,10 @@ class Connection {
     });
   }
 
+  getDrizzleMigrator() {
+    return new DrizzleMigrator(this.drizzle, this.db);
+  }
+
   async syncMigrationTablesIfNecessary() {
     const tables = await this.db.introspection.getTables({
       withInternalKyselyTables: true,
@@ -156,6 +164,7 @@ class Connection {
     const newMigrationTableExists = tables.some(
       (table) => table.name === MigrationTableName,
     );
+    console.log(tables);
 
     const legacyMigrationTableExists = tables.some(
       (table) => table.name === 'mikro_orm_migrations',
@@ -235,14 +244,20 @@ class Connection {
           .ifExists()
           .execute();
       }
+    } else if (!newMigrationTableExists) {
+      // This will run our placeholder "first" migration which will
+      // force kysely to create the migration tables.
+      // Now port over the legacy migrations
+      console.log('migrate up');
+      await migrator.migrateUp();
     } else {
       this.logger.debug('New migration table already exists');
     }
   }
 
   async runDBMigrations(migrateTo?: string) {
-    const migrator = this.getMigrator();
-    this.logger.debug(
+    const migrator = this.getDrizzleMigrator();
+    this.logger.trace(
       'Migrating DB %s %s',
       this.name,
       isNonEmptyString(migrateTo) ? `to ${migrateTo}` : 'to latest',
@@ -344,11 +359,7 @@ export class DBAccess {
     const copyMigrator = new DatabaseCopyMigrator(this);
     for (const migration of pendingMigrations) {
       this.logger.info('Running database migration "%s"', migration.name);
-      if (
-        (has(migration.migration, 'fullCopy') &&
-          migration.migration.fullCopy) ||
-        (has(migration.migration, 'inPlace') && !migration.migration.inPlace)
-      ) {
+      if (migration.migration.fullCopy) {
         await copyMigrator.migrate(dbPathToMigrate, migration.name);
       } else {
         // Refresh the connection every time.

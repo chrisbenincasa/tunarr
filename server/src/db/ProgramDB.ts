@@ -14,7 +14,7 @@ import { JellyfinTaskQueue, PlexTaskQueue } from '@/tasks/TaskQueue.js';
 import { SaveJellyfinProgramExternalIdsTask } from '@/tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { autoFactoryKey, KEYS } from '@/types/inject.js';
-import { MarkNonNullable, Maybe, PagedResult } from '@/types/util.js';
+import { MarkNonNullable, Maybe, Nullable, PagedResult } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { devAssert } from '@/util/debug.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
@@ -41,6 +41,7 @@ import {
   isNull as dbIsNull,
   eq,
   inArray,
+  isNotNull,
   or,
   sql,
 } from 'drizzle-orm';
@@ -50,7 +51,7 @@ import {
   SQLiteSelectBuilder,
 } from 'drizzle-orm/sqlite-core';
 import { inject, injectable, interfaces } from 'inversify';
-import { CaseWhenBuilder, Kysely, NotNull, UpdateResult } from 'kysely';
+import { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
@@ -80,6 +81,7 @@ import {
   round,
   some,
   sum,
+  tail,
   uniq,
   uniqBy,
 } from 'lodash-es';
@@ -104,11 +106,11 @@ import {
   isDefined,
   isNonEmptyString,
   mapAsyncSeq,
-  mapToObj,
   programExternalIdString,
   run,
   unzip,
 } from '../util/index.ts';
+import { caseWhen } from './DrizzleSqlCaseWhen.ts';
 import { ProgramGroupingMinter } from './converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from './converters/ProgramMinter.ts';
 import { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.ts';
@@ -119,7 +121,7 @@ import {
 import { PageParams } from './interfaces/IChannelDB.ts';
 import {
   AllProgramFields,
-  ProgramUpsertFields,
+  ProgramUpsertSetClause,
   selectProgramsBuilder,
   withProgramByExternalId,
 } from './programQueryHelpers.ts';
@@ -133,7 +135,7 @@ import {
   NewGenreEntity,
 } from './schema/Genre.ts';
 import { MediaSourceOrm, RemoteMediaSourceType } from './schema/MediaSource.ts';
-import { MediaSourceLibraryOrm } from './schema/MediaSourceLibrary.ts';
+import { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
 import {
   Program,
   ProgramDao,
@@ -146,6 +148,7 @@ import {
   NewProgramExternalId,
   NewSingleOrMultiExternalId,
   ProgramExternalId,
+  ProgramExternalIdOrm,
   toInsertableProgramExternalId,
 } from './schema/ProgramExternalId.ts';
 import {
@@ -201,20 +204,17 @@ import type {
   ProgramWithRelationsOrm,
   TvSeasonOrm,
 } from './schema/derivedTypes.ts';
-import { DrizzleDBAccess, schema } from './schema/index.ts';
+import {
+  BaseDrizzleDBAccess,
+  DrizzleDBAccess,
+  schema,
+} from './schema/index.ts';
 
 type MintedNewProgramInfo = {
   program: NewProgramWithRelations;
   externalIds: NewSingleOrMultiExternalId[];
   apiProgram: ContentProgram;
 };
-
-type ProgramRelationCaseBuilder = CaseWhenBuilder<
-  DB,
-  'program',
-  unknown,
-  string | null
->;
 
 type RelevantProgramWithHierarchy = {
   program: RawProgram;
@@ -992,28 +992,35 @@ export class ProgramDB implements IProgramDB {
     newExternalId: NewProgramExternalId,
     oldExternalId?: MinimalProgramExternalId,
   ) {
-    await this.db.transaction().execute(async (tx) => {
+    this.drizzleDB.transaction((tx) => {
       if (oldExternalId) {
-        await tx
-          .deleteFrom('programExternalId')
-          .where('programExternalId.programUuid', '=', programId)
+        tx.delete(ProgramExternalId)
           .where(
-            'programExternalId.externalKey',
-            '=',
-            oldExternalId.externalKey,
+            and(
+              eq(ProgramExternalId.programUuid, programId),
+              eq(ProgramExternalId.externalKey, oldExternalId.externalKey),
+              eq(ProgramExternalId.sourceType, oldExternalId.sourceType),
+              oldExternalId.mediaSourceId
+                ? eq(
+                    ProgramExternalId.mediaSourceId,
+                    oldExternalId.mediaSourceId,
+                  )
+                : undefined,
+              !oldExternalId.mediaSourceId && oldExternalId.externalSourceId
+                ? eq(
+                    ProgramExternalId.externalSourceId,
+                    oldExternalId.externalSourceId,
+                  )
+                : undefined,
+            ),
           )
-          .where(
-            'programExternalId.externalSourceId',
-            '=',
-            oldExternalId.externalSourceId,
-          )
-          .where('programExternalId.sourceType', '=', oldExternalId.sourceType)
-          // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-          // .limit(1)
-          .execute();
+          .limit(1)
+          .run();
       }
-      await tx.insertInto('programExternalId').values(newExternalId).execute();
+      // await tx.insertInto('programExternalId').values(newExternalId).execute();
+      tx.insert(ProgramExternalId).values(newExternalId).run();
     });
+    return Promise.resolve(void 0);
   }
 
   async upsertContentPrograms(
@@ -1109,32 +1116,24 @@ export class ProgramDB implements IProgramDB {
         programUpsertBatchSize,
       )) {
         upsertedPrograms.push(
-          ...(await this.db.transaction().execute((tx) =>
-            tx
-              .insertInto('program')
-              .values(chunkToInsert.map(({ program: { program } }) => program))
-              // .onConflict((oc) =>
-              //   oc
-              //     .columns(['sourceType', 'externalSourceId', 'externalKey'])
-              //     .doUpdateSet((eb) =>
-              //       mapToObj(ProgramUpsertFields, (f) => ({
-              //         [f.replace('excluded.', '')]: eb.ref(f),
-              //       })),
-              //     ),
-              // )
-              .onConflict((oc) =>
-                oc
-                  .columns(['sourceType', 'mediaSourceId', 'externalKey'])
-                  .doUpdateSet((eb) =>
-                    mapToObj(ProgramUpsertFields, (f) => ({
-                      [f.replace('excluded.', '')]: eb.ref(f),
-                    })),
-                  ),
-              )
-              .returningAll()
-              .$narrowType<{ mediaSourceId: NotNull }>()
-              .execute(),
-          )),
+          ...this.drizzleDB.transaction(
+            (tx) =>
+              tx
+                .insert(Program)
+                .values(
+                  chunkToInsert.map(({ program: { program } }) => program),
+                )
+                .onConflictDoUpdate({
+                  target: [
+                    Program.sourceType,
+                    Program.mediaSourceId,
+                    Program.externalKey,
+                  ],
+                  set: ProgramUpsertSetClause,
+                })
+                .returning()
+                .all() as MarkNonNullable<ProgramDao, 'mediaSourceId'>[],
+          ),
         );
       }
     });
@@ -1226,8 +1225,6 @@ export class ProgramDB implements IProgramDB {
       return [];
     }
 
-    const db = this.db;
-
     // Group related items by canonicalId because the UUID we get back
     // from the upsert may not be the one we generated (if an existing entry)
     // already exists
@@ -1238,25 +1235,21 @@ export class ProgramDB implements IProgramDB {
 
     const result = await Promise.all(
       chunk(requests, programUpsertBatchSize).map(async (c) => {
-        const chunkResult = await db.transaction().execute((tx) =>
-          tx
-            .insertInto('program')
+        const chunkResult = this.drizzleDB.transaction((tx) => {
+          return tx
+            .insert(Program)
             .values(c.map(({ program }) => program))
-            .onConflict((oc) =>
-              oc
-                .columns(['sourceType', 'mediaSourceId', 'externalKey'])
-                .doUpdateSet((eb) =>
-                  mapToObj(ProgramUpsertFields, (f) => ({
-                    [f.replace('excluded.', '')]: eb.ref(f),
-                  })),
-                ),
-            )
-            .returningAll()
-            // All new programs must have mediaSourceId and canonicalId. This is enforced
-            // by the NewProgramDao type
-            .$narrowType<{ mediaSourceId: NotNull; canonicalId: NotNull }>()
-            .execute(),
-        );
+            .onConflictDoUpdate({
+              target: [
+                Program.sourceType,
+                Program.mediaSourceId,
+                Program.externalKey,
+              ],
+              set: ProgramUpsertSetClause,
+            })
+            .returning()
+            .all();
+        });
 
         const allExternalIds = flatten(c.map((program) => program.externalIds));
         const versionsToInsert: NewProgramVersion[] = [];
@@ -1267,7 +1260,7 @@ export class ProgramDB implements IProgramDB {
         const studiosToInsert: Dictionary<NewStudio[]> = {};
         const tagsToInsert: Dictionary<NewTag[]> = {};
         for (const program of chunkResult) {
-          const key = program.canonicalId;
+          const key = program.canonicalId!;
           const request: Maybe<NewProgramWithRelations> =
             requestsByCanonicalId[key];
           const eids = request?.externalIds ?? [];
@@ -1319,7 +1312,7 @@ export class ProgramDB implements IProgramDB {
 
         // Credits must come before artwork because some art may
         // rely on credit IDs
-        await this.upsertCredits(creditsToInsert);
+        this.upsertCredits(creditsToInsert);
 
         await this.upsertArtwork(artworkToInsert);
 
@@ -1361,36 +1354,35 @@ export class ProgramDB implements IProgramDB {
     }
 
     const insertedVersions: ProgramVersion[] = [];
-    await this.db.transaction().execute(async (tx) => {
+    this.drizzleDB.transaction((tx) => {
       const byProgramId = groupByUniq(versions, (version) => version.programId);
       for (const batch of chunk(Object.entries(byProgramId), 50)) {
         const [programIds, versionBatch] = unzip(batch);
         // We probably need to delete here, because we never really delete
         // programs on the upsert path.
-        await tx
-          .deleteFrom('programVersion')
-          .where('programId', 'in', programIds)
-          .executeTakeFirstOrThrow();
+        tx.delete(ProgramVersion)
+          .where(inArray(ProgramVersion.programId, programIds))
+          .run();
 
-        const insertResult = await tx
-          .insertInto('programVersion')
+        const insertResult = tx
+          .insert(ProgramVersion)
           .values(
             versionBatch.map((version) =>
               omit(version, ['chapters', 'mediaStreams', 'mediaFiles']),
             ),
           )
-          .returningAll()
-          .execute();
+          .returning()
+          .all();
 
-        await this.upsertProgramMediaStreams(
+        this.upsertProgramMediaStreams(
           versionBatch.flatMap(({ mediaStreams }) => mediaStreams),
           tx,
         );
-        await this.upsertProgramChapters(
+        this.upsertProgramChapters(
           versionBatch.flatMap(({ chapters }) => chapters ?? []),
           tx,
         );
-        await this.upsertProgramMediaFiles(
+        this.upsertProgramMediaFiles(
           versionBatch.flatMap(({ mediaFiles }) => mediaFiles),
           tx,
         );
@@ -1401,9 +1393,9 @@ export class ProgramDB implements IProgramDB {
     return insertedVersions;
   }
 
-  private async upsertProgramMediaStreams(
+  private upsertProgramMediaStreams(
     streams: NewProgramMediaStream[],
-    tx: Kysely<DB> = this.db,
+    tx: BaseDrizzleDBAccess = this.drizzleDB,
   ) {
     if (streams.length === 0) {
       this.logger.warn('No media streams passed for version');
@@ -1417,19 +1409,19 @@ export class ProgramDB implements IProgramDB {
       // TODO: Do we need to delete first?
       // await tx.deleteFrom('programMediaStream').where('programVersionId', 'in', versionIds).executeTakeFirstOrThrow();
       inserted.push(
-        ...(await tx
-          .insertInto('programMediaStream')
+        ...tx
+          .insert(ProgramMediaStream)
           .values(flatten(streams))
-          .returningAll()
-          .execute()),
+          .returning()
+          .all(),
       );
     }
     return inserted;
   }
 
-  private async upsertProgramChapters(
+  private upsertProgramChapters(
     chapters: NewProgramChapter[],
-    tx: Kysely<DB> = this.db,
+    tx: BaseDrizzleDBAccess = this.drizzleDB,
   ) {
     if (chapters.length === 0) {
       return [];
@@ -1442,19 +1434,15 @@ export class ProgramDB implements IProgramDB {
       // TODO: Do we need to delete first?
       // await tx.deleteFrom('programMediaStream').where('programVersionId', 'in', versionIds).executeTakeFirstOrThrow();
       inserted.push(
-        ...(await tx
-          .insertInto('programChapter')
-          .values(flatten(streams))
-          .returningAll()
-          .execute()),
+        ...tx.insert(ProgramChapter).values(flatten(streams)).returning().all(),
       );
     }
     return inserted;
   }
 
-  private async upsertProgramMediaFiles(
+  private upsertProgramMediaFiles(
     files: NewProgramMediaFile[],
-    tx: Kysely<DB> = this.db,
+    tx: BaseDrizzleDBAccess = this.drizzleDB,
   ) {
     if (files.length === 0) {
       this.logger.warn('No media files passed for version');
@@ -1468,11 +1456,7 @@ export class ProgramDB implements IProgramDB {
       // TODO: Do we need to delete first?
       // await tx.deleteFrom('programMediaStream').where('programVersionId', 'in', versionIds).executeTakeFirstOrThrow();
       inserted.push(
-        ...(await tx
-          .insertInto('programMediaFile')
-          .values(flatten(files))
-          .returningAll()
-          .execute()),
+        ...tx.insert(ProgramMediaFile).values(flatten(files)).returning().all(),
       );
     }
     return inserted;
@@ -1496,36 +1480,39 @@ export class ProgramDB implements IProgramDB {
       (art) => art.creditId,
     );
 
-    return await this.drizzleDB.transaction(async (tx) => {
-      for (const batch of chunk(keys(programArt), 50)) {
-        await tx.delete(Artwork).where(inArray(Artwork.programId, batch));
-      }
-      for (const batch of chunk(keys(groupArt), 50)) {
-        await tx.delete(Artwork).where(inArray(Artwork.groupingId, batch));
-      }
-      for (const batch of chunk(keys(creditArt), 50)) {
-        await tx.delete(Artwork).where(inArray(Artwork.creditId, batch));
-      }
-      const inserted: Artwork[] = [];
-      for (const batch of chunk(artwork, 50)) {
-        const batchResult = await this.drizzleDB
-          .insert(Artwork)
-          .values(batch)
-          .onConflictDoUpdate({
-            target: Artwork.uuid,
-            set: {
-              cachePath: sql`excluded.cache_path`,
-              groupingId: sql`excluded.grouping_id`,
-              programId: sql`excluded.program_id`,
-              updatedAt: sql`excluded.updated_at`,
-              sourcePath: sql`excluded.source_path`,
-            },
-          })
-          .returning();
-        inserted.push(...batchResult);
-      }
-      return inserted;
-    });
+    return Promise.resolve(
+      this.drizzleDB.transaction((tx) => {
+        for (const batch of chunk(keys(programArt), 50)) {
+          tx.delete(Artwork).where(inArray(Artwork.programId, batch)).run();
+        }
+        for (const batch of chunk(keys(groupArt), 50)) {
+          tx.delete(Artwork).where(inArray(Artwork.groupingId, batch)).run();
+        }
+        for (const batch of chunk(keys(creditArt), 50)) {
+          tx.delete(Artwork).where(inArray(Artwork.creditId, batch)).run();
+        }
+        const inserted: Artwork[] = [];
+        for (const batch of chunk(artwork, 50)) {
+          const batchResult = this.drizzleDB
+            .insert(Artwork)
+            .values(batch)
+            .onConflictDoUpdate({
+              target: Artwork.uuid,
+              set: {
+                cachePath: sql`excluded.cache_path`,
+                groupingId: sql`excluded.grouping_id`,
+                programId: sql`excluded.program_id`,
+                updatedAt: sql`excluded.updated_at`,
+                sourcePath: sql`excluded.source_path`,
+              },
+            })
+            .returning()
+            .all();
+          inserted.push(...batchResult);
+        }
+        return inserted;
+      }),
+    );
   }
 
   async upsertProgramGenres(programId: string, genres: NewGenre[]) {
@@ -1574,20 +1561,20 @@ export class ProgramDB implements IProgramDB {
       });
     }
 
-    return this.drizzleDB.transaction(async (tx) => {
+    return this.drizzleDB.transaction((tx) => {
       const col =
         entityType === 'grouping' ? EntityGenre.groupId : EntityGenre.programId;
-      await tx.delete(EntityGenre).where(eq(col, joinId));
+      tx.delete(EntityGenre).where(eq(col, joinId)).run();
       if (newGenreNames.size > 0) {
-        await tx
-          .insert(Genre)
+        tx.insert(Genre)
           .values(
             [...newGenreNames.values()].map((name) => incomingByName[name]!),
           )
-          .onConflictDoNothing();
+          .onConflictDoNothing()
+          .run();
       }
       if (relations.length > 0) {
-        await tx.insert(EntityGenre).values(relations).onConflictDoNothing();
+        tx.insert(EntityGenre).values(relations).onConflictDoNothing().run();
       }
     });
   }
@@ -1638,22 +1625,22 @@ export class ProgramDB implements IProgramDB {
       });
     }
 
-    return this.drizzleDB.transaction(async (tx) => {
+    this.drizzleDB.transaction((tx) => {
       const col =
         entityType === 'grouping'
           ? StudioEntity.groupId
           : StudioEntity.programId;
-      await tx.delete(StudioEntity).where(eq(col, joinId));
+      tx.delete(StudioEntity).where(eq(col, joinId)).run();
       if (newStudioNames.size > 0) {
-        await tx
-          .insert(Studio)
+        tx.insert(Studio)
           .values(
             [...newStudioNames.values()].map((name) => incomingByName[name]!),
           )
-          .onConflictDoNothing();
+          .onConflictDoNothing()
+          .run();
       }
       if (relations.length > 0) {
-        await tx.insert(StudioEntity).values(relations).onConflictDoNothing();
+        tx.insert(StudioEntity).values(relations).onConflictDoNothing().run();
       }
     });
   }
@@ -1704,22 +1691,22 @@ export class ProgramDB implements IProgramDB {
       });
     }
 
-    return this.drizzleDB.transaction(async (tx) => {
+    this.drizzleDB.transaction((tx) => {
       const col =
         entityType === 'grouping'
           ? TagRelations.groupingId
           : TagRelations.programId;
-      await tx.delete(TagRelations).where(eq(col, joinId));
+      tx.delete(TagRelations).where(eq(col, joinId)).run();
       if (newTagNames.size > 0) {
-        await tx
-          .insert(Tag)
+        tx.insert(Tag)
           .values(
             [...newTagNames.values()].map((name) => incomingByName[name]!),
           )
-          .onConflictDoNothing();
+          .onConflictDoNothing()
+          .run();
       }
       if (relations.length > 0) {
-        await tx.insert(TagRelations).values(relations).onConflictDoNothing();
+        tx.insert(TagRelations).values(relations).onConflictDoNothing().run();
       }
     });
   }
@@ -1818,45 +1805,47 @@ export class ProgramDB implements IProgramDB {
         updates.push(existing);
       }
 
-      await this.drizzleDB.transaction(async (tx) => {
+      this.drizzleDB.transaction((tx) => {
         if (inserts.length > 0) {
-          await tx.insert(ProgramSubtitles).values(inserts);
+          tx.insert(ProgramSubtitles).values(inserts).run();
         }
         if (removes.length > 0) {
-          await tx.delete(ProgramSubtitles).where(
-            inArray(
-              ProgramSubtitles.uuid,
-              removes.map((s) => s.uuid),
-            ),
-          );
+          tx.delete(ProgramSubtitles)
+            .where(
+              inArray(
+                ProgramSubtitles.uuid,
+                removes.map((s) => s.uuid),
+              ),
+            )
+            .run();
         }
 
         if (updates.length > 0) {
           for (const update of updates) {
-            await tx
-              .update(ProgramSubtitles)
+            tx.update(ProgramSubtitles)
               .set(update)
-              .where(eq(ProgramSubtitles.uuid, update.uuid));
+              .where(eq(ProgramSubtitles.uuid, update.uuid))
+              .run();
           }
         }
 
-        await tx
-          .delete(ProgramSubtitles)
+        tx.delete(ProgramSubtitles)
           .where(
             and(
               eq(ProgramSubtitles.subtitleType, 'sidecar'),
               eq(ProgramSubtitles.programId, programId),
             ),
-          );
+          )
+          .run();
 
         if (incomingExternal.length > 0) {
-          await tx.insert(ProgramSubtitles).values(incomingExternal);
+          tx.insert(ProgramSubtitles).values(incomingExternal).run();
         }
       });
     }
   }
 
-  async upsertCredits(credits: NewCredit[]) {
+  private upsertCredits(credits: NewCredit[]) {
     if (credits.length === 0) {
       return;
     }
@@ -1870,19 +1859,20 @@ export class ProgramDB implements IProgramDB {
       (credit) => credit.groupingId,
     );
 
-    return await this.drizzleDB.transaction(async (tx) => {
+    return this.drizzleDB.transaction((tx) => {
       for (const batch of chunk(keys(programCredits), 50)) {
-        await tx.delete(Credit).where(inArray(Credit.programId, batch));
+        tx.delete(Credit).where(inArray(Credit.programId, batch)).run();
       }
       for (const batch of chunk(keys(groupCredits), 50)) {
-        await tx.delete(Credit).where(inArray(Credit.groupingId, batch));
+        tx.delete(Credit).where(inArray(Credit.groupingId, batch)).run();
       }
       const inserted: Credit[] = [];
       for (const batch of chunk(credits, 50)) {
-        const batchResult = await this.drizzleDB
+        const batchResult = this.drizzleDB
           .insert(Credit)
           .values(batch)
-          .returning();
+          .returning()
+          .all();
         inserted.push(...batchResult);
       }
       return inserted;
@@ -1897,112 +1887,65 @@ export class ProgramDB implements IProgramDB {
       return {};
     }
 
-    const logger = this.logger;
-
     const [singles, multiples] = partition(
       externalIds,
       (id) => id.type === 'single',
     );
 
-    let singleIdPromise: Promise<ProgramExternalId[]>;
+    let singleIdResults: ProgramExternalIdOrm[] = [];
     if (!isEmpty(singles)) {
-      singleIdPromise = mapAsyncSeq(
-        chunk(singles, chunkSize),
-        (singleChunk) => {
-          return this.db.transaction().execute((tx) =>
-            tx
-              .insertInto('programExternalId')
-              .values(singleChunk.map(toInsertableProgramExternalId))
-              // .onConflict((oc) =>
-              //   oc
-              //     .columns(['programUuid', 'sourceType', 'externalSourceId'])
-              //     .where('externalSourceId', 'is', null)
-              //     .doUpdateSet((eb) => ({
-              //       updatedAt: eb.ref('excluded.updatedAt'),
-              //       externalFilePath: eb.ref('excluded.externalFilePath'),
-              //       directFilePath: eb.ref('excluded.directFilePath'),
-              //       programUuid: eb.ref('excluded.programUuid'),
-              //     })),
-              // )
-              .onConflict((oc) =>
-                oc
-                  .columns(['programUuid', 'sourceType'])
-                  .where('mediaSourceId', 'is', null)
-                  .doUpdateSet((eb) => ({
-                    updatedAt: eb.ref('excluded.updatedAt'),
-                    externalFilePath: eb.ref('excluded.externalFilePath'),
-                    directFilePath: eb.ref('excluded.directFilePath'),
-                    programUuid: eb.ref('excluded.programUuid'),
-                  })),
-              )
-              .returningAll()
-              .execute(),
-          );
-        },
-      ).then(flatten);
-    } else {
-      singleIdPromise = Promise.resolve([]);
+      singleIdResults = flatMap(chunk(singles, chunkSize), (singleChunk) => {
+        return this.drizzleDB.transaction((tx) =>
+          tx
+            .insert(ProgramExternalId)
+            .values(singleChunk.map(toInsertableProgramExternalId))
+            .onConflictDoUpdate({
+              target: [
+                ProgramExternalId.programUuid,
+                ProgramExternalId.sourceType,
+              ],
+              targetWhere: dbIsNull(ProgramExternalId.mediaSourceId),
+              set: {
+                updatedAt: sql`excluded.updated_at`,
+                externalFilePath: sql`excluded.external_file_path`,
+                directFilePath: sql`excluded.direct_file_path`,
+                programUuid: sql`excluded.program_uuid`,
+              },
+            })
+            .returning()
+            .all(),
+        );
+      });
     }
 
-    let multiIdPromise: Promise<ProgramExternalId[]>;
+    let multiIdResult: ProgramExternalIdOrm[] = [];
     if (!isEmpty(multiples)) {
-      multiIdPromise = mapAsyncSeq(
-        chunk(multiples, chunkSize),
-        (multiChunk) => {
-          return this.db.transaction().execute((tx) =>
-            tx
-              .insertInto('programExternalId')
-              .values(multiChunk.map(toInsertableProgramExternalId))
-              // .onConflict((oc) =>
-              //   oc
-              //     .columns(['programUuid', 'sourceType', 'externalSourceId'])
-              //     .where('externalSourceId', 'is not', null)
-              //     .doUpdateSet((eb) => ({
-              //       updatedAt: eb.ref('excluded.updatedAt'),
-              //       externalFilePath: eb.ref('excluded.externalFilePath'),
-              //       directFilePath: eb.ref('excluded.directFilePath'),
-              //       programUuid: eb.ref('excluded.programUuid'),
-              //     })),
-              // )
-              .onConflict((oc) =>
-                oc
-                  .columns(['programUuid', 'sourceType', 'mediaSourceId'])
-                  .where('mediaSourceId', 'is not', null)
-                  .doUpdateSet((eb) => ({
-                    updatedAt: eb.ref('excluded.updatedAt'),
-                    externalFilePath: eb.ref('excluded.externalFilePath'),
-                    directFilePath: eb.ref('excluded.directFilePath'),
-                    programUuid: eb.ref('excluded.programUuid'),
-                  })),
-              )
-              .returningAll()
-              .execute(),
-          );
-        },
-      ).then(flatten);
-    } else {
-      multiIdPromise = Promise.resolve([]);
+      multiIdResult = flatMap(chunk(multiples, chunkSize), (multiChunk) => {
+        return this.drizzleDB.transaction((tx) =>
+          tx
+            .insert(ProgramExternalId)
+            .values(multiChunk.map(toInsertableProgramExternalId))
+            .onConflictDoUpdate({
+              target: [
+                ProgramExternalId.programUuid,
+                ProgramExternalId.sourceType,
+              ],
+              targetWhere: isNotNull(ProgramExternalId.mediaSourceId),
+              set: {
+                updatedAt: sql`excluded.updated_at`,
+                externalFilePath: sql`excluded.external_file_path`,
+                directFilePath: sql`excluded.direct_file_path`,
+                programUuid: sql`excluded.program_uuid`,
+              },
+            })
+            .returning()
+            .all(),
+        );
+      });
     }
 
-    const [singleResult, multiResult] = await Promise.allSettled([
-      singleIdPromise,
-      multiIdPromise,
-    ]);
-
-    const allExternalIds: ProgramExternalId[] = [];
-    if (singleResult.status === 'rejected') {
-      logger.error(singleResult.reason, 'Error saving external IDs');
-    } else {
-      logger.trace('Upserted %d external IDs', singleResult.value.length);
-      allExternalIds.push(...singleResult.value);
-    }
-
-    if (multiResult.status === 'rejected') {
-      logger.error(multiResult.reason, 'Error saving external IDs');
-    } else {
-      logger.trace('Upserted %d external IDs', multiResult.value.length);
-      allExternalIds.push(...multiResult.value);
-    }
+    const allExternalIds: ProgramExternalId[] =
+      singleIdResults.concat(multiIdResult);
 
     return groupBy(allExternalIds, (eid) => eid.programUuid);
   }
@@ -2295,13 +2238,13 @@ export class ProgramDB implements IProgramDB {
       for (const externalId of newGroupingAndRelations.externalIds) {
         externalId.groupUuid = entity.uuid;
       }
-      entity = await this.drizzleDB.transaction(async (tx) => {
-        const updated = await this.updateProgramGrouping(
+      entity = this.drizzleDB.transaction((tx) => {
+        const updated = this.updateProgramGrouping(
           newGroupingAndRelations,
           entity!,
           tx,
         );
-        const upsertedExternalIds = await this.updateProgramGroupingExternalIds(
+        const upsertedExternalIds = this.updateProgramGroupingExternalIds(
           entity!.externalIds,
           externalIds,
           tx,
@@ -2314,20 +2257,16 @@ export class ProgramDB implements IProgramDB {
 
       wasUpdated = true;
     } else if (!entity) {
-      entity = await this.drizzleDB.transaction(async (tx) => {
-        const grouping = head(
-          await tx
-            .insert(ProgramGrouping)
-            .values(omit(dao, 'externalIds'))
-            .returning(),
-        )!;
+      entity = this.drizzleDB.transaction((tx) => {
+        const grouping = tx
+          .insert(ProgramGrouping)
+          .values(omit(dao, 'externalIds'))
+          .returning()
+          .get();
         const insertedExternalIds: ProgramGroupingExternalIdOrm[] = [];
         if (externalIds.length > 0) {
           insertedExternalIds.push(
-            ...(await this.upsertProgramGroupingExternalIdsChunkOrm(
-              externalIds,
-              tx,
-            )),
+            ...this.upsertProgramGroupingExternalIdsChunkOrm(externalIds, tx),
           );
         }
 
@@ -2350,7 +2289,7 @@ export class ProgramDB implements IProgramDB {
         artwork.groupingId = entity.uuid;
       });
 
-      await this.upsertCredits(
+      this.upsertCredits(
         newGroupingAndRelations.credits.map(({ credit }) => credit),
       );
 
@@ -2383,11 +2322,11 @@ export class ProgramDB implements IProgramDB {
     };
   }
 
-  private async updateProgramGrouping(
+  private updateProgramGrouping(
     { programGrouping: incoming }: NewProgramGroupingWithRelations,
     existing: ProgramGroupingOrmWithRelations,
     tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
-  ): Promise<ProgramGroupingOrm> {
+  ): ProgramGroupingOrm {
     const update: NewProgramGroupingOrm = {
       ...omit(existing, 'externalIds'),
       index: incoming.index,
@@ -2411,21 +2350,20 @@ export class ProgramDB implements IProgramDB {
       state: incoming.state,
     };
 
-    return head(
-      await tx
-        .update(ProgramGrouping)
-        .set(update)
-        .where(eq(ProgramGrouping.uuid, existing.uuid))
-        .limit(1)
-        .returning(),
-    )!;
+    return tx
+      .update(ProgramGrouping)
+      .set(update)
+      .where(eq(ProgramGrouping.uuid, existing.uuid))
+      .limit(1)
+      .returning()
+      .get();
   }
 
-  private async updateProgramGroupingExternalIds(
+  private updateProgramGroupingExternalIds(
     existingIds: ProgramGroupingExternalId[],
     newIds: NewSingleOrMultiProgramGroupingExternalId[],
     tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
-  ): Promise<ProgramGroupingExternalIdOrm[]> {
+  ): ProgramGroupingExternalIdOrm[] {
     devAssert(
       uniq(seq.collect(existingIds, (id) => id.mediaSourceId)).length <= 1,
     );
@@ -2463,43 +2401,40 @@ export class ProgramDB implements IProgramDB {
     const deletedIds = [...deletedUniqueKeys.values()].map(
       (key) => existingByUniqueId[key]!,
     );
-    await Promise.all(
-      chunk(deletedIds, 100).map((idChunk) => {
-        const clauses = idChunk.map((id) =>
-          and(
-            id.mediaSourceId
-              ? eq(ProgramGroupingExternalId.mediaSourceId, id.mediaSourceId)
-              : dbIsNull(ProgramGroupingExternalId.mediaSourceId),
-            id.libraryId
-              ? eq(ProgramGroupingExternalId.libraryId, id.libraryId)
-              : dbIsNull(ProgramGroupingExternalId.libraryId),
-            eq(ProgramGroupingExternalId.externalKey, id.externalKey),
-            id.externalSourceId
-              ? eq(
-                  ProgramGroupingExternalId.externalSourceId,
-                  id.externalSourceId,
-                )
-              : dbIsNull(ProgramGroupingExternalId.externalSourceId),
-            eq(ProgramGroupingExternalId.sourceType, id.sourceType),
-          ),
-        );
+    chunk(deletedIds, 100).forEach((idChunk) => {
+      const clauses = idChunk.map((id) =>
+        and(
+          id.mediaSourceId
+            ? eq(ProgramGroupingExternalId.mediaSourceId, id.mediaSourceId)
+            : dbIsNull(ProgramGroupingExternalId.mediaSourceId),
+          id.libraryId
+            ? eq(ProgramGroupingExternalId.libraryId, id.libraryId)
+            : dbIsNull(ProgramGroupingExternalId.libraryId),
+          eq(ProgramGroupingExternalId.externalKey, id.externalKey),
+          id.externalSourceId
+            ? eq(
+                ProgramGroupingExternalId.externalSourceId,
+                id.externalSourceId,
+              )
+            : dbIsNull(ProgramGroupingExternalId.externalSourceId),
+          eq(ProgramGroupingExternalId.sourceType, id.sourceType),
+        ),
+      );
 
-        return tx
-          .delete(ProgramGroupingExternalId)
-          .where(or(...clauses))
-          .execute();
-      }),
-    );
+      tx.delete(ProgramGroupingExternalId)
+        .where(or(...clauses))
+        .run();
+    });
 
     const addedIds = [...addedUniqueKeys.union(updatedKeys).values()].map(
       (key) => newByUniqueId[key]!,
     );
 
-    return await Promise.all(
-      chunk(addedIds, 100).map((idChunk) =>
+    return chunk(addedIds, 100)
+      .map((idChunk) =>
         this.upsertProgramGroupingExternalIdsChunkOrm(idChunk, tx),
-      ),
-    ).then((_) => _.flat());
+      )
+      .flat();
   }
 
   async getProgramGroupingChildCounts(groupingIds: string[]) {
@@ -2717,7 +2652,7 @@ export class ProgramDB implements IProgramDB {
     upsertedPrograms: MarkNonNullable<ProgramDao, 'mediaSourceId'>[],
     programInfos: Record<string, MintedNewProgramInfo>,
     mediaSource: MediaSourceOrm,
-    library: MediaSourceLibraryOrm,
+    library: MediaSourceLibrary,
   ) {
     const grandparentRatingKeyToParentRatingKey: Record<
       string,
@@ -3043,146 +2978,154 @@ export class ProgramDB implements IProgramDB {
 
     if (hasUpdates) {
       // Surprisingly it's faster to do these all at once...
-      await this.timer.timeAsync('update program relations', () =>
-        this.db.transaction().execute(async (tx) => {
-          // For each program, we produce 3 SQL variables: when = ?, then = ?, and uuid in [?].
-          // We have to chunk by type in order to ensure we don't go over the variable limit
-          const tvShowIdUpdates = [...updatesByType[ProgramGroupingType.Show]];
+      // this.timer.timeSync('update program relations', () =>
+      this.drizzleDB.transaction((tx) => {
+        // For each program, we produce 3 SQL variables: when = ?, then = ?, and uuid in [?].
+        // We have to chunk by type in order to ensure we don't go over the variable limit
+        const tvShowIdUpdates = [...updatesByType[ProgramGroupingType.Show]];
 
-          const chunkSize = run(() => {
-            const envVal = getNumericEnvVar(
-              TUNARR_ENV_VARS.DEBUG__PROGRAM_GROUPING_UPDATE_CHUNK_SIZE,
+        const chunkSize = run(() => {
+          const envVal = getNumericEnvVar(
+            TUNARR_ENV_VARS.DEBUG__PROGRAM_GROUPING_UPDATE_CHUNK_SIZE,
+          );
+
+          if (isNonEmptyString(envVal) && !isNaN(parseInt(envVal))) {
+            return Math.min(10_000, parseInt(envVal));
+          }
+          return DEFAULT_PROGRAM_GROUPING_UPDATE_CHUNK_SIZE;
+        });
+
+        if (!isEmpty(tvShowIdUpdates)) {
+          // Should produce up to 30_000 variables each iteration...
+          for (const idChunk of chunk(tvShowIdUpdates, chunkSize)) {
+            const first = head(idChunk)!; // We know for sure this exists.
+            const rest = tail(idChunk);
+            const firstCase = caseWhen(
+              eq(Program.uuid, first),
+              sql<Nullable<string>>`${upsertedProgramById[first]!.tvShowUuid}`,
             );
-
-            if (isNonEmptyString(envVal) && !isNaN(parseInt(envVal))) {
-              return Math.min(10_000, parseInt(envVal));
-            }
-            return DEFAULT_PROGRAM_GROUPING_UPDATE_CHUNK_SIZE;
-          });
-
-          const updates: Promise<UpdateResult[]>[] = [];
-
-          if (!isEmpty(tvShowIdUpdates)) {
-            // Should produce up to 30_000 variables each iteration...
-            for (const idChunk of chunk(tvShowIdUpdates, chunkSize)) {
-              updates.push(
-                tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    tvShowUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr]!.tvShowUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.tvShowUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute(),
-              );
-            }
+            const cases = reduce(
+              rest,
+              (caseBuilder, id) => {
+                return caseBuilder.when(
+                  eq(Program.uuid, id),
+                  sql<Nullable<string>>`${upsertedProgramById[id]!.tvShowUuid}`,
+                );
+              },
+              firstCase,
+            ).else(Program.tvShowUuid);
+            tx.update(Program)
+              .set({
+                tvShowUuid: cases,
+              })
+              .where(inArray(Program.uuid, idChunk))
+              .run();
           }
+        }
 
-          const seasonIdUpdates = [
-            ...updatesByType[ProgramGroupingType.Season],
-          ];
+        const seasonIdUpdates = [...updatesByType[ProgramGroupingType.Season]];
 
-          if (!isEmpty(seasonIdUpdates)) {
-            // Should produce up to 30_000 variables each iteration...
-            for (const idChunk of chunk(seasonIdUpdates, chunkSize)) {
-              updates.push(
-                tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    seasonUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr]!.seasonUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.seasonUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute(),
-              );
-            }
+        if (!isEmpty(seasonIdUpdates)) {
+          // Should produce up to 30_000 variables each iteration...
+          for (const idChunk of chunk(seasonIdUpdates, chunkSize)) {
+            const first = head(idChunk)!; // We know for sure this exists.
+            const rest = tail(idChunk);
+            const firstCase = caseWhen(
+              eq(Program.uuid, first),
+              sql<Nullable<string>>`${upsertedProgramById[first]!.seasonUuid}`,
+            );
+            const cases = reduce(
+              rest,
+              (caseBuilder, id) => {
+                return caseBuilder.when(
+                  eq(Program.uuid, id),
+                  sql<Nullable<string>>`${upsertedProgramById[id]!.seasonUuid}`,
+                );
+              },
+              firstCase,
+            ).else(Program.seasonUuid);
+            tx.update(Program)
+              .set({
+                seasonUuid: cases,
+              })
+              .where(inArray(Program.uuid, idChunk))
+              .run();
           }
+        }
 
-          const musicArtistUpdates = [
-            ...updatesByType[ProgramGroupingType.Artist],
-          ];
+        const musicArtistUpdates = [
+          ...updatesByType[ProgramGroupingType.Artist],
+        ];
 
-          if (!isEmpty(musicArtistUpdates)) {
-            // Should produce up to 30_000 variables each iteration...
-            for (const idChunk of chunk(musicArtistUpdates, chunkSize)) {
-              updates.push(
-                tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    artistUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr]!.artistUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.artistUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute(),
-              );
-            }
+        if (!isEmpty(musicArtistUpdates)) {
+          // Should produce up to 30_000 variables each iteration...
+          for (const idChunk of chunk(musicArtistUpdates, chunkSize)) {
+            const first = head(idChunk)!; // We know for sure this exists.
+            const rest = tail(idChunk);
+            const firstCase = caseWhen(
+              eq(Program.uuid, first),
+              sql<Nullable<string>>`${upsertedProgramById[first]!.artistUuid}`,
+            );
+            const cases = reduce(
+              rest,
+              (caseBuilder, id) => {
+                return caseBuilder.when(
+                  eq(Program.uuid, id),
+                  sql<Nullable<string>>`${upsertedProgramById[id]!.artistUuid}`,
+                );
+              },
+              firstCase,
+            ).else(Program.artistUuid);
+            tx.update(Program)
+              .set({
+                artistUuid: cases,
+              })
+              .where(inArray(Program.uuid, idChunk))
+              .run();
           }
+        }
 
-          const musicAlbumUpdates = [
-            ...updatesByType[ProgramGroupingType.Album],
-          ];
+        const musicAlbumUpdates = [...updatesByType[ProgramGroupingType.Album]];
 
-          if (!isEmpty(musicAlbumUpdates)) {
-            // Should produce up to 30_000 variables each iteration...
-            for (const idChunk of chunk(musicAlbumUpdates, chunkSize)) {
-              updates.push(
-                tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    albumUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr]!.albumUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.albumUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute(),
-              );
-            }
+        if (!isEmpty(musicAlbumUpdates)) {
+          // Should produce up to 30_000 variables each iteration...
+          for (const idChunk of chunk(musicAlbumUpdates, chunkSize)) {
+            const first = head(idChunk)!; // We know for sure this exists.
+            const rest = tail(idChunk);
+            const firstCase = caseWhen(
+              eq(Program.uuid, first),
+              sql<Nullable<string>>`${upsertedProgramById[first]!.albumUuid}`,
+            );
+            const cases = reduce(
+              rest,
+              (caseBuilder, id) => {
+                return caseBuilder.when(
+                  eq(Program.uuid, id),
+                  sql<Nullable<string>>`${upsertedProgramById[id]!.albumUuid}`,
+                );
+              },
+              firstCase,
+            ).else(Program.albumUuid);
+            tx.update(Program)
+              .set({
+                albumUuid: cases,
+              })
+              .where(inArray(Program.uuid, idChunk))
+              .run();
           }
-
-          await Promise.all(updates);
-        }),
-      );
+        }
+      });
+      // );
     }
   }
 
-  private async upsertProgramGroupingExternalIdsChunkOrm(
+  private upsertProgramGroupingExternalIdsChunkOrm(
     ids: (
       | NewSingleOrMultiProgramGroupingExternalId
       | NewProgramGroupingExternalId
     )[],
     tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
-  ): Promise<ProgramGroupingExternalIdOrm[]> {
+  ): ProgramGroupingExternalIdOrm[] {
     if (ids.length === 0) {
       return [];
     }
@@ -3191,11 +3134,11 @@ export class ProgramDB implements IProgramDB {
       isValidSingleExternalIdType(id.sourceType),
     );
 
-    const promises: Promise<ProgramGroupingExternalIdOrm[]>[] = [];
+    const results: ProgramGroupingExternalIdOrm[] = [];
 
     if (singles.length > 0) {
-      promises.push(
-        tx
+      results.push(
+        ...tx
           .insert(ProgramGroupingExternalId)
           .values(singles.map(toInsertableProgramGroupingExternalId))
           .onConflictDoUpdate({
@@ -3212,25 +3155,13 @@ export class ProgramDB implements IProgramDB {
             },
           })
           .returning()
-          .execute(),
-        // .onConflict((oc) =>
-        //   oc
-        //     .columns(['groupUuid', 'sourceType'])
-        //     .where('mediaSourceId', 'is', null)
-        //     .doUpdateSet((eb) => ({
-        //       updatedAt: eb.ref('excluded.updatedAt'),
-        //       externalFilePath: eb.ref('excluded.externalFilePath'),
-        //       groupUuid: eb.ref('excluded.groupUuid'),
-        //       externalKey: eb.ref('excluded.externalKey'),
-        //     })),
-        // )
-        // .executeTakeFirstOrThrow(),
+          .all(),
       );
     }
 
     if (multiples.length > 0) {
-      promises.push(
-        tx
+      results.push(
+        ...tx
           .insert(ProgramGroupingExternalId)
           .values(multiples.map(toInsertableProgramGroupingExternalId))
           .onConflictDoUpdate({
@@ -3248,23 +3179,11 @@ export class ProgramDB implements IProgramDB {
             },
           })
           .returning()
-          .execute(),
-        // .onConflict((oc) =>
-        //   oc
-        //     .columns(['groupUuid', 'sourceType', 'mediaSourceId'])
-        //     .where('mediaSourceId', 'is not', null)
-        //     .doUpdateSet((eb) => ({
-        //       updatedAt: eb.ref('excluded.updatedAt'),
-        //       externalFilePath: eb.ref('excluded.externalFilePath'),
-        //       groupUuid: eb.ref('excluded.groupUuid'),
-        //       externalKey: eb.ref('excluded.externalKey'),
-        //     })),
-        // )
-        // .executeTakeFirstOrThrow(),
+          .all(),
       );
     }
 
-    return (await Promise.all(promises)).flat();
+    return results;
   }
 
   private schedulePlexExternalIdsTask(upsertedPrograms: ProgramDao[]) {

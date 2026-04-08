@@ -1,8 +1,6 @@
-import { CompiledQuery } from 'kysely';
-import { isNonEmptyString } from '../../util/index.ts';
-import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
+import { makeMigrationFromSqlString } from './util.ts';
 
-export const expr = String.raw`
+const expr = String.raw`
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE "__new_channel_subtitle_preferences" (
 	"uuid" text PRIMARY KEY NOT NULL,
@@ -37,17 +35,4 @@ ALTER TABLE "__new_custom_show_subtitle_preferences" RENAME TO "custom_show_subt
 CREATE INDEX "custom_show_priority_index" ON "custom_show_subtitle_preferences" ("custom_show_id","priority");
 `;
 
-export default {
-  fullCopy: true,
-  async up(db) {
-    const queries = expr
-      .split('--> statement-breakpoint')
-      .map((s) => s.trim())
-      .filter(isNonEmptyString)
-      .map((s) => CompiledQuery.raw(s));
-
-    for (const query of queries) {
-      await db.executeQuery(query);
-    }
-  },
-} satisfies TunarrDatabaseMigration;
+export default makeMigrationFromSqlString(expr, true);

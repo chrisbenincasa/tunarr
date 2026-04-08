@@ -32,8 +32,10 @@
         "esModuleInterop": true,
         "noErrorTruncation": true,
         "noUncheckedIndexedAccess": true,
-        "baseUrl": ".",
         "paths": {
+            "*": [
+                "./*"
+            ],
             "@/*": [
                 "./src/*"
             ]

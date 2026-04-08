@@ -302,7 +302,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
       if (!config) {
         return res.status(404).send();
       }
-      await req.serverCtx.transcodeConfigDB.deleteConfig(req.params.id);
+      req.serverCtx.transcodeConfigDB.deleteConfig(req.params.id);
       return res.send();
     },
   );

@@ -26,7 +26,7 @@ import type {
   ProgramGroupingOrmWithRelations,
   ProgramWithRelationsOrm,
 } from '../db/schema/derivedTypes.ts';
-import type { MediaSourceLibraryOrm } from '../db/schema/MediaSourceLibrary.ts';
+import type { MediaSourceLibrary } from '../db/schema/MediaSourceLibrary.ts';
 import type {
   ProgramGroupingSearchDocument,
   TerminalProgramSearchDocument,
@@ -51,7 +51,7 @@ export class ApiProgramConverters {
     program: ProgramWithRelationsOrm,
     searchDoc: Maybe<TerminalProgramSearchDocument>,
     mediaSource?: MediaSourceWithRelations,
-    mediaLibrary?: MediaSourceLibraryOrm,
+    mediaLibrary?: MediaSourceLibrary,
   ): Nullable<TerminalProgram> {
     if (!program.canonicalId) {
       this.logger.warn(`Program %s doesn't have a canonicalId!`, program.uuid);
@@ -207,7 +207,7 @@ export class ApiProgramConverters {
     doc: Maybe<ProgramGroupingSearchDocument>,
     childCounts: Maybe<ProgramGroupingChildCounts>,
     mediaSource: MediaSourceWithRelations,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
   ): Nullable<ProgramGrouping> {
     if (!grouping.canonicalId) {
       this.logger.warn(

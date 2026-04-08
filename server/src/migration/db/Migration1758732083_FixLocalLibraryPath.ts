@@ -1,3 +1,3 @@
-import { makeKyselyMigrationFromSqlFile } from './util.ts';
+import { makeMigrationFromSqlFile } from './util.ts';
 
-export default makeKyselyMigrationFromSqlFile('./sql/0014_gray_mongu.sql');
+export default makeMigrationFromSqlFile('./sql/0014_gray_mongu.sql');

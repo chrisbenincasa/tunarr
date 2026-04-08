@@ -1,5 +1,6 @@
 import type { Kysely } from 'kysely';
 import { CompiledQuery } from 'kysely';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 export default {
   async up(db: Kysely<unknown>): Promise<void> {
@@ -63,4 +64,5 @@ export default {
     await db.executeQuery(CompiledQuery.raw('PRAGMA foreign_keys = ON'));
     await db.executeQuery(CompiledQuery.raw('PRAGMA defer_foreign_keys = OFF'));
   },
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

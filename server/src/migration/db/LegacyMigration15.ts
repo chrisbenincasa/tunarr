@@ -1,5 +1,6 @@
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 export default {
   async up(db: Kysely<unknown>): Promise<void> {
@@ -21,4 +22,5 @@ export default {
     // this.addSql('alter table `channel` drop column `stream_mode`;');
     await db.schema.alterTable('channel').dropColumn('stream_mode').execute();
   },
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

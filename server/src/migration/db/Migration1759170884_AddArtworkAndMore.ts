@@ -1,6 +1,6 @@
-import { makeKyselyMigrationFromSqlFile } from './util.ts';
+import { makeMigrationFromSqlFile } from './util.ts';
 
-export default makeKyselyMigrationFromSqlFile(
+export default makeMigrationFromSqlFile(
   './sql/0016_wealthy_dragon_lord.sql',
   true,
 );

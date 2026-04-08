@@ -6,6 +6,7 @@ import type {
   WithUpdatedAt,
   WithUuid,
 } from '../../db/schema/base.js';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 interface CurrentProgramExternalIdTable
   extends WithUuid,
@@ -136,4 +137,5 @@ export default {
       .where(sql`\`external_source_id\``, 'is', null)
       .execute();
   },
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

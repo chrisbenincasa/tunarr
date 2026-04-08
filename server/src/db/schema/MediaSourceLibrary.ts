@@ -1,6 +1,6 @@
+import type { InferInsertModel } from 'drizzle-orm';
 import { inArray, relations, type InferSelectModel } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { Insertable, Selectable, Updateable } from 'kysely';
 import { MediaLibraryTypes, type MediaSourceId } from './base.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
 import { MediaSource } from './MediaSource.ts';
@@ -50,7 +50,6 @@ export const MediaSourceLibraryColumns: (keyof MediaSourceLibraryTable)[] = [
 ];
 
 export type MediaSourceLibraryTable = KyselifyBetter<typeof MediaSourceLibrary>;
-export type MediaSourceLibrary = Selectable<MediaSourceLibraryTable>;
-export type MediaSourceLibraryOrm = InferSelectModel<typeof MediaSourceLibrary>;
-export type NewMediaSourceLibrary = Insertable<MediaSourceLibraryTable>;
-export type MediaSourceLibraryUpdate = Updateable<MediaSourceLibraryTable>;
+export type MediaSourceLibrary = InferSelectModel<typeof MediaSourceLibrary>;
+export type NewMediaSourceLibrary = InferInsertModel<typeof MediaSourceLibrary>;
+export type MediaSourceLibraryUpdate = Partial<NewMediaSourceLibrary>;

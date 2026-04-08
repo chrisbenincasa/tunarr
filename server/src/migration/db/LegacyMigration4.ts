@@ -1,4 +1,5 @@
 import type { Kysely } from 'kysely';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 import { columnExists } from './util.ts';
 
 export default {
@@ -29,4 +30,5 @@ export default {
       await db.schema.alterTable('program').dropColumn('album_name').execute();
     }
   },
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

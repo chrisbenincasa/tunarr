@@ -8,7 +8,7 @@ import type {
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
 import {
@@ -43,12 +43,14 @@ import {
   PlexMediaSource,
 } from './schema/derivedTypes.js';
 import { DrizzleDBAccess } from './schema/index.ts';
+import { MediaSource } from './schema/MediaSource.ts';
 import {
   MediaSourceLibrary,
   MediaSourceLibraryUpdate,
   NewMediaSourceLibrary,
 } from './schema/MediaSourceLibrary.ts';
 import { MediaSourceLibraryReplacePath } from './schema/MediaSourceLibraryReplacePath.ts';
+import { Program } from './schema/Program.ts';
 
 type MediaSourceUserInfo = {
   userId?: string;
@@ -186,11 +188,8 @@ export class MediaSourceDB {
     // Remove all associations of this program
     for (const programChunk of chunk(allPrograms, 100)) {
       const programIds = programChunk.map((p) => p.uuid);
-      await this.db.transaction().execute(async (tx) => {
-        await tx
-          .deleteFrom('program')
-          .where('uuid', 'in', programIds)
-          .execute();
+      this.drizzleDB.transaction((tx) => {
+        tx.delete(Program).where(inArray(Program.uuid, programIds)).run();
       });
     }
 
@@ -226,15 +225,14 @@ export class MediaSourceDB {
     }
 
     if (updateReq.type === 'local') {
-      await this.db.transaction().execute(async (tx) => {
-        await tx
-          .updateTable('mediaSource')
+      this.drizzleDB.transaction((tx) => {
+        tx.update(MediaSource)
           .set({
             mediaType: updateReq.mediaType,
             name: tag<MediaSourceName>(updateReq.name),
           })
-          .where('mediaSource.uuid', '=', id)
-          .executeTakeFirstOrThrow();
+          .where(eq(MediaSource.uuid, id))
+          .run();
 
         const newPaths = differenceWith(
           updateReq.paths,
@@ -248,20 +246,18 @@ export class MediaSourceDB {
         ).map(({ externalKey }) => externalKey);
 
         if (deletePaths.length > 0) {
-          await tx
-            .deleteFrom('mediaSourceLibrary')
+          tx.delete(MediaSourceLibrary)
             .where(
-              'mediaSourceLibrary.mediaSourceId',
-              '=',
-              tag<MediaSourceId>(updateReq.id),
+              and(
+                eq(MediaSourceLibrary, tag<MediaSourceId>(updateReq.id)),
+                inArray(MediaSourceLibrary.externalKey, deletePaths),
+              ),
             )
-            .where('mediaSourceLibrary.externalKey', 'in', deletePaths)
-            .executeTakeFirstOrThrow();
+            .run();
         }
 
         if (newPaths.length > 0) {
-          await tx
-            .insertInto('mediaSourceLibrary')
+          tx.insert(MediaSourceLibrary)
             .values(
               newPaths.map((path) => ({
                 externalKey: path,
@@ -269,11 +265,11 @@ export class MediaSourceDB {
                 mediaType: updateReq.mediaType,
                 name: path,
                 uuid: v4(),
-                enabled: booleanToNumber(true),
+                enabled: true,
                 lastScannedAt: null,
               })),
             )
-            .executeTakeFirstOrThrow();
+            .run();
         }
       });
     } else {
@@ -354,16 +350,15 @@ export class MediaSourceDB {
       .then((_) => _?.count ?? 0);
 
     const now = +dayjs();
-    const newServer = await this.db.transaction().execute(async (tx) => {
-      const newServer = await tx
-        .insertInto('mediaSource')
+    const newServer = this.drizzleDB.transaction((tx) => {
+      const newServer = tx
+        .insert(MediaSource)
         .values({
-          // ...server,
           uuid: tag<MediaSourceId>(v4()),
           name,
           uri: server.type === 'local' ? '' : trimEnd(server.uri, '/'),
-          sendChannelUpdates: booleanToNumber(false),
-          sendGuideUpdates: booleanToNumber(sendGuideUpdates),
+          sendChannelUpdates: false,
+          sendGuideUpdates: sendGuideUpdates,
           createdAt: now,
           updatedAt: now,
           index,
@@ -382,13 +377,12 @@ export class MediaSourceDB {
                 : null,
           accessToken: server.type === 'local' ? '' : server.accessToken,
           mediaType: server.type === 'local' ? server.mediaType : null,
-        })
-        .returning('uuid')
-        .executeTakeFirstOrThrow();
+        } satisfies typeof MediaSource.$inferInsert)
+        .returning({ uuid: MediaSource.uuid })
+        .get();
 
       if (server.type === 'local') {
-        await tx
-          .insertInto('mediaSourceLibrary')
+        tx.insert(MediaSourceLibrary)
           .values(
             server.paths.map(
               (path) =>
@@ -398,12 +392,12 @@ export class MediaSourceDB {
                   mediaType: server.mediaType,
                   name: path,
                   uuid: v4(),
-                  enabled: booleanToNumber(true),
+                  enabled: true,
                   lastScannedAt: null,
-                }) satisfies NewMediaSourceLibrary,
+                }) satisfies typeof MediaSourceLibrary.$inferInsert,
             ),
           )
-          .executeTakeFirstOrThrow();
+          .all();
       }
 
       return newServer;
@@ -425,30 +419,25 @@ export class MediaSourceDB {
     return newServer?.uuid;
   }
 
-  async updateLibraries(updates: MediaSourceLibrariesUpdate) {
-    return this.db.transaction().execute(async (tx) => {
+  updateLibraries(updates: MediaSourceLibrariesUpdate) {
+    this.drizzleDB.transaction((tx) => {
       if (!isEmpty(updates.addedLibraries)) {
-        await tx
-          .insertInto('mediaSourceLibrary')
-          .values(updates.addedLibraries)
-          .execute();
+        tx.insert(MediaSourceLibrary).values(updates.addedLibraries).run();
       }
 
       if (updates.updatedLibraries.length > 0) {
         for (const update of updates.updatedLibraries) {
-          await tx
-            .updateTable('mediaSourceLibrary')
+          tx.update(MediaSourceLibrary)
             .set(update)
-            .where('uuid', '=', update.uuid)
-            .executeTakeFirstOrThrow();
+            .where(eq(MediaSourceLibrary.uuid, update.uuid))
+            .run();
         }
       }
 
       if (updates.deletedLibraries.length > 0) {
-        await tx
-          .deleteFrom('mediaSourceLibrary')
-          .where('uuid', 'in', updates.deletedLibraries)
-          .execute();
+        tx.delete(MediaSourceLibrary)
+          .where(inArray(MediaSourceLibrary.uuid, updates.deletedLibraries))
+          .run();
       }
     });
   }

@@ -1,7 +1,9 @@
+import type { BaseDrizzleDBAccess } from '@/db/schema/index.js';
 import Migration1735044379_AddHlsDirect from '@/migration/db/Migration1735044379_AddHlsDirect.js';
 import type { Migration, MigrationProvider } from 'kysely';
 import { CompiledQuery } from 'kysely';
 import { mapValues } from 'lodash-es';
+import { match } from 'ts-pattern';
 import LegacyMigration0 from './db/LegacyMigration0.ts';
 import LegacyMigration1 from './db/LegacyMigration1.ts';
 import LegacyMigration10 from './db/LegacyMigration10.ts';
@@ -33,9 +35,6 @@ import Migration1746123876_ReworkSubtitleFilter from './db/Migration1746123876_R
 import Migration1746128022_FixSubtitlePriorityType from './db/Migration1746128022_FixSubtitlePriorityType.ts';
 import Migration1748345299_AddMoreProgramTypes from './db/Migration1748345299_AddMoreProgramTypes.ts';
 import Migration1756312561_InitialAdvancedTranscodeConfig from './db/Migration1756312561_InitialAdvancedTranscodeConfig.ts';
-import Migration1756381281_AddLibraries from './db/Migration1756381281_AddLibraries.ts';
-import Migration1757704591_AddProgramMediaSourceIndex from './db/Migration1757704591_AddProgramMediaSourceIndex.ts';
-import Migration1758203109_AddProgramMedia from './db/Migration1758203109_AddProgramMedia.ts';
 import Migration1758570688_AddLocalLibraries from './db/Migration1758570688_AddLocalLibraries.ts';
 import Migration1758732083_FixLocalLibraryPath from './db/Migration1758732083_FixLocalLibraryPath.ts';
 import Migration1758903045_FixLocalLibraryPathAgain from './db/Migration1758903045_FixLocalLibraryPathAgain.ts';
@@ -53,7 +52,7 @@ import Migration1764022266_AddCreditGroupingIndex from './db/Migration1764022266
 import Migration1764022464_AddArtworkIndexes from './db/Migration1764022464_AddArtworkIndexes.ts';
 import Migration1767300603_AddExternalCollections from './db/Migration1767300603_AddExternalCollections.ts';
 import Migration1771271020_FixCustomShowContentKey from './db/Migration1771271020_FixCustomShowContentKey.ts';
-import { makeKyselyMigrationFromSqlFile } from './db/util.ts';
+import { makeMigrationFromSqlFile } from './db/util.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -79,159 +78,192 @@ export const LegacyMigrationNameToNewMigrationName = [
   ['cascade_channel_filler_show_deletes', '_Legacy_Migration16'],
 ] as const;
 
+const FirstMigration: TunarrDatabaseMigrationLegacy = {
+  async up(db) {
+    await db.executeQuery(CompiledQuery.raw('select 1;'));
+  },
+  kyselyOnly: true,
+};
+
 export class DirectMigrationProvider implements MigrationProvider {
+  getMigrations(): Promise<Record<string, TunarrDatabaseMigration>> {
+    return Promise.resolve(this.getMigrationsSync());
+  }
   // Kysely migrations are strictly run in alphanumeric asc order
   // We need to ensure migrations pre-kyesely (from mikro-orm)
   // are run FIRST and in the correct order, in order to have a smooth
   // transition away. Legacy migrations are thus prefixed with '_'
   // to ensure they are always run first
-  getMigrations(): Promise<Record<string, Migration>> {
-    return Promise.resolve(
-      mapValues(
-        {
-          _ALWAYS_FIRST: {
-            async up(db) {
-              await db.executeQuery(CompiledQuery.raw('select 1;'));
-            },
-          } satisfies Migration,
-          _Legacy_Migration00: LegacyMigration0,
-          _Legacy_Migration01: LegacyMigration1,
-          _Legacy_Migration02: LegacyMigration2,
-          _Legacy_Migration03: LegacyMigration3,
-          _Legacy_Migration04: LegacyMigration4,
-          _Legacy_Migration05: LegacyMigration5,
-          _Legacy_Migration06: LegacyMigration6,
-          _Legacy_Migration07: LegacyMigration7,
-          _Legacy_Migration08: LegacyMigration8,
-          _Legacy_Migration08_dupe: {
-            async up() {
-              // NO-OP
-            },
+  getMigrationsSync(): Record<string, TunarrDatabaseMigration> {
+    return mapValues(
+      {
+        _ALWAYS_FIRST: FirstMigration,
+        _Legacy_Migration00: LegacyMigration0,
+        _Legacy_Migration01: LegacyMigration1,
+        _Legacy_Migration02: LegacyMigration2,
+        _Legacy_Migration03: LegacyMigration3,
+        _Legacy_Migration04: LegacyMigration4,
+        _Legacy_Migration05: LegacyMigration5,
+        _Legacy_Migration06: LegacyMigration6,
+        _Legacy_Migration07: LegacyMigration7,
+        _Legacy_Migration08: LegacyMigration8,
+        _Legacy_Migration08_dupe: {
+          async up() {
+            // NO-OP
           },
-          _Legacy_Migration09: LegacyMigration9,
-          _Legacy_Migration10: LegacyMigration10,
-          _Legacy_Migration11: LegacyMigration11,
-          _Legacy_Migration12: LegacyMigration12,
-          _Legacy_Migration13: LegacyMigration13,
-          _Legacy_Migration14: LegacyMigration14,
-          _Legacy_Migration15: LegacyMigration15,
-          _Legacy_Migration16: LegacyMigration16,
-          migration1730806741: Migration1730806741,
-          migration1731982492: Migration1731982492,
-          migration1732969335: Migration1732969335_AddTranscodeConfig,
-          migration1735044379: Migration1735044379_AddHlsDirect,
-          migration1738604866: Migration1738604866_AddEmby,
-          migration1740691984: Migration1740691984_ProgramMediaSourceId,
-          migration1741297998: Migration1741297998_AddProgramIndexes,
-          migration1741658292: Migration1741658292_MediaSourceIndex,
-          migration1744918641: Migration1744918641_AddMediaSourceUserInfo,
-          migration1745007030:
-            Migration1745007030_ReaddMissingProgramExternalIdIndexes,
+          kyselyOnly: true,
+        } satisfies TunarrDatabaseMigrationLegacy,
+        _Legacy_Migration09: LegacyMigration9,
+        _Legacy_Migration10: LegacyMigration10,
+        _Legacy_Migration11: LegacyMigration11,
+        _Legacy_Migration12: LegacyMigration12,
+        _Legacy_Migration13: LegacyMigration13,
+        _Legacy_Migration14: LegacyMigration14,
+        _Legacy_Migration15: LegacyMigration15,
+        _Legacy_Migration16: LegacyMigration16,
+        migration1730806741: Migration1730806741,
+        migration1731982492: Migration1731982492,
+        migration1732969335: Migration1732969335_AddTranscodeConfig,
+        migration1735044379: Migration1735044379_AddHlsDirect,
+        migration1738604866: Migration1738604866_AddEmby,
+        migration1740691984: Migration1740691984_ProgramMediaSourceId,
+        migration1741297998: Migration1741297998_AddProgramIndexes,
+        migration1741658292: Migration1741658292_MediaSourceIndex,
+        migration1744918641: Migration1744918641_AddMediaSourceUserInfo,
+        migration1745007030:
+          Migration1745007030_ReaddMissingProgramExternalIdIndexes,
 
-          migration1746042667: Migration1746042667_AddSubtitles,
-          migration1746123876: Migration1746123876_ReworkSubtitleFilter,
-          migration1746128022: Migration1746128022_FixSubtitlePriorityType,
-          migration1748345299: Migration1748345299_AddMoreProgramTypes,
-          migration1756312561:
-            Migration1756312561_InitialAdvancedTranscodeConfig,
-          migration1756381281: Migration1756381281_AddLibraries,
-          migration1757704591: Migration1757704591_AddProgramMediaSourceIndex,
-          migration1758203109: Migration1758203109_AddProgramMedia,
-          migration1758570688: Migration1758570688_AddLocalLibraries,
-          migration1758732083_FixLocalLibraryPath:
-            Migration1758732083_FixLocalLibraryPath,
-          migration1758903045_FixLocalLibraryPathAgain:
-            Migration1758903045_FixLocalLibraryPathAgain,
-          migration1759170884_AddArtworkAndMore:
-            Migration1759170884_AddArtworkAndMore,
-          migration1759518565_AddProgramSubtitles:
-            Migration1759518565_AddProgramSubtitles,
-          migration1760129429_AddProgramGroupingSourceType:
-            Migration1760129429_AddProgramGroupingSourceType,
-          migration1760213210_AddMoreProgramGroupingFields:
-            Migration1760213210_AddMoreProgramGroupingFields,
-          migration1760455673_UpdateForeignKeyCasacades:
-            Migration1760455673_UpdateForeignKeyCasacades,
-          migration1761309919_AddSmartCollections:
-            makeKyselyMigrationFromSqlFile(
-              './sql/0021_stormy_victor_mancha.sql',
-            ),
-          migration1762205138_AddCredits: Migration1762205138_AddCredits,
-          migration1762205207_ArtworkCachePathNullable:
-            Migration1762205207_ArtworkCachePathNullable,
-          migration1763585155_AddProgramForeignKeys:
-            Migration1763585155_AddProgramForeignKeys,
-          migration1763673215_MoreProgramForeignKeys:
-            Migration1763673215_MoreProgramForeignKeys,
-          migration1763749592_AddProgramState:
-            Migration1763749592_AddProgramState,
-          migration1764022266_AddCreditGroupingIndex:
-            Migration1764022266_AddCreditGroupingIndex,
-          migration1764022464_AddArtworkIndexes:
-            Migration1764022464_AddArtworkIndexes,
-          migration1764695284_AddProgramGroupingMetadata:
-            makeKyselyMigrationFromSqlFile('./sql/0029_hard_arachne.sql'),
-          migration1764710105_AddGenreAndStudios:
-            makeKyselyMigrationFromSqlFile('./sql/0030_redundant_glorian.sql'),
-          migration1764773318: makeKyselyMigrationFromSqlFile(
-            './sql/0031_bitter_dormammu.sql',
-          ),
-          // Add program grouping state,
-          migration1764870206: makeKyselyMigrationFromSqlFile(
-            './sql/0032_vengeful_network.sql',
-          ),
-          migration1767300603: Migration1767300603_AddExternalCollections,
-          migration1767374284: makeKyselyMigrationFromSqlFile(
-            './sql/0036_smooth_vanisher.sql',
-          ),
-          migration1768825617: makeKyselyMigrationFromSqlFile(
-            './sql/0037_orange_bromley.sql',
-          ),
-          migration1768876318: makeKyselyMigrationFromSqlFile(
-            './sql/0038_boring_maginty.sql',
-          ),
-          migration1769099084: makeKyselyMigrationFromSqlFile(
-            './sql/0039_famous_bloodscream.sql',
-          ),
-          migration1769361518: makeKyselyMigrationFromSqlFile(
-            './sql/0040_daffy_bishop.sql',
-            true,
-          ),
-          migration1770236998: makeKyselyMigrationFromSqlFile(
-            './sql/0041_easy_firebird.sql',
-          ),
-          migration1771271020: Migration1771271020_FixCustomShowContentKey,
-        },
-        wrapWithTransaction,
-      ),
+        migration1746042667: Migration1746042667_AddSubtitles,
+        migration1746123876: Migration1746123876_ReworkSubtitleFilter,
+        migration1746128022: Migration1746128022_FixSubtitlePriorityType,
+        migration1748345299: Migration1748345299_AddMoreProgramTypes,
+        migration1756312561: Migration1756312561_InitialAdvancedTranscodeConfig,
+        // Migration1756381281_AddLibraries.ts
+        migration1756381281: makeMigrationFromSqlFile(
+          './sql/0010_lazy_nova.sql',
+        ),
+        // AddProgramMediaSources
+        migration1757704591: makeMigrationFromSqlFile(
+          './sql/0011_stormy_stark_industries.sql',
+        ),
+        // AddProgramMedia
+        migration1758203109: makeMigrationFromSqlFile(
+          './sql/0012_yielding_ben_grimm.sql',
+        ),
+        migration1758570688: Migration1758570688_AddLocalLibraries,
+        migration1758732083_FixLocalLibraryPath:
+          Migration1758732083_FixLocalLibraryPath,
+        migration1758903045_FixLocalLibraryPathAgain:
+          Migration1758903045_FixLocalLibraryPathAgain,
+        migration1759170884_AddArtworkAndMore:
+          Migration1759170884_AddArtworkAndMore,
+        migration1759518565_AddProgramSubtitles:
+          Migration1759518565_AddProgramSubtitles,
+        migration1760129429_AddProgramGroupingSourceType:
+          Migration1760129429_AddProgramGroupingSourceType,
+        migration1760213210_AddMoreProgramGroupingFields:
+          Migration1760213210_AddMoreProgramGroupingFields,
+        migration1760455673_UpdateForeignKeyCasacades:
+          Migration1760455673_UpdateForeignKeyCasacades,
+        migration1761309919_AddSmartCollections: makeMigrationFromSqlFile(
+          './sql/0021_stormy_victor_mancha.sql',
+        ),
+        migration1762205138_AddCredits: Migration1762205138_AddCredits,
+        migration1762205207_ArtworkCachePathNullable:
+          Migration1762205207_ArtworkCachePathNullable,
+        migration1763585155_AddProgramForeignKeys:
+          Migration1763585155_AddProgramForeignKeys,
+        migration1763673215_MoreProgramForeignKeys:
+          Migration1763673215_MoreProgramForeignKeys,
+        migration1763749592_AddProgramState:
+          Migration1763749592_AddProgramState,
+        migration1764022266_AddCreditGroupingIndex:
+          Migration1764022266_AddCreditGroupingIndex,
+        migration1764022464_AddArtworkIndexes:
+          Migration1764022464_AddArtworkIndexes,
+        migration1764695284_AddProgramGroupingMetadata:
+          makeMigrationFromSqlFile('./sql/0029_hard_arachne.sql'),
+        migration1764710105_AddGenreAndStudios: makeMigrationFromSqlFile(
+          './sql/0030_redundant_glorian.sql',
+        ),
+        migration1764773318: makeMigrationFromSqlFile(
+          './sql/0031_bitter_dormammu.sql',
+        ),
+        // Add program grouping state,
+        migration1764870206: makeMigrationFromSqlFile(
+          './sql/0032_vengeful_network.sql',
+        ),
+        migration1767300603: Migration1767300603_AddExternalCollections,
+        migration1767374284: makeMigrationFromSqlFile(
+          './sql/0036_smooth_vanisher.sql',
+        ),
+        migration1768825617: makeMigrationFromSqlFile(
+          './sql/0037_orange_bromley.sql',
+        ),
+        migration1768876318: makeMigrationFromSqlFile(
+          './sql/0038_boring_maginty.sql',
+        ),
+        migration1769099084: makeMigrationFromSqlFile(
+          './sql/0039_famous_bloodscream.sql',
+        ),
+        migration1769361518: makeMigrationFromSqlFile(
+          './sql/0040_daffy_bishop.sql',
+          true,
+        ),
+        migration1770236998: makeMigrationFromSqlFile(
+          './sql/0041_easy_firebird.sql',
+        ),
+        migration1771271020: Migration1771271020_FixCustomShowContentKey,
+      } satisfies Record<string, TunarrDatabaseMigration>,
+      wrapWithTransaction,
     );
   }
 }
 
-function wrapWithTransaction(m: TunarrDatabaseMigration): Migration {
-  return {
-    ...m,
-    up(db) {
-      if (m.noTransaction) {
-        return m.up(db);
-      }
-      return db.transaction().execute((tx) => {
-        return m.up(tx);
-      });
-    },
-    down(db) {
-      if (m.noTransaction) {
-        return m.down?.(db) ?? Promise.resolve(void 0);
-      }
-      return db.transaction().execute((tx) => {
-        return m.down?.(tx) ?? Promise.resolve(void 0);
-      });
-    },
-  } satisfies Migration;
+function wrapWithTransaction(
+  m: TunarrDatabaseMigration,
+): TunarrDatabaseMigration {
+  return (
+    match(m)
+      .returnType<TunarrDatabaseMigration>()
+      // Kysely only migrations can never run in transactions because they
+      // have no synchronous option
+      .with({ kyselyOnly: true }, (m) => m)
+      .with({ kyselyOnly: false, noTransaction: true }, (m) => m)
+      .with(
+        { kyselyOnly: false },
+        (m) =>
+          ({
+            ...m,
+            upDrizzle(db) {
+              db.run('PRAGMA defer_foreign_keys = ON');
+              db.transaction((tx) => {
+                return m.upDrizzle(tx);
+              });
+              db.run('PRAGMA defer_foreign_keys = OFF');
+            },
+          }) satisfies TunarrDatabaseMigrationWithDrizzle,
+      )
+      .exhaustive()
+  );
 }
 
-export interface TunarrDatabaseMigration extends Migration {
-  inPlace?: boolean;
+type BaseTunarrDatabaseMigration = Migration & {
   fullCopy?: boolean;
   noTransaction?: boolean;
-}
+  kyselyOnly: boolean;
+};
+
+export type TunarrDatabaseMigrationWithDrizzle = BaseTunarrDatabaseMigration & {
+  kyselyOnly: false;
+  upDrizzle: (db: BaseDrizzleDBAccess) => void;
+};
+
+export type TunarrDatabaseMigrationLegacy = BaseTunarrDatabaseMigration & {
+  kyselyOnly: true;
+  upDrizzle?: never;
+};
+
+export type TunarrDatabaseMigration =
+  | TunarrDatabaseMigrationWithDrizzle
+  | TunarrDatabaseMigrationLegacy;

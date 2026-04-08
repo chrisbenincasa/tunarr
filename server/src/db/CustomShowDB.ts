@@ -12,6 +12,7 @@ import {
   UpdateCustomShowRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
+import { eq } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import { chunk, isNil, orderBy, partition, uniqBy } from 'lodash-es';
@@ -20,8 +21,11 @@ import { v4 } from 'uuid';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
 import { withCustomShowPrograms } from './programQueryHelpers.ts';
 import { MediaSourceId, MediaSourceType } from './schema/base.ts';
-import type { NewCustomShow } from './schema/CustomShow.ts';
-import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
+import { CustomShow, type NewCustomShow } from './schema/CustomShow.ts';
+import {
+  CustomShowContent,
+  type NewCustomShowContent,
+} from './schema/CustomShowContent.ts';
 import { DB } from './schema/db.ts';
 import { ProgramWithRelationsOrm } from './schema/derivedTypes.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
@@ -155,17 +159,12 @@ export class CustomShowDB {
       return false;
     }
 
-    await this.db.transaction().execute(async (tx) => {
+    this.drizzle.transaction((tx) => {
       // TODO: Do this deletion in the DB with foreign keys.
-      await tx
-        .deleteFrom('channelCustomShows')
-        .where('customShowUuid', '=', show.uuid)
-        .execute();
-      await tx
-        .deleteFrom('customShowContent')
-        .where('customShowContent.customShowUuid', '=', show.uuid)
-        .execute();
-      await tx.deleteFrom('customShow').where('uuid', '=', show.uuid).execute();
+      tx.delete(CustomShowContent)
+        .where(eq(CustomShowContent.customShowUuid, show.uuid))
+        .run();
+      tx.delete(CustomShow).where(eq(CustomShow.uuid, show.uuid)).run();
     });
 
     return true;
@@ -295,17 +294,13 @@ export class CustomShowDB {
       'asc',
     );
 
-    await this.db.transaction().execute(async (tx) => {
+    this.drizzle.transaction((tx) => {
       if (allNewCustomContent.length > 0) {
-        await tx
-          .deleteFrom('customShowContent')
-          .where('customShowContent.customShowUuid', '=', customShowId)
-          .execute();
+        tx.delete(CustomShowContent)
+          .where(eq(CustomShowContent.customShowUuid, customShowId))
+          .run();
         for (const contentChunk of chunk(allNewCustomContent, 1_000)) {
-          await tx
-            .insertInto('customShowContent')
-            .values(contentChunk)
-            .execute();
+          tx.insert(CustomShowContent).values(contentChunk).run();
         }
       }
     });

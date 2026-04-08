@@ -1,14 +1,14 @@
 import { seq } from '@tunarr/shared/util';
 import type { SearchFilterValueNode } from '@tunarr/types/schemas';
 import type { Dictionary } from 'ts-essentials';
-import type { MediaSourceLibraryOrm } from '../../db/schema/MediaSourceLibrary.ts';
+import type { MediaSourceLibrary } from '../../db/schema/MediaSourceLibrary.ts';
 import { groupByUniq } from '../../util/index.ts';
 import type { SearchFilterValueMutator } from './SearchFilterValueMutator.ts';
 
 export class LibraryNameSearchMutator implements SearchFilterValueMutator {
-  private byName!: Dictionary<MediaSourceLibraryOrm>;
+  private byName!: Dictionary<MediaSourceLibrary>;
 
-  constructor(libraries: MediaSourceLibraryOrm[]) {
+  constructor(libraries: MediaSourceLibrary[]) {
     this.byName = groupByUniq(libraries, (lib) => lib.name);
   }
 

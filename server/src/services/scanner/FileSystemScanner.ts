@@ -1,4 +1,4 @@
-import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.js';
+import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
 import { seq } from '@tunarr/shared/util';
 import type { MediaItem, MediaStream } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -553,7 +553,7 @@ export abstract class FileSystemScanner {
 
 export type LocalScanContext = {
   mediaSource: MediaSourceWithRelations;
-  library: MediaSourceLibraryOrm;
+  library: MediaSourceLibrary;
   force: boolean;
   percentMin: number;
   percentCompleteMultiplier: number;

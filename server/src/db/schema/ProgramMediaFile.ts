@@ -1,7 +1,6 @@
-import type { InferSelectModel } from 'drizzle-orm';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { Insertable } from 'kysely';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
 import { LocalMediaFolder } from './LocalMediaFolder.ts';
 import { ProgramVersion } from './ProgramVersion.ts';
@@ -40,4 +39,4 @@ export const ProgramMediaFileRelations = relations(
 
 export type ProgramMediaFileTable = KyselifyBetter<typeof ProgramMediaFile>;
 export type ProgramMediaFile = InferSelectModel<typeof ProgramMediaFile>;
-export type NewProgramMediaFile = Insertable<ProgramMediaFileTable>;
+export type NewProgramMediaFile = InferInsertModel<typeof ProgramMediaFile>;

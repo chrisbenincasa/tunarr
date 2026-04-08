@@ -36,7 +36,7 @@ export interface IFillerListDB {
     id: string,
   ): Promise<Array<{ number: number; name: string }>>;
 
-  deleteFiller(id: string): Promise<void>;
+  deleteFiller(id: string): void;
 
   getAllFillerIds(): Promise<string[]>;
 

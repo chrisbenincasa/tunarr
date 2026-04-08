@@ -17,7 +17,6 @@ import { KEYS } from '../types/inject.ts';
 import { Maybe } from '../types/util.ts';
 import { groupByUniq, isDefined } from '../util/index.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
-import { booleanToNumber } from '../util/sqliteUtil.ts';
 
 @injectable()
 export class MediaSourceLibraryRefresher {
@@ -117,7 +116,7 @@ export class MediaSourceLibraryRefresher {
         // Checked above
         mediaType: this.plexLibraryTypeToTunarrType(plexLibrary)!,
         uuid: v4(),
-        enabled: booleanToNumber(false),
+        enabled: false,
         name: plexLibrary.title,
       } satisfies NewMediaSourceLibrary);
     }
@@ -147,7 +146,7 @@ export class MediaSourceLibraryRefresher {
       mediaSource.uuid,
     );
 
-    await this.mediaSourceDB.updateLibraries({
+    this.mediaSourceDB.updateLibraries({
       addedLibraries: librariesToAdd,
       deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
       updatedLibraries: librariesToUpdate,
@@ -225,7 +224,7 @@ export class MediaSourceLibraryRefresher {
           jellyfinLibrary.CollectionType,
         )!,
         uuid: v4(),
-        enabled: booleanToNumber(false),
+        enabled: false,
         name: jellyfinLibrary.Name ?? '',
       } satisfies NewMediaSourceLibrary);
     }
@@ -253,7 +252,7 @@ export class MediaSourceLibraryRefresher {
       mediaSource.uuid,
     );
 
-    await this.mediaSourceDB.updateLibraries({
+    this.mediaSourceDB.updateLibraries({
       addedLibraries: librariesToAdd,
       deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
       updatedLibraries: [],
@@ -315,7 +314,7 @@ export class MediaSourceLibraryRefresher {
           embyLibrary.CollectionType,
         )!,
         uuid: v4(),
-        enabled: booleanToNumber(false),
+        enabled: false,
         name: embyLibrary.Name ?? '',
       } satisfies NewMediaSourceLibrary);
     }
@@ -331,7 +330,7 @@ export class MediaSourceLibraryRefresher {
       mediaSource.uuid,
     );
 
-    await this.mediaSourceDB.updateLibraries({
+    this.mediaSourceDB.updateLibraries({
       addedLibraries: librariesToAdd,
       deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
       updatedLibraries: [],
