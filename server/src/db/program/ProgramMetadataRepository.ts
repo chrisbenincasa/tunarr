@@ -30,7 +30,7 @@ import type { DrizzleDBAccess } from '../schema/index.ts';
 export class ProgramMetadataRepository {
   constructor(@inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess) {}
 
-  async upsertArtwork(artwork: NewArtwork[]) {
+  upsertArtwork(artwork: NewArtwork[]) {
     if (artwork.length === 0) {
       return;
     }
@@ -48,19 +48,19 @@ export class ProgramMetadataRepository {
       (art) => art.creditId,
     );
 
-    return await this.drizzleDB.transaction(async (tx) => {
+    return this.drizzleDB.transaction((tx) => {
       for (const batch of chunk(keys(programArt), 50)) {
-        await tx.delete(Artwork).where(inArray(Artwork.programId, batch));
+        tx.delete(Artwork).where(inArray(Artwork.programId, batch)).run();
       }
       for (const batch of chunk(keys(groupArt), 50)) {
-        await tx.delete(Artwork).where(inArray(Artwork.groupingId, batch));
+        tx.delete(Artwork).where(inArray(Artwork.groupingId, batch)).run();
       }
       for (const batch of chunk(keys(creditArt), 50)) {
-        await tx.delete(Artwork).where(inArray(Artwork.creditId, batch));
+        tx.delete(Artwork).where(inArray(Artwork.creditId, batch)).run();
       }
       const inserted: Artwork[] = [];
       for (const batch of chunk(artwork, 50)) {
-        const batchResult = await this.drizzleDB
+        const batchResult = tx
           .insert(Artwork)
           .values(batch)
           .onConflictDoUpdate({
@@ -73,7 +73,8 @@ export class ProgramMetadataRepository {
               sourcePath: sql`excluded.source_path`,
             },
           })
-          .returning();
+          .returning()
+          .all();
         inserted.push(...batchResult);
       }
       return inserted;
@@ -126,20 +127,20 @@ export class ProgramMetadataRepository {
       });
     }
 
-    return this.drizzleDB.transaction(async (tx) => {
+    return this.drizzleDB.transaction((tx) => {
       const col =
         entityType === 'grouping' ? EntityGenre.groupId : EntityGenre.programId;
-      await tx.delete(EntityGenre).where(eq(col, joinId));
+      tx.delete(EntityGenre).where(eq(col, joinId)).run();
       if (newGenreNames.size > 0) {
-        await tx
-          .insert(Genre)
+        tx.insert(Genre)
           .values(
             [...newGenreNames.values()].map((name) => incomingByName[name]!),
           )
-          .onConflictDoNothing();
+          .onConflictDoNothing()
+          .run();
       }
       if (relations.length > 0) {
-        await tx.insert(EntityGenre).values(relations).onConflictDoNothing();
+        tx.insert(EntityGenre).values(relations).onConflictDoNothing().run();
       }
     });
   }
@@ -190,22 +191,22 @@ export class ProgramMetadataRepository {
       });
     }
 
-    return this.drizzleDB.transaction(async (tx) => {
+    return this.drizzleDB.transaction((tx) => {
       const col =
         entityType === 'grouping'
           ? StudioEntity.groupId
           : StudioEntity.programId;
-      await tx.delete(StudioEntity).where(eq(col, joinId));
+      tx.delete(StudioEntity).where(eq(col, joinId)).run();
       if (newStudioNames.size > 0) {
-        await tx
-          .insert(Studio)
+        tx.insert(Studio)
           .values(
             [...newStudioNames.values()].map((name) => incomingByName[name]!),
           )
-          .onConflictDoNothing();
+          .onConflictDoNothing()
+          .run();
       }
       if (relations.length > 0) {
-        await tx.insert(StudioEntity).values(relations).onConflictDoNothing();
+        tx.insert(StudioEntity).values(relations).onConflictDoNothing().run();
       }
     });
   }
@@ -257,24 +258,24 @@ export class ProgramMetadataRepository {
       });
     }
 
-    return this.drizzleDB.transaction(async (tx) => {
+    return this.drizzleDB.transaction((tx) => {
       const col =
         entityType === 'grouping'
           ? TagRelations.groupingId
           : TagRelations.programId;
-      await tx
-        .delete(TagRelations)
-        .where(and(eq(col, joinId), eq(TagRelations.source, 'media')));
+      tx.delete(TagRelations)
+        .where(and(eq(col, joinId), eq(TagRelations.source, 'media')))
+        .run();
       if (newTagNames.size > 0) {
-        await tx
-          .insert(Tag)
+        tx.insert(Tag)
           .values(
             [...newTagNames.values()].map((name) => incomingByName[name]!),
           )
-          .onConflictDoNothing();
+          .onConflictDoNothing()
+          .run();
       }
       if (relations.length > 0) {
-        await tx.insert(TagRelations).values(relations).onConflictDoNothing();
+        tx.insert(TagRelations).values(relations).onConflictDoNothing().run();
       }
     });
   }
@@ -371,45 +372,45 @@ export class ProgramMetadataRepository {
         updates.push(existing);
       }
 
-      await this.drizzleDB.transaction(async (tx) => {
+      this.drizzleDB.transaction((tx) => {
         if (inserts.length > 0) {
-          await tx.insert(ProgramSubtitles).values(inserts);
+          tx.insert(ProgramSubtitles).values(inserts).run();
         }
         if (removes.length > 0) {
-          await tx.delete(ProgramSubtitles).where(
+          tx.delete(ProgramSubtitles).where(
             inArray(
               ProgramSubtitles.uuid,
               removes.map((s) => s.uuid),
             ),
-          );
+          ).run();
         }
 
         if (updates.length > 0) {
           for (const update of updates) {
-            await tx
-              .update(ProgramSubtitles)
+            tx.update(ProgramSubtitles)
               .set(update)
-              .where(eq(ProgramSubtitles.uuid, update.uuid));
+              .where(eq(ProgramSubtitles.uuid, update.uuid))
+              .run();
           }
         }
 
-        await tx
-          .delete(ProgramSubtitles)
+        tx.delete(ProgramSubtitles)
           .where(
             and(
               eq(ProgramSubtitles.subtitleType, 'sidecar'),
               eq(ProgramSubtitles.programId, programId),
             ),
-          );
+          )
+          .run();
 
         if (incomingExternal.length > 0) {
-          await tx.insert(ProgramSubtitles).values(incomingExternal);
+          tx.insert(ProgramSubtitles).values(incomingExternal).run();
         }
       });
     }
   }
 
-  async upsertCredits(credits: NewCredit[]) {
+  upsertCredits(credits: NewCredit[]) {
     if (credits.length === 0) {
       return;
     }
@@ -423,19 +424,20 @@ export class ProgramMetadataRepository {
       (credit) => credit.groupingId,
     );
 
-    return await this.drizzleDB.transaction(async (tx) => {
+    return this.drizzleDB.transaction((tx) => {
       for (const batch of chunk(keys(programCredits), 50)) {
-        await tx.delete(Credit).where(inArray(Credit.programId, batch));
+        tx.delete(Credit).where(inArray(Credit.programId, batch)).run();
       }
       for (const batch of chunk(keys(groupCredits), 50)) {
-        await tx.delete(Credit).where(inArray(Credit.groupingId, batch));
+        tx.delete(Credit).where(inArray(Credit.groupingId, batch)).run();
       }
       const inserted: Credit[] = [];
       for (const batch of chunk(credits, 50)) {
-        const batchResult = await this.drizzleDB
+        const batchResult = tx
           .insert(Credit)
           .values(batch)
-          .returning();
+          .returning()
+          .all();
         inserted.push(...batchResult);
       }
       return inserted;

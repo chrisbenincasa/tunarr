@@ -183,7 +183,6 @@ const test = baseTest.extend<Fixture>({
     );
     const upsertRepo = new ProgramUpsertRepository(
       logger,
-      dbAccess.getKyselyDatabase(':memory:')!,
       dbAccess.getConnection(':memory:')!.drizzle!,
       mockTaskFactory,
       mockTaskFactory,

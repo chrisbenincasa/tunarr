@@ -1,5 +1,3 @@
-import { makeKyselyMigrationFromSqlFile } from './util.ts';
+import { makeMigrationFromSqlFile } from './util.ts';
 
-export default makeKyselyMigrationFromSqlFile(
-  './sql/0023_powerful_silvermane.sql',
-);
+export default makeMigrationFromSqlFile('./sql/0023_powerful_silvermane.sql');

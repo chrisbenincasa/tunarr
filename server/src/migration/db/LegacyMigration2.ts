@@ -1,3 +1,5 @@
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
+
 export default {
   async up(): Promise<void> {
     // DROP INDEX IF EXISTS `filler_show_content_filler_show_uuid_program_uuid_index_unique`;
@@ -48,4 +50,5 @@ export default {
     //   .addColumn('index', 'integer', (col) => col.notNull())
     //   .execute();
   },
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

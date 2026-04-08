@@ -1,5 +1,3 @@
-import { makeKyselyMigrationFromSqlFile } from './util.ts';
+import { makeMigrationFromSqlFile } from './util.ts';
 
-export default makeKyselyMigrationFromSqlFile(
-  './sql/0017_glossy_lorna_dane.sql',
-);
+export default makeMigrationFromSqlFile('./sql/0017_glossy_lorna_dane.sql');

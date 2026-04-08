@@ -1,3 +1,3 @@
-import { makeKyselyMigrationFromSqlFile } from './util.ts';
+import { makeMigrationFromSqlFile } from './util.ts';
 
-export default makeKyselyMigrationFromSqlFile('./sql/0015_cuddly_midnight.sql');
+export default makeMigrationFromSqlFile('./sql/0015_cuddly_midnight.sql');

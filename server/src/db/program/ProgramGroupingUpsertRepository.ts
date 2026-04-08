@@ -15,7 +15,6 @@ import type { InsertResult, Kysely } from 'kysely';
 import {
   chunk,
   compact,
-  head,
   isNil,
   keys,
   omit,
@@ -123,13 +122,13 @@ export class ProgramGroupingUpsertRepository {
       for (const externalId of newGroupingAndRelations.externalIds) {
         externalId.groupUuid = entity.uuid;
       }
-      entity = await this.drizzleDB.transaction(async (tx) => {
-        const updated = await this.updateProgramGrouping(
+      entity = this.drizzleDB.transaction((tx) => {
+        const updated = this.updateProgramGrouping(
           newGroupingAndRelations,
           entity!,
           tx,
         );
-        const upsertedExternalIds = await this.updateProgramGroupingExternalIds(
+        const upsertedExternalIds = this.updateProgramGroupingExternalIds(
           entity!.externalIds,
           externalIds,
           tx,
@@ -142,20 +141,19 @@ export class ProgramGroupingUpsertRepository {
 
       wasUpdated = true;
     } else if (!entity) {
-      entity = await this.drizzleDB.transaction(async (tx) => {
-        const grouping = head(
-          await tx
-            .insert(ProgramGrouping)
-            .values(omit(dao, 'externalIds'))
-            .returning(),
-        )!;
+      entity = this.drizzleDB.transaction((tx) => {
+        const grouping = tx
+          .insert(ProgramGrouping)
+          .values(omit(dao, 'externalIds'))
+          .returning()
+          .get();
         const insertedExternalIds: ProgramGroupingExternalIdOrm[] = [];
         if (externalIds.length > 0) {
           insertedExternalIds.push(
-            ...(await this.upsertProgramGroupingExternalIdsChunkOrm(
+            ...this.upsertProgramGroupingExternalIdsChunkOrm(
               externalIds,
               tx,
-            )),
+            ),
           );
         }
 
@@ -178,11 +176,11 @@ export class ProgramGroupingUpsertRepository {
         artwork.groupingId = entity.uuid;
       });
 
-      await this.metadataRepo.upsertCredits(
+      this.metadataRepo.upsertCredits(
         newGroupingAndRelations.credits.map(({ credit }) => credit),
       );
 
-      await this.metadataRepo.upsertArtwork(
+      this.metadataRepo.upsertArtwork(
         newGroupingAndRelations.artwork.concat(
           newGroupingAndRelations.credits.flatMap(({ artwork }) => artwork),
         ),
@@ -248,11 +246,11 @@ export class ProgramGroupingUpsertRepository {
       .then((result) => result?.grouping ?? undefined);
   }
 
-  private async updateProgramGrouping(
+  private updateProgramGrouping(
     { programGrouping: incoming }: NewProgramGroupingWithRelations,
     existing: ProgramGroupingOrmWithRelations,
     tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
-  ): Promise<ProgramGroupingOrm> {
+  ): ProgramGroupingOrm {
     const update: NewProgramGroupingOrm = {
       ...omit(existing, 'externalIds'),
       index: incoming.index,
@@ -275,21 +273,20 @@ export class ProgramGroupingUpsertRepository {
       state: incoming.state,
     };
 
-    return head(
-      await tx
-        .update(ProgramGrouping)
-        .set(update)
-        .where(eq(ProgramGrouping.uuid, existing.uuid))
-        .limit(1)
-        .returning(),
-    )!;
+    return tx
+      .update(ProgramGrouping)
+      .set(update)
+      .where(eq(ProgramGrouping.uuid, existing.uuid))
+      .limit(1)
+      .returning()
+      .get();
   }
 
-  private async updateProgramGroupingExternalIds(
+  private updateProgramGroupingExternalIds(
     existingIds: ProgramGroupingExternalId[],
     newIds: NewSingleOrMultiProgramGroupingExternalId[],
     tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
-  ): Promise<ProgramGroupingExternalIdOrm[]> {
+  ): ProgramGroupingExternalIdOrm[] {
     devAssert(
       uniq(seq.collect(existingIds, (id) => id.mediaSourceId)).length <= 1,
     );
@@ -326,52 +323,48 @@ export class ProgramGroupingUpsertRepository {
     const deletedIds = [...deletedUniqueKeys.values()].map(
       (key) => existingByUniqueId[key]!,
     );
-    await Promise.all(
-      chunk(deletedIds, 100).map((idChunk) => {
-        const clauses = idChunk.map((id) =>
-          and(
-            id.mediaSourceId
-              ? eq(ProgramGroupingExternalId.mediaSourceId, id.mediaSourceId)
-              : dbIsNull(ProgramGroupingExternalId.mediaSourceId),
-            id.libraryId
-              ? eq(ProgramGroupingExternalId.libraryId, id.libraryId)
-              : dbIsNull(ProgramGroupingExternalId.libraryId),
-            eq(ProgramGroupingExternalId.externalKey, id.externalKey),
-            id.externalSourceId
-              ? eq(
-                  ProgramGroupingExternalId.externalSourceId,
-                  id.externalSourceId,
-                )
-              : dbIsNull(ProgramGroupingExternalId.externalSourceId),
-            eq(ProgramGroupingExternalId.sourceType, id.sourceType),
-          ),
-        );
+    for (const idChunk of chunk(deletedIds, 100)) {
+      const clauses = idChunk.map((id) =>
+        and(
+          id.mediaSourceId
+            ? eq(ProgramGroupingExternalId.mediaSourceId, id.mediaSourceId)
+            : dbIsNull(ProgramGroupingExternalId.mediaSourceId),
+          id.libraryId
+            ? eq(ProgramGroupingExternalId.libraryId, id.libraryId)
+            : dbIsNull(ProgramGroupingExternalId.libraryId),
+          eq(ProgramGroupingExternalId.externalKey, id.externalKey),
+          id.externalSourceId
+            ? eq(
+                ProgramGroupingExternalId.externalSourceId,
+                id.externalSourceId,
+              )
+            : dbIsNull(ProgramGroupingExternalId.externalSourceId),
+          eq(ProgramGroupingExternalId.sourceType, id.sourceType),
+        ),
+      );
 
-        return tx
-          .delete(ProgramGroupingExternalId)
-          .where(or(...clauses))
-          .execute();
-      }),
-    );
+      tx
+        .delete(ProgramGroupingExternalId)
+        .where(or(...clauses))
+        .run();
+    }
 
     const addedIds = [...addedUniqueKeys.union(updatedKeys).values()].map(
       (key) => newByUniqueId[key]!,
     );
 
-    return await Promise.all(
-      chunk(addedIds, 100).map((idChunk) =>
-        this.upsertProgramGroupingExternalIdsChunkOrm(idChunk, tx),
-      ),
-    ).then((_) => _.flat());
+    return chunk(addedIds, 100).flatMap((idChunk) =>
+      this.upsertProgramGroupingExternalIdsChunkOrm(idChunk, tx),
+    );
   }
 
-  async upsertProgramGroupingExternalIdsChunkOrm(
+  upsertProgramGroupingExternalIdsChunkOrm(
     ids: (
       | NewSingleOrMultiProgramGroupingExternalId
       | NewProgramGroupingExternalId
     )[],
     tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
-  ): Promise<ProgramGroupingExternalIdOrm[]> {
+  ): ProgramGroupingExternalIdOrm[] {
     if (ids.length === 0) {
       return [];
     }
@@ -380,11 +373,11 @@ export class ProgramGroupingUpsertRepository {
       isValidSingleExternalIdType(id.sourceType),
     );
 
-    const promises: Promise<ProgramGroupingExternalIdOrm[]>[] = [];
+    const results: ProgramGroupingExternalIdOrm[] = [];
 
     if (singles.length > 0) {
-      promises.push(
-        tx
+      results.push(
+        ...tx
           .insert(ProgramGroupingExternalId)
           .values(singles.map(toInsertableProgramGroupingExternalId))
           .onConflictDoUpdate({
@@ -401,13 +394,13 @@ export class ProgramGroupingUpsertRepository {
             },
           })
           .returning()
-          .execute(),
+          .all(),
       );
     }
 
     if (multiples.length > 0) {
-      promises.push(
-        tx
+      results.push(
+        ...tx
           .insert(ProgramGroupingExternalId)
           .values(multiples.map(toInsertableProgramGroupingExternalId))
           .onConflictDoUpdate({
@@ -425,11 +418,11 @@ export class ProgramGroupingUpsertRepository {
             },
           })
           .returning()
-          .execute(),
+          .all(),
       );
     }
 
-    return (await Promise.all(promises)).flat();
+    return results;
   }
 
   async upsertProgramGroupingExternalIdsChunk(

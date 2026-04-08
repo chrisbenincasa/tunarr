@@ -21,5 +21,5 @@ export interface ITranscodeConfigDB {
     Result<TranscodeConfigOrm, TranscodeConfigNotFoundError | WrappedError>
   >;
   updateConfig(id: string, updatedConfig: TranscodeConfig): Promise<void>;
-  deleteConfig(id: string): Promise<void>;
+  deleteConfig(id: string): void;
 }

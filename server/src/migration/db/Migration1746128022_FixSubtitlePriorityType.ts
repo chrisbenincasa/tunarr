@@ -1,6 +1,4 @@
-import { type Kysely, CompiledQuery } from 'kysely';
-import { isNonEmptyString } from '../../util/index.ts';
-import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
+import { makeMigrationFromSqlString } from './util.ts';
 
 const expr = String.raw`
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
@@ -36,17 +34,4 @@ DROP TABLE "custom_show_subtitle_preferences";--> statement-breakpoint
 ALTER TABLE "__new_custom_show_subtitle_preferences" RENAME TO "custom_show_subtitle_preferences";--> statement-breakpoint
 CREATE INDEX "custom_show_priority_index" ON "custom_show_subtitle_preferences" ("custom_show_id","priority");
 `;
-export default {
-  fullCopy: true,
-  up: async (db: Kysely<unknown>) => {
-    const queries = expr
-      .split('--> statement-breakpoint')
-      .map((s) => s.trim())
-      .filter(isNonEmptyString)
-      .map((s) => CompiledQuery.raw(s));
-
-    for (const query of queries) {
-      await db.executeQuery(query);
-    }
-  },
-} satisfies TunarrDatabaseMigration;
+export default makeMigrationFromSqlString(expr, true);

@@ -56,7 +56,7 @@ import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsComma
 import { RegenerateChannelLineupCommand } from '../commands/RegenerateChannelLineupCommand.ts';
 import { container } from '../container.ts';
 import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
-import type { LegacyChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
+import type { ChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
 import type { SessionType } from '../stream/Session.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams } from '../types/schemas.ts';
@@ -159,7 +159,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       try {
         const channelAndLineup =
-          await req.serverCtx.channelDB.loadChannelAndLineup(req.params.id);
+          await req.serverCtx.channelDB.loadChannelAndLineupOrm(req.params.id);
 
         if (!isNil(channelAndLineup)) {
           // TODO: This is super gnarly and we're doing this sorta custom everywhere.
@@ -217,7 +217,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const body: CreateChannelRequest = req.body;
-      let insertResult: Result<LegacyChannelAndLineup>;
+      let insertResult: Result<ChannelAndLineup>;
       switch (body.type) {
         case 'copy':
           insertResult = await Result.attemptAsync(() =>

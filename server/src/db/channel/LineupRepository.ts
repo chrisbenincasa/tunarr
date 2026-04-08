@@ -70,7 +70,10 @@ import {
 import { SchemaBackedDbAdapter } from '../json/SchemaBackedJsonDBAdapter.ts';
 import { calculateStartTimeOffsets } from '../lineupUtil.ts';
 import { Channel, ChannelOrm } from '../schema/Channel.ts';
-import { NewChannelProgram } from '../schema/ChannelPrograms.ts';
+import {
+  ChannelPrograms,
+  NewChannelProgram,
+} from '../schema/ChannelPrograms.ts';
 import { DB } from '../schema/db.ts';
 import { DrizzleDBAccess } from '../schema/index.ts';
 import { ChannelOrmWithPrograms } from '../schema/derivedTypes.ts';
@@ -86,7 +89,7 @@ import {
 } from '../../util/index.ts';
 import { typedProperty } from '@/types/path.js';
 import { globalOptions } from '@/globals.js';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray, notInArray } from 'drizzle-orm';
 import { chunk } from 'lodash-es';
 
 // Module-level cache shared within this module
@@ -343,17 +346,17 @@ export class LineupRepository {
   async setChannelPrograms(
     channel: Channel,
     lineup: readonly LineupItem[],
-  ): Promise<Channel | null>;
+  ): Promise<ChannelOrm | null>;
   async setChannelPrograms(
     channel: string | Channel,
     lineup: readonly LineupItem[],
     startTime?: number,
-  ): Promise<Channel | null>;
+  ): Promise<ChannelOrm | null>;
   async setChannelPrograms(
     channel: string | Channel,
     lineup: readonly LineupItem[],
     startTime?: number,
-  ): Promise<Channel | null> {
+  ): Promise<ChannelOrm | null> {
     const loadedChannel = await run(async () => {
       if (isString(channel)) {
         return this.db
@@ -372,38 +375,38 @@ export class LineupRepository {
 
     const allIds = uniq(map(filter(lineup, isContentItem), 'id'));
 
-    return await this.db.transaction().execute(async (tx) => {
-      if (!isUndefined(startTime)) {
-        loadedChannel.startTime = startTime;
-      }
-      loadedChannel.duration = sumBy(lineup, typedProperty('durationMs'));
-      const updatedChannel = await tx
-        .updateTable('channel')
-        .where('channel.uuid', '=', loadedChannel.uuid)
-        .set('duration', sumBy(lineup, typedProperty('durationMs')))
-        .$if(isDefined(startTime), (_) => _.set('startTime', startTime!))
-        .returningAll()
-        .executeTakeFirst();
+    return this.drizzleDB.transaction((tx) => {
+      const updatedChannel = tx
+        .update(Channel)
+        .set({
+          duration: sumBy(lineup, typedProperty('durationMs')),
+          startTime: isDefined(startTime) ? startTime : undefined,
+        })
+        .where(eq(Channel.uuid, loadedChannel.uuid))
+        .returning()
+        .get();
 
       for (const idChunk of chunk(allIds, 500)) {
-        await tx
-          .deleteFrom('channelPrograms')
-          .where('channelUuid', '=', loadedChannel.uuid)
-          .where('programUuid', 'not in', idChunk)
-          .execute();
+        tx.delete(ChannelPrograms)
+          .where(
+            and(
+              eq(ChannelPrograms.channelUuid, loadedChannel.uuid),
+              notInArray(ChannelPrograms.programUuid, idChunk),
+            ),
+          )
+          .run();
       }
 
       for (const idChunk of chunk(allIds, 500)) {
-        await tx
-          .insertInto('channelPrograms')
+        tx.insert(ChannelPrograms)
           .values(
             map(idChunk, (id) => ({
               programUuid: id,
               channelUuid: loadedChannel.uuid,
             })),
           )
-          .onConflict((oc) => oc.doNothing())
-          .executeTakeFirst();
+          .onConflictDoNothing()
+          .run();
       }
 
       return updatedChannel ?? null;
@@ -771,16 +774,14 @@ export class LineupRepository {
       return null;
     }
 
-    const updateChannel = async (lineup: readonly LineupItem[]) => {
-      return await this.db.transaction().execute(async (tx) => {
-        await tx
-          .updateTable('channel')
-          .where('channel.uuid', '=', id)
+    const updateChannel = (lineup: readonly LineupItem[]) => {
+      return this.drizzleDB.transaction((tx) => {
+        tx.update(Channel)
           .set({
             duration: sumBy(lineup, typedProperty('durationMs')),
           })
-          .limit(1)
-          .executeTakeFirstOrThrow();
+          .where(eq(Channel.uuid, id))
+          .run();
 
         const allNewIds = new Set([
           ...uniq(map(filter(lineup, isContentItem), (p) => p.id)),
@@ -816,16 +817,21 @@ export class LineupRepository {
           );
 
           if (!isEmpty(removes)) {
-            await tx
-              .deleteFrom('channelPrograms')
-              .where('channelPrograms.programUuid', 'in', map(removes, 'id'))
-              .where('channelPrograms.channelUuid', '=', id)
-              .execute();
+            tx.delete(ChannelPrograms)
+              .where(
+                and(
+                  inArray(
+                    ChannelPrograms.programUuid,
+                    map(removes, typedProperty('id')),
+                  ),
+                  eq(ChannelPrograms.channelUuid, id),
+                ),
+              )
+              .run();
           }
 
           if (!isEmpty(adds)) {
-            await tx
-              .insertInto('channelPrograms')
+            tx.insert(ChannelPrograms)
               .values(
                 map(
                   adds,
@@ -836,7 +842,7 @@ export class LineupRepository {
                     }) satisfies NewChannelProgram,
                 ),
               )
-              .execute();
+              .run();
           }
         }
         return channel;
@@ -910,7 +916,7 @@ export class LineupRepository {
         }
       });
 
-      const updatedChannel = await this.timer.timeAsync('updateChannel', () =>
+      const updatedChannel = this.timer.timeSync('updateChannel', () =>
         updateChannel(newLineupItems),
       );
 
@@ -971,7 +977,7 @@ export class LineupRepository {
 
       const newLineup = await createNewLineup(programs);
 
-      const updatedChannel = await updateChannel(newLineup);
+      const updatedChannel = updateChannel(newLineup);
       await this.saveLineup(id, {
         items: newLineup,
         schedule: req.schedule,

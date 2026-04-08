@@ -89,7 +89,9 @@ export interface IChannelDB {
     uuid: string,
   ): Promise<Maybe<ProgramOrmWithExternalIds>>;
 
-  saveChannel(createReq: SaveableChannel): Promise<ChannelAndLineup<Channel>>;
+  saveChannel(
+    createReq: SaveableChannel,
+  ): Promise<ChannelAndLineup<ChannelOrm>>;
 
   deleteChannel(
     channelId: string,
@@ -99,11 +101,11 @@ export interface IChannelDB {
   updateChannel(
     id: string,
     updateReq: SaveableChannel,
-  ): Promise<ChannelAndLineup<Channel>>;
+  ): Promise<ChannelAndLineup>;
 
   updateChannelDuration(id: string, duration: number): Promise<number>;
 
-  copyChannel(id: string): Promise<ChannelAndLineup<Channel>>;
+  copyChannel(id: string): Promise<ChannelAndLineup<ChannelOrm>>;
 
   loadLineup(channelId: string, forceRead?: boolean): Promise<Lineup>;
 
@@ -121,7 +123,7 @@ export interface IChannelDB {
   replaceChannelPrograms(
     channelId: string,
     programIds: string[],
-  ): Promise<void>;
+  ): void;
 
   updateLineup(
     id: string,
@@ -173,12 +175,12 @@ export interface IChannelDB {
   setChannelPrograms(
     channel: Channel,
     lineup: readonly LineupItem[],
-  ): Promise<Channel | null>;
+  ): Promise<ChannelOrm | null>;
   setChannelPrograms(
     channel: string | Channel,
     lineup: readonly LineupItem[],
     startTime?: number,
-  ): Promise<Channel | null>;
+  ): Promise<ChannelOrm | null>;
 
   updateChannelStartTime(id: string, newTime: number): Promise<void>;
 

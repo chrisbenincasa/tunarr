@@ -1,6 +1,4 @@
-import { CompiledQuery } from 'kysely';
-import { isNonEmptyString } from '../../util/index.ts';
-import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
+import { makeMigrationFromSqlString } from './util.ts';
 
 const expr = String.raw`
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
@@ -57,17 +55,4 @@ CREATE INDEX "program_artist_uuid_index" ON "program" ("artist_uuid");--> statem
 CREATE UNIQUE INDEX "program_source_type_external_source_id_external_key_unique" ON "program" ("source_type","external_source_id","external_key");
 `;
 
-export default {
-  fullCopy: true,
-  async up(db) {
-    const queries = expr
-      .split('--> statement-breakpoint')
-      .map((s) => s.trim())
-      .filter(isNonEmptyString)
-      .map((s) => CompiledQuery.raw(s));
-
-    for (const query of queries) {
-      await db.executeQuery(query);
-    }
-  },
-} satisfies TunarrDatabaseMigration;
+export default makeMigrationFromSqlString(expr, true);

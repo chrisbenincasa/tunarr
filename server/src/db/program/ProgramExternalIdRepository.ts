@@ -3,6 +3,7 @@ import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import { flatMapAsyncSeq, isNonEmptyString } from '../../util/index.ts';
 import { createExternalId } from '@tunarr/shared';
+import { and, eq, isNull as dbIsNull, isNotNull, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import { chunk, first, isEmpty, isNil, last, map, mapValues } from 'lodash-es';
@@ -16,9 +17,11 @@ import type {
   MinimalProgramExternalId,
   NewProgramExternalId,
   NewSingleOrMultiExternalId,
-  ProgramExternalId,
 } from '../schema/ProgramExternalId.ts';
-import { toInsertableProgramExternalId } from '../schema/ProgramExternalId.ts';
+import {
+  ProgramExternalId,
+  toInsertableProgramExternalId,
+} from '../schema/ProgramExternalId.ts';
 import type { MediaSourceId, RemoteSourceType } from '../schema/base.ts';
 import type { DB } from '../schema/db.ts';
 import type { ProgramWithRelationsOrm } from '../schema/derivedTypes.ts';
@@ -28,8 +31,7 @@ import { groupByUniq } from '../../util/index.ts';
 import type { RemoteMediaSourceType } from '../schema/MediaSource.ts';
 import type { ProgramDao } from '../schema/Program.ts';
 import type { Dictionary } from 'ts-essentials';
-import { groupBy, flatten, partition } from 'lodash-es';
-import { mapAsyncSeq } from '../../util/index.ts';
+import { groupBy, partition } from 'lodash-es';
 
 @injectable()
 export class ProgramExternalIdRepository {
@@ -262,37 +264,35 @@ export class ProgramExternalIdRepository {
     }
   }
 
-  async replaceProgramExternalId(
+  replaceProgramExternalId(
     programId: string,
     newExternalId: NewProgramExternalId,
     oldExternalId?: MinimalProgramExternalId,
   ) {
-    await this.db.transaction().execute(async (tx) => {
+    this.drizzleDB.transaction((tx) => {
       if (oldExternalId) {
-        await tx
-          .deleteFrom('programExternalId')
-          .where('programExternalId.programUuid', '=', programId)
+        tx.delete(ProgramExternalId)
           .where(
-            'programExternalId.externalKey',
-            '=',
-            oldExternalId.externalKey,
+            and(
+              eq(ProgramExternalId.programUuid, programId),
+              eq(ProgramExternalId.externalKey, oldExternalId.externalKey),
+              eq(
+                ProgramExternalId.externalSourceId,
+                oldExternalId.externalSourceId!,
+              ),
+              eq(ProgramExternalId.sourceType, oldExternalId.sourceType),
+            ),
           )
-          .where(
-            'programExternalId.externalSourceId',
-            '=',
-            oldExternalId.externalSourceId,
-          )
-          .where('programExternalId.sourceType', '=', oldExternalId.sourceType)
-          .execute();
+          .run();
       }
-      await tx.insertInto('programExternalId').values(newExternalId).execute();
+      tx.insert(ProgramExternalId).values(newExternalId).run();
     });
   }
 
-  async upsertProgramExternalIds(
+  upsertProgramExternalIds(
     externalIds: NewSingleOrMultiExternalId[],
     chunkSize: number = 100,
-  ): Promise<Dictionary<ProgramExternalId[]>> {
+  ): Dictionary<ProgramExternalId[]> {
     if (isEmpty(externalIds)) {
       return {};
     }
@@ -304,82 +304,71 @@ export class ProgramExternalIdRepository {
       (id) => id.type === 'single',
     );
 
-    let singleIdPromise: Promise<ProgramExternalId[]>;
-    if (!isEmpty(singles)) {
-      singleIdPromise = mapAsyncSeq(
-        chunk(singles, chunkSize),
-        (singleChunk) => {
-          return this.db.transaction().execute((tx) =>
-            tx
-              .insertInto('programExternalId')
-              .values(singleChunk.map(toInsertableProgramExternalId))
-              .onConflict((oc) =>
-                oc
-                  .columns(['programUuid', 'sourceType'])
-                  .where('mediaSourceId', 'is', null)
-                  .doUpdateSet((eb) => ({
-                    updatedAt: eb.ref('excluded.updatedAt'),
-                    externalFilePath: eb.ref('excluded.externalFilePath'),
-                    directFilePath: eb.ref('excluded.directFilePath'),
-                    programUuid: eb.ref('excluded.programUuid'),
-                  })),
-              )
-              .returningAll()
-              .execute(),
-          );
-        },
-      ).then(flatten);
-    } else {
-      singleIdPromise = Promise.resolve([]);
-    }
-
-    let multiIdPromise: Promise<ProgramExternalId[]>;
-    if (!isEmpty(multiples)) {
-      multiIdPromise = mapAsyncSeq(
-        chunk(multiples, chunkSize),
-        (multiChunk) => {
-          return this.db.transaction().execute((tx) =>
-            tx
-              .insertInto('programExternalId')
-              .values(multiChunk.map(toInsertableProgramExternalId))
-              .onConflict((oc) =>
-                oc
-                  .columns(['programUuid', 'sourceType', 'mediaSourceId'])
-                  .where('mediaSourceId', 'is not', null)
-                  .doUpdateSet((eb) => ({
-                    updatedAt: eb.ref('excluded.updatedAt'),
-                    externalFilePath: eb.ref('excluded.externalFilePath'),
-                    directFilePath: eb.ref('excluded.directFilePath'),
-                    programUuid: eb.ref('excluded.programUuid'),
-                  })),
-              )
-              .returningAll()
-              .execute(),
-          );
-        },
-      ).then(flatten);
-    } else {
-      multiIdPromise = Promise.resolve([]);
-    }
-
-    const [singleResult, multiResult] = await Promise.allSettled([
-      singleIdPromise,
-      multiIdPromise,
-    ]);
-
     const allExternalIds: ProgramExternalId[] = [];
-    if (singleResult.status === 'rejected') {
-      logger.error(singleResult.reason, 'Error saving external IDs');
-    } else {
-      logger.trace('Upserted %d external IDs', singleResult.value.length);
-      allExternalIds.push(...singleResult.value);
+
+    if (!isEmpty(singles)) {
+      try {
+        const singleResults = chunk(singles, chunkSize).flatMap(
+          (singleChunk) =>
+            this.drizzleDB.transaction((tx) =>
+              tx
+                .insert(ProgramExternalId)
+                .values(singleChunk.map(toInsertableProgramExternalId))
+                .onConflictDoUpdate({
+                  target: [
+                    ProgramExternalId.programUuid,
+                    ProgramExternalId.sourceType,
+                  ],
+                  targetWhere: dbIsNull(ProgramExternalId.mediaSourceId),
+                  set: {
+                    updatedAt: sql`excluded.updated_at`,
+                    externalFilePath: sql`excluded.external_file_path`,
+                    directFilePath: sql`excluded.direct_file_path`,
+                    programUuid: sql`excluded.program_uuid`,
+                  },
+                })
+                .returning()
+                .all(),
+            ),
+        );
+        logger.trace('Upserted %d external IDs', singleResults.length);
+        allExternalIds.push(...singleResults);
+      } catch (error) {
+        logger.error(error, 'Error saving external IDs');
+      }
     }
 
-    if (multiResult.status === 'rejected') {
-      logger.error(multiResult.reason, 'Error saving external IDs');
-    } else {
-      logger.trace('Upserted %d external IDs', multiResult.value.length);
-      allExternalIds.push(...multiResult.value);
+    if (!isEmpty(multiples)) {
+      try {
+        const multiResults = chunk(multiples, chunkSize).flatMap(
+          (multiChunk) =>
+            this.drizzleDB.transaction((tx) =>
+              tx
+                .insert(ProgramExternalId)
+                .values(multiChunk.map(toInsertableProgramExternalId))
+                .onConflictDoUpdate({
+                  target: [
+                    ProgramExternalId.programUuid,
+                    ProgramExternalId.sourceType,
+                    ProgramExternalId.mediaSourceId,
+                  ],
+                  targetWhere: isNotNull(ProgramExternalId.mediaSourceId),
+                  set: {
+                    updatedAt: sql`excluded.updated_at`,
+                    externalFilePath: sql`excluded.external_file_path`,
+                    directFilePath: sql`excluded.direct_file_path`,
+                    programUuid: sql`excluded.program_uuid`,
+                  },
+                })
+                .returning()
+                .all(),
+            ),
+        );
+        logger.trace('Upserted %d external IDs', multiResults.length);
+        allExternalIds.push(...multiResults);
+      } catch (error) {
+        logger.error(error, 'Error saving external IDs');
+      }
     }
 
     return groupBy(allExternalIds, (eid) => eid.programUuid);

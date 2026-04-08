@@ -244,18 +244,21 @@ export class ProgramDB implements IProgramDB {
     newExternalId: NewProgramExternalId,
     oldExternalId?: MinimalProgramExternalId,
   ): Promise<void> {
-    return this.externalIdRepo.replaceProgramExternalId(
+    this.externalIdRepo.replaceProgramExternalId(
       programId,
       newExternalId,
       oldExternalId,
     );
+    return Promise.resolve();
   }
 
   upsertProgramExternalIds(
     externalIds: NewSingleOrMultiExternalId[],
     chunkSize?: number,
   ): Promise<Dictionary<ProgramExternalId[]>> {
-    return this.externalIdRepo.upsertProgramExternalIds(externalIds, chunkSize);
+    return Promise.resolve(
+      this.externalIdRepo.upsertProgramExternalIds(externalIds, chunkSize),
+    );
   }
 
   upsertContentPrograms(
@@ -286,8 +289,8 @@ export class ProgramDB implements IProgramDB {
     }
   }
 
-  upsertArtwork(artwork: NewArtwork[]): Promise<void> {
-    return this.metadataRepo.upsertArtwork(artwork).then(() => {});
+  upsertArtwork(artwork: NewArtwork[]): void {
+    this.metadataRepo.upsertArtwork(artwork);
   }
 
   upsertProgramGroupingGenres(

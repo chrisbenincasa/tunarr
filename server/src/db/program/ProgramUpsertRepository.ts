@@ -25,9 +25,8 @@ import {
   untag,
 } from '@tunarr/types';
 import dayjs from 'dayjs';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { inject, injectable, interfaces } from 'inversify';
-import type { CaseWhenBuilder, Kysely, NotNull } from 'kysely';
-import { UpdateResult } from 'kysely';
 import {
   chunk,
   concat,
@@ -47,7 +46,6 @@ import {
   omit,
   orderBy,
   partition,
-  reduce,
   reject,
   round,
   some,
@@ -62,7 +60,6 @@ import {
   groupByUniqProp,
   isNonEmptyString,
   mapAsyncSeq,
-  mapToObj,
   unzip as myUnzip,
   programExternalIdString,
   run,
@@ -70,32 +67,32 @@ import {
 import { ProgramGroupingMinter } from '../converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../converters/ProgramMinter.ts';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.ts';
-import { ProgramUpsertFields } from '../programQueryHelpers.ts';
+import { caseWhen } from '../DrizzleSqlCaseWhen.ts';
+import { ProgramUpsertSetClause } from '../programQueryHelpers.ts';
 import type { NewArtwork } from '../schema/Artwork.ts';
 import type { NewCredit } from '../schema/Credit.ts';
 import type { NewGenre } from '../schema/Genre.ts';
 import type { MediaSourceOrm } from '../schema/MediaSource.ts';
-import type { MediaSourceLibraryOrm } from '../schema/MediaSourceLibrary.ts';
-import { type ProgramDao, ProgramType } from '../schema/Program.ts';
-import type {
-  NewProgramChapter,
+import type { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
+import { Program, type ProgramDao, ProgramType } from '../schema/Program.ts';
+import {
   ProgramChapter,
+  type NewProgramChapter,
 } from '../schema/ProgramChapter.ts';
 import type { NewSingleOrMultiExternalId } from '../schema/ProgramExternalId.ts';
 import { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
-import type {
-  NewProgramMediaFile,
+import {
   ProgramMediaFile,
+  type NewProgramMediaFile,
 } from '../schema/ProgramMediaFile.ts';
-import type {
-  NewProgramMediaStream,
+import {
   ProgramMediaStream,
+  type NewProgramMediaStream,
 } from '../schema/ProgramMediaStream.ts';
 import type { NewProgramSubtitles } from '../schema/ProgramSubtitles.ts';
-import type { ProgramVersion } from '../schema/ProgramVersion.ts';
+import { ProgramVersion } from '../schema/ProgramVersion.ts';
 import type { NewStudio } from '../schema/Studio.ts';
 import type { NewTag } from '../schema/Tag.ts';
-import type { DB } from '../schema/db.ts';
 import type {
   MediaSourceWithLibraries,
   NewProgramGroupingWithRelations,
@@ -124,20 +121,12 @@ type RelevantProgramWithHierarchy = {
   parentKey: string;
 };
 
-type ProgramRelationCaseBuilder = CaseWhenBuilder<
-  DB,
-  'program',
-  unknown,
-  string | null
->;
-
 @injectable()
 export class ProgramUpsertRepository {
   private timer: Timer;
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
-    @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
     @inject(autoFactoryKey(SavePlexProgramExternalIdsTask))
     private savePlexProgramExternalIdsTaskFactory: interfaces.AutoFactory<SavePlexProgramExternalIdsTask>,
@@ -267,7 +256,7 @@ export class ProgramUpsertRepository {
     this.logger.debug('Upserting %d programs', programsToPersist.length);
 
     const upsertedPrograms: MarkNonNullable<ProgramDao, 'mediaSourceId'>[] = [];
-    await this.timer.timeAsync('programUpsert', async () => {
+    this.timer.timeSync('programUpsert', () => {
       for (const chunkToInsert of chunk(
         programsToPersist,
         programUpsertBatchSize,
@@ -277,23 +266,21 @@ export class ProgramUpsertRepository {
         );
         try {
           upsertedPrograms.push(
-            ...(await this.db.transaction().execute((tx) =>
+            ...(this.drizzleDB.transaction((tx) =>
               tx
-                .insertInto('program')
+                .insert(Program)
                 .values(programsToUpsert)
-                .onConflict((oc) =>
-                  oc
-                    .columns(['sourceType', 'mediaSourceId', 'externalKey'])
-                    .doUpdateSet((eb) =>
-                      mapToObj(ProgramUpsertFields, (f) => ({
-                        [f.replace('excluded.', '')]: eb.ref(f),
-                      })),
-                    ),
-                )
-                .returningAll()
-                .$narrowType<{ mediaSourceId: NotNull }>()
-                .execute(),
-            )),
+                .onConflictDoUpdate({
+                  target: [
+                    Program.sourceType,
+                    Program.mediaSourceId,
+                    Program.externalKey,
+                  ],
+                  set: ProgramUpsertSetClause,
+                })
+                .returning()
+                .all(),
+            ) as MarkNonNullable<ProgramDao, 'mediaSourceId'>[]),
           );
         } catch (e) {
           this.logger.error(
@@ -328,7 +315,7 @@ export class ProgramUpsertRepository {
       (p) => p.sourceType === 'plex' || p.sourceType === 'jellyfin',
     );
 
-    await this.timer.timeAsync(
+    this.timer.timeSync(
       `upsert ${requiredExternalIds.length} external ids`,
       () =>
         this.externalIdRepo.upsertProgramExternalIds(requiredExternalIds, 200),
@@ -355,14 +342,16 @@ export class ProgramUpsertRepository {
         'UpsertExternalIds',
         dayjs().add(100),
         undefined,
-        AnonymousTask('UpsertExternalIds', () =>
-          this.timer.timeAsync(
+        AnonymousTask('UpsertExternalIds', () => {
+          this.timer.timeSync(
             `background external ID upsert (${backgroundExternalIds.length} ids)`,
             () =>
               this.externalIdRepo.upsertProgramExternalIds(
                 backgroundExternalIds,
               ),
-          ),
+          );
+          return Promise.resolve();
+        },
         ),
       );
     });
@@ -394,8 +383,6 @@ export class ProgramUpsertRepository {
       return [];
     }
 
-    const db = this.db;
-
     const requestsByCanonicalId = groupByUniq(
       requests,
       ({ program }) => program.canonicalId,
@@ -403,23 +390,21 @@ export class ProgramUpsertRepository {
 
     const result = await Promise.all(
       chunk(requests, programUpsertBatchSize).map(async (c) => {
-        const chunkResult = await db.transaction().execute((tx) =>
+        const chunkResult = this.drizzleDB.transaction((tx) =>
           tx
-            .insertInto('program')
+            .insert(Program)
             .values(c.map(({ program }) => program))
-            .onConflict((oc) =>
-              oc
-                .columns(['sourceType', 'mediaSourceId', 'externalKey'])
-                .doUpdateSet((eb) =>
-                  mapToObj(ProgramUpsertFields, (f) => ({
-                    [f.replace('excluded.', '')]: eb.ref(f),
-                  })),
-                ),
-            )
-            .returningAll()
-            .$narrowType<{ mediaSourceId: NotNull; canonicalId: NotNull }>()
-            .execute(),
-        );
+            .onConflictDoUpdate({
+              target: [
+                Program.sourceType,
+                Program.mediaSourceId,
+                Program.externalKey,
+              ],
+              set: ProgramUpsertSetClause,
+            })
+            .returning()
+            .all(),
+        ) as MarkNonNullable<ProgramDao, 'mediaSourceId' | 'canonicalId'>[];
 
         const allExternalIds = flatten(c.map((program) => program.externalIds));
         const versionsToInsert: NewProgramVersion[] = [];
@@ -476,13 +461,13 @@ export class ProgramUpsertRepository {
         }
 
         const externalIdsByProgramId =
-          await this.externalIdRepo.upsertProgramExternalIds(allExternalIds);
+          this.externalIdRepo.upsertProgramExternalIds(allExternalIds);
 
-        await this.upsertProgramVersions(versionsToInsert);
+        this.upsertProgramVersions(versionsToInsert);
 
-        await this.metadataRepo.upsertCredits(creditsToInsert);
+        this.metadataRepo.upsertCredits(creditsToInsert);
 
-        await this.metadataRepo.upsertArtwork(artworkToInsert);
+        this.metadataRepo.upsertArtwork(artworkToInsert);
 
         await this.metadataRepo.upsertSubtitles(subtitlesToInsert);
 
@@ -515,41 +500,40 @@ export class ProgramUpsertRepository {
     }
   }
 
-  private async upsertProgramVersions(versions: NewProgramVersion[]) {
+  private upsertProgramVersions(versions: NewProgramVersion[]) {
     if (versions.length === 0) {
       this.logger.warn('No program versions passed for item');
       return [];
     }
 
     const insertedVersions: ProgramVersion[] = [];
-    await this.db.transaction().execute(async (tx) => {
+    this.drizzleDB.transaction((tx) => {
       const byProgramId = groupByUniq(versions, (version) => version.programId);
       for (const batch of chunk(Object.entries(byProgramId), 50)) {
         const [programIds, versionBatch] = myUnzip(batch);
-        await tx
-          .deleteFrom('programVersion')
-          .where('programId', 'in', programIds)
-          .executeTakeFirstOrThrow();
+        tx.delete(ProgramVersion)
+          .where(inArray(ProgramVersion.programId, programIds))
+          .run();
 
-        const insertResult = await tx
-          .insertInto('programVersion')
+        const insertResult = tx
+          .insert(ProgramVersion)
           .values(
             versionBatch.map((version) =>
               omit(version, ['chapters', 'mediaStreams', 'mediaFiles']),
             ),
           )
-          .returningAll()
-          .execute();
+          .returning()
+          .all();
 
-        await this.upsertProgramMediaStreams(
+        this.upsertProgramMediaStreams(
           versionBatch.flatMap(({ mediaStreams }) => mediaStreams),
           tx,
         );
-        await this.upsertProgramChapters(
+        this.upsertProgramChapters(
           versionBatch.flatMap(({ chapters }) => chapters ?? []),
           tx,
         );
-        await this.upsertProgramMediaFiles(
+        this.upsertProgramMediaFiles(
           versionBatch.flatMap(({ mediaFiles }) => mediaFiles),
           tx,
         );
@@ -560,9 +544,9 @@ export class ProgramUpsertRepository {
     return insertedVersions;
   }
 
-  private async upsertProgramMediaStreams(
+  private upsertProgramMediaStreams(
     streams: NewProgramMediaStream[],
-    tx: Kysely<DB> = this.db,
+    tx: DrizzleDBAccess = this.drizzleDB,
   ) {
     if (streams.length === 0) {
       this.logger.warn('No media streams passed for version');
@@ -574,19 +558,19 @@ export class ProgramUpsertRepository {
     for (const batch of chunk(Object.entries(byVersionId), 50)) {
       const [_, streams] = myUnzip(batch);
       inserted.push(
-        ...(await tx
-          .insertInto('programMediaStream')
+        ...tx
+          .insert(ProgramMediaStream)
           .values(flatten(streams))
-          .returningAll()
-          .execute()),
+          .returning()
+          .all(),
       );
     }
     return inserted;
   }
 
-  private async upsertProgramChapters(
+  private upsertProgramChapters(
     chapters: NewProgramChapter[],
-    tx: Kysely<DB> = this.db,
+    tx: DrizzleDBAccess = this.drizzleDB,
   ) {
     if (chapters.length === 0) {
       return [];
@@ -597,19 +581,19 @@ export class ProgramUpsertRepository {
     for (const batch of chunk(Object.entries(byVersionId), 50)) {
       const [_, streams] = myUnzip(batch);
       inserted.push(
-        ...(await tx
-          .insertInto('programChapter')
+        ...tx
+          .insert(ProgramChapter)
           .values(flatten(streams))
-          .returningAll()
-          .execute()),
+          .returning()
+          .all(),
       );
     }
     return inserted;
   }
 
-  private async upsertProgramMediaFiles(
+  private upsertProgramMediaFiles(
     files: NewProgramMediaFile[],
-    tx: Kysely<DB> = this.db,
+    tx: DrizzleDBAccess = this.drizzleDB,
   ) {
     if (files.length === 0) {
       this.logger.warn('No media files passed for version');
@@ -621,11 +605,11 @@ export class ProgramUpsertRepository {
     for (const batch of chunk(Object.entries(byVersionId), 50)) {
       const [_, files] = myUnzip(batch);
       inserted.push(
-        ...(await tx
-          .insertInto('programMediaFile')
+        ...tx
+          .insert(ProgramMediaFile)
           .values(flatten(files))
-          .returningAll()
-          .execute()),
+          .returning()
+          .all(),
       );
     }
     return inserted;
@@ -675,7 +659,7 @@ export class ProgramUpsertRepository {
     upsertedPrograms: MarkNonNullable<ProgramDao, 'mediaSourceId'>[],
     programInfos: Record<string, MintedNewProgramInfo>,
     mediaSource: MediaSourceOrm,
-    library: MediaSourceLibraryOrm,
+    library: MediaSourceLibrary,
   ) {
     const grandparentRatingKeyToParentRatingKey: Record<
       string,
@@ -982,8 +966,8 @@ export class ProgramUpsertRepository {
     const hasUpdates = some(updatesByType, (updates) => updates.size > 0);
 
     if (hasUpdates) {
-      await this.timer.timeAsync('update program relations', () =>
-        this.db.transaction().execute(async (tx) => {
+      this.timer.timeSync('update program relations', () =>
+        this.drizzleDB.transaction((tx) => {
           const tvShowIdUpdates = [...updatesByType[ProgramGroupingType.Show]];
 
           const chunkSize = run(() => {
@@ -997,28 +981,28 @@ export class ProgramUpsertRepository {
             return DEFAULT_PROGRAM_GROUPING_UPDATE_CHUNK_SIZE;
           });
 
-          const updates: Promise<UpdateResult[]>[] = [];
-
           if (!isEmpty(tvShowIdUpdates)) {
             for (const idChunk of chunk(tvShowIdUpdates, chunkSize)) {
-              updates.push(
-                tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    tvShowUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr]!.tvShowUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.tvShowUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute(),
-              );
+              const first = idChunk[0]!;
+              const caseExpr = idChunk
+                .slice(1)
+                .reduce(
+                  (acc, curr) =>
+                    acc.when(
+                      eq(Program.uuid, curr),
+                      sql`${upsertedProgramById[curr]!.tvShowUuid}`,
+                    ),
+                  caseWhen(
+                    eq(Program.uuid, first),
+                    sql`${upsertedProgramById[first]!.tvShowUuid}`,
+                  ),
+                )
+                .else(Program.tvShowUuid);
+
+              tx.update(Program)
+                .set({ tvShowUuid: caseExpr })
+                .where(inArray(Program.uuid, idChunk))
+                .run();
             }
           }
 
@@ -1028,24 +1012,26 @@ export class ProgramUpsertRepository {
 
           if (!isEmpty(seasonIdUpdates)) {
             for (const idChunk of chunk(seasonIdUpdates, chunkSize)) {
-              updates.push(
-                tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    seasonUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr]!.seasonUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.seasonUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute(),
-              );
+              const first = idChunk[0]!;
+              const caseExpr = idChunk
+                .slice(1)
+                .reduce(
+                  (acc, curr) =>
+                    acc.when(
+                      eq(Program.uuid, curr),
+                      sql`${upsertedProgramById[curr]!.seasonUuid}`,
+                    ),
+                  caseWhen(
+                    eq(Program.uuid, first),
+                    sql`${upsertedProgramById[first]!.seasonUuid}`,
+                  ),
+                )
+                .else(Program.seasonUuid);
+
+              tx.update(Program)
+                .set({ seasonUuid: caseExpr })
+                .where(inArray(Program.uuid, idChunk))
+                .run();
             }
           }
 
@@ -1055,24 +1041,26 @@ export class ProgramUpsertRepository {
 
           if (!isEmpty(musicArtistUpdates)) {
             for (const idChunk of chunk(musicArtistUpdates, chunkSize)) {
-              updates.push(
-                tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    artistUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr]!.artistUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.artistUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute(),
-              );
+              const first = idChunk[0]!;
+              const caseExpr = idChunk
+                .slice(1)
+                .reduce(
+                  (acc, curr) =>
+                    acc.when(
+                      eq(Program.uuid, curr),
+                      sql`${upsertedProgramById[curr]!.artistUuid}`,
+                    ),
+                  caseWhen(
+                    eq(Program.uuid, first),
+                    sql`${upsertedProgramById[first]!.artistUuid}`,
+                  ),
+                )
+                .else(Program.artistUuid);
+
+              tx.update(Program)
+                .set({ artistUuid: caseExpr })
+                .where(inArray(Program.uuid, idChunk))
+                .run();
             }
           }
 
@@ -1082,28 +1070,28 @@ export class ProgramUpsertRepository {
 
           if (!isEmpty(musicAlbumUpdates)) {
             for (const idChunk of chunk(musicAlbumUpdates, chunkSize)) {
-              updates.push(
-                tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    albumUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr]!.albumUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.albumUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute(),
-              );
+              const first = idChunk[0]!;
+              const caseExpr = idChunk
+                .slice(1)
+                .reduce(
+                  (acc, curr) =>
+                    acc.when(
+                      eq(Program.uuid, curr),
+                      sql`${upsertedProgramById[curr]!.albumUuid}`,
+                    ),
+                  caseWhen(
+                    eq(Program.uuid, first),
+                    sql`${upsertedProgramById[first]!.albumUuid}`,
+                  ),
+                )
+                .else(Program.albumUuid);
+
+              tx.update(Program)
+                .set({ albumUuid: caseExpr })
+                .where(inArray(Program.uuid, idChunk))
+                .run();
             }
           }
-
-          await Promise.all(updates);
         }),
       );
     }

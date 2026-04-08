@@ -8,6 +8,7 @@ import type {
   WithUpdatedAt,
   WithUuid,
 } from '../../db/schema/base.js';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 interface ProgramGroupingInMigration
   extends WithUuid,
@@ -712,4 +713,5 @@ export default {
     await db.executeQuery(CompiledQuery.raw('PRAGMA foreign_keys = ON'));
     await db.executeQuery(CompiledQuery.raw('PRAGMA defer_foreign_keys = OFF'));
   },
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

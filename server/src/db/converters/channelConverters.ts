@@ -9,15 +9,12 @@ import {
 } from '../../util/index.ts';
 import { numberToBoolean } from '../../util/sqliteUtil.ts';
 import type { ChannelAndLineup } from '../interfaces/IChannelDB.ts';
-import type {
-  ChannelOrmWithRelations,
-  ChannelWithRelations,
-} from '../schema/derivedTypes.ts';
+import type { ChannelOrmWithRelations } from '../schema/derivedTypes.ts';
 
 export const dbChannelToApiChannel = ({
   channel,
   lineup,
-}: ChannelAndLineup<ChannelWithRelations>): Channel => {
+}: ChannelAndLineup<ChannelOrmWithRelations>): Channel => {
   const subtitlePreferences = orderBy(
     channel.subtitlePreferences?.map(
       (pref) =>
@@ -46,21 +43,21 @@ export const dbChannelToApiChannel = ({
     icon: channel.icon ?? DefaultChannelIcon,
     guideMinimumDuration: channel.guideMinimumDuration,
     groupTitle: channel.groupTitle || '',
-    disableFillerOverlay: channel.disableFillerOverlay === 1,
+    disableFillerOverlay: channel.disableFillerOverlay ?? false,
     fillerRepeatCooldown: nullToUndefined(channel.fillerRepeatCooldown),
     startTime: channel.startTime,
     offline: channel.offline,
     name: channel.name,
     transcoding: nilToUndefined(channel.transcoding),
     duration: channel.duration,
-    stealth: channel.stealth === 1,
+    stealth: channel.stealth ?? false,
     onDemand: {
       enabled: isDefined(lineup.onDemandConfig),
     },
     programCount: filter(lineup.items, { type: 'content' }).length,
     streamMode: channel.streamMode,
     transcodeConfigId: channel.transcodeConfigId,
-    subtitlesEnabled: numberToBoolean(channel.subtitlesEnabled),
+    subtitlesEnabled: channel.subtitlesEnabled ?? false,
     subtitlePreferences: isNonEmptyArray(subtitlePreferences)
       ? subtitlePreferences
       : undefined,

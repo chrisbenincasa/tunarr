@@ -1,4 +1,4 @@
-import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.js';
+import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
 import dayjs from 'dayjs';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
@@ -11,13 +11,13 @@ import { devAssert } from '../../util/debug.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 
 export type ScanRequest = {
-  library: MediaSourceLibraryOrm;
+  library: MediaSourceLibrary;
   force?: boolean;
   pathFilter?: string;
 };
 
 export type ScanContext<ApiClientTypeT> = {
-  library: MediaSourceLibraryOrm;
+  library: MediaSourceLibrary;
   mediaSource: MediaSourceOrm;
   apiClient: ApiClientTypeT;
   force: boolean;
