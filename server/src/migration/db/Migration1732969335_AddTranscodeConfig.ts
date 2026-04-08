@@ -7,6 +7,7 @@ import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
 import { isEmpty } from 'lodash-es';
 import { v4 } from 'uuid';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 export default {
   async up(db: Kysely<DB>) {
@@ -147,4 +148,5 @@ export default {
       .execute();
     await db.schema.dropTable('transcode_config').ifExists().execute();
   },
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

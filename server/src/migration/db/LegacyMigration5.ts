@@ -1,5 +1,6 @@
-import type { Kysely, Migration } from 'kysely';
+import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 import { columnExists } from './util.ts';
 
 export default {
@@ -231,4 +232,5 @@ export default {
     await db.schema.dropIndex('program_album_uuid_index').ifExists().execute();
     await db.schema.dropIndex('program_artist_uuid_index').ifExists().execute();
   },
-} satisfies Migration;
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

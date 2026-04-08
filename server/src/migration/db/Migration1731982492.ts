@@ -1,6 +1,7 @@
-import type { Kysely, Migration } from 'kysely';
+import type { Kysely } from 'kysely';
 import { CompiledQuery } from 'kysely';
 import type { CustomShowContent } from '../../db/schema/CustomShowContent.ts';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 type DBTemp = {
   customShowContentTmp: CustomShowContent;
@@ -91,4 +92,5 @@ export default {
     await db.executeQuery(CompiledQuery.raw('PRAGMA foreign_keys = ON'));
     await db.executeQuery(CompiledQuery.raw('PRAGMA defer_foreign_keys = OFF'));
   },
-} satisfies Migration;
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

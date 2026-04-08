@@ -1,5 +1,3 @@
-import { makeKyselyMigrationFromSqlFile } from './util.ts';
+import { makeMigrationFromSqlFile } from './util.ts';
 
-export default makeKyselyMigrationFromSqlFile(
-  './sql/0024_messy_hammerhead.sql',
-);
+export default makeMigrationFromSqlFile('./sql/0024_messy_hammerhead.sql');

@@ -13,7 +13,7 @@ import {
   LocalMediaFolderOrm,
   NewLocalMediaFolderOrm,
 } from './schema/LocalMediaFolder.ts';
-import { MediaSourceLibraryOrm } from './schema/MediaSourceLibrary.ts';
+import { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
 import { ProgramType } from './schema/Program.ts';
 
 @injectable()
@@ -21,7 +21,7 @@ export class LocalMediaDB {
   constructor(@inject(KEYS.DrizzleDB) private db: DrizzleDBAccess) {}
 
   async findFolder(
-    library: MediaSourceLibraryOrm,
+    library: MediaSourceLibrary,
     parentPath: string,
   ): Promise<Maybe<LocalMediaFolderOrm>> {
     if (isEmpty(parentPath)) {
@@ -35,7 +35,7 @@ export class LocalMediaDB {
   }
 
   async upsertFolder(
-    library: MediaSourceLibraryOrm,
+    library: MediaSourceLibrary,
     knownParentId: Maybe<string>,
     folderName: string,
     canonicalId: string,

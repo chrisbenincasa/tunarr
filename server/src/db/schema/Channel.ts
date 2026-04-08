@@ -1,4 +1,4 @@
-import type { InferSelectModel } from 'drizzle-orm';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { inArray, relations } from 'drizzle-orm';
 import {
   check,
@@ -74,6 +74,7 @@ export type Channel = Selectable<ChannelTable>;
 export type NewChannel = Insertable<ChannelTable>;
 export type ChannelUpdate = Updateable<ChannelTable>;
 export type ChannelOrm = InferSelectModel<typeof Channel>;
+export type NewChannelOrm = InferInsertModel<typeof Channel>;
 
 export const ChannelRelations = relations(Channel, ({ many, one }) => ({
   channelPrograms: many(ChannelPrograms),

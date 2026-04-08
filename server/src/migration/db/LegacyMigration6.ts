@@ -1,5 +1,6 @@
 import type { DB } from '@/db/schema/db.js';
-import type { Kysely, Migration } from 'kysely';
+import type { Kysely } from 'kysely';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 export default {
   async up(db: Kysely<DB>): Promise<void> {
@@ -12,4 +13,5 @@ export default {
       .where('plexRatingKey', 'is not', null)
       .execute();
   },
-} satisfies Migration;
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

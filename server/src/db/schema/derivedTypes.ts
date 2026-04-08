@@ -3,7 +3,6 @@ import type {
   TranscodeConfigOrm,
 } from '@/db/schema/TranscodeConfig.js';
 import type { MarkNonNullable, Nullable } from '@/types/util.js';
-import type { Insertable } from 'kysely';
 import type { DeepNullable, MarkRequired, StrictOmit } from 'ts-essentials';
 import type { Artwork, NewArtwork } from './Artwork.ts';
 import type { MediaSourceType } from './base.ts';
@@ -20,10 +19,7 @@ import type {
   LocalMediaSourcePathOrm,
 } from './LocalMediaSourcePath.ts';
 import type { MediaSource, MediaSourceOrm } from './MediaSource.ts';
-import type {
-  MediaSourceLibrary,
-  MediaSourceLibraryOrm,
-} from './MediaSourceLibrary.ts';
+import type { MediaSourceLibrary } from './MediaSourceLibrary.ts';
 import type { MediaSourceLibraryReplacePath } from './MediaSourceLibraryReplacePath.ts';
 import type {
   NewProgramDao,
@@ -31,12 +27,7 @@ import type {
   ProgramOrm,
   ProgramType,
 } from './Program.ts';
-import type {
-  NewProgramChapterOrm,
-  ProgramChapter,
-  ProgramChapterOrm,
-  ProgramChapterTable,
-} from './ProgramChapter.ts';
+import type { NewProgramChapter, ProgramChapter } from './ProgramChapter.ts';
 import type {
   MinimalProgramExternalId,
   NewSingleOrMultiExternalId,
@@ -60,20 +51,13 @@ import type {
 } from './ProgramMediaFile.ts';
 import type {
   NewProgramMediaStream,
-  NewProgramMediaStreamOrm,
   ProgramMediaStream,
-  ProgramMediaStreamOrm,
 } from './ProgramMediaStream.ts';
 import type {
   NewProgramSubtitles,
   ProgramSubtitles,
 } from './ProgramSubtitles.ts';
-import type {
-  NewProgramVersionDao,
-  NewProgramVersionOrm,
-  ProgramVersion,
-  ProgramVersionOrm,
-} from './ProgramVersion.ts';
+import type { NewProgramVersionOrm, ProgramVersion } from './ProgramVersion.ts';
 import type { NewStudio, Studio, StudioEntity } from './Studio.ts';
 import type { ChannelSubtitlePreferences } from './SubtitlePreferences.ts';
 import type { NewTag, Tag, TagRelation } from './Tag.ts';
@@ -83,15 +67,15 @@ export type ProgramVersionWithRelations = ProgramVersion & {
   chapters?: ProgramChapter[];
 };
 
-export type ProgramVersionOrmWithRelations = ProgramVersionOrm & {
-  mediaStreams?: ProgramMediaStreamOrm[];
+export type ProgramVersionOrmWithRelations = ProgramVersion & {
+  mediaStreams?: ProgramMediaStream[];
   mediaFiles?: ProgramMediaFile[];
-  chapters?: ProgramChapterOrm[];
+  chapters?: ProgramChapter[];
 };
 
 export type NewProgramVersionOrmWithRelations = NewProgramVersionOrm & {
-  mediaStreams?: NewProgramMediaStreamOrm[];
-  chapters?: NewProgramChapterOrm[];
+  mediaStreams?: NewProgramMediaStream[];
+  chapters?: NewProgramChapter[];
 };
 
 export type ProgramWithRelations = ProgramDao & {
@@ -125,7 +109,7 @@ export type ProgramWithRelationsOrm = ProgramOrm & {
   // Require minimum data from externalId
   externalIds?: ProgramExternalIdOrm[];
   versions?: ProgramVersionOrmWithRelations[];
-  mediaLibrary?: Nullable<MediaSourceLibraryOrm>;
+  mediaLibrary?: Nullable<MediaSourceLibrary>;
   artwork?: Artwork[];
   subtitles?: ProgramSubtitles[];
   credits?: CreditWithArtwork[];
@@ -239,10 +223,10 @@ export type ProgramWithExternalIds = ProgramDao & {
   externalIds: MinimalProgramExternalId[];
 };
 
-export type NewProgramVersion = NewProgramVersionDao & {
+export type NewProgramVersion = NewProgramVersionOrm & {
   mediaStreams: NewProgramMediaStream[];
   mediaFiles: NewProgramMediaFile[];
-  chapters?: Insertable<ProgramChapterTable>[];
+  chapters?: NewProgramChapter[];
 };
 
 export type NewCreditWithArtwork = {
@@ -400,11 +384,11 @@ export type MediaSourceWithLibrariesDirect = MediaSource & {
 };
 
 export type MediaSourceWithLibraries = MediaSourceOrm & {
-  libraries: MediaSourceLibraryOrm[];
+  libraries: MediaSourceLibrary[];
 };
 
 export type MediaSourceWithRelations = MediaSourceOrm & {
-  libraries: MediaSourceLibraryOrm[];
+  libraries: MediaSourceLibrary[];
   paths: LocalMediaSourcePathOrm[];
   replacePaths: MediaSourceLibraryReplacePath[];
 };

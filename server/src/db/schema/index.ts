@@ -1,4 +1,6 @@
+import type { RunResult } from 'better-sqlite3';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core';
 import { Artwork, ArtworkRelations } from './Artwork.ts';
 import { Channel, ChannelRelations } from './Channel.ts';
 import {
@@ -168,3 +170,8 @@ export const schema = {
 };
 
 export type DrizzleDBAccess = BetterSQLite3Database<typeof schema>;
+export type BaseDrizzleDBAccess = BaseSQLiteDatabase<
+  'sync',
+  RunResult,
+  typeof schema
+>;

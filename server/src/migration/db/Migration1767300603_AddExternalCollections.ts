@@ -1,25 +1,7 @@
-import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
-import { processSqlMigrationFile } from './util.ts';
+import { makeMigrationFromSqlFile } from './util.ts';
 
-export default {
-  up: async (db) => {
-    for (const statement of await processSqlMigrationFile(
-      './sql/0033_free_nekra.sql',
-    )) {
-      await db.executeQuery(statement);
-    }
-
-    for (const statement of await processSqlMigrationFile(
-      './sql/0034_cooing_bloodscream.sql',
-    )) {
-      await db.executeQuery(statement);
-    }
-
-    for (const statement of await processSqlMigrationFile(
-      './sql/0035_military_ben_grimm.sql',
-    )) {
-      await db.executeQuery(statement);
-    }
-  },
-  fullCopy: false,
-} satisfies TunarrDatabaseMigration;
+export default makeMigrationFromSqlFile([
+  './sql/0033_free_nekra.sql',
+  './sql/0034_cooing_bloodscream.sql',
+  './sql/0035_military_ben_grimm.sql',
+]);

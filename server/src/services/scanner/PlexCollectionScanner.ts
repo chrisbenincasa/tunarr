@@ -23,7 +23,7 @@ import type {
 } from '../../db/schema/derivedTypes.ts';
 import { ExternalCollection } from '../../db/schema/ExternalCollection.ts';
 import { MediaSourceOrm } from '../../db/schema/MediaSource.ts';
-import { MediaSourceLibraryOrm } from '../../db/schema/MediaSourceLibrary.ts';
+import { MediaSourceLibrary } from '../../db/schema/MediaSourceLibrary.ts';
 import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import { Tag } from '../../db/schema/Tag.ts';
 import { TagRepo } from '../../db/TagRepo.ts';
@@ -45,7 +45,7 @@ import {
 
 type Context = {
   mediaSource: MediaSourceOrm;
-  library: MediaSourceLibraryOrm;
+  library: MediaSourceLibrary;
   apiClient: PlexApiClient;
 };
 

@@ -1,6 +1,7 @@
 import type { Channel } from '@/db/schema/Channel.js';
 import type { Kysely } from 'kysely';
 import { CompiledQuery, sql } from 'kysely';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 interface ChannelProgramsInMigration {
   channelUuid: string;
@@ -290,4 +291,5 @@ export default {
     await db.executeQuery(CompiledQuery.raw('PRAGMA foreign_keys = ON'));
     await db.executeQuery(CompiledQuery.raw('PRAGMA defer_foreign_keys = OFF'));
   },
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

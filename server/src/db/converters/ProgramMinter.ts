@@ -45,11 +45,10 @@ import { KEYS } from '../../types/inject.ts';
 import { Nilable } from '../../types/util.ts';
 import { parsePlexGuid } from '../../util/externalIds.ts';
 import { isNonEmptyString } from '../../util/index.ts';
-import { booleanToNumber } from '../../util/sqliteUtil.ts';
 import { NewArtwork } from '../schema/Artwork.ts';
 import { CreditType, NewCredit } from '../schema/Credit.ts';
 import { MediaSourceOrm } from '../schema/MediaSource.ts';
-import { MediaSourceLibraryOrm } from '../schema/MediaSourceLibrary.ts';
+import { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
 import type { NewProgramDao } from '../schema/Program.ts';
 import { ProgramType } from '../schema/Program.ts';
 import { NewProgramMediaFile } from '../schema/ProgramMediaFile.ts';
@@ -83,7 +82,7 @@ export class ProgramDaoMinter {
 
   mint(
     mediaSource: MediaSourceOrm,
-    library: MediaSourceLibraryOrm,
+    library: MediaSourceLibrary,
     program: ContentProgramOriginalProgram,
   ): NewProgramWithExternalIds {
     const ret = match(program)
@@ -135,7 +134,7 @@ export class ProgramDaoMinter {
 
   mint2(
     mediaSource: MediaSourceOrm,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
     program: TerminalProgram & HasMediaSourceInfo,
     localFolderId?: string,
     now: number = +dayjs(),
@@ -173,7 +172,7 @@ export class ProgramDaoMinter {
 
   mintMovie(
     mediaSource: MediaSourceOrm,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
     movie: MediaSourceMovie,
     localFolderId?: string,
     now: number = +dayjs(),
@@ -258,7 +257,7 @@ export class ProgramDaoMinter {
           colorSpace: stream.colorSpace ?? null,
           colorTransfer: stream.colorTransfer ?? null,
           colorPrimaries: stream.colorPrimaries ?? null,
-          default: booleanToNumber(stream.default ?? false),
+          default: stream.default ?? false,
           //TODO: forced: stream.forced
           language: stream.languageCodeISO6392,
           pixelFormat: stream.pixelFormat,
@@ -284,8 +283,8 @@ export class ProgramDaoMinter {
       if (resolution) {
         const version: NewProgramVersion = {
           uuid: versionId,
-          createdAt: now,
-          updatedAt: now,
+          createdAt: new Date(now),
+          updatedAt: new Date(now),
           programId,
           displayAspectRatio: item.mediaItem.displayAspectRatio,
           duration: item.mediaItem.duration,
@@ -419,7 +418,7 @@ export class ProgramDaoMinter {
 
   mintEpisode(
     mediaSource: MediaSourceOrm,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
     episode: Episode,
     localFolderId?: string,
     now: number = +dayjs(),
@@ -487,7 +486,7 @@ export class ProgramDaoMinter {
 
   mintMusicTrack(
     mediaSource: MediaSourceOrm,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
     track: MediaSourceMusicTrack,
     localFolderId?: string,
     now: number = +dayjs(),
@@ -542,7 +541,7 @@ export class ProgramDaoMinter {
 
   mintOtherVideo(
     mediaSource: MediaSourceOrm,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
     video: MediaSourceOtherVideo,
     localFolderId?: string,
     now: number = +dayjs(),
@@ -599,7 +598,7 @@ export class ProgramDaoMinter {
 
   mintMusicVideo(
     mediaSource: MediaSourceOrm,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
     video: MediaSourceMusicVideo,
     localFolderId?: string,
     now: number = +dayjs(),
@@ -656,7 +655,7 @@ export class ProgramDaoMinter {
 
   private mintProgramForPlexMovie(
     mediaSource: MediaSourceOrm,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
     plexMovie: ApiPlexMovie,
   ): NewProgramDao {
     const file = first(first(plexMovie.Media)?.Part ?? []);
@@ -739,7 +738,7 @@ export class ProgramDaoMinter {
 
   private mintProgramForPlexEpisode(
     mediaSource: MediaSourceOrm,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
     plexEpisode: PlexEpisode,
   ): NewProgramDao {
     const file = first(first(plexEpisode.Media)?.Part ?? []);
@@ -775,7 +774,7 @@ export class ProgramDaoMinter {
 
   private mintProgramForPlexTrack(
     mediaSource: MediaSourceOrm,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
     plexTrack: PlexMusicTrack,
   ): NewProgramDao {
     const file = first(first(plexTrack.Media)?.Part ?? []);

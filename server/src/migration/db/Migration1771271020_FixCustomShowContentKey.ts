@@ -1,13 +1,9 @@
-import { CompiledQuery } from 'kysely';
-import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
+import { makeMigrationFromSqlStatements } from './util.ts';
 
-export default {
-  fullCopy: true,
-  async up(db) {
-    const statements = [
-      'PRAGMA foreign_keys = OFF',
-      'ALTER TABLE `custom_show_content` RENAME TO `old_custom_show_content`',
-      `
+const statements = [
+  'PRAGMA foreign_keys = OFF',
+  'ALTER TABLE `custom_show_content` RENAME TO `old_custom_show_content`',
+  `
       CREATE TABLE IF NOT EXISTS "custom_show_content" (
         "custom_show_uuid" text not null,
         "content_uuid" text not null,
@@ -17,13 +13,9 @@ export default {
         constraint "primary_key" primary key ("custom_show_uuid", "content_uuid", "index")
       )
       `,
-      'INSERT INTO `custom_show_content`(custom_show_uuid, content_uuid, "index") SELECT custom_show_uuid, content_uuid, "index" FROM `old_custom_show_content`',
-      'DROP TABLE `old_custom_show_content`',
-      'PRAGMA foreign_keys = ON',
-    ];
+  'INSERT INTO `custom_show_content`(custom_show_uuid, content_uuid, "index") SELECT custom_show_uuid, content_uuid, "index" FROM `old_custom_show_content`',
+  'DROP TABLE `old_custom_show_content`',
+  'PRAGMA foreign_keys = ON',
+];
 
-    for (const statement of statements) {
-      await db.executeQuery(CompiledQuery.raw(statement.trim()));
-    }
-  },
-} satisfies TunarrDatabaseMigration;
+export default makeMigrationFromSqlStatements(statements, true);
