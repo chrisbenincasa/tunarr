@@ -1,5 +1,3 @@
-import { makeKyselyMigrationFromSqlFile } from './util.ts';
+import { makeMigrationFromSqlFile } from './util.ts';
 
-export default makeKyselyMigrationFromSqlFile(
-  './sql/0012_yielding_ben_grimm.sql',
-);
+export default makeMigrationFromSqlFile('./sql/0012_yielding_ben_grimm.sql');

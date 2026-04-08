@@ -1,5 +1,5 @@
 import { MediaSourceType } from '@/db/schema/base.js';
-import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.js';
+import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
 import type { Nilable, Nullable } from '@/types/util.js';
 import { type Maybe } from '@/types/util.js';
 import dayjs from '@/util/dayjs.js';
@@ -396,7 +396,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     schema: z.ZodType<PlexMetadataResponse<ItemType>>,
     converter: (
       item: ItemType,
-      libraryId: MediaSourceLibraryOrm,
+      libraryId: MediaSourceLibrary,
     ) => Result<OutType>,
     pageSize: number = 50,
     key: string = `/library/sections/${libraryId}/all`,
@@ -548,7 +548,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   }
 
   private plexCollectionInject(
-    library: MediaSourceLibraryOrm,
+    library: MediaSourceLibrary,
     collection: PlexLibraryCollection,
   ): Collection {
     return {
@@ -764,7 +764,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     schema: z.ZodType<PlexMetadataResponse<ItemType>>,
     converter: (
       plexItem: ItemType,
-      library: MediaSourceLibraryOrm,
+      library: MediaSourceLibrary,
     ) => Result<OutType>,
   ): Promise<QueryResult<OutType>> {
     const queryResult = await this.getItemMetadataInternal(externalKey, schema);
@@ -783,7 +783,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   private findLibraryFromPlexMedia(
     media: PlexMedia,
     libraryId?: string,
-  ): QueryResult<MediaSourceLibraryOrm> {
+  ): QueryResult<MediaSourceLibrary> {
     libraryId ??= isPlexItemOrGrouping(media)
       ? media.librarySectionID?.toString()
       : undefined;
@@ -1164,7 +1164,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexShowInjection(
     plexShow: ApiPlexTvShow,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
   ): Result<PlexShow> {
     const artwork: MediaArtwork[] = compact([
       this.plexArtworkInject(plexShow.thumb, 'poster'),
@@ -1223,7 +1223,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexSeasonInjection(
     plexSeason: ApiPlexTvSeason,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
   ): Result<PlexSeason> {
     return Result.success({
       uuid: v4(),
@@ -1319,7 +1319,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexEpisodeInjection(
     plexEpisode: ApiPlexEpisode,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
   ): Result<PlexEpisode> {
     if (isNil(plexEpisode.duration) || plexEpisode.duration <= 0) {
       return Result.forError(
@@ -1490,7 +1490,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexMovieInjection(
     plexMovie: ApiPlexMovie,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
   ): Result<PlexMovie> {
     if (isNil(plexMovie.duration) || plexMovie.duration <= 0) {
       return Result.forError(
@@ -1573,7 +1573,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexOtherVideoInjection(
     plexClip: ApiPlexMovie,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
   ): Result<PlexOtherVideo> {
     if (isNil(plexClip.duration) || plexClip.duration <= 0) {
       return Result.forError(
@@ -1654,7 +1654,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexMusicArtistInjection(
     plexArtist: ApiPlexMusicArtist,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
   ): Result<PlexArtist> {
     return Result.success({
       uuid: v4(),
@@ -1699,7 +1699,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexAlbumInjection(
     plexAlbum: ApiPlexMusicAlbum,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
   ): Result<PlexAlbum> {
     const releaseDate = parseReleaseDate(plexAlbum.originallyAvailableAt);
     return Result.success({
@@ -1789,7 +1789,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexTrackInjection(
     plexTrack: ApiPlexMusicTrack,
-    mediaLibrary: MediaSourceLibraryOrm,
+    mediaLibrary: MediaSourceLibrary,
   ): Result<PlexTrack, WrappedError> {
     if (isNil(plexTrack.duration) || plexTrack.duration <= 0) {
       return Result.forError(

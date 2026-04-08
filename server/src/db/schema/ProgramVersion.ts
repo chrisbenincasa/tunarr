@@ -1,7 +1,7 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { Insertable, Selectable, Updateable } from 'kysely';
+import type { Insertable, Updateable } from 'kysely';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
 import { Program } from './Program.ts';
 import { ProgramChapter } from './ProgramChapter.ts';
@@ -47,8 +47,7 @@ export const ProgramVersionRelations = relations(
 );
 
 export type ProgramVersionTable = KyselifyBetter<typeof ProgramVersion>;
-export type ProgramVersion = Selectable<ProgramVersionTable>;
-export type ProgramVersionOrm = InferSelectModel<typeof ProgramVersion>;
+export type ProgramVersion = InferSelectModel<typeof ProgramVersion>;
 export type NewProgramVersionDao = Insertable<ProgramVersionTable>;
 export type NewProgramVersionOrm = InferInsertModel<typeof ProgramVersion>;
 export type ProgramVersionUpdate = Updateable<ProgramVersionTable>;

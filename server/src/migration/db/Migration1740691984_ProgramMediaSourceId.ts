@@ -1,4 +1,5 @@
 import { type Kysely, CompiledQuery, sql } from 'kysely';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 export default {
   fullCopy: true,
@@ -134,4 +135,5 @@ CREATE TABLE IF NOT EXISTS "program_grouping_external_id_tmp" (
     await db.executeQuery(CompiledQuery.raw('PRAGMA foreign_keys = ON'));
     await db.executeQuery(CompiledQuery.raw('PRAGMA defer_foreign_keys = OFF'));
   },
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

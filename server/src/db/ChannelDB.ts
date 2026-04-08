@@ -93,14 +93,16 @@ export class ChannelDB implements IChannelDB {
     return this.basicChannel.getAllChannels();
   }
 
-  saveChannel(createReq: SaveableChannel): Promise<ChannelAndLineup<Channel>> {
+  saveChannel(
+    createReq: SaveableChannel,
+  ): Promise<ChannelAndLineup<ChannelOrm>> {
     return this.basicChannel.saveChannel(createReq);
   }
 
   updateChannel(
     id: string,
     updateReq: SaveableChannel,
-  ): Promise<ChannelAndLineup<Channel>> {
+  ): Promise<ChannelAndLineup> {
     return this.basicChannel.updateChannel(id, updateReq);
   }
 
@@ -116,7 +118,7 @@ export class ChannelDB implements IChannelDB {
     return this.basicChannel.syncChannelDuration(id);
   }
 
-  copyChannel(id: string): Promise<ChannelAndLineup<Channel>> {
+  copyChannel(id: string): Promise<ChannelAndLineup<ChannelOrm>> {
     return this.basicChannel.copyChannel(id);
   }
 
@@ -175,8 +177,8 @@ export class ChannelDB implements IChannelDB {
   replaceChannelPrograms(
     channelId: string,
     programIds: string[],
-  ): Promise<void> {
-    return this.channelProgram.replaceChannelPrograms(channelId, programIds);
+  ): void {
+    this.channelProgram.replaceChannelPrograms(channelId, programIds);
   }
 
   findChannelsForProgramId(programId: string): Promise<ChannelOrm[]> {
@@ -257,18 +259,23 @@ export class ChannelDB implements IChannelDB {
   setChannelPrograms(
     channel: Channel,
     lineup: readonly LineupItem[],
-  ): Promise<Channel | null>;
+  ): Promise<ChannelOrm | null>;
   setChannelPrograms(
     channel: string | Channel,
     lineup: readonly LineupItem[],
     startTime?: number,
-  ): Promise<Channel | null>;
+  ): Promise<ChannelOrm | null>;
   setChannelPrograms(
     channel: string | Channel,
     lineup: readonly LineupItem[],
     startTime?: number,
-  ): Promise<Channel | null> {
-    return this.lineup.setChannelPrograms(channel, lineup, startTime);
+  ): Promise<ChannelOrm | null> {
+    // TODO: Update LineupRepository.setChannelPrograms to return ChannelOrm
+    return this.lineup.setChannelPrograms(
+      channel,
+      lineup,
+      startTime,
+    );
   }
 
   addPendingPrograms(

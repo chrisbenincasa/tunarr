@@ -19,7 +19,7 @@ import type {
   PageParams,
   UpdateChannelLineupRequest,
 } from '../../db/interfaces/IChannelDB.ts';
-import type { Channel } from '../../db/schema/Channel.ts';
+import type { Channel, ChannelOrm } from '../../db/schema/Channel.ts';
 import type {
   ChannelWithPrograms,
   ChannelWithRelations,
@@ -165,75 +165,17 @@ export class FakeChannelDB implements IChannelDB {
   setChannelPrograms(
     channel: Channel,
     lineup: readonly LineupItem[],
-  ): Promise<Channel | null>;
+  ): Promise<ChannelOrm | null>;
   setChannelPrograms(
     channel: string | Channel,
     lineup: readonly LineupItem[],
     startTime?: number,
-  ): Promise<Channel | null>;
+  ): Promise<ChannelOrm | null>;
   setChannelPrograms(
     channel: unknown,
     lineup: unknown,
     startTime?: unknown,
-  ): Promise<{
-    number: number;
-    duration: number;
-    uuid: string;
-    offline: {
-      mode: 'pic' | 'clip';
-      picture?: string | undefined;
-      soundtrack?: string | undefined;
-    };
-    createdAt: number | null;
-    updatedAt: number | null;
-    name: string;
-    disableFillerOverlay: number;
-    fillerRepeatCooldown: number | null;
-    groupTitle: string | null;
-    guideFlexTitle: string | null;
-    guideMinimumDuration: number;
-    icon: {
-      path: string;
-      width: number;
-      duration: number;
-      position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-    };
-    startTime: number;
-    stealth: number;
-    streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct';
-    transcoding: {
-      targetResolution?: { widthPx: number; heightPx: number } | undefined;
-      videoBitrate?: number | undefined;
-      videoBufferSize?: number | undefined;
-    } | null;
-    transcodeConfigId: string;
-    watermark: {
-      enabled: boolean;
-      position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-      width: number;
-      verticalMargin: number;
-      horizontalMargin: number;
-      duration: number;
-      opacity: number;
-      url?: string | undefined;
-      fixedSize?: boolean | undefined;
-      animated?: boolean | undefined;
-      fadeConfig?:
-        | {
-            periodMins: number;
-            programType?:
-              | 'movie'
-              | 'episode'
-              | 'track'
-              | 'music_video'
-              | 'other_video'
-              | undefined;
-            leadingEdge?: boolean | undefined;
-          }[]
-        | undefined;
-    } | null;
-    subtitlesEnabled: number;
-  } | null> {
+  ): Promise<ChannelOrm> {
     throw new Error('Method not implemented.');
   }
   updateChannelStartTime(id: string, newTime: number): Promise<void> {

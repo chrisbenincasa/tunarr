@@ -119,7 +119,6 @@ const test = baseTest.extend<Fixture>({
     );
     const upsertRepo = new ProgramUpsertRepository(
       logger,
-      dbAccess.db!,
       dbAccess.drizzle!,
       mockTaskFactory,
       mockTaskFactory,

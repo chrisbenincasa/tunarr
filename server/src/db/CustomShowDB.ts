@@ -189,12 +189,12 @@ export class CustomShowDB {
       return false;
     }
 
-    await this.db.transaction().execute(async (tx) => {
-      await tx
-        .deleteFrom('customShowContent')
-        .where('customShowContent.customShowUuid', '=', show.uuid)
-        .execute();
-      await tx.deleteFrom('customShow').where('uuid', '=', show.uuid).execute();
+    this.drizzle.transaction((tx) => {
+      // TODO: Do this deletion in the DB with foreign keys.
+      tx.delete(CustomShowContent)
+        .where(eq(CustomShowContent.customShowUuid, show.uuid))
+        .run();
+      tx.delete(CustomShow).where(eq(CustomShow.uuid, show.uuid)).run();
     });
 
     return true;
@@ -346,17 +346,13 @@ export class CustomShowDB {
       'asc',
     );
 
-    await this.db.transaction().execute(async (tx) => {
+    this.drizzle.transaction((tx) => {
       if (allNewCustomContent.length > 0) {
-        await tx
-          .deleteFrom('customShowContent')
-          .where('customShowContent.customShowUuid', '=', customShowId)
-          .execute();
+        tx.delete(CustomShowContent)
+          .where(eq(CustomShowContent.customShowUuid, customShowId))
+          .run();
         for (const contentChunk of chunk(allNewCustomContent, 1_000)) {
-          await tx
-            .insertInto('customShowContent')
-            .values(contentChunk)
-            .execute();
+          tx.insert(CustomShowContent).values(contentChunk).run();
         }
       }
     });

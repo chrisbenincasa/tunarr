@@ -1,4 +1,5 @@
-import type { Kysely, Migration } from 'kysely';
+import type { Kysely } from 'kysely';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 export default {
   async up(db: Kysely<unknown>) {
@@ -10,4 +11,5 @@ export default {
       .unique()
       .execute();
   },
-} satisfies Migration;
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

@@ -421,19 +421,19 @@ export class ChannelProgramRepository {
     return result?.program;
   }
 
-  async replaceChannelPrograms(
+  replaceChannelPrograms(
     channelId: string,
     programIds: string[],
-  ): Promise<void> {
+  ): void {
     const uniqueIds = uniq(programIds);
-    await this.drizzleDB.transaction(async (tx) => {
-      await tx
-        .delete(ChannelPrograms)
-        .where(eq(ChannelPrograms.channelUuid, channelId));
+    this.drizzleDB.transaction((tx) => {
+      tx.delete(ChannelPrograms)
+        .where(eq(ChannelPrograms.channelUuid, channelId))
+        .run();
       for (const c of chunk(uniqueIds, 250)) {
-        await tx
-          .insert(ChannelPrograms)
-          .values(c.map((id) => ({ channelUuid: channelId, programUuid: id })));
+        tx.insert(ChannelPrograms)
+          .values(c.map((id) => ({ channelUuid: channelId, programUuid: id })))
+          .run();
       }
     });
   }

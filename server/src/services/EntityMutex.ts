@@ -1,7 +1,4 @@
-import {
-  MediaSourceLibrary,
-  MediaSourceLibraryOrm,
-} from '@/db/schema/MediaSourceLibrary.js';
+import { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
 import { inject, injectable } from 'inversify';
 import { MediaSource, MediaSourceOrm } from '../db/schema/MediaSource.ts';
 import { KEYS } from '../types/inject.ts';
@@ -23,7 +20,7 @@ export class EntityMutex {
     return this.lock(this.libraryKey(library.mediaSourceId, library.uuid));
   }
 
-  isLibraryLocked(library: MediaSourceLibrary | MediaSourceLibraryOrm) {
+  isLibraryLocked(library: MediaSourceLibrary) {
     return (
       this.mutexMap
         .getLockSync(this.libraryKey(library.mediaSourceId, library.uuid))
@@ -39,7 +36,7 @@ export class EntityMutex {
     );
   }
 
-  getLockForLibrary(library: MediaSourceLibrary | MediaSourceLibraryOrm) {
+  getLockForLibrary(library: MediaSourceLibrary) {
     return this.lock(this.libraryKey(library.mediaSourceId, library.uuid));
   }
 

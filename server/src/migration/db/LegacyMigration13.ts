@@ -1,5 +1,6 @@
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 
 export default {
   async up(db: Kysely<unknown>): Promise<void> {
@@ -49,4 +50,5 @@ export default {
   //   'CREATE UNIQUE INDEX `plex_server_settings_name_uri_unique` on `plex_server_settings` (`name`, `uri`);',
   // );
   // }
-};
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

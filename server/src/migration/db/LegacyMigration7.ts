@@ -1,4 +1,5 @@
-import type { Kysely, Migration } from 'kysely';
+import type { Kysely } from 'kysely';
+import type { TunarrDatabaseMigrationLegacy } from '../DirectMigrationProvider.ts';
 import { columnExists } from './util.ts';
 
 export default {
@@ -16,4 +17,5 @@ export default {
         .execute();
     }
   },
-} satisfies Migration;
+  kyselyOnly: true,
+} satisfies TunarrDatabaseMigrationLegacy;

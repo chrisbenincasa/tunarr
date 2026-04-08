@@ -1,11 +1,13 @@
+import { sql } from 'drizzle-orm';
 import { CompiledQuery, type Kysely } from 'kysely';
-import { castArray } from 'lodash-es';
+import { castArray, identity } from 'lodash-es';
+import { readFileSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import path from 'path';
 import { isNonEmptyString } from '../../util/index.ts';
-import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
+import type { TunarrDatabaseMigrationWithDrizzle } from '../DirectMigrationProvider.ts';
 
 export async function columnExists(
   db: Kysely<unknown>,
@@ -20,22 +22,6 @@ export async function columnExists(
   );
 }
 
-export async function applyDrizzleMigrationExpression(
-  db: Kysely<unknown>,
-  exprString: string,
-  breakpoint: string = '--> statement-breakpoint',
-) {
-  const queries = exprString
-    .split(breakpoint)
-    .map((s) => s.trim())
-    .filter(isNonEmptyString)
-    .map((s) => CompiledQuery.raw(s));
-
-  for (const query of queries) {
-    await db.executeQuery(query);
-  }
-}
-
 export async function processSqlMigrationFile(
   filePath: string,
   statementBreakpoint: string = '--> statement-breakpoint',
@@ -44,27 +30,78 @@ export async function processSqlMigrationFile(
     path.join(dirname(fileURLToPath(import.meta.url)), filePath),
     'utf-8',
   );
+  return processSqlMigrationString(
+    contents,
+    (statement) => CompiledQuery.raw(statement),
+    statementBreakpoint,
+  );
+}
 
-  return contents
+export function processSqlMigrationString<OutType>(
+  queryString: string,
+  processor: (singleStatement: string) => OutType,
+  statementBreakpoint: string = '--> statement-breakpoint',
+) {
+  return queryString
     .split(statementBreakpoint)
     .map((s) => s.trim())
     .filter(isNonEmptyString)
-    .map((s) => CompiledQuery.raw(s));
+    .map((s) => processor(s));
 }
 
-export function makeKyselyMigrationFromSqlFile(
+function processSqlMigrationFileForDrizzle(
+  filePath: string,
+  statementBreakpoint: string = '--> statement-breakpoint',
+) {
+  const contents = readFileSync(
+    path.join(dirname(fileURLToPath(import.meta.url)), filePath),
+    'utf-8',
+  );
+
+  return processSqlMigrationString(
+    contents,
+    identity<string>,
+    statementBreakpoint,
+  );
+}
+
+export function makeMigrationFromSqlFile(
   filePaths: string | Array<string>,
   fullCopy: boolean = false,
-): TunarrDatabaseMigration {
+): TunarrDatabaseMigrationWithDrizzle {
+  filePaths = castArray(filePaths);
+  const allStatements = filePaths.flatMap((path) =>
+    processSqlMigrationFileForDrizzle(path),
+  );
+  return makeMigrationFromSqlStatements(allStatements, fullCopy);
+}
+
+export function makeMigrationFromSqlString(
+  queryString: string,
+  fullCopy: boolean = false,
+): TunarrDatabaseMigrationWithDrizzle {
+  return makeMigrationFromSqlStatements(
+    processSqlMigrationString(queryString, identity<string>),
+    fullCopy,
+  );
+}
+
+export function makeMigrationFromSqlStatements(
+  allStatements: string[],
+  fullCopy: boolean,
+) {
   return {
     fullCopy,
     async up(db) {
-      filePaths = castArray(filePaths);
-      for (const path of filePaths) {
-        for (const statement of await processSqlMigrationFile(path)) {
-          await db.executeQuery(statement);
-        }
+      for (const statement of allStatements) {
+        await db.executeQuery(CompiledQuery.raw(statement));
       }
     },
-  };
+    upDrizzle(db) {
+      for (const statement of allStatements) {
+        db.run(sql.raw(statement));
+      }
+    },
+    kyselyOnly: false,
+  } satisfies TunarrDatabaseMigrationWithDrizzle;
 }

@@ -1,5 +1,8 @@
+import { mapToObj } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
 import { type TupleToUnion } from '@tunarr/types';
+import { sql } from 'drizzle-orm';
+import { toSnakeCase } from 'drizzle-orm/casing';
 import type {
   CaseWhenBuilder,
   ExpressionBuilder,
@@ -284,8 +287,8 @@ export const AllProgramFields = [
 ] as const;
 
 type ProgramUpsertFields = StrictExclude<
-  Replace<ProgramField, 'program', 'excluded'>,
-  'excluded.uuid' | 'excluded.createdAt'
+  Replace<ProgramField, 'program.', ''>,
+  'uuid' | 'createdAt'
 >;
 
 const ProgramUpsertIgnoreFields = [
@@ -306,14 +309,11 @@ export const ProgramUpsertFields: ProgramUpsertFields[] =
   AllProgramFields.filter(
     (f): f is KnownProgramUpsertFields =>
       !(ProgramUpsertIgnoreFields as ReadonlyArray<ProgramField>).includes(f),
-  ).map(
-    (v) =>
-      v.replace('program.', 'excluded.') as Replace<
-        typeof v,
-        'program',
-        'excluded'
-      >,
-  );
+  ).map((v) => v.replace('program.', '') as Replace<typeof v, 'program.', ''>);
+
+export const ProgramUpsertSetClause = mapToObj(ProgramUpsertFields, (f) => ({
+  [f]: sql`excluded.${sql.identifier(toSnakeCase(f))}`,
+}));
 
 type ProgramGroupingField = `programGrouping.${keyof ProgramGrouping}`;
 type ProgramGroupingUpsertFields = StrictExclude<

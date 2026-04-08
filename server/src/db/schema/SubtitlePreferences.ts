@@ -1,3 +1,4 @@
+import type { InferInsertModel } from 'drizzle-orm';
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable } from 'kysely';
 import type { TupleToUnion } from '../../types/util.ts';
@@ -37,6 +38,9 @@ export type ChannelSubtitlePreferences =
   Selectable<ChannelSubtitlePreferencesTable>;
 export type NewChannelSubtitlePreference =
   Insertable<ChannelSubtitlePreferencesTable>;
+export type NewChannelSubtitlePreferenceOrm = InferInsertModel<
+  typeof ChannelSubtitlePreferences
+>;
 
 export const CustomShowSubtitlePreferences = sqliteTable(
   'custom_show_subtitle_preferences',

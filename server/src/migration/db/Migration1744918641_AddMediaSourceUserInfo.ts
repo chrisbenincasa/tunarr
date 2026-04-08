@@ -1,10 +1,8 @@
-import { CompiledQuery, type Kysely } from 'kysely';
-import { isNonEmptyString } from '../../util/index.ts';
-import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
+import { makeMigrationFromSqlString } from './util.ts';
 
 // low-fi ... copied from the generated one by drizzle
 
-export const expr = String.raw`
+const expr = String.raw`
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE "__new_program_external_id" (
 	"uuid" text PRIMARY KEY NOT NULL,
@@ -35,17 +33,4 @@ ALTER TABLE "media_source" ADD "user_id" text;--> statement-breakpoint
 
 // ALTER TABLE "program" ADD "media_source_id" text REFERENCES media_source(uuid);--> statement-breakpoint
 // ALTER TABLE "program_grouping_external_id" ADD "media_source_id" text REFERENCES media_source(uuid);
-export default {
-  up: async (db: Kysely<unknown>) => {
-    const queries = expr
-      .split('--> statement-breakpoint')
-      .map((s) => s.trim())
-      .filter(isNonEmptyString)
-      .map((s) => CompiledQuery.raw(s));
-
-    for (const query of queries) {
-      await db.executeQuery(query);
-    }
-  },
-  fullCopy: true,
-} satisfies TunarrDatabaseMigration;
+export default makeMigrationFromSqlString(expr, true);

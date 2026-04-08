@@ -28,7 +28,7 @@ import {
   NewProgramGroupingWithRelations,
 } from '../schema/derivedTypes.js';
 import { MediaSourceOrm } from '../schema/MediaSource.ts';
-import { MediaSourceLibraryOrm } from '../schema/MediaSourceLibrary.ts';
+import { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
 import { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
 import { CommonDaoMinter } from './CommonDaoMinter.ts';
 
@@ -39,7 +39,7 @@ export class ProgramGroupingMinter {
   mintGrandparentGrouping(
     item: EpisodeWithHierarchy | MusicTrackWithHierarchy,
     mediaSource: MediaSourceOrm,
-    mediaSourceLibrary: MediaSourceLibraryOrm,
+    mediaSourceLibrary: MediaSourceLibrary,
   ): Nullable<NewProgramGroupingWithRelations> {
     if (item.type === 'episode') {
       return this.mintForMediaSourceShow(
@@ -61,7 +61,7 @@ export class ProgramGroupingMinter {
   mintParentGrouping(
     item: EpisodeWithHierarchy | MusicTrackWithHierarchy,
     mediaSource: MediaSourceOrm,
-    mediaSourceLibrary: MediaSourceLibraryOrm,
+    mediaSourceLibrary: MediaSourceLibrary,
   ): Nullable<NewProgramGroupingWithRelations> {
     if (item.type === 'episode') {
       return this.mintSeason(mediaSource, mediaSourceLibrary, item.season);
@@ -74,7 +74,7 @@ export class ProgramGroupingMinter {
 
   mintForMediaSourceShow(
     mediaSource: MediaSourceOrm,
-    mediaSourceLibrary: MediaSourceLibraryOrm,
+    mediaSourceLibrary: MediaSourceLibrary,
     show: Show,
   ): NewProgramGroupingWithRelations<'show'> {
     const now = dayjs();
@@ -173,7 +173,7 @@ export class ProgramGroupingMinter {
 
   mintForMediaSourceArtist(
     mediaSource: MediaSourceOrm,
-    mediaSourceLibrary: MediaSourceLibraryOrm,
+    mediaSourceLibrary: MediaSourceLibrary,
     artist: MediaSourceMusicArtist,
   ): NewProgramGroupingWithRelations<'artist'> {
     const now = +dayjs();
@@ -228,7 +228,7 @@ export class ProgramGroupingMinter {
 
   mintSeason(
     mediaSource: MediaSourceOrm,
-    mediaSourceLibrary: MediaSourceLibraryOrm,
+    mediaSourceLibrary: MediaSourceLibrary,
     season: Season,
   ): NewProgramGroupingWithRelations<'season'> {
     const now = +dayjs();
@@ -291,7 +291,7 @@ export class ProgramGroupingMinter {
 
   mintMusicAlbum(
     mediaSource: MediaSourceOrm,
-    mediaSourceLibrary: MediaSourceLibraryOrm,
+    mediaSourceLibrary: MediaSourceLibrary,
     album: MediaSourceMusicAlbum,
   ): NewProgramGroupingWithRelations<'album'> {
     const now = +dayjs();
