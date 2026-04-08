@@ -574,6 +574,7 @@ export class MeilisearchService implements ISearchService {
           args.join(' '),
         );
         this.proc = await this.childProcessHelper.spawn(executablePath, args, {
+          name: 'meilisearch',
           maxAttempts: 3,
           additionalOpts: {
             cwd: this.serverOptions.databaseDirectory,
