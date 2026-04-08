@@ -79,6 +79,7 @@ export class DatabaseCopyMigrator {
     await this.dbAccess.closeConnection(tmpPath);
     await this.dbAccess.closeConnection(currentDbPath);
     await fs.cp(tmpPath, currentDbPath);
+    await fs.unlink(tmpPath);
     // Force reinit at the new path
     this.dbAccess.setConnection(currentDbPath);
   }
