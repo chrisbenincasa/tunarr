@@ -32,6 +32,7 @@ import { RemoveDanglingProgramsFromSearchTask } from './RemoveDanglingProgramsFr
 import { RollLogFileTask } from './RollLogFileTask.ts';
 import { ScanLibrariesTask } from './ScanLibrariesTask.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
+import { SyncCollectionsTask } from './SyncCollectionsTask.ts';
 import { SyncCustomShowsTask } from './SyncCustomShowsTask.ts';
 
 const TasksModule = new ContainerModule(({ bind }) => {
@@ -46,6 +47,9 @@ const TasksModule = new ContainerModule(({ bind }) => {
 
   bind(ScanLibrariesTask).toSelf();
   bindAutoFactory(bind, ScanLibrariesTask.KEY, ScanLibrariesTask);
+
+  bind(SyncCollectionsTask).toSelf();
+  bindAutoFactory(bind, SyncCollectionsTask.KEY, SyncCollectionsTask);
 
   bind(KEYS.Task).toService(RemoveDanglingProgramsFromSearchTask);
 

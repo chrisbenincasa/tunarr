@@ -18,6 +18,7 @@ import type { FolderAndContents } from './LocalFolderCanonicalizer.ts';
 import { LocalFolderCanonicalizer } from './LocalFolderCanonicalizer.ts';
 import { LocalMediaCanonicalizer } from './LocalMediaCanonicalizer.ts';
 import { PlexMediaCanonicalizer } from './PlexMediaCanonicalizers.ts';
+import { EmbyCollectionScanner } from './scanner/EmbyCollectionScanner.ts';
 import { EmbyMediaSourceMovieScanner } from './scanner/EmbyMediaSourceMovieScanner.ts';
 import { EmbyMediaSourceMusicScanner } from './scanner/EmbyMediaSourceMusicScanner.ts';
 import { EmbyMediaSourceMusicVideoScanner } from './scanner/EmbyMediaSourceMusicVideoScanner.ts';
@@ -28,6 +29,7 @@ import type {
   GenericLocalMediaSourceScanner,
   GenericLocalMediaSourceScannerFactory,
 } from './scanner/FileSystemScanner.ts';
+import { JellyfinCollectionScanner } from './scanner/JellyfinCollectionScanner.ts';
 import { JellyfinMediaSourceMovieScanner } from './scanner/JellyfinMediaSourceMovieScanner.ts';
 import { JellyfinMediaSourceMusicScanner } from './scanner/JellyfinMediaSourceMusicScanner.ts';
 import { JellyfinMediaSourceMusicVideoScanner } from './scanner/JellyfinMediaSourceMusicVideoScanner.ts';
@@ -197,6 +199,14 @@ export const ServicesModule = new ContainerModule(({ bind }) => {
   bind<GenericExternalCollectionScanner>(KEYS.ExternalCollectionScanner)
     .to(PlexCollectionScanner)
     .whenNamed(MediaSourceType.Plex);
+
+  bind<GenericExternalCollectionScanner>(KEYS.ExternalCollectionScanner)
+    .to(JellyfinCollectionScanner)
+    .whenNamed(MediaSourceType.Jellyfin);
+
+  bind<GenericExternalCollectionScanner>(KEYS.ExternalCollectionScanner)
+    .to(EmbyCollectionScanner)
+    .whenNamed(MediaSourceType.Emby);
 
   bindFactoryFunc(
     bind,

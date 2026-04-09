@@ -14,8 +14,11 @@ import os from 'node:os';
 import { getHeapStatistics } from 'v8';
 import z from 'zod/v4';
 import { container } from '../container.ts';
+import type { MediaSourceType } from '../db/schema/base.ts';
 import { TunarrWorkerPool } from '../services/TunarrWorkerPool.ts';
-import { PlexCollectionScanner } from '../services/scanner/PlexCollectionScanner.ts';
+import type { GenericExternalCollectionScanner } from '../services/scanner/ExternalCollectionScanner.ts';
+import { KEYS } from '../types/inject.ts';
+import type { Maybe } from '../types/util.ts';
 import { debugFfmpegApiRouter } from './debug/debugFfmpegApi.ts';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 import { debugStreamApiRouter } from './debug/debugStreamApi.js';
@@ -423,18 +426,25 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         return res
           .status(404)
           .send(`No media source with ID ${req.params.mediaSourceId}`);
-      } else if (mediaSource.type !== 'plex') {
-        return res
-          .status(400)
-          .send('Only Plex collection scanning is currently supported');
       }
 
-      const scanRes = await container
-        .get<PlexCollectionScanner>(PlexCollectionScanner)
-        .scan({
-          mediaSourceId: mediaSource.uuid,
-          force: true,
-        });
+      const scannerFactory = container.get<
+        (sourceType: MediaSourceType) => Maybe<GenericExternalCollectionScanner>
+      >(KEYS.ExternalCollectionScannerFactory);
+
+      const scanner = scannerFactory(mediaSource.type);
+      if (!scanner) {
+        return res
+          .status(400)
+          .send(
+            `Collection scanning is not supported for media source type "${mediaSource.type}"`,
+          );
+      }
+
+      const scanRes = await scanner.scan({
+        mediaSourceId: mediaSource.uuid,
+        force: true,
+      });
 
       return res.send(scanRes);
     },

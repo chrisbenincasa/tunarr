@@ -8,6 +8,7 @@ import { RefreshMediaSourceLibraryTask } from '../../tasks/RefreshMediaSourceLib
 import { ScanLibrariesTask } from '../../tasks/ScanLibrariesTask.ts';
 import { ScheduledTask } from '../../tasks/ScheduledTask.ts';
 import { SubtitleExtractorTask } from '../../tasks/SubtitleExtractorTask.ts';
+import { SyncCollectionsTask } from '../../tasks/SyncCollectionsTask.ts';
 import { SyncCustomShowsTask } from '../../tasks/SyncCustomShowsTask.ts';
 import { UpdateXmlTvTask } from '../../tasks/UpdateXmlTvTask.ts';
 import { autoFactoryKey, KEYS } from '../../types/inject.ts';
@@ -105,6 +106,18 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
           this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
         ),
         container.get<() => ScanLibrariesTask>(ScanLibrariesTask.KEY),
+        undefined,
+      ),
+    );
+
+    GlobalScheduler.scheduleTask(
+      SyncCollectionsTask.ID,
+      new ScheduledTask(
+        SyncCollectionsTask,
+        hoursCrontab(
+          this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
+        ),
+        container.get<() => SyncCollectionsTask>(SyncCollectionsTask.KEY),
         undefined,
       ),
     );
