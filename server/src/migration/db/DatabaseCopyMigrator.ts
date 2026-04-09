@@ -23,7 +23,7 @@ export class DatabaseCopyMigrator {
   constructor(private dbAccess: DBAccess) {}
 
   async migrate(currentDbPath: string, migrateTo?: string) {
-    const { path: tmpPath } = await tmp.file({ keep: false });
+    const { path: tmpPath, cleanup } = await tmp.file({ keep: false });
     this.logger.debug('Migrating to temp DB %s', tmpPath);
     const tempDBConn = this.dbAccess.getOrCreateConnection(tmpPath);
     const tempDB = tempDBConn.kysely;
@@ -79,6 +79,7 @@ export class DatabaseCopyMigrator {
     await this.dbAccess.closeConnection(tmpPath);
     await this.dbAccess.closeConnection(currentDbPath);
     await fs.cp(tmpPath, currentDbPath);
+    await cleanup();
     // Force reinit at the new path
     this.dbAccess.setConnection(currentDbPath);
   }
