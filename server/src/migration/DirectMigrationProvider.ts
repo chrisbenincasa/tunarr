@@ -201,6 +201,9 @@ export class DirectMigrationProvider implements MigrationProvider {
             './sql/0041_easy_firebird.sql',
           ),
           migration1771271020: Migration1771271020_FixCustomShowContentKey,
+          migration1773603770: makeKyselyMigrationFromSqlFile(
+            './sql/0042_supreme_medusa.sql',
+          ),
         },
         wrapWithTransaction,
       ),

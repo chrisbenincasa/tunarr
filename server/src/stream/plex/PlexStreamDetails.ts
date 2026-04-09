@@ -474,6 +474,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
 
           this.logger.warn(
             'Skipping external subtitles at index %d because download failed. Please check logs and file an issue for assistance.',
+            stream.index ?? -1,
           );
 
           return;
@@ -536,25 +537,4 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
 
     return streamDetails;
   }
-
-  // private getPlexTranscodeStreamUrl(key: string) {
-  //   const query = querystring.encode({
-  //     ...DefaultPlexHeaders,
-  //     'X-Plex-Token': this.server.accessToken,
-  //     Connection: 'keep-alive',
-  //     path: key,
-  //     mediaIndex: 0,
-  //     partIndex: 0,
-  //     fastSeek: 1,
-  //     directPlay: true,
-  //     directStream: true,
-  //     directStreamAudio: true,
-  //     copyts: false,
-  //   });
-
-  //   return `${trimEnd(
-  //     this.server.uri,
-  //     '/',
-  //   )}/video/:/transcode/universal/start.m3u8?${query}`;
-  // }
 }

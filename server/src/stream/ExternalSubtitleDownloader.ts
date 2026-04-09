@@ -69,7 +69,8 @@ export class ExternalSubtitleDownloader {
 
       if (subtitlesRes.isFailure()) {
         this.logger.warn(
-          'Error while requesting external subtitle stream from Jellyfin: %s',
+          subtitlesRes.error,
+          'Error while requesting external subtitle stream: %s',
           subtitlesRes.error.message ?? '',
         );
         return;
