@@ -6,8 +6,8 @@ import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { RemoteSourceType } from '../../db/schema/base.ts';
 import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
 import { TagRepo } from '../../db/TagRepo.ts';
+import type { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
-import type { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { KEYS } from '../../types/inject.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
@@ -15,9 +15,9 @@ import { MeilisearchService } from '../MeilisearchService.ts';
 import { ExternalCollectionScanner } from './ExternalCollectionScanner.ts';
 
 @injectable()
-export class PlexCollectionScanner extends ExternalCollectionScanner<PlexApiClient> {
+export class JellyfinCollectionScanner extends ExternalCollectionScanner<JellyfinApiClient> {
   get sourceType(): RemoteSourceType {
-    return 'plex';
+    return 'jellyfin';
   }
 
   @InjectLogger() declare readonly logger: Logger;
@@ -47,24 +47,24 @@ export class PlexCollectionScanner extends ExternalCollectionScanner<PlexApiClie
 
   protected getApiClient(
     mediaSource: MediaSourceWithRelations,
-  ): Promise<PlexApiClient> {
-    return this.mediaSourceApiFactory.getPlexApiClientForMediaSource(
+  ): Promise<JellyfinApiClient> {
+    return this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
       mediaSource,
     );
   }
 
   getAllLibraryCollections(
-    apiClient: PlexApiClient,
+    apiClient: JellyfinApiClient,
     libraryExternalKey: string,
   ): AsyncIterable<Collection> {
     return apiClient.getAllLibraryCollections(libraryExternalKey);
   }
 
   getCollectionItems(
-    apiClient: PlexApiClient,
-    libraryId: string,
+    apiClient: JellyfinApiClient,
+    _libraryId: string,
     collectionId: string,
   ): AsyncIterable<ProgramOrFolder> {
-    return apiClient.getCollectionItems(libraryId, collectionId);
+    return apiClient.getCollectionItems(collectionId);
   }
 }
