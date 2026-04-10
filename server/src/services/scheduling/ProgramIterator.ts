@@ -128,9 +128,13 @@ export function getProgramOrderer(
 // There is probably a way to make this typesafe by asserting the
 // programming subtype, but I haven't figured it out yet.
 export function slotIteratorKey<T extends BaseSlot>(slot: T): SlotIteratorKey {
+  const groupSuffix =
+    (slot.type === 'movie' || slot.type === 'smart-collection') && slot.groupBy
+      ? '_grouped'
+      : '';
   switch (slot.type) {
     case 'movie':
-      return `movie_${slot.order}`;
+      return `movie_${slot.order}${groupSuffix}` as SlotIteratorKey;
     case 'show':
       return `tv_${slot.showId}_${slot.order}`;
     case 'redirect':
@@ -140,7 +144,7 @@ export function slotIteratorKey<T extends BaseSlot>(slot: T): SlotIteratorKey {
     case 'filler':
       return `filler_${slot.fillerListId}_${slot.order}`;
     case 'smart-collection':
-      return `smart_collection_${slot.smartCollectionId}_${slot.order}`;
+      return `smart_collection_${slot.smartCollectionId}_${slot.order}${groupSuffix}` as SlotIteratorKey;
     case 'flex':
       return 'flex';
   }

@@ -2672,6 +2672,11 @@ export class ProgramDB implements IProgramDB {
           },
         },
         externalIds: true,
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
       },
     });
 

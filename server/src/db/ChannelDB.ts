@@ -356,6 +356,11 @@ export class ChannelDB implements IChannelDB {
                   },
                 },
                 externalIds: true,
+                tags: {
+                  with: {
+                    tag: true,
+                  },
+                },
               },
             },
           },
