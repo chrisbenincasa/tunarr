@@ -8,6 +8,13 @@
     "clean-build": {
       "dependsOn": ["^build"]
     },
+    "compile-messages": {
+      "dependsOn": ["extract-messages"]
+    },
+    "dev": {
+      "dependsOn": ["compile-messages"]
+    },
+    "extract-messages": {},
     "typecheck": {
       "dependsOn": ["^build"]
     },

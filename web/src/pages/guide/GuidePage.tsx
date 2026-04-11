@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
 import {
   ArrowBackIos,
   ArrowForwardIos,
@@ -115,7 +117,7 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
   return (
     <>
       <Typography variant="h3" mb={2}>
-        Guide
+        <Trans>Guide</Trans>
       </Typography>
       <Stack direction={{ xs: 'column', sm: 'row' }}>
         <Stack
@@ -132,12 +134,12 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
               minDateTime={roundCurrentTime(15)}
               value={start}
               onChange={(v) => handleDayChange(v)}
-              label="Guide Start Time"
+              label={t`Guide Start Time`}
             />
           </FormControl>
           <Typography>{dayjs.duration(end.diff(start)).humanize()}</Typography>
           {!dayjs().isBetween(start, end) && (
-            <Tooltip title={'Reset to current date/time'} placement="top">
+            <Tooltip title={t`Reset to current date/time`} placement="top">
               <IconButton onClick={handleNavigationReset}>
                 <History />
               </IconButton>
@@ -150,7 +152,7 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
                 onChange={(_, checked) => setShowStealth(checked)}
               />
             }
-            label="Show Stealth"
+            label={t`Show Stealth`}
           />
         </Stack>
         <Stack

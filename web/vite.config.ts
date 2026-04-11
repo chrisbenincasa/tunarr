@@ -1,6 +1,7 @@
 import dotenv from '@dotenvx/dotenvx';
 dotenv.config({ debug: false });
 
+import { lingui } from '@lingui/vite-plugin';
 import { tanstackRouter } from '@tanstack/router-vite-plugin';
 import react from '@vitejs/plugin-react-swc';
 import path from 'node:path';
@@ -33,7 +34,10 @@ const version = (() => {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      plugins: [['@lingui/swc-plugin', {}]],
+    }),
+    lingui(),
     tanstackRouter({
       semicolons: true,
       routesDirectory: path.resolve(__dirname, './src/routes'),
