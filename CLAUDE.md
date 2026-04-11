@@ -18,6 +18,8 @@ This is a monorepo with four main packages:
 ## Code Style
 
 - Never cast types using `as any`
+- Never use inline `import()` type annotations — use top-level `import type` statements instead
+- All edits must comply with the project's ESLint rules. Run `pnpm lint-changed` to verify before considering work complete
 
 ## Development Setup
 

@@ -1,3 +1,4 @@
+import type { Maybe } from '@/types/util.ts';
 import { get, isNil, isObject, isUndefined, merge } from 'lodash-es';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
@@ -16,9 +17,11 @@ import {
   type ProgrammingListingsState,
   createProgrammingListingsState,
 } from './programmingSelector/store.ts';
+import type { SettingsStateInternal } from './settings/store.ts';
 import {
   type PersistedSettingsState,
   type SettingsState,
+  SettingsStateInternalSchema,
   createSettingsSlice,
 } from './settings/store.ts';
 import type { ThemeEditorStateInner } from './themeEditor/store.ts';
@@ -75,6 +78,23 @@ const useStore = create<State>()(
               'settings',
             ) as unknown;
 
+            let parsedSettings: Maybe<SettingsStateInternal>;
+            if (persistedSettings) {
+              const result = SettingsStateInternalSchema.safeParse(
+                persistedSettings,
+                { reportInput: true },
+              );
+              if (result.error) {
+                console.error(
+                  'Could not hydrate persisted settings',
+                  result.error,
+                );
+              } else {
+                parsedSettings = result.data;
+                // TODO: provide way to convert to the next version
+              }
+            }
+
             // Migrate to new setting.
             if (
               isObject(persistedTheme) &&
@@ -98,7 +118,7 @@ const useStore = create<State>()(
               settings: merge(
                 {},
                 currentState.settings ?? {},
-                isObject(persistedSettings) ? persistedSettings : {},
+                parsedSettings ?? {},
               ),
             };
           },

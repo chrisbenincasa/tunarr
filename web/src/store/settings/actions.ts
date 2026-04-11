@@ -1,5 +1,5 @@
 import type { SupportedLocales } from '@/store/settings/store.ts';
-import type { PaginationState } from '@tanstack/react-table';
+import type { PaginationState, SortingState } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import useStore from '..';
 
@@ -27,6 +27,14 @@ export const setTablePaginationState = (
     settings.ui.tableSettings[tableName] = {
       ...(settings.ui.tableSettings[tableName] ?? {}),
       pagination,
+    };
+  });
+
+export const setTableSortState = (tableName: string, sorting: SortingState) =>
+  useStore.setState(({ settings }) => {
+    settings.ui.tableSettings[tableName] = {
+      ...(settings.ui.tableSettings[tableName] ?? {}),
+      sortState: sorting,
     };
   });
 

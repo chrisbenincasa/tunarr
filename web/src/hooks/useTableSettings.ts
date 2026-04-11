@@ -1,14 +1,16 @@
-import {
+import type {
   OnChangeFn,
   PaginationState,
+  SortingState,
   VisibilityState,
 } from '@tanstack/react-table';
 import { isFunction } from 'lodash-es';
-import { MRT_RowData, MRT_TableOptions } from 'material-react-table';
+import type { MRT_RowData, MRT_TableOptions } from 'material-react-table';
 import { useCallback, useState } from 'react';
 import {
   setTableColumnModel,
   setTablePaginationState,
+  setTableSortState,
 } from '../store/settings/actions.ts';
 import { useSettings } from '../store/settings/selectors.ts';
 
@@ -16,6 +18,7 @@ export const useTableSettings = (
   tableName: string,
   defaultPaginationState: PaginationState = { pageIndex: 0, pageSize: 10 },
   defaultVisibilityState: VisibilityState = {},
+  defaultSortState: SortingState = [],
 ) => {
   const settings = useSettings();
   const tableSettings = settings.ui.tableSettings[tableName];
@@ -24,6 +27,9 @@ export const useTableSettings = (
   const colVisibilityState = useState<VisibilityState>(initialColumnModel);
   const paginationState = useState<PaginationState>(
     tableSettings?.pagination ?? defaultPaginationState,
+  );
+  const sortState = useState<SortingState>(
+    tableSettings?.sortState ?? defaultSortState,
   );
 
   const visibilityUpdater: OnChangeFn<VisibilityState> = useCallback(
@@ -39,7 +45,7 @@ export const useTableSettings = (
         colVisibilityState[1](updater);
       }
     },
-    [],
+    [colVisibilityState, tableName],
   );
 
   const paginationUpdater: OnChangeFn<PaginationState> = useCallback(
@@ -55,7 +61,24 @@ export const useTableSettings = (
         paginationState[1](updater);
       }
     },
-    [],
+    [paginationState, tableName],
+  );
+
+  const sortUpdater: OnChangeFn<SortingState> = useCallback(
+    (updater) => {
+      if (isFunction(updater)) {
+        sortState[1]((prev) => {
+          const next = updater(prev);
+          console.log(next);
+          setTableSortState(tableName, next);
+          return next;
+        });
+      } else {
+        setTableSortState(tableName, updater);
+        sortState[1](updater);
+      }
+    },
+    [sortState, tableName],
   );
 
   return {
@@ -66,6 +89,10 @@ export const useTableSettings = (
     paginationState: {
       current: paginationState[0],
       setter: paginationUpdater,
+    },
+    sortState: {
+      current: sortState[0],
+      setter: sortUpdater,
     },
   };
 };
@@ -85,13 +112,17 @@ export const useStoreBackedTableSettings = <Data extends MRT_RowData>(
     state: {
       columnVisibility: tableState.colVisibilityState.current,
       pagination: tableState.paginationState.current,
+      sorting: tableState.sortState.current,
     },
     initialState: {
       pagination: tableState.paginationState.current,
+      columnVisibility: tableState.colVisibilityState.current,
+      sorting: tableState.sortState.current,
     },
     onColumnVisibilityChange: (updater) => {
       tableState.colVisibilityState.setter(updater);
     },
     onPaginationChange: (updater) => tableState.paginationState.setter(updater),
+    onSortingChange: (updater) => tableState.sortState.setter(updater),
   } satisfies Partial<MRT_TableOptions<Data>>;
 };

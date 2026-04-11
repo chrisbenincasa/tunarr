@@ -14,6 +14,15 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { DBAccess } from './DBAccess.ts';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
 import { ProgramDB } from './ProgramDB.ts';
+import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
+import { ProgramGroupingRepository } from './program/ProgramGroupingRepository.ts';
+import { ProgramExternalIdRepository } from './program/ProgramExternalIdRepository.ts';
+import { ProgramUpsertRepository } from './program/ProgramUpsertRepository.ts';
+import { ProgramMetadataRepository } from './program/ProgramMetadataRepository.ts';
+import { ProgramGroupingUpsertRepository } from './program/ProgramGroupingUpsertRepository.ts';
+import { ProgramGroupingMinter } from './converters/ProgramGroupingMinter.ts';
+import { ProgramSearchRepository } from './program/ProgramSearchRepository.ts';
+import { ProgramStateRepository } from './program/ProgramStateRepository.ts';
 import { NewArtwork } from './schema/Artwork.ts';
 import {
   MediaSourceId,
@@ -94,16 +103,41 @@ const test = baseTest.extend<Fixture>({
     const dbAccess = DBAccess.instance;
     const logger = LoggerFactory.child({ className: 'ProgramDB' });
 
-    // Mock the task factories required by ProgramDB
+    // Mock the task factories required by ProgramUpsertRepository
     const mockTaskFactory = () => ({ enqueue: async () => {} }) as any;
 
-    const programDb = new ProgramDB(
+    const metadataRepo = new ProgramMetadataRepository(dbAccess.drizzle!);
+    const externalIdRepo = new ProgramExternalIdRepository(
       logger,
-      mockTaskFactory,
-      mockTaskFactory,
       dbAccess.db!,
-      () => ({}) as any, // ProgramDaoMinterFactory
       dbAccess.drizzle!,
+    );
+    const groupingUpsertRepo = new ProgramGroupingUpsertRepository(
+      dbAccess.db!,
+      dbAccess.drizzle!,
+      metadataRepo,
+    );
+    const upsertRepo = new ProgramUpsertRepository(
+      logger,
+      dbAccess.db!,
+      dbAccess.drizzle!,
+      mockTaskFactory,
+      mockTaskFactory,
+      () => ({}) as any, // ProgramDaoMinterFactory
+      externalIdRepo,
+      metadataRepo,
+      groupingUpsertRepo,
+      new ProgramGroupingMinter(),
+    );
+    const programDb = new ProgramDB(
+      new BasicProgramRepository(dbAccess.db!, dbAccess.drizzle!),
+      new ProgramGroupingRepository(logger, dbAccess.db!, dbAccess.drizzle!),
+      externalIdRepo,
+      upsertRepo,
+      metadataRepo,
+      groupingUpsertRepo,
+      new ProgramSearchRepository(dbAccess.db!, dbAccess.drizzle!),
+      new ProgramStateRepository(dbAccess.drizzle!),
     );
 
     await use(programDb);

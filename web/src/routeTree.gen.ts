@@ -24,6 +24,7 @@ import { Route as SystemLogsRouteImport } from './routes/system/logs';
 import { Route as SystemDebugRouteImport } from './routes/system/debug';
 import { Route as SettingsXmltvRouteImport } from './routes/settings/xmltv';
 import { Route as SettingsSourcesRouteImport } from './routes/settings/sources';
+import { Route as SettingsScannerRouteImport } from './routes/settings/scanner';
 import { Route as SettingsHdhrRouteImport } from './routes/settings/hdhr';
 import { Route as SettingsGeneralRouteImport } from './routes/settings/general';
 import { Route as SettingsFfmpegRouteImport } from './routes/settings/ffmpeg';
@@ -134,6 +135,11 @@ const SettingsXmltvRoute = SettingsXmltvRouteImport.update({
 const SettingsSourcesRoute = SettingsSourcesRouteImport.update({
   id: '/sources',
   path: '/sources',
+  getParentRoute: () => SettingsRoute,
+} as any);
+const SettingsScannerRoute = SettingsScannerRouteImport.update({
+  id: '/scanner',
+  path: '/scanner',
   getParentRoute: () => SettingsRoute,
 } as any);
 const SettingsHdhrRoute = SettingsHdhrRouteImport.update({
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
   '/settings/hdhr': typeof SettingsHdhrRoute;
+  '/settings/scanner': typeof SettingsScannerRoute;
   '/settings/sources': typeof SettingsSourcesRoute;
   '/settings/xmltv': typeof SettingsXmltvRoute;
   '/system/debug': typeof SystemDebugRoute;
@@ -404,6 +411,7 @@ export interface FileRoutesByTo {
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
   '/settings/hdhr': typeof SettingsHdhrRoute;
+  '/settings/scanner': typeof SettingsScannerRoute;
   '/settings/sources': typeof SettingsSourcesRoute;
   '/settings/xmltv': typeof SettingsXmltvRoute;
   '/system/debug': typeof SystemDebugRoute;
@@ -456,6 +464,7 @@ export interface FileRoutesById {
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
   '/settings/hdhr': typeof SettingsHdhrRoute;
+  '/settings/scanner': typeof SettingsScannerRoute;
   '/settings/sources': typeof SettingsSourcesRoute;
   '/settings/xmltv': typeof SettingsXmltvRoute;
   '/system/debug': typeof SystemDebugRoute;
@@ -511,6 +520,7 @@ export interface FileRouteTypes {
     | '/settings/ffmpeg'
     | '/settings/general'
     | '/settings/hdhr'
+    | '/settings/scanner'
     | '/settings/sources'
     | '/settings/xmltv'
     | '/system/debug'
@@ -562,6 +572,7 @@ export interface FileRouteTypes {
     | '/settings/ffmpeg'
     | '/settings/general'
     | '/settings/hdhr'
+    | '/settings/scanner'
     | '/settings/sources'
     | '/settings/xmltv'
     | '/system/debug'
@@ -613,6 +624,7 @@ export interface FileRouteTypes {
     | '/settings/ffmpeg'
     | '/settings/general'
     | '/settings/hdhr'
+    | '/settings/scanner'
     | '/settings/sources'
     | '/settings/xmltv'
     | '/system/debug'
@@ -783,6 +795,13 @@ declare module '@tanstack/react-router' {
       path: '/sources';
       fullPath: '/settings/sources';
       preLoaderRoute: typeof SettingsSourcesRouteImport;
+      parentRoute: typeof SettingsRoute;
+    };
+    '/settings/scanner': {
+      id: '/settings/scanner';
+      path: '/scanner';
+      fullPath: '/settings/scanner';
+      preLoaderRoute: typeof SettingsScannerRouteImport;
       parentRoute: typeof SettingsRoute;
     };
     '/settings/hdhr': {
@@ -1045,6 +1064,7 @@ interface SettingsRouteChildren {
   SettingsFfmpegRoute: typeof SettingsFfmpegRoute;
   SettingsGeneralRoute: typeof SettingsGeneralRoute;
   SettingsHdhrRoute: typeof SettingsHdhrRoute;
+  SettingsScannerRoute: typeof SettingsScannerRoute;
   SettingsSourcesRoute: typeof SettingsSourcesRoute;
   SettingsXmltvRoute: typeof SettingsXmltvRoute;
   SettingsFfmpegConfigIdRoute: typeof SettingsFfmpegConfigIdRoute;
@@ -1056,6 +1076,7 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsFfmpegRoute: SettingsFfmpegRoute,
   SettingsGeneralRoute: SettingsGeneralRoute,
   SettingsHdhrRoute: SettingsHdhrRoute,
+  SettingsScannerRoute: SettingsScannerRoute,
   SettingsSourcesRoute: SettingsSourcesRoute,
   SettingsXmltvRoute: SettingsXmltvRoute,
   SettingsFfmpegConfigIdRoute: SettingsFfmpegConfigIdRoute,
