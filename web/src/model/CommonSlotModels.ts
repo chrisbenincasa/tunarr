@@ -65,6 +65,7 @@ export const CommonShowSlotViewModel = z.object({
     })
     .optional(),
   seasonFilter: z.number().array().default([]),
+  seasonExcludeFilter: z.number().array().default([]),
 });
 
 export type CommonShowSlotViewModel = z.infer<typeof CommonShowSlotViewModel>;

@@ -111,6 +111,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
         show,
         weight: 100,
         seasonFilter: [],
+        seasonExcludeFilter: [],
       });
     }
 

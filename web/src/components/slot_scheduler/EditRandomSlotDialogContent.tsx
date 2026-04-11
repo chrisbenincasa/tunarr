@@ -221,6 +221,7 @@ export const EditRandomSlotDialogContent = ({
           order: 'next',
           direction: 'asc',
           seasonFilter: [],
+          seasonExcludeFilter: [],
         }))
         .with('smart-collection', () => {
           const opt = programOptions.find(

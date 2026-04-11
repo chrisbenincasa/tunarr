@@ -456,11 +456,19 @@ function getContentProgramIterator(
     (p) => p.uuid,
   );
 
-  if (slot.type === 'show' && slot.seasonFilter.length > 0) {
-    programs = programs.filter((program) => {
-      const season = program.season?.index ?? program.seasonNumber;
-      return season && slot.seasonFilter.includes(season);
-    });
+  if (slot.type === 'show') {
+    if (slot.seasonFilter.length > 0) {
+      programs = programs.filter((program) => {
+        const season = program.season?.index ?? program.seasonNumber;
+        return season && slot.seasonFilter.includes(season);
+      });
+    }
+    if (slot.seasonExcludeFilter?.length > 0) {
+      programs = programs.filter((program) => {
+        const season = program.season?.index ?? program.seasonNumber;
+        return !season || !slot.seasonExcludeFilter.includes(season);
+      });
+    }
   }
 
   switch (slot.order) {
