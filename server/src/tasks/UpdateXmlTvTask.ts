@@ -88,9 +88,22 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
           true,
         );
       } else {
+        // Round start time down to the nearest hour so guide boundaries align
+        // with the hour-granular requests made by the UI and other consumers.
+        // Extend the duration by the fractional hour we went back so the guide
+        // end time — and therefore coverage before the next scheduled run — is
+        // identical to what it would have been without rounding.
+        const now = dayjs();
+        const startTime = now.startOf('hour');
+        const extraDuration = dayjs.duration(now.diff(startTime));
+        const guideDuration = dayjs
+          .duration({ hours: xmltvSettings.programmingHours })
+          .add(extraDuration);
+
         await this.guideService.buildAllChannels(
-          dayjs.duration({ hours: xmltvSettings.programmingHours }),
+          guideDuration,
           false,
+          startTime.valueOf(),
         );
       }
 

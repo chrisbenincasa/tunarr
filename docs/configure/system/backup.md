@@ -163,6 +163,26 @@ When restoring a backup without search snapshots, Tunarr will automatically rebu
 !!! warning "Windows Snapshots"
     There is currently an [issue in Meilisearch](https://github.com/meilisearch/meilisearch/issues/6051) where snapshots do not work correctly on Windows. Until this is resolved, Windows users should disable Meilisearch snapshots.
 
+### Excluding `data.ms` from Proxmox Backup Server
+
+The `data.ms` directory contains the Meilisearch search index and can be several gigabytes in size. Since Tunarr rebuilds this index automatically on startup, there is no need to include it in Proxmox Backup Server (PBS) jobs.
+
+PBS uses `.pxarexclude` files (similar to `.gitignore`) to exclude paths from backups. To exclude `data.ms`, create or edit a `.pxarexclude` file in your Tunarr data directory:
+
+```bash
+# Create .pxarexclude in the Tunarr data directory
+# Docker example — adjust to your actual mount path
+echo "data.ms/" >> /path/to/tunarr/data/.pxarexclude
+```
+
+The file should contain:
+
+```
+data.ms/
+```
+
+PBS will skip the `data.ms` directory during all future backup jobs that include that path. No PBS job reconfiguration is required — the exclusion is applied automatically when PBS encounters the `.pxarexclude` file.
+
 ## Backup Storage Locations
 
 ### Default Location

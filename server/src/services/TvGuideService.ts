@@ -198,7 +198,11 @@ export class TVGuideService {
     );
   }
 
-  async buildAllChannels(guideDuration: Duration, force: boolean = false) {
+  async buildAllChannels(
+    guideDuration: Duration,
+    force: boolean = false,
+    startTime: number = +dayjs(),
+  ) {
     return this.withGuideContext(async () => {
       if (isEmpty(this.channelsById)) {
         const placeholderChannel = await this.makePlaceholderChannel();
@@ -207,7 +211,13 @@ export class TVGuideService {
         delete this.cachedGuide[PlaceholderChannelId];
         await Promise.all(
           keys(this.channelsById).map((channelId) =>
-            this.buildChannelGuide(guideDuration, channelId, false, force),
+            this.buildChannelGuide(
+              guideDuration,
+              channelId,
+              false,
+              force,
+              startTime,
+            ),
           ),
         );
       }
@@ -283,16 +293,16 @@ export class TVGuideService {
     const { programs } = channelAndLineup;
 
     return seq.collect(programs, (program) => {
-      const startTime = Math.max(program.startTimeMs, beginningTimeMs);
-      const stopTime = Math.min(
-        program.startTimeMs + program.lineupItem.durationMs,
-        endTimeMs,
-      );
-
-      if (startTime < stopTime) {
+      const programEndTime =
+        program.startTimeMs + program.lineupItem.durationMs;
+      const startsInRange =
+        program.startTimeMs >= beginningTimeMs &&
+        program.startTimeMs < endTimeMs;
+      const endsInRange =
+        programEndTime > beginningTimeMs && programEndTime <= endTimeMs;
+      if (startsInRange || endsInRange) {
         return program;
       }
-
       return;
     });
   }
