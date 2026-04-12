@@ -3,6 +3,7 @@ import type { ChannelStreamMode, Watermark } from '@tunarr/types';
 import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import type { DeepReadonly, StrictExclude } from 'ts-essentials';
+import type { ChannelTranscodingSettings } from '../db/schema/base.ts';
 import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import type { StreamDetails, StreamSource } from '../stream/types.ts';
 import type { OutputFormat } from './builder/constants.ts';
@@ -86,6 +87,7 @@ export type StreamOptions = {
   startTime: Duration;
   duration: Duration;
   watermark?: Watermark;
+  nowPlayingOverlay?: ChannelTranscodingSettings['nowPlayingOverlay'];
   realtime?: boolean; // = true,
   extraInputHeaders?: Record<string, string>;
   outputFormat: OutputFormat;

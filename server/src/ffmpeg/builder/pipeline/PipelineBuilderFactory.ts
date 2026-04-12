@@ -9,6 +9,7 @@ import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.j
 import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
 import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
 import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import type { NowPlayingOverlayPayload } from '@/ffmpeg/NowPlayingOverlay.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import type { Nullable } from '@/types/util.js';
 import { ContainerModule } from 'inversify';
@@ -50,6 +51,7 @@ class PipelineBuilderFactory$Builder {
   private concatInputSource: Nullable<ConcatInputSource> = null;
   private watermarkInputSource: Nullable<WatermarkInputSource> = null;
   private subtiitleInputSource: Nullable<SubtitlesInputSource> = null;
+  private nowPlayingOverlay: Nullable<NowPlayingOverlayPayload> = null;
   private hardwareAccelerationMode: HardwareAccelerationMode =
     HardwareAccelerationMode.None;
 
@@ -92,6 +94,13 @@ class PipelineBuilderFactory$Builder {
     return this;
   }
 
+  setNowPlayingOverlay(
+    nowPlayingOverlay: Nullable<NowPlayingOverlayPayload>,
+  ): PipelineBuilderFactory$Builder {
+    this.nowPlayingOverlay = nowPlayingOverlay;
+    return this;
+  }
+
   setHardwareAccelerationMode(
     hardwareAccelerationMode: HardwareAccelerationMode,
   ): PipelineBuilderFactory$Builder {
@@ -122,7 +131,7 @@ class PipelineBuilderFactory$Builder {
           this.concatInputSource,
           this.watermarkInputSource,
           this.subtiitleInputSource,
-        );
+        ).setNowPlayingOverlay(this.nowPlayingOverlay);
       case HardwareAccelerationMode.Qsv:
         return new QsvPipelineBuilder(
           hardwareCapabilities,
@@ -132,7 +141,7 @@ class PipelineBuilderFactory$Builder {
           this.concatInputSource,
           this.watermarkInputSource,
           this.subtiitleInputSource,
-        );
+        ).setNowPlayingOverlay(this.nowPlayingOverlay);
       case HardwareAccelerationMode.Vaapi:
         return new VaapiPipelineBuilder(
           hardwareCapabilities,
@@ -142,7 +151,7 @@ class PipelineBuilderFactory$Builder {
           this.watermarkInputSource,
           this.subtiitleInputSource,
           this.concatInputSource,
-        );
+        ).setNowPlayingOverlay(this.nowPlayingOverlay);
       case HardwareAccelerationMode.Videotoolbox:
         return new VideoToolboxPipelineBuilder(
           hardwareCapabilities,
@@ -152,7 +161,7 @@ class PipelineBuilderFactory$Builder {
           this.concatInputSource,
           this.watermarkInputSource,
           this.subtiitleInputSource,
-        );
+        ).setNowPlayingOverlay(this.nowPlayingOverlay);
       default:
         return new SoftwarePipelineBuilder(
           this.videoInputSource,
@@ -161,7 +170,7 @@ class PipelineBuilderFactory$Builder {
           this.subtiitleInputSource,
           this.concatInputSource,
           binaryCapabilities,
-        );
+        ).setNowPlayingOverlay(this.nowPlayingOverlay);
     }
   }
 }

@@ -2,6 +2,7 @@ import {
   HardwareAccelerationMode,
   TranscodeAudioOutputFormat,
 } from '@/db/schema/TranscodeConfig.js';
+import type { NowPlayingOverlayPayload } from '@/ffmpeg/NowPlayingOverlay.js';
 import {
   SubtitleMethods,
   type AudioStream,
@@ -55,7 +56,7 @@ import type {
   PipelineStep,
 } from '@/ffmpeg/builder/types/PipelineStep.js';
 import type { DataProps, Nilable, Nullable } from '@/types/util.js';
-import { ifDefined, isNonEmptyString } from '@/util/index.js';
+import { ifDefined, isDefined, isNonEmptyString } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
@@ -152,6 +153,7 @@ export class PipelineBuilderContext {
   videoStream?: VideoStream;
   audioStream?: AudioStream;
   subtitleStream?: SubtitleStream;
+  nowPlayingOverlay?: NowPlayingOverlayPayload;
   ffmpegState: FfmpegState;
   desiredState: FrameState;
   desiredAudioState?: AudioState;
@@ -183,6 +185,10 @@ export class PipelineBuilderContext {
         this.subtitleStream.method === SubtitleMethods.Burn) ??
       false
     );
+  }
+
+  hasNowPlayingOverlay() {
+    return isDefined(this.nowPlayingOverlay);
   }
 }
 
@@ -216,6 +222,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   });
   protected decoder: Nullable<Decoder> = null;
   protected context: PipelineBuilderContext;
+  protected nowPlayingOverlay: Nullable<NowPlayingOverlayPayload> = null;
 
   constructor(
     protected nullableVideoInputSource: Nullable<VideoInputSource>,
@@ -229,6 +236,13 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   get videoInputSource(): VideoInputSource {
     // Only use this on video pipelines!!!
     return this.nullableVideoInputSource!;
+  }
+
+  setNowPlayingOverlay(
+    nowPlayingOverlay: Nullable<NowPlayingOverlayPayload>,
+  ): this {
+    this.nowPlayingOverlay = nowPlayingOverlay;
+    return this;
   }
 
   validate(): Nullable<Error> {
@@ -336,6 +350,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         videoStream: first(this.nullableVideoInputSource?.streams),
         audioStream: first(this.audioInputSource?.streams),
         subtitleStream: first(this.subtitleInputSource?.streams),
+        nowPlayingOverlay: this.nowPlayingOverlay ?? undefined,
         ffmpegState,
         desiredState,
         desiredAudioState: this.audioInputSource?.desiredState,

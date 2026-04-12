@@ -123,6 +123,7 @@ export class PlexProgramStream extends ProgramStream {
         startTime: start,
         duration: dayjs.duration(lineupItem.streamDuration),
         watermark,
+        nowPlayingOverlay: this.getNowPlayingOverlay(),
         realtime: this.context.realtime,
         outputFormat: this.outputFormat,
         streamMode: this.context.streamMode,

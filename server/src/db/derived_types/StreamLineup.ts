@@ -12,11 +12,20 @@ import type {
 } from '../schema/derivedTypes.ts';
 import type { ProgramType } from '../schema/Program.ts';
 
+export type NextProgramMetadata = {
+  title?: string;
+  artist?: string;
+  album?: string;
+  year?: string;
+  filePath?: string;
+};
+
 type BaseStreamLineupItem = {
   streamDuration: number;
   startOffset?: number;
   programBeginMs: number;
   duration: number;
+  nextProgramMetadata?: NextProgramMetadata;
 };
 
 export type StreamLineupProgram = MarkNotNilable<

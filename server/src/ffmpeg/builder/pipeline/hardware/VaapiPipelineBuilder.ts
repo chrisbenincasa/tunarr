@@ -210,6 +210,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     const forceSoftwareOverlay =
       this.context.pipelineOptions?.disableHardwareFilters ||
       (this.context.hasWatermark && this.context.hasSubtitleOverlay()) ||
+      this.context.hasNowPlayingOverlay() ||
       ffmpegState.vaapiDriver === 'radeonsi';
 
     currentState.forceSoftwareOverlay = forceSoftwareOverlay;
@@ -225,7 +226,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     } else if (
       currentState.frameDataLocation === FrameDataLocation.Hardware &&
       (!this.context.hasSubtitleOverlay() || forceSoftwareOverlay) &&
-      this.context.hasWatermark
+      (this.context.hasWatermark || this.context.hasNowPlayingOverlay())
     ) {
       // download for watermark (or forced software subtitle)
       const filter = new HardwareDownloadFilter(currentState);
@@ -238,6 +239,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     // Watermark
     currentState = this.setWatermark(currentState);
+    currentState = this.applyNowPlayingOverlay(currentState);
 
     const noEncoderSteps = every(
       this.getEncoderSteps(),

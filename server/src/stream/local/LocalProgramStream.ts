@@ -118,6 +118,7 @@ export class LocalProgramStream extends ProgramStream {
         startTime: start,
         duration: dayjs.duration(lineupItem.streamDuration),
         watermark: await this.getWatermark(),
+        nowPlayingOverlay: this.getNowPlayingOverlay(),
         realtime: this.context.realtime,
         extraInputHeaders: {},
         outputFormat: this.outputFormat,
