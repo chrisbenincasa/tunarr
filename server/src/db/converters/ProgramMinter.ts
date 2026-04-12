@@ -117,6 +117,8 @@ export class ProgramDaoMinter {
       plot: movie.plot,
       tagline: movie.tagline,
       rating: movie.rating,
+      audienceRating: movie.audienceRating ?? null,
+      criticRating: movie.criticRating ?? null,
       summary: movie.summary,
       title: movie.title,
       type: ProgramType.Movie,
