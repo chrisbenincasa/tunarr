@@ -126,6 +126,9 @@ const RequiredLibraryFields = [
   'OfficialRating',
   'MediaStreams',
   'MediaSources',
+  'ProductionLocations',
+  'CommunityRating',
+  'CriticRating',
 ];
 
 function getJellyfinAuthorization(
@@ -1171,6 +1174,10 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       }),
       plot: movie.Overview ?? null,
       rating: movie.OfficialRating ?? null,
+      countries: movie.ProductionLocations?.map((loc) => ({ name: loc })) ?? [],
+      collections: [],
+      audienceRating: movie.CommunityRating ?? null,
+      criticRating: movie.CriticRating ?? null,
       sourceType: 'jellyfin',
       tagline: find(movie.Taglines, isNonEmptyString) ?? null,
       tags: movie.Tags?.filter(isNonEmptyString) ?? [],
@@ -1408,6 +1415,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       }),
       plot: series.Overview ?? null,
       rating: series.OfficialRating ?? null,
+      countries:
+        series.ProductionLocations?.map((loc) => ({ name: loc })) ?? [],
+      collections: [],
+      audienceRating: series.CommunityRating ?? null,
+      criticRating: series.CriticRating ?? null,
       sourceType: 'jellyfin',
       tagline: find(series.Taglines, isNonEmptyString) ?? null,
       tags: series.Tags?.filter(isNonEmptyString) ?? [],
