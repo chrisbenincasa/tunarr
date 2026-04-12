@@ -1,6 +1,15 @@
-import { Stack } from '@mui/material';
+import {
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+} from '@mui/material';
 import type { PickerValidDate } from '@mui/x-date-pickers';
 import { DatePicker } from '@mui/x-date-pickers';
+import type { DateSearchField, RelativeDateUnit } from '@tunarr/types/schemas';
+import { RelativeDateUnits } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isNumber } from 'lodash-es';
 import { useCallback } from 'react';
@@ -14,9 +23,20 @@ type Props = {
   formKey: FieldKey<FieldPrefix, 'fieldSpec'>;
 };
 
+const UnitLabels: Record<RelativeDateUnit, string> = {
+  day: 'Days',
+  week: 'Weeks',
+  month: 'Months',
+  year: 'Years',
+};
+
+function isRelativeDateOp(op: string): op is 'inthelast' | 'notinthelast' {
+  return op === 'inthelast' || op === 'notinthelast';
+}
+
 export function DateSearchValueNode({ formKey }: Props) {
-  const { control, watch } = useFormContext<SearchForm>();
-  const currentSpec = watch(formKey);
+  const { control, watch, setValue } = useFormContext<SearchForm>();
+  const currentSpec = watch(formKey) as DateSearchField;
 
   const handleDateValueChange = useCallback(
     (
@@ -29,6 +49,74 @@ export function DateSearchValueNode({ formKey }: Props) {
     },
     [],
   );
+
+  const handleRelativeAmountChange = useCallback(
+    (amount: number) => {
+      const unit = currentSpec.relativeDate?.unit ?? 'week';
+      const resolved = +dayjs().subtract(amount, unit);
+      setValue(`${formKey}.value`, resolved);
+      setValue(`${formKey}.relativeDate`, {
+        op: currentSpec.op as 'inthelast' | 'notinthelast',
+        amount,
+        unit,
+      });
+    },
+    [currentSpec.relativeDate?.unit, currentSpec.op, formKey, setValue],
+  );
+
+  const handleRelativeUnitChange = useCallback(
+    (unit: RelativeDateUnit) => {
+      const amount = currentSpec.relativeDate?.amount ?? 1;
+      const resolved = +dayjs().subtract(amount, unit);
+      setValue(`${formKey}.value`, resolved);
+      setValue(`${formKey}.relativeDate`, {
+        op: currentSpec.op as 'inthelast' | 'notinthelast',
+        amount,
+        unit,
+      });
+    },
+    [currentSpec.relativeDate?.amount, currentSpec.op, formKey, setValue],
+  );
+
+  if (isRelativeDateOp(currentSpec.op)) {
+    const amount = currentSpec.relativeDate?.amount ?? 1;
+    const unit = currentSpec.relativeDate?.unit ?? 'week';
+
+    return (
+      <Stack direction="row" gap={1}>
+        <TextField
+          type="number"
+          size="small"
+          label="Amount"
+          value={amount}
+          onChange={(e) => {
+            const val = parseInt(e.target.value);
+            if (!isNaN(val) && val > 0) {
+              handleRelativeAmountChange(val);
+            }
+          }}
+          slotProps={{ htmlInput: { min: 1 } }}
+          sx={{ width: 100 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel>Unit</InputLabel>
+          <Select
+            value={unit}
+            label="Unit"
+            onChange={(e) =>
+              handleRelativeUnitChange(e.target.value as RelativeDateUnit)
+            }
+          >
+            {RelativeDateUnits.map((u) => (
+              <MenuItem key={u} value={u}>
+                {UnitLabels[u]}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Stack>
+    );
+  }
 
   if (isNumber(currentSpec.value)) {
     return (

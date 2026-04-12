@@ -1,10 +1,7 @@
 import { z } from 'zod/v4';
 import type { MediaSourceLibrary } from '../MediaSourceSettings.js';
-import {
-  SearchField,
-  SearchFilterQuerySchema,
-  SearchRequest,
-} from '../schemas/SearchRequest.js';
+import type { SearchField, SearchRequest } from '../schemas/SearchRequest.js';
+import { SearchFilterQuerySchema } from '../schemas/SearchRequest.js';
 
 // A PlexSearch but with a reference to the
 // library it is for.

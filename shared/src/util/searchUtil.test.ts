@@ -649,4 +649,193 @@ describe('searchFilterToString', () => {
     const request = parsedSearchToRequest(query);
     expect(searchFilterToString(request)).toEqual(input);
   });
+
+  // Relative date query tests
+  test('parse release_date inthelast', () => {
+    const input = 'release_date inthelast 2 weeks';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'single_date_query',
+      field: 'release_date',
+      op: 'inthelast',
+      value: { amount: 2, unit: 'week' },
+    } satisfies SearchClause);
+  });
+
+  test('parse release_date notinthelast', () => {
+    const input = 'release_date notinthelast 3 months';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'single_date_query',
+      field: 'release_date',
+      op: 'notinthelast',
+      value: { amount: 3, unit: 'month' },
+    } satisfies SearchClause);
+  });
+
+  test('parse added_date inthelast', () => {
+    const input = 'added_date inthelast 1 week';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'single_date_query',
+      field: 'added_date',
+      op: 'inthelast',
+      value: { amount: 1, unit: 'week' },
+    } satisfies SearchClause);
+  });
+
+  test('parse case-insensitive relative date', () => {
+    const input = 'release_date INTHELAST 1 year';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'single_date_query',
+      field: 'release_date',
+      op: 'inthelast',
+      value: { amount: 1, unit: 'year' },
+    } satisfies SearchClause);
+  });
+
+  test('parse singular unit', () => {
+    const input = 'release_date inthelast 1 day';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'single_date_query',
+      field: 'release_date',
+      op: 'inthelast',
+      value: { amount: 1, unit: 'day' },
+    } satisfies SearchClause);
+  });
+
+  test('parse plural unit', () => {
+    const input = 'release_date inthelast 14 days';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'single_date_query',
+      field: 'release_date',
+      op: 'inthelast',
+      value: { amount: 14, unit: 'day' },
+    } satisfies SearchClause);
+  });
+
+  test('inthelast resolves to >= with epoch ms', () => {
+    const clause = {
+      type: 'single_date_query',
+      field: 'release_date',
+      op: 'inthelast',
+      value: { amount: 2, unit: 'week' },
+    } satisfies SearchClause;
+
+    const before = +dayjs().subtract(2, 'week');
+    const request = parsedSearchToRequest(clause);
+    const after = +dayjs().subtract(2, 'week');
+
+    expect(request).toMatchObject({
+      type: 'value',
+      fieldSpec: {
+        key: 'originalReleaseDate',
+        name: 'release_date',
+        op: '>=',
+        type: 'date',
+        relativeDate: {
+          op: 'inthelast',
+          amount: 2,
+          unit: 'week',
+        },
+      },
+    });
+
+    // The resolved value should be approximately 2 weeks ago
+    const value = (request as { fieldSpec: { value: number } }).fieldSpec.value;
+    expect(value).toBeGreaterThanOrEqual(before);
+    expect(value).toBeLessThanOrEqual(after);
+  });
+
+  test('notinthelast resolves to < with epoch ms', () => {
+    const clause = {
+      type: 'single_date_query',
+      field: 'release_date',
+      op: 'notinthelast',
+      value: { amount: 3, unit: 'month' },
+    } satisfies SearchClause;
+
+    const request = parsedSearchToRequest(clause);
+
+    expect(request).toMatchObject({
+      type: 'value',
+      fieldSpec: {
+        key: 'originalReleaseDate',
+        name: 'release_date',
+        op: '<',
+        type: 'date',
+        relativeDate: {
+          op: 'notinthelast',
+          amount: 3,
+          unit: 'month',
+        },
+      },
+    });
+  });
+
+  test('added_date maps to addedAt index field', () => {
+    const clause = {
+      type: 'single_date_query',
+      field: 'added_date',
+      op: 'inthelast',
+      value: { amount: 1, unit: 'week' },
+    } satisfies SearchClause;
+
+    const request = parsedSearchToRequest(clause);
+
+    expect(request).toMatchObject({
+      type: 'value',
+      fieldSpec: {
+        key: 'addedAt',
+        name: 'added_date',
+        op: '>=',
+        type: 'date',
+      },
+    });
+  });
+
+  test('round-trip relative date through parse and stringify', () => {
+    const input = 'release_date inthelast 2 weeks';
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+    expect(searchFilterToString(request)).toEqual(input);
+  });
+
+  test('round-trip notinthelast through parse and stringify', () => {
+    const input = 'release_date notinthelast 1 month';
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+    expect(searchFilterToString(request)).toEqual(input);
+  });
+
+  test('round-trip singular unit', () => {
+    const input = 'release_date inthelast 1 day';
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+    expect(searchFilterToString(request)).toEqual(input);
+  });
+
+  test('compound query with relative date', () => {
+    const input = 'release_date inthelast 2 weeks AND genre = "comedy"';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'binary_clause',
+      op: 'and',
+      lhs: {
+        type: 'single_date_query',
+        field: 'release_date',
+        op: 'inthelast',
+        value: { amount: 2, unit: 'week' },
+      },
+      rhs: {
+        type: 'single_query',
+        field: 'genre',
+        op: '=',
+        value: 'comedy',
+      },
+    } satisfies SearchClause);
+  });
 });

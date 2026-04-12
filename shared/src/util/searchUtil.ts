@@ -77,7 +77,7 @@ const StringField = createToken({
   longer_alt: Identifier,
 });
 
-const DateFields = ['release_date'] as const;
+const DateFields = ['release_date', 'added_date'] as const;
 
 const DateField = createToken({
   name: 'DateField',
@@ -184,6 +184,24 @@ const GreaterThanOrEqualOperator = createToken({
 });
 const GreaterThanOperator = createToken({ name: 'GTOperator', pattern: />/ });
 
+const NotInTheLastOperator = createToken({
+  name: 'NotInTheLastOperator',
+  pattern: /notinthelast/i,
+  longer_alt: Identifier,
+});
+
+const InTheLastOperator = createToken({
+  name: 'InTheLastOperator',
+  pattern: /inthelast/i,
+  longer_alt: Identifier,
+});
+
+const RelativeDateUnit = createToken({
+  name: 'RelativeDateUnit',
+  pattern: /days?|weeks?|months?|years?/i,
+  longer_alt: Identifier,
+});
+
 const NotOperator = createToken({ name: 'NotOperator', pattern: /not/i });
 
 const InOperator = createToken({ name: 'InOperator', pattern: /in/i });
@@ -209,6 +227,9 @@ const allTokens = [
   NeqOperator,
   LessThanOperator,
   GreaterThanOperator,
+  // Relative date operators must precede Not/In to avoid partial matches
+  NotInTheLastOperator,
+  InTheLastOperator,
   NotOperator,
   InOperator,
   BetweenOperator,
@@ -222,6 +243,8 @@ const allTokens = [
   StringField,
   DateField,
   NumericField,
+  // Relative date units must precede Identifier
+  RelativeDateUnit,
   // Catch all
   Identifier,
 ];
@@ -247,7 +270,16 @@ const StringOps = [
 type StringOps = TupleToUnion<typeof StringOps>;
 const NumericOps = ['=', '!=', '<', '<=', '>', '>=', 'between'] as const;
 type NumericOps = TupleToUnion<typeof NumericOps>;
-const DateOps = ['=', '<', '<=', '>', '>=', 'between'] as const;
+const DateOps = [
+  '=',
+  '<',
+  '<=',
+  '>',
+  '>=',
+  'between',
+  'inthelast',
+  'notinthelast',
+] as const;
 type DateOps = TupleToUnion<typeof DateOps>;
 
 const StringOpToApiType = {
@@ -301,11 +333,16 @@ export type SingleNumericQuery =
       includeHigher: boolean;
     };
 
+export type RelativeDateValue = {
+  amount: number;
+  unit: 'day' | 'week' | 'month' | 'year';
+};
+
 export type SingleDateSearchQuery =
   | {
       type: 'single_date_query';
       field: string;
-      op: StrictExclude<DateOps, 'between'>;
+      op: StrictExclude<DateOps, 'between' | 'inthelast' | 'notinthelast'>;
       value: string;
     }
   | {
@@ -315,6 +352,12 @@ export type SingleDateSearchQuery =
       value: [string, string];
       includeLow: boolean;
       includeHigher: boolean;
+    }
+  | {
+      type: 'single_date_query';
+      field: string;
+      op: 'inthelast' | 'notinthelast';
+      value: RelativeDateValue;
     };
 
 export type SingleSearch =
@@ -343,6 +386,7 @@ export const virtualFieldToIndexField: Record<string, string> = {
   studio: 'studio.name',
   year: 'originalReleaseYear',
   release_date: 'originalReleaseDate',
+  added_date: 'addedAt',
   release_year: 'originalReleaseYear',
   // these get mapped to the duration field and their
   // values get converted to the appropriate units
@@ -401,6 +445,7 @@ const numericFieldDenormalizersByField = {
 
 const dateFieldNormalizersByField = {
   release_date: normalizeReleaseDate,
+  added_date: normalizeReleaseDate,
 } satisfies Record<string, Converter<string, number>>;
 
 export class SearchParser extends EmbeddedActionsParser {
@@ -622,7 +667,49 @@ export class SearchParser extends EmbeddedActionsParser {
     return this.OR<StrictOmit<SingleDateSearchQuery, 'field'>>([
       {
         ALT: () => {
-          const op = this.OR2<StrictExclude<DateOps, 'between'>>([
+          const op = this.OR2<'inthelast' | 'notinthelast'>([
+            {
+              ALT: () => {
+                this.CONSUME(InTheLastOperator);
+                return 'inthelast' as const;
+              },
+            },
+            {
+              ALT: () => {
+                this.CONSUME(NotInTheLastOperator);
+                return 'notinthelast' as const;
+              },
+            },
+          ]);
+          const amount = parseInt(this.CONSUME2(Integer).image);
+          // 'year' is also a NumericField token, so we must accept both.
+          // During Chevrotain's grammar recording phase OR returns undefined,
+          // so we guard the toLowerCase call.
+          const unitImage = this.OR6<string>([
+            {
+              ALT: () => this.CONSUME(RelativeDateUnit).image,
+            },
+            {
+              ALT: () => this.CONSUME(NumericField).image,
+            },
+          ]);
+          const unitRaw =
+            typeof unitImage === 'string' ? unitImage.toLowerCase() : '';
+          const unit = (
+            unitRaw.endsWith('s') ? unitRaw.slice(0, -1) : unitRaw
+          ) as RelativeDateValue['unit'];
+          return {
+            type: 'single_date_query',
+            op,
+            value: { amount, unit },
+          } satisfies StrictOmit<SingleDateSearchQuery, 'field'>;
+        },
+      },
+      {
+        ALT: () => {
+          const op = this.OR3<
+            StrictExclude<DateOps, 'between' | 'inthelast' | 'notinthelast'>
+          >([
             {
               ALT: () => {
                 const tok = this.CONSUME(EqOperator);
@@ -658,7 +745,7 @@ export class SearchParser extends EmbeddedActionsParser {
           ).image.toLowerCase() as 'between';
           let inclLow = false,
             inclHi = false;
-          this.OR3([
+          this.OR4([
             {
               ALT: () => this.CONSUME2(OpenParenGroup),
             },
@@ -673,7 +760,7 @@ export class SearchParser extends EmbeddedActionsParser {
           values.push(this.SUBRULE2(this.searchValue));
           this.OPTION(() => this.CONSUME2(Comma));
           values.push(this.SUBRULE3(this.searchValue));
-          this.OR4([
+          this.OR5([
             {
               ALT: () => this.CONSUME3(CloseParenGroup),
             },
@@ -736,6 +823,14 @@ export class SearchParser extends EmbeddedActionsParser {
   private singleDateSearch = this.RULE('singleDateSearch', () => {
     const field = this.CONSUME(DateField, { LABEL: 'field' }).image;
     const opRet = this.SUBRULE(this.dateOperatorAndValue, { LABEL: 'op' });
+    if (opRet.op === 'inthelast' || opRet.op === 'notinthelast') {
+      return {
+        type: 'single_date_query',
+        field,
+        op: opRet.op,
+        value: opRet.value,
+      } satisfies SingleDateSearchQuery;
+    }
     if (opRet.op === 'between') {
       return {
         type: 'single_date_query',
@@ -751,7 +846,7 @@ export class SearchParser extends EmbeddedActionsParser {
       type: 'single_date_query',
       field,
       op: opRet.op,
-      value: opRet.value,
+      value: opRet.value as string,
     } satisfies SingleDateSearchQuery;
   });
 
@@ -991,6 +1086,28 @@ export function parsedSearchToRequest(
             ]
           : (input: string) => parseInt(input);
 
+      if (input.op === 'inthelast' || input.op === 'notinthelast') {
+        const resolved = +dayjs().subtract(
+          input.value.amount,
+          input.value.unit,
+        );
+        return {
+          type: 'value',
+          fieldSpec: {
+            key,
+            name: originalField,
+            op: input.op === 'inthelast' ? '>=' : '<',
+            type: 'date' as const,
+            value: resolved,
+            relativeDate: {
+              op: input.op,
+              amount: input.value.amount,
+              unit: input.value.unit,
+            },
+          },
+        } satisfies SearchFilterValueNode;
+      }
+
       if (input.op === 'between') {
         return {
           type: 'value',
@@ -1000,9 +1117,13 @@ export function parsedSearchToRequest(
             op: NumericOpToApiType[input.op],
             type: 'date' as const,
             value: [converter(input.value[0]), converter(input.value[1])],
+            relativeDate: undefined,
           },
         } satisfies SearchFilterValueNode;
       } else {
+        // After inthelast/notinthelast and between are handled above,
+        // value is always a string for comparison operators
+        const value = input.value as string;
         return {
           type: 'value',
           fieldSpec: {
@@ -1010,7 +1131,8 @@ export function parsedSearchToRequest(
             name: originalField,
             op: NumericOpToApiType[input.op],
             type: 'date' as const,
-            value: converter(input.value),
+            value: converter(value),
+            relativeDate: undefined,
           },
         } satisfies SearchFilterValueNode;
       }
@@ -1220,6 +1342,14 @@ export function searchFilterToString(input: SearchFilter): string {
         emptyStringToNull(input.fieldSpec.name) ??
         head(indexFieldToVirtualField[input.fieldSpec.key]) ??
         input.fieldSpec.key;
+
+      // Relative date expressions round-trip as their original syntax
+      if (input.fieldSpec.type === 'date' && input.fieldSpec.relativeDate) {
+        const rd = input.fieldSpec.relativeDate;
+        const unitStr = rd.amount === 1 ? rd.unit : rd.unit + 's';
+        return `${key} ${rd.op} ${rd.amount} ${unitStr}`;
+      }
+
       const op =
         indexOperatorToSyntax[input.fieldSpec.op] ?? input.fieldSpec.op;
 

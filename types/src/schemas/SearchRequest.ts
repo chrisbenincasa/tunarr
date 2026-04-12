@@ -16,6 +16,14 @@ const NumericOperators = ['=', '!=', '<', '>', '<=', '>=', 'to'] as const;
 
 export type NumericOperators = TupleToUnion<typeof NumericOperators>;
 
+const DateOperators = [
+  ...NumericOperators,
+  'inthelast',
+  'notinthelast',
+] as const;
+
+export type DateOperators = TupleToUnion<typeof DateOperators>;
+
 const BaseSearchFieldSchema = z.object({
   key: z.string().describe('The actual field path in the search index'),
   name: z
@@ -52,9 +60,28 @@ const NumericSearchFieldSchema = z.object({
 
 export type NumericSearchField = z.infer<typeof NumericSearchFieldSchema>;
 
+export const RelativeDateUnits = ['day', 'week', 'month', 'year'] as const;
+
+export type RelativeDateUnit = TupleToUnion<typeof RelativeDateUnits>;
+
+const RelativeDateOps = ['inthelast', 'notinthelast'] as const;
+
+export type RelativeDateOp = TupleToUnion<typeof RelativeDateOps>;
+
+export const RelativeDateExprSchema = z.object({
+  op: z.enum(RelativeDateOps),
+  amount: z.number().int().positive(),
+  unit: z.enum(RelativeDateUnits),
+});
+
+export type RelativeDateExpr = z.infer<typeof RelativeDateExprSchema>;
+
 const DateSearchFieldSchema = z.object({
-  ...NumericSearchFieldSchema.shape,
+  ...BaseSearchFieldSchema.shape,
   type: z.literal('date'),
+  op: z.enum(DateOperators),
+  value: z.number().or(z.tuple([z.number(), z.number()])),
+  relativeDate: RelativeDateExprSchema.exactOptional(),
 });
 
 export type DateSearchField = z.infer<typeof DateSearchFieldSchema>;
@@ -73,7 +100,7 @@ export type SearchFieldType = SearchField['type'];
 export const OperatorsByType = {
   string: StringOperators,
   numeric: NumericOperators,
-  date: NumericOperators,
+  date: DateOperators,
   faceted_string: StringOperators,
 } satisfies Record<SearchField['type'], ReadonlyArray<string>>;
 
@@ -127,6 +154,7 @@ export const SearchSortFields = [
   'duration',
   'originalReleaseDate',
   'originalReleaseYear',
+  'addedAt',
   'index',
 ] as const;
 

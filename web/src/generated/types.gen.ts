@@ -12,6 +12,7 @@ export type TerminalProgramInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     originalTitle: string | null;
     year: number | null;
     /**
@@ -111,6 +112,7 @@ export type TerminalProgramInput = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -141,6 +143,7 @@ export type TerminalProgramInput = {
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 } | EpisodeInput | MusicTrackInput | {
@@ -155,6 +158,7 @@ export type TerminalProgramInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     originalTitle: string | null;
     year: number | null;
     /**
@@ -250,6 +254,7 @@ export type TerminalProgramInput = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -280,6 +285,7 @@ export type TerminalProgramInput = {
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 } | {
@@ -294,6 +300,7 @@ export type TerminalProgramInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     originalTitle: string | null;
     year: number | null;
     /**
@@ -389,6 +396,7 @@ export type TerminalProgramInput = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -419,6 +427,7 @@ export type TerminalProgramInput = {
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 };
@@ -435,6 +444,7 @@ export type ShowInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -488,6 +498,7 @@ export type ShowInput = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
+        createdAt?: number | null;
         summary: string | null;
         plot: string | null;
         tagline: string | null;
@@ -547,6 +558,7 @@ export type SeasonInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -597,6 +609,7 @@ export type SeasonInput = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
+        createdAt?: number | null;
         originalTitle: string | null;
         year: number | null;
         releaseDate: number | null;
@@ -691,6 +704,7 @@ export type SeasonInput = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -721,6 +735,7 @@ export type SeasonInput = {
                 chapterType?: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     }>;
@@ -738,6 +753,7 @@ export type EpisodeInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     originalTitle: string | null;
     year: number | null;
     releaseDate: number | null;
@@ -834,6 +850,7 @@ export type EpisodeInput = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -864,6 +881,7 @@ export type EpisodeInput = {
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 };
@@ -880,6 +898,7 @@ export type MusicArtistInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -910,6 +929,7 @@ export type MusicArtistInput = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
+        createdAt?: number | null;
         summary: string | null;
         plot: string | null;
         tagline: string | null;
@@ -969,6 +989,7 @@ export type MusicAlbumInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -1012,6 +1033,7 @@ export type MusicAlbumInput = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
+        createdAt?: number | null;
         originalTitle: string | null;
         year: number | null;
         /**
@@ -1108,6 +1130,7 @@ export type MusicAlbumInput = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -1138,6 +1161,7 @@ export type MusicAlbumInput = {
                 chapterType?: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     }>;
@@ -1162,6 +1186,7 @@ export type MusicTrackInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     originalTitle: string | null;
     year: number | null;
     /**
@@ -1260,6 +1285,7 @@ export type MusicTrackInput = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -1290,6 +1316,7 @@ export type MusicTrackInput = {
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 };
@@ -1362,11 +1389,16 @@ export type SearchFilterInput = {
          */
         name?: string;
         type: 'date';
-        op: '=' | '!=' | '<' | '>' | '<=' | '>=' | 'to';
+        op: '=' | '!=' | '<' | '>' | '<=' | '>=' | 'to' | 'inthelast' | 'notinthelast';
         value: number | [
             number,
             number
         ];
+        relativeDate?: {
+            op: 'inthelast' | 'notinthelast';
+            amount: number;
+            unit: 'day' | 'week' | 'month' | 'year';
+        };
     };
 };
 
@@ -1382,6 +1414,7 @@ export type TerminalProgram = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     originalTitle: string | null;
     year: number | null;
     /**
@@ -1481,6 +1514,7 @@ export type TerminalProgram = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -1511,6 +1545,7 @@ export type TerminalProgram = {
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 } | Episode | MusicTrack | {
@@ -1525,6 +1560,7 @@ export type TerminalProgram = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     originalTitle: string | null;
     year: number | null;
     /**
@@ -1620,6 +1656,7 @@ export type TerminalProgram = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -1650,6 +1687,7 @@ export type TerminalProgram = {
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 } | {
@@ -1664,6 +1702,7 @@ export type TerminalProgram = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     originalTitle: string | null;
     year: number | null;
     /**
@@ -1759,6 +1798,7 @@ export type TerminalProgram = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -1789,6 +1829,7 @@ export type TerminalProgram = {
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 };
@@ -1805,6 +1846,7 @@ export type Show = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -1858,6 +1900,7 @@ export type Show = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
+        createdAt?: number | null;
         summary: string | null;
         plot: string | null;
         tagline: string | null;
@@ -1917,6 +1960,7 @@ export type Season = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -1967,6 +2011,7 @@ export type Season = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
+        createdAt?: number | null;
         originalTitle: string | null;
         year: number | null;
         releaseDate: number | null;
@@ -2061,6 +2106,7 @@ export type Season = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -2091,6 +2137,7 @@ export type Season = {
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     }>;
@@ -2108,6 +2155,7 @@ export type Episode = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     originalTitle: string | null;
     year: number | null;
     releaseDate: number | null;
@@ -2204,6 +2252,7 @@ export type Episode = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -2234,6 +2283,7 @@ export type Episode = {
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 };
@@ -2250,6 +2300,7 @@ export type MusicArtist = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -2280,6 +2331,7 @@ export type MusicArtist = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
+        createdAt?: number | null;
         summary: string | null;
         plot: string | null;
         tagline: string | null;
@@ -2339,6 +2391,7 @@ export type MusicAlbum = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -2382,6 +2435,7 @@ export type MusicAlbum = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
+        createdAt?: number | null;
         originalTitle: string | null;
         year: number | null;
         /**
@@ -2478,6 +2532,7 @@ export type MusicAlbum = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -2508,6 +2563,7 @@ export type MusicAlbum = {
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     }>;
@@ -2532,6 +2588,7 @@ export type MusicTrack = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
+    createdAt?: number | null;
     originalTitle: string | null;
     year: number | null;
     /**
@@ -2630,6 +2687,7 @@ export type MusicTrack = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -2660,6 +2718,7 @@ export type MusicTrack = {
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 };
@@ -2732,11 +2791,16 @@ export type SearchFilter = {
          */
         name?: string;
         type: 'date';
-        op: '=' | '!=' | '<' | '>' | '<=' | '>=' | 'to';
+        op: '=' | '!=' | '<' | '>' | '<=' | '>=' | 'to' | 'inthelast' | 'notinthelast';
         value: number | [
             number,
             number
         ];
+        relativeDate?: {
+            op: 'inthelast' | 'notinthelast';
+            amount: number;
+            unit: 'day' | 'week' | 'month' | 'year';
+        };
     };
 };
 
@@ -6674,7 +6738,7 @@ export type PostApiProgramsSearchData = {
             restrictSearchTo?: Array<string>;
             filter?: SearchFilterInput | null;
             sort?: Array<{
-                field: 'title' | 'sortTitle' | 'duration' | 'originalReleaseDate' | 'originalReleaseYear' | 'index';
+                field: 'title' | 'sortTitle' | 'duration' | 'originalReleaseDate' | 'originalReleaseYear' | 'addedAt' | 'index';
                 direction: 'asc' | 'desc';
             }> | null;
         };
@@ -10207,6 +10271,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
+            createdAt?: number | null;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -10306,6 +10371,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -10336,6 +10402,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | Episode | Season | Show | MusicTrack | MusicAlbum | MusicArtist | {
@@ -10350,6 +10417,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
+            createdAt?: number | null;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -10445,6 +10513,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -10475,6 +10544,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | {
@@ -10489,6 +10559,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
+            createdAt?: number | null;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -10584,6 +10655,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -10614,6 +10686,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         }>;
