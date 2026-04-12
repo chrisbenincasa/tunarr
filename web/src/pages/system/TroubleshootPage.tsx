@@ -42,8 +42,8 @@ import { useCallback, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { ProgramSearchAutocomplete } from '../../components/ProgramSearchAutocomplete.tsx';
 import {
-  getApiTranscodeConfigsOptions,
   getChannelsOptions,
+  getTranscodeConfigsOptions,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { postApiTroubleshoot } from '../../generated/index.ts';
 import { resolutionToString } from '../../helpers/util.ts';
@@ -179,7 +179,7 @@ export const TroubleshootPage = ({ initialProgram }: Props) => {
 
   // Data queries
   const { data: channels } = useQuery(getChannelsOptions());
-  const { data: transcodeConfigs } = useQuery(getApiTranscodeConfigsOptions());
+  const { data: transcodeConfigs } = useQuery(getTranscodeConfigsOptions());
 
   // Troubleshoot mutation
   const troubleshootMutation = useMutation({

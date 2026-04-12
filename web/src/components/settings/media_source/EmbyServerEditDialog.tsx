@@ -1,9 +1,9 @@
 import { isNonEmptyString, isValidUrlWithError, toggle } from '@/helpers/util';
 
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
+import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
-import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import {
   CloudDoneOutlined,
   CloudOff,
@@ -38,8 +38,8 @@ import type { StrictOmit } from 'ts-essentials';
 import { type MarkOptional } from 'ts-essentials';
 import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
 import {
-  postApiMediaSources,
-  putApiMediaSourcesById,
+  createMediaSource,
+  updateMediaSource,
 } from '../../../generated/sdk.gen.ts';
 import { invalidateTaggedQueries } from '../../../helpers/queryUtil.ts';
 import { embyLogin } from '../../../hooks/emby/useEmbyLogin.ts';
@@ -117,7 +117,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
         return;
       }
       if (isNonEmptyString(newOrUpdatedServer.id)) {
-        await putApiMediaSourcesById({
+        await updateMediaSource({
           body: {
             ...newOrUpdatedServer,
             id: newOrUpdatedServer.id,
@@ -127,7 +127,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
         });
         return { id: newOrUpdatedServer.id };
       } else {
-        return postApiMediaSources({
+        return createMediaSource({
           body: { ...newOrUpdatedServer, accessToken: at },
         });
       }
@@ -302,7 +302,9 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                       !serverStatus.healthy &&
                       isNonEmptyString(field.value) ? (
                       <>
-                        <span><Trans>Server is unreachable</Trans></span>
+                        <span>
+                          <Trans>Server is unreachable</Trans>
+                        </span>
                         <br />
                       </>
                     ) : null
@@ -354,7 +356,9 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                 }}
                 render={({ field, fieldState: { error } }) => (
                   <FormControl sx={{ flex: 1 }} variant="outlined">
-                    <InputLabel htmlFor="emby-username"><Trans>Username</Trans> </InputLabel>
+                    <InputLabel htmlFor="emby-username">
+                      <Trans>Username</Trans>{' '}
+                    </InputLabel>
                     <OutlinedInput
                       id="emby-username"
                       type="text"
@@ -379,7 +383,9 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                 }}
                 render={({ field, fieldState: { error } }) => (
                   <FormControl sx={{ flex: 1 }} variant="outlined">
-                    <InputLabel htmlFor="emby-password"><Trans>Password</Trans> </InputLabel>
+                    <InputLabel htmlFor="emby-password">
+                      <Trans>Password</Trans>{' '}
+                    </InputLabel>
                     <OutlinedInput
                       id="emby-password"
                       type={showPassword ? 'text' : 'password'}
@@ -410,12 +416,16 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                 )}
               />
               <FormHelperText sx={{ ml: '14px', mt: -1, flexBasis: '100%' }}>
-                <Trans>Enter your Emby password to generate a new access token.</Trans>
+                <Trans>
+                  Enter your Emby password to generate a new access token.
+                </Trans>
               </FormHelperText>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Divider sx={{ flex: 1 }} />
-              <Typography variant="caption"><Trans>OR</Trans></Typography>
+              <Typography variant="caption">
+                <Trans>OR</Trans>
+              </Typography>
               <Divider sx={{ flex: 1 }} />
             </Box>
             <Controller
@@ -436,7 +446,9 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                   //   // isNonEmptyString(username) && isNonEmptyString(password)
                   // }
                 >
-                  <InputLabel htmlFor="access-token"><Trans>Access Token</Trans> </InputLabel>
+                  <InputLabel htmlFor="access-token">
+                    <Trans>Access Token</Trans>{' '}
+                  </InputLabel>
                   <OutlinedInput
                     id="access-token"
                     type={showAccessToken ? 'text' : 'password'}
@@ -464,7 +476,9 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                         </>
                       )}
                       <span>
-                        <Trans>Manually add an access token from your Emby server</Trans>
+                        <Trans>
+                          Manually add an access token from your Emby server
+                        </Trans>
                       </span>
                     </>
                   </FormHelperText>

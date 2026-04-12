@@ -32,8 +32,8 @@ import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import {
-  deleteApiFillerListsByIdMutation,
-  getApiFillerListsQueryKey,
+  deleteFillerListMutation,
+  getFillerListsQueryKey,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
@@ -51,10 +51,10 @@ export default function FillerListsPage() {
   const tableState = useStoreBackedTableSettings(TableName);
 
   const deleteFillerList = useMutation({
-    ...deleteApiFillerListsByIdMutation(),
+    ...deleteFillerListMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: getApiFillerListsQueryKey(),
+        queryKey: getFillerListsQueryKey(),
         exact: false,
       });
     },

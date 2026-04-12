@@ -30,6 +30,8 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/ffmpeg-settings',
     {
       schema: {
+        operationId: 'getFfmpegSettings',
+        summary: 'Get FFmpeg settings',
         tags: ['Settings'],
         response: {
           200: FfmpegSettingsSchema,
@@ -52,6 +54,8 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/ffmpeg-settings',
     {
       schema: {
+        operationId: 'updateFfmpegSettings',
+        summary: 'Update FFmpeg settings',
         tags: ['Settings'],
         body: FfmpegSettingsSchema,
         response: {
@@ -121,6 +125,8 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/ffmpeg-settings',
     {
       schema: {
+        operationId: 'resetFfmpegSettings',
+        summary: 'Reset FFmpeg settings to defaults',
         tags: ['Settings'],
         body: z.object({
           ffmpegPath: z.string(),
@@ -168,6 +174,8 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs',
     {
       schema: {
+        operationId: 'getTranscodeConfigs',
+        summary: 'List all transcode configs',
         tags: ['Settings', 'Transcode Configs'],
         response: {
           200: z.array(TranscodeConfigSchema),
@@ -185,6 +193,8 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id',
     {
       schema: {
+        operationId: 'getTranscodeConfigById',
+        summary: 'Get a transcode config by ID',
         tags: ['Settings', 'Transcode Configs'],
         params: z.object({
           id: z.string().uuid(),
@@ -211,6 +221,8 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id/copy',
     {
       schema: {
+        operationId: 'copyTranscodeConfig',
+        summary: 'Duplicate a transcode config',
         tags: ['Settings', 'Transcode Configs'],
         params: z.object({
           id: z.uuid(),
@@ -245,6 +257,8 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs',
     {
       schema: {
+        operationId: 'createTranscodeConfig',
+        summary: 'Create a transcode config',
         tags: ['Settings', 'Transcode Configs'],
         body: TranscodeConfigSchema.omit({
           id: true,
@@ -266,6 +280,8 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id',
     {
       schema: {
+        operationId: 'updateTranscodeConfig',
+        summary: 'Update a transcode config',
         tags: ['Settings', 'Transcode Configs'],
         body: TranscodeConfigSchema,
         params: IdPathParamSchema,
@@ -287,6 +303,8 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id',
     {
       schema: {
+        operationId: 'deleteTranscodeConfig',
+        summary: 'Delete a transcode config',
         tags: ['Settings', 'Transcode Configs'],
         params: IdPathParamSchema,
         response: {

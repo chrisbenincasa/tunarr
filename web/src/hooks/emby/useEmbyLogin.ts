@@ -1,4 +1,4 @@
-import { postApiEmbyLogin } from '../../generated/sdk.gen.ts';
+import { embyLogin as embyLoginApi } from '../../generated/sdk.gen.ts';
 
 type Opts = {
   uri: string;
@@ -7,7 +7,7 @@ type Opts = {
 };
 
 export const embyLogin = (opts: Opts) => {
-  return postApiEmbyLogin({
+  return embyLoginApi({
     body: {
       ...opts,
       url: opts.uri,

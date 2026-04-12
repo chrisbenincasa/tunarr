@@ -8,13 +8,13 @@ import {
 import { type CustomProgram, type CustomShow } from '@tunarr/types';
 import type { StrictOmit } from 'ts-essentials';
 import type {
-  getApiCustomShowsByIdProgramsQueryKey,
-  getApiCustomShowsQueryKey,
+  getCustomShowProgramsQueryKey,
+  getCustomShowsQueryKey,
 } from '../generated/@tanstack/react-query.gen.ts';
 import {
-  getApiCustomShowsByIdOptions,
-  getApiCustomShowsByIdProgramsOptions,
-  getApiCustomShowsOptions,
+  getCustomShowOptions,
+  getCustomShowProgramsOptions,
+  getCustomShowsOptions,
 } from '../generated/@tanstack/react-query.gen.ts';
 
 export type CustomShowsQueryOpts<TData = CustomShow[]> = Omit<
@@ -32,7 +32,7 @@ type OverridableCustomShowQueryOptions<TOut> = StrictOmit<
     CustomShow[],
     Error,
     TOut,
-    ReturnType<typeof getApiCustomShowsQueryKey>
+    ReturnType<typeof getCustomShowsQueryKey>
   >,
   'queryKey' | 'queryFn'
 >;
@@ -40,11 +40,11 @@ type OverridableCustomShowQueryOptions<TOut> = StrictOmit<
 export const customShowsQuery = <TOut = CustomShow[]>(
   opts?: OverridableCustomShowQueryOptions<TOut>,
 ) =>
-  ({ ...getApiCustomShowsOptions(), ...(opts ?? {}) }) as UseQueryOptions<
+  ({ ...getCustomShowsOptions(), ...(opts ?? {}) }) as UseQueryOptions<
     CustomShow[],
     Error,
     TOut,
-    ReturnType<typeof getApiCustomShowsQueryKey>
+    ReturnType<typeof getCustomShowsQueryKey>
   >;
 
 export const useCustomShows = <TOut = CustomShow[]>(
@@ -54,7 +54,7 @@ export const useCustomShows = <TOut = CustomShow[]>(
         CustomShow[],
         Error,
         TOut,
-        ReturnType<typeof getApiCustomShowsQueryKey>
+        ReturnType<typeof getCustomShowsQueryKey>
       >,
       'queryKey' | 'queryFn'
     >
@@ -68,7 +68,7 @@ type OverridableCustomShowByIdQueryOptions<TOut> = StrictOmit<
     CustomShow,
     Error,
     TOut,
-    ReturnType<typeof getApiCustomShowsByIdProgramsQueryKey>
+    ReturnType<typeof getCustomShowProgramsQueryKey>
   >,
   'queryKey' | 'queryFn'
 >;
@@ -76,10 +76,10 @@ type OverridableCustomShowByIdQueryOptions<TOut> = StrictOmit<
 export const customShowQuery = <TOut = CustomShow>(
   id: string,
   opts?: OverridableCustomShowByIdQueryOptions<TOut>,
-) => ({ ...getApiCustomShowsByIdOptions({ path: { id } }), ...(opts ?? {}) });
+) => ({ ...getCustomShowOptions({ path: { id } }), ...(opts ?? {}) });
 
 export const customShowProgramsQuery = (id: string) =>
-  getApiCustomShowsByIdProgramsOptions({ path: { id } });
+  getCustomShowProgramsOptions({ path: { id } });
 
 // Tried to do a clever overload here but it's easier to just blow out the  method
 // and get the rid type inference...

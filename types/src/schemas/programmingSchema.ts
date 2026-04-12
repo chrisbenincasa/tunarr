@@ -22,14 +22,14 @@ export const ProgramSchema = z.object({
   albumName: z.string().optional(),
   channel: z.string().optional(), // Redirect
   customOrder: z.number().optional(),
-  customShowId: z.string().optional(),
+  customShowId: z.uuid().optional(),
   customShowName: z.string().optional(),
   date: z.string().optional(),
   duration: z.number(),
   episode: z.number().optional(),
   episodeIcon: z.string().optional(),
   file: z.string().optional(),
-  id: z.string(),
+  id: z.uuid(),
   icon: z.string().optional(),
   // Deprecated
   key: z.string().optional(),

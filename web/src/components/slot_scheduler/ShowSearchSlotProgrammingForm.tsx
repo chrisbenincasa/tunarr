@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createTypeSearchField } from '@tunarr/shared/util';
 import { useMemo, useState } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
-import { getApiProgramsByIdChildrenOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { getProgramChildrenOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import type { CommonShowSlotViewModel } from '../../model/CommonSlotModels.ts';
 import { ProgramSearchAutocomplete } from '../ProgramSearchAutocomplete.tsx';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
@@ -29,7 +29,7 @@ export const ShowSearchSlotProgrammingForm = () => {
   );
 
   const showChildrenQuery = useQuery({
-    ...getApiProgramsByIdChildrenOptions({
+    ...getProgramChildrenOptions({
       path: { id: show?.uuid ?? '' },
     }),
     enabled: !!show,

@@ -199,6 +199,8 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/ffmpeg/playlist',
     {
       schema: {
+        operationId: 'getFfmpegPlaylist',
+        summary: 'Get ffconcat playlist for a channel',
         tags: ['Streaming'],
         description:
           'Return a playlist in ffconcat file format for the given channel',

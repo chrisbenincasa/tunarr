@@ -53,7 +53,7 @@ import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated
 import { ChannelIconDisplay } from '../../components/channels/ChannelIconDisplay.tsx';
 import { ChannelOptionsMenu } from '../../components/channels/ChannelOptionsMenu.tsx';
 import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
-import { deleteApiChannelsByIdMutation } from '../../generated/@tanstack/react-query.gen.ts';
+import { deleteChannelMutation } from '../../generated/@tanstack/react-query.gen.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
 import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
@@ -158,7 +158,7 @@ export default function ChannelsPage() {
   };
 
   const removeChannelMutation = useMutation({
-    ...deleteApiChannelsByIdMutation(),
+    ...deleteChannelMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
         queryKey: ['Channels'],
@@ -290,10 +290,20 @@ export default function ChannelsPage() {
               placement="top"
               title={
                 <Box component="span" sx={{ textAlign: 'center' }}>
-                  <Plural value={sessions.length} one="# session" other="# sessions" />
+                  <Plural
+                    value={sessions.length}
+                    one="# session"
+                    other="# sessions"
+                  />
                   <br />
-                  {totalConnections > 1 && <Trans>{totalConnections} total</Trans>}{' '}
-                  <Plural value={totalConnections} one="# connection" other="# connections" />
+                  {totalConnections > 1 && (
+                    <Trans>{totalConnections} total</Trans>
+                  )}{' '}
+                  <Plural
+                    value={totalConnections}
+                    one="# connection"
+                    other="# connections"
+                  />
                 </Box>
               }
             >
@@ -420,10 +430,20 @@ export default function ChannelsPage() {
         placement="top"
         title={
           <Box component="span" sx={{ textAlign: 'center' }}>
-            <Plural value={sessions.length} one="# session" other="# sessions" />
+            <Plural
+              value={sessions.length}
+              one="# session"
+              other="# sessions"
+            />
             <br />
-            {totalConnections > 1 && <Trans>{totalConnections} total</Trans>}{' '}
-            <Plural value={totalConnections} one="# connection" other="# connections" />
+            {totalConnections > 1 && (
+              <Trans>{totalConnections} total</Trans>
+            )}{' '}
+            <Plural
+              value={totalConnections}
+              one="# connection"
+              other="# connections"
+            />
           </Box>
         }
       >
@@ -489,7 +509,12 @@ export default function ChannelsPage() {
                       Ch {channel.number} · {channel.name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      <Plural value={channel.programCount} one="# program" other="# programs" /> ·{' '}
+                      <Plural
+                        value={channel.programCount}
+                        one="# program"
+                        other="# programs"
+                      />{' '}
+                      ·{' '}
                       {betterHumanize(dayjs.duration(channel.duration), {
                         style: 'short',
                       })}

@@ -27,9 +27,9 @@ import {
 } from 'material-react-table';
 import { useCallback, useMemo, useState } from 'react';
 import {
-  getApiMediaLibrariesByLibraryIdQueryKey,
-  getApiMediaSourcesByMediaSourceIdByLibraryIdStatusOptions,
-  getApiMediaSourcesQueryKey,
+  getMediaLibraryByIdQueryKey,
+  getMediaSourceScanStatusOptions,
+  getMediaSourcesQueryKey,
 } from '../generated/@tanstack/react-query.gen.ts';
 import {
   useLibraryScanState,
@@ -87,7 +87,7 @@ const MediaSourceLibraryTableActionCell = ({
           onSuccess: () => {
             queryClient
               .invalidateQueries({
-                queryKey: getApiMediaLibrariesByLibraryIdQueryKey({
+                queryKey: getMediaLibraryByIdQueryKey({
                   path: { libraryId: library.id },
                 }),
                 exact: false,
@@ -102,7 +102,7 @@ const MediaSourceLibraryTableActionCell = ({
 
   const opts = useMemo(
     () =>
-      getApiMediaSourcesByMediaSourceIdByLibraryIdStatusOptions({
+      getMediaSourceScanStatusOptions({
         path: {
           mediaSourceId: mediaSource.id,
           libraryId: library.id,
@@ -131,7 +131,7 @@ const MediaSourceLibraryTableActionCell = ({
           setPrevScanState(null);
           queryClient
             .invalidateQueries({
-              queryKey: getApiMediaSourcesQueryKey(),
+              queryKey: getMediaSourcesQueryKey(),
             })
             .catch(console.error);
         } else {

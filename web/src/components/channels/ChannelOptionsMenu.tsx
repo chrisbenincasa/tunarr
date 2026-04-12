@@ -15,7 +15,7 @@ import type { Channel } from '@tunarr/types';
 import { isEmpty, trimEnd } from 'lodash-es';
 import type { SyntheticEvent } from 'react';
 import { useCallback, useState } from 'react';
-import { deleteApiChannelsByIdSessionsMutation } from '../../generated/@tanstack/react-query.gen.ts';
+import { stopChannelSessionsMutation } from '../../generated/@tanstack/react-query.gen.ts';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard.ts';
@@ -46,7 +46,7 @@ export const ChannelOptionsMenu = ({
 
   const queryClient = useQueryClient();
   const stopSessionsMutation = useMutation({
-    ...deleteApiChannelsByIdSessionsMutation(),
+    ...stopChannelSessionsMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
         predicate: invalidateTaggedQueries(['Channels']),

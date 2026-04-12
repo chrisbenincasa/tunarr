@@ -43,6 +43,9 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
     '/emby/login',
     {
       schema: {
+        operationId: 'embyLogin',
+        summary: 'Authenticate with an Emby server',
+        tags: ['Media Source'],
         body: EmbyLoginRequest,
         response: {
           200: z.object({
@@ -71,6 +74,9 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
     '/emby/:mediaSourceId/user_libraries',
     {
       schema: {
+        operationId: 'getEmbyLibraries',
+        summary: 'List Emby libraries',
+        tags: ['Media Library'],
         params: mediaSourceParams,
         response: {
           200: z.array(LibrarySchema),
@@ -100,6 +106,9 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
     '/emby/:mediaSourceId/libraries/:libraryId/items',
     {
       schema: {
+        operationId: 'getEmbyLibraryItems',
+        summary: 'List items in an Emby library',
+        tags: ['Media Library'],
         params: mediaSourceParams.extend({
           libraryId: z.string(),
         }),

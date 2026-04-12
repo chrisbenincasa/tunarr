@@ -35,8 +35,8 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { match } from 'ts-pattern';
 import {
-  getApiSystemHealthQueryKey,
-  postApiSystemFixersByFixerIdRunMutation,
+  getSystemHealthQueryKey,
+  runFixerMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
 
 // TODO: Get these from server.
@@ -92,10 +92,10 @@ export const StatusPage = () => {
   const snackbar = useSnackbar();
 
   const runSystemFixer = useMutation({
-    ...postApiSystemFixersByFixerIdRunMutation(),
+    ...runFixerMutation(),
     onSuccess: async (_, { path: { fixerId } }) => {
       await queryClient.invalidateQueries({
-        queryKey: getApiSystemHealthQueryKey(),
+        queryKey: getSystemHealthQueryKey(),
       });
       snackbar.enqueueSnackbar(t`Successfully ran system fixer ${fixerId}`, {
         variant: 'success',

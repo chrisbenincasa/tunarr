@@ -29,6 +29,8 @@ export class ProgramGroupingApiController implements ApiController {
         schema: {
           tags: ['Program Groupings'],
           operationId: 'batchGetProgramGroupingsByExternalIds',
+          summary: 'Batch look up program groupings by external IDs',
+          description: 'Returns a map of program groupings (shows, albums, etc.) keyed by their UUID, looked up by external source IDs.',
           body: BatchLookupExternalProgrammingSchema,
           response: {
             200: z.record(z.string(), ProgramGroupingSchema),

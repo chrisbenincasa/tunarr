@@ -40,7 +40,7 @@ export const WatermarkSchema = z.object({
 });
 
 export const FillerCollectionSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   weight: z.number(),
   cooldownSeconds: z.number(),
 });
@@ -103,7 +103,6 @@ export const ChannelConcatStreamModes = [
 export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;
 export const ChannelStreamModeSchema = z.enum(ChannelStreamModes);
 
-
 export type ChannelConcatStreamMode = TupleToUnion<
   typeof ChannelConcatStreamModes
 >;
@@ -132,7 +131,7 @@ export const ChannelSchema = z.object({
   guideFlexTitle: z.string().optional(),
   guideMinimumDuration: z.number(),
   icon: ChannelIconSchema,
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   number: z.number(),
   offline: ChannelOfflineSchema,

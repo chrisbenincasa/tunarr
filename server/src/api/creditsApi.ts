@@ -25,6 +25,10 @@ export class CreditsApiController {
       `/credits/:id`,
       {
         schema: {
+          operationId: 'getCredit',
+          summary: 'Get a credit (person) by ID',
+          description: 'Returns cast/crew credit information for the given UUID. Use the type query parameter to filter by credit type.',
+          tags: ['Programs'],
           params: z.object({
             id: z.uuid(),
           }),
@@ -99,6 +103,10 @@ export class CreditsApiController {
       '/credits/:id/artwork/:artworkType',
       {
         schema: {
+          operationId: 'getCreditArtwork',
+          summary: 'Get artwork for a credit',
+          description: 'Returns or proxies artwork (e.g. thumbnail) for a cast/crew member. Redirects to the source URL if not cached locally.',
+          tags: ['Programs'],
           produces: ['image/jpeg', 'image/png'],
           params: z.object({
             id: z.uuid(),

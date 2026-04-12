@@ -4,7 +4,7 @@ import {
   useSuspenseQueries,
 } from '@tanstack/react-query';
 import type { Channel, CondensedChannelProgramming } from '@tunarr/types';
-import { getApiChannelsByIdProgrammingOptions } from '../generated/@tanstack/react-query.gen.ts';
+import { getChannelProgrammingOptions } from '../generated/@tanstack/react-query.gen.ts';
 import { channelQuery } from './useChannels.ts';
 
 export const channelProgrammingQuery = (
@@ -13,7 +13,7 @@ export const channelProgrammingQuery = (
   pageParams: { offset: number; limit: number } | undefined = undefined,
 ) =>
   queryOptions({
-    ...getApiChannelsByIdProgrammingOptions({
+    ...getChannelProgrammingOptions({
       path: { id },
       query: pageParams,
     }),

@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { RemoteMediaSourceSettings } from '@tunarr/types';
 import type { MarkOptional } from 'ts-essentials';
 import {
-  getApiMediaSourcesByIdStatusOptions,
-  postApiMediaSourcesForeignstatusOptions,
+  getMediaSourceStatusOptions,
+  checkForeignMediaSourceStatusOptions,
 } from '../../generated/@tanstack/react-query.gen.ts';
 
 export const useMediaSourceBackendStatus = (
@@ -20,7 +20,7 @@ export const useMediaSourceBackendStatus = (
   enabled: boolean = true,
 ) => {
   const serverStatusResult = useQuery({
-    ...getApiMediaSourcesByIdStatusOptions({
+    ...getMediaSourceStatusOptions({
       path: {
         id: id!,
       },
@@ -31,7 +31,7 @@ export const useMediaSourceBackendStatus = (
   });
 
   const unknownServerStatusResult = useQuery({
-    ...postApiMediaSourcesForeignstatusOptions({
+    ...checkForeignMediaSourceStatusOptions({
       body: {
         accessToken: accessToken ?? '',
         type,

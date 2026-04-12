@@ -5,7 +5,7 @@ import { ProgramViewToggleButton } from '../../../components/base/ProgramViewTog
 import Breadcrumbs from '../../../components/Breadcrumbs.tsx';
 import { LibraryProgramGrid } from '../../../components/library/LibraryProgramGrid.tsx';
 import { SearchInput } from '../../../components/search/SearchInput.tsx';
-import { getApiMediaSourcesByMediaSourceIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
+import { getMediaSourceByIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 import { useMediaSource } from '../../../hooks/media-sources/mediaSourceHooks.ts';
 import { setSearchRequest } from '../../../store/programmingSelector/actions.ts';
 
@@ -13,7 +13,7 @@ export const Route = createFileRoute('/media_sources_/$mediaSourceId/')({
   component: MediaSourceBrowserPage,
   loader: async ({ context, params: { mediaSourceId } }) => {
     await context.queryClient.ensureQueryData(
-      getApiMediaSourcesByMediaSourceIdOptions({
+      getMediaSourceByIdOptions({
         path: {
           mediaSourceId,
         },

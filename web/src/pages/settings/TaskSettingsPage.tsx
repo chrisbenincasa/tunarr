@@ -26,8 +26,8 @@ import { MRT_Table, useMaterialReactTable } from 'material-react-table';
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
 import {
-  getApiTasksOptions,
-  postApiTasksByIdRunMutation,
+  getTasksOptions,
+  runTaskMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import type { Nullable } from '../../types/util.ts';
@@ -38,7 +38,7 @@ export default function TaskSettingsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { data: tasks } = useSuspenseQuery({
-    ...getApiTasksOptions(),
+    ...getTasksOptions(),
     refetchInterval: 60 * 1000, // Check tasks every minute
   });
   const dayjs = useDayjs();
@@ -47,7 +47,7 @@ export default function TaskSettingsPage() {
   const [menuRef, setMenuRef] = useState<Nullable<HTMLElement>>(null);
 
   const runTaskNowMutation = useMutation({
-    ...postApiTasksByIdRunMutation(),
+    ...runTaskMutation(),
   });
 
   const runTaskNow = useCallback(

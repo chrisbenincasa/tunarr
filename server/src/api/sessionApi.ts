@@ -15,6 +15,9 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/sessions',
     {
       schema: {
+        operationId: 'getAllSessions',
+        summary: 'List all active streaming sessions',
+        description: 'Returns all active streaming sessions grouped by channel ID.',
         tags: ['Sessions'],
         response: {
           200: z.record(z.string(), z.array(ChannelSessionsResponseSchema)),
@@ -53,6 +56,9 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/sessions',
     {
       schema: {
+        operationId: 'getChannelSessions',
+        summary: 'List active sessions for a channel',
+        description: 'Returns active streaming sessions for the given channel. The id parameter accepts either a channel UUID or channel number.',
         tags: ['Sessions'],
         params: z.object({
           id: z.coerce.number().or(z.string().uuid()),
@@ -105,6 +111,9 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/sessions',
     {
       schema: {
+        operationId: 'stopChannelSessions',
+        summary: 'Stop all sessions for a channel',
+        description: 'Terminates all active transcode sessions for the given channel. Accepts channel UUID or channel number.',
         tags: ['Sessions'],
         params: z.object({
           id: z.coerce.number().or(z.string().uuid()),

@@ -1,13 +1,13 @@
 import { resetCurrentLineup } from '@/store/channelEditor/actions';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { postApiChannelsByIdProgrammingMutation } from '../generated/@tanstack/react-query.gen.ts';
+import { updateChannelProgrammingMutation } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useUpdateLineup = (
-  opts?: ReturnType<typeof postApiChannelsByIdProgrammingMutation>,
+  opts?: ReturnType<typeof updateChannelProgrammingMutation>,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
-    ...postApiChannelsByIdProgrammingMutation(),
+    ...updateChannelProgrammingMutation(),
     onSuccess: async (...args) => {
       const [
         response,

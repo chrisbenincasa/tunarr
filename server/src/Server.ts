@@ -125,42 +125,82 @@ export class Server {
           tags: [
             {
               name: 'Channels',
+              description: 'Manage Tunarr channels and their programming',
             },
             {
               name: 'Custom Shows',
+              description: 'Manage custom show libraries',
             },
             {
               name: 'Filler Lists',
+              description: 'Manage filler content lists used to pad channel schedules',
             },
             {
               name: 'Guide',
+              description: 'TV guide and XMLTV data for configured channels',
+            },
+            {
+              name: 'Media Library',
+              description: 'Browse and search media source libraries',
             },
             {
               name: 'Media Source',
+              description:
+                'Configure external media sources (Plex, Jellyfin, Emby, local)',
             },
             {
               name: 'Programs',
+              description: 'Search and manage individual programs',
+            },
+            {
+              name: 'Program Groupings',
+              description:
+                'Manage program groupings such as TV shows and music albums',
+            },
+            {
+              name: 'Scheduling',
+              description: 'Channel slot scheduling and time-based programming',
             },
             {
               name: 'Sessions',
+              description: 'Active streaming sessions and connection management',
+            },
+            {
+              name: 'Smart Collections',
+              description:
+                'Dynamic media collections defined by filter rules',
             },
             {
               name: 'Streaming',
+              description: 'M3U playlists, XMLTV feeds, and stream access',
             },
             {
               name: 'HDHR',
+              description: 'HDHomeRun device emulation for legacy client compatibility',
             },
             {
               name: 'Settings',
+              description: 'System-wide and media source settings',
             },
             {
               name: 'System',
+              description: 'System health, logging, and administration',
             },
             {
               name: 'Tasks',
+              description: 'Background task management and scheduling',
+            },
+            {
+              name: 'Logs',
+              description: 'Server log access',
+            },
+            {
+              name: 'Transcode Configs',
+              description: 'Video transcode configuration profiles',
             },
             {
               name: 'Debug',
+              description: 'Debug and diagnostic endpoints',
             },
           ],
         },

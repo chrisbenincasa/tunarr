@@ -19,6 +19,8 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     '/jellyfin/libraries',
     {
       schema: {
+        operationId: 'debugGetJellyfinLibraries',
+        summary: 'Debug: list Jellyfin libraries via direct credentials',
         tags: ['Debug'],
         querystring: z.object({
           userId: z.string().optional(),
@@ -54,6 +56,8 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     '/jellyfin/library/items',
     {
       schema: {
+        operationId: 'debugGetJellyfinLibraryItems',
+        summary: 'Debug: list Jellyfin library items via direct credentials',
         tags: ['Debug'],
         querystring: z
           .object({
@@ -102,6 +106,8 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     '/jellyfin/match_program/:id',
     {
       schema: {
+        operationId: 'debugMatchJellyfinProgram',
+        summary: 'Debug: find Jellyfin item matching a Tunarr program',
         tags: ['Debug'],
         params: z.object({
           id: z.string(),
@@ -119,6 +125,9 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     '/jellyfin/:libraryId/enumerate',
     {
       schema: {
+        operationId: 'debugEnumerateJellyfinLibrary',
+        summary: 'Debug: enumerate all items in a Jellyfin library',
+        tags: ['Debug'],
         params: z.object({
           libraryId: z.string(),
         }),

@@ -7,7 +7,7 @@ import { isArray } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useDebounceValue } from 'usehooks-ts';
-import { postApiProgramsFacetsByFacetNameOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { getProgramFacetsWithFilterOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import type { SearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import type { FieldKey, FieldPrefix } from '../../types/SearchBuilder.ts';
@@ -35,7 +35,7 @@ export function FacetStringValueSearchNode({
   const [lastValue, op] = watch([`${formKey}.value`, `${formKey}.op`]);
 
   const facetQuery = useQuery({
-    ...postApiProgramsFacetsByFacetNameOptions({
+    ...getProgramFacetsWithFilterOptions({
       path: {
         facetName: search.virtualFieldToIndexField[field.key] ?? field.key,
       },

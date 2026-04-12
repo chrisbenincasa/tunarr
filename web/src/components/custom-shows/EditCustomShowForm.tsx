@@ -1,4 +1,3 @@
-import { Trans, useLingui } from '@lingui/react/macro';
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { customShowQuery } from '@/hooks/useCustomShows.ts';
 import useStore from '@/store';
@@ -11,6 +10,7 @@ import {
 } from '@/store/customShowEditor/actions.ts';
 import { removeCustomShowProgram } from '@/store/entityEditor/util';
 import { type UICustomShowProgram } from '@/types';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Refresh, Save, Sync, Tv, Undo } from '@mui/icons-material';
 import {
   Alert,
@@ -35,16 +35,16 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { useCallback, useEffect } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import {
-  getApiCustomShowsByIdProgramsQueryKey,
-  getApiCustomShowsByIdQueryKey,
-  getApiCustomShowsQueryKey,
+  getCustomShowProgramsQueryKey,
+  getCustomShowQueryKey,
+  getCustomShowsQueryKey,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import {
   createCustomShow,
-  getApiMediaSources,
-  getApiPlexByMediaSourceIdPlaylists,
-  putApiCustomShowsById,
+  getMediaSources,
+  getPlexPlaylists,
   syncCustomShow,
+  updateCustomShow,
 } from '../../generated/sdk.gen.ts';
 import ChannelLineupList from '../channel_config/ChannelLineupList.tsx';
 import { CustomShowSortToolsMenu } from './CustomShowSortToolsMenu.tsx';
@@ -119,7 +119,7 @@ export function EditCustomShowsForm({
   const { data: mediaSources } = useQuery({
     queryKey: ['settings', 'media-sources'],
     queryFn: async () => {
-      const result = await getApiMediaSources({ throwOnError: true });
+      const result = await getMediaSources({ throwOnError: true });
       return result.data;
     },
   });
@@ -131,7 +131,7 @@ export function EditCustomShowsForm({
   const { data: playlists, isLoading: playlistsLoading } = useQuery({
     queryKey: ['plex', selectedMediaSourceId, 'playlists'],
     queryFn: async () => {
-      const result = await getApiPlexByMediaSourceIdPlaylists({
+      const result = await getPlexPlaylists({
         path: { mediaSourceId: selectedMediaSourceId },
         throwOnError: true,
       });
@@ -169,7 +169,7 @@ export function EditCustomShowsForm({
       if (isNew) {
         return createCustomShow({ body, throwOnError: true });
       } else {
-        return putApiCustomShowsById({
+        return updateCustomShow({
           path: { id: customShow.id },
           body,
           throwOnError: true,
@@ -185,16 +185,16 @@ export function EditCustomShowsForm({
           updatedShow.data.syncExternalPlaylistId ?? undefined,
       });
       await queryClient.invalidateQueries({
-        queryKey: getApiCustomShowsQueryKey(),
+        queryKey: getCustomShowsQueryKey(),
       });
       await queryClient.invalidateQueries({
-        queryKey: getApiCustomShowsByIdQueryKey({
+        queryKey: getCustomShowQueryKey({
           path: { id: updatedShow.data.id },
         }),
         exact: true,
       });
       await queryClient.invalidateQueries({
-        queryKey: getApiCustomShowsByIdProgramsQueryKey({
+        queryKey: getCustomShowProgramsQueryKey({
           path: { id: updatedShow.data.id },
         }),
         exact: true,
@@ -220,12 +220,12 @@ export function EditCustomShowsForm({
     onSuccess: async (updatedShow) => {
       updateCurrentCustomShow(updatedShow.data);
       await queryClient.invalidateQueries({
-        queryKey: getApiCustomShowsByIdProgramsQueryKey({
+        queryKey: getCustomShowProgramsQueryKey({
           path: { id: customShow.id },
         }),
       });
       await queryClient.invalidateQueries({
-        queryKey: getApiCustomShowsByIdQueryKey({
+        queryKey: getCustomShowQueryKey({
           path: { id: customShow.id },
         }),
       });
@@ -381,7 +381,9 @@ export function EditCustomShowsForm({
                 </Button>
                 {customShow.lastSyncedAt && (
                   <Typography variant="body2" color="text.secondary">
-                    <Trans>Last synced {dayjs(customShow.lastSyncedAt).fromNow()}</Trans>
+                    <Trans>
+                      Last synced {dayjs(customShow.lastSyncedAt).fromNow()}
+                    </Trans>
                   </Typography>
                 )}
               </Stack>
@@ -394,8 +396,10 @@ export function EditCustomShowsForm({
         <Box>
           {isSynced && !isNew && (
             <Alert severity="info" sx={{ mb: 2 }} icon={<Sync />}>
-              <Trans>This custom show is synced with an external playlist. Content is
-              updated automatically and cannot be edited manually.</Trans>
+              <Trans>
+                This custom show is synced with an external playlist. Content is
+                updated automatically and cannot be edited manually.
+              </Trans>
             </Alert>
           )}
 
@@ -416,7 +420,9 @@ export function EditCustomShowsForm({
                 <>
                   <CustomShowSortToolsMenu />
                   {customShowProgrammingChanged && (
-                    <Tooltip title={t`Reset programming to most recently saved state`}>
+                    <Tooltip
+                      title={t`Reset programming to most recently saved state`}
+                    >
                       <Button
                         variant="contained"
                         startIcon={<Undo />}

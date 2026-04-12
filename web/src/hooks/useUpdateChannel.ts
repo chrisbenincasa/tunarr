@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { putApiChannelsByIdMutation } from '../generated/@tanstack/react-query.gen.ts';
+import { updateChannelMutation } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useUpdateChannel = (
-  opts?: ReturnType<typeof putApiChannelsByIdMutation>,
+  opts?: ReturnType<typeof updateChannelMutation>,
 ) => {
   const queryClient = useQueryClient();
 
   const updateChannel = useMutation({
-    ...putApiChannelsByIdMutation(),
+    ...updateChannelMutation(),
     onSuccess: async (...args) => {
       await queryClient.invalidateQueries({
         exact: false,

@@ -17,6 +17,8 @@ export class SmartCollectionsApiController implements ApiController {
       '/smart_collections',
       {
         schema: {
+          operationId: 'getSmartCollections',
+          summary: 'List all smart collections',
           tags: ['Smart Collections'],
           response: {
             200: SmartCollection.array(),
@@ -33,6 +35,8 @@ export class SmartCollectionsApiController implements ApiController {
       '/smart_collections/:id',
       {
         schema: {
+          operationId: 'getSmartCollection',
+          summary: 'Get a smart collection by ID',
           tags: ['Smart Collections'],
           params: z.object({
             id: z.uuid(),
@@ -58,6 +62,8 @@ export class SmartCollectionsApiController implements ApiController {
       '/smart_collections/:id',
       {
         schema: {
+          operationId: 'deleteSmartCollection',
+          summary: 'Delete a smart collection',
           tags: ['Smart Collections'],
           params: z.object({
             id: z.uuid(),
@@ -84,6 +90,8 @@ export class SmartCollectionsApiController implements ApiController {
       '/smart_collections',
       {
         schema: {
+          operationId: 'createSmartCollection',
+          summary: 'Create a smart collection',
           tags: ['Smart Collections'],
           body: SmartCollection.omit({ uuid: true }),
           response: {
@@ -106,6 +114,8 @@ export class SmartCollectionsApiController implements ApiController {
       '/smart_collections/:id',
       {
         schema: {
+          operationId: 'updateSmartCollection',
+          summary: 'Update a smart collection',
           tags: ['Smart Collections'],
           params: z.object({
             id: z.uuid(),

@@ -7,8 +7,8 @@ import { isError } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo } from 'react';
 import {
-  postApiChannelsByChannelIdScheduleSlots,
-  postApiChannelsByChannelIdScheduleTimeSlots,
+  scheduleChannelSlots,
+  scheduleChannelTimeSlots,
 } from '../../generated/sdk.gen.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
 import type { TimeSlotForm } from '../../model/TimeSlotModels.ts';
@@ -37,7 +37,7 @@ export const useScheduleSlots = () => {
 
   const scheduleTimeSlotsMut = useMutation({
     mutationFn: ({ channelId, values }: TimeSlotMutArgs) =>
-      postApiChannelsByChannelIdScheduleTimeSlots({
+      scheduleChannelTimeSlots({
         path: { channelId },
         body: {
           schedule: {
@@ -52,7 +52,7 @@ export const useScheduleSlots = () => {
 
   const scheduleSlotsMut = useMutation({
     mutationFn: ({ channelId, values }: SlotMutArgs) =>
-      postApiChannelsByChannelIdScheduleSlots({
+      scheduleChannelSlots({
         path: { channelId },
         body: {
           schedule: {

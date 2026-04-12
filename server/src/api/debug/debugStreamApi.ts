@@ -30,6 +30,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     '/streams/offline',
     {
       schema: {
+        operationId: 'debugStreamOffline',
+        summary: 'Debug: stream an offline placeholder',
         tags: ['Debug'],
         querystring: z.object({
           duration: z.coerce.number().default(30_000),
@@ -79,6 +81,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     '/streams/error',
     {
       schema: {
+        operationId: 'debugStreamError',
+        summary: 'Debug: stream an error placeholder',
         tags: ['Debug'],
         querystring: z.object({
           channelId: z.uuid().or(z.coerce.number()).optional(),
@@ -127,7 +131,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     },
   );
 
-  fastify.get('/streams/random', async (req, res) => {
+  fastify.get('/streams/random', { schema: { operationId: 'debugStreamRandom', summary: 'Debug: stream a random program', tags: ['Debug'] } }, async (req, res) => {
     const program = await req.serverCtx
       .drizzleFactory()
       .query.program.findFirst({
@@ -173,6 +177,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     '/streams/programs/:id',
     {
       schema: {
+        operationId: 'debugStreamProgram',
+        summary: 'Debug: stream a specific program by ID',
         tags: ['Debug'],
         params: z.object({
           id: z.string(),

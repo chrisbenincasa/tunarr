@@ -42,14 +42,27 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       prefix: '/debug',
     });
 
-  fastify.get('/debug/heap', async (_, res) => {
-    return res.send(getHeapStatistics());
-  });
+  fastify.get(
+    '/debug/heap',
+    {
+      schema: {
+        operationId: 'getHeapStatistics',
+        summary: 'Get V8 heap statistics',
+        tags: ['Debug'],
+      },
+    },
+    async (_, res) => {
+      return res.send(getHeapStatistics());
+    },
+  );
 
   fastify.get(
     '/debug/log',
     {
       schema: {
+        operationId: 'debugLog',
+        summary: 'Emit a test log message',
+        tags: ['Debug'],
         querystring: z.object({
           level: z.enum(LogLevels).default('debug'),
           log: z.string().optional(),
@@ -67,6 +80,8 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/helpers/playing_at',
     {
       schema: {
+        operationId: 'debugGetPlayingAt',
+        summary: 'Debug: get what is playing at a given time',
         tags: ['Debug'],
         querystring: z.object({
           channelId: z.coerce.number().or(z.string()),
@@ -127,6 +142,8 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/helpers/create_guide',
     {
       schema: {
+        operationId: 'debugCreateGuide',
+        summary: 'Debug: create guide for a channel',
         tags: ['Debug'],
         querystring: CreateLineupSchema,
       },
@@ -165,6 +182,8 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/helpers/channels/:id/build_guide',
     {
       schema: {
+        operationId: 'debugBuildChannelGuide',
+        summary: 'Debug: build guide for a specific channel',
         tags: ['Debug'],
         params: z.object({
           id: z.string(),
@@ -217,6 +236,8 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/helpers/build_guide',
     {
       schema: {
+        operationId: 'debugBuildAllGuides',
+        summary: 'Debug: build guides for all channels',
         querystring: ChannelLineupQuery,
         tags: ['Channels'],
         response: {
@@ -248,6 +269,8 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/helpers/random_filler',
     {
       schema: {
+        operationId: 'debugGetRandomFiller',
+        summary: 'Debug: get random filler for a channel',
         tags: ['Debug'],
         querystring: RandomFillerSchema,
       },
@@ -275,6 +298,8 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/db/backup',
     {
       schema: {
+        operationId: 'debugTriggerBackup',
+        summary: 'Debug: trigger a database backup',
         tags: ['Debug'],
       },
     },
@@ -297,6 +322,8 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/channels/reload_all_lineups',
     {
       schema: {
+        operationId: 'debugReloadAllLineups',
+        summary: 'Debug: reload all channel lineup configs',
         tags: ['Debug'],
       },
     },
@@ -310,6 +337,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/subprocess/status',
     {
       schema: {
+        operationId: 'debugGetSubprocessStatus',
+        summary: 'Debug: get worker subprocess status',
+        tags: ['Debug'],
         querystring: z.object({}),
       },
     },
@@ -325,6 +355,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/subprocess/restart',
     {
       schema: {
+        operationId: 'debugRestartSubprocess',
+        summary: 'Debug: restart worker subprocess',
+        tags: ['Debug'],
         querystring: z.object({}),
       },
     },
@@ -343,6 +376,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/media_sources/:mediaSourceId/scan',
     {
       schema: {
+        operationId: 'debugScanMediaSource',
+        summary: 'Debug: scan a media source',
+        tags: ['Debug'],
         params: z.object({
           mediaSourceId: z.uuid(),
         }),
@@ -372,6 +408,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/media_sources/:mediaSourceId/libraries/:libraryId/scan',
     {
       schema: {
+        operationId: 'debugScanMediaSourceLibrary',
+        summary: 'Debug: scan a media source library',
+        tags: ['Debug'],
         params: z.object({
           mediaSourceId: z.uuid(),
           libraryId: z.uuid(),
@@ -408,6 +447,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/media_sources/:mediaSourceId/scan-collections',
     {
       schema: {
+        operationId: 'debugScanMediaSourceCollections',
+        summary: 'Debug: scan Plex collections for a media source',
+        tags: ['Debug'],
         params: z.object({
           mediaSourceId: z.uuid(),
         }),

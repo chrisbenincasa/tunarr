@@ -13,6 +13,8 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
     '/ffmpeg/probe',
     {
       schema: {
+        operationId: 'debugFfmpegProbe',
+        summary: 'Debug: probe a media file with ffprobe',
         tags: ['Debug'],
         querystring: z.object({
           path: z.string(),
@@ -27,7 +29,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
     },
   );
 
-  fastify.get('/ffmpeg/capabilities', async (_, res) => {
+  fastify.get('/ffmpeg/capabilities', { schema: { operationId: 'debugFfmpegCapabilities', summary: 'Debug: get full FFmpeg capabilities', tags: ['Debug'] } }, async (_, res) => {
     const info = container.get(FfmpegInfo);
     const capabilities = await info.getCapabilities();
     return res.send({

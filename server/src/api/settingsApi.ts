@@ -7,6 +7,8 @@ export const settingsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/settings/media-source',
     {
       schema: {
+        operationId: 'getGlobalMediaSourceSettings',
+        summary: 'Get global media source settings',
         tags: ['Settings'],
         response: {
           200: GlobalMediaSourceSettingsSchema,
@@ -23,6 +25,8 @@ export const settingsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/settings/media-source',
     {
       schema: {
+        operationId: 'updateGlobalMediaSourceSettings',
+        summary: 'Update global media source settings',
         tags: ['Settings'],
         body: GlobalMediaSourceSettingsSchema,
         response: {

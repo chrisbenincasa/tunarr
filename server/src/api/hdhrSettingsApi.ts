@@ -20,6 +20,8 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
     '/hdhr-settings',
     {
       schema: {
+        operationId: 'getHdhrSettings',
+        summary: 'Get HDHomeRun settings',
         tags: ['Settings'],
         response: {
           200: HdhrSettingsSchema,
@@ -42,6 +44,8 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
     '/hdhr-settings',
     {
       schema: {
+        operationId: 'updateHdhrSettings',
+        summary: 'Update HDHomeRun settings',
         tags: ['Settings'],
         body: HdhrSettingsSchema,
         response: {
@@ -85,6 +89,8 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
     '/hdhr-settings',
     {
       schema: {
+        operationId: 'resetHdhrSettings',
+        summary: 'Reset HDHomeRun settings to defaults',
         tags: ['Settings'],
         response: {
           200: HdhrSettingsSchema,

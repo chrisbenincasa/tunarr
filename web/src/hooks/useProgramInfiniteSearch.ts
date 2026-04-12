@@ -1,14 +1,14 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { SearchRequest } from '@tunarr/types/schemas';
-import { postApiProgramsSearchInfiniteOptions } from '../generated/@tanstack/react-query.gen.ts';
+import { searchProgramsInfiniteOptions } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useProgramInfiniteSearch = (
   searchRequest: SearchRequest,
   enabled: boolean = true,
 ) => {
   return useInfiniteQuery({
-    ...postApiProgramsSearchInfiniteOptions({
+    ...searchProgramsInfiniteOptions({
       body: {
         query: searchRequest,
         expandParents: true,

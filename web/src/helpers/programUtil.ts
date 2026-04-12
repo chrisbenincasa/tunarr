@@ -18,7 +18,7 @@ import {
 import dayjs from 'dayjs';
 import { isEmpty, isNil } from 'lodash-es';
 import { match, P } from 'ts-pattern';
-import { postApiProgramsSearch } from '../generated/sdk.gen.ts';
+import { searchPrograms } from '../generated/index.ts';
 import type { Maybe, Nullable } from '../types/util.ts';
 import { prettyItemDuration } from './util.ts';
 
@@ -96,7 +96,7 @@ export async function enumerateSyncedItems(
 ) {
   const results: ProgramOrFolder[] = [];
   const loop = async (page?: number): Promise<ProgramOrFolder[]> => {
-    const result = await postApiProgramsSearch({
+    const result = await searchPrograms({
       body: {
         mediaSourceId,
         libraryId: libraryId ?? undefined,

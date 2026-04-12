@@ -16,7 +16,7 @@ import { useSnackbar } from 'notistack';
 import { useCallback, useEffect } from 'react';
 import type { FieldValues, SubmitErrorHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
-import { getApiSmartCollectionsByIdOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { getSmartCollectionOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import { useUpdateSmartCollection } from '../../hooks/smartCollectionHooks.ts';
 
 type Props = {
@@ -33,7 +33,7 @@ export const EditSmartCollectionDialog = (props: Props) => {
     isLoading,
     isError,
   } = useQuery({
-    ...getApiSmartCollectionsByIdOptions({
+    ...getSmartCollectionOptions({
       path: {
         id: props.id,
       },

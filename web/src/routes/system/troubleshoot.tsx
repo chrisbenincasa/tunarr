@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import { z } from 'zod';
-import { getApiProgramsByIdOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { getProgramByIdOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import { TroubleshootPage } from '../../pages/system/TroubleshootPage.tsx';
 
 const troubleshootParams = z.object({
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/system/troubleshoot')({
     const search = location.search as TroubleshootParams;
     if (isNonEmptyString(search.programId)) {
       return context.queryClient.ensureQueryData({
-        ...getApiProgramsByIdOptions({ path: { id: search.programId } }),
+        ...getProgramByIdOptions({ path: { id: search.programId } }),
       });
     }
     return null;

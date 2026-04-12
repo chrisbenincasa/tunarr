@@ -8,8 +8,8 @@ import { isNonEmptyString } from '@tunarr/shared/util';
 import type { SearchRequest } from '@tunarr/types/schemas';
 import { flatten, groupBy, isEmpty } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
-import { postApiProgramsSearch } from '../generated/sdk.gen.ts';
-import type { PostApiProgramsSearchResponses } from '../generated/types.gen.ts';
+import { searchPrograms } from '../generated/sdk.gen.ts';
+import type { SearchProgramsResponses } from '../generated/types.gen.ts';
 import { addKnownMediaForServer } from '../store/programmingSelector/actions.ts';
 import type { Maybe } from '../types/util.ts';
 import { useQueryObserver } from './useQueryObserver.ts';
@@ -27,16 +27,16 @@ export function programSearchQueryOpts(
     libraryId,
   ] satisfies QueryKey;
   const opts: UseInfiniteQueryOptions<
-    PostApiProgramsSearchResponses[200],
+    SearchProgramsResponses[200],
     DefaultError,
-    PostApiProgramsSearchResponses[200],
-    PostApiProgramsSearchResponses[200],
+    SearchProgramsResponses[200],
+    SearchProgramsResponses[200],
     typeof key,
     number
   > = {
     queryKey: key,
     queryFn: async ({ pageParam }) => {
-      const { data } = await postApiProgramsSearch({
+      const { data } = await searchPrograms({
         body: {
           mediaSourceId: mediaSourceId,
           libraryId: libraryId,
