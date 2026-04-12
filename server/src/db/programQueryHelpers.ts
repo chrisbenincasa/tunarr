@@ -268,6 +268,8 @@ export const AllProgramFields = [
   'program.plexFilePath',
   'program.plexRatingKey',
   'program.rating',
+  'program.audienceRating',
+  'program.criticRating',
   'program.seasonIcon',
   'program.seasonNumber',
   'program.seasonUuid',

@@ -62,6 +62,8 @@ const FactedStringFields = [
   'video_dynamic_range',
   'media_source_name',
   'library_name',
+  'country',
+  'collection',
 ] as const;
 
 const StringFields = [
@@ -69,6 +71,7 @@ const StringFields = [
   'library_id',
   'title',
   'show_title',
+  'summary',
 ] as const;
 
 const StringField = createToken({
@@ -95,6 +98,8 @@ const NumericFields = [
   'audio_channels',
   'release_year',
   'year',
+  'audience_rating',
+  'critic_rating',
 ] as const;
 
 const NumericField = createToken({
@@ -365,6 +370,11 @@ export const virtualFieldToIndexField: Record<string, string> = {
   audio_channels: 'audioChannels',
   // library_name: 'libraryName',
   // media_source_name: 'mediaSourceName'
+  summary: 'summary',
+  country: 'countries.name',
+  collection: 'collections.name',
+  audience_rating: 'audienceRating',
+  critic_rating: 'criticRating',
 };
 
 export const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);

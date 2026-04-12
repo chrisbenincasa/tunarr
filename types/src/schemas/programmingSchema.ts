@@ -269,6 +269,10 @@ export const MovieMetadata = z.object({
   ...WithSummaryMetadata.shape,
   type: z.literal('movie'),
   rating: z.string().nullable(),
+  countries: z.array(NamedEntity).optional(),
+  collections: z.array(NamedEntity).optional(),
+  audienceRating: z.number().nullable().optional(),
+  criticRating: z.number().nullable().optional(),
 });
 
 export const Movie = z.object({
@@ -313,6 +317,10 @@ export const ShowMetadata = z.object({
   releaseDate: z.number().nullable(),
   releaseDateString: z.string().nullable(),
   year: z.number().positive().nullable(),
+  countries: z.array(NamedEntity).optional(),
+  collections: z.array(NamedEntity).optional(),
+  audienceRating: z.number().nullable().optional(),
+  criticRating: z.number().nullable().optional(),
   get seasons(): z.ZodOptional<z.ZodArray<typeof _SeasonWithTunarrMetadata>> {
     return z.array(_SeasonWithTunarrMetadata).optional();
   },

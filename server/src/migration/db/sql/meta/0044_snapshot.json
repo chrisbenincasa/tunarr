@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "11c0c7ae-4449-4d42-8243-1d68565688fc",
-  "prevId": "63234c90-1be6-4af9-985c-db1eb9bb694c",
+  "id": "e115b939-354f-46be-b6c8-497807f83580",
+  "prevId": "11c0c7ae-4449-4d42-8243-1d68565688fc",
   "tables": {
     "artwork": {
       "name": "artwork",
@@ -1820,6 +1820,20 @@
         "rating": {
           "name": "rating",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "audience_rating": {
+          "name": "audience_rating",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "critic_rating": {
+          "name": "critic_rating",
+          "type": "real",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

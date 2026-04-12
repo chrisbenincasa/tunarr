@@ -1186,11 +1186,15 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       releaseDateString: releaseDate?.format() ?? null,
       actors: plexActorInject(plexShow.Role),
       genres: plexJoinItemInject(plexShow.Genre),
+      countries: plexJoinItemInject(plexShow.Country),
+      collections: plexJoinItemInject(plexShow.Collection),
       plot: plexShow.summary ?? null,
       studios: isNonEmptyString(plexShow.studio)
         ? [{ name: plexShow.studio }]
         : [],
       rating: plexShow.contentRating ?? null,
+      audienceRating: plexShow.audienceRating ?? null,
+      criticRating: null,
       summary: null,
       tagline: plexShow.tagline ?? null,
       identifiers: [
@@ -1538,10 +1542,14 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       writers: plexWriterInject(plexMovie.Writer),
       studios,
       genres: plexMovie.Genre?.map(({ tag }) => ({ name: tag })) ?? [],
+      countries: plexJoinItemInject(plexMovie.Country),
+      collections: plexJoinItemInject(plexMovie.Collection),
       summary: plexMovie.summary ?? null,
       plot: null,
       tagline: plexMovie.tagline ?? null,
       rating: plexMovie.contentRating ?? null,
+      audienceRating: plexMovie.audienceRating ?? null,
+      criticRating: plexMovie.rating ?? null,
       tags: plexMovie.Label?.map((label) => label.tag) ?? [],
       externalId: plexMovie.ratingKey,
       identifiers: [

@@ -424,6 +424,7 @@ export const PlexMovieSchema = BasePlexMediaSchema.extend({
   Media: z.array(PlexMediaDescriptionSchema).optional(),
   Genre: z.array(PlexJoinItemSchema).optional(),
   Country: z.array(PlexJoinItemSchema).optional(),
+  Collection: z.array(PlexJoinItemSchema).optional(),
   Director: z.array(PlexJoinItemSchema).optional(),
   Writer: z.array(PlexJoinItemSchema).optional(),
   Role: z.array(PlexActorSchema).optional(),
