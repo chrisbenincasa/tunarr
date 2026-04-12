@@ -57,11 +57,18 @@ function roundToMinute(timestamp: number) {
 
 function updateRequestToChannel(
   updateReq: UpdateChannelRequest,
+  existingTranscoding: NewChannelOrm['transcoding'],
 ): Partial<NewChannelOrm> {
   const sanitizedWatermark = sanitizeChannelWatermark(updateReq.watermark);
 
   return {
     number: updateReq.number,
+    transcoding: updateReq.transcoding?.nowPlayingOverlay
+      ? {
+          ...existingTranscoding,
+          nowPlayingOverlay: updateReq.transcoding.nowPlayingOverlay,
+        }
+      : undefined,
     watermark: sanitizedWatermark ?? undefined,
     icon: updateReq.icon,
     guideMinimumDuration: updateReq.guideMinimumDuration,
@@ -92,6 +99,7 @@ function createRequestToChannel(saveReq: SaveableChannel): NewChannelOrm {
     createdAt: now,
     updatedAt: now,
     number: saveReq.number,
+    transcoding: saveReq.transcoding,
     watermark: saveReq.watermark ?? null,
     icon: saveReq.icon,
     guideMinimumDuration: saveReq.guideMinimumDuration,
@@ -231,7 +239,7 @@ export class BasicChannelRepository {
     // loadLineupConfig reads the same file but hands back only a few of its
     // fields, so it cannot answer this.
     const currentLineup = await this.lineupRepository.loadLineup(id);
-    const update = updateRequestToChannel(updateReq);
+    const update = updateRequestToChannel(updateReq, channel.transcoding);
 
     // The server owns a rebuilding channel's start time, which follows the
     // cycles as they air, down to the millisecond. A settings form holding the
@@ -384,7 +392,6 @@ export class BasicChannelRepository {
           watermark: channel.watermark,
           createdAt: now,
           updatedAt: now,
-          transcoding: null,
           transcodeConfigId: channel.transcodeConfigId,
         })
         .returning()

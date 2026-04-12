@@ -258,6 +258,8 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         (isDefined(this.watermarkInputSource?.watermark.duration) &&
           this.watermarkInputSource.watermark.duration > 0) ||
         this.context.pipelineOptions?.disableHardwareFilters);
+    const needsSoftwareVideoOverlay =
+      this.context.hasNowPlayingOverlay() || needsSoftwareWatermarkOverlay;
 
     // If we're certain that we're about to use a hardware overlay of some sort
     // then ensure the video stream is uploaded to hardware.
@@ -267,7 +269,8 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       !this.context.hasSubtitleTextContext() &&
       !this.context.pipelineOptions.disableHardwareFilters &&
       (this.context.hasSubtitleOverlay() ||
-        (this.context.hasWatermark && !needsSoftwareWatermarkOverlay))
+        ((this.context.hasWatermark || this.context.hasNowPlayingOverlay()) &&
+          !needsSoftwareVideoOverlay))
     ) {
       const filter = new HardwareUploadCudaFilter(currentState);
       currentState = filter.nextState(currentState);
@@ -280,7 +283,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     // for the watermark, do a download
     if (
       currentState.frameDataLocation === FrameDataLocation.Hardware &&
-      needsSoftwareWatermarkOverlay
+      needsSoftwareVideoOverlay
     ) {
       const hwDownloadFilter = new HardwareDownloadCudaFilter(
         currentState,
@@ -304,7 +307,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       }
     } else if (
       currentState.frameDataLocation === FrameDataLocation.Software &&
-      !needsSoftwareWatermarkOverlay
+      !needsSoftwareVideoOverlay
     ) {
       const hwUpload = new HardwareUploadCudaFilter(currentState);
       currentState = hwUpload.nextState(currentState);
@@ -320,6 +323,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     currentState = this.setWatermark(currentState);
+    currentState = this.applyNowPlayingOverlay(currentState);
 
     let encoder: Nullable<VideoEncoder> = null;
     if (ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.Cuda) {

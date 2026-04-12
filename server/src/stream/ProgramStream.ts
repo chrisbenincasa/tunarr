@@ -139,6 +139,12 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
       startTime: start,
       duration: dayjs.duration(lineupItem.streamDuration),
       watermark,
+      nowPlayingOverlay:
+        this.context.transcodeConfig.disableChannelOverlay ||
+        (lineupItem.type === 'commercial' &&
+          this.context.targetChannel.disableFillerOverlay)
+          ? undefined
+          : this.context.targetChannel.transcoding?.nowPlayingOverlay,
       realtime: this.context.realtime,
       outputFormat: this.outputFormat,
       streamMode: this.context.streamMode,

@@ -6,6 +6,7 @@ import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.js';
 import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js';
 import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
+import { NowPlayingOverlayFilter } from '@/ffmpeg/builder/filter/NowPlayingOverlayFilter.js';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
 import { isHdrContent } from '@/ffmpeg/builder/filter/HdrDetection.js';
 import { TonemapFilter } from '@/ffmpeg/builder/filter/TonemapFilter.js';
@@ -54,6 +55,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       currentState = this.setPad(currentState);
       currentState = this.addSubtitles(currentState);
       currentState = this.setWatermark(currentState);
+      currentState = this.applyNowPlayingOverlay(currentState);
     }
 
     if (!this.hasVideoEncoderPipelineStep()) {
@@ -172,6 +174,25 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     }
 
     return currentState;
+  }
+
+  protected applyNowPlayingOverlay(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    if (!this.context.nowPlayingOverlay) {
+      return currentState;
+    }
+
+    this.context.filterChain.nowPlayingOverlayFilterSteps.push(
+      new NowPlayingOverlayFilter(
+        this.context.desiredState.paddedSize,
+        this.context.nowPlayingOverlay,
+      ),
+    );
+
+    return currentState.updateFrameLocation(FrameDataLocation.Software);
   }
 
   protected setPixelFormat(currentState: FrameState): FrameState {

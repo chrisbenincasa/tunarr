@@ -205,6 +205,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     currentState = this.setWatermark(currentState);
+    currentState = this.applyNowPlayingOverlay(currentState);
 
     const noEncoderSteps = every(
       this.getEncoderSteps(),

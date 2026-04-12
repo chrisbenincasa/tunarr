@@ -34,6 +34,7 @@ const CacheKeys = {
   NVIDIA: 'nvidia',
   VAINFO: 'vainfo_%s_%s',
   FILTERS: 'filters',
+  PROBE: 'probe_%s',
 } as const;
 
 export type FfmpegVersionResult = {
@@ -355,6 +356,14 @@ export class FfmpegInfo {
     }
 
     return result.data;
+  }
+
+  async probeFileWithCache(path: string, timeout?: number) {
+    return cacheGetOrSet(
+      FfmpegInfo.resultCache,
+      FfmpegInfo.makeCacheKey(this.ffprobePath, 'PROBE', path),
+      () => this.probeFile(path, timeout),
+    );
   }
 
   private getFfmpegStdout(
