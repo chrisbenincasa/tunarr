@@ -17,7 +17,7 @@ const channelProgrammingSchema = z.object({
   libraryId: z.string().optional().catch(undefined),
 });
 
-export const Route = createFileRoute('/channels_/$channelId/programming/add')({
+export const Route = createFileRoute('/channels/$channelId/programming/add')({
   validateSearch: (search) => channelProgrammingSchema.parse(search),
   loader: async (args: ChannelArgs) => {
     useStore.setState((s) => {
