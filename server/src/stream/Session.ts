@@ -155,6 +155,10 @@ export abstract class Session<
    * participants.
    */
   async stop() {
+    // Cancel any pending delayed cleanup so it cannot fire after this
+    // session has been replaced by a new one at the same key.
+    this.connectionTracker.cancelCleanup();
+
     await this.lock.runExclusive(async () => {
       switch (this.state) {
         case 'starting':

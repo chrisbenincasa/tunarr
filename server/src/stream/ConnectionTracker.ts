@@ -63,6 +63,13 @@ export class ConnectionTracker<
     return this.#heartbeats[token];
   }
 
+  cancelCleanup() {
+    if (this.#cleanupFunc) {
+      clearTimeout(this.#cleanupFunc);
+      this.#cleanupFunc = null;
+    }
+  }
+
   scheduleCleanup(delay: number) {
     if (this.#cleanupFunc) {
       this.#logger.debug('Cleanup already scheduled');
