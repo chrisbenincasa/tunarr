@@ -135,14 +135,11 @@ export abstract class BaseHlsSession<
         'Cleaning up existing working directory: %s',
         this._workingDirectory,
       );
-      await fs.rmdir(this._workingDirectory, { recursive: true });
+      await fs.rm(this._workingDirectory, { recursive: true, force: true });
       await fs.mkdir(this._workingDirectory);
     } catch (err) {
-      return this.logger.error(
-        err,
-        'Failed to cleanup stream: %s',
-        this.channel.uuid,
-      );
+      this.logger.error(err, 'Failed to cleanup stream: %s', this.channel.uuid);
+      throw err;
     }
   }
 
