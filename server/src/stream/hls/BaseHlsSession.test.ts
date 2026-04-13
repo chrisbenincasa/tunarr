@@ -151,6 +151,32 @@ describe('BaseHlsSession', () => {
       expect(session.minSegment).toBe(10);
     });
 
+    it('stop() cancels a pending cleanup timer so it cannot fire on a replacement session', async () => {
+      // This test covers the session lifecycle race condition:
+      // 1. Session A loses all connections → scheduleCleanup() sets a 15s timer
+      // 2. User starts a new stream → endSession() calls stop() on Session A
+      // 3. Session B is created at the same cache key
+      // 4. Session A's timer fires → would delete Session B from the map
+      //
+      // Fix: stop() calls connectionTracker.cancelCleanup() before
+      // acquiring the lock, so the timer never fires.
+
+      const cleanupHandler = vi.fn();
+      session.on('cleanup', cleanupHandler);
+
+      // Schedule cleanup as would happen when all connections go stale
+      session.scheduleCleanup(15_000);
+
+      // stop() should cancel the pending timer
+      await session.stop();
+
+      // Advance past the scheduled delay
+      vi.advanceTimersByTime(20_000);
+
+      // The stale cleanup timer must not have fired
+      expect(cleanupHandler).not.toHaveBeenCalled();
+    });
+
     it('keeps a connection alive if heartbeat is refreshed within staleness window', () => {
       session.addConnection('192.168.1.1', makeConnection('192.168.1.1'));
       session.addConnection('192.168.1.2', makeConnection('192.168.1.2'));
