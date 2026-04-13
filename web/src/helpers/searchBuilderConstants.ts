@@ -244,6 +244,55 @@ export const SearchFieldSpecs: NonEmptyArray<
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
+  {
+    key: 'summary',
+    type: 'string' as const,
+    displayName: 'Summary',
+    uiVisible: true,
+    visibleForLibraryTypes: ['movies', 'shows'] as NoInfer<
+      ReadonlyArray<MediaSourceLibrary['mediaType']>
+    >,
+  } satisfies SearchFieldSpec<'string'>,
+  {
+    key: 'countries.name',
+    name: 'country',
+    type: 'faceted_string' as const,
+    displayName: 'Country',
+    uiVisible: true,
+    visibleForLibraryTypes: ['movies', 'shows'] as NoInfer<
+      ReadonlyArray<MediaSourceLibrary['mediaType']>
+    >,
+  } satisfies SearchFieldSpec<'faceted_string'>,
+  {
+    key: 'collections.name',
+    name: 'collection',
+    type: 'faceted_string' as const,
+    displayName: 'Collection',
+    uiVisible: true,
+    visibleForLibraryTypes: ['movies', 'shows'] as NoInfer<
+      ReadonlyArray<MediaSourceLibrary['mediaType']>
+    >,
+  } satisfies SearchFieldSpec<'faceted_string'>,
+  {
+    key: 'audienceRating',
+    name: 'audience_rating',
+    type: 'numeric' as const,
+    displayName: 'Audience Rating',
+    uiVisible: true,
+    visibleForLibraryTypes: ['movies', 'shows'] as NoInfer<
+      ReadonlyArray<MediaSourceLibrary['mediaType']>
+    >,
+  } satisfies SearchFieldSpec<'numeric'>,
+  {
+    key: 'criticRating',
+    name: 'critic_rating',
+    type: 'numeric' as const,
+    displayName: 'Critic Rating',
+    uiVisible: true,
+    visibleForLibraryTypes: ['movies', 'shows'] as NoInfer<
+      ReadonlyArray<MediaSourceLibrary['mediaType']>
+    >,
+  } satisfies SearchFieldSpec<'numeric'>,
 ];
 
 interface Bij<In, Out = In> {

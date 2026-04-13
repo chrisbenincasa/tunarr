@@ -207,6 +207,9 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1775060606: makeKyselyMigrationFromSqlFile(
             './sql/0043_common_zzzax.sql',
           ),
+          migration1776016472: makeKyselyMigrationFromSqlFile(
+            './sql/0044_add_audience_critic_rating.sql',
+          ),
         },
         wrapWithTransaction,
       ),
