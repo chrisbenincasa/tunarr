@@ -188,12 +188,15 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       }
     }
 
-    this.logger.debug(
-      'HLS worker ended main loop with state = %s. Scheduling cleanup',
-      this.state,
-    );
+    this.logger.debug('HLS worker ended main loop with state = %s', this.state);
 
-    this.scheduleCleanup();
+    // Only schedule cleanup if the session wasn't already explicitly stopped
+    // (e.g. via endSession). If the session is already stopped, its cleanup
+    // has been handled and scheduling another timer would risk deleting a
+    // replacement session that now occupies the same map key.
+    if (this.state !== 'stopped') {
+      this.scheduleCleanup();
+    }
   }
 
   protected async stopInternal(): Promise<void> {
