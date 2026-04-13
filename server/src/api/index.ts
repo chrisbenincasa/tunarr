@@ -18,8 +18,8 @@ import { container } from '../container.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import { isDev, isNonEmptyString, run } from '../util/index.js';
+import { AutoChannelApiController } from './autoChannelApi.ts';
 import { channelsApi } from './channelsApi.js';
-import { nativePlaybackApi } from './nativePlaybackApi.js';
 import { CreditsApiController } from './creditsApi.ts';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
@@ -30,6 +30,7 @@ import { guideRouter } from './guideApi.js';
 import { hdhrSettingsRouter } from './hdhrSettingsApi.js';
 import { jellyfinApiRouter } from './jellyfinApi.js';
 import { mediaSourceRouter } from './mediaSourceApi.js';
+import { nativePlaybackApi } from './nativePlaybackApi.js';
 import { plexApiRouter } from './plexApi.ts';
 import { plexSettingsRouter } from './plexSettingsApi.js';
 import { ProgramGroupingApiController } from './programGroupingApi.ts';
@@ -37,10 +38,10 @@ import { programmingApi } from './programmingApi.js';
 import { sessionApiRouter } from './sessionApi.js';
 import { settingsApi } from './settingsApi.ts';
 import { SmartCollectionsApiController } from './smartCollectionsApi.ts';
+import { streamSelectionRouter } from './streamSelectionApi.ts';
 import { systemApiRouter } from './systemApi.js';
 import { tasksApiRouter } from './tasksApi.js';
 import { trashApi } from './trashApi.ts';
-import { streamSelectionRouter } from './streamSelectionApi.ts';
 import { troubleshootApiRouter } from './troubleshootApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
 
@@ -85,7 +86,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(trashApi)
     .register(container.get(SmartCollectionsApiController).mount)
     .register(container.get(CreditsApiController).mount)
-    .register(container.get(ProgramGroupingApiController).mount);
+    .register(container.get(ProgramGroupingApiController).mount)
+    .register(container.get(AutoChannelApiController).mount);
 
   if (isDev || getBooleanEnvVar(TUNARR_ENV_VARS.MOUNT_DEBUG_ENDPOINTS, false)) {
     await fastify.register(debugApi);
