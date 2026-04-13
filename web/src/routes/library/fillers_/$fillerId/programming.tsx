@@ -5,12 +5,10 @@ import { createFileRoute } from '@tanstack/react-router';
 import { noop } from 'ts-essentials';
 import { ProgrammingSelectionContext } from '../../../../context/ProgrammingSelectionContext.ts';
 
-export const Route = createFileRoute('/library/fillers_/$fillerId/programming')(
-  {
-    loader: preloadFillerAndProgramming,
-    component: FillerProgrammingSelectorPage,
-  },
-);
+export const Route = createFileRoute('/library/fillers_/$fillerId/programming')({
+  loader: preloadFillerAndProgramming,
+  component: FillerProgrammingSelectorPage,
+});
 
 function FillerProgrammingSelectorPage() {
   const navigate = Route.useNavigate();

@@ -31,6 +31,10 @@
     },
     "./types": {
       "types": "./dist/src/types/index.d.ts"
+    },
+    "./channel-templates": {
+      "types": "./dist/src/channel-templates/presets.d.ts",
+      "default": "./dist/src/channel-templates/presets.js"
     }
   },
   "main": "index.ts",
