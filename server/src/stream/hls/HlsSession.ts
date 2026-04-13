@@ -113,6 +113,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         this.#highestDeletedBelow,
       ),
       segmentsToKeepBefore: 10,
+      segmentFloor: this.#highestDeletedBelow,
     };
     return Result.attemptAsync(async () => {
       return await this.lock.runExclusive(async () => {

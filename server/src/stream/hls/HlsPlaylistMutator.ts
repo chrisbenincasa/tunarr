@@ -33,6 +33,9 @@ type FilterBeforeSegmentNumber = {
   type: 'before_segment_number';
   segmentNumber: number;
   segmentsToKeepBefore: number;
+  // Hard floor: never include segments below this number. Prevents the
+  // playlist from referencing segments that have been deleted from disk.
+  segmentFloor?: number;
 };
 
 export type HlsPlaylistFilterOptions =
@@ -155,7 +158,7 @@ export class HlsPlaylistMutator {
           (beforeSeg) => {
             const minSeg = Math.max(
               beforeSeg.segmentNumber - beforeSeg.segmentsToKeepBefore,
-              0,
+              beforeSeg.segmentFloor ?? 0,
             );
             return seq.collect(allSegments, (segment) => {
               const fileName = basename(segment.line);
