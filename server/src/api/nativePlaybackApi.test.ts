@@ -83,8 +83,8 @@ describe('mapLineupItemToPlaybackItem', () => {
 
     const result = mapLineupItemToPlaybackItem(item, baseUrl, channelId);
 
-    expect(result.kind).toBe('content');
-    if (result.kind === 'content') {
+    expect(result.type).toBe('content');
+    if (result.type === 'content') {
       expect(result.title).toBe(programTitle);
       expect(result.episodeTitle).toBeUndefined();
     }
@@ -101,8 +101,8 @@ describe('mapLineupItemToPlaybackItem', () => {
 
     const result = mapLineupItemToPlaybackItem(item, baseUrl, channelId);
 
-    expect(result.kind).toBe('content');
-    if (result.kind === 'content') {
+    expect(result.type).toBe('content');
+    if (result.type === 'content') {
       expect(result.title).toBe(showTitle);
       expect(result.episodeTitle).toBe(episodeTitle);
     }
@@ -118,8 +118,8 @@ describe('mapLineupItemToPlaybackItem', () => {
 
     const result = mapLineupItemToPlaybackItem(item, baseUrl, channelId);
 
-    expect(result.kind).toBe('content');
-    if (result.kind === 'content') {
+    expect(result.type).toBe('content');
+    if (result.type === 'content') {
       expect(result.seasonNumber).toBe(2);
       expect(result.episodeNumber).toBe(3);
     }
@@ -131,8 +131,8 @@ describe('mapLineupItemToPlaybackItem', () => {
 
     const result = mapLineupItemToPlaybackItem(item, baseUrl, channelId);
 
-    expect(result.kind).toBe('content');
-    if (result.kind === 'content') {
+    expect(result.type).toBe('content');
+    if (result.type === 'content') {
       expect(result.seekOffsetMs).toBe(seekMs);
     }
   });
@@ -142,8 +142,8 @@ describe('mapLineupItemToPlaybackItem', () => {
 
     const result = mapLineupItemToPlaybackItem(item, baseUrl, channelId);
 
-    expect(result.kind).toBe('content');
-    if (result.kind === 'content') {
+    expect(result.type).toBe('content');
+    if (result.type === 'content') {
       expect(result.seekOffsetMs).toBe(0);
     }
   });
@@ -154,8 +154,8 @@ describe('mapLineupItemToPlaybackItem', () => {
 
     const result = mapLineupItemToPlaybackItem(item, baseUrl, channelId);
 
-    expect(result.kind).toBe('content');
-    if (result.kind === 'content') {
+    expect(result.type).toBe('content');
+    if (result.type === 'content') {
       expect(result.streamUrl).toBe(
         `${baseUrl}/stream/channels/${channelId}/item-stream.ts?t=${itemStartedAtMs}`,
       );
@@ -168,8 +168,8 @@ describe('mapLineupItemToPlaybackItem', () => {
 
     const result = mapLineupItemToPlaybackItem(item, baseUrl, channelId);
 
-    expect(result.kind).toBe('content');
-    if (result.kind === 'content') {
+    expect(result.type).toBe('content');
+    if (result.type === 'content') {
       expect(result.thumb).toBe(iconUrl);
     }
   });
@@ -184,8 +184,8 @@ describe('mapLineupItemToPlaybackItem', () => {
 
     const result = mapLineupItemToPlaybackItem(offline, baseUrl, channelId);
 
-    expect(result.kind).toBe('flex');
-    if (result.kind === 'flex') {
+    expect(result.type).toBe('flex');
+    if (result.type === 'flex') {
       expect(result.remainingMs).toBe(offline.streamDuration);
       expect(result.itemStartedAtMs).toBe(offline.programBeginMs);
     }
@@ -202,6 +202,6 @@ describe('mapLineupItemToPlaybackItem', () => {
 
     const result = mapLineupItemToPlaybackItem(redirect, baseUrl, channelId);
 
-    expect(result.kind).toBe('flex');
+    expect(result.type).toBe('flex');
   });
 });

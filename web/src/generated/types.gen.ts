@@ -5943,10 +5943,10 @@ export type GetApiChannelsByIdNativePlaybackResponses = {
         channelName: string;
         serverTimeMs: number;
         current: {
-            kind: 'content';
             itemStartedAtMs: number;
-            seekOffsetMs: number;
             remainingMs: number;
+            type: 'content';
+            seekOffsetMs: number;
             programId: string;
             title: string;
             episodeTitle?: string;
@@ -5956,19 +5956,19 @@ export type GetApiChannelsByIdNativePlaybackResponses = {
             thumb?: string;
             streamUrl: string;
         } | {
-            kind: 'flex';
-            remainingMs: number;
             itemStartedAtMs: number;
+            remainingMs: number;
+            type: 'flex';
         } | {
-            kind: 'error';
+            type: 'error';
             message: string;
             retryAfterMs: number;
         };
         next?: {
-            kind: 'content';
             itemStartedAtMs: number;
-            seekOffsetMs: number;
             remainingMs: number;
+            type: 'content';
+            seekOffsetMs: number;
             programId: string;
             title: string;
             episodeTitle?: string;
@@ -5978,11 +5978,11 @@ export type GetApiChannelsByIdNativePlaybackResponses = {
             thumb?: string;
             streamUrl: string;
         } | {
-            kind: 'flex';
-            remainingMs: number;
             itemStartedAtMs: number;
+            remainingMs: number;
+            type: 'flex';
         } | {
-            kind: 'error';
+            type: 'error';
             message: string;
             retryAfterMs: number;
         };

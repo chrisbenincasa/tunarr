@@ -17,3 +17,4 @@ export * from './transcodeConfigSchemas.js';
 export * from './customShowsSchema.js';
 export * from './fillerSchema.js';
 export * from './guideApiSchemas.js';
+export * from './nativePlaybackSchemas.js';
