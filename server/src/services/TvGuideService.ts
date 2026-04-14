@@ -427,13 +427,17 @@ export class TVGuideService {
       lock.runExclusive(async () => {
         this.logger.info('Building guide info for channel %s', channelId);
         devAssert(!isEmpty(this.channelsById));
-        const now = startTime;
+        // Use real wall-clock time for cache staleness checks so that
+        // a backdated startTime (e.g. startOf('hour')) doesn't prevent
+        // rebuilds when the lineup changes within the same period.
+        const now = +dayjs();
         const lastUpdateTime = this.lastUpdateTime[channelId] ?? 0;
         const currentUpdateTime = this.currentUpdateTime[channelId] ?? -1;
 
         if (force || (lastUpdateTime < now && currentUpdateTime === -1)) {
-          this.currentUpdateTime[channelId] = now;
-          this.currentEndTime[channelId] = now + guideDuration.asMilliseconds();
+          this.currentUpdateTime[channelId] = startTime;
+          this.currentEndTime[channelId] =
+            startTime + guideDuration.asMilliseconds();
 
           await this.buildChannelGuideWithRetries(channelId, writeXmlTv);
         }
