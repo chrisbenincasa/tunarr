@@ -1,6 +1,8 @@
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import type { NativePlaybackItem } from '@tunarr/types';
 import { BasicIdParamSchema } from '@tunarr/types/api';
+import { NativePlaybackResponseSchema } from '@tunarr/types/schemas';
 import { isNil } from 'lodash-es';
 import z from 'zod/v4';
 import type { StreamLineupItem } from '../db/derived_types/StreamLineup.ts';
@@ -8,50 +10,6 @@ import {
   isContentBackedLineupItem,
   isOfflineLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
-
-const NativePlaybackContentItemSchema = z.object({
-  kind: z.literal('content'),
-  itemStartedAtMs: z.number().int(),
-  seekOffsetMs: z.number().int(),
-  remainingMs: z.number().int(),
-  programId: z.string().uuid(),
-  title: z.string(),
-  episodeTitle: z.string().optional(),
-  seasonNumber: z.number().int().optional(),
-  episodeNumber: z.number().int().optional(),
-  summary: z.string().optional(),
-  thumb: z.string().optional(),
-  streamUrl: z.string(),
-});
-
-const NativePlaybackFlexItemSchema = z.object({
-  kind: z.literal('flex'),
-  remainingMs: z.number().int(),
-  itemStartedAtMs: z.number().int(),
-});
-
-const NativePlaybackErrorItemSchema = z.object({
-  kind: z.literal('error'),
-  message: z.string(),
-  retryAfterMs: z.number().int(),
-});
-
-const NativePlaybackItemSchema = z.discriminatedUnion('kind', [
-  NativePlaybackContentItemSchema,
-  NativePlaybackFlexItemSchema,
-  NativePlaybackErrorItemSchema,
-]);
-
-const NativePlaybackResponseSchema = z.object({
-  channelId: z.string().uuid(),
-  channelNumber: z.number().int(),
-  channelName: z.string(),
-  serverTimeMs: z.number().int(),
-  current: NativePlaybackItemSchema,
-  next: NativePlaybackItemSchema.optional(),
-});
-
-type NativePlaybackItem = z.infer<typeof NativePlaybackItemSchema>;
 
 function buildStreamUrl(
   baseUrl: string,
@@ -71,7 +29,7 @@ export function mapLineupItemToPlaybackItem(
 
   if (isOfflineLineupItem(lineupItem)) {
     return {
-      kind: 'flex',
+      type: 'flex',
       remainingMs,
       itemStartedAtMs,
     };
@@ -80,7 +38,7 @@ export function mapLineupItemToPlaybackItem(
   if (isContentBackedLineupItem(lineupItem)) {
     const program = lineupItem.program;
     return {
-      kind: 'content',
+      type: 'content',
       itemStartedAtMs,
       seekOffsetMs: lineupItem.startOffset ?? 0,
       remainingMs,
@@ -99,7 +57,7 @@ export function mapLineupItemToPlaybackItem(
 
   // error or redirect items fall through as flex
   return {
-    kind: 'flex',
+    type: 'flex',
     remainingMs: lineupItem.streamDuration,
     itemStartedAtMs: lineupItem.programBeginMs,
   };
@@ -167,7 +125,7 @@ export const nativePlaybackApi: RouterPluginAsyncCallback = async (fastify) => {
           channelName: channel.name,
           serverTimeMs: now,
           current: {
-            kind: 'error',
+            type: 'error',
             message:
               currentResult.error.message ??
               'Unable to determine current program',
