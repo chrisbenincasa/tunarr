@@ -5,6 +5,7 @@ edit_uri: edit/dev/docs/
 site_url: https://tunarr.com/
 theme:
   name: material
+  custom_dir: docs/overrides
   palette:
     # Palette toggle for automatic mode
     - media: "(prefers-color-scheme)"
@@ -131,6 +132,9 @@ extra:
   social:
     - icon: fontawesome/brands/discord
       link: https://discord.gg/nYkb7MhPfD
+    - icon: fontawesome/solid/heart
+      link: https://github.com/sponsors/chrisbenincasa
+      name: Sponsor Tunarr on GitHub
 
 plugins:
   - glightbox
