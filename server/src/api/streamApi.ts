@@ -491,7 +491,14 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const videoStream = container.get(VideoStream);
-      const startTimestamp = req.query.t;
+      const itemStartedAtMs = req.query.t;
+
+      // Use the current wall-clock time so the stream begins at the live
+      // position (current seek offset) rather than replaying from the item's
+      // beginning. `itemStartedAtMs` identifies which item the client expects;
+      // if a different item is now playing, startStream will stream that one
+      // and the client will detect the mismatch when the queue expires.
+      const now = Date.now();
 
       const rawStreamResult = await videoStream.startStream(
         {
@@ -500,7 +507,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           streamMode: 'mpegts',
           encoding: { mode: 'remux' },
         },
-        startTimestamp,
+        now,
         false,
       );
 
@@ -509,7 +516,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           rawStreamResult.error ?? null,
           'Error starting item stream for channel %s at t=%d: %s',
           req.params.id,
-          startTimestamp,
+          itemStartedAtMs,
           rawStreamResult.message,
         );
         return res
@@ -519,7 +526,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
 
       req.raw.on('close', () => {
         logger.debug(
-          { channel: req.params.id, t: startTimestamp },
+          { channel: req.params.id, t: itemStartedAtMs },
           'Native item stream client disconnected, stopping stream.',
         );
         rawStreamResult.stop();
