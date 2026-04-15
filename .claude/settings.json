@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm turbo:*)",
+      "Bash(pnpm fmt:*)",
+      "Bash(pnpm lint-changed:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm i:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm drizzle-kit:*)",
+      "Bash(cd server && pnpm test:*)",
+      "Bash(cd server && pnpm generate-openapi:*)",
+      "Bash(cd server && pnpm drizzle-kit:*)",
+      "Bash(cd server && pnpm typecheck:*)",
+      "Bash(cd web && pnpm generate-client:*)",
+      "Bash(cd web && pnpm regen-routes:*)",
+      "Bash(cd web && pnpm typecheck:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git show:*)",
+      "Bash(git blame:*)",
+      "Bash(git branch:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr checks:*)"
+    ]
+  }
+}

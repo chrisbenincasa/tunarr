@@ -71,6 +71,8 @@ export class FfmpegInfo {
     return format(`${path}_${CacheKeys[command]}`, ...args);
   }
 
+  private childProcessHelper = new ChildProcessHelper();
+
   constructor(
     @inject(KEYS.FFmpegPath) private ffmpegPath: string,
     @inject(KEYS.FFprobePath) private ffprobePath: string,
@@ -353,7 +355,7 @@ export class FfmpegInfo {
     args: string[],
     opts?: GetStdoutOptions,
   ): Promise<string> {
-    return new ChildProcessHelper().getStdout(executable, args, opts);
+    return this.childProcessHelper.getStdout(executable, args, opts);
   }
 
   private cacheKey(key: keyof typeof CacheKeys): string {

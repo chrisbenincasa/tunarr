@@ -101,5 +101,15 @@ borg create --exclude '*/data.ms' /path/to/repo::backup /path/to/tunarr/.tunarr/
 restic backup --exclude 'data.ms' /path/to/tunarr/.tunarr/
 ```
 
+**Proxmox Backup Server (PBS):**
+
+PBS uses `.pxarexclude` files (similar to `.gitignore`) to exclude paths from backups. Create or edit a `.pxarexclude` file in your Tunarr data directory:
+
+```bash
+echo "data.ms/" >> /path/to/tunarr/.tunarr/.pxarexclude
+```
+
+PBS will skip the `data.ms` directory during all future backup jobs that include that path. No PBS job reconfiguration is required — the exclusion is applied automatically when PBS encounters the `.pxarexclude` file.
+
 !!! tip
     The Meilisearch index can be rebuilt automatically by Tunarr, so excluding `data.ms` from backups is generally safe, so long as the `ms-snapshots` directory is preserved. After restoring a backup without this file, Tunarr will recreate the search index on startup.

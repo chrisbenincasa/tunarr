@@ -25,7 +25,7 @@ import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
-import { BaseHlsSession, SegmentNameRegex } from './BaseHlsSession.js';
+import { BaseHlsSession } from './BaseHlsSession.js';
 import type { SubtitleRenditionInfo } from './HlsMasterPlaylistMutator.js';
 import { HlsMasterPlaylistMutator } from './HlsMasterPlaylistMutator.js';
 import type { HlsPlaylistFilterOptions } from './HlsPlaylistMutator.js';
@@ -56,7 +56,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
-  #highestDeletedBelow: number = 0;
   #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
 
   constructor(
@@ -108,10 +107,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   async trimPlaylist(filterOpts?: HlsPlaylistFilterOptions) {
     filterOpts ??= {
       type: 'before_segment_number',
-      segmentNumber: Math.max(
-        this.minSegmentRequested,
-        this.#highestDeletedBelow,
-      ),
+      segmentNumber: this.minSegmentRequested,
       segmentsToKeepBefore: 10,
       segmentFloor: this.#highestDeletedBelow,
     };
@@ -138,7 +134,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
               this.channel.uuid,
               this.channel.number,
             );
-            await this.deleteOldSegments(trimResult.sequence);
+            this.deleteOldSegments(trimResult.sequence).catch((e) =>
+              this.logger.error(e),
+            );
             this.#lastDelete = now;
           }
 
@@ -412,10 +410,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   private async deleteOldSegments(sequenceNum: number) {
-    this.#highestDeletedBelow = Math.max(
-      this.#highestDeletedBelow,
-      sequenceNum,
-    );
     const workingDirectoryFiles = await fs.readdir(this._workingDirectory);
     const segments = filter(
       seq.collect(
@@ -424,8 +418,8 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           return ext === '.ts' || ext === '.mp4' || ext === '.vtt';
         }),
         (file) => {
-          const matches = file.match(SegmentNameRegex);
-          if (matches && matches.length > 1) {
+          const matches = file.match(/[A-z/]+(\d+)\.[ts|mp4]/);
+          if (matches && matches.length > 0) {
             return {
               file,
               seq: parseInt(matches[1]!),
