@@ -109,7 +109,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       type: 'before_segment_number',
       segmentNumber: this.minSegmentRequested,
       segmentsToKeepBefore: 10,
-      segmentFloor: this.#highestDeletedBelow,
+      // segmentFloor: this.#highestDeletedBelow,
     };
     return Result.attemptAsync(async () => {
       return await this.lock.runExclusive(async () => {
