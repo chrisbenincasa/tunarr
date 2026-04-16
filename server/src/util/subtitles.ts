@@ -1,14 +1,13 @@
-import type { MediaSourceType } from '@/db/schema/base.js';
+import type { MediaSourceId, MediaSourceType } from '@/db/schema/base.js';
 import crypto from 'node:crypto';
 import path from 'path';
 import { match, P } from 'ts-pattern';
-import type { SubtitleStreamDetails } from '../stream/types.ts';
-import type { Nullable } from '../types/util.ts';
+import type { Maybe, Nullable } from '../types/util.ts';
 
 type MinimalProgram = {
   id: string;
   externalSourceType: MediaSourceType;
-  externalSourceId: string;
+  externalSourceId: MediaSourceId;
   externalKey: string;
 };
 
@@ -22,9 +21,13 @@ export function subtitleCodecToExt(codec: string): Nullable<string> {
 
 export function getSubtitleCacheFilePath(
   program: MinimalProgram,
-  subtitleStream: SubtitleStreamDetails,
+  subtitleStream: { streamIndex: Maybe<number>; codec: string },
 ) {
-  const outputPath = getSubtitleCacheFileName(program, subtitleStream);
+  const outputPath = getSubtitleCacheFileName(
+    program,
+    subtitleStream.streamIndex,
+    subtitleStream.codec,
+  );
   const ext = subtitleCodecToExt(subtitleStream.codec.toLowerCase());
   if (!ext) {
     return null;
@@ -39,7 +42,8 @@ export function getSubtitleCacheFilePath(
 
 function getSubtitleCacheFileName(
   program: MinimalProgram,
-  subtitleStream: SubtitleStreamDetails,
+  streamIndex: Maybe<number>,
+  codec: string,
 ) {
   // TODO: We should not always include the external key in here. but it will bust the "cache"
   // if the underlying program changes at the target
@@ -49,7 +53,7 @@ function getSubtitleCacheFileName(
     .update(program.externalSourceType)
     .update(program.externalSourceId)
     .update(program.externalKey)
-    .update(subtitleStream.index?.toString() ?? '')
-    .update(subtitleStream.codec)
+    .update(streamIndex?.toString() ?? '')
+    .update(codec)
     .digest('hex');
 }

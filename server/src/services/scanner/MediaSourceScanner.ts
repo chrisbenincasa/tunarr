@@ -1,12 +1,18 @@
 import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
 import dayjs from 'dayjs';
+import { isEmpty } from 'lodash-es';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
+import type {
+  MediaSourceWithRelations,
+  NewProgramWithRelations,
+} from '../../db/schema/derivedTypes.js';
 import type {
   MediaLibraryType,
   MediaSourceOrm,
   RemoteMediaSourceType,
 } from '../../db/schema/MediaSource.ts';
+import type { QueryResult } from '../../external/BaseApiClient.ts';
+import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { devAssert } from '../../util/debug.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 
@@ -42,6 +48,14 @@ export type GenericMediaSourceScannerFactory = (
   libraryType: MediaLibraryType,
 ) => GenericMediaSourceScanner;
 
+export type GetSubtitlesRequest = {
+  key: string;
+  extension: string;
+  externalItemId: string;
+  externalMediaItemId?: string;
+  streamIndex: number; // Only relevant for Jellyfin
+};
+
 export abstract class BaseMediaSourceScanner<ApiClientTypeT, ScanRequestT> {
   abstract scan(req: ScanRequestT): Promise<void>;
 
@@ -62,6 +76,7 @@ export abstract class MediaSourceScanner<
   constructor(
     protected logger: Logger,
     protected mediaSourceDB: MediaSourceDB,
+    protected externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super();
   }
@@ -130,4 +145,55 @@ export abstract class MediaSourceScanner<
     libraryKey: string,
     context: ScanContext<ApiClientTypeT>,
   ): Promise<number>;
+
+  protected abstract getSubtitles(
+    context: ScanContext<ApiClientTypeT>,
+    request: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>>;
+
+  protected async downloadExternalSubtitleStreams(
+    { program, subtitles }: NewProgramWithRelations,
+    getSubtitlesCallback: (
+      args: GetSubtitlesRequest,
+    ) => Promise<QueryResult<string>>,
+  ) {
+    const externalSubtitleStreams =
+      subtitles.filter((stream) => stream.subtitleType === 'sidecar') ?? [];
+
+    for (const stream of externalSubtitleStreams) {
+      if (isEmpty(stream.path)) {
+        continue;
+      }
+
+      const fullPath =
+        await this.externalSubtitleDownloader.downloadSubtitlesIfNecessary(
+          {
+            externalKey: program.externalKey,
+            externalSourceId: program.mediaSourceId,
+            sourceType: program.sourceType,
+            uuid: program.uuid,
+          },
+          { streamIndex: stream.streamIndex ?? undefined, codec: stream.codec },
+          (args) =>
+            getSubtitlesCallback({
+              ...args,
+              key: stream.path!,
+              externalItemId: program.externalKey,
+              streamIndex: stream.streamIndex ?? 0,
+            }),
+        );
+
+      if (fullPath) {
+        stream.path = fullPath;
+        // return details;
+      }
+
+      this.logger.warn(
+        'Skipping external subtitles at index %d because download failed. Please check logs and file an issue for assistance.',
+        stream.streamIndex ?? -1,
+      );
+
+      return;
+    }
+  }
 }

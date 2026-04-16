@@ -7,6 +7,7 @@ import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 import { JellyfinT } from '../../types/internal.ts';
@@ -16,11 +17,13 @@ import {
   JellyfinMusicTrack,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
+import { QueryResult } from '../../external/BaseApiClient.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
+import { JellyfinScanUtil } from './JellyfinScanUtil.ts';
 import { MediaSourceMusicArtistScanner } from './MediaSourceMusicArtistScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import { ScanContext } from './MediaSourceScanner.ts';
+import { GetSubtitlesRequest, ScanContext } from './MediaSourceScanner.ts';
 
 export class JellyfinMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
   JellyfinT,
@@ -46,6 +49,8 @@ export class JellyfinMediaSourceMusicScanner extends MediaSourceMusicArtistScann
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(GetProgramGroupingById)
     getProgramGroupingsById: GetProgramGroupingById,
+    @inject(ExternalSubtitleDownloader)
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
       logger,
@@ -56,6 +61,7 @@ export class JellyfinMediaSourceMusicScanner extends MediaSourceMusicArtistScann
       searchService,
       mediaSourceProgressService,
       getProgramGroupingsById,
+      externalSubtitleDownloader,
     );
   }
 
@@ -108,5 +114,12 @@ export class JellyfinMediaSourceMusicScanner extends MediaSourceMusicArtistScann
     return context.apiClient
       .getChildItemCount(libraryKey, 'MusicArtist')
       .then((_) => _.getOrThrow());
+  }
+
+  protected getSubtitles(
+    context: ScanContext<JellyfinApiClient>,
+    request: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>> {
+    return JellyfinScanUtil.getSubtitles(context, request);
   }
 }

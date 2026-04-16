@@ -1,18 +1,24 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { ScanContext } from '@/services/scanner/MediaSourceScanner.js';
+import {
+  GetSubtitlesRequest,
+  ScanContext,
+} from '@/services/scanner/MediaSourceScanner.js';
 import { inject, injectable, interfaces } from 'inversify';
 import { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
+import { QueryResult } from '../../external/BaseApiClient.ts';
 import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { KEYS } from '../../types/inject.ts';
 import { EmbyT } from '../../types/internal.ts';
 import { EmbyMovie } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
+import { EmbyScanUtil } from './EmbyScanUtil.ts';
 import { MediaSourceMovieLibraryScanner } from './MediaSourceMovieLibraryScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
@@ -36,6 +42,8 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(MeilisearchService) searchService: MeilisearchService,
     @inject(ProgramConverter) programConverter: ProgramConverter,
+    @inject(ExternalSubtitleDownloader)
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
       logger,
@@ -45,6 +53,7 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
       searchService,
       programConverter,
       programMinterFactory(),
+      externalSubtitleDownloader,
     );
   }
 
@@ -89,5 +98,12 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
     return context.apiClient
       .getChildItemCount(libraryKey, 'Movie')
       .then((_) => _.getOrThrow());
+  }
+
+  protected getSubtitles(
+    context: ScanContext<EmbyApiClient>,
+    request: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>> {
+    return EmbyScanUtil.getSubtitles(context, request);
   }
 }

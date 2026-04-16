@@ -1,22 +1,28 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { ScanContext } from '@/services/scanner/MediaSourceScanner.js';
+import {
+  GetSubtitlesRequest,
+  ScanContext,
+} from '@/services/scanner/MediaSourceScanner.js';
 import { inject, injectable, interfaces } from 'inversify';
 import { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
+import { QueryResult } from '../../external/BaseApiClient.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 import { PlexT } from '../../types/internal.ts';
 import { PlexAlbum, PlexArtist, PlexTrack } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { MediaSourceMusicArtistScanner } from './MediaSourceMusicArtistScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
+import { PlexScanUtil } from './PlexScanUtil.ts';
 
 @injectable()
 export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
@@ -43,6 +49,8 @@ export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(GetProgramGroupingById)
     getProgramGroupingsById: GetProgramGroupingById,
+    @inject(ExternalSubtitleDownloader)
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
       logger,
@@ -53,6 +61,7 @@ export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
       searchService,
       mediaSourceProgressService,
       getProgramGroupingsById,
+      externalSubtitleDownloader,
     );
   }
 
@@ -105,5 +114,12 @@ export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
     return context.apiClient
       .getLibraryCount(libraryKey)
       .then((_) => _.getOrThrow());
+  }
+
+  protected getSubtitles(
+    context: ScanContext<PlexApiClient>,
+    { key }: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>> {
+    return PlexScanUtil.getSubtitles(context, key);
   }
 }

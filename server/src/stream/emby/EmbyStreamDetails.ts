@@ -344,8 +344,16 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
         if (details.type === 'external' && isDefined(index)) {
           const fullPath =
             await this.externalSubtitleDownloader.downloadSubtitlesIfNecessary(
-              item,
-              details,
+              {
+                externalKey: item.externalKey,
+                externalSourceId: item.mediaSourceId,
+                sourceType: 'emby',
+                uuid: item.uuid,
+              },
+              {
+                codec: details.codec,
+                streamIndex: details.index,
+              },
               ({ extension: ext }) =>
                 this.emby.getSubtitles(
                   item.externalKey,

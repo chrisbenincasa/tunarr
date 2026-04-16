@@ -1,13 +1,18 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/base.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { ScanContext } from '@/services/scanner/MediaSourceScanner.js';
+import {
+  GetSubtitlesRequest,
+  ScanContext,
+} from '@/services/scanner/MediaSourceScanner.js';
 import { inject, injectable, interfaces } from 'inversify';
 import { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
+import { QueryResult } from '../../external/BaseApiClient.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { KEYS } from '../../types/inject.ts';
 import { PlexMovie } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
@@ -15,6 +20,7 @@ import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { MediaSourceMovieLibraryScanner } from './MediaSourceMovieLibraryScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
+import { PlexScanUtil } from './PlexScanUtil.ts';
 
 @injectable()
 export class PlexMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
@@ -35,6 +41,8 @@ export class PlexMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(MeilisearchService) searchService: MeilisearchService,
     @inject(ProgramConverter) programConverter: ProgramConverter,
+    @inject(ExternalSubtitleDownloader)
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
       logger,
@@ -44,6 +52,7 @@ export class PlexMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
       searchService,
       programConverter,
       programMinterFactory(),
+      externalSubtitleDownloader,
     );
   }
 
@@ -76,5 +85,12 @@ export class PlexMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
     incomingMovie: PlexMovie,
   ): Promise<Result<PlexMovie>> {
     return apiClient.getMovie(incomingMovie.externalId);
+  }
+
+  protected getSubtitles(
+    context: ScanContext<PlexApiClient>,
+    { key }: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>> {
+    return PlexScanUtil.getSubtitles(context, key);
   }
 }

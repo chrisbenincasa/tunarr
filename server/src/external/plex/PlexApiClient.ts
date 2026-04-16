@@ -41,6 +41,7 @@ import type {
   PlexMediaContainerResponse,
   PlexMediaNoCollectionOrPlaylist,
   PlexMediaNoCollectionPlaylist,
+  PlexMediaSubtitleStream,
   PlexMediaVideoStream,
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
@@ -1356,7 +1357,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       directors: plexDirectorInject(plexEpisode.Director),
       writers: plexWriterInject(plexEpisode.Writer),
       episodeNumber: plexEpisode.index ?? 0,
-      mediaItem: plexMediaStreamsInject(
+      mediaItem: this.plexMediaStreamsInject(
         plexEpisode.ratingKey,
         plexEpisode,
       ).getOrElse(() => emptyMediaItem(plexEpisode)),
@@ -1528,7 +1529,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       year: plexMovie.year ?? releaseDate?.year() ?? null,
       releaseDate: releaseDate?.valueOf() ?? null,
       releaseDateString: releaseDate?.format() ?? null,
-      mediaItem: plexMediaStreamsInject(
+      mediaItem: this.plexMediaStreamsInject(
         plexMovie.ratingKey,
         plexMovie,
       ).getOrElse(() => emptyMediaItem(plexMovie)),
@@ -1610,9 +1611,10 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       year: plexClip.year ?? releaseDate?.year() ?? null,
       releaseDate: releaseDate?.valueOf() ?? null,
       releaseDateString: releaseDate?.format() ?? null,
-      mediaItem: plexMediaStreamsInject(plexClip.ratingKey, plexClip).getOrElse(
-        () => emptyMediaItem(plexClip),
-      ),
+      mediaItem: this.plexMediaStreamsInject(
+        plexClip.ratingKey,
+        plexClip,
+      ).getOrElse(() => emptyMediaItem(plexClip)),
       duration: plexClip.duration,
       actors: plexActorInject(plexClip.Role),
       directors: plexDirectorInject(plexClip.Director),
@@ -1824,7 +1826,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       writers: [],
       genres: [],
       trackNumber: plexTrack.index ?? 0,
-      mediaItem: plexMediaStreamsInject(
+      mediaItem: this.plexMediaStreamsInject(
         plexTrack.ratingKey,
         plexTrack,
       ).getOrElse(() => emptyMediaItem(plexTrack)),
@@ -1957,6 +1959,227 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       return;
     }
   }
+
+  plexMediaStreamsInject(
+    itemId: string,
+    plexItem: PlexTerminalMedia,
+    requireVideoStream: boolean = true,
+  ): Result<MediaItem> {
+    const plexMedia = plexItem.Media;
+    if (isNil(plexMedia) || isEmpty(plexMedia)) {
+      return Result.forError(
+        new Error(`Plex item ID = ${itemId} has no Media streams`),
+      );
+    }
+
+    const relevantMedia = maxBy(
+      filter(
+        plexMedia,
+        (m) => (m.duration ?? 0) >= 0 && (m.Part?.length ?? 0) > 0,
+      ),
+      (m) => m.id,
+    );
+
+    if (!relevantMedia) {
+      return Result.forError(
+        new Error(
+          `No Media items on Plex item ID = ${itemId} meet the necessary criteria.`,
+        ),
+      );
+    }
+
+    const relevantMediaPart = first(relevantMedia?.Part);
+    const apiMediaStreams = relevantMediaPart?.Stream;
+
+    if (!relevantMediaPart || isEmpty(apiMediaStreams)) {
+      return Result.forError(
+        new Error(`Could not extract a stream for Plex item ID ${itemId}`),
+      );
+    }
+
+    const videoStream = find(
+      apiMediaStreams,
+      (stream): stream is PlexMediaVideoStream => stream.streamType === 1,
+    );
+
+    if (requireVideoStream && !videoStream) {
+      return Result.forError(
+        new Error(`Plex item ID = ${itemId} has no video streams`),
+      );
+    }
+
+    const streams: MediaStream[] = [];
+    if (videoStream) {
+      const videoDetails = {
+        streamType: 'video',
+        codec: videoStream.codec,
+        bitDepth: videoStream.bitDepth ?? 8,
+        languageCodeISO6392: videoStream.languageCode,
+        default: videoStream.default,
+        profile: videoStream.profile?.toLowerCase() ?? '',
+        index: videoStream.index,
+        frameRate: videoStream.frameRate,
+        colorPrimaries: videoStream.colorPrimaries,
+        colorRange: videoStream.colorRange,
+        colorSpace: videoStream.colorSpace,
+        colorTransfer: videoStream.colorTrc,
+      } satisfies MediaStream;
+      streams.push(videoDetails);
+    }
+
+    streams.push(
+      ...map(
+        sortBy(
+          filter(apiMediaStreams, (stream): stream is PlexMediaAudioStream => {
+            return stream.streamType === 2 && !isNil(stream.index);
+          }),
+          (stream) => [
+            stream.selected ? -1 : 0,
+            stream.default ? 0 : 1,
+            stream.index,
+          ],
+        ),
+        (audioStream) => {
+          return {
+            streamType: 'audio',
+            // bitrate: audioStream.bitrate,
+            channels: audioStream.channels,
+            codec: audioStream.codec,
+            index: audioStream.index,
+            // Use the "selected" bit over the "default" if it exists
+            // In plex, selected signifies that the user's preferences would choose
+            // this stream over others, even if it is not the default
+            // This is temporary until we have language preferences within Tunarr
+            // to pick these streams.
+            profile: audioStream.profile?.toLocaleLowerCase() ?? '',
+            selected: audioStream.selected,
+            default: audioStream.default,
+            languageCodeISO6392: audioStream.languageCode,
+            title: audioStream.displayTitle,
+          } satisfies MediaStream;
+        },
+      ),
+    );
+
+    streams.push(
+      ...map(
+        sortBy(
+          filter(
+            apiMediaStreams,
+            (stream): stream is PlexMediaSubtitleStream => {
+              return stream.streamType === 3 && !stream.embeddedInVideo;
+            },
+          ),
+          (stream) => [
+            stream.selected ? -1 : 0,
+            // stream.default ? 0 : 1,
+            stream.index,
+          ],
+        ),
+        (stream) => {
+          const sdh = !![
+            stream.title,
+            stream.displayTitle,
+            stream.extendedDisplayTitle,
+          ]
+            .filter(isNonEmptyString)
+            .find((s) => s.toLocaleLowerCase().includes('sdh'));
+
+          const details = {
+            streamType: isDefined(stream.index)
+              ? 'subtitles'
+              : 'external_subtitles',
+            codec: stream.codec.toLocaleLowerCase(),
+            default: stream.default ?? false,
+            index: stream.index ?? 0,
+            title: stream.displayTitle,
+            sdh,
+            languageCodeISO6392: stream.languageCode,
+            fileName: stream.key,
+            forced: stream.forced ?? false,
+          } satisfies MediaStream;
+          return details;
+        },
+      ),
+    );
+
+    const chapters: MediaChapter[] =
+      plexItem.type === 'movie' || plexItem.type === 'episode'
+        ? (plexItem.Chapter?.map((chapter) => {
+            return {
+              index: chapter.index,
+              endTime: chapter.endTimeOffset,
+              startTime: chapter.startTimeOffset,
+              chapterType: 'chapter',
+              title: chapter.tag,
+            } satisfies MediaChapter;
+          }) ?? [])
+        : [];
+
+    const markers =
+      plexItem.type === 'movie' || plexItem.type === 'episode'
+        ? (plexItem.Marker ?? [])
+        : [];
+    const intros = zipWithIndex(
+      orderBy(
+        markers.filter((marker) => marker.type === 'intro'),
+        (marker) => marker.startTimeOffset,
+        'asc',
+      ),
+    ).map(
+      ([marker, index]) =>
+        ({
+          chapterType: 'intro',
+          endTime: marker.endTimeOffset,
+          startTime: marker.startTimeOffset,
+          index,
+        }) satisfies MediaChapter,
+    );
+    const outros = zipWithIndex(
+      orderBy(
+        markers.filter((marker) => marker.type === 'credits'),
+        (marker) => marker.startTimeOffset,
+        'asc',
+      ),
+    ).map(
+      ([marker, index]) =>
+        ({
+          chapterType: 'outro',
+          endTime: marker.endTimeOffset,
+          startTime: marker.startTimeOffset,
+          index,
+        }) satisfies MediaChapter,
+    );
+
+    chapters.push(...intros, ...outros);
+
+    return Result.success({
+      // Handle if this is not present...
+      duration: relevantMedia.duration!,
+      sampleAspectRatio: isNonEmptyString(videoStream?.pixelAspectRatio)
+        ? videoStream.pixelAspectRatio
+        : '1:1',
+      displayAspectRatio:
+        (relevantMedia.aspectRatio ?? 0) === 0
+          ? ''
+          : (relevantMedia.aspectRatio?.toFixed(2) ?? ''),
+      resolution:
+        isDefined(relevantMedia.width) && isDefined(relevantMedia.height)
+          ? { widthPx: relevantMedia.width, heightPx: relevantMedia.height }
+          : undefined,
+      frameRate: videoStream?.frameRate?.toFixed(2),
+      streams,
+      locations: [
+        {
+          type: 'remote',
+          externalKey: relevantMediaPart.key,
+          path: relevantMediaPart.file,
+          sourceType: MediaSourceType.Plex,
+        },
+      ],
+      chapters,
+    } satisfies MediaItem);
+  }
 }
 
 type PlexTvDevicesResponse = {
@@ -2021,183 +2244,4 @@ function emptyMediaItem(item: PlexTerminalMedia): Maybe<MediaItem> {
       },
     ],
   };
-}
-
-function plexMediaStreamsInject(
-  itemId: string,
-  plexItem: PlexTerminalMedia,
-  requireVideoStream: boolean = true,
-): Result<MediaItem> {
-  const plexMedia = plexItem.Media;
-  if (isNil(plexMedia) || isEmpty(plexMedia)) {
-    return Result.forError(
-      new Error(`Plex item ID = ${itemId} has no Media streams`),
-    );
-  }
-
-  const relevantMedia = maxBy(
-    filter(
-      plexMedia,
-      (m) => (m.duration ?? 0) >= 0 && (m.Part?.length ?? 0) > 0,
-    ),
-    (m) => m.id,
-  );
-
-  if (!relevantMedia) {
-    return Result.forError(
-      new Error(
-        `No Media items on Plex item ID = ${itemId} meet the necessary criteria.`,
-      ),
-    );
-  }
-
-  const relevantMediaPart = first(relevantMedia?.Part);
-  const apiMediaStreams = relevantMediaPart?.Stream;
-
-  if (!relevantMediaPart || isEmpty(apiMediaStreams)) {
-    return Result.forError(
-      new Error(`Could not extract a stream for Plex item ID ${itemId}`),
-    );
-  }
-
-  const videoStream = find(
-    apiMediaStreams,
-    (stream): stream is PlexMediaVideoStream => stream.streamType === 1,
-  );
-
-  if (requireVideoStream && !videoStream) {
-    return Result.forError(
-      new Error(`Plex item ID = ${itemId} has no video streams`),
-    );
-  }
-
-  const streams: MediaStream[] = [];
-  if (videoStream) {
-    const videoDetails = {
-      streamType: 'video',
-      codec: videoStream.codec,
-      bitDepth: videoStream.bitDepth ?? 8,
-      languageCodeISO6392: videoStream.languageCode,
-      default: videoStream.default,
-      profile: videoStream.profile?.toLowerCase() ?? '',
-      index: videoStream.index,
-      frameRate: videoStream.frameRate,
-      colorPrimaries: videoStream.colorPrimaries,
-      colorRange: videoStream.colorRange,
-      colorSpace: videoStream.colorSpace,
-      colorTransfer: videoStream.colorTrc,
-    } satisfies MediaStream;
-    streams.push(videoDetails);
-  }
-
-  streams.push(
-    ...map(
-      sortBy(
-        filter(apiMediaStreams, (stream): stream is PlexMediaAudioStream => {
-          return stream.streamType === 2 && !isNil(stream.index);
-        }),
-        (stream) => [
-          stream.selected ? -1 : 0,
-          stream.default ? 0 : 1,
-          stream.index,
-        ],
-      ),
-      (audioStream) => {
-        return {
-          streamType: 'audio',
-          // bitrate: audioStream.bitrate,
-          channels: audioStream.channels,
-          codec: audioStream.codec,
-          index: audioStream.index,
-          // Use the "selected" bit over the "default" if it exists
-          // In plex, selected signifies that the user's preferences would choose
-          // this stream over others, even if it is not the default
-          // This is temporary until we have language preferences within Tunarr
-          // to pick these streams.
-          profile: audioStream.profile?.toLocaleLowerCase() ?? '',
-          selected: audioStream.selected,
-          default: audioStream.default,
-          languageCodeISO6392: audioStream.languageCode,
-          title: audioStream.displayTitle,
-        } satisfies MediaStream;
-      },
-    ),
-  );
-
-  const chapters: MediaChapter[] =
-    plexItem.type === 'movie' || plexItem.type === 'episode'
-      ? (plexItem.Chapter?.map((chapter) => {
-          return {
-            index: chapter.index,
-            endTime: chapter.endTimeOffset,
-            startTime: chapter.startTimeOffset,
-            chapterType: 'chapter',
-            title: chapter.tag,
-          } satisfies MediaChapter;
-        }) ?? [])
-      : [];
-
-  const markers =
-    plexItem.type === 'movie' || plexItem.type === 'episode'
-      ? (plexItem.Marker ?? [])
-      : [];
-  const intros = zipWithIndex(
-    orderBy(
-      markers.filter((marker) => marker.type === 'intro'),
-      (marker) => marker.startTimeOffset,
-      'asc',
-    ),
-  ).map(
-    ([marker, index]) =>
-      ({
-        chapterType: 'intro',
-        endTime: marker.endTimeOffset,
-        startTime: marker.startTimeOffset,
-        index,
-      }) satisfies MediaChapter,
-  );
-  const outros = zipWithIndex(
-    orderBy(
-      markers.filter((marker) => marker.type === 'credits'),
-      (marker) => marker.startTimeOffset,
-      'asc',
-    ),
-  ).map(
-    ([marker, index]) =>
-      ({
-        chapterType: 'outro',
-        endTime: marker.endTimeOffset,
-        startTime: marker.startTimeOffset,
-        index,
-      }) satisfies MediaChapter,
-  );
-
-  chapters.push(...intros, ...outros);
-
-  return Result.success({
-    // Handle if this is not present...
-    duration: relevantMedia.duration!,
-    sampleAspectRatio: isNonEmptyString(videoStream?.pixelAspectRatio)
-      ? videoStream.pixelAspectRatio
-      : '1:1',
-    displayAspectRatio:
-      (relevantMedia.aspectRatio ?? 0) === 0
-        ? ''
-        : (relevantMedia.aspectRatio?.toFixed(2) ?? ''),
-    resolution:
-      isDefined(relevantMedia.width) && isDefined(relevantMedia.height)
-        ? { widthPx: relevantMedia.width, heightPx: relevantMedia.height }
-        : undefined,
-    frameRate: videoStream?.frameRate?.toFixed(2),
-    streams,
-    locations: [
-      {
-        type: 'remote',
-        externalKey: relevantMediaPart.key,
-        path: relevantMediaPart.file,
-        sourceType: MediaSourceType.Plex,
-      },
-    ],
-    chapters,
-  } satisfies MediaItem);
 }

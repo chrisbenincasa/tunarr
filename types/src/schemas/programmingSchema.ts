@@ -189,6 +189,7 @@ export const MediaStream = z.object({
 
   // Subtitles
   sdh: z.boolean().nullish(),
+  externalKey: z.string().nullish(),
 
   // Audio or Subtitles
   languageCodeISO6392: z.string().nullish(),
@@ -237,6 +238,7 @@ export const MediaItem = z.object({
   locations: z.array(MediaLocation),
   chapters: z.array(MediaChapter).nullish(),
   scanKind: z.enum(['unknown', 'progressive', 'interlaced']).nullish(),
+  externalKey: z.string().nullish(),
 });
 
 const WithMediaItemMetadata = z.object({

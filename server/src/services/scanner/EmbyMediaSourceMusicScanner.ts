@@ -5,8 +5,10 @@ import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
+import { QueryResult } from '../../external/BaseApiClient.ts';
 import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 import { EmbyT } from '../../types/internal.ts';
@@ -18,9 +20,10 @@ import {
 import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
+import { EmbyScanUtil } from './EmbyScanUtil.ts';
 import { MediaSourceMusicArtistScanner } from './MediaSourceMusicArtistScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import { ScanContext } from './MediaSourceScanner.ts';
+import { GetSubtitlesRequest, ScanContext } from './MediaSourceScanner.ts';
 
 export class EmbyMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
   EmbyT,
@@ -46,6 +49,8 @@ export class EmbyMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(GetProgramGroupingById)
     getProgramGroupingsById: GetProgramGroupingById,
+    @inject(ExternalSubtitleDownloader)
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
       logger,
@@ -56,6 +61,7 @@ export class EmbyMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
       searchService,
       mediaSourceProgressService,
       getProgramGroupingsById,
+      externalSubtitleDownloader,
     );
   }
 
@@ -108,5 +114,12 @@ export class EmbyMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
     return context.apiClient
       .getChildItemCount(libraryKey, 'MusicArtist')
       .then((_) => _.getOrThrow());
+  }
+
+  protected getSubtitles(
+    context: ScanContext<EmbyApiClient>,
+    request: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>> {
+    return EmbyScanUtil.getSubtitles(context, request);
   }
 }

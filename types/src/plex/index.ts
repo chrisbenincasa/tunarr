@@ -318,6 +318,7 @@ export const PlexMediaSubtitleStreamSchema = BasePlexMediaStreamSchema.extend({
     .boolean()
     .or(z.number().transform((i) => i === 1))
     .optional(),
+  embeddedInVideo: z.coerce.number().optional(),
 }).partial({
   bitrate: true,
   index: true,

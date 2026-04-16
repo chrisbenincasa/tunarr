@@ -1,12 +1,16 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/base.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { ScanContext } from '@/services/scanner/MediaSourceScanner.js';
+import {
+  GetSubtitlesRequest,
+  ScanContext,
+} from '@/services/scanner/MediaSourceScanner.js';
 import { inject, injectable, interfaces } from 'inversify';
 import { isNil } from 'lodash-es';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import { QueryResult } from '../../external/BaseApiClient.ts';
 import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
@@ -21,8 +25,10 @@ import {
   SeasonWithShow,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
+import { EmbyScanUtil } from './EmbyScanUtil.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import { MediaSourceTvShowLibraryScanner } from './MediaSourceTvShowLibraryScanner.ts';
 
@@ -51,6 +57,8 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
     @inject(MeilisearchService) searchService: MeilisearchService,
     @inject(GetProgramGroupingById)
     getProgramGroupingsById: GetProgramGroupingById,
+    @inject(ExternalSubtitleDownloader)
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
       logger,
@@ -61,6 +69,7 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
       searchService,
       mediaSourceProgressService,
       getProgramGroupingsById,
+      externalSubtitleDownloader,
     );
   }
 
@@ -154,5 +163,12 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
 
   protected isSeasonT(grouping: ProgramGrouping): grouping is EmbySeason {
     return grouping.sourceType === 'emby' && grouping.type === 'season';
+  }
+
+  protected getSubtitles(
+    context: ScanContext<EmbyApiClient>,
+    request: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>> {
+    return EmbyScanUtil.getSubtitles(context, request);
   }
 }

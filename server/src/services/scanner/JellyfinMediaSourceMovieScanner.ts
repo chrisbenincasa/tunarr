@@ -1,18 +1,24 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { ScanContext } from '@/services/scanner/MediaSourceScanner.js';
+import {
+  GetSubtitlesRequest,
+  ScanContext,
+} from '@/services/scanner/MediaSourceScanner.js';
 import { inject, injectable, interfaces } from 'inversify';
 import { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
+import { QueryResult } from '../../external/BaseApiClient.ts';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { KEYS } from '../../types/inject.ts';
 import { JellyfinT } from '../../types/internal.ts';
 import { JellyfinMovie } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
+import { JellyfinScanUtil } from './JellyfinScanUtil.ts';
 import { MediaSourceMovieLibraryScanner } from './MediaSourceMovieLibraryScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
@@ -36,6 +42,8 @@ export class JellyfinMediaSourceMovieScanner extends MediaSourceMovieLibraryScan
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(MeilisearchService) searchService: MeilisearchService,
     @inject(ProgramConverter) programConverter: ProgramConverter,
+    @inject(ExternalSubtitleDownloader)
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
       logger,
@@ -45,6 +53,7 @@ export class JellyfinMediaSourceMovieScanner extends MediaSourceMovieLibraryScan
       searchService,
       programConverter,
       programMinterFactory(),
+      externalSubtitleDownloader,
     );
   }
 
@@ -89,5 +98,12 @@ export class JellyfinMediaSourceMovieScanner extends MediaSourceMovieLibraryScan
     return context.apiClient
       .getChildItemCount(libraryKey, 'Movie')
       .then((_) => _.getOrThrow());
+  }
+
+  protected getSubtitles(
+    context: ScanContext<JellyfinApiClient>,
+    request: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>> {
+    return JellyfinScanUtil.getSubtitles(context, request);
   }
 }

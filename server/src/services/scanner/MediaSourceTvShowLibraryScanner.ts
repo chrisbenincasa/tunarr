@@ -13,6 +13,7 @@ import type { RemoteMediaSourceType } from '../../db/schema/MediaSource.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
+import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import type {
   HasMediaSourceAndLibraryId,
   MediaSourceEpisode,
@@ -61,8 +62,9 @@ export abstract class MediaSourceTvShowLibraryScanner<
     protected searchService: MeilisearchService,
     private mediaSourceProgressService: MediaSourceProgressService,
     private getProgramGroupingByIdCommand: GetProgramGroupingById,
+    protected externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
-    super(logger, mediaSourceDB);
+    super(logger, mediaSourceDB, externalSubtitleDownloader);
   }
 
   protected async scanInternal(
@@ -497,6 +499,14 @@ export abstract class MediaSourceTvShowLibraryScanner<
           mediaSource,
           library,
           episodeWithJoins,
+        );
+
+        await this.downloadExternalSubtitleStreams(dao, (req) =>
+          this.getSubtitles(scanContext, {
+            ...req,
+            externalMediaItemId:
+              episodeWithJoins.mediaItem?.externalKey ?? undefined,
+          }),
         );
 
         dao.program.tvShowUuid = show.uuid;

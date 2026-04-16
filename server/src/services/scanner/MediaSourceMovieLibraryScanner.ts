@@ -8,6 +8,7 @@ import type { RemoteMediaSourceType } from '../../db/schema/MediaSource.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import { isMovieProgram } from '../../db/schema/schemaTypeGuards.ts';
 import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
+import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import type { HasMediaSourceInfo, Movie } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
@@ -45,8 +46,9 @@ export abstract class MediaSourceMovieLibraryScanner<
     private searchService: MeilisearchService,
     protected programConverter: ProgramConverter,
     protected programMinter: ProgramDaoMinter,
+    protected externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
-    super(logger, mediaSourceDB);
+    super(logger, mediaSourceDB, externalSubtitleDownloader);
   }
 
   protected async scanInternal(
@@ -121,6 +123,13 @@ export abstract class MediaSourceMovieLibraryScanner<
         mediaSource,
         library,
         fullMovie,
+      );
+
+      await this.downloadExternalSubtitleStreams(minted, (req) =>
+        this.getSubtitles(context, {
+          ...req,
+          externalMediaItemId: fullMovie.mediaItem?.externalKey ?? undefined,
+        }),
       );
 
       const upsertResult = await Result.attemptAsync(() =>

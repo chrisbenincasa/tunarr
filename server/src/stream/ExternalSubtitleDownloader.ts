@@ -1,20 +1,31 @@
 import { inject, injectable } from 'inversify';
 import fs from 'node:fs/promises';
 import path from 'path';
-import { StreamLineupProgram } from '../db/derived_types/StreamLineup.ts';
+import { MediaSourceId, MediaSourceType } from '../db/schema/base.ts';
 import { QueryResult } from '../external/BaseApiClient.ts';
 import { FileSystemService } from '../services/FileSystemService.ts';
 import { KEYS } from '../types/inject.ts';
+import { Maybe } from '../types/util.ts';
 import { fileExists } from '../util/fsUtil.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import {
   getSubtitleCacheFilePath,
   subtitleCodecToExt,
 } from '../util/subtitles.ts';
-import { SubtitleStreamDetails } from './types.ts';
 
-type GetSubtitleCallbackArgs = {
+export type GetSubtitleCallbackArgs = {
   extension: string;
+};
+
+type GetSubtitlesCallback = (
+  cbArgs: GetSubtitleCallbackArgs,
+) => Promise<QueryResult<string>>;
+
+type ExternalItem = {
+  externalKey: string;
+  externalSourceId: MediaSourceId;
+  sourceType: MediaSourceType;
+  uuid: string;
 };
 
 @injectable()
@@ -33,11 +44,9 @@ export class ExternalSubtitleDownloader {
    * @returns The full path to the downloaded subtitles
    */
   async downloadSubtitlesIfNecessary(
-    item: StreamLineupProgram,
-    details: SubtitleStreamDetails,
-    getSubtitlesCb: (
-      args: GetSubtitleCallbackArgs,
-    ) => Promise<QueryResult<string>>,
+    item: ExternalItem,
+    details: { streamIndex: Maybe<number>; codec: string },
+    getSubtitlesCb: GetSubtitlesCallback,
   ) {
     const outPath = getSubtitleCacheFilePath(
       {
@@ -46,7 +55,10 @@ export class ExternalSubtitleDownloader {
         externalSourceType: item.sourceType,
         id: item.uuid,
       },
-      details,
+      {
+        codec: details.codec,
+        streamIndex: details.streamIndex,
+      },
     );
     const ext = subtitleCodecToExt(details.codec);
 

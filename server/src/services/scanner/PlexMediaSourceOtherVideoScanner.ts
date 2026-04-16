@@ -4,8 +4,10 @@ import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
+import { QueryResult } from '../../external/BaseApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import type { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 import type { PlexT } from '../../types/internal.ts';
@@ -15,7 +17,8 @@ import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { MediaSourceOtherVideoScanner } from './MediaSourceOtherVideoScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import type { ScanContext } from './MediaSourceScanner.ts';
+import type { GetSubtitlesRequest, ScanContext } from './MediaSourceScanner.ts';
+import { PlexScanUtil } from './PlexScanUtil.ts';
 
 @injectable()
 export class PlexMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScanner<
@@ -37,6 +40,8 @@ export class PlexMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(KEYS.ProgramDaoMinterFactory)
     programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
+    @inject(ExternalSubtitleDownloader)
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
       logger,
@@ -45,6 +50,7 @@ export class PlexMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
       searchService,
       mediaSourceProgressService,
       programMinterFactory(),
+      externalSubtitleDownloader,
     );
   }
 
@@ -81,5 +87,12 @@ export class PlexMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
 
   protected getExternalKey(video: PlexOtherVideo): string {
     return video.externalId;
+  }
+
+  protected getSubtitles(
+    context: ScanContext<PlexApiClient>,
+    { key }: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>> {
+    return PlexScanUtil.getSubtitles(context, key);
   }
 }

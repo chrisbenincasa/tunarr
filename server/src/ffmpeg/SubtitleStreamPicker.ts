@@ -161,7 +161,7 @@ export class SubtitleStreamPicker {
         externalSourceId: lineupItem.program.mediaSourceId,
         externalSourceType: lineupItem.program.sourceType,
       },
-      stream,
+      { streamIndex: stream.index, codec: stream.codec },
     );
 
     if (!filePath) {

@@ -32,6 +32,7 @@ import { Result } from '../../types/result.ts';
 import type { Maybe } from '../../types/util.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
+import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext } from './MediaSourceScanner.ts';
 import { MediaSourceScanner } from './MediaSourceScanner.ts';
@@ -78,8 +79,9 @@ export abstract class MediaSourceMusicArtistScanner<
     protected searchService: MeilisearchService,
     private mediaSourceProgressService: MediaSourceProgressService,
     private getProgramGroupingByIdCommand: GetProgramGroupingById,
+    protected externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
-    super(logger, mediaSourceDB);
+    super(logger, mediaSourceDB, externalSubtitleDownloader);
   }
 
   protected async scanInternal(
