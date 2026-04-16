@@ -1,7 +1,7 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
 import type { Maybe } from '@/types/util.ts';
-import { Check, Close, Edit, MoreVert } from '@mui/icons-material';
+import { AutoFixHigh, Check, Close, Edit, MoreVert } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import type { BoxProps } from '@mui/material';
 import {
@@ -565,13 +565,22 @@ export default function ChannelsPage() {
         <Typography flexGrow={1} variant="h3">
           Channels
         </Typography>
-        <RouterButtonLink
-          to="/channels/new"
-          variant="contained"
-          startIcon={<AddCircleIcon />}
-        >
-          New
-        </RouterButtonLink>
+        <Box display="flex" gap={1}>
+          <RouterButtonLink
+            to="/channels/auto-create"
+            variant="outlined"
+            startIcon={<AutoFixHigh />}
+          >
+            Auto Create
+          </RouterButtonLink>
+          <RouterButtonLink
+            to="/channels/new"
+            variant="contained"
+            startIcon={<AddCircleIcon />}
+          >
+            New
+          </RouterButtonLink>
+        </Box>
       </Box>
 
       {smallViewport ? (
