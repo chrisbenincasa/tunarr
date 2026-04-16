@@ -40,6 +40,7 @@ import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
+import { tunarrBasicAuthHook } from './util/basicAuth.js';
 import { defaultHlsOptions } from './ffmpeg/builder/constants.ts';
 import { type ServerOptions, serverOptions } from './globals.js';
 import { IWorkerPool } from './interfaces/IWorkerPool.ts';
@@ -86,6 +87,8 @@ export class Server {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       .setSerializerCompiler(serializerCompiler)
       .withTypeProvider<ZodTypeProvider>();
+      
+    this.app.addHook('onRequest', tunarrBasicAuthHook);
 
     if (serverOptions().printRoutes) {
       await this.app.register(
