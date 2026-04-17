@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
 const PUBLIC_EXACT_PATHS = new Set([
-  '/',
   '/device.xml',
   '/discover.json',
   '/lineup.json',
@@ -20,10 +19,18 @@ const PUBLIC_PREFIXES = [
   '/cache/images/',
 ];
 
+function isProgramArtworkPath(path: string) {
+  return /^\/api\/programs\/[^/]+\/artwork\/[^/]+$/.test(path);
+}
+
 function isPublicPath(url: string) {
   const path = url.split('?')[0] ?? url;
 
   if (PUBLIC_EXACT_PATHS.has(path)) {
+    return true;
+  }
+
+  if (isProgramArtworkPath(path)) {
     return true;
   }
 
