@@ -1,10 +1,13 @@
+import ClearIcon from '@mui/icons-material/Clear';
 import {
   Box,
   Divider,
   FormControlLabel,
+  IconButton,
   Stack,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -187,7 +190,7 @@ export function ChannelPropertiesEditor() {
                   />
                 )}
               />
-              <Box sx={{ display: 'flex', alignItems: 'end' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, mb: 1 }}>
                 {DefaultIconPath !== imagePath ? (
                   <Box
                     component="img"
@@ -205,7 +208,7 @@ export function ChannelPropertiesEditor() {
                   control={control}
                   render={({ field }) => (
                     <ImageUploadInput
-                      FormControlProps={{ fullWidth: true, margin: 'normal' }}
+                      FormControlProps={{ fullWidth: true }}
                       value={field.value}
                       onFormValueChange={(newPath) => {
                         field.onChange(newPath);
@@ -217,6 +220,19 @@ export function ChannelPropertiesEditor() {
                     />
                   )}
                 />
+
+                {DefaultIconPath !== imagePath && (
+                  <Tooltip title="Remove custom icon">
+                    <IconButton
+                      aria-label="Remove channel icon"
+                      onClick={() =>
+                        setValue('icon.path', '', { shouldDirty: true })
+                      }
+                    >
+                      <ClearIcon />
+                    </IconButton>
+                  </Tooltip>
+                )}
               </Box>
             </Box>
             <Stack gap={2}>

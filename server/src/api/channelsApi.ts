@@ -37,6 +37,8 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
+import { globalOptions } from '@/globals.js';
+import { deleteIfLocalAndCleared } from '@/util/iconUtil.js';
 import {
   head,
   isEmpty,
@@ -275,6 +277,17 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           const channelUpdate = {
             ...req.body,
           };
+
+          // If icon is being cleared and the old icon was a local upload, delete it from disk
+          try {
+            await deleteIfLocalAndCleared(
+              channel.icon?.path ?? '',
+              req.body.icon?.path ?? '',
+              globalOptions().databaseDirectory,
+            );
+          } catch (e) {
+            logger.warn(e, 'Could not delete old channel icon file from disk');
+          }
 
           const updatedChannel = await req.serverCtx.channelDB.updateChannel(
             channel.uuid,
