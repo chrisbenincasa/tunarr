@@ -6,12 +6,17 @@ import {
 } from '@mui/icons-material';
 import {
   Box,
+  Card,
+  CardContent,
   IconButton,
   Link as MuiLink,
   Paper,
+  Stack,
   TableContainer,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -40,6 +45,7 @@ import { useQueryObserver } from '../hooks/useQueryObserver.ts';
 import { useStoreBackedTableSettings } from '../hooks/useTableSettings.ts';
 import type { Nullable } from '../types/util.ts';
 import { RouterIconButtonLink } from './base/RouterButtonLink.tsx';
+import { NetworkIcon } from './util/NetworkIcon.tsx';
 
 type MediaSourceLibraryRow = MediaSourceLibrary & {
   mediaSource: MediaSourceSettings;
@@ -237,6 +243,8 @@ export const MediaSourceLibraryTable = () => {
   const dayjs = useDayjs();
   const { data: mediaSources } = useMediaSources();
   const tableSettings = useStoreBackedTableSettings(TableName);
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
   const columns = useMemo<MRT_ColumnDef<MediaSourceLibraryRow>[]>(() => {
     return [
@@ -325,6 +333,69 @@ export const MediaSourceLibraryTable = () => {
     return [...remoteLibraries, ...localLibraries];
   }, [mediaSources]);
 
+  const renderMobileCards = () => (
+    <Stack spacing={1}>
+      {data.map((library) => (
+        <Card
+          key={`${library.mediaSource.id}-${library.id}`}
+          variant="outlined"
+        >
+          <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle2" noWrap>
+                  {library.type === 'local'
+                    ? library.name
+                    : `${library.mediaSource.name} \u2013 ${library.name}`}
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                    mt: 0.25,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      display: 'flex',
+                      alignItems: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <NetworkIcon
+                      network={library.mediaSource.type}
+                      sx={{ width: '100%', height: '100%' }}
+                    />
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">
+                    {prettifySnakeCaseString(library.mediaType)}
+                  </Typography>
+                  {library.lastScannedAt && (
+                    <Typography variant="caption" color="text.secondary">
+                      · {dayjs(library.lastScannedAt).format('ll')}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}
+              >
+                <MediaSourceLibraryTableActionCell
+                  mediaSource={library.mediaSource}
+                  library={library}
+                />
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+      ))}
+    </Stack>
+  );
+
   const table = useMaterialReactTable({
     data,
     columns,
@@ -351,13 +422,25 @@ export const MediaSourceLibraryTable = () => {
     ),
     positionActionsColumn: 'last',
     ...tableSettings,
+    state: {
+      ...tableSettings.state,
+      columnVisibility: {
+        ...tableSettings.state?.columnVisibility,
+        type: !smallViewport,
+        lastUpdated: !smallViewport,
+      },
+    },
   });
 
   return (
     <>
-      <TableContainer component={Paper} sx={{ width: '100%' }}>
-        <MaterialReactTable table={table} />
-      </TableContainer>
+      {smallViewport ? (
+        renderMobileCards()
+      ) : (
+        <TableContainer component={Paper} sx={{ width: '100%' }}>
+          <MaterialReactTable table={table} />
+        </TableContainer>
+      )}
       <Typography variant="body2" align="center">
         Don't see the library you want here? Ensure it is enabled in the{' '}
         <MuiLink component={Link} to="/settings/sources">

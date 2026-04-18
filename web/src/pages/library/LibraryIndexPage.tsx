@@ -1,10 +1,13 @@
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { MediaSourceLibraryTable } from '../../components/MediaSourceLibraryTable.tsx';
 
 export default function LibraryIndexPage() {
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
     <Box>
-      <Typography variant="h3" mb={2}>
+      <Typography variant={smallViewport ? 'h5' : 'h3'} mb={2}>
         Library
       </Typography>
       <Stack gap={2}>
