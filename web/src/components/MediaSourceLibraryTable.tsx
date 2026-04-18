@@ -8,7 +8,6 @@ import {
   Box,
   Card,
   CardContent,
-  Chip,
   IconButton,
   Link as MuiLink,
   Paper,
@@ -46,6 +45,7 @@ import { useQueryObserver } from '../hooks/useQueryObserver.ts';
 import { useStoreBackedTableSettings } from '../hooks/useTableSettings.ts';
 import type { Nullable } from '../types/util.ts';
 import { RouterIconButtonLink } from './base/RouterButtonLink.tsx';
+import { NetworkIcon } from './util/NetworkIcon.tsx';
 
 type MediaSourceLibraryRow = MediaSourceLibrary & {
   mediaSource: MediaSourceSettings;
@@ -357,11 +357,20 @@ export const MediaSourceLibraryTable = () => {
                     flexWrap: 'wrap',
                   }}
                 >
-                  <Chip
-                    label={capitalize(library.type)}
-                    size="small"
-                    sx={{ height: 18, fontSize: '0.65rem' }}
-                  />
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      display: 'flex',
+                      alignItems: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <NetworkIcon
+                      network={library.mediaSource.type}
+                      sx={{ width: '100%', height: '100%' }}
+                    />
+                  </Box>
                   <Typography variant="caption" color="text.secondary">
                     {prettifySnakeCaseString(library.mediaType)}
                   </Typography>
