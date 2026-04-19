@@ -4,6 +4,7 @@ import type { NonEmptyArray } from 'ts-essentials';
 import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import type { ChannelSubtitlePreferences } from '../db/schema/SubtitlePreferences.ts';
 import { globalOptions } from '../globals.ts';
+import { LanguageService } from '../services/LanguageService.ts';
 import type { SubtitleStreamDetails } from '../stream/types.ts';
 import { isImageBasedSubtitle } from '../stream/util.ts';
 import type { Maybe } from '../types/util.ts';
@@ -15,7 +16,6 @@ import { fileExists } from '../util/fsUtil.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { getSubtitleCacheFilePath } from '../util/subtitles.ts';
-import { LanguageService } from '../services/LanguageService.ts';
 
 export class SubtitleStreamPicker {
   private static _logger?: Logger;
@@ -41,22 +41,27 @@ export class SubtitleStreamPicker {
     opts: { preferTextBased?: boolean } = {},
   ): Promise<Maybe<SubtitleStreamDetails>> {
     const orderedStreams = opts.preferTextBased
-      ? orderBy(subtitleStreams, (s) => isImageBasedSubtitle(s.codec), 'desc')
+      ? (orderBy(
+          subtitleStreams,
+          (s) => isImageBasedSubtitle(s.codec),
+          'desc',
+        ) as NonEmptyArray<SubtitleStreamDetails>)
       : subtitleStreams;
     if (subtitlePreferences.length === 0) {
       this.logger.debug(
         'No subtitle preferences for channel. Attempting to use default stream.',
       );
-      let foundStream = orderedStreams.find((stream) => stream.default);
-      if (!foundStream) {
+      const defaultStream = orderedStreams.find((stream) => stream.default);
+      const defaultOrFirstStream = defaultStream ?? orderedStreams[0];
+      if (!defaultStream) {
         this.logger.debug('Could not find default subtitle stream');
-        return;
       }
 
+      let foundStream: Maybe<SubtitleStreamDetails> = defaultOrFirstStream;
       if (
         !opts.preferTextBased &&
-        !isImageBasedSubtitle(foundStream.codec) &&
-        foundStream.type === 'embedded'
+        !isImageBasedSubtitle(defaultOrFirstStream.codec) &&
+        defaultOrFirstStream.type === 'embedded'
       ) {
         foundStream = await this.getSubtitleDetailsWithExtractedPath(
           lineupItem,

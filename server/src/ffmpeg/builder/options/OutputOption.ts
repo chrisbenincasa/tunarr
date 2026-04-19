@@ -60,6 +60,14 @@ export const DoNotMapMetadataOutputOption = () =>
 export const MapAllStreamsOutputOption = () =>
   makeConstantOutputOption(['-map', '0']);
 
+/**
+ * Maps all video, audio, and data streams from the first input but excludes
+ * subtitle streams. Subtitle codecs like SRT/ASS cannot be muxed directly
+ * into HLS/mpegts — they must be handled via separate WebVTT sidecar files.
+ */
+export const MapAllNonSubtitleStreamsOutputOption = () =>
+  makeConstantOutputOption(['-map', '0:v', '-map', '0:a', '-map', '0:d?']);
+
 export const NoSceneDetectOutputOption = (
   value: number,
 ): ConstantOutputOption =>

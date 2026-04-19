@@ -15,15 +15,6 @@ enum State {
   Error = 'error',
 }
 
-export type SubtitleRenditionMetadata = {
-  language: string;
-  languageName?: string;
-  default: boolean;
-  forced: boolean;
-  sdh: boolean;
-  title?: string;
-};
-
 /**
  * Represents a single ffmpeg transcode stream. Allows for interaction
  * with the underlying ffmpeg process, emits relevant events, and contains
@@ -35,8 +26,6 @@ export class FfmpegTranscodeSession extends (events.EventEmitter as new () => Ty
     caller: import.meta,
   });
   private state = State.Idle;
-
-  subtitleRendition?: SubtitleRenditionMetadata;
 
   constructor(
     public process: FfmpegProcess,

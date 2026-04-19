@@ -1,6 +1,7 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
+import type { TranscodeSessionResult } from '@/ffmpeg/ffmpegBase.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
 import type { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Result } from '@/types/result.js';
@@ -14,6 +15,7 @@ import events from 'node:events';
 import { PassThrough } from 'node:stream';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.js';
 import type { StreamOptions } from '../ffmpeg/ffmpegBase.ts';
+import type { StreamRenditions } from './types.ts';
 import {
   attempt,
   isDefined,
@@ -37,6 +39,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
   private outStream: PassThrough;
   private hadError: boolean = false;
   private _transcodeSession: FfmpegTranscodeSession;
+  private _renditions?: StreamRenditions;
 
   constructor(
     public context: PlayerContext,
@@ -58,10 +61,11 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
     const result = await this.setupInternal(opts);
 
     result.forEach((value) => {
-      this.transcodeSession = value;
+      this.transcodeSession = value.session;
+      this._renditions = value.renditions;
     });
 
-    return result;
+    return result.map((r) => r.session);
   }
 
   isInitialized(): boolean {
@@ -87,7 +91,11 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
 
   protected abstract setupInternal(
     opts?: Partial<StreamOptions>,
-  ): Promise<Result<FfmpegTranscodeSession>>;
+  ): Promise<Result<TranscodeSessionResult>>;
+
+  get renditions(): StreamRenditions | undefined {
+    return this._renditions;
+  }
 
   get transcodeSession() {
     return this._transcodeSession;

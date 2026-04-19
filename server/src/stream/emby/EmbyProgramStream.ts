@@ -2,9 +2,8 @@ import { isEmnyBackedLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { type MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/base.js';
-import { type FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { type OutputFormat } from '@/ffmpeg/builder/constants.js';
-import type { StreamOptions } from '@/ffmpeg/ffmpegBase.js';
+import type { StreamOptions, TranscodeSessionResult } from '@/ffmpeg/ffmpegBase.js';
 import { type IFFMPEG } from '@/ffmpeg/ffmpegBase.js';
 import { type CacheImageService } from '@/services/cacheImageService.js';
 import { type PlayerContext } from '@/stream/PlayerStreamContext.js';
@@ -51,7 +50,7 @@ export class EmbyProgramStream extends ProgramStream {
 
   async setupInternal(
     opts?: StreamOptions,
-  ): Promise<Result<FfmpegTranscodeSession>> {
+  ): Promise<Result<TranscodeSessionResult>> {
     const lineupItem = this.context.lineupItem;
     if (!isEmnyBackedLineupItem(lineupItem)) {
       return Result.forError(
@@ -103,7 +102,7 @@ export class EmbyProgramStream extends ProgramStream {
 
     const start = dayjs.duration(lineupItem.startOffset ?? 0);
 
-    const ffmpegOutStream = await this.ffmpeg.createStreamSession({
+    const result = await this.ffmpeg.createStreamSession({
       stream: {
         source: stream.streamSource,
         details: stream.streamDetails,
@@ -122,10 +121,10 @@ export class EmbyProgramStream extends ProgramStream {
       lineupItem,
     });
 
-    if (isUndefined(ffmpegOutStream)) {
+    if (isUndefined(result)) {
       return Result.forError(new Error('Unable to spawn ffmpeg'));
     }
 
-    return Result.success(ffmpegOutStream);
+    return Result.success(result);
   }
 }

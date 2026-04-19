@@ -2,8 +2,8 @@ import { isPlexBackedLineupItem } from '@/db/derived_types/StreamLineup.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/base.js';
-import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
+import type { TranscodeSessionResult } from '@/ffmpeg/ffmpegBase.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
 import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import { ProgramStream } from '@/stream/ProgramStream.js';
@@ -55,7 +55,7 @@ export class PlexProgramStream extends ProgramStream {
 
   protected async setupInternal(
     opts?: Partial<StreamOptions>,
-  ): Promise<Result<FfmpegTranscodeSession>> {
+  ): Promise<Result<TranscodeSessionResult>> {
     const lineupItem = this.context.lineupItem;
     if (!isPlexBackedLineupItem(lineupItem)) {
       return Result.forError(
@@ -114,7 +114,7 @@ export class PlexProgramStream extends ProgramStream {
 
     const start = dayjs.duration(lineupItem.startOffset ?? 0);
 
-    const transcodeSession = await ffmpeg.createStreamSession({
+    const result = await ffmpeg.createStreamSession({
       stream: {
         source: stream.streamSource,
         details: stream.streamDetails,
@@ -132,7 +132,7 @@ export class PlexProgramStream extends ProgramStream {
       lineupItem,
     });
 
-    if (isUndefined(transcodeSession)) {
+    if (isUndefined(result)) {
       return Result.forError(new Error('Unable to create ffmpeg process'));
     }
 
@@ -154,6 +154,6 @@ export class PlexProgramStream extends ProgramStream {
       );
     }
 
-    return Result.success(transcodeSession);
+    return Result.success(result);
   }
 }

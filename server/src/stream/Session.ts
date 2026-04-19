@@ -33,7 +33,9 @@ export type HlsSessionType = StrictExtract<
 export type HlsConcatSessionType =
   `${HlsSessionType}${typeof ConcatSessionSuffix}`;
 
-export type SessionType = ChannelStreamMode | ChannelConcatStreamMode;
+export type SessionType =
+  | ChannelStreamMode
+  | ChannelConcatStreamMode;
 
 // TODO: sort these all out.... and write docs
 type StreamSessionEvents = {
