@@ -4,8 +4,10 @@ import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { MediaSourceType } from '../../db/schema/base.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
+import { QueryResult } from '../../external/BaseApiClient.ts';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 import { JellyfinT } from '../../types/internal.ts';
@@ -13,9 +15,10 @@ import { JellyfinMusicVideo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
+import { JellyfinScanUtil } from './JellyfinScanUtil.ts';
 import { MediaSourceMusicVideoScanner } from './MediaSourceMusicVideoScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import { ScanContext } from './MediaSourceScanner.ts';
+import { GetSubtitlesRequest, ScanContext } from './MediaSourceScanner.ts';
 
 @injectable()
 export class JellyfinMediaSourceMusicVideoScanner extends MediaSourceMusicVideoScanner<
@@ -37,6 +40,8 @@ export class JellyfinMediaSourceMusicVideoScanner extends MediaSourceMusicVideoS
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(KEYS.ProgramDaoMinterFactory)
     programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
+    @inject(ExternalSubtitleDownloader)
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
       logger,
@@ -45,6 +50,7 @@ export class JellyfinMediaSourceMusicVideoScanner extends MediaSourceMusicVideoS
       searchService,
       mediaSourceProgressService,
       programMinterFactory(),
+      externalSubtitleDownloader,
     );
   }
 
@@ -100,5 +106,12 @@ export class JellyfinMediaSourceMusicVideoScanner extends MediaSourceMusicVideoS
 
   protected getExternalKey(video: JellyfinMusicVideo): string {
     return video.externalId;
+  }
+
+  protected getSubtitles(
+    context: ScanContext<JellyfinApiClient>,
+    request: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>> {
+    return JellyfinScanUtil.getSubtitles(context, request);
   }
 }

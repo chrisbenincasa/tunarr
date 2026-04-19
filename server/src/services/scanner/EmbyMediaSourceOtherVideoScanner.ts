@@ -4,8 +4,10 @@ import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
+import { QueryResult } from '../../external/BaseApiClient.ts';
 import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 import type { EmbyT } from '../../types/internal.ts';
@@ -13,9 +15,10 @@ import type { EmbyOtherVideo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
+import { EmbyScanUtil } from './EmbyScanUtil.ts';
 import { MediaSourceOtherVideoScanner } from './MediaSourceOtherVideoScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import type { ScanContext } from './MediaSourceScanner.ts';
+import type { GetSubtitlesRequest, ScanContext } from './MediaSourceScanner.ts';
 
 @injectable()
 export class EmbyMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScanner<
@@ -37,6 +40,8 @@ export class EmbyMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(KEYS.ProgramDaoMinterFactory)
     programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
+    @inject(ExternalSubtitleDownloader)
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
       logger,
@@ -45,6 +50,7 @@ export class EmbyMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
       searchService,
       mediaSourceProgressService,
       programMinterFactory(),
+      externalSubtitleDownloader,
     );
   }
 
@@ -93,5 +99,12 @@ export class EmbyMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
 
   protected getExternalKey(video: EmbyOtherVideo): string {
     return video.externalId;
+  }
+
+  protected getSubtitles(
+    context: ScanContext<EmbyApiClient>,
+    request: GetSubtitlesRequest,
+  ): Promise<QueryResult<string>> {
+    return EmbyScanUtil.getSubtitles(context, request);
   }
 }

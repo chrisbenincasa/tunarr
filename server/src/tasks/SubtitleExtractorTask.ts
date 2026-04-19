@@ -230,9 +230,9 @@ export class SubtitleExtractorTask extends Task2<
 
           const filePath = getSubtitleCacheFilePath(
             {
-              externalKey: program.program.externalKey,
-              externalSourceId: tag(program.program.externalSourceId),
-              externalSourceType: program.program.externalSourceType,
+              externalKey: program.program.externalId,
+              externalSourceId: tag(program.program.mediaSourceId),
+              externalSourceType: program.program.sourceType,
               id: program.uniqueId,
             },
             { streamIndex: subtitle.index, codec: subtitle.codec },

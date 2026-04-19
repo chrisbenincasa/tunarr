@@ -6,6 +6,7 @@ import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { RemoteMediaSourceType } from '../../db/schema/MediaSource.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
+import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import type { HasMediaSourceInfo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
@@ -34,8 +35,9 @@ export abstract class MediaSourceMusicVideoScanner<
     private searchService: MeilisearchService,
     private mediaSourceProgressService: MediaSourceProgressService,
     protected programMinter: ProgramDaoMinter,
+    externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
-    super(logger, mediaSourceDB);
+    super(logger, mediaSourceDB, externalSubtitleDownloader);
   }
 
   protected async scanInternal(
