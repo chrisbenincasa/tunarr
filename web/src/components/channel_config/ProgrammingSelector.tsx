@@ -241,7 +241,7 @@ export const ProgrammingSelector = ({
           <Alert
             variant="filled"
             severity="error"
-            action={<AddMediaSourceButton />}
+            action={<AddMediaSourceButton ButtonProps={{ color: 'inherit', variant: 'outlined' }} />}
           >
             No Media Sources detected.
           </Alert>

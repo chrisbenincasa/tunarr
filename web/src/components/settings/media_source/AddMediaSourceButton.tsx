@@ -73,7 +73,7 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
   return (
     <Box>
       <Button
-        color="inherit"
+        color="primary"
         onClick={openManualAddButtonMenu}
         variant="contained"
         startIcon={<Add />}
