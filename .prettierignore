@@ -1,28 +1,33 @@
+# Top level ignores
 .github/
 .husky/
+.claude/
+.serena/
+CHANGELOG.md
+mkdocs.yml
+pnpm-*.yaml
+
+# Package ignores
+macos/
 docker/
 docs/
 resources/
 
-pnpm-*.yaml
-
+# Wide nets
 **/bundle
 **/node_modules
-
-.release-please-manifest.json
-CHANGELOG.md
-mkdocs.yml
-
-server/streams/**/*.ts
-server/web/
-server/temp
+**/*.json
+**/*.html
+**/*.sql
+docs-extras/**/*.md
 **/.tsup
 
-*.html
+# Server
+server/streams/**/*.ts
+server/src/testing/ffmpeg/fixtures/*
+server/web/
+server/temp
 
-docs-extras/**/*.md
-
+# web
 web/src/generated/*
 web/src/routeTree.gen.ts
-
-*.sql
