@@ -238,6 +238,7 @@ export abstract class MediaSourceTvShowLibraryScanner<
     const persistedShow: ShowT & HasMediaSourceAndLibraryId = {
       ...show,
       uuid: upsertedShow.uuid,
+      createdAt: upsertedShow.createdAt,
       mediaSourceId: mediaSource.uuid,
       libraryId: library.uuid,
     };
@@ -518,7 +519,11 @@ export abstract class MediaSourceTvShowLibraryScanner<
           this.logger.trace('Upserted episode ID %s', upsertResult!.uuid);
 
           await this.searchService.indexEpisodes([
-            { ...episodeWithJoins, uuid: upsertResult!.uuid },
+            {
+              ...episodeWithJoins,
+              uuid: upsertResult!.uuid,
+              createdAt: upsertResult!.createdAt,
+            },
           ]);
         } catch (e) {
           this.logger.warn(

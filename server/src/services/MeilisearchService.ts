@@ -132,6 +132,7 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'rating',
     'originalReleaseDate',
     'originalReleaseYear',
+    'addedAt',
     'externalIdsMerged',
     'grandparent.id',
     'grandparent.type',
@@ -172,6 +173,7 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'duration',
     'originalReleaseDate',
     'originalReleaseYear',
+    'addedAt',
     'index',
   ],
   caseSensitiveFilters: [
@@ -277,6 +279,7 @@ type BaseProgramSearchDocument = {
   studio?: Studio[];
   tags: string[];
   state: ProgramState;
+  addedAt: Nullable<number>;
 };
 
 export type TerminalProgramSearchDocument<
@@ -830,6 +833,7 @@ export class MeilisearchService implements ISearchService {
       tags: show.tags,
       studio: show.studios,
       state: 'ok',
+      addedAt: show.createdAt ?? null,
     };
 
     await this.client()
@@ -881,6 +885,7 @@ export class MeilisearchService implements ISearchService {
       ),
       tags: season.tags,
       state: 'ok',
+      addedAt: season.createdAt ?? null,
       parent: {
         id: encodeCaseSensitiveId(season.show.uuid),
         externalIds: showEids ?? [],
@@ -1005,6 +1010,7 @@ export class MeilisearchService implements ISearchService {
       ),
       tags: artist.tags,
       state: 'ok',
+      addedAt: artist.createdAt ?? null,
     };
 
     await this.client()
@@ -1054,6 +1060,7 @@ export class MeilisearchService implements ISearchService {
       ),
       tags: album.tags,
       state: 'ok',
+      addedAt: album.createdAt ?? null,
       parent: {
         id: encodeCaseSensitiveId(album.artist.uuid),
         externalIds: artistEids ?? [],
@@ -1447,13 +1454,42 @@ export class MeilisearchService implements ISearchService {
             },
           )
           .with(
-            { type: P.union('date', 'numeric'), value: [P.number, P.number] },
+            P.union(
+              { type: 'numeric', value: [P.number, P.number] },
+              {
+                type: 'date',
+                value: [P.number, P.number],
+              },
+            ),
             ({ value }) => {
               return `${value[0]} TO ${value[1]}`;
             },
           )
           .with(
-            { type: P.union('date', 'numeric'), value: P.number },
+            { type: 'numeric', value: P.number },
+            ({ value, op }) => `${op.toUpperCase()} ${value}`,
+          )
+          .with(
+            {
+              type: 'date',
+              relativeDate: { op: 'inthelast' },
+              value: P.number,
+            },
+            ({ value }) => `>= ${value}`,
+          )
+          .with(
+            {
+              type: 'date',
+              relativeDate: { op: 'notinthelast' },
+              value: P.number,
+            },
+            ({ value }) => `< ${value}`,
+          )
+          .with(
+            {
+              type: 'date',
+              value: P.number,
+            },
             ({ value, op }) => `${op.toUpperCase()} ${value}`,
           )
           .otherwise(() => null);
@@ -1595,6 +1631,7 @@ export class MeilisearchService implements ISearchService {
       writer: program.writers ?? [],
       studio: program.studios ?? [],
       tags: program.tags,
+      addedAt: program.createdAt ?? null,
       mediaSourceId: encodeCaseSensitiveId(program.mediaSourceId),
       libraryId: encodeCaseSensitiveId(program.libraryId),
       videoWidth: width,

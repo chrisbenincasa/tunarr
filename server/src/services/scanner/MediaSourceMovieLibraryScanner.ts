@@ -158,6 +158,7 @@ export abstract class MediaSourceMovieLibraryScanner<
           {
             ...fullMovie,
             uuid: dbMovie.uuid,
+            createdAt: dbMovie.createdAt,
             mediaSourceId: mediaSource.uuid,
             libraryId: library.uuid,
           },

@@ -123,7 +123,35 @@ export function SearchValueNode(props: ValueNodeProps) {
 
   const handleOpChange = useCallback(
     (newOp: string) => {
-      if (
+      const isRelativeOp = newOp === 'inthelast' || newOp === 'notinthelast';
+      const wasRelativeOp =
+        selfValue.fieldSpec.type === 'date' &&
+        (selfValue.fieldSpec.op === 'inthelast' ||
+          selfValue.fieldSpec.op === 'notinthelast');
+
+      if (isRelativeOp && selfValue.fieldSpec.type === 'date') {
+        // Switching to a relative date operator: set default relative metadata
+        const relativeDate = {
+          op: newOp,
+          amount: 1,
+          unit: 'week',
+        } as const;
+        const resolved = +dayjs().subtract(1, 'week');
+        setValue(getFieldName('fieldSpec.value'), resolved);
+        setValue(getFieldName('fieldSpec.relativeDate'), relativeDate);
+      } else if (wasRelativeOp && !isRelativeOp) {
+        // Switching from relative to absolute: clear relativeDate metadata
+        setValue(getFieldName('fieldSpec.relativeDate'), undefined);
+        if (newOp === 'to') {
+          const now = +dayjs();
+          setValue(getFieldName('fieldSpec.value'), [now, now] as [
+            number,
+            number,
+          ]);
+        } else if (!isNumber(selfValue.fieldSpec.value)) {
+          setValue(getFieldName('fieldSpec.value'), +dayjs());
+        }
+      } else if (
         selfValue.fieldSpec.type === 'numeric' ||
         selfValue.fieldSpec.type === 'date'
       ) {
@@ -145,7 +173,9 @@ export function SearchValueNode(props: ValueNodeProps) {
       );
     },
     [
+      dayjs,
       getFieldName,
+      selfValue.fieldSpec.op,
       selfValue.fieldSpec.type,
       selfValue.fieldSpec.value,
       setValue,

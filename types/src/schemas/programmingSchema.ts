@@ -129,6 +129,7 @@ const BaseItem = z.object({
   title: z.string(),
   sortTitle: z.string(),
   tags: z.array(z.string()),
+  createdAt: z.number().nullable().optional(),
   // ...HasMediaSourceAndLibraryId.shape,
 });
 

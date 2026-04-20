@@ -156,6 +156,14 @@ export const SearchFieldSpecs: NonEmptyArray<
     visibleForLibraryTypes: 'all',
   },
   {
+    key: 'addedAt',
+    name: 'added_date',
+    type: 'date' as const,
+    displayName: 'Date Added',
+    uiVisible: true,
+    visibleForLibraryTypes: 'all',
+  },
+  {
     key: 'originalReleaseYear',
     name: 'year',
     type: 'numeric' as const,
@@ -296,6 +304,8 @@ const OperatorLabelByFieldType = {
     '>': 'after',
     '>=': 'on or after',
     to: 'between',
+    inthelast: 'in the last',
+    notinthelast: 'not in the last',
   },
   numeric: {
     '!=': '!=',
