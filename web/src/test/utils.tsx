@@ -1,11 +1,13 @@
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
+import { Theme } from '@/theme.ts';
+import { ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement, ReactNode } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { ThemeProvider } from '@mui/material';
-import { Theme } from '@/theme.ts';
 
 /**
  * Creates a fresh QueryClient configured for testing.
@@ -37,11 +39,13 @@ function TestProviders({ children, queryClient }: TestProvidersProps) {
   const client = queryClient ?? createTestQueryClient();
 
   return (
-    <QueryClientProvider client={client}>
-      <DndProvider backend={HTML5Backend}>
-        <ThemeProvider theme={Theme}>{children}</ThemeProvider>
-      </DndProvider>
-    </QueryClientProvider>
+    <I18nProvider i18n={i18n}>
+      <QueryClientProvider client={client}>
+        <DndProvider backend={HTML5Backend}>
+          <ThemeProvider theme={Theme}>{children}</ThemeProvider>
+        </DndProvider>
+      </QueryClientProvider>
+    </I18nProvider>
   );
 }
 

@@ -1,4 +1,5 @@
 import type { router } from '@/router.ts';
+import { t } from '@lingui/core/macro';
 import {
   Computer,
   Delete,
@@ -52,52 +53,52 @@ export const useNavItems = () => {
   return useMemo<NavItem[]>(() => {
     const items: NavItem[] = [
       {
-        name: 'Welcome',
+        name: t`Welcome`,
         path: '/welcome',
         hidden: !showWelcome,
         icon: <Home />,
       },
-      { name: 'Guide', path: '/guide', icon: <Tv /> },
+      { name: t`Guide`, path: '/guide', icon: <Tv /> },
       {
-        name: 'Channels',
+        name: t`Channels`,
         path: '/channels',
         icon: <SettingsRemote />,
       },
       // { name: 'Watch', path: '/watch', hidden: true, icon: <LiveTv /> },
       {
-        name: 'Library',
+        name: t`Library`,
         path: '/library',
         icon: <VideoLibrary />,
         children: [
           {
-            name: 'Filler Lists',
+            name: t`Filler Lists`,
             path: '/library/fillers',
             icon: <Preview />,
           },
           {
-            name: 'Smart Collections',
+            name: t`Smart Collections`,
             path: '/library/smart_collections',
             icon: <Psychology />,
           },
           {
-            name: 'Custom Shows',
+            name: t`Custom Shows`,
             path: '/library/custom-shows' as const,
             icon: <Theaters />,
           },
           {
-            name: 'Trash',
+            name: t`Trash`,
             path: '/library/trash',
             icon: <Delete />,
           },
         ],
       },
       {
-        name: 'Sources',
+        name: t`Sources`,
         path: '/media_sources',
         icon: <StorageIcon />,
       },
       {
-        name: 'System',
+        name: t`System`,
         path: '/system',
         icon: <Computer />,
         badge: highestSev
@@ -108,24 +109,24 @@ export const useNavItems = () => {
           : undefined,
         children: [
           {
-            name: 'Status',
+            name: t`Status`,
             path: '/system',
             hidden: true,
           },
           {
-            name: 'Debug',
+            name: t`Debug`,
             path: '/system/debug',
             hidden: true,
           },
           {
-            name: 'Logs',
+            name: t`Logs`,
             path: '/system/logs',
             hidden: true,
           },
         ],
       },
       {
-        name: 'Settings',
+        name: t`Settings`,
         path: '/settings/general',
         icon: <Settings />,
         children: [

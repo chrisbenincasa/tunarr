@@ -17,9 +17,9 @@ import React, { useState } from 'react';
 import { useCustomShowBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
 import { useProgramShuffle } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useCustomShowReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
+import { useLingui } from '@lingui/react/macro';
 import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
 import { useCustomShowEditor } from '../../store/selectors.ts';
-import { strings } from '../../strings.ts';
 import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
 import { StyledMenu } from '../base/StyledMenu.tsx';
 import AddBlockShuffleModal from '../programming_controls/AddBlockShuffleModal.tsx';
@@ -32,6 +32,7 @@ type OrdereredSort<T extends string> = `${T}-asc` | `${T}-desc`;
 type PossibleSorts = 'random' | OrdereredSort<'release'> | 'block';
 
 export const CustomShowSortToolsMenu = () => {
+  const { t } = useLingui();
   const { programList } = useCustomShowEditor();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = !!anchorEl;
@@ -125,7 +126,7 @@ export const CustomShowSortToolsMenu = () => {
           Sort By...
         </MenuItem>
         <ElevatedTooltip
-          title={strings.SHUFFLE_TOOLTIP}
+          title={t`Completely randomizes the order of programs.`}
           placement="right"
           elevation={10}
         >
@@ -144,7 +145,7 @@ export const CustomShowSortToolsMenu = () => {
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip
-          title={strings.RELEASE_SORT_TOOLTIP}
+          title={t`Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom.`}
           placement="right"
           elevation={10}
         >
@@ -163,7 +164,7 @@ export const CustomShowSortToolsMenu = () => {
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip
-          title={strings.BLOCK_SHUFFLE_TOOLTIP}
+          title={t`Alternates TV shows in blocks of episodes. You can pick the number of episodes per show in each block and if the order of shows in each block should be randomized. Movies are moved to the bottom.`}
           placement="right"
           elevation={10}
         >

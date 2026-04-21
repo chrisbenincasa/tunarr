@@ -1,6 +1,7 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
 import type { Maybe } from '@/types/util.ts';
+import { Trans } from '@lingui/react/macro';
 import { Check, Close, Edit, MoreVert } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import type { BoxProps } from '@mui/material';
@@ -182,12 +183,14 @@ export default function ChannelsPage() {
         {deleteChannelConfirmation && (
           <>
             <DialogTitle id="delete-channel-title">
-              Delete Channel "{deleteChannelConfirmation.name}"?
+              <Trans>Delete Channel</Trans> "{deleteChannelConfirmation.name}"?
             </DialogTitle>
             <DialogContent>
               <DialogContentText id="delete-channel-description">
-                Deleting a Channel will remove all programming from the channel.
-                This action cannot be undone.
+                <Trans>
+                  Deleting a Channel will remove all programming from the
+                  channel. This action cannot be undone.
+                </Trans>
               </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -195,13 +198,13 @@ export default function ChannelsPage() {
                 onClick={() => setDeleteChannelConfirmation(undefined)}
                 autoFocus
               >
-                Cancel
+                <Trans>Cancel</Trans>
               </Button>
               <Button
                 onClick={() => removeChannel(deleteChannelConfirmation.id)}
                 variant="contained"
               >
-                Delete
+                <Trans>Delete</Trans>
               </Button>
             </DialogActions>
           </>

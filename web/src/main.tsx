@@ -2,7 +2,6 @@ import languages from '@cospired/i18n-iso-languages';
 import en from '@cospired/i18n-iso-languages/langs/en.json';
 import { ColorSpace, LCH, OKLCH, sRGB } from 'colorjs.io/fn';
 import dayjs from 'dayjs';
-import 'dayjs/locale/en-gb';
 import localeData from 'dayjs/plugin/localeData';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import React from 'react';
@@ -17,7 +16,6 @@ ColorSpace.register(sRGB);
 
 dayjs.extend(localizedFormat);
 dayjs.extend(localeData);
-dayjs.locale('en-gb');
 
 // Initialize the languages database with English names
 // TODO: localize this and make it a context provider

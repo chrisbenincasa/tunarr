@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Alert, Box, Toolbar, useTheme } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -13,8 +14,6 @@ import { TopBar } from './components/TopBar.tsx';
 import { useServerEventsSnackbar } from './hooks/useServerEvents.ts';
 import { useIsDarkMode } from './hooks/useTunarrTheme.ts';
 import { useVersion } from './hooks/useVersion.tsx';
-import { strings } from './strings.ts';
-
 export function Root({ children }: { children?: React.ReactNode }) {
   useServerEventsSnackbar();
 
@@ -75,7 +74,11 @@ export function Root({ children }: { children?: React.ReactNode }) {
                 </RouterButtonLink>
               }
             >
-              {strings.FFMPEG_MISSING}
+              <Trans>
+                FFmpeg not found. For all features to work, we recommend
+                installing FFmpeg 7.1+ or update your FFmpeg executable path in
+                settings.
+              </Trans>
             </Alert>
           ) : null}
           {children ?? <Outlet />}
@@ -88,7 +91,9 @@ export function Root({ children }: { children?: React.ReactNode }) {
 export default function App() {
   return (
     <>
-      <RouterLink to={'/channels'}>Channels</RouterLink>
+      <RouterLink to={'/channels'}>
+        <Trans>Channels</Trans>
+      </RouterLink>
     </>
   );
 }

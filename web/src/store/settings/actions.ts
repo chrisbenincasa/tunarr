@@ -1,6 +1,7 @@
-import type { SupportedLocales } from '@/store/settings/store.ts';
+import { loadDayjsLocale } from '@/helpers/localeLoader.ts';
+import { loadCatalog } from '@/i18n.ts';
+import type { SupportedLocales, TimeFormat } from '@/store/settings/store.ts';
 import type { PaginationState, SortingState } from '@tanstack/react-table';
-import dayjs from 'dayjs';
 import useStore from '..';
 
 export const setBackendUri = (uri: string) =>
@@ -49,11 +50,22 @@ export const setChannelPaginationState = (p: PaginationState) =>
     settings.ui.channelTablePagination = p;
   });
 
-export const setUiLocale = (locale: SupportedLocales) =>
+export const setUiLocale = async (locale: SupportedLocales) => {
+  await loadDayjsLocale(locale);
+  await loadCatalog(locale);
   useStore.setState(({ settings }) => {
-    dayjs.locale(locale); // Changes the default dayjs locale globally
     settings.ui.i18n.locale = locale;
   });
+};
+
+export const setTimeFormat = async (format: TimeFormat) => {
+  if (format === '24h') {
+    await import('dayjs/locale/en-gb');
+  }
+  useStore.setState(({ settings }) => {
+    settings.ui.i18n.timeFormat = format;
+  });
+};
 
 export const setShowAdvancedSettings = (value: boolean) =>
   useStore.setState(({ settings }) => {
