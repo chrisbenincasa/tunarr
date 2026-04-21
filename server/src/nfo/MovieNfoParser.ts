@@ -12,6 +12,7 @@ const ArrayTags = [
   'movie.fileinfo',
   'movie.actor',
   'movie.uniqueid',
+  'movie.studio',
 ];
 
 export class MovieNfoParser extends BaseNfoParser<typeof MovieNfoContainer> {
