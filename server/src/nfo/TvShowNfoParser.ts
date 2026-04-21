@@ -11,6 +11,7 @@ const ArrayTags = [
   'tvshow.tag',
   'tvshow.actor',
   'tvshow.uniqueid',
+  'tvshow.studio',
 ];
 
 export class TvShowNfoParser extends BaseNfoParser<typeof TvShowNfoContainer> {

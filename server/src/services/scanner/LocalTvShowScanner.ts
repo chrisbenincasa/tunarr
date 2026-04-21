@@ -732,7 +732,9 @@ export class LocalTvShowScanner extends FileSystemScanner {
       type: 'show',
       genres: tvShowNfo.genre ? tvShowNfo.genre.map((name) => ({ name })) : [],
       actors: mapNfoActors(tvShowNfo.actor),
-      studios: [],
+      studios: tvShowNfo.studio
+        ? tvShowNfo.studio.map((name) => ({ name }))
+        : [],
       rating: tvShowNfo.mpaa ?? null,
       releaseDate: releaseDate ? +releaseDate : null,
       releaseDateString: releaseDate?.format() ?? null,

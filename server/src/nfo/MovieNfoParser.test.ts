@@ -14,6 +14,21 @@ describe('MovieNfoParser', () => {
     expect(output.movie.credits).length(2);
     expect(output.movie.director).length(1);
     expect(output.movie.actor).length(5);
+    expect(output.movie.studio).toHaveLength(1);
+    expect(output.movie.studio).toEqual(['Marv Films']);
+  });
+
+  test('parses basic movie file no studio', async () => {
+    const contents = (await readTestFile('movie-no-studio.nfo')).toString(
+      'utf-8',
+    );
+    const result = await new MovieNfoParser().parse(contents);
+    expect(result.isSuccess()).toBe(true);
+
+    const output = result.get();
+
+    expect(output.movie).toBeDefined();
+    expect(output.movie.studio).toBeUndefined();
   });
 
   test('parses NFOs without explicit fileinfo', async () => {

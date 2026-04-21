@@ -11,8 +11,22 @@ describe('TvEpisodeNfoParser', () => {
 
     expect(output.episodedetails[0].credits).length(3);
     expect(output.episodedetails[0].director).length(2);
+    expect(output.episodedetails[0].studio).length(1);
+    expect(output.episodedetails[0].studio).toEqual(['Disney+ (US)']);
 
     console.log(output.episodedetails);
+  });
+
+  test('parses basic tv episode file no studio', async () => {
+    const contents = (await readTestFile('episode-no-studio.nfo')).toString(
+      'utf-8',
+    );
+    const result = await new TvEpisodeNfoParser().parse(contents);
+    expect(result.isSuccess()).toBe(true);
+
+    const output = result.get();
+
+    expect(output.episodedetails[0].studio).toBeUndefined();
   });
 
   test('parses basic tv episode file 2', async () => {
