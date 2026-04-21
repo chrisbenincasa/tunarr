@@ -176,6 +176,18 @@ export const NumericFormController = <
         ...(props.rules ?? {}),
       }}
       toFormType={handleStr}
+      render={(renderProps) =>
+        props.render({
+          ...renderProps,
+          field: {
+            ...renderProps.field,
+            value: (typeof renderProps.field.value === 'number' &&
+            isNaN(renderProps.field.value)
+              ? ''
+              : renderProps.field.value) as FieldPathValue<TFieldValues, TName>,
+          },
+        })
+      }
     />
   );
 };
