@@ -60,6 +60,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'dayjs/locale': path.resolve('./node_modules/dayjs/esm/locale'),
     },
   },
   server: {

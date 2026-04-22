@@ -1,4 +1,5 @@
 import eslint from '@eslint/js';
+import pluginLingui from 'eslint-plugin-lingui';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import jsxRuntime from 'eslint-plugin-react/configs/jsx-runtime.js';
@@ -66,6 +67,7 @@ export default defineConfig(
   {
     files: ['web/src/**/*.tsx', 'web/src/**/*.ts', 'web/src/**/*.d.ts'],
     ...reactRecommended,
+    ...pluginLingui.configs['flat/recommended'],
     extends: [jsxRuntime],
     plugins: {
       // react,
