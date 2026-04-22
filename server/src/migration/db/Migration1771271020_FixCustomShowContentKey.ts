@@ -18,4 +18,4 @@ const statements = [
   'PRAGMA foreign_keys = ON',
 ];
 
-export default makeMigrationFromSqlStatements(statements, true);
+export default makeMigrationFromSqlStatements(statements, false);
