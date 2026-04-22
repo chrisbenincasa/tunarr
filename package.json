@@ -9,7 +9,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "fmt": "prettier --write .",
-    "lint-staged": "lint-staged",
+    "lint-staged": "lint-staged --allow-empty",
     "lint-changed": "eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)",
     "test": "turbo run test",
     "preinstall": "npx only-allow pnpm",
