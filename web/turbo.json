@@ -5,6 +5,10 @@
     "build-dev": {
       "dependsOn": ["^build"]
     },
+    "bundle": {
+      "dependsOn": ["^build", "extract-template"],
+      "outputs": ["dist/**"]
+    },
     "clean-build": {
       "dependsOn": ["^build"]
     },
@@ -15,12 +19,9 @@
       "dependsOn": ["compile-messages"]
     },
     "extract-messages": {},
+    "extract-template": {},
     "typecheck": {
       "dependsOn": ["^build"]
-    },
-    "bundle": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
     },
     "generate-client": {
       "dependsOn": ["@tunarr/server#generate-openapi"],

@@ -1,0 +1,44 @@
+name: Check missing message extractions
+
+on:
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TURBO_CACHE_DIR: .turbo
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Use Latest Corepack
+        run: |
+          npm install -g corepack@latest
+          corepack enable && corepack enable pnpm
+          pnpm --version
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.13.0
+          cache: "pnpm"
+
+      - name: Cache Turbo
+        uses: actions/cache@v5
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Extract messages
+        run: |
+          cd web/ && pnpm run extract-messages
+
+      - name: Fail if new messages found
+        run: git diff --exit-code web/src/locales/

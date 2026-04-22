@@ -37,7 +37,7 @@ export default defineConfig({
     react({
       plugins: [['@lingui/swc-plugin', {}]],
     }),
-    lingui(),
+    lingui({ failOnMissing: true, failOnCompileError: true }),
     tanstackRouter({
       semicolons: true,
       routesDirectory: path.resolve(__dirname, './src/routes'),

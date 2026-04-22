@@ -9,6 +9,7 @@
     "bundle": "vite build",
     "dev": "vite",
     "extract-messages": "lingui extract",
+    "extract-template": "lingui extract-template",
     "compile-messages": "lingui compile --typescript",
     "regen-routes": "tsr generate",
     "generate-client": "openapi-ts",
