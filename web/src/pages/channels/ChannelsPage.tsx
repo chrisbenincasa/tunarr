@@ -44,17 +44,16 @@ import {
   type MRT_ColumnDef, //if using TypeScript (optional, but recommended)
 } from 'material-react-table';
 import React, { useEffect, useMemo, useState } from 'react';
-import TunarrLogo from '../../components/TunarrLogo.tsx';
 import {
   RouterButtonLink,
   RouterIconButtonLink,
 } from '../../components/base/RouterButtonLink.tsx';
 import { RouterLink } from '../../components/base/RouterLink.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
+import { ChannelIconDisplay } from '../../components/channels/ChannelIconDisplay.tsx';
 import { ChannelOptionsMenu } from '../../components/channels/ChannelOptionsMenu.tsx';
 import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
 import { deleteApiChannelsByIdMutation } from '../../generated/@tanstack/react-query.gen.ts';
-import { isNonEmptyString } from '../../helpers/util.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
 import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
@@ -317,10 +316,12 @@ export default function ChannelsPage() {
         size: 100,
         Cell: ({ cell }) => {
           const value = cell.getValue<ChannelIcon>();
-          return isNonEmptyString(value?.path) ? (
-            <img style={{ maxHeight: '40px' }} src={value.path} />
-          ) : (
-            <TunarrLogo style={{ width: '40px', height: '32px' }} />
+          return (
+            <ChannelIconDisplay
+              icon={value}
+              imgStyle={{ maxHeight: '40px' }}
+              style={{ width: '40px', height: '32px' }}
+            />
           );
         },
         enableColumnFilter: false,
@@ -477,14 +478,11 @@ export default function ChannelsPage() {
                       alignItems: 'center',
                     }}
                   >
-                    {isNonEmptyString(channel.icon?.path) ? (
-                      <img
-                        style={{ maxHeight: '32px', maxWidth: '40px' }}
-                        src={channel.icon.path}
-                      />
-                    ) : (
-                      <TunarrLogo style={{ width: '40px', height: '32px' }} />
-                    )}
+                    <ChannelIconDisplay
+                      icon={channel.icon}
+                      imgStyle={{ maxHeight: '32px', maxWidth: '40px' }}
+                      style={{ width: '40px', height: '32px' }}
+                    />
                   </Box>
                   <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <Typography variant="subtitle2" noWrap>

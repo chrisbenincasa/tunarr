@@ -53,12 +53,14 @@ const ChannelIconSchema = z
     position: z
       .enum(['top-left', 'top-right', 'bottom-left', 'bottom-right'])
       .catch('bottom-right'),
+    useDefaultIconFallback: z.boolean().optional().catch(true),
   })
   .catch({
     path: '',
     width: 0,
     duration: 0,
     position: 'bottom-right',
+    useDefaultIconFallback: true,
   });
 
 export const DefaultChannelIcon = ChannelIconSchema.parse({});

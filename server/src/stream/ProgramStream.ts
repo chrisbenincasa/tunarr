@@ -7,6 +7,7 @@ import type { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { resolveIconUrl } from '@/util/iconUtil.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import type { Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -200,10 +201,15 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
             icon = makeLocalUrl('/images/tunarr.png');
           }
         }
-      } else if (isNonEmptyString(channel.icon?.path)) {
-        icon = channel.icon.path;
       } else {
-        icon = makeLocalUrl('/images/tunarr.png');
+        const resolvedIcon = resolveIconUrl(
+          channel.icon,
+          makeLocalUrl('/images/tunarr.png'),
+        );
+        if (!resolvedIcon) {
+          return;
+        }
+        icon = resolvedIcon;
       }
 
       return {

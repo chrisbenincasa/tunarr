@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { deleteIfLocalAndCleared, extractLocalUploadFilename } from './iconUtil.ts';
+import {
+  deleteIfLocalAndCleared,
+  extractLocalUploadFilename,
+  resolveIconUrl,
+} from './iconUtil.ts';
 import * as fsUtil from './fsUtil.ts';
 
 vi.mock('./fsUtil.ts', () => ({
@@ -42,6 +46,60 @@ describe('iconUtil', () => {
           'http://192.168.1.10:8000/images/uploads/channel_icon.jpg',
         ),
       ).toBe('channel_icon.jpg');
+    });
+  });
+
+  describe('resolveIconUrl', () => {
+    const defaultUrl = 'http://localhost:8000/images/tunarr.png';
+
+    test('returns defaultUrl when icon is null', () => {
+      expect(resolveIconUrl(null, defaultUrl)).toBe(defaultUrl);
+    });
+
+    test('returns defaultUrl when icon is undefined', () => {
+      expect(resolveIconUrl(undefined, defaultUrl)).toBe(defaultUrl);
+    });
+
+    test('returns custom path when icon.path is non-empty', () => {
+      const icon = {
+        path: 'http://localhost:8000/images/uploads/abc.png',
+        width: 0,
+        duration: 0,
+        position: 'bottom-right' as const,
+      };
+      expect(resolveIconUrl(icon, defaultUrl)).toBe(icon.path);
+    });
+
+    test('returns defaultUrl when path is empty and useDefaultIconFallback is true', () => {
+      const icon = {
+        path: '',
+        width: 0,
+        duration: 0,
+        position: 'bottom-right' as const,
+        useDefaultIconFallback: true,
+      };
+      expect(resolveIconUrl(icon, defaultUrl)).toBe(defaultUrl);
+    });
+
+    test('returns defaultUrl when path is empty and useDefaultIconFallback is undefined', () => {
+      const icon = {
+        path: '',
+        width: 0,
+        duration: 0,
+        position: 'bottom-right' as const,
+      };
+      expect(resolveIconUrl(icon, defaultUrl)).toBe(defaultUrl);
+    });
+
+    test('returns null when path is empty and useDefaultIconFallback is false', () => {
+      const icon = {
+        path: '',
+        width: 0,
+        duration: 0,
+        position: 'bottom-right' as const,
+        useDefaultIconFallback: false,
+      };
+      expect(resolveIconUrl(icon, defaultUrl)).toBeNull();
     });
   });
 

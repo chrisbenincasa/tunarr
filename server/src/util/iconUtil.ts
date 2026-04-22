@@ -1,4 +1,5 @@
 import path from 'node:path';
+import type { ChannelIcon } from '@tunarr/types';
 import { deleteUploadedFile } from './fsUtil.js';
 import { isNonEmptyString } from './index.js';
 
@@ -25,6 +26,21 @@ export function extractLocalUploadFilename(url: string): string | null {
   }
 
   return parsed.pathname.slice(LocalUploadPathPrefix.length);
+}
+
+/**
+ * Returns the URL to use for a channel icon, or null if no icon should be shown.
+ * - Custom icon (non-empty path): returns the path
+ * - Default fallback enabled (useDefaultIconFallback === true, or icon missing): returns defaultUrl
+ * - No icon (path empty, useDefaultIconFallback === false): returns null
+ */
+export function resolveIconUrl(
+  icon: ChannelIcon | null | undefined,
+  defaultUrl: string,
+): string | null {
+  if (!icon) return defaultUrl;
+  if (isNonEmptyString(icon.path)) return icon.path;
+  return icon.useDefaultIconFallback !== false ? defaultUrl : null;
 }
 
 /**
