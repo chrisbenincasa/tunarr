@@ -26,6 +26,7 @@ type SpawnOpts = {
 
 type ChildProcessEvents = {
   restart: () => void;
+  fail: () => void;
 };
 
 abstract class ITypedEventEmitter extends (events.EventEmitter as new () => TypedEventEmitter<ChildProcessEvents>) {}
@@ -109,6 +110,7 @@ export class ChildProcessWrapper extends ITypedEventEmitter {
         const bufferedBytes = bufferedOut.getLastN().toString('utf-8');
         this.logger.error(bufferedBytes);
         console.error(bufferedBytes);
+        this.emit('fail');
       }
 
       if (!this.wasAborted && this.opts.restartOnFailure) {

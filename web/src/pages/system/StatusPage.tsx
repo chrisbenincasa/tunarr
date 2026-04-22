@@ -44,6 +44,7 @@ const HardwareAccelerationCheck = 'HardwareAcceleration';
 const FfmpegDebugLoggingCheck = 'FfmpegDebugLogging';
 const FfmpegTranscodeDirectory = 'FfmpegTranscodeDirectory';
 const BaseImageHealthCheck = 'BaseImageHealthCheck';
+const SearchServerCheck = 'SearchServer';
 
 const AllKnownChecks = [
   FfmpegVersionCheck,
@@ -53,6 +54,7 @@ const AllKnownChecks = [
   // MissingSeasonNumbersCheck,
   // MissingProgramAssociationsHealthCheck,
   BaseImageHealthCheck,
+  SearchServerCheck,
 ] as const;
 
 const CopyToClipboardButton = (
@@ -127,6 +129,7 @@ export const StatusPage = () => {
           // )
           .with(FfmpegTranscodeDirectory, () => 'FFmpeg Transcode Directory')
           .with(BaseImageHealthCheck, () => 'Base Docker Image Tag')
+          .with(SearchServerCheck, () => 'Search Server')
           .exhaustive();
 
         const fixer = match(check)
