@@ -12,3 +12,162 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/components/settings/general/WebSettings.tsx:93
+msgid "12-hour"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx:96
+msgid "24-hour"
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:178
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx:167
+msgid "Alternates TV shows in blocks of episodes. You can pick the number of episodes per show in each block and if the order of shows in each block should be randomized. Movies are moved to the bottom."
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx:99
+msgid "Auto"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx:103
+msgid "Auto uses the time convention for the selected language."
+msgstr ""
+
+#: src/pages/channels/ChannelsPage.tsx:201
+msgid "Cancel"
+msgstr ""
+
+#: src/App.tsx:95
+#: src/hooks/useNavItems.tsx:63
+msgid "Channels"
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:144
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx:129
+msgid "Completely randomizes the order of programs."
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:84
+msgid "Custom Shows"
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:117
+msgid "Debug"
+msgstr ""
+
+#: src/pages/channels/ChannelsPage.tsx:207
+msgid "Delete"
+msgstr ""
+
+#: src/pages/channels/ChannelsPage.tsx:186
+msgid "Delete Channel"
+msgstr ""
+
+#: src/pages/channels/ChannelsPage.tsx:190
+msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
+msgstr ""
+
+#: src/App.tsx:77
+msgid "FFmpeg not found. For all features to work, we recommend installing FFmpeg 7.1+ or update your FFmpeg executable path in settings."
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:74
+msgid "Filler Lists"
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:61
+#: src/pages/guide/GuidePage.tsx:120
+msgid "Guide"
+msgstr ""
+
+#: src/pages/guide/GuidePage.tsx:137
+msgid "Guide Start Time"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx:57
+#: src/components/settings/general/WebSettings.tsx:61
+#: src/components/settings/general/WebSettings.tsx:66
+msgid "Language"
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:69
+msgid "Library"
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:161
+msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:122
+msgid "Logs"
+msgstr ""
+
+#: src/pages/guide/GuidePage.tsx:142
+msgid "Reset to current date/time"
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:129
+msgid "Settings"
+msgstr ""
+
+#: src/pages/guide/GuidePage.tsx:155
+msgid "Show Stealth"
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:79
+msgid "Smart Collections"
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:196
+msgid "Sorts alphabetically by program title"
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:214
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx:148
+msgid "Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom."
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:231
+msgid "Sorts the list by TV Show and the episodes in each TV show by their season/episode number. Movies are moved to the bottom of the schedule."
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:96
+msgid "Sources"
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:112
+msgid "Status"
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:101
+msgid "System"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx:111
+msgid "Theme Settings"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx:48
+msgid "These settings are stored in your browser and are saved automatically when changed."
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx:90
+msgid "Time format"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx:82
+msgid "Time Format"
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:89
+msgid "Trash"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx:45
+msgid "Web Settings"
+msgstr ""
+
+#: src/hooks/useNavItems.tsx:56
+msgid "Welcome"
+msgstr ""

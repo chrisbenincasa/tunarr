@@ -13,14 +13,40 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/pages/channels/ChannelsPage.tsx:195
+#: src/components/settings/general/WebSettings.tsx:93
+msgid "12-hour"
+msgstr "12-hour"
+
+#: src/components/settings/general/WebSettings.tsx:96
+msgid "24-hour"
+msgstr "24-hour"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:178
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx:167
+msgid "Alternates TV shows in blocks of episodes. You can pick the number of episodes per show in each block and if the order of shows in each block should be randomized. Movies are moved to the bottom."
+msgstr "Alternates TV shows in blocks of episodes. You can pick the number of episodes per show in each block and if the order of shows in each block should be randomized. Movies are moved to the bottom."
+
+#: src/components/settings/general/WebSettings.tsx:99
+msgid "Auto"
+msgstr "Auto"
+
+#: src/components/settings/general/WebSettings.tsx:103
+msgid "Auto uses the time convention for the selected language."
+msgstr "Auto uses the time convention for the selected language."
+
+#: src/pages/channels/ChannelsPage.tsx:201
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/App.tsx:93
+#: src/App.tsx:95
 #: src/hooks/useNavItems.tsx:63
 msgid "Channels"
 msgstr "Channels"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:144
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx:129
+msgid "Completely randomizes the order of programs."
+msgstr "Completely randomizes the order of programs."
 
 #: src/hooks/useNavItems.tsx:84
 msgid "Custom Shows"
@@ -30,17 +56,21 @@ msgstr "Custom Shows"
 msgid "Debug"
 msgstr "Debug"
 
-#: src/pages/channels/ChannelsPage.tsx:201
+#: src/pages/channels/ChannelsPage.tsx:207
 msgid "Delete"
 msgstr "Delete"
 
-#: src/pages/channels/ChannelsPage.tsx:180
+#: src/pages/channels/ChannelsPage.tsx:186
 msgid "Delete Channel"
 msgstr "Delete Channel"
 
-#: src/pages/channels/ChannelsPage.tsx:184
+#: src/pages/channels/ChannelsPage.tsx:190
 msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
 msgstr "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
+
+#: src/App.tsx:77
+msgid "FFmpeg not found. For all features to work, we recommend installing FFmpeg 7.1+ or update your FFmpeg executable path in settings."
+msgstr "FFmpeg not found. For all features to work, we recommend installing FFmpeg 7.1+ or update your FFmpeg executable path in settings."
 
 #: src/hooks/useNavItems.tsx:74
 msgid "Filler Lists"
@@ -55,9 +85,19 @@ msgstr "Guide"
 msgid "Guide Start Time"
 msgstr "Guide Start Time"
 
+#: src/components/settings/general/WebSettings.tsx:57
+#: src/components/settings/general/WebSettings.tsx:61
+#: src/components/settings/general/WebSettings.tsx:66
+msgid "Language"
+msgstr "Language"
+
 #: src/hooks/useNavItems.tsx:69
 msgid "Library"
 msgstr "Library"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:161
+msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
+msgstr "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
 
 #: src/hooks/useNavItems.tsx:122
 msgid "Logs"
@@ -79,6 +119,19 @@ msgstr "Show Stealth"
 msgid "Smart Collections"
 msgstr "Smart Collections"
 
+#: src/components/channel_config/ChannelProgrammingSort.tsx:196
+msgid "Sorts alphabetically by program title"
+msgstr "Sorts alphabetically by program title"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:214
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx:148
+msgid "Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom."
+msgstr "Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom."
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx:231
+msgid "Sorts the list by TV Show and the episodes in each TV show by their season/episode number. Movies are moved to the bottom of the schedule."
+msgstr "Sorts the list by TV Show and the episodes in each TV show by their season/episode number. Movies are moved to the bottom of the schedule."
+
 #: src/hooks/useNavItems.tsx:96
 msgid "Sources"
 msgstr "Sources"
@@ -91,9 +144,29 @@ msgstr "Status"
 msgid "System"
 msgstr "System"
 
+#: src/components/settings/general/WebSettings.tsx:111
+msgid "Theme Settings"
+msgstr "Theme Settings"
+
+#: src/components/settings/general/WebSettings.tsx:48
+msgid "These settings are stored in your browser and are saved automatically when changed."
+msgstr "These settings are stored in your browser and are saved automatically when changed."
+
+#: src/components/settings/general/WebSettings.tsx:90
+msgid "Time format"
+msgstr "Time format"
+
+#: src/components/settings/general/WebSettings.tsx:82
+msgid "Time Format"
+msgstr "Time Format"
+
 #: src/hooks/useNavItems.tsx:89
 msgid "Trash"
 msgstr "Trash"
+
+#: src/components/settings/general/WebSettings.tsx:45
+msgid "Web Settings"
+msgstr "Web Settings"
 
 #: src/hooks/useNavItems.tsx:56
 msgid "Welcome"
