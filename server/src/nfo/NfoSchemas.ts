@@ -89,7 +89,7 @@ export const MovieNfo = z.object({
   credits: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
   director: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
   premiered: z.string().optional(), // yyyy-mm-dd
-  studio: z.string().optional().catch(undefined),
+  studio: z.array(z.string()).optional(),
   fileinfo: z.array(NfoFileInfo).optional(),
   actor: z.array(NfoActor).optional(),
 });
@@ -127,7 +127,7 @@ export const TvShowNfo = z.object({
   director: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
   premiered: z.string().optional(), // yyyy-mm-dd
   enddate: z.string().optional(), // yyyy-mm-dd
-  studio: z.string().optional().catch(undefined),
+  studio: z.array(z.string()).optional(),
   actor: z.array(NfoActor).optional(),
 });
 
@@ -163,7 +163,7 @@ export const TvEpisodeNfo = z.object({
   director: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
   premiered: z.string().optional(), // yyyy-mm-dd
   aired: z.string().optional(), // yyyy-mm-dd
-  studio: z.string().optional().catch(undefined),
+  studio: z.array(z.string()).optional(),
   actor: z.array(NfoActor).optional(),
 });
 

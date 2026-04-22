@@ -479,7 +479,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
       tags: nfo.tag ?? [],
       type: 'other_video',
       directors,
-      studios: nfo.studio ? [{ name: nfo.studio }] : [],
+      studios: nfo.studio?.map((s) => ({ name: s })) ?? [],
       genres: nfo.genre?.map((g) => ({ name: g })) ?? [],
       writers:
         nfo.credits?.map((c) => ({

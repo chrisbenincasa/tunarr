@@ -20,7 +20,8 @@ describe('TvShowNfoParser', () => {
     );
     expect(output.tvshow.premiered).toBe('2017-09-24');
     expect(output.tvshow.mpaa).toBe('Australia:M');
-    expect(output.tvshow.studio).toBe('CBS All Access');
+    expect(output.tvshow.studio).toHaveLength(1);
+    expect(output.tvshow.studio).toEqual(['CBS All Access']);
 
     expect(output.tvshow.uniqueid).toHaveLength(3);
     expect(output.tvshow.uniqueid).toEqual([
@@ -42,6 +43,18 @@ describe('TvShowNfoParser', () => {
 
     expect(output.tvshow.thumb).toBeDefined();
     expect(output.tvshow.thumb!.length).toBeGreaterThan(0);
+  });
+
+  test('parses basic tv show with no studio', async () => {
+    const contents = (await readTestFile('tvshow-no-studio.nfo')).toString(
+      'utf-8',
+    );
+    const result = await new TvShowNfoParser().parse(contents);
+
+    expect(result.isSuccess()).toBe(true);
+
+    const output = result.get();
+    expect(output.tvshow.studio).toBeUndefined();
   });
 
   test('parses numeric title as string', async () => {

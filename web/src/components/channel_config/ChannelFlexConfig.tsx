@@ -344,7 +344,10 @@ export function ChannelFlexConfig() {
                         : null
                     }
                     {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value);
+                      field.onChange(isNaN(v) ? '' : v);
+                    }}
                   />
                   <Typography variant="caption" sx={{ ml: 1 }}>
                     Items from any filler list will not be chosen more
