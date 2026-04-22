@@ -4,9 +4,8 @@ import { isLocalBackedLineupItem } from '../../db/derived_types/StreamLineup.ts'
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import type { OutputFormat } from '../../ffmpeg/builder/constants.ts';
-import type { StreamOptions } from '../../ffmpeg/ffmpegBase.ts';
+import type { StreamOptions, TranscodeSessionResult } from '../../ffmpeg/ffmpegBase.ts';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
-import type { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.ts';
 import type { CacheImageService } from '../../services/cacheImageService.ts';
 import { Result } from '../../types/result.ts';
 import type { PlayerContext } from '../PlayerStreamContext.ts';
@@ -41,7 +40,7 @@ export class LocalProgramStream extends ProgramStream {
 
   protected async setupInternal(
     opts?: Partial<StreamOptions>,
-  ): Promise<Result<FfmpegTranscodeSession>> {
+  ): Promise<Result<TranscodeSessionResult>> {
     const lineupItem = this.context.lineupItem;
     if (!isLocalBackedLineupItem(lineupItem)) {
       return Result.forError(
@@ -109,7 +108,7 @@ export class LocalProgramStream extends ProgramStream {
 
     const { streamDetails: details, streamSource: source } = streamResult.get();
 
-    const ffmpegOutStream = await ffmpeg.createStreamSession({
+    const result = await ffmpeg.createStreamSession({
       stream: {
         source,
         details,
@@ -128,10 +127,10 @@ export class LocalProgramStream extends ProgramStream {
       lineupItem,
     });
 
-    if (isUndefined(ffmpegOutStream)) {
+    if (isUndefined(result)) {
       return Result.forError(new Error('Unable to spawn ffmpeg'));
     }
 
-    return Result.success(ffmpegOutStream);
+    return Result.success(result);
   }
 }

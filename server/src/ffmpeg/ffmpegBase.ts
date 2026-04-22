@@ -4,9 +4,18 @@ import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import type { DeepReadonly, StrictExclude } from 'ts-essentials';
 import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
-import type { StreamDetails, StreamSource } from '../stream/types.ts';
+import type {
+  StreamDetails,
+  StreamRenditions,
+  StreamSource,
+} from '../stream/types.ts';
 import type { OutputFormat } from './builder/constants.ts';
 import type { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
+
+export type TranscodeSessionResult = {
+  session: FfmpegTranscodeSession;
+  renditions: StreamRenditions;
+};
 
 export type HlsWrapperOptions = DeepReadonly<
   Omit<ConcatOptions, 'mode'> & {
@@ -52,7 +61,7 @@ export abstract class IFFMPEG {
    */
   abstract createStreamSession(
     streamSessionOptions: StreamSessionCreateArgs,
-  ): Promise<Maybe<FfmpegTranscodeSession>>;
+  ): Promise<Maybe<TranscodeSessionResult>>;
 
   abstract createErrorSession(
     title: string,
@@ -107,4 +116,10 @@ export type StreamOptions = {
   streamMode: ChannelStreamMode;
   /** How the pipeline should encode this stream. Defaults to 'transcode'. */
   encoding?: StreamEncoding;
+  /**
+   * Whether this is the first transcode in the HLS session. Used to determine
+   * whether to include `discont_start` in the HLS flags. When undefined, the
+   * pipeline falls back to inferring from ptsOffset (legacy behaviour).
+   */
+  isFirstTranscode?: boolean;
 };

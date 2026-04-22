@@ -1,6 +1,6 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
+import type { TranscodeSessionResult } from '@/ffmpeg/ffmpegBase.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
 import { Result } from '@/types/result.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -35,7 +35,7 @@ export class OfflineProgramStream extends ProgramStream {
 
   async setupInternal(
     opts?: Partial<StreamOptions>,
-  ): Promise<Result<FfmpegTranscodeSession>> {
+  ): Promise<Result<TranscodeSessionResult>> {
     try {
       const ffmpeg = this.ffmpegFactory(
         this.context.transcodeConfig,
@@ -73,7 +73,10 @@ export class OfflineProgramStream extends ProgramStream {
         throw new Error('Unable to start ffmpeg transcode session');
       }
 
-      return Result.success(ff);
+      return Result.success({
+        session: ff,
+        renditions: { audio: [] },
+      });
     } catch (err) {
       if (isError(err)) {
         return Result.forError(err);

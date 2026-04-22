@@ -140,3 +140,24 @@ export type ProgramStreamResult = {
   streamSource: StreamSource;
   streamDetails: StreamDetails;
 };
+
+export type AudioRenditionInfo = {
+  language: string;
+  languageName?: string;
+  title?: string;
+  channels?: number;
+  default: boolean;
+};
+
+export type SubtitleRenditionInfo = {
+  language: string;
+  languageName?: string;
+  default: boolean;
+  forced: boolean;
+  title?: string;
+};
+
+export type StreamRenditions = {
+  audio: AudioRenditionInfo[];
+  subtitle?: SubtitleRenditionInfo;
+};

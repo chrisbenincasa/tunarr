@@ -24,9 +24,12 @@ import { filter, isEmpty, last, maxBy, sortBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
+import type {
+  AudioRenditionInfo,
+  SubtitleRenditionInfo,
+} from '@/stream/types.js';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
 import { BaseHlsSession } from './BaseHlsSession.js';
-import type { SubtitleRenditionInfo } from './HlsMasterPlaylistMutator.js';
 import { HlsMasterPlaylistMutator } from './HlsMasterPlaylistMutator.js';
 import type { HlsPlaylistFilterOptions } from './HlsPlaylistMutator.js';
 import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
@@ -57,6 +60,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
   #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
+  #currentAudioRenditions: AudioRenditionInfo[] = [];
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -97,6 +101,13 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         HlsMasterPlaylistMutator.injectSubtitleMediaTag(
           lines,
           rendition,
+          hlsOptions,
+        );
+      }
+      if (this.#currentAudioRenditions.length > 0) {
+        HlsMasterPlaylistMutator.injectAudioMediaTags(
+          lines,
+          this.#currentAudioRenditions,
           hlsOptions,
         );
       }
@@ -251,6 +262,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
       let transcodeSessionResult = await programStream.setup({
         ptsOffset,
+        isFirstTranscode: this.#isFirstTranscode,
       });
 
       if (transcodeSessionResult.isFailure()) {
@@ -285,7 +297,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           transcodeSession.streamDuration,
         );
         this.#currentSession = transcodeSession;
-        this.#currentSubtitleRendition = transcodeSession.subtitleRendition;
+        this.#currentSubtitleRendition = programStream.renditions?.subtitle;
+        this.#currentAudioRenditions =
+          programStream.renditions?.audio ?? [];
       });
 
       if (this.sessionOptions.streamMode === 'hls') {

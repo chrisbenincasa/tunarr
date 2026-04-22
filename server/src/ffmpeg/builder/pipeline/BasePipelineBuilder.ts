@@ -2,8 +2,9 @@ import {
   HardwareAccelerationMode,
   TranscodeAudioOutputFormat,
 } from '@/db/schema/TranscodeConfig.js';
+import type {
+  FeatureFlagService} from '../../../services/FeatureFlagService.ts';
 import {
-  FeatureFlagService,
   resolveFeatureFlagFromEnv,
 } from '../../../services/FeatureFlagService.ts';
 import {
@@ -109,6 +110,7 @@ import {
   DoNotMapMetadataOutputOption,
   FastStartOutputOption,
   makeConstantOutputOption,
+  MapAllNonSubtitleStreamsOutputOption,
   MapAllStreamsOutputOption,
   MatroskaOutputFormatOption,
   MetadataServiceNameOutputOption,
@@ -430,6 +432,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.videoInputSource.addOption(new HttpReconnectOptions());
     }
 
+    if (this.ffmpegState.copyAllStreams) {
+      return this.buildCopyAllPipeline();
+    }
+
     if (
       this.audioInputSource?.path &&
       this.audioInputSource.protocol === 'http' &&
@@ -469,7 +475,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     }
 
     // metadata
-    if (this.ffmpegState.doNotMapMetadata) {
+    if (this.ffmpegState.stripMetadata) {
       this.pipelineSteps.push(DoNotMapMetadataOutputOption());
     }
 
@@ -518,6 +524,56 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       videoInput: this.videoInputSource,
       audioInput: this.audioInputSource,
       watermarkInput: this.watermarkInputSource,
+      subtitleInput: this.subtitleInputSource,
+      concatInput: this.concatInputSource,
+    });
+  }
+
+  /**
+   * Builds a pipeline that maps all input streams and copies them directly
+   * to the output without re-encoding. Used for passthrough modes
+   * (hls_direct_v2).
+   */
+  private buildCopyAllPipeline(): Pipeline {
+    this.pipelineSteps.push(
+      MapAllNonSubtitleStreamsOutputOption(),
+      new CopyVideoEncoder(),
+      new CopyAudioEncoder(),
+    );
+
+    // Per-stream audio codec overrides for incompatible codecs
+    // (e.g. DTS/TrueHD cannot be muxed into MPEG-TS).
+    for (const override of this.ffmpegState.audioCodecOverrides) {
+      this.pipelineSteps.push(
+        makeConstantOutputOption([
+          `-c:a:${override.outputIndex}`,
+          override.codec,
+        ]),
+      );
+    }
+
+    this.setRealtime();
+
+    if (isNonEmptyString(this.ffmpegState.metadataServiceProvider)) {
+      this.pipelineSteps.push(
+        MetadataServiceProviderOutputOption(
+          this.ffmpegState.metadataServiceProvider,
+        ),
+      );
+    }
+
+    if (isNonEmptyString(this.ffmpegState.metadataServiceName)) {
+      this.pipelineSteps.push(
+        MetadataServiceNameOutputOption(this.ffmpegState.metadataServiceName),
+      );
+    }
+
+    this.setOutputFormat();
+
+    return new Pipeline(this.pipelineSteps, {
+      videoInput: this.videoInputSource,
+      audioInput: null,
+      watermarkInput: null,
       subtitleInput: this.subtitleInputSource,
       concatInput: this.concatInputSource,
     });
@@ -849,8 +905,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
           isNonEmptyString(this.ffmpegState.hlsBaseStreamUrl)
         ) {
           const isFirst =
-            isNil(this.ffmpegState.ptsOffset) ||
-            this.ffmpegState.ptsOffset === 0;
+            this.ffmpegState.isFirstTranscode ??
+            (isNil(this.ffmpegState.ptsOffset) ||
+              this.ffmpegState.ptsOffset === 0);
           this.pipelineSteps.push(
             new HlsOutputFormat(
               this.desiredState,
@@ -890,8 +947,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
           isNonEmptyString(this.ffmpegState.hlsBaseStreamUrl)
         ) {
           const isFirst =
-            isNil(this.ffmpegState.ptsOffset) ||
-            this.ffmpegState.ptsOffset === 0;
+            this.ffmpegState.isFirstTranscode ??
+            (isNil(this.ffmpegState.ptsOffset) ||
+              this.ffmpegState.ptsOffset === 0);
           this.pipelineSteps.push(
             new HlsDirectOutputFormat(
               this.ffmpegState.hlsPlaylistPath,
