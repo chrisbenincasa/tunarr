@@ -100,6 +100,14 @@ export async function walkDirectory(dirPath: string) {
   }
 }
 
+/**
+ * Deletes the file at the given absolute path.
+ * Throws if the file cannot be deleted.
+ */
+export async function deleteUploadedFile(filePath: string): Promise<void> {
+  await fs.unlink(filePath);
+}
+
 export function changeFileExtension(filePath: string, newExtension: string) {
   const ext = newExtension.startsWith('.') ? newExtension : `.${newExtension}`;
   return path.join(
