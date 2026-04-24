@@ -13,6 +13,7 @@ import {
 } from '../../store/channelEditor/actions.ts';
 import { isUndefined, omit } from 'lodash-es';
 import type { UIFlexProgram } from '../../types/index.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 
 dayjs.extend(duration);
 
@@ -31,6 +32,7 @@ const AddFlexModal = ({
   onClose,
   initialProgram,
 }: AddRedirectModalProps) => {
+  const { t } = useLingui();
   const [duration, setDuration] = useState(
     (initialProgram?.duration
       ? initialProgram.duration / 1000
@@ -86,29 +88,29 @@ const AddFlexModal = ({
   return (
     <Dialog open={open}>
       <DialogTitle>
-        {!isUndefined(initialProgram) ? 'Edit' : 'Add'} Flex Time
+        {!isUndefined(initialProgram) ? <Trans>Edit Flex Time</Trans> : <Trans>Add Flex Time</Trans>}
       </DialogTitle>
       <DialogContent>
         <TextField
           fullWidth
           margin="normal"
-          label="Duration (seconds)"
+          label={t`Duration (seconds)`}
           value={duration}
           error={isInvalid}
           onChange={(e) => setDurationValidated(e.target.value)}
           helperText={
             isNotNumeric
-              ? 'Duration must be numeric'
+              ? t`Duration must be numeric`
               : !isGreaterThanZero
-                ? 'Duration must be greater than 0.'
+                ? t`Duration must be greater than 0.`
                 : dayjs.duration(parsedDuration, 'seconds').humanize()
           }
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button variant="contained" onClick={() => addFlex()}>
-          Save
+          <Trans>Save</Trans>
         </Button>
       </DialogActions>
     </Dialog>

@@ -12,6 +12,8 @@ import { getRandomSlotId } from '@/helpers/slotSchedulerUtil.ts';
 
 import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
+import { plural } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import type {
   RandomSlotTableRowType,
   SlotWarning,
@@ -53,7 +55,6 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
-import pluralize from 'pluralize';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { P, match } from 'ts-pattern';
 import { formatSlotOrder } from '../../helpers/slots.ts';
@@ -66,6 +67,7 @@ import type { SlotViewModel } from '../../model/SlotModels.ts';
 import type { Nullable } from '../../types/util.ts';
 
 export const RandomSlotTable = () => {
+  const { t } = useLingui();
   const { slotArray, getValues, watch, setValue } = useRandomSlotFormContext();
   const getSlotName = useSlotName();
   const slotDistribution = getValues('randomDistribution');
@@ -194,10 +196,10 @@ export const RandomSlotTable = () => {
             const len = row.original.warnings.length;
             return (
               <Tooltip
-                title={`There ${pluralize('is', len)} ${len} ${pluralize(
-                  'warning',
-                  len,
-                )}. Click for details.`}
+                title={plural(len, {
+                  one: 'There is # warning. Click for details.',
+                  other: 'There are # warnings. Click for details.',
+                })}
               >
                 <IconButton
                   onClick={() => setCurrentSlotWarningsIndex(row.index)}
@@ -217,7 +219,7 @@ export const RandomSlotTable = () => {
         enableColumnActions: false,
       },
       {
-        header: 'Type',
+        header: t`Type`,
         accessorKey: 'durationSpec.type',
         Cell: ({ cell }) => {
           const value = cell.getValue<string>();
@@ -227,7 +229,7 @@ export const RandomSlotTable = () => {
         grow: false,
       },
       {
-        header: 'Duration',
+        header: t`Duration`,
         id: 'duration',
         accessorFn: (slot) => {
           switch (slot.durationSpec.type) {
@@ -246,14 +248,14 @@ export const RandomSlotTable = () => {
                 style: 'full',
               });
             case 'dynamic':
-              return `${value} ${pluralize('program', value)}`;
+              return plural(value, { one: '# program', other: '# programs' });
           }
         },
         size: 100,
         grow: false,
       },
       {
-        header: 'Program',
+        header: t`Program`,
         id: 'programming',
         accessorFn: identity,
         enableEditing: true,
@@ -265,16 +267,16 @@ export const RandomSlotTable = () => {
         size: 350,
       },
       {
-        header: 'Order',
+        header: t`Order`,
         accessorFn: formatSlotOrder,
         id: 'programOrder',
         Header() {
           return (
             <Tooltip
               placement="top"
-              title="Order of programming within the slot"
+              title={t`Order of programming within the slot`}
             >
-              <span>Order</span>
+              <span><Trans>Order</Trans></span>
             </Tooltip>
           );
         },
@@ -288,7 +290,7 @@ export const RandomSlotTable = () => {
         enableSorting: false,
       },
       {
-        header: 'Cooldown',
+        header: t`Cooldown`,
         accessorKey: 'cooldownMs',
         Cell: ({ cell }) => {
           const value = cell.getValue<number>();
@@ -305,7 +307,7 @@ export const RandomSlotTable = () => {
         grow: false,
       },
       {
-        header: 'Weight',
+        header: t`Weight`,
         accessorKey: 'weight',
         enableSorting: false,
         Cell: ({ cell }) => {
@@ -318,7 +320,7 @@ export const RandomSlotTable = () => {
         },
       },
     ];
-  }, [getSlotName, lockWeights, maxWeight]);
+  }, [getSlotName, lockWeights, maxWeight, t]);
 
   const onDeleteSlot = useCallback(
     (index: number) => {
@@ -350,7 +352,7 @@ export const RandomSlotTable = () => {
   }) => {
     return (
       <>
-        <Tooltip title="Edit Slot" placement="top">
+        <Tooltip title={t`Edit Slot`} placement="top">
           <IconButton
             onClick={() =>
               setCurrentEditingSlot({
@@ -362,7 +364,7 @@ export const RandomSlotTable = () => {
             <Edit />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Delete Slot" placement="top">
+        <Tooltip title={t`Delete Slot`} placement="top">
           <IconButton onClick={() => onDeleteSlot(row.index)}>
             <Delete />
           </IconButton>
@@ -436,7 +438,7 @@ export const RandomSlotTable = () => {
               onClick={() => toggleWeightAdjustDialogOpen(true)}
               startIcon={<Balance />}
             >
-              Adjust Weights
+              <Trans>Adjust Weights</Trans>
             </Button>
           )}
           <RandomSlotPresetButton />
@@ -487,7 +489,7 @@ export const RandomSlotTable = () => {
         fullWidth
         onClose={() => setCurrentEditingSlot(null)}
       >
-        <DialogTitle>Edit Slot</DialogTitle>
+        <DialogTitle><Trans>Edit Slot</Trans></DialogTitle>
         {currentEditingSlot && (
           <EditRandomSlotDialogContent
             slot={currentEditingSlot.slot}

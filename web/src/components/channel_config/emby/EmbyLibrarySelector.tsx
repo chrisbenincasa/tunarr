@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { find, isNil, sortBy } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export const EmbyLibrarySelector = ({ initialLibraryId }: Props) => {
+  const { t } = useLingui();
   const { onSourceChange } = useProgrammingSelectionContext();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
@@ -75,9 +77,9 @@ export const EmbyLibrarySelector = ({ initialLibraryId }: Props) => {
     selectedEmbyLibrary && (
       <>
         <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
-          <InputLabel>Library</InputLabel>
+          <InputLabel>{t`Library`}</InputLabel>
           <Select
-            label="Library"
+            label={t`Library`}
             value={selectedEmbyLibrary.uuid}
             onChange={(e) => handleLibraryChange(e.target.value)}
           >

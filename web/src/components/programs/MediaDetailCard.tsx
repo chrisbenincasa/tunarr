@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { getProgramSummary } from '@/helpers/programUtil';
 import { useSettings } from '@/store/settings/selectors';
 import { MoreVert, OpenInNew } from '@mui/icons-material';
@@ -28,6 +29,7 @@ type Props = {
 };
 
 export default function MediaDetailCard({ program }: Props) {
+  const { t } = useLingui();
   const theme = useTheme();
   const settings = useSettings();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -166,7 +168,7 @@ export default function MediaDetailCard({ program }: Props) {
               <Box
                 component="img"
                 src={getArtworkUrl(program) ?? undefined}
-                alt={`${program.title} Poster`}
+                alt={t`${program.title} Poster`}
                 onError={() => setPosterError(true)}
                 width={'100%'}
                 sx={{
@@ -191,7 +193,7 @@ export default function MediaDetailCard({ program }: Props) {
                 marginY: 1,
               }}
             >
-              {`Open in ${capitalize(program.sourceType)}`}
+              <Trans>Open in {capitalize(program.sourceType)}</Trans>
             </Button>
           )}
         </Box>
@@ -229,7 +231,7 @@ export default function MediaDetailCard({ program }: Props) {
             <Typography>{displayText}</Typography>
             {isLongDescription && (
               <Button variant="contained" onClick={toggleExpanded}>
-                {isExpanded ? 'Read Less' : 'Read More'}
+                {isExpanded ? <Trans>Read Less</Trans> : <Trans>Read More</Trans>}
               </Button>
             )}
           </Stack>

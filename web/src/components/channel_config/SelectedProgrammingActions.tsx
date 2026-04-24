@@ -17,9 +17,9 @@ import {
 } from '@mui/material';
 import type { EmbyItemKind } from '@tunarr/types/emby';
 import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import pluralize from 'pluralize';
 import { useCallback, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import {
@@ -51,6 +51,7 @@ export default function SelectedProgrammingActions({
   selectAllEnabled = true,
   toggleOrSetSelectedProgramsDrawer,
 }: Props) {
+  const { t } = useLingui();
   const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndView();
   const currentGenre = useStore((s) => s.currentMediaGenre);
   const { urlFilter: plexSearch } = useStore(
@@ -205,7 +206,7 @@ export default function SelectedProgrammingActions({
         .catch((e) => {
           console.error('Error while attempting to select all items', e);
           snackbar.enqueueSnackbar(
-            'Error querying Plex. Check console log and consider reporting a bug!',
+            t`Error querying Plex. Check console log and consider reporting a bug!`,
             {
               variant: 'error',
             },
@@ -247,14 +248,14 @@ export default function SelectedProgrammingActions({
       }}
     >
       <Box>
-        {`${selectedMedia.length} ${pluralize('Selected Item', selectedMedia.length)}`}
+        <Plural value={selectedMedia.length} one="# Selected Item" other="# Selected Items" />
 
         {selectedMedia.length > 0 && (
           <Link
             onClick={() => removeAllItems()}
             sx={{ ml: 1, cursor: 'pointer', mr: 4 }}
           >
-            Clear
+            <Trans>Clear</Trans>
           </Link>
         )}
       </Box>
@@ -278,7 +279,7 @@ export default function SelectedProgrammingActions({
             {smallViewport && selectAllEnabled ? (
               <RotatingLoopIcon />
             ) : (
-              'Select All'
+              t`Select All`
             )}
           </Button>
         )}
@@ -292,7 +293,7 @@ export default function SelectedProgrammingActions({
               onClick={() => toggleOrSetSelectedProgramsDrawer(true)}
               sx={{ m: 0.5, flexGrow: 1 }}
             >
-              {smallViewport ? 'Review' : 'Review Selections'}
+              {smallViewport ? t`Review` : t`Review Selections`}
             </Button>
             <Button
               key={'add-selected-media'}
@@ -308,7 +309,7 @@ export default function SelectedProgrammingActions({
               disabled={selectAllLoading || addSelectedLoading}
               sx={{ m: 0.5, flexGrow: 1 }}
             >
-              {smallViewport ? 'Add Media' : 'Add Selected Media'}
+              {smallViewport ? t`Add Media` : t`Add Selected Media`}
             </Button>
           </>
         )}

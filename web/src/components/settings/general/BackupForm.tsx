@@ -1,3 +1,5 @@
+import { plural } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import type { SelectChangeEvent } from '@mui/material';
 import {
   FormControl,
@@ -13,12 +15,12 @@ import { TimePicker } from '@mui/x-date-pickers';
 import type { EverySchedule } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { first } from 'lodash-es';
-import pluralize from 'pluralize';
 import { Controller, useFormContext } from 'react-hook-form';
 import { NumericFormControllerText } from '../../util/TypedController.tsx';
 import type { GeneralSettingsFormData } from './GeneralSettingsForm.tsx';
 
 export const BackupForm = () => {
+  const { t } = useLingui();
   const { control, watch, setValue } =
     useFormContext<GeneralSettingsFormData>();
 
@@ -71,9 +73,9 @@ export const BackupForm = () => {
           render={({ field }) => (
             <TextField
               fullWidth
-              label="Output Path"
+              label={t`Output Path`}
               {...field}
-              helperText="By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups"
+              helperText={t`By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups`}
             />
           )}
         />
@@ -82,17 +84,17 @@ export const BackupForm = () => {
         <NumericFormControllerText
           control={control}
           name="backup.configurations.0.outputs.0.maxBackups"
-          prettyFieldName="Max Backups"
+          prettyFieldName={t`Max Backups`}
           rules={{ min: 0 }}
           TextFieldProps={{
-            label: 'Max Backups',
-            helperText: 'Set to 0 to never delete backups',
+            label: t`Max Backups`,
+            helperText: t`Set to 0 to never delete backups`,
           }}
         />
       </Grid>
       <Grid size={{ xs: 3 }}>
         <FormControl fullWidth>
-          <InputLabel>Archive Format</InputLabel>
+          <InputLabel><Trans>Archive Format</Trans></InputLabel>
           <Controller
             control={control}
             name="backup.configurations.0.outputs.0.archiveFormat"
@@ -105,7 +107,7 @@ export const BackupForm = () => {
                     ? 'targz'
                     : field.value
                 }
-                label="Archive Format"
+                label={t`Archive Format`}
                 onChange={(ev) => handleArchiveFormatUpdate(ev)}
               >
                 <MenuItem value="zip">.zip</MenuItem>
@@ -118,11 +120,11 @@ export const BackupForm = () => {
       </Grid>
       <Grid size={{ xs: 6 }}>
         <Stack direction="row" alignItems="center" spacing={2}>
-          <Typography>Every</Typography>
+          <Typography><Trans>Every</Trans></Typography>
           <NumericFormControllerText
             control={control}
             name="backup.configurations.0.schedule.increment"
-            prettyFieldName="Max Backups"
+            prettyFieldName={t`Increment`}
             rules={{ min: 1 }}
             TextFieldProps={{
               sx: { width: '30%' },
@@ -142,10 +144,10 @@ export const BackupForm = () => {
                 sx={{ minWidth: '25%' }}
               >
                 <MenuItem value="hour">
-                  {pluralize('Hour', currentBackupSchedule!.increment)}
+                  {plural(currentBackupSchedule!.increment, { one: 'Hour', other: 'Hours' })}
                 </MenuItem>
                 <MenuItem value="day">
-                  {pluralize('Day', currentBackupSchedule!.increment)}
+                  {plural(currentBackupSchedule!.increment, { one: 'Day', other: 'Days' })}
                 </MenuItem>
               </Select>
             )}

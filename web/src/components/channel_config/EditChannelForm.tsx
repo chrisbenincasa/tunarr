@@ -12,6 +12,7 @@ import type {
   SaveableChannel,
   SubtitlePreference,
 } from '@tunarr/types';
+import { useLingui } from '@lingui/react/macro';
 import { isEmpty, isNil, keys, map, reject, some } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import {
@@ -118,6 +119,7 @@ export function EditChannelForm({
   isNew,
   initialTab,
 }: EditChannelFormProps) {
+  const { t } = useLingui();
   const navigate = useNavigate({
     from: isNew ? '/channels/new' : '/channels/$channelId/edit',
   });
@@ -235,6 +237,13 @@ export function EditChannelForm({
     }
   };
 
+  const tabDescriptions: Record<string, string> = {
+    Properties: t`Properties`,
+    Flex: t`Flex`,
+    EPG: t`EPG`,
+    Streaming: t`Streaming`,
+  };
+
   const renderTab = (tab: EditChannelTabProps) => {
     const hasError = some(formErrorKeys, (k) => tab.fields.includes(k));
     return (
@@ -249,7 +258,7 @@ export function EditChannelForm({
             slotProps={{ badge: { style: { right: -3, top: -3 } } }}
             invisible={!hasError}
           >
-            {tab.description}
+            {tabDescriptions[tab.description] ?? tab.description}
           </Badge>
         }
       />

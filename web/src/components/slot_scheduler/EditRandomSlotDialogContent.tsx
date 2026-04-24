@@ -6,6 +6,7 @@ import type {
 } from '@/helpers/slotSchedulerUtil';
 import { useAdjustRandomSlotWeights } from '@/hooks/slot_scheduler/useAdjustRandomSlotWeights.ts';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Alert,
   Box,
@@ -57,6 +58,7 @@ export const EditRandomSlotDialogContent = ({
   onSave,
   onCancel,
 }: EditRandomSlotDialogContentProps) => {
+  const { t } = useLingui();
   const randomSlotForm = useRandomSlotFormContext();
   const programOptions = useSlotProgramOptionsContext();
   const { slotArray } = randomSlotForm;
@@ -291,9 +293,9 @@ export const EditRandomSlotDialogContent = ({
             onChange={(_, tab: number) => setTab(tab)}
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >
-            <Tab label="Programming" value={0} />
-            {programType !== 'flex' && <Tab label="Filler" value={1} />}
-            {hasMidFiller && <Tab label="Mid-Roll" value={2} />}
+            <Tab label={t`Programming`} value={0} />
+            {programType !== 'flex' && <Tab label={t`Filler`} value={1} />}
+            {hasMidFiller && <Tab label={t`Mid-Roll`} value={2} />}
           </Tabs>
           <TabPanel value={tab} index={0}>
             <Stack gap={2} useFlexGap>
@@ -315,8 +317,12 @@ export const EditRandomSlotDialogContent = ({
                             )
                           }
                         >
-                          <ToggleButton value="fixed">Fixed</ToggleButton>
-                          <ToggleButton value="dynamic">Dynamic</ToggleButton>
+                          <ToggleButton value="fixed">
+                            <Trans>Fixed</Trans>
+                          </ToggleButton>
+                          <ToggleButton value="dynamic">
+                            <Trans>Dynamic</Trans>
+                          </ToggleButton>
                         </ToggleButtonGroup>
                       )}
                     />
@@ -326,7 +332,7 @@ export const EditRandomSlotDialogContent = ({
                   <NumericFormControllerText
                     control={control}
                     TextFieldProps={{
-                      label: 'Program Count',
+                      label: t`Program Count`,
                       fullWidth: true,
                       helperText: '',
                     }}
@@ -353,7 +359,7 @@ export const EditRandomSlotDialogContent = ({
                           onChange={(value) =>
                             updateSlotTime(value, field.onChange)
                           }
-                          label="Duration"
+                          label={t`Duration`}
                           slotProps={{
                             textField: {
                               fullWidth: true,
@@ -382,7 +388,7 @@ export const EditRandomSlotDialogContent = ({
                           onChange={(value) =>
                             updateSlotTime(value, field.onChange)
                           }
-                          label="Cooldown"
+                          label={t`Cooldown`}
                           slotProps={{
                             textField: {
                               fullWidth: true,
@@ -426,7 +432,7 @@ export const EditRandomSlotDialogContent = ({
                   />
                   <TextField
                     type="number"
-                    label={lockWeights ? 'Weight %' : 'Frequency'}
+                    label={lockWeights ? t`Weight %` : t`Frequency`}
                     value={weightValue}
                     disabled
                   />
@@ -437,9 +443,11 @@ export const EditRandomSlotDialogContent = ({
           <TabPanel value={tab} index={1}>
             {fillerLists.length === 0 ? (
               <Alert severity="warning" variant="outlined">
-                You must create at least one{' '}
-                <RouterLink to="/library/fillers">filler list</RouterLink>{' '}
-                before assigning filler to a lot.
+                <Trans>
+                  You must create at least one{' '}
+                  <RouterLink to="/library/fillers">filler list</RouterLink>{' '}
+                  before assigning filler to a lot.
+                </Trans>
               </Alert>
             ) : (
               <FormProvider {...formMethods}>
@@ -455,13 +463,15 @@ export const EditRandomSlotDialogContent = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onCancel()}>Cancel</Button>
+        <Button onClick={() => onCancel()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button
           disabled={!isDirty || !isValid}
           onClick={() => commit()}
           variant="contained"
         >
-          Save
+          <Trans>Save</Trans>
         </Button>
       </DialogActions>
     </>

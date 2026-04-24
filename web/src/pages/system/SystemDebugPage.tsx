@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { CopyAll, Refresh, Search } from '@mui/icons-material';
 import {
   Box,
@@ -98,14 +99,14 @@ export const SystemDebugPage = () => {
       <Stack spacing={2}>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Typography sx={{ mb: 1, flexGrow: 1 }} variant="h5">
-            Nvidia Capabilities
+            <Trans>Nvidia Capabilities</Trans>
           </Typography>
           {nvidiaCapabilitiesResult && (
             <Button
               onClick={() => copyToClipboard(nvidiaCapabilitiesResult)}
               startIcon={<CopyAll />}
             >
-              Copy
+              <Trans>Copy</Trans>
             </Button>
           )}
           <Button
@@ -113,7 +114,7 @@ export const SystemDebugPage = () => {
             onClick={() => handleCheckNvidia()}
             variant="contained"
           >
-            Check
+            <Trans>Check</Trans>
           </Button>
         </Box>
         {isLoadingNvidiaCapabilities && <LinearProgress />}
@@ -128,14 +129,14 @@ export const SystemDebugPage = () => {
       <Stack spacing={2}>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Typography sx={{ mb: 1, flexGrow: 1 }} variant="h5">
-            VAAPI Capabilities
+            <Trans>VAAPI Capabilities</Trans>
           </Typography>
           {vappiCapabilitiesResult && (
             <Button
               onClick={() => copyToClipboard(vappiCapabilitiesResult)}
               startIcon={<CopyAll />}
             >
-              Copy
+              <Trans>Copy</Trans>
             </Button>
           )}
           <Button
@@ -143,7 +144,7 @@ export const SystemDebugPage = () => {
             onClick={() => handleCheckVaapi()}
             variant="contained"
           >
-            Check
+            <Trans>Check</Trans>
           </Button>
         </Box>
         {isLoadingVaapiCapabilities && <LinearProgress />}
@@ -158,7 +159,7 @@ export const SystemDebugPage = () => {
       <Stack spacing={2}>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Typography sx={{ mb: 1, flexGrow: 1 }} variant="h5">
-            System Environment
+            <Trans>System Environment</Trans>
           </Typography>
           <Button
             onClick={() =>
@@ -166,7 +167,7 @@ export const SystemDebugPage = () => {
             }
             startIcon={<CopyAll />}
           >
-            Copy
+            <Trans>Copy</Trans>
           </Button>
         </Box>
         <Box sx={{ maxHeight: 500, overflowY: 'scroll' }}>

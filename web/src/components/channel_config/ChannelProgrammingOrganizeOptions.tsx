@@ -6,6 +6,7 @@ import {
   Shuffle as ShuffleIcon,
   AccessTime as TimeIcon,
 } from '@mui/icons-material';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { MenuItem } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -22,6 +23,7 @@ type Props = {
 type OpenModal = 'replicate' | 'rerun' | 'weights' | 'balance';
 
 export function ChannelProgrammingOrganizeOptions({ onClose }: Props) {
+  const { t } = useLingui();
   const [openModal, setOpenModal] = useState<OpenModal | null>(null);
   const consolidatePrograms = useConsolidatePrograms();
 
@@ -33,28 +35,28 @@ export function ChannelProgrammingOrganizeOptions({ onClose }: Props) {
   return (
     <>
       <MenuItem divider disabled>
-        Organize
+        <Trans>Organize</Trans>
       </MenuItem>
       <ElevatedTooltip
-        title="This allows to schedule specific shows to run at specific time slots of the day or a week. It's recommended you first populate the channel with the episodes from the shows you want to play and/or other content like movies and redirects."
+        title={t`This allows to schedule specific shows to run at specific time slots of the day or a week. It's recommended you first populate the channel with the episodes from the shows you want to play and/or other content like movies and redirects.`}
         placement="right"
         elevation={10}
       >
         <MenuItem component={Link} to="time-slot-editor">
-          <TimeIcon /> Time Slots...
+          <TimeIcon /> <Trans>Time Slots...</Trans>
         </MenuItem>
       </ElevatedTooltip>
       <ElevatedTooltip
-        title="Schedule programming using slots assigned a start time and duration."
+        title={t`Schedule programming using slots assigned a start time and duration.`}
         placement="right"
         elevation={10}
       >
         <MenuItem component={Link} to="slot-editor">
-          <ShuffleIcon /> Slots Editor...
+          <ShuffleIcon /> <Trans>Slots Editor...</Trans>
         </MenuItem>
       </ElevatedTooltip>
       <ElevatedTooltip
-        title="Schedule programming in blocks that are either count or duration based. Can be used to generate random schedules."
+        title={t`Schedule programming in blocks that are either count or duration based. Can be used to generate random schedules.`}
         placement="right"
         elevation={10}
       >
@@ -63,11 +65,11 @@ export function ChannelProgrammingOrganizeOptions({ onClose }: Props) {
             setOpenModal('balance');
           }}
         >
-          <Scale /> Balance...
+          <Scale /> <Trans>Balance...</Trans>
         </MenuItem>
       </ElevatedTooltip>
       <ElevatedTooltip
-        title="Makes multiple copies of the schedule and plays them in sequence. Normally this isn't necessary, because Tunarr will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels."
+        title={t`Makes multiple copies of the schedule and plays them in sequence. Normally this isn't necessary, because Tunarr will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels.`}
         placement="right"
         elevation={10}
       >
@@ -76,11 +78,11 @@ export function ChannelProgrammingOrganizeOptions({ onClose }: Props) {
             setOpenModal('replicate');
           }}
         >
-          <ReplicateIcon /> Replicate...
+          <ReplicateIcon /> <Trans>Replicate...</Trans>
         </MenuItem>
       </ElevatedTooltip>
       <ElevatedTooltip
-        title="Consolidates contiguous match flex and redirect blocks into singular spans"
+        title={t`Consolidates contiguous match flex and redirect blocks into singular spans`}
         placement="right"
         elevation={10}
       >
@@ -90,7 +92,7 @@ export function ChannelProgrammingOrganizeOptions({ onClose }: Props) {
             handleClose();
           }}
         >
-          <Merge /> Consolidate
+          <Merge /> <Trans>Consolidate</Trans>
         </MenuItem>
       </ElevatedTooltip>
       {/* <Tooltip

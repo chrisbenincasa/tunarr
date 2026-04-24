@@ -30,6 +30,7 @@ import {
   some,
   sumBy,
 } from 'lodash-es';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { useCallback, useState } from 'react';
 import { Controller, useFieldArray } from 'react-hook-form';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -42,6 +43,7 @@ import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import { NumericFormController } from '../util/TypedController.tsx';
 
 export function ChannelFlexConfig() {
+  const { t } = useLingui();
   const { backendUri } = useSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const { data: fillerLists, isPending: fillerListsLoading } = useFillerLists();
@@ -213,7 +215,7 @@ export function ChannelFlexConfig() {
               name={`fillerCollections.${index}.cooldownSeconds`}
               rules={{ min: 0, max: 525600 }}
               render={({ field }) => (
-                <TextField label="Cooldown (seconds)" {...field} />
+                <TextField label={t`Cooldown (seconds)`} {...field} />
               )}
             />
           </Grid>
@@ -238,7 +240,7 @@ export function ChannelFlexConfig() {
                   <Grid>
                     <TextField
                       type="number"
-                      label="Weight %"
+                      label={t`Weight %`}
                       value={weights[index]}
                       disabled
                     />
@@ -265,9 +267,11 @@ export function ChannelFlexConfig() {
     if (fillerLists.length === 0) {
       return (
         <Typography>
-          You haven't created any filler lists yet! Go to the{' '}
-          <RouterLink to="/library/fillers">Filler Lists</RouterLink> page to
-          create one.
+          <Trans>
+            You haven't created any filler lists yet! Go to the{' '}
+            <RouterLink to="/library/fillers">Filler Lists</RouterLink> page to
+            create one.
+          </Trans>
         </Typography>
       );
     }
@@ -283,18 +287,18 @@ export function ChannelFlexConfig() {
     const opts = [
       <MenuItem key="null" value="_unused">
         {unclaimedLists.length === 0
-          ? 'All lists are used'
-          : 'Add a Filler List'}
+          ? t`All lists are used`
+          : t`Add a Filler List`}
       </MenuItem>,
       ...unclaimedLists,
     ];
 
     return (
       <FormControl sx={{ mb: 1 }}>
-        <InputLabel>Filler List</InputLabel>
+        <InputLabel>{t`Filler List`}</InputLabel>
         <Select
           value="_unused"
-          label="Filler List"
+          label={t`Filler List`}
           onChange={(e) => addFillerList(e.target.value)}
           disabled={unclaimedLists.length === 0}
         >
@@ -311,22 +315,24 @@ export function ChannelFlexConfig() {
           <Box>
             <Box>
               <Typography variant="h5" sx={{ mb: 1 }}>
-                Filler Content
+                <Trans>Filler Content</Trans>
               </Typography>
               <Typography variant="body1" sx={{ mb: 2 }}>
-                Videos from the filler list will be randomly picked to play
-                unless there are cooldown restrictions to place or if no videos
-                are short enough for the remaining Flex time.
-                <br />
-                Each filler can be assigned a cooldown, which restricts how
-                frequently the list will be chosen during flex time.
+                <Trans>
+                  Videos from the filler list will be randomly picked to play
+                  unless there are cooldown restrictions to place or if no videos
+                  are short enough for the remaining Flex time.
+                  <br />
+                  Each filler can be assigned a cooldown, which restricts how
+                  frequently the list will be chosen during flex time.
+                </Trans>
               </Typography>
               {!fillerListsLoading && renderFillerLists()}
               {fillerListsLoading ? <Skeleton /> : renderAddFillerListEditor()}
             </Box>
             <Divider sx={{ my: 2 }} />
             <Typography variant="h5" sx={{ mb: 1 }}>
-              Filler Options
+              <Trans>Filler Options</Trans>
             </Typography>
             <Controller
               name="fillerRepeatCooldown"
@@ -336,11 +342,11 @@ export function ChannelFlexConfig() {
                 <>
                   <TextField
                     fullWidth
-                    label="Filler List Cooldown (seconds)"
+                    label={t`Filler List Cooldown (seconds)`}
                     margin="normal"
                     helperText={
                       errors.fillerRepeatCooldown?.type === 'validate'
-                        ? 'Filler cooldown must be a number'
+                        ? t`Filler cooldown must be a number`
                         : null
                     }
                     {...field}
@@ -350,8 +356,10 @@ export function ChannelFlexConfig() {
                     }}
                   />
                   <Typography variant="caption" sx={{ ml: 1 }}>
-                    Items from any filler list will not be chosen more
-                    frequently than this cooldown setting.
+                    <Trans>
+                      Items from any filler list will not be chosen more
+                      frequently than this cooldown setting.
+                    </Trans>
                   </Typography>
                 </>
               )}
@@ -363,7 +371,7 @@ export function ChannelFlexConfig() {
                 <FormControl fullWidth margin="normal">
                   <FormControlLabel
                     control={<Checkbox {...field} checked={field.value} />}
-                    label="Hide watermark during filler"
+                    label={t`Hide watermark during filler`}
                   />
                 </FormControl>
               )}
@@ -371,12 +379,14 @@ export function ChannelFlexConfig() {
           </Box>
           <Divider sx={{ my: 2 }} />
           <Typography variant="h5" sx={{ mb: 1 }}>
-            Channel Fallback
+            <Trans>Channel Fallback</Trans>
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Configure what appears on your channel when there is no suitable
-            filler content available. Using channel fallbacks requires ffmpeg
-            transcoding.
+            <Trans>
+              Configure what appears on your channel when there is no suitable
+              filler content available. Using channel fallbacks requires ffmpeg
+              transcoding.
+            </Trans>
           </Typography>
           <Stack spacing={2} direction="row" sx={{ pb: 1 }}>
             {offlineMode === 'pic' && (
@@ -395,11 +405,11 @@ export function ChannelFlexConfig() {
                 control={control}
                 render={({ field }) => (
                   <FormControl fullWidth sx={{ mb: 1 }}>
-                    <InputLabel>Fallback Mode</InputLabel>
-                    <Select fullWidth label="Fallback Mode" {...field}>
-                      <MenuItem value={'pic'}>Image</MenuItem>
+                    <InputLabel>{t`Fallback Mode`}</InputLabel>
+                    <Select fullWidth label={t`Fallback Mode`} {...field}>
+                      <MenuItem value={'pic'}><Trans>Image</Trans></MenuItem>
                       <MenuItem disabled value={'clip'}>
-                        Library Clip (not yet implemented)
+                        <Trans>Library Clip (not yet implemented)</Trans>
                       </MenuItem>
                     </Select>
                   </FormControl>
@@ -412,7 +422,7 @@ export function ChannelFlexConfig() {
                   <ImageUploadInput
                     // TODO: This should be something like {channel.id}_fallback_picture.ext
                     fileRenamer={typedProperty('name')}
-                    label="Image URL"
+                    label={t`Image URL`}
                     onFormValueChange={(newPath) => {
                       field.onChange(newPath);
                     }}
@@ -426,7 +436,7 @@ export function ChannelFlexConfig() {
                 name="offline.soundtrack"
                 control={control}
                 render={({ field }) => (
-                  <TextField fullWidth label="Soundtrack" {...field} />
+                  <TextField fullWidth label={t`Soundtrack`} {...field} />
                 )}
               />
             </Stack>

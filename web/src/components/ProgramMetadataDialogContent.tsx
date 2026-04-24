@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { getProgramSummary } from '@/helpers/programUtil.ts';
 import { OpenInNew } from '@mui/icons-material';
 import {
@@ -140,7 +141,7 @@ export const ProgramMetadataDialogContent = ({
               fullWidth
               sx={{ mt: 1 }}
             >
-              View in {capitalize(program.sourceType)}
+              <Trans>View in {capitalize(program.sourceType)}</Trans>
             </Button>
           )}
           <Button
@@ -151,7 +152,7 @@ export const ProgramMetadataDialogContent = ({
             fullWidth
             sx={{ mt: 1 }}
           >
-            View Full Details
+            <Trans>View Full Details</Trans>
           </Button>
         </Box>
         <Box>

@@ -1,4 +1,5 @@
 import { useAppForm } from '@/hooks/form.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Check, VisibilityOff } from '@mui/icons-material';
 import {
   Box,
@@ -36,6 +37,7 @@ export const TranscodeConfigSettingsForm = ({
   initialConfig,
   isNew,
 }: Props) => {
+  const { t } = useLingui();
   const showAdvancedSettings = useStore(
     (s) => s.settings.ui.showAdvancedSettings,
   );
@@ -65,7 +67,7 @@ export const TranscodeConfigSettingsForm = ({
         <Stack spacing={2} divider={<Divider />}>
           <Stack direction={'row'}>
             <Typography variant="h4">
-              Edit Transcode Config: "{initialConfig.name}"
+              <Trans>Edit Transcode Config: "{initialConfig.name}"</Trans>
             </Typography>
             <ToggleButton
               value={showAdvancedSettings}
@@ -78,19 +80,19 @@ export const TranscodeConfigSettingsForm = ({
               ) : (
                 <Check sx={{ mr: 0.5 }} />
               )}{' '}
-              {showAdvancedSettings ? 'Hide' : 'Show'} Advanced
+              {showAdvancedSettings ? <Trans>Hide Advanced</Trans> : <Trans>Show Advanced</Trans>}
             </ToggleButton>
           </Stack>
           <Box>
             <Typography variant="h5" sx={{ mb: 2 }}>
-              General
+              <Trans>General</Trans>
             </Typography>
             <Grid container columnSpacing={2}>
               <Grid size={{ sm: 12, md: 6 }}>
                 <transcodeConfigForm.AppField
                   name="name"
                   children={(field) => (
-                    <field.BasicTextInput fullWidth label="Name" />
+                    <field.BasicTextInput fullWidth label={t`Name`} />
                   )}
                 />
                 {/* <Controller
@@ -124,10 +126,10 @@ export const TranscodeConfigSettingsForm = ({
                   name="threadCount"
                   children={(field) => (
                     <TextField
-                      label="Threads"
+                      label={t`Threads`}
                       fullWidth
                       helperText={
-                        <>
+                        <Trans>
                           Sets the number of threads used to decode the input
                           stream. Set to 0 to let ffmpeg automatically decide
                           how many threads to use. Read more about this option{' '}
@@ -140,7 +142,7 @@ export const TranscodeConfigSettingsForm = ({
                           . <strong>Note: </strong> this option is overridden to
                           1 when using hardware accelearation for stability
                           reasons.
-                        </>
+                        </Trans>
                       }
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -195,11 +197,11 @@ export const TranscodeConfigSettingsForm = ({
                       //   name="disableChannelOverlay"
                       // />
                     }
-                    label={'Disable Watermarks'}
+                    label={t`Disable Watermarks`}
                   />
                   <FormHelperText>
-                    If set, all watermark overlays will be disabled for channels
-                    assigned this transcode config.
+                    <Trans>If set, all watermark overlays will be disabled for channels
+                    assigned this transcode config.</Trans>
                   </FormHelperText>
                 </FormControl>
               </Grid>
@@ -208,7 +210,7 @@ export const TranscodeConfigSettingsForm = ({
 
           <Stack spacing={2}>
             <Typography component="h5" variant="h5">
-              Video Options
+              <Trans>Video Options</Trans>
             </Typography>
             <TranscodeConfigVideoSettingsForm initialConfig={initialConfig} />
             <transcodeConfigForm.Subscribe
@@ -218,14 +220,14 @@ export const TranscodeConfigSettingsForm = ({
                 hardwareAccelerationMode !== 'none' && (
                   <Box>
                     <Typography component="h6" variant="h6" mb={1}>
-                      Advanced Video Options
+                      <Trans>Advanced Video Options</Trans>
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 2 }}>
-                      Advanced options relating to transcoding. In general, do
+                      <Trans>Advanced options relating to transcoding. In general, do
                       not change these unless you know what you are doing! These
                       settings exist in order to leave some parity with the old
                       dizqueTV transcode pipeline as well as to provide
-                      mechanisms to aid in debugging streaming issues.
+                      mechanisms to aid in debugging streaming issues.</Trans>
                     </Typography>
                     <TranscodeConfigAdvancedOptions
                       initialConfig={initialConfig}
@@ -237,7 +239,7 @@ export const TranscodeConfigSettingsForm = ({
           </Stack>
           <Box>
             <Typography component="h5" variant="h5" sx={{ mb: 2 }}>
-              Audio Options
+              <Trans>Audio Options</Trans>
             </Typography>
             <TranscodeConfigAudioSettingsForm
               initialConfig={initialConfig}
@@ -246,7 +248,7 @@ export const TranscodeConfigSettingsForm = ({
           </Box>
           <Box>
             <Typography component="h6" variant="h6" sx={{ pb: 1 }}>
-              Error Options
+              <Trans>Error Options</Trans>
             </Typography>
             <TranscodeConfigErrorOptions initialConfig={initialConfig} />
           </Box>
@@ -263,7 +265,7 @@ export const TranscodeConfigSettingsForm = ({
                         transcodeConfigForm.reset();
                       }}
                     >
-                      Reset Changes
+                      <Trans>Reset Changes</Trans>
                     </Button>
                   ) : null}
                   <Button
@@ -271,7 +273,7 @@ export const TranscodeConfigSettingsForm = ({
                     disabled={!canSubmit}
                     type="submit"
                   >
-                    {isSubmitting ? 'Submitting...' : 'Submit'}
+                    {isSubmitting ? <Trans>Submitting...</Trans> : <Trans>Submit</Trans>}
                   </Button>
                 </>
               )}

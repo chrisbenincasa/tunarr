@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Computer, DarkMode, LightMode } from '@mui/icons-material';
 import {
   IconButton,
@@ -16,13 +17,14 @@ type ThemeMode = 'light' | 'system' | 'dark';
 
 export default function DarkModeButton(props: DarkModeProps) {
   const { iconOnly } = props;
+  const { t } = useLingui();
   const { mode, setMode } = useColorScheme();
   const isDarkMode = useIsDarkMode();
 
   return (
     <>
       {iconOnly ? (
-        <Tooltip title={`Enable ${isDarkMode ? 'light' : 'dark'} Mode`}>
+        <Tooltip title={isDarkMode ? t`Enable light Mode` : t`Enable dark Mode`}>
           <IconButton
             color="inherit"
             onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
@@ -39,14 +41,14 @@ export default function DarkModeButton(props: DarkModeProps) {
           aria-label="text alignment"
         >
           <ToggleButton value="light" aria-label="left aligned">
-            <LightMode fontSize="small" sx={{ mr: 1 }} /> Light
+            <LightMode fontSize="small" sx={{ mr: 1 }} /> <Trans>Light</Trans>
           </ToggleButton>
           <ToggleButton value="system" aria-label="left aligned">
-            <Computer fontSize="small" sx={{ mr: 1 }} /> System
+            <Computer fontSize="small" sx={{ mr: 1 }} /> <Trans>System</Trans>
           </ToggleButton>
           <ToggleButton value="dark" aria-label="centered">
             <DarkMode fontSize="small" sx={{ mr: 1 }} />
-            Dark
+            <Trans>Dark</Trans>
           </ToggleButton>
         </ToggleButtonGroup>
       )}

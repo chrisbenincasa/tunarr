@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { isNonEmptyString } from '@/helpers/util';
 import { Autocomplete, TextField } from '@mui/material';
 import type { LanguagePreference } from '@tunarr/types';
@@ -16,6 +17,7 @@ export function LanguagePreferencesList({
   onChange,
   error,
 }: LanguagePreferencesListProps) {
+  const { t } = useLingui();
   const handleChange = (value: LanguagePreference[]) => {
     onChange(value);
   };
@@ -37,12 +39,14 @@ export function LanguagePreferencesList({
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Language"
+          label={t`Language`}
           variant="outlined"
           helperText={
             <span>
-              The selected languages will be considered in order they are
-              selected.
+              <Trans>
+                The selected languages will be considered in order they are
+                selected.
+              </Trans>
               {isNonEmptyString(error?.message) && (
                 <>
                   <br />

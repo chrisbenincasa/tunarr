@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import {
   Button,
   Dialog,
@@ -29,17 +30,17 @@ export function MediaSourceDeleteDialog({
 
   return (
     <Dialog open={open} aria-labelledby={titleId} aria-describedby={descId}>
-      <DialogTitle id={titleId}>Delete Media Source?</DialogTitle>
+      <DialogTitle id={titleId}><Trans>Delete Media Source?</Trans></DialogTitle>
       <DialogContent>
         <DialogContentText id={descId}>
-          Deleting a Plex server will remove all programming from your channels
+          <Trans>Deleting a Plex server will remove all programming from your channels
           associated with this plex server. Missing programming will be replaced
-          with Flex time. This action cannot be undone.
+          with Flex time. This action cannot be undone.</Trans>
         </DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} autoFocus>
-          Cancel
+          <Trans>Cancel</Trans>
         </Button>
         <Button
           onClick={() =>
@@ -47,7 +48,7 @@ export function MediaSourceDeleteDialog({
           }
           variant="contained"
         >
-          Delete
+          <Trans>Delete</Trans>
         </Button>
       </DialogActions>
     </Dialog>

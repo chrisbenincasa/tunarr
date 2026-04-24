@@ -3,6 +3,7 @@ import {
   getApiSettingsMediaSourceOptions,
   putApiSettingsMediaSourceMutation,
 } from '@/generated/@tanstack/react-query.gen.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Box, Button, Stack } from '@mui/material';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import type { GlobalMediaSourceSettings } from '@tunarr/types/schemas';
@@ -11,6 +12,7 @@ import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 
 export const ScannerSettingsPage = () => {
+  const { t } = useLingui();
   const { data: mediaSourceSettings } = useSuspenseQuery(
     getApiSettingsMediaSourceOptions(),
   );
@@ -27,15 +29,14 @@ export const ScannerSettingsPage = () => {
       settingsForm.reset(returned);
       snackbar.enqueueSnackbar({
         variant: 'success',
-        message: 'Successfully updated Media Source settings.',
+        message: t`Successfully updated Media Source settings.`,
       });
     },
     onError: (err) => {
       console.error(err);
       snackbar.enqueueSnackbar({
         variant: 'error',
-        message:
-          'Failed to update Media Source settings. Please check server and browser logs for details.',
+        message: t`Failed to update Media Source settings. Please check server and browser logs for details.`,
       });
     },
   });
@@ -52,10 +53,9 @@ export const ScannerSettingsPage = () => {
   const onError = useCallback(() => {
     snackbar.enqueueSnackbar({
       variant: 'error',
-      message:
-        'There was an error submitting the request to update Media Source settings. Please check the form and try again',
+      message: t`There was an error submitting the request to update Media Source settings. Please check the form and try again`,
     });
-  }, [snackbar]);
+  }, [snackbar, t]);
 
   return (
     <Stack>
@@ -67,11 +67,10 @@ export const ScannerSettingsPage = () => {
           <NumericFormControllerText
             control={settingsForm.control}
             name="rescanIntervalHours"
-            prettyFieldName="Rescan Interval (hours)"
+            prettyFieldName={t`Rescan Interval (hours)`}
             TextFieldProps={{
-              label: 'Rescan Interval (hours)',
-              helperText:
-                'How frequently libraries should be scanned (starting from midnight).',
+              label: t`Rescan Interval (hours)`,
+              helperText: t`How frequently libraries should be scanned (starting from midnight).`,
             }}
           />
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -80,7 +79,7 @@ export const ScannerSettingsPage = () => {
               variant="contained"
               disabled={!settingsForm.formState.isDirty}
             >
-              Save
+              <Trans>Save</Trans>
             </Button>
           </Box>
         </Stack>

@@ -4,6 +4,7 @@ import { RandomSlotTable } from '@/components/slot_scheduler/RandomSlotTable.tsx
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
 import { defaultRandomSlotSchedule } from '@/model/SlotModels.ts';
 import { useChannelEditor } from '@/store/selectors';
+import { Trans } from '@lingui/react/macro';
 import { ArrowBack, HelpOutline } from '@mui/icons-material';
 import {
   Alert,
@@ -183,23 +184,25 @@ export default function RandomSlotEditorPage() {
   );
 
   if (isUndefined(channel)) {
-    return <div>Loading</div>;
+    return <div><Trans>Loading</Trans></div>;
   }
 
   return (
     <>
       <Breadcrumbs />
       <Stack gap={2} useFlexGap>
-        <Typography variant="h4">Slot Scheduler</Typography>
+        <Typography variant="h4"><Trans>Slot Scheduler</Trans></Typography>
         {hasExistingTimeSlotSchedule && (
           <Alert severity="warning">
-            This channel has an existing time slot schedule. A channel can only
-            use one scheduling type at a time. Saving a schedule here will
-            remove the existing time slot schedule.
+            <Trans>
+              This channel has an existing time slot schedule. A channel can only
+              use one scheduling type at a time. Saving a schedule here will
+              remove the existing time slot schedule.
+            </Trans>
           </Alert>
         )}
         <PaddedPaper>
-          <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>Slots</Typography>
+          <Typography sx={{ flexGrow: 1, fontWeight: 600 }}><Trans>Slots</Trans></Typography>
           <Divider sx={{ my: 2 }} />
           <SlotProgrammingOptionsProvider>
             <RandomSlotFormProvider {...randomSlotForm} slotArray={slotArray}>
@@ -216,7 +219,7 @@ export default function RandomSlotEditorPage() {
         </PaddedPaper>
         <PaddedPaper>
           <Stack direction="row" sx={{ width: '100%' }}>
-            <Typography sx={{ pb: 1 }}>Programming Preview</Typography>
+            <Typography sx={{ pb: 1 }}><Trans>Programming Preview</Trans></Typography>
             <Typography sx={{ ml: 'auto' }}>
               <Tooltip title={<>{programFrequency}</>} placement="left">
                 <HelpOutline />
@@ -231,7 +234,7 @@ export default function RandomSlotEditorPage() {
               enableRowDelete={false}
               enableRowEdit={false}
               listEmptyMessage={
-                isCalculatingSlots ? 'Calculating Slots...' : null
+                isCalculatingSlots ? <Trans>Calculating Slots...</Trans> : null
               }
               virtualListProps={{
                 width: '100%',
@@ -255,16 +258,16 @@ export default function RandomSlotEditorPage() {
             startIcon={<ArrowBack />}
             sx={{ justifyContent: 'flex-start' }}
           >
-            Back to Programming
+            <Trans>Back to Programming</Trans>
           </RouterButtonLink>
         </Box>
         {isDirty && (
           <Button variant="contained" onClick={() => resetLineupToSaved()}>
-            Reset Options
+            <Trans>Reset Options</Trans>
           </Button>
         )}
         <Button variant="contained" onClick={() => onSave()}>
-          Save
+          <Trans>Save</Trans>
         </Button>
       </Box>
     </>

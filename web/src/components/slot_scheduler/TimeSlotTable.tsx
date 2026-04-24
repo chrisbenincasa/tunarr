@@ -1,6 +1,8 @@
 import { OneDayMillis } from '@/helpers/constants.ts';
 import { getTimeSlotId, OneWeekMillis } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptionsContext } from '@/hooks/programming_controls/useSlotProgramOptions';
+import { plural } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails.ts';
 import type { TimeSlotViewModel } from '@/model/TimeSlotModels.ts';
 import { Delete, Edit, Warning } from '@mui/icons-material';
@@ -41,7 +43,6 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
-import pluralize from 'pluralize';
 import { useMemo, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { formatSlotOrder } from '../../helpers/slots.ts';
@@ -83,6 +84,7 @@ const fillerKindToColor = {
 };
 
 export const TimeSlotTable = () => {
+  const { t } = useLingui();
   const providedDjs = useDayjs();
   const localeData = useMemo(() => providedDjs().localeData(), [providedDjs]);
   const { watch, slotArray } = useTimeSlotFormContext();
@@ -191,10 +193,10 @@ export const TimeSlotTable = () => {
             const len = row.original.warnings.length;
             return (
               <Tooltip
-                title={`There ${pluralize('is', len)} ${len} ${pluralize(
-                  'warning',
-                  len,
-                )}. Click for details.`}
+                title={plural(len, {
+                  one: 'There is # warning. Click for details.',
+                  other: 'There are # warnings. Click for details.',
+                })}
               >
                 <IconButton
                   onClick={() => setCurrentSlotWarningsIndex(row.index)}
@@ -208,7 +210,7 @@ export const TimeSlotTable = () => {
             );
           } else if (row.original.type === 'show' && row.original.missingShow) {
             return (
-              <Tooltip title="This show is marked as missing in the database.">
+              <Tooltip title={t`This show is marked as missing in the database.`}>
                 <Warning sx={{ fontSize: 'inherit' }} color="warning" />
               </Tooltip>
             );
@@ -216,7 +218,7 @@ export const TimeSlotTable = () => {
 
           return match(row.original)
             .with({ type: 'show', missingShow: P.nonNullable }, () => (
-              <Tooltip title="This show is marked as missing in the database.">
+              <Tooltip title={t`This show is marked as missing in the database.`}>
                 <Warning sx={{ fontSize: 'inherit' }} color="warning" />
               </Tooltip>
             ))
@@ -227,7 +229,7 @@ export const TimeSlotTable = () => {
               },
               (slot) => (
                 <Tooltip
-                  title={`This ${slot.type
+                  title={t`This ${slot.type
                     .split('-')
                     .map((s) => capitalize(s))
                     .join(' ')} is marked as missing in the database.`}
@@ -243,7 +245,7 @@ export const TimeSlotTable = () => {
         enableColumnActions: false,
       },
       {
-        header: 'Start Time',
+        header: t`Start Time`,
         accessorKey: 'startTime',
         Cell: ({ cell }) => {
           const value = cell.getValue<number>();
@@ -256,7 +258,7 @@ export const TimeSlotTable = () => {
         grow: false,
       },
       {
-        header: 'Program',
+        header: t`Program`,
         accessorFn: identity,
         id: 'programming',
         enableEditing: true,
@@ -286,7 +288,7 @@ export const TimeSlotTable = () => {
       //   },
       // },
       {
-        header: 'Order',
+        header: t`Order`,
         accessorFn: formatSlotOrder,
         id: 'programOrder',
         Cell({ cell }) {
@@ -299,7 +301,7 @@ export const TimeSlotTable = () => {
         enableSorting: false,
       },
       {
-        header: 'Filler',
+        header: t`Filler`,
         id: 'filler',
         accessorFn: (row) => {
           switch (row.type) {
@@ -350,7 +352,7 @@ export const TimeSlotTable = () => {
         },
       },
     ];
-  }, [currentPeriod, getSlotName, startOfPeriod]);
+  }, [currentPeriod, getSlotName, startOfPeriod, t]);
 
   const renderActionCell = ({
     row,
@@ -360,7 +362,7 @@ export const TimeSlotTable = () => {
   }) => {
     return (
       <>
-        <Tooltip title="Edit Slot" placement="top">
+        <Tooltip title={t`Edit Slot`} placement="top">
           <IconButton
             onClick={() =>
               setCurrentEditingSlot({
@@ -372,7 +374,7 @@ export const TimeSlotTable = () => {
             <Edit />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Delete Slot" placement="top">
+        <Tooltip title={t`Delete Slot`} placement="top">
           <IconButton
             onClick={() => slotArray.remove(row.original.originalIndex)}
           >
@@ -451,7 +453,7 @@ export const TimeSlotTable = () => {
         fullWidth
         onClose={() => setCurrentEditingSlot(null)}
       >
-        <DialogTitle>Edit Slot</DialogTitle>
+        <DialogTitle><Trans>Edit Slot</Trans></DialogTitle>
         {currentEditingSlot && (
           <EditTimeSlotDialogContent
             slot={currentEditingSlot.slot}

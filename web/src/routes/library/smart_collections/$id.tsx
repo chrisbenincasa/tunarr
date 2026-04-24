@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Stack, Typography } from '@mui/material';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -47,7 +48,7 @@ function RouteComponent() {
   return (
     <Stack gap={2}>
       <Typography variant="h4">
-        Smart Collection: {smartCollection.name}
+        <Trans>Smart Collection: {smartCollection.name}</Trans>
       </Typography>
       <SearchInput
         initialSearchFilter={filter ?? undefined}

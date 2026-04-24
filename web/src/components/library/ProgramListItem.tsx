@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Info } from '@mui/icons-material';
 import {
   Button,
@@ -154,10 +155,10 @@ export const ProgramListItem = ({
               variant="contained"
             >
               {!isTerminalItemType(item) && (item.childCount ?? 0) > 0
-                ? `Add ${item.type}`
+                ? <Trans>Add {item.type}</Trans>
                 : selectedMediaIds.includes(item.uuid)
-                  ? 'Remove'
-                  : `Add`}
+                  ? <Trans>Remove</Trans>
+                  : <Trans>Add</Trans>}
             </Button>
           )}
         </ListItemButton>

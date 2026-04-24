@@ -1,4 +1,5 @@
 import { SlotProgrammingTooLongWarningDetails } from '@/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx';
+import { Trans } from '@lingui/react/macro';
 import {
   Button,
   Dialog,
@@ -36,11 +37,11 @@ export const TimeSlotWarningsDialog = ({ slot, onClose }: Props) => {
 
   return (
     <Dialog open={!!slot} onClose={() => onClose()} fullWidth maxWidth="md">
-      <DialogTitle>Slot Warnings</DialogTitle>
+      <DialogTitle><Trans>Slot Warnings</Trans></DialogTitle>
       <DialogContent>{renderWarnings()}</DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()} variant="contained">
-          Done
+          <Trans>Done</Trans>
         </Button>
       </DialogActions>
     </Dialog>

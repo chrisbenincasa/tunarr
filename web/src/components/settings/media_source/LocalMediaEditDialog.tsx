@@ -1,3 +1,5 @@
+import { plural, t } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
 import { Add, CloudDoneOutlined, CloudOff, Delete } from '@mui/icons-material';
 import {
   Box,
@@ -31,7 +33,6 @@ import { MediaSourceContentType as MediaSourceContentTypeSchema } from '@tunarr/
 import { useDebounce } from '@uidotdev/usehooks';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import pluralize from 'pluralize';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FieldErrors } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
@@ -93,7 +94,7 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
   register('paths', {
     validate: (p) => {
       if (p.length === 0) {
-        return 'Need at least one path';
+        return t`Need at least one path`;
       }
     },
   });
@@ -163,8 +164,7 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
     (err: FieldErrors<LocalMediaSourceForm>) => {
       console.error(err);
       snackbar.enqueueSnackbar({
-        message:
-          'There was an error when submitting the form. Please see console logs for details.',
+        message: t`There was an error when submitting the form. Please see console logs for details.`,
         variant: 'error',
       });
     },
@@ -211,7 +211,7 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
     [getValues, setValue, trigger],
   );
 
-  const title = source ? `Editing "${source.name}"` : 'New Local Media Source';
+  const title = source ? t`Editing "${source.name}"` : t`New Local Media Source`;
   return (
     <>
       <DialogTitle>{title}</DialogTitle>
@@ -230,20 +230,19 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
                 minLength: 1,
                 pattern: {
                   value: /[A-z0-9_-]+/,
-                  message:
-                    'Name can only contain alphanumeric characters, dashes, and underscores',
+                  message: t`Name can only contain alphanumeric characters, dashes, and underscores`,
                 },
               }}
               render={({ field, fieldState: { error } }) => (
                 <TextField
-                  label="Name"
+                  label={t`Name`}
                   fullWidth
                   {...field}
                   error={!isUndefined(error)}
                   helperText={
                     error && isNonEmptyString(error.message)
                       ? error.message
-                      : 'Enter a name for your Local Media Source'
+                      : t`Enter a name for your Local Media Source`
                   }
                 />
               )}
@@ -253,8 +252,8 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
               name="mediaType"
               render={({ field, fieldState: { error } }) => (
                 <FormControl fullWidth>
-                  <InputLabel>Media Type</InputLabel>
-                  <Select label="Media Type" {...field} error={!!error}>
+                  <InputLabel><Trans>Media Type</Trans></InputLabel>
+                  <Select label={t`Media Type`} {...field} error={!!error}>
                     {Object.values(MediaSourceContentTypeSchema.enum)
                       .filter((val) =>
                         seq.inConstArr(supportedLocalLibraryTypes, val),
@@ -266,7 +265,7 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
                       ))}
                   </Select>
                   <FormHelperText>
-                    The type of media in the provided paths{' '}
+                    <Trans>The type of media in the provided paths</Trans>{' '}
                     {isNonEmptyString(error?.message) ? error.message : null}
                   </FormHelperText>
                 </FormControl>
@@ -275,11 +274,11 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
 
             <Stack direction={'row'} spacing={1} alignItems="center">
               <TextField
-                label="Path"
+                label={t`Path`}
                 fullWidth
                 value={currentPath}
                 onChange={(e) => setCurrentPath(e.target.value)}
-                helperText="A root path to scan for media. Local sources can search many different paths."
+                helperText={t`A root path to scan for media. Local sources can search many different paths.`}
                 slotProps={{
                   input: {
                     spellCheck: false,
@@ -302,7 +301,7 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
             <Divider />
             <Box>
               <Typography variant="h6">
-                {pluralize('Path', paths.length)}
+                {plural(paths.length, { one: 'Path', other: 'Paths' })}
               </Typography>
               <List sx={{ pl: 1, py: 0 }}>
                 {paths.map((path) => (
@@ -328,7 +327,7 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={() => onClose()} autoFocus>
-          Cancel
+          <Trans>Cancel</Trans>
         </Button>
         <Button
           variant="contained"
@@ -336,7 +335,7 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
           type="submit"
           onClick={handleSubmit(onSubmitSuccess, onSubmitError)}
         >
-          {source?.id ? 'Update' : 'Add'}
+          {source?.id ? <Trans>Update</Trans> : <Trans>Add</Trans>}
         </Button>
       </DialogActions>
     </>

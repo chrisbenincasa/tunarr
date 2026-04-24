@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   HourglassTop,
   Radar,
@@ -60,6 +61,7 @@ const MediaSourceLibraryTableActionCell = ({
   mediaSource,
   library,
 }: ActionCellProps) => {
+  const { t } = useLingui();
   const [isRefreshing, setIsRefreshing] = useState(library.isLocked);
   const refreshLibraryMutation = useScanLibraryMutation();
   const scanStateQuery = useLibraryScanState(
@@ -146,7 +148,7 @@ const MediaSourceLibraryTableActionCell = ({
 
   return (
     <>
-      <Tooltip placement="top" title="View Library">
+      <Tooltip placement="top" title={t`View Library`}>
         <Box component="span">
           {mediaSource.type === 'local' ? (
             <RouterIconButtonLink
@@ -169,10 +171,10 @@ const MediaSourceLibraryTableActionCell = ({
         placement="top"
         title={
           scanStateQuery.data?.state === 'queued'
-            ? 'Queued'
+            ? t`Queued`
             : library.isLocked
-              ? 'Scanning'
-              : 'Scan'
+              ? t`Scanning`
+              : t`Scan`
         }
       >
         <span>
@@ -199,10 +201,10 @@ const MediaSourceLibraryTableActionCell = ({
           placement="top"
           title={
             scanStateQuery.data?.state === 'queued'
-              ? 'Queued'
+              ? t`Queued`
               : library.isLocked
-                ? 'Scanning'
-                : 'Force Scan'
+                ? t`Scanning`
+                : t`Force Scan`
           }
         >
           <span>
@@ -240,6 +242,7 @@ const MediaSourceLibraryTableActionCell = ({
 const TableName = 'MediaSourceLibraryTable';
 
 export const MediaSourceLibraryTable = () => {
+  const { t } = useLingui();
   const dayjs = useDayjs();
   const { data: mediaSources } = useMediaSources();
   const tableSettings = useStoreBackedTableSettings(TableName);
@@ -249,7 +252,7 @@ export const MediaSourceLibraryTable = () => {
   const columns = useMemo<MRT_ColumnDef<MediaSourceLibraryRow>[]>(() => {
     return [
       {
-        header: 'Source Type',
+        header: t`Source Type`,
         id: 'type',
         accessorFn: ({ type }) => capitalize(type),
         // size: 100,
@@ -257,7 +260,7 @@ export const MediaSourceLibraryTable = () => {
         grow: false,
       },
       {
-        header: 'Name',
+        header: t`Name`,
         id: 'name',
         accessorFn(originalRow) {
           if (originalRow.type === 'local') {
@@ -270,14 +273,14 @@ export const MediaSourceLibraryTable = () => {
         // grow: false,
       },
       {
-        header: 'Media Type',
+        header: t`Media Type`,
         id: 'mediaType',
         accessorFn: ({ mediaType }) => prettifySnakeCaseString(mediaType),
         // size: 150,
         // grow: false,
       },
       {
-        header: 'Last Synced',
+        header: t`Last Synced`,
         id: 'lastUpdated',
         accessorFn: ({ lastScannedAt }) =>
           lastScannedAt ? dayjs(lastScannedAt).format('LLL') : '-',
@@ -442,10 +445,12 @@ export const MediaSourceLibraryTable = () => {
         </TableContainer>
       )}
       <Typography variant="body2" align="center">
-        Don't see the library you want here? Ensure it is enabled in the{' '}
-        <MuiLink component={Link} to="/settings/sources">
-          Media Source Settings.
-        </MuiLink>
+        <Trans>
+          Don't see the library you want here? Ensure it is enabled in the{' '}
+          <MuiLink component={Link} to="/settings/sources">
+            Media Source Settings.
+          </MuiLink>
+        </Trans>
       </Typography>
     </>
   );

@@ -3,6 +3,7 @@ import {
   useCurrentMediaSourceView,
 } from '@/store/programmingSelector/selectors.ts';
 import { PlexMediaSourceLibraryViewType } from '@/store/programmingSelector/store.ts';
+import { useLingui } from '@lingui/react/macro';
 import { Box, Tab, Tabs, Tooltip } from '@mui/material';
 import type { ProgramOrFolder } from '@tunarr/types';
 import { filter, isNil } from 'lodash-es';
@@ -42,6 +43,7 @@ enum TabValues {
 export default function PlexProgrammingSelector({
   toggleOrSetSelectedProgramsDrawer,
 }: Props) {
+  const { t } = useLingui();
   const { data: mediaSources } = useMediaSources();
   const plexServers = filter(mediaSources, { type: 'plex' });
   const selectedServer = useCurrentMediaSource('plex');
@@ -129,14 +131,14 @@ export default function PlexProgrammingSelector({
               >
                 <Tab
                   value={TabValues.Library}
-                  label="Library"
+                  label={t`Library`}
                   {...a11yProps(TabValues.Library)}
                 />
                 {selectedLibrary?.view.type !==
                   PlexMediaSourceLibraryViewType.Playlists && (
                   <Tab
                     value={TabValues.Collections}
-                    label="Collections"
+                    label={t`Collections`}
                     {...a11yProps(TabValues.Collections)}
                   />
                 )}
@@ -146,7 +148,7 @@ export default function PlexProgrammingSelector({
                     value={TabValues.Playlists}
                     label={
                       <Tooltip title={null} placement="top" arrow>
-                        <span>Playlists</span>
+                        <span>{t`Playlists`}</span>
                       </Tooltip>
                     }
                     sx={{

@@ -1,3 +1,4 @@
+import { plural } from '@lingui/core/macro';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { Box, Grid, IconButton, Stack, Typography } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
@@ -7,7 +8,6 @@ import 'dayjs/plugin/duration';
 import 'dayjs/plugin/localeData';
 import weekday from 'dayjs/plugin/weekday';
 import { countBy, range } from 'lodash-es';
-import pluralize from 'pluralize';
 import { useCallback, useMemo, useState } from 'react';
 import { useDaysInMonth } from '../../hooks/calendarHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
@@ -191,7 +191,7 @@ export const ProgramCalendarView = ({
               fontSize: (theme) => theme.typography.subtitle2.fontSize,
             }}
           >
-            {count} {pluralize('program', count)}
+            {plural(count, { one: '# program', other: '# programs' })}
           </Box>
         </Grid>
       );

@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { Stack } from '@mui/material';
 import { useTypedAppFormContext } from '../../../hooks/form.ts';
 import type { BaseTranscodeConfigProps } from './BaseTranscodeConfigProps.ts';
@@ -6,6 +7,7 @@ import { useBaseTranscodeConfigFormOptions } from './useTranscodeConfigFormOptio
 export const TranscodeConfigAdvancedOptions = ({
   initialConfig,
 }: BaseTranscodeConfigProps) => {
+  const { t } = useLingui();
   const formOpts = useBaseTranscodeConfigFormOptions(initialConfig);
   const form = useTypedAppFormContext({ ...formOpts });
 
@@ -15,10 +17,9 @@ export const TranscodeConfigAdvancedOptions = ({
         name="disableHardwareDecoder"
         children={(field) => (
           <field.BasicCheckboxInput
-            label="Disable Hardware Decoding"
+            label={t`Disable Hardware Decoding`}
             formControlProps={{ fullWidth: true }}
-            helperText="Will force use of a software decoder despite hardware acceleration
-          settings."
+            helperText={t`Will force use of a software decoder despite hardware acceleration settings.`}
           />
         )}
       />
@@ -27,10 +28,9 @@ export const TranscodeConfigAdvancedOptions = ({
         name="disableHardwareEncoding"
         children={(field) => (
           <field.BasicCheckboxInput
-            label="Disable Hardware Encoding"
+            label={t`Disable Hardware Encoding`}
             formControlProps={{ fullWidth: true }}
-            helperText="Will force use of a software encoder despite hardware acceleration
-          settings."
+            helperText={t`Will force use of a software encoder despite hardware acceleration settings.`}
           />
         )}
       />
@@ -39,10 +39,9 @@ export const TranscodeConfigAdvancedOptions = ({
         name="disableHardwareFilters"
         children={(field) => (
           <field.BasicCheckboxInput
-            label="Disable Hardware Filters"
+            label={t`Disable Hardware Filters`}
             formControlProps={{ fullWidth: true }}
-            helperText="Will force use of a software filters (e.g. scale, pad, etc.) despite
-          hardware acceleration settings."
+            helperText={t`Will force use of a software filters (e.g. scale, pad, etc.) despite hardware acceleration settings.`}
           />
         )}
       />

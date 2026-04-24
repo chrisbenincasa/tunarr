@@ -2,6 +2,7 @@ import Breadcrumbs from '@/components/Breadcrumbs.tsx';
 import { ChannelOptionsButton } from '@/components/channels/ChannelOptionsButton.tsx';
 import { useChannelAndProgramming } from '@/hooks/useChannelLineup.ts';
 import { Route } from '@/routes/channels_/$channelId/programming/index.tsx';
+import { Trans } from '@lingui/react/macro';
 import { Alert, Box, Paper, Stack, Typography } from '@mui/material';
 import { useEffect } from 'react';
 import { RouterLink } from '../../components/base/RouterLink.tsx';
@@ -44,20 +45,22 @@ export default function ChannelProgrammingPage() {
       </Stack>
       {schedule && (
         <Alert sx={{ mb: 2 }} severity="info" component={Paper} elevation={1}>
-          This channel is set up to use{' '}
-          <RouterLink
-            to={
-              schedule.type === 'time'
-                ? '/channels/$channelId/programming/time-slot-editor'
-                : '/channels/$channelId/programming/slot-editor'
-            }
-            params={{ channelId }}
-          >
-            {schedule.type === 'time' ? 'Time ' : ' '}
-            Slots
-          </RouterLink>{' '}
-          for programming. Any manual changes on this page will likely make this
-          channel stop adhering to that schedule.
+          <Trans>
+            This channel is set up to use{' '}
+            <RouterLink
+              to={
+                schedule.type === 'time'
+                  ? '/channels/$channelId/programming/time-slot-editor'
+                  : '/channels/$channelId/programming/slot-editor'
+              }
+              params={{ channelId }}
+            >
+              {schedule.type === 'time' ? 'Time ' : ' '}
+              Slots
+            </RouterLink>{' '}
+            for programming. Any manual changes on this page will likely make this
+            channel stop adhering to that schedule.
+          </Trans>
         </Alert>
       )}
       <Paper sx={{ p: 2 }}>

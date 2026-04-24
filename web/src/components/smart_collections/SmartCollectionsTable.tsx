@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Delete, Edit, Search, Visibility } from '@mui/icons-material';
 import {
   Box,
@@ -28,6 +29,7 @@ import { DeleteConfirmationDialog } from '../DeleteConfirmationDialog.tsx';
 import { EditSmartCollectionDialog } from './EditSmartCollectionDialog.tsx';
 
 export const SmartCollectionsTable = () => {
+  const { t } = useLingui();
   const navigate = Route.useNavigate();
   const smartColletionsQuery = useSmartCollections();
   const tableSettings = useStoreBackedTableSettings('SmartCollections');
@@ -54,7 +56,7 @@ export const SmartCollectionsTable = () => {
     data: smartColletionsQuery.data,
     columns: [
       {
-        header: 'Name',
+        header: t`Name`,
         accessorKey: 'name',
         grow: true,
       },
@@ -64,8 +66,8 @@ export const SmartCollectionsTable = () => {
         <Typography
           sx={{ py: '2rem', textAlign: 'center', fontStyle: 'italic' }}
         >
-          You have no smart collections. Smart collections can be created on the{' '}
-          <RouterLink to="/search">search</RouterLink> page.
+          <Trans>You have no smart collections. Smart collections can be created on the{' '}
+          <RouterLink to="/search">search</RouterLink> page.</Trans>
         </Typography>
       );
     },
@@ -92,7 +94,7 @@ export const SmartCollectionsTable = () => {
             })}
             startIcon={<Search />}
           >
-            Create
+            <Trans>Create</Trans>
           </RouterButtonLink>
         </Stack>
       );
@@ -100,7 +102,7 @@ export const SmartCollectionsTable = () => {
     renderRowActions: ({ row }) => {
       return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Tooltip title="View Collection" placement="top">
+          <Tooltip title={t`View Collection`} placement="top">
             <IconButton
               onClick={() =>
                 navigate({
@@ -112,14 +114,14 @@ export const SmartCollectionsTable = () => {
               <Visibility />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Edit" placement="top">
+          <Tooltip title={t`Edit`} placement="top">
             <IconButton
               onClick={() => setEditingSmartCollection(row.original.uuid)}
             >
               <Edit />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete" placement="top">
+          <Tooltip title={t`Delete`} placement="top">
             <IconButton
               onClick={() => setDeletingSmartCollection(row.original)}
             >
@@ -151,8 +153,8 @@ export const SmartCollectionsTable = () => {
         onConfirm={() =>
           handleDeleteSmartCollection(deletingSmartCollection!.uuid)
         }
-        title={`Delete "${deletingSmartCollection?.name}"`}
-        body={`Are you sure you want to delete Smart Collection "${deletingSmartCollection?.name}"?`}
+        title={t`Delete "${deletingSmartCollection?.name}"`}
+        body={t`Are you sure you want to delete Smart Collection "${deletingSmartCollection?.name}"?`}
       />
     </>
   );

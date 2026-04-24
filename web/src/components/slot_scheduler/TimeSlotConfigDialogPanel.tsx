@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   FormControl,
   FormHelperText,
@@ -11,16 +12,17 @@ import { padOptions } from '../../helpers/slotSchedulerUtil.ts';
 import type { TimeSlotViewModel } from '../../model/TimeSlotModels.ts';
 
 export const TimeSlotConfigDialogPanel = () => {
+  const { t } = useLingui();
   const { control } = useFormContext<TimeSlotViewModel>();
   return (
     <Stack>
       <FormControl fullWidth margin="normal">
-        <InputLabel>Pad Times</InputLabel>
+        <InputLabel>{t`Pad Times`}</InputLabel>
         <Controller
           control={control}
           name="padMs"
           render={({ field }) => (
-            <Select label="Pad Times" {...field}>
+            <Select label={t`Pad Times`} {...field}>
               {padOptions.map((opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
                   {opt.description}
@@ -31,7 +33,7 @@ export const TimeSlotConfigDialogPanel = () => {
         />
 
         <FormHelperText>
-          Override how programs within this slot are padded.
+          <Trans>Override how programs within this slot are padded.</Trans>
         </FormHelperText>
       </FormControl>
     </Stack>

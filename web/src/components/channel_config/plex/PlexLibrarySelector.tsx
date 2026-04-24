@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { find, isNil, map } from 'lodash-es';
 import { useCallback, useContext, useEffect } from 'react';
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export const PlexLibrarySelector = ({ initialLibraryId }: Props) => {
+  const { t } = useLingui();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
   const selectionCtx = useContext(ProgrammingSelectionContext);
@@ -114,16 +116,16 @@ export const PlexLibrarySelector = ({ initialLibraryId }: Props) => {
 
   const playlistMenuItem = (
     <MenuItem key="playlists" value="playlists" disabled={plexPlaylistsLoading}>
-      Playlists
+      {t`Playlists`}
     </MenuItem>
   );
 
   return (
     hasLibraries && (
       <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
-        <InputLabel>Library</InputLabel>
+        <InputLabel>{t`Library`}</InputLabel>
         <Select
-          label="Library"
+          label={t`Library`}
           value={
             selectedPlexLibrary.type === 'library'
               ? selectedPlexLibrary.library.uuid

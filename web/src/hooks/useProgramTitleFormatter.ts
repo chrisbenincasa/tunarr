@@ -1,5 +1,6 @@
 import { betterHumanize } from '@/helpers/dayjs';
 import { isNonEmptyString } from '@/helpers/util';
+import { t } from '@lingui/core/macro';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import type { FillerList } from '@tunarr/types';
 import { type ChannelProgram, type CustomShow } from '@tunarr/types';
@@ -37,15 +38,13 @@ export const useProgramTitleFormatter = () => {
   const baseItemTitleFormatter = useCallback(
     (program: ChannelProgram) =>
       match(program)
-        .with(
-          { type: 'custom' },
-          (p) =>
-            `${customShows[p.customShowId]?.name ?? 'Custom Show'} - ${p.index
-              .toString()
-              .padStart(3, '0')} - `,
-        )
-        .with({ type: 'redirect' }, (p) => `Redirect to "${p.channelName}"`)
-        .with({ type: 'flex' }, () => 'Flex')
+        .with({ type: 'custom' }, (p) => {
+          const showName = customShows[p.customShowId]?.name ?? t`Custom Show`;
+          const idx = p.index.toString().padStart(3, '0');
+          return `${showName} - ${idx} - `;
+        })
+        .with({ type: 'redirect' }, (p) => t`Redirect to "${p.channelName}"`)
+        .with({ type: 'flex' }, () => t`Flex`)
         .with({ type: 'filler' }, () => '')
         .with({ type: 'content' }, ({ program }) => {
           switch (program.type) {

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import {
   Box,
@@ -60,6 +61,7 @@ type Props = {
 };
 
 export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
+  const { t } = useLingui();
   const theme = useTheme();
   // Workaround for issue with page jumping on-zoom or nav caused by collapsing
   // div when loading new guide data
@@ -202,8 +204,8 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
           },
           ({ title }) => title,
         )
-        .with({ type: 'custom' }, () => 'Custom Program')
-        .with({ type: 'redirect' }, (p) => `Redirect to Channel ${p.channel}`)
+        .with({ type: 'custom' }, () => t`Custom Program`)
+        .with({ type: 'redirect' }, (p) => t`Redirect to Channel ${p.channel}`)
         .with({ type: 'flex' }, (p) => p.title ?? flexTitle)
         .exhaustive();
 
@@ -332,7 +334,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
                     </Box>
                   )}
                   <Box sx={{ fontSize: '12px' }}>
-                    {remainingTime ? ` (${remainingTime} left)` : null}
+                    {remainingTime ? <Trans>{remainingTime} left</Trans> : null}
                   </Box>
                 </>
               ))}
@@ -349,7 +351,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
     const bg = alternateColors(index, theme.palette.mode);
     return (
       <Tooltip
-        title={'No programming scheduled for this time period'}
+        title={t`No programming scheduled for this time period`}
         placement="top"
       >
         <TvGuideItem
@@ -372,7 +374,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
               m: 0.5,
             }}
           >
-            No Programming scheduled
+            <Trans>No Programming scheduled</Trans>
           </Box>
         </TvGuideItem>
       </Tooltip>
@@ -576,7 +578,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
                 }}
               >
                 <Typography sx={{ m: 4 }}>
-                  An error occurred: {error.message}
+                  <Trans>An error occurred: {error.message}</Trans>
                 </Typography>
               </Box>
             ) : isPending ? (

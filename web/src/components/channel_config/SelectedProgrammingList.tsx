@@ -19,8 +19,8 @@ import {
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import { type MediaSourceSettings } from '@tunarr/types';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { first, groupBy, mapValues } from 'lodash-es';
-import pluralize from 'pluralize';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import { useWindowSize } from 'usehooks-ts';
@@ -66,16 +66,14 @@ const ImportedProgramListItem = ({
   let secondary: ReactNode = null;
   switch (media?.type) {
     case 'show':
-      secondary = `${media.childCount ?? 0} ${pluralize(
-        'season',
-        media.childCount ?? 0,
-      )}, ${media.grandchildCount ?? 0} total ${pluralize(
-        'episode',
-        media.grandchildCount ?? 0,
-      )}`;
+      secondary = (
+        <Trans>
+          <Plural value={media.childCount ?? 0} one="# season" other="# seasons" />, <Plural value={media.grandchildCount ?? 0} one="# total episode" other="# total episodes" />
+        </Trans>
+      );
       break;
     case 'movie':
-      secondary = `Movie${media.year ? ', ' + media.year : ''}`;
+      secondary = media.year ? <Trans>Movie, {media.year}</Trans> : <Trans>Movie</Trans>;
       break;
     default:
       break;
@@ -133,6 +131,7 @@ export default function SelectedProgrammingList({
   isOpen,
   toggleOrSetSelectedProgramsDrawer,
 }: Props) {
+  const { t } = useLingui();
   const { data: mediaSources } = useMediaSources();
   const { data: customShows } = useCustomShows();
   const knownMedia = useKnownMedia();
@@ -197,11 +196,8 @@ export default function SelectedProgrammingList({
               style={props.style}
             >
               <ListItemText
-                primary={`Custom Show - ${customShow.name}`}
-                secondary={`${customShow.contentCount} ${pluralize(
-                  'item',
-                  customShow.contentCount,
-                )}`}
+                primary={t`Custom Show - ${customShow.name}`}
+                secondary={<Plural value={customShow.contentCount} one="# item" other="# items" />}
               />
               <ListItemIcon sx={{ minWidth: 40 }}>
                 <IconButton onClick={() => removeSelectedMedia([selected])}>
@@ -244,7 +240,7 @@ export default function SelectedProgrammingList({
             zIndex: 10,
           }}
         >
-          <Tooltip title={'Close'} placement="left">
+          <Tooltip title={t`Close`} placement="left">
             <IconButton
               disableRipple
               onClick={() => toggleOrSetSelectedProgramsDrawer(!open)}
@@ -288,8 +284,7 @@ export default function SelectedProgrammingList({
             }}
           ></Toolbar>
           <Typography textAlign={'left'} sx={{ my: 2, ml: 1, fontWeight: 600 }}>
-            Selected {pluralize('Item', selectedMedia.length)} (
-            {selectedMedia.length}):
+            <Plural value={selectedMedia.length} one="Selected Item" other="Selected Items" /> ({selectedMedia.length}):
           </Typography>
           {selectedMedia.length > 0 && renderSelectedItems()}
         </Drawer>

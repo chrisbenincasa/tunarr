@@ -1,4 +1,5 @@
 import { isNonEmptyString } from '@/helpers/util';
+import { t } from '@lingui/core/macro';
 import { useSnackbar } from 'notistack';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIsMounted, useUnmount } from 'usehooks-ts';
@@ -41,14 +42,14 @@ export const useCopyToClipboard = () => {
       const popSuccessSnack = () => {
         const text = isNonEmptyString(successText)
           ? successText
-          : 'Copied to clipboard!';
+          : t`Copied to clipboard!`;
         snackbar.enqueueSnackbar(text, { variant: 'success' });
       };
 
       const popErrorSnack = () => {
         const text = isNonEmptyString(errorText)
           ? errorText
-          : 'Error copying to clipboard!';
+          : t`Error copying to clipboard!`;
         snackbar.enqueueSnackbar(text, { variant: 'error' });
       };
 

@@ -1,4 +1,5 @@
 import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { ArrowBack, ArrowForward, Edit } from '@mui/icons-material';
 import {
   Alert,
@@ -11,7 +12,6 @@ import {
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { isEmpty } from 'lodash-es';
-import pluralize from 'pluralize';
 import React, { useEffect } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
@@ -21,9 +21,9 @@ import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useVersion } from '../../hooks/useVersion.tsx';
 import { updateShowWelcomeState } from '../../store/themeEditor/actions.ts';
 
-const steps = ['Connect Sources', 'Install FFMPEG', 'All Set!'];
-
 export default function WelcomePage() {
+  const { t } = useLingui();
+  const steps = [t`Connect Sources`, t`Install FFMPEG`, t`All Set!`];
   const [hasMediaSource, setHasMediaSource] = React.useState<boolean>(false);
   const [isFfmpegInstalled, setIsFfmpegInstalled] =
     React.useState<boolean>(false);
@@ -54,7 +54,7 @@ export default function WelcomePage() {
         }}
       />
 
-      <Typography variant="h3">Welcome to Tunarr!</Typography>
+      <Typography variant="h3"><Trans>Welcome to Tunarr!</Trans></Typography>
     </>
   );
 
@@ -87,7 +87,7 @@ export default function WelcomePage() {
 
   const getStarted = (
     <>
-      <Typography variant="body1">Let's get started...</Typography>
+      <Typography variant="body1"><Trans>Let's get started...</Trans></Typography>
       <Box sx={{ width: '100%', maxWidth: '750px', margin: '0 auto', mt: 4 }}>
         <Stepper alternativeLabel activeStep={activeStep}>
           {steps.map((label, index) => {
@@ -112,12 +112,14 @@ export default function WelcomePage() {
                 align="left"
                 sx={{ mt: 3 }}
               >
-                Connect Media Sources
+                <Trans>Connect Media Sources</Trans>
               </Typography>
               <Typography sx={{ mb: 3 }} align="left">
-                To use Tunarr, you must first connect at least one media source.
-                Media sources provide all content used to create channels in
-                Tunarr. Plex and Jellyfin are currently supported.
+                <Trans>
+                  To use Tunarr, you must first connect at least one media source.
+                  Media sources provide all content used to create channels in
+                  Tunarr. Plex and Jellyfin are currently supported.
+                </Trans>
               </Typography>
 
               {!hasMediaSource ? (
@@ -137,12 +139,11 @@ export default function WelcomePage() {
                     />
                   }
                 >
-                  <Typography>No media sources connected.</Typography>
+                  <Typography><Trans>No media sources connected.</Trans></Typography>
                 </Alert>
               ) : (
                 <Alert variant="filled" severity="success">
-                  {mediaSources.length}{' '}
-                  {pluralize('source', mediaSources.length)} connected.
+                  <Plural value={mediaSources.length} one="# source connected." other="# sources connected." />
                 </Alert>
               )}
               {hasMediaSource && <ConnectMediaSources />}
@@ -156,17 +157,19 @@ export default function WelcomePage() {
                 align="left"
                 sx={{ mt: 3 }}
               >
-                Install FFMPEG
+                <Trans>Install FFMPEG</Trans>
               </Typography>
               <Typography sx={{ mb: 3 }} align="left">
-                FFMPEG transcoding is required for some features like channel
-                overlay, subtitles, and measures to prevent issues when
-                switching episodes.
+                <Trans>
+                  FFMPEG transcoding is required for some features like channel
+                  overlay, subtitles, and measures to prevent issues when
+                  switching episodes.
+                </Trans>
               </Typography>
 
               {isFfmpegInstalled ? (
                 <Alert variant="filled" severity="success">
-                  FFMPEG is installed. Detected version {version?.ffmpeg}
+                  <Trans>FFMPEG is installed. Detected version {version?.ffmpeg}</Trans>
                 </Alert>
               ) : (
                 <>
@@ -179,16 +182,18 @@ export default function WelcomePage() {
                         color="inherit"
                         startIcon={<Edit />}
                       >
-                        Edit
+                        <Trans>Edit</Trans>
                       </RouterButtonLink>
                     }
                   >
-                    FFMPEG is not detected.
+                    <Trans>FFMPEG is not detected.</Trans>
                   </Alert>
                   <Typography sx={{ my: 3 }} align="left">
-                    If you are confident FFMPEG is installed, you may just need
-                    to update the executable path in the settings. To do so,
-                    simply click Edit above to update the path.
+                    <Trans>
+                      If you are confident FFMPEG is installed, you may just need
+                      to update the executable path in the settings. To do so,
+                      simply click Edit above to update the path.
+                    </Trans>
                   </Typography>
                 </>
               )}
@@ -203,11 +208,13 @@ export default function WelcomePage() {
                 align="left"
                 sx={{ mt: 3 }}
               >
-                You're All Set!
+                <Trans>You're All Set!</Trans>
               </Typography>
               <Typography sx={{ mb: 3 }} align="left">
-                Congrats, you're ready to start building channels! Just click
-                Finish below to start working on your first channel.
+                <Trans>
+                  Congrats, you're ready to start building channels! Just click
+                  Finish below to start working on your first channel.
+                </Trans>
               </Typography>
             </>
           )}
@@ -221,7 +228,7 @@ export default function WelcomePage() {
               variant="outlined"
               startIcon={<ArrowBack />}
             >
-              Back
+              <Trans>Back</Trans>
             </Button>
             <Box sx={{ flex: '1 1 auto' }} />
 
@@ -232,7 +239,7 @@ export default function WelcomePage() {
                 disabled={activeStep === 0 && !hasMediaSource}
                 endIcon={<ArrowForward />}
               >
-                Next
+                <Trans>Next</Trans>
               </Button>
             ) : (
               <Button
@@ -240,7 +247,7 @@ export default function WelcomePage() {
                 variant="contained"
                 color="primary"
               >
-                Finish
+                <Trans>Finish</Trans>
               </Button>
             )}
           </Box>

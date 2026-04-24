@@ -23,6 +23,7 @@ import {
   lighten,
   useTheme,
 } from '@mui/material';
+import { useLingui } from '@lingui/react/macro';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { ProgramOrFolder } from '@tunarr/types';
 import { isStructuralItemType, isTerminalItemType } from '@tunarr/types';
@@ -81,6 +82,7 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
   props: Props<ItemTypeT>,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
+  const { t } = useLingui();
   const theme = useTheme();
   const skeletonBgColor = alpha(
     theme.palette.text.primary,
@@ -240,7 +242,7 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
             ref={ref}
           >
             {isTerminalItemType(item) && item.state === 'missing' && (
-              <Tooltip title="Item was not present during the last scan">
+              <Tooltip title={t`Item was not present during the last scan`}>
                 <WarningTwoTone
                   sx={{
                     position: 'absolute',

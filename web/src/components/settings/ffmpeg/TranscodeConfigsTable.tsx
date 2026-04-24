@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
 import { AddCircle, ContentCopy, Delete, Edit } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Button, IconButton, Stack, Tooltip } from '@mui/material';
@@ -60,17 +62,17 @@ export const TranscodeConfigsTable = () => {
     ({ row: { original: config } }: { row: MRT_Row<TranscodeConfig> }) => {
       return (
         <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
-          <Tooltip title="Edit" placement="top">
+          <Tooltip title={t`Edit`} placement="top">
             <IconButton to={`/settings/ffmpeg/${config.id}`} component={Link}>
               <Edit />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Duplicate" placement="top">
+          <Tooltip title={t`Duplicate`} placement="top">
             <IconButton onClick={() => handleDuplicateConfig(config.id)}>
               <ContentCopy />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete" placement="top">
+          <Tooltip title={t`Delete`} placement="top">
             <IconButton onClick={() => setConfirmDeleteTranscodeConfig(config)}>
               <Delete />
             </IconButton>
@@ -88,13 +90,13 @@ export const TranscodeConfigsTable = () => {
   const columns = useMemo<MRT_ColumnDef<TranscodeConfig>[]>(() => {
     return [
       {
-        header: 'Name',
+        header: t`Name`,
         accessorKey: 'name',
         Cell({ cell, row: { original: config } }) {
           if (config.isDefault) {
             return (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Tooltip title="Default Config" placement="top">
+                <Tooltip title={t`Default Config`} placement="top">
                   <CheckCircleOutlineIcon />
                 </Tooltip>
                 {cell.getValue<string>()}
@@ -105,19 +107,19 @@ export const TranscodeConfigsTable = () => {
         },
       },
       {
-        header: 'Resolution',
+        header: t`Resolution`,
         accessorFn(originalRow) {
           return `${originalRow.resolution.widthPx}x${originalRow.resolution.heightPx}`;
         },
       },
       {
-        header: 'Hardware Accel.',
+        header: t`Hardware Accel.`,
         accessorKey: 'hardwareAccelerationMode',
         Cell({ cell }) {
           const value = cell.getValue<SupportedHardwareAccels>();
           switch (value) {
             case 'none':
-              return 'Software (No GPU)';
+              return t`Software (No GPU)`;
             case 'cuda':
               return 'CUDA';
             case 'vaapi':
@@ -130,11 +132,11 @@ export const TranscodeConfigsTable = () => {
         },
       },
       {
-        header: 'Video Format',
+        header: t`Video Format`,
         accessorKey: 'videoFormat',
       },
       {
-        header: 'Audio Format',
+        header: t`Audio Format`,
         accessorKey: 'audioFormat',
       },
     ];
@@ -162,7 +164,7 @@ export const TranscodeConfigsTable = () => {
             component={Link}
             to="/settings/ffmpeg/new"
           >
-            New
+            <Trans>New</Trans>
           </Button>
         </Stack>
       );
@@ -175,8 +177,8 @@ export const TranscodeConfigsTable = () => {
       <MaterialReactTable table={table} />
       <DeleteConfirmationDialog
         open={!isNull(confirmDeleteTranscodeConfig)}
-        title={`Delete Transcoding Config "${confirmDeleteTranscodeConfig?.name}"?`}
-        body="All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
+        title={t`Delete Transcoding Config "${confirmDeleteTranscodeConfig?.name ?? ''}"?`}
+        body={t`All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created.`}
         onConfirm={() =>
           deleteTranscodeConfig.mutate({
             path: { id: confirmDeleteTranscodeConfig!.id },

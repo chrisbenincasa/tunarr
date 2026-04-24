@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { useSettings } from '@/store/settings/selectors';
 import { Box, Grid, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
@@ -31,7 +32,7 @@ export default function Seasons({ program }: Props) {
         color="text.primary"
         sx={{ mt: 4 }}
       >
-        Seasons
+        <Trans>Seasons</Trans>
       </Typography>
       <Grid
         container

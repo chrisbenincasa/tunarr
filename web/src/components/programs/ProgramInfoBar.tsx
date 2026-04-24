@@ -1,3 +1,4 @@
+import { Plural } from '@lingui/react/macro';
 import {
   getProgramDuration,
   getProgramRating,
@@ -12,7 +13,6 @@ import {
   type TerminalProgram,
 } from '@tunarr/types';
 import { capitalize, compact, isUndefined } from 'lodash-es';
-import pluralize from 'pluralize';
 import React, { useMemo } from 'react';
 import Genres from './Genres';
 
@@ -143,7 +143,18 @@ export default function ProgramInfoBar({ program, time }: Props) {
 
     const itemType = getChildItemType(program.type);
 
-    return `${count} ${pluralize(itemType, count)}`;
+    switch (itemType) {
+      case 'season':
+        return <Plural value={count} one="# season" other="# seasons" />;
+      case 'episode':
+        return <Plural value={count} one="# episode" other="# episodes" />;
+      case 'album':
+        return <Plural value={count} one="# album" other="# albums" />;
+      case 'track':
+        return <Plural value={count} one="# track" other="# tracks" />;
+      default:
+        return <Plural value={count} one="# item" other="# items" />;
+    }
   }, [program]);
 
   const itemInfoBar = useMemo(() => {

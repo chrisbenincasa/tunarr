@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
 import {
   FindReplace,
   Movie,
@@ -90,13 +92,13 @@ export const EditMediaSourceLibrariesDialog = ({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>Manage Libraries</DialogTitle>
+      <DialogTitle><Trans>Manage Libraries</Trans></DialogTitle>
       <DialogContent>
         <List
           sx={{ width: '100%' }}
           subheader={
             <ListSubheader sx={{ backgroundColor: 'inherit' }}>
-              Libraries
+              <Trans>Libraries</Trans>
             </ListSubheader>
           }
         >
@@ -113,7 +115,7 @@ export const EditMediaSourceLibrariesDialog = ({
               {library.enabled && (
                 <Tooltip
                   placement="top"
-                  title={`Last Scanned: ${library.lastScannedAt ? dayjs(library.lastScannedAt)?.format() : 'never'}`}
+                  title={t`Last Scanned: ${library.lastScannedAt ? dayjs(library.lastScannedAt)?.format() : t`never`}`}
                 >
                   <span>
                     <IconButton
@@ -145,7 +147,7 @@ export const EditMediaSourceLibrariesDialog = ({
                 placement="top"
                 title={
                   library.isLocked
-                    ? 'Cannot disable libraries when they are locked'
+                    ? t`Cannot disable libraries when they are locked`
                     : null
                 }
               >
@@ -166,7 +168,7 @@ export const EditMediaSourceLibrariesDialog = ({
       </DialogContent>
       <DialogActions>
         <Button variant="contained" onClick={() => onClose()}>
-          Close
+          <Trans>Close</Trans>
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,6 +1,7 @@
 import useStore from '@/store';
 import { setProgrammingSelectorViewState } from '@/store/themeEditor/actions';
 import type { ProgramSelectorViewType } from '@/types';
+import { useLingui } from '@lingui/react/macro';
 import { GridView, ViewList } from '@mui/icons-material';
 import type { SxProps } from '@mui/material';
 import { Stack, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export const ProgramViewToggleButton = ({ sx }: Props) => {
+  const { t } = useLingui();
   const viewType = useStore((state) => state.theme.programmingSelectorView);
 
   const handleFormat = (
@@ -29,12 +31,12 @@ export const ProgramViewToggleButton = ({ sx }: Props) => {
         exclusive
         // sx={sx}
       >
-        <Tooltip title="Grid">
+        <Tooltip title={t`Grid`}>
           <ToggleButton value="grid">
             <GridView />
           </ToggleButton>
         </Tooltip>
-        <Tooltip title="List">
+        <Tooltip title={t`List`}>
           <ToggleButton value="list">
             <ViewList />
           </ToggleButton>

@@ -1,4 +1,5 @@
 import { ChannelOptionsButton } from '@/components/channels/ChannelOptionsButton.tsx';
+import { Trans } from '@lingui/react/macro';
 import {
   Box,
   LinearProgress,
@@ -41,7 +42,7 @@ export const ChannelSummaryPage = () => {
           <Typography variant={smallViewport ? 'h5' : 'h4'} noWrap>
             {channel.name}
           </Typography>
-          <Typography variant="subtitle1">Channel #{channel.number}</Typography>
+          <Typography variant="subtitle1"><Trans>Channel #{channel.number}</Trans></Typography>
         </Stack>
 
         <ChannelOptionsButton

@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import {
   ChevronLeft,
   ChevronRight,
@@ -286,7 +287,7 @@ export const ProgramWeekCalendarView = ({
     <Stack sx={{ width: '100%' }} gap={2}>
       <Stack direction="row">
         <Button onClick={() => goToToday()} variant="contained">
-          Today
+          <Trans>Today</Trans>
         </Button>
         <IconButton onClick={() => moveBackwardDays(7)}>
           <ChevronLeft />

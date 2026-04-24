@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary } from '@tunarr/types';
@@ -41,6 +42,7 @@ type Props = {
 };
 
 export const ImportedLibrarySelector = ({ initialLibraryId }: Props) => {
+  const { t } = useLingui();
   const { onSourceChange } = useProgrammingSelectionContext();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
@@ -97,9 +99,9 @@ export const ImportedLibrarySelector = ({ initialLibraryId }: Props) => {
     selectedImportedLibrary && (
       <>
         <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
-          <InputLabel>Library</InputLabel>
+          <InputLabel>{t`Library`}</InputLabel>
           <Select
-            label="Library"
+            label={t`Library`}
             value={selectedImportedLibrary?.id}
             onChange={(e) => handleLibraryChange(e.target.value)}
           >

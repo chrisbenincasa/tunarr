@@ -1,6 +1,7 @@
 import { ChannelOptionsButton } from '@/components/channels/ChannelOptionsButton.tsx';
 import { useChannelSuspense } from '@/hooks/useChannels.ts';
 import { Route } from '@/routes/channels_/$channelId/watch.tsx';
+import { Trans } from '@lingui/react/macro';
 import { Stack } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
@@ -24,7 +25,7 @@ export default function ChannelWatchPage() {
         <Breadcrumbs />
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Typography variant="h4" sx={{ mb: 2, width: '100%' }}>
-            "{channel.name}" Live
+            <Trans>"{channel.name}" Live</Trans>
           </Typography>
           <ChannelOptionsButton
             channel={channel}

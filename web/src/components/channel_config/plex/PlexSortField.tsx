@@ -1,4 +1,5 @@
 import { useCurrentMediaSourceView } from '@/store/programmingSelector/selectors.ts';
+import { useLingui } from '@lingui/react/macro';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import ArrowUpward from '@mui/icons-material/ArrowUpward';
 import { FormControl, FormGroup, IconButton, InputLabel } from '@mui/material';
@@ -19,6 +20,7 @@ type PlexSort = {
 };
 
 export function PlexSortField() {
+  const { t } = useLingui();
   const selectedLibrary = useCurrentMediaSourceView('plex');
 
   const [sort, setSort] = useState<PlexSort>({
@@ -84,10 +86,10 @@ export function PlexSortField() {
     !isUndefined(libraryFilterMetadata?.Sort) && (
       <FormGroup row>
         <FormControl>
-          <InputLabel>Sort</InputLabel>
+          <InputLabel>{t`Sort`}</InputLabel>
           <Select
             value={sort.key ?? ''}
-            label="Sort"
+            label={t`Sort`}
             size="small"
             onChange={(e) => handleSortKeyChange(e.target.value)}
           >

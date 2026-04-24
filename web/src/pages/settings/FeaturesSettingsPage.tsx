@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Box,
   Button,
@@ -74,7 +75,7 @@ function FlagSection({
                 )}
               />
               {meta.envOverride && (
-                <Chip label="Set by environment variable" size="small" />
+                <Chip label={<Trans>Set by environment variable</Trans>} size="small" />
               )}
             </Stack>
             <FormHelperText sx={{ ml: 0 }}>{meta.description}</FormHelperText>
@@ -86,6 +87,7 @@ function FlagSection({
 }
 
 export default function FeaturesSettingsPage() {
+  const { t } = useLingui();
   const { data, isPending, error } = useQuery(
     getApiSystemFeatureFlagsOptions(),
   );
@@ -105,14 +107,14 @@ export default function FeaturesSettingsPage() {
   const updateMutation = useMutation({
     ...putApiSystemFeatureFlagsMutation(),
     onSuccess: (result) => {
-      snackbar.enqueueSnackbar('Feature flags saved!', { variant: 'success' });
+      snackbar.enqueueSnackbar(t`Feature flags saved!`, { variant: 'success' });
       reset(result.flags as FlagFormValues, { keepValues: true });
       return queryClient.invalidateQueries({
         queryKey: getApiSystemFeatureFlagsQueryKey(),
       });
     },
     onError: () => {
-      snackbar.enqueueSnackbar('Failed to save feature flags.', {
+      snackbar.enqueueSnackbar(t`Failed to save feature flags.`, {
         variant: 'error',
       });
     },
@@ -128,7 +130,7 @@ export default function FeaturesSettingsPage() {
 
   if (error) {
     return (
-      <Typography color="error">Failed to load feature flags.</Typography>
+      <Typography color="error"><Trans>Failed to load feature flags.</Trans></Typography>
     );
   }
 
@@ -140,12 +142,12 @@ export default function FeaturesSettingsPage() {
     <Box component="form" onSubmit={handleSubmit(onSubmit)}>
       <Stack spacing={4}>
         <FlagSection
-          title="Experimental Features"
+          title={t`Experimental Features`}
           flags={experimental}
           control={control}
         />
         <FlagSection
-          title="Escape Hatches"
+          title={t`Escape Hatches`}
           flags={escapeHatches}
           control={control}
         />
@@ -157,7 +159,7 @@ export default function FeaturesSettingsPage() {
             onClick={() => reset(data?.flags as FlagFormValues)}
             disabled={isSubmitting}
           >
-            Reset Changes
+            <Trans>Reset Changes</Trans>
           </Button>
         )}
         <Button
@@ -165,7 +167,7 @@ export default function FeaturesSettingsPage() {
           type="submit"
           disabled={!isDirty || isSubmitting}
         >
-          Save
+          <Trans>Save</Trans>
         </Button>
       </Stack>
     </Box>

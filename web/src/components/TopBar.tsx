@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import DiscordIcon from '@/assets/icon_clyde_black_RGB.svg?react';
 import {
   GitHub,
@@ -87,6 +88,7 @@ type TopBarNavItem = {
 };
 
 export const TopBar = () => {
+  const { t } = useLingui();
   const initialSearch = Route.useSearch();
   const navigate = Route.useNavigate();
   const matches = useMatches();
@@ -131,7 +133,7 @@ export const TopBar = () => {
         e.preventDefault();
         copyToClipboard(
           navItem.path,
-          `Copied ${navItem.name} URL to clipboard`,
+          t`Copied ${navItem.name} URL to clipboard`,
         ).catch(console.error);
       }
     },
@@ -180,7 +182,7 @@ export const TopBar = () => {
         ),
       },
       {
-        name: 'Documentation',
+        name: t`Documentation`,
         path: 'https://tunarr.com/',
         visible: true,
         icon: <TextSnippet />,
@@ -220,7 +222,7 @@ export const TopBar = () => {
               <SearchIcon />
             </SearchIconWrapper>
             <StyledInputBase
-              placeholder="Search…"
+              placeholder={t`Search…`}
               inputProps={{ 'aria-label': 'search' }}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

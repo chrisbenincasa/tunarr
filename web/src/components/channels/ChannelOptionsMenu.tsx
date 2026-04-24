@@ -8,6 +8,7 @@ import {
   Tv,
 } from '@mui/icons-material';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { Channel } from '@tunarr/types';
@@ -41,6 +42,7 @@ export const ChannelOptionsMenu = ({
   const { backendUri } = useSettings();
   const copyToClipboard = useCopyToClipboard();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const { t } = useLingui();
 
   const queryClient = useQueryClient();
   const stopSessionsMutation = useMutation({
@@ -103,7 +105,7 @@ export const ChannelOptionsMenu = ({
             <ListItemIcon>
               <Edit />
             </ListItemIcon>
-            <ListItemText>Edit Channel</ListItemText>
+            <ListItemText><Trans>Edit Channel</Trans></ListItemText>
           </MenuItem>
         ) : null}
 
@@ -118,7 +120,7 @@ export const ChannelOptionsMenu = ({
             <ListItemIcon>
               <Edit />
             </ListItemIcon>
-            <ListItemText>Modify Programming</ListItemText>
+            <ListItemText><Trans>Modify Programming</Trans></ListItemText>
           </MenuItem>
         ) : null}
 
@@ -134,8 +136,8 @@ export const ChannelOptionsMenu = ({
             )}/stream/channels/${row.number}.m3u8`;
             copyToClipboard(
               url,
-              `Copied channel "${channelName}" m3u link to clipboard`,
-              'Error copying channel m3u link to clipboard',
+              t`Copied channel "${channelName}" m3u link to clipboard`,
+              t`Error copying channel m3u link to clipboard`,
             )
               .catch(console.error)
               .finally(() => {
@@ -146,12 +148,12 @@ export const ChannelOptionsMenu = ({
           <ListItemIcon>
             <ContentCopy />
           </ListItemIcon>
-          <ListItemText>Copy M3U URL</ListItemText>
+          <ListItemText><Trans>Copy M3U URL</Trans></ListItemText>
         </MenuItem>
         <MenuItem
           onClick={(e) => {
             e.stopPropagation();
-            copyToClipboard(channelId, 'Copied Channel ID!')
+            copyToClipboard(channelId, t`Copied Channel ID!`)
               .catch(console.error)
               .finally(() => {
                 onClose(e);
@@ -161,7 +163,7 @@ export const ChannelOptionsMenu = ({
           <ListItemIcon>
             <ContentCopy />
           </ListItemIcon>
-          <ListItemText>Copy Channel ID</ListItemText>
+          <ListItemText><Trans>Copy Channel ID</Trans></ListItemText>
         </MenuItem>
 
         {!hideItems?.includes('watch') ? (
@@ -175,7 +177,7 @@ export const ChannelOptionsMenu = ({
             <ListItemIcon>
               <Tv />
             </ListItemIcon>
-            <ListItemText>Watch Channel</ListItemText>
+            <ListItemText><Trans>Watch Channel</Trans></ListItemText>
           </MenuItem>
         ) : null}
         <MenuItem
@@ -189,7 +191,7 @@ export const ChannelOptionsMenu = ({
           <ListItemIcon>
             <Stop />
           </ListItemIcon>
-          <ListItemText primary={`Stop Transcode Session`} />
+          <ListItemText primary={t`Stop Transcode Session`} />
         </MenuItem>
         {!hideItems?.includes('duplicate') && (
           <MenuItem
@@ -207,7 +209,7 @@ export const ChannelOptionsMenu = ({
             <ListItemIcon>
               <CopyAll />{' '}
             </ListItemIcon>
-            <ListItemText>Duplicate Channel</ListItemText>
+            <ListItemText><Trans>Duplicate Channel</Trans></ListItemText>
           </MenuItem>
         )}
         {!hideItems?.includes('delete') && (
@@ -220,7 +222,7 @@ export const ChannelOptionsMenu = ({
             <ListItemIcon>
               <Delete />
             </ListItemIcon>
-            <ListItemText>Delete Channel</ListItemText>
+            <ListItemText><Trans>Delete Channel</Trans></ListItemText>
           </MenuItem>
         )}
       </Menu>

@@ -1,5 +1,7 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
 import { isNonEmptyString, isValidUrlWithError, toggle } from '@/helpers/util';
+import { t } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
 import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import {
   CloudDoneOutlined,
@@ -72,8 +74,8 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
   const [showAccessToken, setShowAccessToken] = useState(false);
 
   const title = server
-    ? `Editing Plex Server "${server.name}"`
-    : 'New Plex Server';
+    ? t`Editing Plex Server "${server.name}"`
+    : t`New Plex Server`;
 
   const handleClose = () => {
     setShowAccessToken(false);
@@ -201,18 +203,18 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
 
                     switch (err) {
                       case 'empty':
-                        return 'Cannot be empty';
+                        return t`Cannot be empty`;
                       case 'not_parseable':
-                        return 'Not a valid URL';
+                        return t`Not a valid URL`;
                       case 'wrong_protocol':
-                        return 'Protocol must be HTTP or HTTPS';
+                        return t`Protocol must be HTTP or HTTPS`;
                     }
                   },
                 },
               }}
               render={({ field, fieldState: { error } }) => (
                 <TextField
-                  label="URL"
+                  label={t`URL`}
                   fullWidth
                   {...field}
                   error={
@@ -226,7 +228,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                       !serverStatus.healthy &&
                       isNonEmptyString(field.value) ? (
                       <>
-                        <span>Server is unreachable</span>
+                        <span><Trans>Server is unreachable</Trans></span>
                         <br />
                       </>
                     ) : null
@@ -252,7 +254,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
               }}
               render={({ field, formState: { errors } }) => (
                 <FormControl sx={{ m: 1 }} fullWidth variant="outlined">
-                  <InputLabel htmlFor="access-token">Access Token </InputLabel>
+                  <InputLabel htmlFor="access-token"><Trans>Access Token</Trans> </InputLabel>
                   <OutlinedInput
                     id="access-token"
                     type={showAccessToken ? 'text' : 'password'}
@@ -260,7 +262,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                     endAdornment={
                       <InputAdornment position="end">
                         <IconButton
-                          aria-label="toggle access token visibility"
+                          aria-label={t`toggle access token visibility`}
                           onClick={() => setShowAccessToken(toggle)}
                           edge="end"
                         >
@@ -268,7 +270,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                         </IconButton>
                       </InputAdornment>
                     }
-                    label="Access Token"
+                    label={t`Access Token`}
                     {...field}
                   />
                   <FormHelperText>
@@ -279,13 +281,13 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                       </>
                     )}
                     <span>
-                      For more details on manually retrieving a Plex token, see{' '}
+                      <Trans>For more details on manually retrieving a Plex token, see{' '}
                       <Link
                         href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
                         target="_blank"
                       >
                         here
-                      </Link>
+                      </Link></Trans>
                     </span>
                   </FormHelperText>
                 </FormControl>
@@ -299,13 +301,12 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                 minLength: 1,
                 pattern: {
                   value: /[A-z0-9_-]+/,
-                  message:
-                    'Name can only contain alphanumeric characters, dashes, and underscores',
+                  message: t`Name can only contain alphanumeric characters, dashes, and underscores`,
                 },
               }}
               render={({ field, formState: { errors } }) => (
                 <TextField
-                  label="Name"
+                  label={t`Name`}
                   fullWidth
                   {...field}
                   error={!isUndefined(errors.name)}
@@ -332,7 +333,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                       )}
                     />
                   }
-                  label="Auto-Update Guide"
+                  label={t`Auto-Update Guide`}
                 />
               </FormControl>
             </Box>
@@ -341,14 +342,14 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={() => handleClose()} autoFocus>
-          Cancel
+          <Trans>Cancel</Trans>
         </Button>
         <Button
           variant="contained"
           disabled={!isDirty || !isValid}
           type="submit"
         >
-          {server?.id ? 'Update' : 'Add'}
+          {server?.id ? <Trans>Update</Trans> : <Trans>Add</Trans>}
         </Button>
       </DialogActions>
     </Dialog>

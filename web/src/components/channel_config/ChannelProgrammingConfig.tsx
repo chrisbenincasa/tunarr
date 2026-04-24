@@ -36,6 +36,7 @@ import {
   reject,
   values,
 } from 'lodash-es';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
 import type { CalendarState } from '../slot_scheduler/ProgramCalendarView.tsx';
@@ -57,6 +58,7 @@ export function ChannelProgrammingConfig() {
   } = useChannelEditor();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useLingui();
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const snackbar = useSnackbar();
@@ -86,12 +88,12 @@ export function ChannelProgrammingConfig() {
       setIsSubmitting(false);
     },
     onSuccess: () => {
-      snackbar.enqueueSnackbar('Programs saved!', {
+      snackbar.enqueueSnackbar(t`Programs saved!`, {
         variant: 'success',
       });
     },
     onError: (error, vars) => {
-      snackbar.enqueueSnackbar('Error saving programs. ' + error.message, {
+      snackbar.enqueueSnackbar(t`Error saving programs. ${error.message}`, {
         variant: 'error',
       });
 
@@ -235,22 +237,22 @@ export function ChannelProgrammingConfig() {
                 exclusive
                 onChange={(_, v) => setView(v as ViewType)}
               >
-                <Tooltip title="List">
+                <Tooltip title={t`List`}>
                   <ToggleButton value="list">
                     <List />
                   </ToggleButton>
                 </Tooltip>
-                <Tooltip title="Day">
+                <Tooltip title={t`Day`}>
                   <ToggleButton value="day">
                     <CalendarViewDay />
                   </ToggleButton>
                 </Tooltip>
-                <Tooltip title="Week">
+                <Tooltip title={t`Week`}>
                   <ToggleButton value="week">
                     <CalendarViewWeek />
                   </ToggleButton>
                 </Tooltip>
-                <Tooltip title="Month">
+                <Tooltip title={t`Month`}>
                   <ToggleButton value="month">
                     <CalendarViewMonth />
                   </ToggleButton>
@@ -277,7 +279,7 @@ export function ChannelProgrammingConfig() {
 
             {programsDirty && (
               <Tooltip
-                title="Reset changes made to the channel's lineup"
+                title={t`Reset changes made to the channel's lineup`}
                 placement="top"
               >
                 {smallViewport ? (
@@ -293,7 +295,7 @@ export function ChannelProgrammingConfig() {
                     disabled={!programsDirty}
                     startIcon={<Undo />}
                   >
-                    Reset
+                    <Trans>Reset</Trans>
                   </Button>
                 )}
               </Tooltip>
@@ -328,7 +330,7 @@ export function ChannelProgrammingConfig() {
                   )
                 }
               >
-                Save
+                <Trans>Save</Trans>
               </Button>
             )}
           </Stack>

@@ -12,6 +12,7 @@ import { Button, ButtonGroup, MenuItem } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { isNull } from 'lodash-es';
 import { useState } from 'react';
+import { useLingui } from '@lingui/react/macro';
 import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
 import { StyledMenu } from '../base/StyledMenu';
 import AddBreaksModal from '../programming_controls/AddBreaksModal';
@@ -21,6 +22,7 @@ import AddRedirectModal from '../programming_controls/AddRedirectModal';
 import AddRestrictHoursModal from '../programming_controls/AddRestrictHoursModal';
 
 export default function AddProgrammingButton() {
+  const { t } = useLingui();
   const [addRedirectModalOpen, setAddRedirectModalOpen] = useState(false);
   const [addFlexModalOpen, setAddFlexModalOpen] = useState(false);
   const [addPaddingModalOpen, setAddPaddingModalOpen] = useState(false);
@@ -45,60 +47,55 @@ export default function AddProgrammingButton() {
   const addProgrammingOptions = [
     {
       icon: <AddToQueue />,
-      name: 'Add Media',
+      name: t`Add Media`,
       callback: () =>
         navigate({
           to: '/channels/$channelId/programming/add',
           params: { channelId },
         }),
-      description: 'Add TV Shows or Movies to programming list.',
+      description: t`Add TV Shows or Movies to programming list.`,
       divider: false,
     },
     {
       icon: <RedirectIcon />,
-      name: 'Add Redirect',
+      name: t`Add Redirect`,
       callback: () => setAddRedirectModalOpen(true),
-      description:
-        'Adds a channel redirect. During this period of time, the channel will redirect to another channel.',
+      description: t`Adds a channel redirect. During this period of time, the channel will redirect to another channel.`,
       divider: false,
     },
     {
       icon: null,
-      name: 'Flex',
+      name: t`Flex`,
       callback: () => null,
       description: '',
       divider: true,
     },
     {
       icon: <FlexIcon />,
-      name: 'Add Flex',
+      name: t`Add Flex`,
       callback: () => setAddFlexModalOpen(true),
-      description:
-        "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases.",
+      description: t`Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases.`,
       divider: false,
     },
     {
       icon: <BreaksIcon />,
-      name: 'Add Breaks',
+      name: t`Add Breaks`,
       callback: () => setAddBreaksModalOpen(true),
-      description:
-        'Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large.',
+      description: t`Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large.`,
       divider: false,
     },
     {
       icon: <PaddingIcon />,
-      name: 'Add Padding',
+      name: t`Add Padding`,
       callback: () => setAddPaddingModalOpen(true),
-      description:
-        'Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large.',
+      description: t`Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large.`,
       divider: false,
     },
     {
       icon: <RestrictHoursIcon />,
-      name: 'Restrict Hours',
+      name: t`Restrict Hours`,
       callback: () => setAddRestrictHoursModalOpen(true),
-      description:
-        "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours.",
+      description: t`The channel's regular programming between the specified hours. Flex time will fill up the remaining hours.`,
       divider: false,
     },
   ];

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro';
 import { isString } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import { isNonEmptyString, uuidRegexPattern } from '../helpers/util';
@@ -34,7 +35,7 @@ const useNamedRoutes = () => {
     (): Route[] => [
       {
         matcher: /^\/channels$/g,
-        name: 'Channels',
+        name: t`Channels`,
       },
       {
         matcher: channelsPageMatcher(''),
@@ -47,19 +48,19 @@ const useNamedRoutes = () => {
       },
       {
         matcher: /^\/channels\/new$/g,
-        name: 'New',
+        name: t`New`,
       },
       {
         matcher: channelsPageMatcher('watch'),
-        name: 'Watch',
+        name: t`Watch`,
       },
       {
         matcher: channelsPageMatcher('edit'),
-        name: 'Edit',
+        name: t`Edit`,
       },
       {
         matcher: channelsPageMatcher('edit/flex'),
-        name: 'Flex',
+        name: t`Flex`,
       },
       {
         matcher: channelsPageMatcher('edit/ffmpeg'),
@@ -71,83 +72,83 @@ const useNamedRoutes = () => {
       },
       {
         matcher: customShowsPageMatcher('edit'),
-        name: 'Edit',
+        name: t`Edit`,
       },
       {
         matcher: channelsPageMatcher('programming'),
-        name: 'Programming',
+        name: t`Programming`,
       },
       {
         matcher: channelsPageMatcher('programming/add'),
-        name: 'Add',
+        name: t`Add`,
       },
       {
         matcher: channelsPageMatcher('programming/time-slot-editor'),
-        name: 'Time Slot Editor',
+        name: t`Time Slot Editor`,
       },
       {
         matcher: channelsPageMatcher('programming/slot-editor'),
-        name: 'Slot Editor',
+        name: t`Slot Editor`,
       },
       {
         matcher: /^\/library$/g,
-        name: 'Library',
+        name: t`Library`,
       },
       {
         matcher: /^\/library\/fillers$/g,
-        name: 'Filler Lists',
+        name: t`Filler Lists`,
       },
       {
         matcher: new RegExp(
           `^/library/fillers/(new|${uuidRegexPattern})/programming/?$`,
         ),
-        name: 'Add Programming',
+        name: t`Add Programming`,
       },
       {
         matcher: entityPageMatcher('library/fillers', 'edit'),
-        name: 'Edit',
+        name: t`Edit`,
       },
       {
         matcher: /^\/library\/fillers\/new$/g,
-        name: 'New',
+        name: t`New`,
       },
       {
         matcher: /^\/library\/smart_collections$/g,
-        name: 'Smart Collections',
+        name: t`Smart Collections`,
       },
       {
         matcher: /^\/library\/custom-shows$/g,
-        name: 'Custom Shows',
+        name: t`Custom Shows`,
       },
       {
         matcher: /^\/library\/custom-shows\/new$/g,
-        name: 'New',
+        name: t`New`,
       },
       {
         matcher: /^\/library\/trash$/g,
-        name: 'Trash',
+        name: t`Trash`,
       },
       {
         matcher: new RegExp(
           `^/library/custom-shows/(new|${uuidRegexPattern})/programming/?$`,
         ),
-        name: 'Add Programming',
+        name: t`Add Programming`,
       },
       {
         matcher: /^\/settings\/ffmpeg$/g,
-        name: 'FFmpeg Settings',
+        name: t`FFmpeg Settings`,
       },
       {
         matcher: entityPageMatcher('settings/ffmpeg', ''),
-        name: 'Edit Transcode Config',
+        name: t`Edit Transcode Config`,
       },
       {
         matcher: entityPageMatcher('library', ''),
-        name: 'Search',
+        name: t`Search`,
       },
       {
         matcher: /^\/media_sources$/g,
-        name: 'Media Sources',
+        name: t`Media Sources`,
         to: '/library',
       },
       {

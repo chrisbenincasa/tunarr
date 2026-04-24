@@ -2,6 +2,7 @@ import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts';
 import { useSuspendedStore } from '@/hooks/useSuspendedStore.ts';
 import { deleteProgram } from '@/store/entityEditor/util.ts';
 
+import { Plural, Trans } from '@lingui/react/macro';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import Edit from '@mui/icons-material/Edit';
@@ -497,7 +498,7 @@ export default function ChannelLineupList(props: Props) {
         <Box width={'100%'}>
           {msg ?? (
             <Typography align="center" sx={{ my: 4, fontStyle: 'italic' }}>
-              No programming added yet
+              <Trans>No programming added yet</Trans>
             </Typography>
           )}
         </Box>
@@ -523,7 +524,11 @@ export default function ChannelLineupList(props: Props) {
         {showProgramCount && (
           <Box sx={{ width: '100%', mb: 1, textAlign: 'right' }}>
             <Typography variant="caption" sx={{ flexGrow: 1, mr: 2 }}>
-              {programList.length} program{programList.length === 1 ? '' : 's'}
+              <Plural
+                value={programList.length}
+                one="# program"
+                other="# programs"
+              />
             </Typography>
             <Typography variant="caption">
               {dayjs.duration(duration).humanize()}

@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Box, LinearProgress, Typography } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { isNonEmptyString } from '@tunarr/shared/util';
@@ -230,10 +231,10 @@ export const LibraryProgramGrid = ({
     <Box sx={{ mt: 1 }}>
       {depth === 0 && !isUndefined(totalHits) && (
         <Typography textAlign="right" variant="subtitle2">
-          Total hits:{' '}
+          <Trans>Total hits:{' '}
           {isNonEmptyString(query.query) && totalHits >= 1000
             ? '>1000'
-            : totalHits}
+            : totalHits}</Trans>
         </Typography>
       )}
       {search.isLoading && <LinearProgress />}

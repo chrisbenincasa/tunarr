@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { Delete } from '@mui/icons-material';
 import {
   FormControl,
@@ -50,6 +51,7 @@ export function SearchValueNode(props: ValueNodeProps) {
     only,
     remove,
   } = props;
+  const { t } = useLingui();
   const { control, watch, setValue } = useFormContext<SearchForm>();
   const [selfValue, searchField] = watch([formKey, `${formKey}.fieldSpec`]) as [
     SearchFilterValueNode,
@@ -243,7 +245,7 @@ export function SearchValueNode(props: ValueNodeProps) {
 
       return (
         <Select
-          label="Operator"
+          label={t`Operator`}
           {...field}
           value={field.value.op}
           onChange={(ev) => handleOpChange(ev.target.value)}
@@ -266,9 +268,9 @@ export function SearchValueNode(props: ValueNodeProps) {
         name={getFieldName('fieldSpec')}
         render={({ field }) => (
           <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel>Field</InputLabel>
+            <InputLabel>{t`Field`}</InputLabel>
             <Select
-              label="Field"
+              label={t`Field`}
               MenuProps={{ sx: { maxHeight: 375 } }}
               value={field.value.name ?? field.value.key}
               onChange={(e) => handleFieldChange(e.target.value)}
@@ -295,7 +297,7 @@ export function SearchValueNode(props: ValueNodeProps) {
         )}
       />
       <FormControl size="small" sx={{ minWidth: 200 }}>
-        <InputLabel>Operator</InputLabel>
+        <InputLabel>{t`Operator`}</InputLabel>
         <Controller
           control={control}
           name={getFieldName('fieldSpec')}

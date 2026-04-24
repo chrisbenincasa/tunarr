@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { FilterAlt } from '@mui/icons-material';
 import {
   Box,
@@ -55,8 +56,8 @@ export const PlexProgrammingFilterToolbar = () => {
                   value={useAdvancedSearch ? 'advanced' : 'basic'}
                   onChange={() => setUseAdvancedSearch(toggle)}
                 >
-                  <ToggleButton value="basic">Basic</ToggleButton>
-                  <ToggleButton value="advanced">Advanced</ToggleButton>
+                  <ToggleButton value="basic"><Trans>Basic</Trans></ToggleButton>
+                  <ToggleButton value="advanced"><Trans>Advanced</Trans></ToggleButton>
                 </ToggleButtonGroup>
               </Grow>
             )}

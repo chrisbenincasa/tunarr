@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Delete } from '@mui/icons-material';
 import { MenuItem } from '@mui/material';
 import { useRemoveAllProgramming } from '../../hooks/programming_controls/useRemoveAllProgramming';
@@ -15,6 +16,7 @@ export function ChannelProgrammingDeleteOptions({
   onClose,
   removeShowsModalOpen,
 }: DeleteOptionsProps) {
+  const { t } = useLingui();
   const removeDuplicatePrograms = useRemoveDuplicates();
   const removeFlex = useRemoveFlex();
   const removeAllProgramming = useRemoveAllProgramming();
@@ -27,10 +29,10 @@ export function ChannelProgrammingDeleteOptions({
   return (
     <>
       <MenuItem divider disabled>
-        Delete
+        <Trans>Delete</Trans>
       </MenuItem>
       <ElevatedTooltip
-        title="Removes all Flex periods from the schedule."
+        title={t`Removes all Flex periods from the schedule.`}
         placement="right"
         elevation={10}
       >
@@ -42,11 +44,11 @@ export function ChannelProgrammingDeleteOptions({
           }}
         >
           <Delete />
-          Flex
+          <Trans>Flex</Trans>
         </MenuItem>
       </ElevatedTooltip>
       <ElevatedTooltip
-        title="Removes repeated programs."
+        title={t`Removes repeated programs.`}
         placement="right"
         elevation={10}
       >
@@ -58,11 +60,11 @@ export function ChannelProgrammingDeleteOptions({
           }}
         >
           <Delete />
-          Duplicates
+          <Trans>Duplicates</Trans>
         </MenuItem>
       </ElevatedTooltip>
       <ElevatedTooltip
-        title="Removes any specials from the schedule. Specials are episodes with season '00'."
+        title={t`Removes any specials from the schedule. Specials are episodes with season '00'.`}
         placement="right"
         elevation={10}
       >
@@ -74,11 +76,11 @@ export function ChannelProgrammingDeleteOptions({
           }}
         >
           <Delete />
-          Specials
+          <Trans>Specials</Trans>
         </MenuItem>
       </ElevatedTooltip>
       <ElevatedTooltip
-        title="Allows you to pick specific programming to remove from the channel."
+        title={t`Allows you to pick specific programming to remove from the channel.`}
         placement="right"
         elevation={10}
       >
@@ -91,11 +93,11 @@ export function ChannelProgrammingDeleteOptions({
           }}
         >
           <Delete />
-          Remove...
+          <Trans>Remove...</Trans>
         </MenuItem>
       </ElevatedTooltip>
       <ElevatedTooltip
-        title="Removes all programs from schedule"
+        title={t`Removes all programs from schedule`}
         placement="right"
         elevation={10}
       >
@@ -107,7 +109,7 @@ export function ChannelProgrammingDeleteOptions({
           }}
         >
           <Delete />
-          Clear Schedule
+          <Trans>Clear Schedule</Trans>
         </MenuItem>
       </ElevatedTooltip>
     </>

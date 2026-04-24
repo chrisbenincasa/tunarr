@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { Stack, TextField } from '@mui/material';
 import type { MediaSourceId } from '@tunarr/shared';
 import { search } from '@tunarr/shared/util';
@@ -15,6 +16,7 @@ export const PointAndClickSearchBuilder = ({
   mediaSourceId,
   libraryId,
 }: Props) => {
+  const { t } = useLingui();
   const form = useFormContext<SearchForm>();
   const filter = form.watch('filter');
 
@@ -22,7 +24,7 @@ export const PointAndClickSearchBuilder = ({
     <FormProvider {...form}>
       <Stack direction="row" gap={2} alignItems={'center'}>
         <TextField
-          label="Filter"
+          label={t`Filter`}
           disabled
           size="small"
           fullWidth

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { removeFillerListProgram } from '@/store/entityEditor/util.ts';
 import {
   clearCurrentFillerList,
@@ -45,6 +46,7 @@ export function EditFillerListForm({
   fillerListPrograms,
   isNew,
 }: EditFillerListFormProps) {
+  const { t } = useLingui();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const {
@@ -132,7 +134,7 @@ export function EditFillerListForm({
           control={control}
           name="name"
           render={({ field }) => (
-            <TextField margin="normal" fullWidth label="Name" {...field} />
+            <TextField margin="normal" fullWidth label={t`Name`} {...field} />
           )}
         />
         <Divider />
@@ -147,7 +149,7 @@ export function EditFillerListForm({
               variant="h6"
               sx={{ flex: 1, flexBasis: ['100%', 'auto'] }}
             >
-              Programming
+              <Trans>Programming</Trans>
             </Typography>
             <Button
               disableRipple
@@ -157,7 +159,7 @@ export function EditFillerListForm({
               variant="outlined"
               disabled={isEmpty(fillerListPrograms)}
             >
-              Clear All
+              <Trans>Clear All</Trans>
             </Button>
             {programsDirty && (
               <Button
@@ -167,10 +169,10 @@ export function EditFillerListForm({
                 startIcon={<Undo />}
                 variant="outlined"
               >
-                Reset
+                <Trans>Reset</Trans>
               </Button>
             )}
-            <Tooltip title="Add TV Shows or Movies to filler" placement="right">
+            <Tooltip title={t`Add TV Shows or Movies to filler`} placement="right">
               <Button
                 disableRipple
                 component="button"
@@ -178,7 +180,7 @@ export function EditFillerListForm({
                 startIcon={<Tv />}
                 variant="contained"
               >
-                Add Media
+                <Trans>Add Media</Trans>
               </Button>
             </Tooltip>
             <Button
@@ -194,7 +196,7 @@ export function EditFillerListForm({
                 saveShowMutation.isPending ? <RotatingLoopIcon /> : <Save />
               }
             >
-              Save
+              <Trans>Save</Trans>
             </Button>
           </Stack>
           <ChannelLineupList

@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { Autocomplete, TextField } from '@mui/material';
 import { filter, find, first, map } from 'lodash-es';
 import { useMemo } from 'react';
@@ -8,6 +9,7 @@ import type { CommonCustomShowSlotViewModel } from '../../model/CommonSlotModels
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
 export const CustomShowSlotProgrammingForm = () => {
+  const { t } = useLingui();
   const { watch, control } = useFormContext<CommonCustomShowSlotViewModel>();
   const programOptions = useSlotProgramOptionsContext();
   const [type] = watch(['type']);
@@ -47,7 +49,7 @@ export const CustomShowSlotProgrammingForm = () => {
               value ? field.onChange(value.customShowId) : void 0
             }
             renderInput={(params) => (
-              <TextField {...params} label="Custom Show" />
+              <TextField {...params} label={t`Custom Show`} />
             )}
           />
         )}

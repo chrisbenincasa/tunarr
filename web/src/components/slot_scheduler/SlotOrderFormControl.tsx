@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   FormControl,
   FormHelperText,
@@ -16,6 +17,7 @@ import { slotOrderOptions } from '../../helpers/slotSchedulerUtil.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 
 export const SlotOrderFormControl = () => {
+  const { t } = useLingui();
   const { watch, control } = useFormContext<BaseSlot>();
   const [type, order] = watch(['type', 'order']);
 
@@ -38,19 +40,19 @@ export const SlotOrderFormControl = () => {
             let helperText;
             switch (field.value) {
               case 'linear':
-                helperText = 'Inverse linear decay, heavier weighting.';
+                helperText = t`Inverse linear decay, heavier weighting.`;
                 break;
               case 'log':
-                helperText = 'Logarithmic decay, lighter weighting.';
+                helperText = t`Logarithmic decay, lighter weighting.`;
                 break;
             }
 
             return (
               <FormControl fullWidth>
-                <InputLabel>Weighting</InputLabel>
-                <Select label="Weighting" {...field}>
-                  <MenuItem value="linear">Linear</MenuItem>
-                  <MenuItem value="log">Logarithmic</MenuItem>
+                <InputLabel>{t`Weighting`}</InputLabel>
+                <Select label={t`Weighting`} {...field}>
+                  <MenuItem value="linear"><Trans>Linear</Trans></MenuItem>
+                  <MenuItem value="log"><Trans>Logarithmic</Trans></MenuItem>
                 </Select>
                 {isNonEmptyString(helperText) && (
                   <FormHelperText>{helperText}</FormHelperText>
@@ -78,14 +80,14 @@ export const SlotOrderFormControl = () => {
                 handleDirectionChange(value as string | null, field.onChange)
               }
             >
-              <ToggleButton value="asc">Asc</ToggleButton>
-              <ToggleButton value="desc">Desc</ToggleButton>
+              <ToggleButton value="asc"><Trans>Asc</Trans></ToggleButton>
+              <ToggleButton value="desc"><Trans>Desc</Trans></ToggleButton>
             </ToggleButtonGroup>
           )}
         />
       );
     }
-  }, [control, order, type]);
+  }, [control, order, type, t]);
 
   if (type === 'flex' || type === 'redirect') {
     return null;
@@ -101,8 +103,8 @@ export const SlotOrderFormControl = () => {
           const helperText = find(opts, { value: field.value })?.helperText;
           return (
             <FormControl fullWidth>
-              <InputLabel>Order</InputLabel>
-              <Select label="Order" {...field}>
+              <InputLabel>{t`Order`}</InputLabel>
+              <Select label={t`Order`} {...field}>
                 {map(opts, ({ description, value }) => (
                   <MenuItem key={value} value={value}>
                     {description}

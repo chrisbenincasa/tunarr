@@ -3,6 +3,7 @@ import ChannelLineupList from '@/components/channel_config/ChannelLineupList.tsx
 import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormProvider.tsx';
 import { TimeSlotTable } from '@/components/slot_scheduler/TimeSlotTable.tsx';
 import type { DropdownOption } from '@/helpers/DropdownOption.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   OneDayMillis,
   OneWeekMillis,
@@ -122,6 +123,7 @@ function convertToViewModel(
 }
 
 export default function TimeSlotEditorPage() {
+  const { t } = useLingui();
   const {
     channelEditor: { currentEntity: channel },
     materializeOriginalProgramList,
@@ -296,7 +298,7 @@ export default function TimeSlotEditorPage() {
         <PaddedPaper>
           <Stack direction="row" alignItems="center">
             <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
-              Time Slots
+              <Trans>Time Slots</Trans>
             </Typography>
           </Stack>
           <Divider sx={{ my: 2 }} />
@@ -308,7 +310,7 @@ export default function TimeSlotEditorPage() {
           <Divider sx={{ my: 2 }} />
           <Stack direction="row">
             <Typography sx={{ flexGrow: 1, fontWeight: '600' }}>
-              Settings
+              <Trans>Settings</Trans>
             </Typography>
             <ExpandMore
               sx={{ cursor: 'pointer' }}
@@ -325,39 +327,41 @@ export default function TimeSlotEditorPage() {
               >
                 <Grid size={{ sm: 16, md: 5 }}>
                   <FormControl fullWidth margin="normal">
-                    <InputLabel>Period</InputLabel>
+                    <InputLabel><Trans>Period</Trans></InputLabel>
                     <Controller
                       control={control}
                       name="period"
                       render={({ field }) => (
                         <Select
-                          label="Period"
+                          label={t`Period`}
                           {...field}
                           onChange={(e) => handlePeriodChange(e)}
                         >
-                          <MenuItem value="day">Daily</MenuItem>
-                          <MenuItem value="week">Weekly</MenuItem>
+                          <MenuItem value="day"><Trans>Daily</Trans></MenuItem>
+                          <MenuItem value="week"><Trans>Weekly</Trans></MenuItem>
                         </Select>
                       )}
                     />
                     <FormHelperText>
-                      By default, time slots are time of the day-based, you can
-                      change it to time of the day + day of the week. That means
-                      scheduling 7x the number of time slots. If you change from
-                      daily to weekly, the current schedule will be repeated 7
-                      times. If you change from weekly to daily, many of the
-                      slots will be deleted.
+                      <Trans>
+                        By default, time slots are time of the day-based, you can
+                        change it to time of the day + day of the week. That means
+                        scheduling 7x the number of time slots. If you change from
+                        daily to weekly, the current schedule will be repeated 7
+                        times. If you change from weekly to daily, many of the
+                        slots will be deleted.
+                      </Trans>
                     </FormHelperText>
                   </FormControl>
                 </Grid>
                 <Grid size={{ sm: 16, md: 5 }}>
                   <FormControl fullWidth margin="normal">
-                    <InputLabel>Max Lateness</InputLabel>
+                    <InputLabel><Trans>Max Lateness</Trans></InputLabel>
                     <Controller
                       control={control}
                       name="latenessMs"
                       render={({ field }) => (
-                        <Select label="Max Lateness" {...field}>
+                        <Select label={t`Max Lateness`} {...field}>
                           {latenessOptions.map((opt) => (
                             <MenuItem key={opt.value} value={opt.value}>
                               {opt.description}
@@ -368,20 +372,22 @@ export default function TimeSlotEditorPage() {
                     />
 
                     <FormHelperText>
-                      Allows programs to play a bit late if the previous program
-                      took longer than usual. If a program is too late, Flex is
-                      scheduled instead.
+                      <Trans>
+                        Allows programs to play a bit late if the previous program
+                        took longer than usual. If a program is too late, Flex is
+                        scheduled instead.
+                      </Trans>
                     </FormHelperText>
                   </FormControl>
                 </Grid>
                 <Grid size={{ sm: 16, md: 5 }}>
                   <FormControl fullWidth margin="normal">
-                    <InputLabel>Pad Times</InputLabel>
+                    <InputLabel><Trans>Pad Times</Trans></InputLabel>
                     <Controller
                       control={control}
                       name="padMs"
                       render={({ field }) => (
-                        <Select label="Pad Times" {...field}>
+                        <Select label={t`Pad Times`} {...field}>
                           {padOptions.map((opt) => (
                             <MenuItem key={opt.value} value={opt.value}>
                               {opt.description}
@@ -392,20 +398,22 @@ export default function TimeSlotEditorPage() {
                     />
 
                     <FormHelperText>
-                      Ensures programs have a nice-looking start time, it will
-                      add Flex time to fill the gaps.
+                      <Trans>
+                        Ensures programs have a nice-looking start time, it will
+                        add Flex time to fill the gaps.
+                      </Trans>
                     </FormHelperText>
                   </FormControl>
                 </Grid>
 
                 <Grid size={{ sm: 16, md: 5 }}>
                   <FormControl fullWidth margin="normal">
-                    <InputLabel>Flex Style</InputLabel>
+                    <InputLabel><Trans>Flex Style</Trans></InputLabel>
                     <Controller
                       control={control}
                       name="flexPreference"
                       render={({ field }) => (
-                        <Select label="Flex Style" {...field}>
+                        <Select label={t`Flex Style`} {...field}>
                           {flexOptions.map((opt) => (
                             <MenuItem key={opt.value} value={opt.value}>
                               {opt.description}
@@ -415,11 +423,13 @@ export default function TimeSlotEditorPage() {
                       )}
                     />
                     <FormHelperText>
-                      Usually slots need to add flex time to ensure that the
-                      next slot starts at the correct time. When there are
-                      multiple videos in the slot, you might prefer to
-                      distribute the flex time between the videos or to place
-                      most of the flex time at the end of the slot.
+                      <Trans>
+                        Usually slots need to add flex time to ensure that the
+                        next slot starts at the correct time. When there are
+                        multiple videos in the slot, you might prefer to
+                        distribute the flex time between the videos or to place
+                        most of the flex time at the end of the slot.
+                      </Trans>
                     </FormHelperText>
                   </FormControl>
                 </Grid>
@@ -428,23 +438,25 @@ export default function TimeSlotEditorPage() {
                     <NumericFormControllerText
                       control={control}
                       name="maxDays"
-                      prettyFieldName="Days to Precalculate"
+                      prettyFieldName={t`Days to Precalculate`}
                       TextFieldProps={{
-                        label: 'Days to Precalculate',
+                        label: t`Days to Precalculate`,
                         fullWidth: true,
                         margin: 'normal',
                       }}
                     />
 
                     <FormHelperText sx={{ ml: 1 }}>
-                      Maximum number of days to precalculate the schedule. Note
-                      that the length of the schedule is also bounded by the
-                      maximum number of programs allowed in a channel.
-                      <br />
-                      <strong>
-                        Note: Previewing the schedule in the browser for long
-                        lengths of time can cause UI performance issues
-                      </strong>
+                      <Trans>
+                        Maximum number of days to precalculate the schedule. Note
+                        that the length of the schedule is also bounded by the
+                        maximum number of programs allowed in a channel.
+                        <br />
+                        <strong>
+                          Note: Previewing the schedule in the browser for long
+                          lengths of time can cause UI performance issues
+                        </strong>
+                      </Trans>
                     </FormHelperText>
                   </FormGroup>
                 </Grid>
@@ -461,15 +473,15 @@ export default function TimeSlotEditorPage() {
                 isCalculatingSlots ? <RotatingLoopIcon /> : <Autorenew />
               }
             >
-              Refresh Preview
+              <Trans>Refresh Preview</Trans>
             </Button>
           </Box>
         </PaddedPaper>
         <PaddedPaper>
-          <Typography sx={{ mb: 1 }}>Programming Preview</Typography>
+          <Typography sx={{ mb: 1 }}><Trans>Programming Preview</Trans></Typography>
           <Divider sx={{ mb: 1 }} />
           <DateTimePicker
-            label="Programming Start"
+            label={t`Programming Start`}
             value={startTime}
             disabled
             slotProps={{ textField: { size: 'small' } }}
@@ -500,12 +512,12 @@ export default function TimeSlotEditorPage() {
             startIcon={<ArrowBack />}
             sx={{ justifyContent: 'flex-start' }}
           >
-            Back to Programming
+            <Trans>Back to Programming</Trans>
           </RouterButtonLink>
         </Box>
         {isDirty && (
           <Button variant="contained" onClick={() => resetLineupToSaved()}>
-            Reset Options
+            <Trans>Reset Options</Trans>
           </Button>
         )}
         <Button
@@ -513,7 +525,7 @@ export default function TimeSlotEditorPage() {
           // disabled={(!isValid || !isDirty) && !programsDirty}
           onClick={() => onSave()}
         >
-          Save
+          <Trans>Save</Trans>
         </Button>
       </Box>
     </div>

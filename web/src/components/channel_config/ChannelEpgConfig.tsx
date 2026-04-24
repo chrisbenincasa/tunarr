@@ -5,11 +5,13 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import FormHelperText from '@mui/material/FormHelperText';
 import TextField from '@mui/material/TextField';
+import { Trans, useLingui } from '@lingui/react/macro';
 import type { Channel } from '@tunarr/types';
 import { Controller, useFormContext } from 'react-hook-form';
 import { NumericFormController } from '../util/TypedController.tsx';
 
 export default function ChannelEpgConfig() {
+  const { t } = useLingui();
   const { control } = useFormContext<Channel>();
 
   return (
@@ -23,12 +25,14 @@ export default function ChannelEpgConfig() {
               <FormControl>
                 <FormControlLabel
                   control={<Checkbox {...field} checked={field.value} />}
-                  label="Stealth Mode"
+                  label={t`Stealth Mode`}
                 />
                 <FormHelperText>
-                  "Stealth" channels are hidden from TV guides, spoofed HDHR,
-                  m3u playlist, etc. The channel can still be streamed directly
-                  or be used as a redirect target.
+                  <Trans>
+                    "Stealth" channels are hidden from TV guides, spoofed HDHR,
+                    m3u playlist, etc. The channel can still be streamed directly
+                    or be used as a redirect target.
+                  </Trans>
                 </FormHelperText>
               </FormControl>
             )}
@@ -39,8 +43,8 @@ export default function ChannelEpgConfig() {
             name="guideFlexTitle"
             render={({ field }) => (
               <TextField
-                helperText="This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled."
-                label="Placeholder Program Title"
+                helperText={t`This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled.`}
+                label={t`Placeholder Program Title`}
                 margin="normal"
                 {...field}
                 value={field.value ?? ''}
@@ -53,8 +57,8 @@ export default function ChannelEpgConfig() {
             name="guideMinimumDuration"
             render={({ field, formState: { errors } }) => (
               <TextField
-                label="Min. Visible in Guide Duration Program (seconds)"
-                helperText={`Programs shorter than this value will be treated the same as Flex time. Meaning that the TV Guide will try to meld them with the previous program or display the block of programs as the "place holder program" if they make a large continuous group. Use 0 to disable this feature or use a large value to make the channel report only the placeholder program and not the real programming.\n${
+                label={t`Min. Visible in Guide Duration Program (seconds)`}
+                helperText={t`Programs shorter than this value will be treated the same as Flex time. Meaning that the TV Guide will try to meld them with the previous program or display the block of programs as the "place holder program" if they make a large continuous group. Use 0 to disable this feature or use a large value to make the channel report only the placeholder program and not the real programming.\n${
                   errors?.guideMinimumDuration?.message ?? ''
                 }`}
                 margin="normal"

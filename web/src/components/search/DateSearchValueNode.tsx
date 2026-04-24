@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import {
   FormControl,
   InputLabel,
@@ -35,6 +36,7 @@ function isRelativeDateOp(op: string): op is 'inthelast' | 'notinthelast' {
 }
 
 export function DateSearchValueNode({ formKey }: Props) {
+  const { t } = useLingui();
   const { control, watch, setValue } = useFormContext<SearchForm>();
   const currentSpec = watch(formKey) as DateSearchField;
 
@@ -87,7 +89,7 @@ export function DateSearchValueNode({ formKey }: Props) {
         <TextField
           type="number"
           size="small"
-          label="Amount"
+          label={t`Amount`}
           value={amount}
           onChange={(e) => {
             const val = parseInt(e.target.value);
@@ -99,10 +101,10 @@ export function DateSearchValueNode({ formKey }: Props) {
           sx={{ width: 100 }}
         />
         <FormControl size="small" sx={{ minWidth: 120 }}>
-          <InputLabel>Unit</InputLabel>
+          <InputLabel>{t`Unit`}</InputLabel>
           <Select
             value={unit}
-            label="Unit"
+            label={t`Unit`}
             onChange={(e) =>
               handleRelativeUnitChange(e.target.value as RelativeDateUnit)
             }
@@ -126,7 +128,7 @@ export function DateSearchValueNode({ formKey }: Props) {
         render={({ field }) => (
           <DatePicker
             sx={{ height: 40 }}
-            label="Value"
+            label={t`Value`}
             slotProps={{
               textField: {
                 size: 'small',
@@ -147,7 +149,7 @@ export function DateSearchValueNode({ formKey }: Props) {
           render={({ field }) => (
             <DatePicker
               sx={{ height: 40 }}
-              label="Value"
+              label={t`Value`}
               maxDate={dayjs()}
               slotProps={{
                 textField: {
@@ -165,7 +167,7 @@ export function DateSearchValueNode({ formKey }: Props) {
           render={({ field }) => (
             <DatePicker
               sx={{ height: 40 }}
-              label="Value"
+              label={t`Value`}
               slotProps={{
                 textField: {
                   size: 'small',

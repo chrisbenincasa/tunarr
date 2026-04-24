@@ -1,4 +1,5 @@
 import { usePlexLogin } from '@/hooks/plex/usePlexLogin.tsx';
+import { t } from '@lingui/core/macro';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { AddCircle } from '@mui/icons-material';
 import { Button } from '@mui/material';
@@ -10,7 +11,7 @@ type AddPlexServer = {
 };
 
 export default function AddPlexServer({
-  title = 'Add',
+  title = t`Add`,
   variant = 'contained',
   ...restProps
 }: AddPlexServer) {

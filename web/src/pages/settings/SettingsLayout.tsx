@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Box, LinearProgress, Paper, Tabs, Typography } from '@mui/material';
 import { Outlet } from '@tanstack/react-router';
 import { Suspense } from 'react';
@@ -8,10 +9,11 @@ type Props = {
 };
 
 export function SettingsLayout({ currentTab = '/general' }: Props) {
+  const { t } = useLingui();
   return (
     <Box>
       <Typography variant="h3" mb={2}>
-        Settings
+        <Trans>Settings</Trans>
       </Typography>
       <Paper sx={{ p: [1, 2] }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -26,24 +28,24 @@ export function SettingsLayout({ currentTab = '/general' }: Props) {
             }}
           >
             <RouterTabLink
-              label="General"
+              label={t`General`}
               value="/general"
               to="/settings/general"
             />
-            <RouterTabLink label="XMLTV" value="/xmltv" to="/settings/xmltv" />
+            <RouterTabLink label={t`XMLTV`} value="/xmltv" to="/settings/xmltv" />
             <RouterTabLink
-              label="FFMPEG"
+              label={t`FFMPEG`}
               value="/ffmpeg"
               to="/settings/ffmpeg"
             />
             <RouterTabLink
-              label="Scanner"
+              label={t`Scanner`}
               value="/scanner"
               to="/settings/scanner"
             />
-            <RouterTabLink label="HDHR" value="/hdhr" to="/settings/hdhr" />
+            <RouterTabLink label={t`HDHR`} value="/hdhr" to="/settings/hdhr" />
             <RouterTabLink
-              label="Features"
+              label={t`Features`}
               value="/features"
               to="/settings/features"
             />

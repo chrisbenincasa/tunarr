@@ -1,3 +1,4 @@
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { Download } from '@mui/icons-material';
 import { Button, Stack, Typography } from '@mui/material';
 import type { TupleToUnion } from '@tunarr/types';
@@ -7,7 +8,6 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
-import pluralize from 'pluralize';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSettings } from '../../store/settings/selectors.ts';
 
@@ -65,6 +65,7 @@ type ParsedLogLine = {
 };
 
 export function SystemLogsPage() {
+  const { t } = useLingui();
   const { backendUri } = useSettings();
   const source = useRef<EventSource | null>(null);
   const [logBuf, setLogBuf] = useState<LogLine[]>([]);
@@ -123,24 +124,24 @@ export function SystemLogsPage() {
     return [
       {
         accessorKey: 'timestamp',
-        header: 'Timestamp',
+        header: t`Timestamp`,
       },
       {
         accessorKey: 'level',
-        header: 'Level',
+        header: t`Level`,
         filterVariant: 'multi-select',
         filterSelectOptions: ValidLogLevels,
       },
       {
         accessorKey: 'component',
-        header: 'Component',
+        header: t`Component`,
       },
       {
         accessorKey: 'message',
-        header: 'Message',
+        header: t`Message`,
       },
     ];
-  }, []);
+  }, [t]);
 
   const table = useMaterialReactTable({
     columns,
@@ -159,15 +160,15 @@ export function SystemLogsPage() {
           component="a"
           href={`${backendUri}/api/system/debug/logs?download=true&pretty=true&lineLimit=${table.getRowCount()}`}
         >
-          Download last {table.getRowCount()}{' '}
-          {pluralize('row', table.getRowCount())}
+          <Trans>Download last {table.getRowCount()}{' '}
+          <Plural value={table.getRowCount()} one="# row" other="# rows" /></Trans>
         </Button>
         <Button
           startIcon={<Download />}
           component="a"
           href={`${backendUri}/api/system/debug/logs?download=true&pretty=true`}
         >
-          Download all logs
+          <Trans>Download all logs</Trans>
         </Button>
       </Stack>
     ),
@@ -176,9 +177,11 @@ export function SystemLogsPage() {
   return (
     <>
       <Typography sx={{ pb: 2 }}>
-        Displays the last {logBuf.length} system log events. Use the buttons
-        below to export these logs or download the entire log file for
-        debugging.
+        <Trans>
+          Displays the last {logBuf.length} system log events. Use the buttons
+          below to export these logs or download the entire log file for
+          debugging.
+        </Trans>
       </Typography>
       <MaterialReactTable table={table} />
     </>

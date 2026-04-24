@@ -2,6 +2,7 @@ import {
   useCurrentMediaSource,
   useCurrentMediaSourceView,
 } from '@/store/programmingSelector/selectors';
+import { useLingui } from '@lingui/react/macro';
 import { Box, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
 import { Jellyfin } from '../../../helpers/constants.ts';
@@ -20,6 +21,7 @@ type Props = {
 export function JellyfinProgrammingSelector({
   toggleOrSetSelectedProgramsDrawer,
 }: Props) {
+  const { t } = useLingui();
   const selectedServer = useCurrentMediaSource(Jellyfin)!;
   const selectedLibrary = useCurrentMediaSourceView(Jellyfin)!;
   const [tabValue, setTabValue] = useState(TabValues.Library);
@@ -42,7 +44,7 @@ export function JellyfinProgrammingSelector({
           variant="scrollable"
           allowScrollButtonsMobile
         >
-          <Tab value={TabValues.Library} label="Library" />
+          <Tab value={TabValues.Library} label={t`Library`} />
         </Tabs>
         <JellyfinProgramGrid
           selectedLibrary={selectedLibrary}

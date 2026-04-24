@@ -8,6 +8,7 @@ import {
 import { useVersion } from '@/hooks/useVersion.tsx';
 import { setBackendUri } from '@/store/settings/actions.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { CloudDoneOutlined, CloudOff } from '@mui/icons-material';
 import {
   Box,
@@ -137,6 +138,7 @@ function getDefaultFormValues(
 export function GeneralSettingsForm({
   systemSettings,
 }: GeneralSetingsFormProps) {
+  const { t } = useLingui();
   const settings = useSettings();
   const snackbar = useSnackbar();
   const versionInfo = useVersion({
@@ -211,14 +213,14 @@ export function GeneralSettingsForm({
       {
         onSuccess(data) {
           reset(getBaseFormValues(settings, data), { keepDirty: false });
-          snackbar.enqueueSnackbar('Settings Saved!', {
+          snackbar.enqueueSnackbar(t`Settings Saved!`, {
             variant: 'success',
           });
         },
         onError: (err) => {
           console.error(err);
           snackbar.enqueueSnackbar(
-            'Error while saving settings. Please check console for details.',
+            t`Error while saving settings. Please check console for details.`,
             {
               variant: 'error',
             },
@@ -264,10 +266,10 @@ export function GeneralSettingsForm({
                   onChange={toggleBackupEnabled}
                 />
               }
-              label="Enable Backups"
+              label={t`Enable Backups`}
             />
             <FormHelperText>
-              When enabling, Tunarr will generate an initial backup immediately
+              <Trans>When enabling, Tunarr will generate an initial backup immediately</Trans>
             </FormHelperText>
           </FormControl>
         </Grid>
@@ -282,7 +284,7 @@ export function GeneralSettingsForm({
         <Stack gap={2} divider={<Divider />}>
           <Stack gap={2}>
             <Typography variant="h5" sx={{ mb: 1 }}>
-              Server Settings
+              <Trans>Server Settings</Trans>
             </Typography>
             <Stack direction={{ sm: 'column', md: 'row' }} gap={2}>
               {!systemState.data.isInContainer && (
@@ -290,13 +292,12 @@ export function GeneralSettingsForm({
                   control={control}
                   name="server.port"
                   TextFieldProps={{
-                    label: 'Server Listen Port',
+                    label: t`Server Listen Port`,
                     fullWidth: true,
                     sx: {
                       width: { sm: '100%', md: '50%' },
                     },
-                    helperText:
-                      'Select the port the Tunarr server will listen on. This requires a server restart to take effect.',
+                    helperText: t`Select the port the Tunarr server will listen on. This requires a server restart to take effect.`,
                   }}
                 />
               )}
@@ -310,7 +311,7 @@ export function GeneralSettingsForm({
                       width: { sm: '100%', md: '50%' },
                     }}
                     fullWidth
-                    label="Tunarr Backend URL"
+                    label={t`Tunarr Backend URL`}
                     slotProps={{
                       input: {
                         endAdornment: (
@@ -329,8 +330,8 @@ export function GeneralSettingsForm({
                     {...field}
                     helperText={
                       error?.type === 'isValidUrl'
-                        ? 'Must use a valid URL, or empty.'
-                        : 'Set the host of your Tunarr backend. When empty, the web UI will use the current host/port to communicate with the backend.'
+                        ? t`Must use a valid URL, or empty.`
+                        : t`Set the host of your Tunarr backend. When empty, the web UI will use the current host/port to communicate with the backend.`
                     }
                   />
                 )}
@@ -339,7 +340,7 @@ export function GeneralSettingsForm({
           </Stack>
           <Stack gap={1}>
             <Typography variant="h6" sx={{ mb: 1 }}>
-              Logging
+              <Trans>Logging</Trans>
             </Typography>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12 }}>
@@ -348,7 +349,7 @@ export function GeneralSettingsForm({
                     width: ['100%', '50%'],
                   }}
                 >
-                  <InputLabel id="log-level-label">Log Level</InputLabel>
+                  <InputLabel id="log-level-label"><Trans>Log Level</Trans></InputLabel>
                   <Controller
                     name="logLevel"
                     control={control}
@@ -356,7 +357,7 @@ export function GeneralSettingsForm({
                       <Select
                         labelId="log-level-label"
                         id="log-level"
-                        label="Log Level"
+                        label={t`Log Level`}
                         {...field}
                       >
                         {map(LogLevelChoices, ({ value, description }) => (
@@ -368,19 +369,21 @@ export function GeneralSettingsForm({
                     )}
                   />
                   <FormHelperText>
+                    <Trans>
                     Set the log level for the Tunarr server.
                     <br />
                     Selecting <strong>"Use environment settings"</strong> will
                     instruct the server to use the <code>LOG_LEVEL</code>{' '}
                     environment variable, if set, or system default "info".
+                    </Trans>
                   </FormHelperText>
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <Typography sx={{ mb: 1 }}>Category Log Levels</Typography>
+                <Typography sx={{ mb: 1 }}><Trans>Category Log Levels</Trans></Typography>
                 <Typography variant="subtitle2">
-                  Change the verbosity of specific categories of logs. Useful if
-                  debugging a specific feature.
+                  <Trans>Change the verbosity of specific categories of logs. Useful if
+                  debugging a specific feature.</Trans>
                 </Typography>
               </Grid>
               {LogCategorySelectInputs.map((category) => (
@@ -422,13 +425,13 @@ export function GeneralSettingsForm({
           </Stack>
           <Box>
             <Typography variant="h6" sx={{ mb: 1 }}>
-              Backups
+              <Trans>Backups</Trans>
             </Typography>
             {renderBackupsForm()}
           </Box>
           <Box>
             <Typography variant="h6" sx={{ mb: 1 }}>
-              Caching
+              <Trans>Caching</Trans>
             </Typography>
             <Box>
               <FormControl
@@ -448,9 +451,9 @@ export function GeneralSettingsForm({
                   }
                   label={
                     <span>
-                      <strong>Experimental:</strong> Enable Plex Request Cache{' '}
+                      <Trans><strong>Experimental:</strong> Enable Plex Request Cache</Trans>{' '}
                       <Tooltip
-                        title="Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
+                        title={t`Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing.`}
                         placement="top"
                       >
                         <sup style={{ color: theme.palette.primary.main }}>
@@ -461,8 +464,8 @@ export function GeneralSettingsForm({
                   }
                 />
                 <FormHelperText>
-                  This feature is currently experimental. Proceed with caution
-                  and if you experience an issue, try disabling caching.
+                  <Trans>This feature is currently experimental. Proceed with caution
+                  and if you experience an issue, try disabling caching.</Trans>
                 </FormHelperText>
               </FormControl>
             </Box>
@@ -482,7 +485,7 @@ export function GeneralSettingsForm({
               }}
               disabled={!isValid || isSubmitting || !isDirty}
             >
-              Reset Options
+              <Trans>Reset Options</Trans>
             </Button>
           )}
           <Button
@@ -490,7 +493,7 @@ export function GeneralSettingsForm({
             type="submit"
             disabled={!isValid || isSubmitting || !isDirty}
           >
-            Save
+            <Trans>Save</Trans>
           </Button>
         </Stack>
       </FormProvider>

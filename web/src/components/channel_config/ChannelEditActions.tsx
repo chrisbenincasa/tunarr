@@ -1,4 +1,5 @@
 import { useChannelEditor } from '@/store/selectors.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Save } from '@mui/icons-material';
 import { CircularProgress } from '@mui/material';
 import Button from '@mui/material/Button';
@@ -22,6 +23,7 @@ type ChannelEditActionsProps = {
 export default function ChannelEditActions({
   isNewChannel,
 }: ChannelEditActionsProps) {
+  const { t } = useLingui();
   const { currentEntity: channel } = useChannelEditor();
   const {
     formState: { isValid, isDirty, isSubmitting },
@@ -47,15 +49,17 @@ export default function ChannelEditActions({
 
       if (lastState === 'pending') {
         if (currentState === 'success' && !isNewChannel) {
-          snackbar.enqueueSnackbar('Channel settings saved!', {
+          snackbar.enqueueSnackbar(t`Channel settings saved!`, {
             variant: 'success',
           });
         } else if (currentState === 'error') {
           snackbar.enqueueSnackbar(
             <span>
-              Error updating channel.
-              <br />
-              Check browser console for details
+              <Trans>
+                Error updating channel.
+                <br />
+                Check browser console for details
+              </Trans>
             </span>,
             {
               variant: 'error',
@@ -73,7 +77,7 @@ export default function ChannelEditActions({
         <>
           {isDirty && (
             <Button onClick={() => reset()} variant="outlined">
-              Reset Changes
+              <Trans>Reset Changes</Trans>
             </Button>
           )}
           <Button
@@ -91,7 +95,7 @@ export default function ChannelEditActions({
               )
             }
           >
-            Save
+            <Trans>Save</Trans>
           </Button>
         </>
       ) : (
@@ -111,7 +115,7 @@ export default function ChannelEditActions({
               )
             }
           >
-            Save
+            <Trans>Save</Trans>
           </Button>
         </>
       )}

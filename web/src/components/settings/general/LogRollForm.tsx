@@ -1,3 +1,5 @@
+import { plural } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Checkbox,
   FormControl,
@@ -12,7 +14,6 @@ import {
 import { TimePicker } from '@mui/x-date-pickers';
 import type { EverySchedule } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import pluralize from 'pluralize';
 import { useCallback } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { formatBytes } from '../../../helpers/util.ts';
@@ -23,6 +24,7 @@ import {
 import type { GeneralSettingsFormData } from './GeneralSettingsForm.tsx';
 
 export const LogRollForm = () => {
+  const { t } = useLingui();
   const { control, watch, setValue } =
     useFormContext<GeneralSettingsFormData>();
   const [enabled, schedule] = watch([
@@ -53,7 +55,7 @@ export const LogRollForm = () => {
     <Stack gap={2}>
       <FormControl>
         <FormControlLabel
-          label="Enable Log File Rolling"
+          label={t`Enable Log File Rolling`}
           control={
             <CheckboxFormController
               control={control}
@@ -62,7 +64,7 @@ export const LogRollForm = () => {
           }
         />
         <FormHelperText>
-          Enable rolling log files using time and/or size based criteria
+          <Trans>Enable rolling log files using time and/or size based criteria</Trans>
         </FormHelperText>
       </FormControl>
       {enabled && (
@@ -70,7 +72,7 @@ export const LogRollForm = () => {
           <Grid size={{ xs: 6 }}>
             <FormControl>
               <FormControlLabel
-                label="Roll on Schedule"
+                label={t`Roll on Schedule`}
                 control={
                   <Controller
                     control={control}
@@ -97,12 +99,12 @@ export const LogRollForm = () => {
                 }
               />
               <FormHelperText>
-                Roll the log file on a fixed schedule, regardless of file size.
+                <Trans>Roll the log file on a fixed schedule, regardless of file size.</Trans>
               </FormHelperText>
             </FormControl>
             {(currentBackupSchedule?.increment ?? 0) > 0 && (
               <Stack direction="row" alignItems="center" spacing={2}>
-                <Typography>Every</Typography>
+                <Typography><Trans>Every</Trans></Typography>
                 <NumericFormControllerText
                   control={control}
                   name="logging.logRollConfig.schedule.increment"
@@ -126,10 +128,10 @@ export const LogRollForm = () => {
                       sx={{ minWidth: '25%' }}
                     >
                       <MenuItem value="hour">
-                        {pluralize('Hour', currentBackupSchedule!.increment)}
+                        {plural(currentBackupSchedule!.increment, { one: 'Hour', other: 'Hours' })}
                       </MenuItem>
                       <MenuItem value="day">
-                        {pluralize('Day', currentBackupSchedule!.increment)}
+                        {plural(currentBackupSchedule!.increment, { one: 'Day', other: 'Days' })}
                       </MenuItem>
                     </Select>
                   )}
@@ -157,7 +159,7 @@ export const LogRollForm = () => {
           <Stack direction={'row'}>
             <FormControl fullWidth>
               <FormControlLabel
-                label="Roll based on size"
+                label={t`Roll based on size`}
                 control={
                   <Controller
                     control={control}
@@ -181,7 +183,7 @@ export const LogRollForm = () => {
                 }
               />
               <FormHelperText>
-                Roll the log file on a fixed schedule, regardless of file size.
+                <Trans>Roll the log file on a fixed schedule, regardless of file size.</Trans>
               </FormHelperText>
             </FormControl>
             <NumericFormControllerText
@@ -189,7 +191,7 @@ export const LogRollForm = () => {
               name="logging.logRollConfig.maxFileSizeBytes"
               TextFieldProps={{
                 fullWidth: true,
-                label: 'Max file size (bytes)',
+                label: t`Max file size (bytes)`,
                 helperText: ({ field }) =>
                   field.value ? `${formatBytes(field.value)}` : '',
               }}

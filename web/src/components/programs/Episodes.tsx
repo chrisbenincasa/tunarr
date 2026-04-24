@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { InfoSharp } from '@mui/icons-material';
 import { Box, Grid, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
@@ -45,7 +46,7 @@ export default function Episodes({ program }: Props) {
         color="text.primary"
         sx={{ mt: 4 }}
       >
-        Episodes
+        <Trans>Episodes</Trans>
       </Typography>
       <Grid
         container

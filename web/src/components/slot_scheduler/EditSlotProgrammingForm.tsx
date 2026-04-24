@@ -3,6 +3,7 @@ import type {
   ProgramOptionType,
 } from '@/helpers/slotSchedulerUtil';
 import { ProgramOptionTypes } from '@/helpers/slotSchedulerUtil.ts';
+import { useLingui } from '@lingui/react/macro';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { filter, map, uniqBy } from 'lodash-es';
 import { useMemo, useState } from 'react';
@@ -25,6 +26,7 @@ export const EditSlotProgrammingForm = <
 >({
   newSlotForType,
 }: EditSlotProgramProps<SlotT>) => {
+  const { t } = useLingui();
   const { watch, reset } = useFormContext<SlotT>();
   const type = watch('type' as FieldPath<SlotT>);
   const programOptions = useSlotProgramOptionsContext();
@@ -52,9 +54,9 @@ export const EditSlotProgrammingForm = <
   return (
     <>
       <FormControl fullWidth>
-        <InputLabel>Type</InputLabel>
+        <InputLabel>{t`Type`}</InputLabel>
         <Select
-          label="Type"
+          label={t`Type`}
           value={typeSelectValue}
           onChange={(e) =>
             handleTypeChange(e.target.value as ProgramOption['type'])

@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Close, Refresh } from '@mui/icons-material';
 import { Button, Stack } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
@@ -31,14 +32,18 @@ export const useVersion = (
       preventDuplicate: true,
       message: (
         <span>
-          <strong>Version Mismatch!</strong>
+          <strong><Trans>Version Mismatch!</Trans></strong>
           <br />
-          The loaded version of the Tunarr UI does not match the server. Reload
-          the browser to get the latest. If this message persists, clear your
-          browser cache and reload.
+          <Trans>
+            The loaded version of the Tunarr UI does not match the server. Reload
+            the browser to get the latest. If this message persists, clear your
+            browser cache and reload.
+          </Trans>
           <br />
-          Web version = {trimStart(__TUNARR_VERSION__, 'v')}, Server version ={' '}
-          {trimStart(query.data?.tunarr, 'v')}
+          <Trans>
+            Web version = {trimStart(__TUNARR_VERSION__, 'v')}, Server version ={' '}
+            {trimStart(query.data?.tunarr, 'v')}
+          </Trans>
         </span>
       ),
       variant: 'warning',
@@ -55,14 +60,14 @@ export const useVersion = (
               onClick={() => window.location.reload()}
               color="inherit"
             >
-              Refresh
+              <Trans>Refresh</Trans>
             </Button>
             <Button
               startIcon={<Close />}
               onClick={() => snackbar.closeSnackbar('version_mismatch')}
               color="inherit"
             >
-              Dismiss
+              <Trans>Dismiss</Trans>
             </Button>
           </Stack>
         );

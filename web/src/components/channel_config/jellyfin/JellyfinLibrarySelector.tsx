@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
 import { capitalize, find, isEmpty, isNil, sortBy } from 'lodash-es';
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
+  const { t } = useLingui();
   const { onSourceChange } = useProgrammingSelectionContext();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
@@ -89,9 +91,9 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
     const genreList = jellyfinGenres?.Items ?? [];
     return (
       <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
-        <InputLabel>Genre</InputLabel>
+        <InputLabel>{t`Genre`}</InputLabel>
         <Select
-          label="Genre"
+          label={t`Genre`}
           value={selectedGenre ?? ''}
           onChange={(e) => {
             const value = e.target.value;
@@ -99,7 +101,7 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
           }}
         >
           <MenuItem value="">
-            <em>All Genres</em>
+            <em>{t`All Genres`}</em>
           </MenuItem>
           {seq.collect(genreList, (genre) => {
             if (isEmpty(genre.Name)) {
@@ -123,9 +125,9 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
     selectedJellyfinLibrary && (
       <>
         <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
-          <InputLabel>Library</InputLabel>
+          <InputLabel>{t`Library`}</InputLabel>
           <Select
-            label="Library"
+            label={t`Library`}
             value={selectedJellyfinLibrary.uuid}
             onChange={(e) => handleLibraryChange(e.target.value)}
           >

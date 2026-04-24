@@ -1,7 +1,7 @@
 import type { DropdownOption } from '@/helpers/DropdownOption.js';
 import { flexOptions, padOptions } from '@/helpers/slotSchedulerUtil';
 import type { RandomSlotForm } from '@/model/SlotModels.ts';
-
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Autorenew } from '@mui/icons-material';
 import {
   Box,
@@ -50,6 +50,7 @@ export const RandomSlotSettingsForm = ({
   onCalculateStart,
   onCalculateEnd,
 }: Props) => {
+  const { t } = useLingui();
   const { control, getValues, watch } = useFormContext<RandomSlotForm>();
   const [padTime, distributionType] = watch(['padMs', 'randomDistribution']);
 
@@ -79,16 +80,16 @@ export const RandomSlotSettingsForm = ({
 
   return (
     <Box>
-      <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>Settings</Typography>
+      <Typography sx={{ flexGrow: 1, fontWeight: 600 }}><Trans>Settings</Trans></Typography>
       <Grid container columnSpacing={2} justifyContent={'flex-start'}>
         <Grid size={{ sm: 12, md: 6 }}>
           <FormControl fullWidth margin="normal">
-            <InputLabel>Pad Times</InputLabel>
+            <InputLabel>{t`Pad Times`}</InputLabel>
             <Controller
               control={control}
               name="padMs"
               render={({ field }) => (
-                <Select label="Pad Times" {...field}>
+                <Select label={t`Pad Times`} {...field}>
                   {padOptions.map((opt) => (
                     <MenuItem key={opt.value} value={opt.value}>
                       {opt.description}
@@ -99,21 +100,21 @@ export const RandomSlotSettingsForm = ({
             />
 
             <FormHelperText>
-              Ensures programs start only at a particular interval within the
+              <Trans>Ensures programs start only at a particular interval within the
               hour. This makes for nice looking schedules. Flex time is
-              scheduled to facilitate.
+              scheduled to facilitate.</Trans>
             </FormHelperText>
           </FormControl>
         </Grid>
         {padTime > 1 && (
           <Grid size={{ sm: 12, md: 6 }}>
             <FormControl fullWidth margin="normal">
-              <InputLabel>Pad Style</InputLabel>
+              <InputLabel>{t`Pad Style`}</InputLabel>
               <Controller
                 control={control}
                 name="padStyle"
                 render={({ field }) => (
-                  <Select label="Pad Style" {...field}>
+                  <Select label={t`Pad Style`} {...field}>
                     {padStyleOptions.map((opt) => (
                       <MenuItem key={opt.value} value={opt.value}>
                         {opt.description}
@@ -124,13 +125,13 @@ export const RandomSlotSettingsForm = ({
               />
 
               <FormHelperText>
-                <strong>Pad Slot:</strong> Align slot start times to the
+                <Trans><strong>Pad Slot:</strong> Align slot start times to the
                 specified pad time.
                 <br />
                 <strong>Pad Episode:</strong> Align episode start times (within
                 a slot) to the specified pad time. <strong>NOTE:</strong>{' '}
                 Depending on slot length and the chosen pad time, this could
-                potentially create a lot of flex.
+                potentially create a lot of flex.</Trans>
               </FormHelperText>
             </FormControl>
           </Grid>
@@ -138,12 +139,12 @@ export const RandomSlotSettingsForm = ({
 
         <Grid size={{ sm: 12, md: 6 }}>
           <FormControl fullWidth margin="normal">
-            <InputLabel>Flex Style</InputLabel>
+            <InputLabel>{t`Flex Style`}</InputLabel>
             <Controller
               control={control}
               name="flexPreference"
               render={({ field }) => (
-                <Select label="Flex Style" {...field}>
+                <Select label={t`Flex Style`} {...field}>
                   {flexOptions.map((opt) => (
                     <MenuItem key={opt.value} value={opt.value}>
                       {opt.description}
@@ -153,25 +154,25 @@ export const RandomSlotSettingsForm = ({
               )}
             />
             <FormHelperText>
-              If no more programs can fit into a duration-based slot, flex time
+              <Trans>If no more programs can fit into a duration-based slot, flex time
               is added to fill the gap. This setting determines how flex is
               added <i>within</i> the slot to ensure all time is filled.
               <br />
               <strong>Between:</strong> Flex time is added between videos within
               a slot, if there are multiple
               <br />
-              <strong>End:</strong> Flex time is added at the end of the slot
+              <strong>End:</strong> Flex time is added at the end of the slot</Trans>
             </FormHelperText>
           </FormControl>
         </Grid>
         <Grid size={{ sm: 12, md: 6 }}>
           <FormControl fullWidth margin="normal">
-            <InputLabel>Distribution</InputLabel>
+            <InputLabel>{t`Distribution`}</InputLabel>
             <Controller
               control={control}
               name="randomDistribution"
               render={({ field }) => (
-                <Select label="Distribution" {...field}>
+                <Select label={t`Distribution`} {...field}>
                   {distributionOptions.map((opt) => (
                     <MenuItem key={opt.value} value={opt.value}>
                       {opt.description}
@@ -181,14 +182,14 @@ export const RandomSlotSettingsForm = ({
               )}
             />
             <FormHelperText>
-              <strong>None:</strong> slots are picked in the order they are
+              <Trans><strong>None:</strong> slots are picked in the order they are
               specified in the table (i.e. not randomly)
               <br />
               <strong>Uniform:</strong> all slots have an equal chance to be
               picked.
               <br />
               <strong>Weighted:</strong> each slot is picked with a specified
-              probability
+              probability</Trans>
             </FormHelperText>
           </FormControl>
         </Grid>
@@ -196,9 +197,9 @@ export const RandomSlotSettingsForm = ({
           <FormGroup row>
             <NumericFormControllerText
               control={control}
-              prettyFieldName="Days to Precalculate"
+              prettyFieldName={t`Days to Precalculate`}
               TextFieldProps={{
-                label: 'Days to Precalculate',
+                label: t`Days to Precalculate`,
                 fullWidth: true,
                 margin: 'normal',
               }}
@@ -206,9 +207,9 @@ export const RandomSlotSettingsForm = ({
             />
 
             <FormHelperText sx={{ ml: 1 }}>
-              Maximum number of days to precalculate the schedule. Note that the
+              <Trans>Maximum number of days to precalculate the schedule. Note that the
               length of the schedule is also bounded by the maximum number of
-              programs allowed in a channel.
+              programs allowed in a channel.</Trans>
             </FormHelperText>
           </FormGroup>
         </Grid>
@@ -222,14 +223,14 @@ export const RandomSlotSettingsForm = ({
                     name="lockWeights"
                   />
                 }
-                label="Lock Weights"
+                label={t`Lock Weights`}
               />
 
               <FormHelperText sx={{ ml: 1 }}>
-                If true, adjusting the weight of one slot will scale the weights
+                <Trans>If true, adjusting the weight of one slot will scale the weights
                 of other slots such that all weights total 100%. Otherwise,
                 weights can be adjusted freely and the weight of each slot is
-                only relative to the total weight.
+                only relative to the total weight.</Trans>
               </FormHelperText>
             </FormGroup>
           </Grid>
@@ -243,7 +244,7 @@ export const RandomSlotSettingsForm = ({
           disabled={isCalculatingSlots}
           startIcon={isCalculatingSlots ? <RotatingLoopIcon /> : <Autorenew />}
         >
-          Refresh Preview
+          <Trans>Refresh Preview</Trans>
         </Button>
       </Box>
     </Box>

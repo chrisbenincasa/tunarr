@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import type { SearchFieldSpec } from '@/helpers/searchBuilderConstants.ts';
 import { numericBij } from '@/helpers/searchBuilderConstants.ts';
 import type { FieldKey, FieldPrefix } from '@/types/SearchBuilder.ts';
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export const NumericValueSearchNode = ({ uiSpec, formKey }: Props) => {
+  const { t } = useLingui();
   const { control } = useFormContext<SearchForm>();
 
   const handleValueChange = useCallback(
@@ -53,7 +55,7 @@ export const NumericValueSearchNode = ({ uiSpec, formKey }: Props) => {
 
         return (
           <TextField
-            label="Value"
+            label={t`Value`}
             size="small"
             value={v}
             onChange={(e) => handleValueChange(e.target.value, field.onChange)}

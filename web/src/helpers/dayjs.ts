@@ -1,8 +1,8 @@
+import { t, plural } from '@lingui/core/macro';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { merge, padStart } from 'lodash-es';
-import pluralize from 'pluralize';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -32,6 +32,21 @@ const styleStrings = {
   },
 };
 
+function pluralizeUnit(unit: string, count: number): string {
+  switch (unit) {
+    case 'day':
+      return plural(count, { one: 'day', other: 'days' });
+    case 'hour':
+      return plural(count, { one: 'hour', other: 'hours' });
+    case 'min':
+      return plural(count, { one: 'min', other: 'mins' });
+    case 'second':
+      return plural(count, { one: 'second', other: 'seconds' });
+    default:
+      return unit;
+  }
+}
+
 export function betterHumanize(
   dur: duration.Duration,
   options: Partial<Options> = {},
@@ -51,27 +66,27 @@ export function betterHumanize(
   } = styleStrings[mergedOpts.style];
 
   if (+dur === 0) {
-    return `0 mins`;
+    return t`0 mins`;
   }
 
   if (days >= 1) {
     const d =
-      mergedOpts.style === 'full' ? ' ' + pluralize(daysStr, days) : daysStr;
+      mergedOpts.style === 'full' ? ' ' + pluralizeUnit(daysStr, days) : daysStr;
     builder.push(`${days}${d}`);
   }
 
   if (hrs >= 1) {
     const d =
-      mergedOpts.style === 'full' ? ' ' + pluralize(hoursStr, hrs) : hoursStr;
+      mergedOpts.style === 'full' ? ' ' + pluralizeUnit(hoursStr, hrs) : hoursStr;
     builder.push(`${hrs}${d}`);
   }
 
   if (mins >= 1) {
     const minsN = Math.round(mins);
     const d =
-      mergedOpts.style === 'full' ? ' ' + pluralize(minStr, minsN) : minStr;
+      mergedOpts.style === 'full' ? ' ' + pluralizeUnit(minStr, minsN) : minStr;
     if (hrs < 1 && days < 1) {
-      const prefix = seconds > 0 && !mergedOpts.exact ? 'about ' : '';
+      const prefix = seconds > 0 && !mergedOpts.exact ? t`about ` : '';
       builder.push(`${prefix}${padStart(minsN.toString(), 2, '0')}${d}`);
     } else {
       builder.push(`${padStart(minsN.toString(), 2, '0')}${d}`);
@@ -82,7 +97,7 @@ export function betterHumanize(
     if (seconds > 0) {
       const secN = Math.round(seconds);
       const d =
-        mergedOpts.style === 'full' ? ' ' + pluralize(secStr, secN) : secStr;
+        mergedOpts.style === 'full' ? ' ' + pluralizeUnit(secStr, secN) : secStr;
       return `${padStart(secN.toString(), 2, '0')}${d}`;
     }
 

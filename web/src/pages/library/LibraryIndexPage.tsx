@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Box, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { MediaSourceLibraryTable } from '../../components/MediaSourceLibraryTable.tsx';
 
@@ -8,7 +9,7 @@ export default function LibraryIndexPage() {
   return (
     <Box>
       <Typography variant={smallViewport ? 'h5' : 'h3'} mb={2}>
-        Library
+        <Trans>Library</Trans>
       </Typography>
       <Stack gap={2}>
         <MediaSourceLibraryTable />

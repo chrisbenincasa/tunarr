@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro';
 import { find } from 'lodash-es';
 import { useCallback } from 'react';
 import type { CommonSlotViewModel } from '../../model/CommonSlotModels.ts';
@@ -9,7 +10,7 @@ export const useSlotName = () => {
     (slot: CommonSlotViewModel) => {
       switch (slot.type) {
         case 'movie':
-          return 'Movie';
+          return t`Movie`;
         case 'show':
           return (
             slot.show?.title ??
@@ -17,7 +18,7 @@ export const useSlotName = () => {
             find(programOptions, { showId: slot.showId })?.description
           );
         case 'flex':
-          return 'Flex';
+          return t`Flex`;
         case 'redirect':
           return find(programOptions, { channelId: slot.channelId })
             ?.description;
@@ -27,7 +28,7 @@ export const useSlotName = () => {
             find(programOptions, {
               customShowId: slot.customShowId,
             })?.description;
-          return `Custom Show - ${showName}`;
+          return t`Custom Show - ${showName ?? ''}`;
         }
         case 'filler': {
           const showName =
@@ -35,7 +36,7 @@ export const useSlotName = () => {
             find(programOptions, {
               fillerListId: slot.fillerListId,
             })?.description;
-          return `Filler - ${showName}`;
+          return t`Filler - ${showName ?? ''}`;
         }
         case 'smart-collection': {
           const collectionName =
@@ -43,7 +44,7 @@ export const useSlotName = () => {
             find(programOptions, {
               collectionId: slot.smartCollectionId,
             })?.description;
-          return `Smart Collection - ${collectionName}`;
+          return t`Smart Collection - ${collectionName ?? ''}`;
         }
       }
     },

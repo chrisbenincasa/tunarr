@@ -1,5 +1,6 @@
 import { useAdjustRandomSlotWeights } from '@/hooks/slot_scheduler/useAdjustRandomSlotWeights';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext';
+import { Trans } from '@lingui/react/macro';
 import {
   Box,
   Button,
@@ -145,16 +146,16 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
 
   return (
     <Dialog maxWidth="md" fullWidth open={open} onClose={onClose}>
-      <DialogTitle>Adjust Weights</DialogTitle>
+      <DialogTitle><Trans>Adjust Weights</Trans></DialogTitle>
       <DialogContent>
         <Stack spacing={2} alignItems="center" sx={{ mt: 1 }}>
           {renderSliders()}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button onClick={() => onCommit()} variant="contained">
-          Commit
+          <Trans>Commit</Trans>
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,4 +1,5 @@
 import { useCurrentPlexMediaSourceLibraryView } from '@/store/programmingSelector/selectors.ts';
+import { useLingui } from '@lingui/react/macro';
 import Add from '@mui/icons-material/Add';
 import Delete from '@mui/icons-material/Delete';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
@@ -85,6 +86,7 @@ export function PlexValueNode({
   only,
   remove,
 }: PlexValueNodeProps) {
+  const { t } = useLingui();
   const { control, watch, setValue } = useFormContext<PlexFilter>();
   const { plexFilterMetadata, libraryFilterMetadata } = useContext(
     FilterMetadataContext,
@@ -182,7 +184,7 @@ export function PlexValueNode({
                 sx={{ minWidth: 200 }}
                 renderInput={(params) => (
                   <TextField
-                    label="Value"
+                    label={t`Value`}
                     {...params}
                     InputProps={{
                       ...params.InputProps,
@@ -211,7 +213,7 @@ export function PlexValueNode({
           render={({ field }) => (
             <DatePicker
               sx={{ height: 40, mt: 2 }}
-              label="Value"
+              label={t`Value`}
               slotProps={{
                 textField: {
                   size: 'small',
@@ -231,7 +233,7 @@ export function PlexValueNode({
           control={control}
           name={getFieldName('value')}
           render={({ field }) => (
-            <TextField label="Value" size="small" {...field} />
+            <TextField label={t`Value`} size="small" {...field} />
           )}
         />
       );
@@ -250,9 +252,9 @@ export function PlexValueNode({
           name={getFieldName('field')}
           render={({ field }) => (
             <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Field</InputLabel>
+              <InputLabel>{t`Field`}</InputLabel>
               <Select
-                label="Field"
+                label={t`Field`}
                 MenuProps={{ sx: { maxHeight: 375 } }}
                 {...field}
                 onChange={(e) => handleFieldChange(e.target.value)}
@@ -270,13 +272,13 @@ export function PlexValueNode({
         />
 
         <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel>Operation</InputLabel>
+          <InputLabel>{t`Operation`}</InputLabel>
           {plexFilter && (
             <Controller
               control={control}
               name={getFieldName('op')}
               render={({ field }) => (
-                <Select label="Operation" {...field}>
+                <Select label={t`Operation`} {...field}>
                   {map(lookupFieldOperators(plexFilter.type), (ops) => {
                     return (
                       <MenuItem key={ops.key} value={ops.key}>
@@ -308,6 +310,7 @@ function PlexGroupNode({
   remove: removeSelf,
   index,
 }: NodeProps) {
+  const { t } = useLingui();
   const { plexFilterMetadata, libraryFilterMetadata } = useContext(
     FilterMetadataContext,
   );
@@ -361,23 +364,23 @@ function PlexGroupNode({
           }}
         >
           <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel>Field</InputLabel>
+            <InputLabel>{t`Field`}</InputLabel>
             <Controller
               control={control}
               name={getFieldName('op')}
               render={({ field }) => (
                 <Select<PlexFilterOperatorNode['op']>
-                  label="Field"
+                  label={t`Field`}
                   MenuProps={{ sx: { maxHeight: 375 } }}
                   {...field}
                 >
-                  <MenuItem value={'and'}>Match all of</MenuItem>
-                  <MenuItem value={'or'}>Match any of</MenuItem>
+                  <MenuItem value={'and'}>{t`Match all of`}</MenuItem>
+                  <MenuItem value={'or'}>{t`Match any of`}</MenuItem>
                 </Select>
               )}
             />
           </FormControl>
-          <Tooltip title="Add field">
+          <Tooltip title={t`Add field`}>
             <IconButton
               onClick={() =>
                 append({
@@ -391,7 +394,7 @@ function PlexGroupNode({
               <Add />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Add group">
+          <Tooltip title={t`Add group`}>
             <IconButton
               onClick={() => append({ type: 'op', children: [], op: 'and' })}
             >
@@ -434,6 +437,7 @@ function PlexGroupNode({
 export function PlexFilterBuilder(
   { advanced }: { advanced?: boolean } = { advanced: false },
 ) {
+  const { t } = useLingui();
   const formMethods = useForm<PlexFilter>({
     defaultValues: {
       children: [],
@@ -510,11 +514,11 @@ export function PlexFilterBuilder(
                 sx={{ width: 200 }}
                 value={limitTo}
                 onChange={(e) => setLimitTo(e.target.value)}
-                label="Limit"
+                label={t`Limit`}
                 size="small"
                 helperText={
                   !isEmpty(limitTo) && isNaN(parseInt(limitTo))
-                    ? 'Limit must be numeric'
+                    ? t`Limit must be numeric`
                     : null
                 }
               />
@@ -525,7 +529,7 @@ export function PlexFilterBuilder(
                   type="submit"
                   variant="contained"
                 >
-                  Search
+                  {t`Search`}
                 </Button>
               </Box>
             </Stack>

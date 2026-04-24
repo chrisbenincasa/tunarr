@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro';
 import { formOptions } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TranscodeConfig } from '@tunarr/types';
@@ -40,7 +41,7 @@ export const useTranscodeConfigFormOptions = ({
   const updateConfigMutation = useMutation({
     ...putApiTranscodeConfigsByIdMutation(),
     onSuccess: (ret) => {
-      snackbar.enqueueSnackbar('Successfully saved config!', {
+      snackbar.enqueueSnackbar(t`Successfully saved config!`, {
         variant: 'success',
       });
       onSave(ret);
@@ -52,7 +53,7 @@ export const useTranscodeConfigFormOptions = ({
     onError: (e) => {
       console.error(e);
       snackbar.enqueueSnackbar(
-        'Error while saving transcode config. See console log for details.',
+        t`Error while saving transcode config. See console log for details.`,
         {
           variant: 'error',
         },
@@ -63,7 +64,7 @@ export const useTranscodeConfigFormOptions = ({
   const newConfigMutation = useMutation({
     ...postApiTranscodeConfigsMutation(),
     onSuccess: (ret) => {
-      snackbar.enqueueSnackbar('Successfully saved config!', {
+      snackbar.enqueueSnackbar(t`Successfully saved config!`, {
         variant: 'success',
       });
       onSave(ret);
@@ -75,7 +76,7 @@ export const useTranscodeConfigFormOptions = ({
     onError: (e) => {
       console.error(e);
       snackbar.enqueueSnackbar(
-        'Error while saving transcode config. See console log for details.',
+        t`Error while saving transcode config. See console log for details.`,
         {
           variant: 'error',
         },

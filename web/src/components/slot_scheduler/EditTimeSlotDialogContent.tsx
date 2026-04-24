@@ -4,6 +4,7 @@ import type {
 } from '@/helpers/slotSchedulerUtil';
 import { OneDayMillis } from '@/helpers/slotSchedulerUtil';
 import type { TimeSlotViewModel } from '@/model/TimeSlotModels.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Box,
   Button,
@@ -54,6 +55,7 @@ export const EditTimeSlotDialogContent = ({
   index,
   onClose,
 }: EditTimeSlotDialogContentProps) => {
+  const { t } = useLingui();
   const { getValues: getSlotFormValues, slotArray } = useTimeSlotFormContext();
   const currentPeriod = getSlotFormValues('period');
   const { data: fillerLists } = useFillerLists();
@@ -236,21 +238,21 @@ export const EditTimeSlotDialogContent = ({
             onChange={(_, tab: number) => setTab(tab)}
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >
-            <Tab label="Programming" value={0} />
+            <Tab label={t`Programming`} value={0} />
             <Tab
-              label="Filler"
+              label={t`Filler`}
               value={1}
               disabled={slotType === 'flex' || fillerLists.length === 0}
             />
-            <Tab label="Config" value={2} />
-            {hasMidFiller && <Tab label="Mid-Roll" value={3} />}
+            <Tab label={t`Config`} value={2} />
+            {hasMidFiller && <Tab label={t`Mid-Roll`} value={3} />}
           </Tabs>
           <TabPanel value={tab} index={0}>
             <Stack gap={2} useFlexGap>
               <Stack direction="row" gap={1}>
                 {currentPeriod === 'week' && (
                   <FormControl fullWidth>
-                    <InputLabel>Day</InputLabel>
+                    <InputLabel>{t`Day`}</InputLabel>
                     <Controller
                       control={control}
                       name={`startTime`}
@@ -259,7 +261,7 @@ export const EditTimeSlotDialogContent = ({
                           {...field}
                           fullWidth
                           value={Math.floor(field.value / OneDayMillis)}
-                          label="Day"
+                          label={t`Day`}
                           onChange={(e) =>
                             updateSlotDay(
                               e.target.value as number,
@@ -289,7 +291,7 @@ export const EditTimeSlotDialogContent = ({
                         onChange={(value) =>
                           updateSlotTime(value, field.onChange)
                         }
-                        label="Start Time"
+                        label={t`Start Time`}
                         closeOnSelect={false}
                         slotProps={{
                           textField: {
@@ -320,13 +322,15 @@ export const EditTimeSlotDialogContent = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button
           disabled={!isValid || isSubmitting}
           onClick={() => commit()}
           variant="contained"
         >
-          Save
+          <Trans>Save</Trans>
         </Button>
       </DialogActions>
     </>

@@ -1,6 +1,7 @@
 import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
 
 import { useMediaSources } from '@/hooks/settingsHooks.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Delete, Edit, Refresh, VideoLibrary } from '@mui/icons-material';
 import {
   Box,
@@ -36,6 +37,7 @@ import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
 import type { Nullable } from '../../types/util.ts';
 
 export default function MediaSourceSettingsPage() {
+  const { t } = useLingui();
   const { data: servers } = useMediaSources();
   const tableState = useStoreBackedTableSettings('MediaSourceSettings');
 
@@ -69,7 +71,7 @@ export default function MediaSourceSettingsPage() {
   const columns = useMemo<MRT_ColumnDef<MediaSourceSettings>[]>(() => {
     return [
       {
-        header: 'Type',
+        header: t`Type`,
         id: 'type',
         accessorFn: ({ type }) => capitalize(type),
         size: 100,
@@ -77,13 +79,13 @@ export default function MediaSourceSettingsPage() {
         enableSorting: false,
       },
       {
-        header: 'Name',
+        header: t`Name`,
         accessorKey: 'name',
         size: 150,
         grow: false,
       },
       {
-        header: 'URL',
+        header: t`URL`,
         accessorKey: 'uri',
         Cell: ({ cell, row }) =>
           row.original.type === 'local' ? (
@@ -104,7 +106,7 @@ export default function MediaSourceSettingsPage() {
         grow: true,
       },
       {
-        header: 'Healthy?',
+        header: t`Healthy?`,
         id: 'isHealthy',
         Cell: ({ row }) => (
           <MediaSourceHealthyTableCell mediaSource={row.original} />
@@ -114,7 +116,7 @@ export default function MediaSourceSettingsPage() {
         // size: 40,
       },
     ];
-  }, []);
+  }, [t]);
 
   const table = useMaterialReactTable({
     data: servers,
@@ -139,14 +141,14 @@ export default function MediaSourceSettingsPage() {
     renderRowActions: ({ row }) => {
       return (
         <>
-          <Tooltip title="Edit Media Source" placement="top">
+          <Tooltip title={t`Edit Media Source`} placement="top">
             <IconButton onClick={() => setEditingMediaSource(row.original)}>
               <Edit />
             </IconButton>
           </Tooltip>
           {row.original.type !== 'local' && (
             <>
-              <Tooltip title="Refresh Libraries" placement="top">
+              <Tooltip title={t`Refresh Libraries`} placement="top">
                 <IconButton
                   onClick={() =>
                     refreshLibrariesMutation.mutate({
@@ -159,7 +161,7 @@ export default function MediaSourceSettingsPage() {
                   <Refresh />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Edit Libraries" placement="top">
+              <Tooltip title={t`Edit Libraries`} placement="top">
                 <IconButton
                   onClick={() => setEditingMediaSourceLibraries(row.original)}
                 >
@@ -196,15 +198,17 @@ export default function MediaSourceSettingsPage() {
                 },
               })}
             >
-              Media Sources
+              <Trans>Media Sources</Trans>
             </Typography>
             <AddMediaSourceButton />
             <Box sx={{ flexBasis: '100%', width: 0 }}></Box>
             <Typography sx={{ width: '60%' }}>
-              Media Sources are where Tunarr sources your content. Media can
-              come from your filesystem or a remote server, like Plex or
-              Jellyfin. At least one Media Source is necessary to create
-              channels and play media in Tunarr.
+              <Trans>
+                Media Sources are where Tunarr sources your content. Media can
+                come from your filesystem or a remote server, like Plex or
+                Jellyfin. At least one Media Source is necessary to create
+                channels and play media in Tunarr.
+              </Trans>
             </Typography>
           </Stack>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>
@@ -247,8 +251,8 @@ export default function MediaSourceSettingsPage() {
       <DeleteConfirmationDialog
         open={!!deletingMediaSource}
         onClose={() => setDeletingMediaSource(null)}
-        title={`Delete Media Source "${deletingMediaSource?.name}?"`}
-        body="Deleting a media source will remove all of its associated programs from Tunarr."
+        title={t`Delete Media Source "${deletingMediaSource?.name}"?`}
+        body={t`Deleting a media source will remove all of its associated programs from Tunarr.`}
         onConfirm={() =>
           deleteMediaSourceMut.mutate({
             path: { id: deletingMediaSource!.id },

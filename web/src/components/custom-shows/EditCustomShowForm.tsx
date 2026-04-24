@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { customShowQuery } from '@/hooks/useCustomShows.ts';
 import useStore from '@/store';
@@ -69,6 +70,7 @@ export function EditCustomShowsForm({
   customShowPrograms,
   isNew,
 }: Props) {
+  const { t } = useLingui();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const customShowProgrammingChanged = useStore(
@@ -265,7 +267,7 @@ export function EditCustomShowsForm({
           control={control}
           name="name"
           render={({ field }) => (
-            <TextField margin="normal" fullWidth label="Name" {...field} />
+            <TextField margin="normal" fullWidth label={t`Name`} {...field} />
           )}
         />
 
@@ -286,7 +288,7 @@ export function EditCustomShowsForm({
                     }}
                   />
                 }
-                label="Sync with external playlist"
+                label={t`Sync with external playlist`}
               />
             )}
           />
@@ -311,7 +313,7 @@ export function EditCustomShowsForm({
                     setValue('syncExternalPlaylistId', '');
                   }}
                   renderInput={(params) => (
-                    <TextField {...params} label="Media Source" />
+                    <TextField {...params} label={t`Media Source`} />
                   )}
                 />
               )}
@@ -340,7 +342,7 @@ export function EditCustomShowsForm({
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Playlist"
+                        label={t`Playlist`}
                         slotProps={{
                           input: {
                             ...params.InputProps,
@@ -375,11 +377,11 @@ export function EditCustomShowsForm({
                   onClick={() => syncNowMutation.mutate()}
                   disabled={syncNowMutation.isPending || customShow.isSyncing}
                 >
-                  Sync Now
+                  <Trans>Sync Now</Trans>
                 </Button>
                 {customShow.lastSyncedAt && (
                   <Typography variant="body2" color="text.secondary">
-                    Last synced {dayjs(customShow.lastSyncedAt).fromNow()}
+                    <Trans>Last synced {dayjs(customShow.lastSyncedAt).fromNow()}</Trans>
                   </Typography>
                 )}
               </Stack>
@@ -392,8 +394,8 @@ export function EditCustomShowsForm({
         <Box>
           {isSynced && !isNew && (
             <Alert severity="info" sx={{ mb: 2 }} icon={<Sync />}>
-              This custom show is synced with an external playlist. Content is
-              updated automatically and cannot be edited manually.
+              <Trans>This custom show is synced with an external playlist. Content is
+              updated automatically and cannot be edited manually.</Trans>
             </Alert>
           )}
 
@@ -407,25 +409,25 @@ export function EditCustomShowsForm({
                 variant="h6"
                 sx={{ flex: 1, flexBasis: ['100%', 'auto'] }}
               >
-                Programming
+                <Trans>Programming</Trans>
               </Typography>
 
               {!syncEnabled && (
                 <>
                   <CustomShowSortToolsMenu />
                   {customShowProgrammingChanged && (
-                    <Tooltip title="Reset programming to most recently saved state">
+                    <Tooltip title={t`Reset programming to most recently saved state`}>
                       <Button
                         variant="contained"
                         startIcon={<Undo />}
                         onClick={() => resetCustomShowProgramming()}
                       >
-                        Reset
+                        <Trans>Reset</Trans>
                       </Button>
                     </Tooltip>
                   )}
                   <Tooltip
-                    title="Add programming to custom show"
+                    title={t`Add programming to custom show`}
                     placement="top"
                   >
                     <Button
@@ -435,7 +437,7 @@ export function EditCustomShowsForm({
                       startIcon={<Tv />}
                       variant="contained"
                     >
-                      Add Media
+                      <Trans>Add Media</Trans>
                     </Button>
                   </Tooltip>
                 </>
@@ -451,7 +453,7 @@ export function EditCustomShowsForm({
                 type="submit"
                 startIcon={<Save />}
               >
-                Save
+                <Trans>Save</Trans>
               </Button>
             </Stack>
           </Box>

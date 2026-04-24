@@ -1,5 +1,6 @@
 import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
+import { Trans } from '@lingui/react/macro';
 import { Add } from '@mui/icons-material';
 import { Button } from '@mui/material';
 import dayjs from 'dayjs';
@@ -131,7 +132,7 @@ export const AddRandomSlotButton = ({ onAdd }: AddRandomSlotButtonProps) => {
 
   return (
     <Button startIcon={<Add />} variant="contained" onClick={() => addSlot()}>
-      Add Slot
+      <Trans>Add Slot</Trans>
     </Button>
   );
 };
