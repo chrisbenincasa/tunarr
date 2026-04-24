@@ -753,6 +753,7 @@ export class PaddedProgram {
     return programDur + fillerDur + this.padMs;
   }
 }
+
 export function createIndexByIdMap(
   programs: SlotSchedulerProgram[],
   customShowId: string,
@@ -858,7 +859,6 @@ function buildEagerBreaks(
       const flex: FlexProgram = {
         type: 'flex',
         duration: remainder,
-        persisted: false,
       };
       result.push(new PaddedProgram(flex, 0, {}));
     }
@@ -916,7 +916,6 @@ function buildLazyBreaks(
     const flex: FlexProgram = {
       type: 'flex',
       duration: breakDuration,
-      persisted: false,
       fillerConfig,
     };
     result.push(new PaddedProgram(flex, 0, {}));

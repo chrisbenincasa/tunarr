@@ -506,7 +506,7 @@ export default function ChannelLineupList(props: Props) {
 
     const programId =
       focusedProgramDetails?.type === 'custom'
-        ? focusedProgramDetails.program?.uniqueId
+        ? focusedProgramDetails.program?.id
         : focusedProgramDetails?.type === 'content'
           ? focusedProgramDetails?.id
           : null;

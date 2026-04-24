@@ -122,7 +122,7 @@ export function channelProgramUniqueId(program: ChannelProgram): string {
     case 'custom':
       return `custom.${program.customShowId}.${program.id}`;
     case 'content':
-      return `content.${program.uniqueId}`;
+      return `content.${program.id}`;
     case 'redirect':
       return `redirect.${program.channel}`;
     case 'filler':

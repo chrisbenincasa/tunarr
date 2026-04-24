@@ -239,7 +239,6 @@ export class ProgramConverter {
       type: 'content',
       duration: program.duration,
       id: program.uuid,
-      uniqueId: program.uuid,
       program,
     };
   }

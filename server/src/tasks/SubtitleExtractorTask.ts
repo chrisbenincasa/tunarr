@@ -233,7 +233,7 @@ export class SubtitleExtractorTask extends Task2<
               externalKey: program.program.externalId,
               externalSourceId: tag(program.program.mediaSourceId),
               externalSourceType: program.program.sourceType,
-              id: program.uniqueId,
+              id: program.id,
             },
             { streamIndex: subtitle.index, codec: subtitle.codec },
           );

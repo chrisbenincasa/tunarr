@@ -347,7 +347,7 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
                 custom: ({ program }) => program,
               }),
             ),
-            (p) => p.id ?? p.uniqueId,
+            (p) => p.id,
           ),
           isNil,
         ),

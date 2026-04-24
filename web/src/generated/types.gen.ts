@@ -3681,7 +3681,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -3691,7 +3690,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
         } | {
             type: 'custom';
@@ -3700,28 +3698,12 @@ export type GetApiChannelsByIdProgrammingResponses = {
             id: string;
             customShowId: string;
             index: number;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                uniqueId: string;
-                startOffsetMs?: number;
-            };
         } | {
             type: 'filler';
             duration: number;
             icon?: string;
             id: string;
             fillerListId: string;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                uniqueId: string;
-                startOffsetMs?: number;
-            };
             fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback' | 'mid';
         } | {
             type: 'redirect';
@@ -4169,14 +4151,12 @@ export type GetApiChannelsByIdProgrammingResponse = GetApiChannelsByIdProgrammin
 export type PostApiChannelsByIdProgrammingData = {
     body?: {
         type: 'manual';
-        programs: Array<{
+        lineup: Array<{
             type: 'content';
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
-            program: TerminalProgramInput;
         } | {
             type: 'custom';
             duration: number;
@@ -4184,15 +4164,13 @@ export type PostApiChannelsByIdProgrammingData = {
             id: string;
             customShowId: string;
             index: number;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                uniqueId: string;
-                startOffsetMs?: number;
-                program: TerminalProgramInput;
-            };
+        } | {
+            type: 'filler';
+            duration: number;
+            icon?: string;
+            id: string;
+            fillerListId: string;
+            fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback' | 'mid';
         } | {
             type: 'redirect';
             duration: number;
@@ -4212,32 +4190,6 @@ export type PostApiChannelsByIdProgrammingData = {
                 };
                 origin?: 'flex' | 'midroll';
             };
-        } | {
-            type: 'filler';
-            duration: number;
-            icon?: string;
-            id: string;
-            fillerListId: string;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                uniqueId: string;
-                startOffsetMs?: number;
-                program: TerminalProgramInput;
-            };
-            fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback' | 'mid';
-        }>;
-        lineup: Array<{
-            type: 'index';
-            index: number;
-            duration?: number;
-        } | {
-            type: 'persisted';
-            programId: string;
-            customShowId?: string;
-            duration: number;
         }>;
         append?: boolean;
     } | {
@@ -4689,7 +4641,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -4699,7 +4650,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
         } | {
             type: 'custom';
@@ -4708,28 +4658,12 @@ export type PostApiChannelsByIdProgrammingResponses = {
             id: string;
             customShowId: string;
             index: number;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                uniqueId: string;
-                startOffsetMs?: number;
-            };
         } | {
             type: 'filler';
             duration: number;
             icon?: string;
             id: string;
             fillerListId: string;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                uniqueId: string;
-                startOffsetMs?: number;
-            };
             fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback' | 'mid';
         } | {
             type: 'redirect';
@@ -5207,7 +5141,6 @@ export type GetChannelFallbacksResponses = {
         duration: number;
         icon?: string;
         id: string;
-        uniqueId: string;
         startOffsetMs?: number;
         program: TerminalProgram;
     };
@@ -5254,7 +5187,6 @@ export type GetApiChannelsAllLineupsResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
             start: number;
@@ -5273,7 +5205,6 @@ export type GetApiChannelsAllLineupsResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -5364,7 +5295,6 @@ export type GetApiChannelsByIdLineupResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
             start: number;
@@ -5383,7 +5313,6 @@ export type GetApiChannelsByIdLineupResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -5460,7 +5389,6 @@ export type GetApiChannelsByIdNowPlayingResponses = {
         duration: number;
         icon?: string;
         id: string;
-        uniqueId: string;
         startOffsetMs?: number;
         program: TerminalProgram;
         start: number;
@@ -5479,7 +5407,6 @@ export type GetApiChannelsByIdNowPlayingResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
         };
@@ -5784,7 +5711,6 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
         } | {
             type: 'custom';
@@ -5793,28 +5719,12 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
             id: string;
             customShowId: string;
             index: number;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                uniqueId: string;
-                startOffsetMs?: number;
-            };
         } | {
             type: 'filler';
             duration: number;
             icon?: string;
             id: string;
             fillerListId: string;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                uniqueId: string;
-                startOffsetMs?: number;
-            };
             fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback' | 'mid';
         } | {
             type: 'redirect';
@@ -5844,7 +5754,6 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -6114,7 +6023,6 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
         } | {
             type: 'custom';
@@ -6123,28 +6031,12 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
             id: string;
             customShowId: string;
             index: number;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                uniqueId: string;
-                startOffsetMs?: number;
-            };
         } | {
             type: 'filler';
             duration: number;
             icon?: string;
             id: string;
             fillerListId: string;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                uniqueId: string;
-                startOffsetMs?: number;
-            };
             fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback' | 'mid';
         } | {
             type: 'redirect';
@@ -6174,7 +6066,6 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -6971,7 +6862,6 @@ export type GetApiCustomShowsResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -6995,7 +6885,6 @@ export type CreateCustomShowData = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgramInput;
         }>;
@@ -7028,7 +6917,6 @@ export type CreateCustomShowResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -7107,7 +6995,6 @@ export type GetApiCustomShowsByIdResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -7131,7 +7018,6 @@ export type PutApiCustomShowsByIdData = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgramInput;
         }>;
@@ -7174,7 +7060,6 @@ export type PutApiCustomShowsByIdResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -7222,7 +7107,6 @@ export type GetApiCustomShowsByIdProgramsResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
         };
@@ -7275,7 +7159,6 @@ export type SyncCustomShowResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -7311,7 +7194,6 @@ export type GetApiFillerListsResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
         } | {
@@ -7326,7 +7208,6 @@ export type GetApiFillerListsResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -7344,7 +7225,6 @@ export type PostApiFillerListsData = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgramInput;
         } | {
@@ -7359,7 +7239,6 @@ export type PostApiFillerListsData = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgramInput;
             };
@@ -7433,7 +7312,6 @@ export type GetApiFillerListsByIdResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
         } | {
@@ -7448,7 +7326,6 @@ export type GetApiFillerListsByIdResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -7466,7 +7343,6 @@ export type PutApiFillerListsByIdData = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgramInput;
         } | {
@@ -7481,7 +7357,6 @@ export type PutApiFillerListsByIdData = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgramInput;
             };
@@ -7514,7 +7389,6 @@ export type PutApiFillerListsByIdResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
         } | {
@@ -7529,7 +7403,6 @@ export type PutApiFillerListsByIdResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -7564,7 +7437,6 @@ export type GetApiFillerListsByIdProgramsResponses = {
         duration: number;
         icon?: string;
         id: string;
-        uniqueId: string;
         startOffsetMs?: number;
         program: TerminalProgram;
     } | {
@@ -7579,7 +7451,6 @@ export type GetApiFillerListsByIdProgramsResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
         };
@@ -7684,7 +7555,6 @@ export type GetApiProgramsByIdDescendantsResponses = {
         duration: number;
         icon?: string;
         id: string;
-        uniqueId: string;
         startOffsetMs?: number;
         program: TerminalProgram;
     }>;
@@ -8387,7 +8257,6 @@ export type GetApiDebugHelpersBuildGuideResponses = {
             duration: number;
             icon?: string;
             id: string;
-            uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
             start: number;
@@ -8406,7 +8275,6 @@ export type GetApiDebugHelpersBuildGuideResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
             };
@@ -9227,7 +9095,6 @@ export type GetApiMediaLibrariesByLibraryIdProgramsResponses = {
         duration: number;
         icon?: string;
         id: string;
-        uniqueId: string;
         startOffsetMs?: number;
         program: TerminalProgram;
     }>;
@@ -10993,7 +10860,6 @@ export type GetApiGuideChannelsResponses = {
                 duration: number;
                 icon?: string;
                 id: string;
-                uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
                 start: number;
@@ -11012,7 +10878,6 @@ export type GetApiGuideChannelsResponses = {
                     duration: number;
                     icon?: string;
                     id: string;
-                    uniqueId: string;
                     startOffsetMs?: number;
                     program: TerminalProgram;
                 };

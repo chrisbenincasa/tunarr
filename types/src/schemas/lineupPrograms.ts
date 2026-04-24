@@ -22,7 +22,7 @@ export const BaseProgramSchema = z.object({
     z.literal('custom'),
     z.literal('filler'),
   ]),
-  duration: z.number(),
+  duration: z.number().positive(),
   icon: z.string().optional(),
 });
 
@@ -75,9 +75,6 @@ export type ContentProgramOriginalProgram = z.infer<
 export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   type: z.literal('content'),
   id: z.string(),
-  // Always populated. IFF persisted then uniqueId = id
-  // ELSE "{source_type}|{source_id}|{external_item_id}"
-  uniqueId: z.string(),
   duration: z.number().min(0),
   startOffsetMs: z.number().nonnegative().optional(),
 });
@@ -142,7 +139,7 @@ export const CondensedCustomProgramSchema = BaseProgramSchema.extend({
   id: z.string(),
   customShowId: z.string(),
   index: z.number(),
-  program: CondensedContentProgramSchema.optional(),
+  // program: CondensedContentProgramSchema.optional(),
 });
 
 export type CondensedCustomProgram = z.infer<
@@ -173,7 +170,6 @@ export const CondensedFillerProgramSchema = BaseProgramSchema.extend({
   // The ID of the underlying program
   id: z.uuid(),
   fillerListId: z.uuid(),
-  program: CondensedContentProgramSchema.optional(),
   fillerType: FillerType.optional(),
 });
 

@@ -1101,7 +1101,7 @@ msgstr "Dark"
 msgid "Data Directory:"
 msgstr "Data Directory:"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:245
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:180
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:251
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:260
 msgid "Day"
@@ -1573,7 +1573,7 @@ msgid "Error saving new Smart Collection. Check server logs and browser console 
 msgstr "Error saving new Smart Collection. Check server logs and browser console for details."
 
 #. placeholder {0}: error.message
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:96
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:86
 msgid "Error saving programs. {0}"
 msgstr "Error saving programs. {0}"
 
@@ -2155,7 +2155,7 @@ msgid "Linear"
 msgstr "Linear"
 
 #: src/components/base/ProgramViewToggleButton.tsx:39
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:240
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:175
 msgid "List"
 msgstr "List"
 
@@ -2368,7 +2368,7 @@ msgstr "Minimum Program Duration (minutes)"
 msgid "Modify Programming"
 msgstr "Modify Programming"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:255
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:190
 msgid "Month"
 msgstr "Month"
 
@@ -2831,7 +2831,7 @@ msgstr "Programs"
 msgid "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
 msgstr "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:91
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:81
 msgid "Programs saved!"
 msgstr "Programs saved!"
 
@@ -3030,7 +3030,7 @@ msgstr "Replicate..."
 msgid "Rescan Interval (hours)"
 msgstr "Rescan Interval (hours)"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:298
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:233
 #: src/components/custom-shows/EditCustomShowForm.tsx:425
 #: src/components/filler/EditFillerListForm.tsx:172
 msgid "Reset"
@@ -3045,7 +3045,7 @@ msgstr "Reset"
 msgid "Reset Changes"
 msgstr "Reset Changes"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:282
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:217
 msgid "Reset changes made to the channel's lineup"
 msgstr "Reset changes made to the channel's lineup"
 
@@ -3121,7 +3121,7 @@ msgstr "Sample rate cannot be changed when copying input audio"
 
 #: src/components/channel_config/ChannelEditActions.tsx:98
 #: src/components/channel_config/ChannelEditActions.tsx:118
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:333
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:268
 #: src/components/custom-shows/EditCustomShowForm.tsx:456
 #: src/components/filler/EditFillerListForm.tsx:199
 #: src/components/programming_controls/AddBreaksModal.tsx:209
@@ -3956,7 +3956,7 @@ msgstr "Web Settings"
 msgid "Web version = {0}, Server version = {1}"
 msgstr "Web version = {0}, Server version = {1}"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:250
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:185
 msgid "Week"
 msgstr "Week"
 

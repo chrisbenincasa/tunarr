@@ -36,7 +36,6 @@ import {
   isUndefined,
   map,
   mapValues,
-  nth,
   omit,
   omitBy,
   partition,
@@ -99,7 +98,9 @@ const SqliteMaxDepthLimit = 1000;
 
 type ProgramRelationOperation = { operation: 'add' | 'remove'; id: string };
 
-function channelProgramToLineupItemFunc(p: ChannelProgram): LineupItem {
+function channelProgramToLineupItemFunc(
+  p: CondensedChannelProgram,
+): LineupItem {
   return match(p)
     .returnType<LineupItem>()
     .with({ type: 'content' }, (program) => ({
@@ -855,34 +856,7 @@ export class LineupRepository {
 
     if (req.type === 'manual') {
       const newLineupItems = await run(async () => {
-        const newItems = await this.timer.timeAsync(
-          'createNewLineup',
-          async () => {
-            const programs = req.programs;
-            return seq.collect(req.lineup, (lineupItem) => {
-              switch (lineupItem.type) {
-                case 'index': {
-                  const program = nth(programs, lineupItem.index);
-                  if (program) {
-                    return channelProgramToLineupItemFunc({
-                      ...program,
-                      duration: lineupItem.duration ?? program.duration,
-                    });
-                  }
-                  return null;
-                }
-                case 'persisted': {
-                  return {
-                    type: 'content',
-                    id: lineupItem.programId,
-                    customShowId: lineupItem.customShowId,
-                    durationMs: lineupItem.duration,
-                  } satisfies ContentItem;
-                }
-              }
-            });
-          },
-        );
+        const newItems = req.lineup.map(channelProgramToLineupItemFunc);
         if (req.append) {
           const existingLineup = await this.loadLineup(channel.uuid);
           return [...existingLineup.items, ...newItems];
@@ -1056,7 +1030,6 @@ export class LineupRepository {
         if (dbProgramIds.has(item.id)) {
           p = {
             ...item,
-            uniqueId: item.id,
             duration: item.durationMs,
           } satisfies CondensedContentProgram;
         }

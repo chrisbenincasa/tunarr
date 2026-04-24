@@ -15,7 +15,6 @@ import {
   ChannelStreamModes,
 } from '../schemas/channelSchema.js';
 import {
-  ChannelProgramSchema,
   CondensedChannelProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
@@ -132,31 +131,11 @@ export const BasicPagingSchema = z.object({
   limit: z.coerce.number().optional(),
 });
 
-const LineupLookupItemSchema = z.object({
-  type: z.literal('index'),
-  index: z.number(),
-  duration: z.number().positive().max(3.156e10).optional(), // Duration for non-content programs
-});
-
-const PersistedLineupItemSchema = z.object({
-  type: z.literal('persisted'),
-  programId: z.string(),
-  customShowId: z.string().optional(),
-  // Include this for now just to make the server-side stuff
-  // a bit easier. Eventually we'll do a big lookup and use the
-  // saved durations from the DB.
-  duration: z.number().positive().max(3.156e10),
-});
-
-const UpdateLineupItemSchema = z.union([
-  LineupLookupItemSchema,
-  PersistedLineupItemSchema,
-]);
-
 export const ManualProgramLineupSchema = z.object({
   type: z.literal('manual'),
-  programs: z.array(ChannelProgramSchema),
-  lineup: z.array(UpdateLineupItemSchema), // Array of indexes into the programming array
+  // programs: z.array(ChannelProgramSchema),
+  // lineup: z.array(UpdateLineupItemSchema), // Array of indexes into the programming array
+  lineup: CondensedChannelProgramSchema.array(),
   append: z.boolean().default(false),
 });
 

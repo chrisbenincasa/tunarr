@@ -436,7 +436,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
 
   const programId =
     modalProgram?.type === 'custom'
-      ? modalProgram.program?.uniqueId
+      ? modalProgram.program?.id
       : modalProgram?.type === 'content'
         ? modalProgram?.id
         : null;

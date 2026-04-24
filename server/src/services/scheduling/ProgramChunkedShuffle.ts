@@ -35,7 +35,6 @@ export class ContentProgramChunkedShuffle extends ProgramChunkedShuffle<Condense
       type: 'content',
       duration: program.duration,
       id: program.uuid,
-      uniqueId: program.uuid,
     };
   }
 }

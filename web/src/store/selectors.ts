@@ -25,7 +25,7 @@ export const materializeProgramList = (
   return seq.collect(lineup, (p) => {
     let content: UIChannelProgramWithOffset | null = null;
     if (p.type === 'content') {
-      const program = programLookup[p.id ?? ''] ?? programLookup[p.uniqueId];
+      const program = programLookup[p.id];
       if (program) {
         content = {
           ...program,
