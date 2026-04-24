@@ -91,15 +91,17 @@ export const EditRandomSlotDialogContent = ({
     if (!hasMidFiller && tab === 2) {
       setTab(0);
     }
-    if (hasMidFiller && !getValues('midRoll' as never)) {
-      setValue('midRoll.intervalMs' as never, (30 * 60 * 1000) as never);
-      setValue('midRoll.breakDurationMs' as never, (3 * 60 * 1000) as never);
-      setValue('midRoll.maxBreaks' as never, 0 as never);
-      setValue(
-        'midRoll.minProgramDurationMs' as never,
-        (60 * 60 * 1000) as never,
-      );
-      setValue('midRoll.programTypes' as never, [] as never);
+    if (hasMidFiller && !getValues('midRoll')) {
+      setValue('midRoll', {
+        intervalMs: 30 * 60 * 1000,
+        breakRule: { type: 'fixed_interval', intervalMs: 30 * 60 * 1000 },
+        breakDurationMs: 3 * 60 * 1000,
+        maxBreaks: 0,
+        minProgramDurationMs: 60 * 60 * 1000,
+        tailBufferMs: 0,
+        programTypes: [],
+        strategy: 'eager',
+      });
     }
   }, [hasMidFiller, tab, getValues, setValue]);
 

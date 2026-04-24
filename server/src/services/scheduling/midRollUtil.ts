@@ -16,16 +16,20 @@ export function calculateMidRollBreaks(
     return null;
   }
 
-  let breakCount = Math.ceil(programDurationMs / config.intervalMs) - 1;
+  const intervalMs = config.intervalMs;
+  const breakDurationMs = config.breakDurationMs;
+  if (intervalMs === undefined || breakDurationMs === undefined) {
+    return null;
+  }
+
+  let breakCount = Math.ceil(programDurationMs / intervalMs) - 1;
   if (config.maxBreaks >= 1) {
     breakCount = Math.min(breakCount, config.maxBreaks);
   }
 
-  // If we know the slot duration, cap breaks so the total fits:
-  // programDuration + breakCount * breakDuration <= slotDuration
   if (isDefined(slotDurationMs)) {
     const maxBreaksFromSlot = Math.floor(
-      (slotDurationMs - programDurationMs) / config.breakDurationMs,
+      (slotDurationMs - programDurationMs) / breakDurationMs,
     );
     breakCount = Math.min(breakCount, maxBreaksFromSlot);
   }
@@ -36,19 +40,18 @@ export function calculateMidRollBreaks(
 
   const segments: { startOffsetMs: number; durationMs: number }[] = [];
   for (let i = 0; i < breakCount; i++) {
-    const startOffsetMs = i * config.intervalMs;
-    const endOffsetMs = (i + 1) * config.intervalMs;
+    const startOffsetMs = i * intervalMs;
+    const endOffsetMs = (i + 1) * intervalMs;
     segments.push({ startOffsetMs, durationMs: endOffsetMs - startOffsetMs });
   }
-  // Final segment
   segments.push({
-    startOffsetMs: breakCount * config.intervalMs,
-    durationMs: programDurationMs - breakCount * config.intervalMs,
+    startOffsetMs: breakCount * intervalMs,
+    durationMs: programDurationMs - breakCount * intervalMs,
   });
 
   return {
     segments,
-    totalBreakDurationMs: breakCount * config.breakDurationMs,
+    totalBreakDurationMs: breakCount * breakDurationMs,
   };
 }
 

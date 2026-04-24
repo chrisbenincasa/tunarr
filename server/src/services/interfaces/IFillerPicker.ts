@@ -5,6 +5,11 @@ import type {
 } from '../../db/schema/derivedTypes.js';
 import type { Nullable } from '../../types/util.ts';
 
+export type FillerPickOptions = {
+  fillerRepeatCooldownOverrideMs?: number;
+  fillerListCooldownOverrides?: Record<string, number>;
+};
+
 export type FillerPickResult = {
   fillerListId: Nullable<string>;
   filler: Nullable<ProgramOrmWithExternalIds>;
@@ -23,6 +28,7 @@ export interface IFillerPicker {
     fillers: ChannelFillerShowWithContent[],
     maxDuration: number,
     now?: number,
+    options?: FillerPickOptions,
   ): Promise<FillerPickResult>;
 }
 export const DefaultFillerCooldownMillis = 30 * 60 * 1000;

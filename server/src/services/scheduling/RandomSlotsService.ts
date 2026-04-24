@@ -100,6 +100,10 @@ class ScheduleContext {
     return this.#sortedSlots;
   }
 
+  get random(): Random {
+    return this.#random;
+  }
+
   advanceTime(by: number | Duration) {
     this.#timeCursor = dayjs.isDuration(by)
       ? this.#timeCursor.add(by)
@@ -253,19 +257,16 @@ export class RandomSlotScheduler {
         paddedPrograms = maybePrograms;
       }
 
-      const expandedPrograms = paddedPrograms.flatMap((pp) =>
+      const finalPrograms: PaddedProgram[] = paddedPrograms.flatMap((pp) =>
         applyMidRollBreaks(
           pp,
           currSlot,
           currSlot.midRollConfig,
-          currSlot.durationSpec.type === 'fixed'
-            ? currSlot.durationSpec.durationMs
-            : undefined,
-          context.timeCursor.valueOf(),
+          context.random,
         ),
       );
 
-      const totalDuration = sum(map(expandedPrograms, (p) => p.totalDuration));
+      const totalDuration = sum(map(finalPrograms, (p) => p.totalDuration));
       let remainingTimeInSlot = 0;
       const startOfNextBlock = +context.timeCursor.add(totalDuration);
       if (
@@ -281,17 +282,13 @@ export class RandomSlotScheduler {
       // "shuffle" ordering, it won't work for "in order" shows in slots.
       // TODO: Implement greedy filling.
       if (flexPreference === 'distribute' && padStyle === 'episode') {
-        distributeFlex(
-          expandedPrograms,
-          this.schedule.padMs,
-          remainingTimeInSlot,
-        );
+        distributeFlex(finalPrograms, this.schedule.padMs, remainingTimeInSlot);
       } else if (flexPreference === 'distribute') {
         // We pad the slot as a whole here. We must find the first content-type
         // program to add the padding to.
-        const div = Math.floor(remainingTimeInSlot / expandedPrograms.length);
+        const div = Math.floor(remainingTimeInSlot / finalPrograms.length);
         let totalAdded = 0;
-        forEach(expandedPrograms, (paddedProgram) => {
+        forEach(finalPrograms, (paddedProgram) => {
           if (paddedProgram.program.type === 'filler') {
             return;
           }
@@ -299,24 +296,21 @@ export class RandomSlotScheduler {
           totalAdded += div;
         });
         const firstContent = find(
-          expandedPrograms,
+          finalPrograms,
           ({ program }) => program.type !== 'filler',
         );
         if (firstContent) {
           firstContent.padMs += remainingTimeInSlot - totalAdded;
         }
       } else {
-        const lastProgram = last(expandedPrograms)!;
-        lastProgram.padMs += remainingTimeInSlot;
+        const lastProgram = last(finalPrograms);
+        if (lastProgram) {
+          lastProgram.padMs += remainingTimeInSlot;
+        }
       }
 
       let done = false;
-      for (const {
-        program,
-        padMs,
-        totalDuration,
-        filler,
-      } of expandedPrograms) {
+      for (const { program, padMs, totalDuration, filler } of finalPrograms) {
         if (+context.timeCursor + program.duration > +upperLimit) {
           done = true;
           break;

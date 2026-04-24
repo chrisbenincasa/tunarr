@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import type { Channel, ChannelProgram } from '@tunarr/types';
+import type { Channel, ChannelProgram, FlexProgram } from '@tunarr/types';
 import Color from 'colorjs.io';
 import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
@@ -101,16 +101,19 @@ export function MidRollGroupRow({
   const bgDarker = new Color(backgroundColor.clone().darken(0.1));
 
   const segmentBarParts = useMemo(() => {
+    const isBreak = (p: ChannelProgram) =>
+      (p.type === 'filler' && p.fillerType === 'mid') ||
+      (p.type === 'flex' &&
+        (p as FlexProgram).fillerConfig?.origin === 'midroll');
+
     const segmentBarParts: Array<{ fraction: number; isFiller: boolean }> = [];
     for (let i = 0; i < group.items.length; i++) {
       const item = group.items[i];
-      const isFiller = item.type === 'filler';
       let totalFraction = 0;
-      if (isFiller) {
+      if (isBreak(item)) {
         for (let j = i; j < group.items.length; j++) {
           const nextItem = group.items[j];
-          if (nextItem.type !== 'filler') {
-            // Continue the outer loop at this item.
+          if (!isBreak(nextItem)) {
             i = j - 1;
             break;
           }
@@ -123,7 +126,7 @@ export function MidRollGroupRow({
       } else {
         segmentBarParts.push({
           fraction: item.duration / group.totalDuration,
-          isFiller,
+          isFiller: false,
         });
       }
     }

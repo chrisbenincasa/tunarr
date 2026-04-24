@@ -3,6 +3,7 @@ import type { RandomSlotForm } from './SlotModels.ts';
 
 import {
   BaseSlotOrdering,
+  MidRollConfigSchema,
   SlotFiller,
   SlotProgrammingFillerOrder,
 } from '@tunarr/types/api';
@@ -17,6 +18,7 @@ import type { TimeSlotForm } from './TimeSlotModels.ts';
 
 export const WithSlotFiller = z.object({
   filler: z.array(SlotFiller).optional(),
+  midRoll: MidRollConfigSchema.optional(),
 });
 
 export const CommonMovieSlotViewModel = z.object({

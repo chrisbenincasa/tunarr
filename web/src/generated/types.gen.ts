@@ -3742,6 +3742,14 @@ export type GetApiChannelsByIdProgrammingResponses = {
             persisted: boolean;
             duration: number;
             icon?: string;
+            fillerConfig?: {
+                fillerListIds?: Array<string>;
+                fillerRepeatCooldownMs?: number;
+                fillerListCooldownOverrides?: {
+                    [key: string]: number;
+                };
+                origin?: 'flex' | 'midroll';
+            };
         }>;
         startTimeOffsets: Array<number>;
         schedule?: {
@@ -3763,11 +3771,26 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
             } | {
                 startTime: number;
@@ -3783,11 +3806,26 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
             } | {
                 startTime: number;
@@ -3819,11 +3857,26 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 startTime: number;
                 padMs?: number;
@@ -3840,11 +3893,26 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
             }>;
             timeZoneOffset: number;
@@ -3862,11 +3930,26 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -3889,11 +3972,26 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -3946,11 +4044,26 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -3992,11 +4105,26 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -4089,6 +4217,14 @@ export type PostApiChannelsByIdProgrammingData = {
             persisted: boolean;
             duration: number;
             icon?: string;
+            fillerConfig?: {
+                fillerListIds?: Array<string>;
+                fillerRepeatCooldownMs?: number;
+                fillerListCooldownOverrides?: {
+                    [key: string]: number;
+                };
+                origin?: 'flex' | 'midroll';
+            };
         } | {
             type: 'filler';
             persisted: boolean;
@@ -4141,11 +4277,26 @@ export type PostApiChannelsByIdProgrammingData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
             } | {
                 startTime: number;
@@ -4161,11 +4312,26 @@ export type PostApiChannelsByIdProgrammingData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
             } | {
                 startTime: number;
@@ -4197,11 +4363,26 @@ export type PostApiChannelsByIdProgrammingData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
                 startTime: number;
                 padMs?: number;
@@ -4218,11 +4399,26 @@ export type PostApiChannelsByIdProgrammingData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
             }>;
             timeZoneOffset: number;
@@ -4246,11 +4442,26 @@ export type PostApiChannelsByIdProgrammingData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -4273,11 +4484,26 @@ export type PostApiChannelsByIdProgrammingData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -4330,11 +4556,26 @@ export type PostApiChannelsByIdProgrammingData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -4376,11 +4617,26 @@ export type PostApiChannelsByIdProgrammingData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -4509,6 +4765,14 @@ export type PostApiChannelsByIdProgrammingResponses = {
             persisted: boolean;
             duration: number;
             icon?: string;
+            fillerConfig?: {
+                fillerListIds?: Array<string>;
+                fillerRepeatCooldownMs?: number;
+                fillerListCooldownOverrides?: {
+                    [key: string]: number;
+                };
+                origin?: 'flex' | 'midroll';
+            };
         }>;
         startTimeOffsets: Array<number>;
         schedule?: {
@@ -4530,11 +4794,26 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
             } | {
                 startTime: number;
@@ -4550,11 +4829,26 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
             } | {
                 startTime: number;
@@ -4586,11 +4880,26 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 startTime: number;
                 padMs?: number;
@@ -4607,11 +4916,26 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
             }>;
             timeZoneOffset: number;
@@ -4629,11 +4953,26 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -4656,11 +4995,26 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -4713,11 +5067,26 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -4759,11 +5128,26 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -4941,6 +5325,14 @@ export type GetApiChannelsAllLineupsResponses = {
             persisted: boolean;
             duration: number;
             icon?: string;
+            fillerConfig?: {
+                fillerListIds?: Array<string>;
+                fillerRepeatCooldownMs?: number;
+                fillerListCooldownOverrides?: {
+                    [key: string]: number;
+                };
+                origin?: 'flex' | 'midroll';
+            };
             start: number;
             stop: number;
             isPaused: boolean;
@@ -5048,6 +5440,14 @@ export type GetApiChannelsByIdLineupResponses = {
             persisted: boolean;
             duration: number;
             icon?: string;
+            fillerConfig?: {
+                fillerListIds?: Array<string>;
+                fillerRepeatCooldownMs?: number;
+                fillerListCooldownOverrides?: {
+                    [key: string]: number;
+                };
+                origin?: 'flex' | 'midroll';
+            };
             start: number;
             stop: number;
             isPaused: boolean;
@@ -5141,6 +5541,14 @@ export type GetApiChannelsByIdNowPlayingResponses = {
         persisted: boolean;
         duration: number;
         icon?: string;
+        fillerConfig?: {
+            fillerListIds?: Array<string>;
+            fillerRepeatCooldownMs?: number;
+            fillerListCooldownOverrides?: {
+                [key: string]: number;
+            };
+            origin?: 'flex' | 'midroll';
+        };
         start: number;
         stop: number;
         isPaused: boolean;
@@ -5240,11 +5648,26 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
             } | {
                 startTime: number;
@@ -5260,11 +5683,26 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
             } | {
                 startTime: number;
@@ -5296,11 +5734,26 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
                 startTime: number;
                 padMs?: number;
@@ -5317,11 +5770,26 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
             }>;
             timeZoneOffset: number;
@@ -5405,6 +5873,14 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
             persisted: boolean;
             duration: number;
             icon?: string;
+            fillerConfig?: {
+                fillerListIds?: Array<string>;
+                fillerRepeatCooldownMs?: number;
+                fillerListCooldownOverrides?: {
+                    [key: string]: number;
+                };
+                origin?: 'flex' | 'midroll';
+            };
         }>;
         seed: Array<number>;
         discardCount: number;
@@ -5440,11 +5916,26 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -5467,11 +5958,26 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -5524,11 +6030,26 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -5570,11 +6091,26 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -5675,6 +6211,14 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
             persisted: boolean;
             duration: number;
             icon?: string;
+            fillerConfig?: {
+                fillerListIds?: Array<string>;
+                fillerRepeatCooldownMs?: number;
+                fillerListCooldownOverrides?: {
+                    [key: string]: number;
+                };
+                origin?: 'flex' | 'midroll';
+            };
         }>;
         seed: Array<number>;
         discardCount: number;
@@ -5728,11 +6272,26 @@ export type GetApiChannelsByIdScheduleResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
             } | {
                 startTime: number;
@@ -5748,11 +6307,26 @@ export type GetApiChannelsByIdScheduleResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 show: Show | null;
                 /**
@@ -5890,11 +6464,26 @@ export type GetApiChannelsByIdScheduleResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 startTime: number;
                 padMs?: number;
@@ -5937,11 +6526,26 @@ export type GetApiChannelsByIdScheduleResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 smartCollection: {
                     uuid: string;
@@ -5967,11 +6571,26 @@ export type GetApiChannelsByIdScheduleResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -5994,11 +6613,26 @@ export type GetApiChannelsByIdScheduleResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -6166,11 +6800,26 @@ export type GetApiChannelsByIdScheduleResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -6229,11 +6878,26 @@ export type GetApiChannelsByIdScheduleResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 midRoll?: {
-                    intervalMs: number;
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
                     maxBreaks: number;
-                    breakDurationMs: number;
                     minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
                     programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
                 };
                 cooldownMs: number;
                 periodMs?: number;
@@ -7858,6 +8522,14 @@ export type GetApiDebugHelpersBuildGuideResponses = {
             persisted: boolean;
             duration: number;
             icon?: string;
+            fillerConfig?: {
+                fillerListIds?: Array<string>;
+                fillerRepeatCooldownMs?: number;
+                fillerListCooldownOverrides?: {
+                    [key: string]: number;
+                };
+                origin?: 'flex' | 'midroll';
+            };
             start: number;
             stop: number;
             isPaused: boolean;
@@ -10478,6 +11150,14 @@ export type GetApiGuideChannelsResponses = {
                 persisted: boolean;
                 duration: number;
                 icon?: string;
+                fillerConfig?: {
+                    fillerListIds?: Array<string>;
+                    fillerRepeatCooldownMs?: number;
+                    fillerListCooldownOverrides?: {
+                        [key: string]: number;
+                    };
+                    origin?: 'flex' | 'midroll';
+                };
                 start: number;
                 stop: number;
                 isPaused: boolean;

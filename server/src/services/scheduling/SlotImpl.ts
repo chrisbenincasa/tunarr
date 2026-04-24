@@ -88,18 +88,18 @@ export abstract class SlotImpl<
     return some(this.fillerIteratorsByType, (v) => !isEmpty(v));
   }
 
+  getMidFillerListIds(): string[] {
+    if (!slotMayHaveFiller(this.slot) || !this.slot.filler) return [];
+    return this.slot.filler
+      .filter((f) => f.types.includes('mid'))
+      .map((f) => f.fillerListId);
+  }
+
   get midRollConfig(): MidRollConfig | undefined {
-    switch (this.slot.type) {
-      case 'filler':
-      case 'flex':
-      case 'redirect':
-        return;
-      case 'movie':
-      case 'show':
-      case 'custom-show':
-      case 'smart-collection':
-        return this.slot.midRoll;
+    if (slotMayHaveFiller(this.slot)) {
+      return this.slot.midRoll;
     }
+    return undefined;
   }
 
   get type() {
