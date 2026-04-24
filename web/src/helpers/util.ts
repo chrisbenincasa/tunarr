@@ -143,12 +143,8 @@ export const zipWithIndex = <T extends object>(
   }));
 };
 
-export const createFlexProgram = (
-  duration: number,
-  persisted: boolean = false,
-): FlexProgram => ({
+export const createFlexProgram = (duration: number): FlexProgram => ({
   duration,
-  persisted,
   type: 'flex',
 });
 

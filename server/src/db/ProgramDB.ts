@@ -8,8 +8,7 @@ import type {
   WithChannelIdFilter,
 } from '@/db/interfaces/IProgramDB.js';
 import { KEYS } from '@/types/inject.js';
-import type { MarkNonNullable, Maybe, PagedResult } from '@/types/util.js';
-import type { ChannelProgram } from '@tunarr/types';
+import type { Maybe, PagedResult } from '@/types/util.js';
 import { inject, injectable } from 'inversify';
 import type {
   Dictionary,
@@ -258,16 +257,6 @@ export class ProgramDB implements IProgramDB {
   ): Promise<Dictionary<ProgramExternalId[]>> {
     return Promise.resolve(
       this.externalIdRepo.upsertProgramExternalIds(externalIds, chunkSize),
-    );
-  }
-
-  upsertContentPrograms(
-    programs: ChannelProgram[],
-    programUpsertBatchSize?: number,
-  ): Promise<MarkNonNullable<ProgramDao, 'mediaSourceId'>[]> {
-    return this.upsertRepo.upsertContentPrograms(
-      programs,
-      programUpsertBatchSize,
     );
   }
 

@@ -7,7 +7,6 @@ import { OnDemandChannelStateTask } from '../../tasks/OnDemandChannelStateTask.t
 import { RefreshMediaSourceLibraryTask } from '../../tasks/RefreshMediaSourceLibraryTask.ts';
 import { ScanLibrariesTask } from '../../tasks/ScanLibrariesTask.ts';
 import { ScheduledTask } from '../../tasks/ScheduledTask.ts';
-import { ScheduleDynamicChannelsTask } from '../../tasks/ScheduleDynamicChannelsTask.ts';
 import { SubtitleExtractorTask } from '../../tasks/SubtitleExtractorTask.ts';
 import { SyncCustomShowsTask } from '../../tasks/SyncCustomShowsTask.ts';
 import { UpdateXmlTvTask } from '../../tasks/UpdateXmlTvTask.ts';
@@ -71,23 +70,6 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
         ),
         undefined,
         { runAtStartup: true },
-      ),
-    );
-
-    GlobalScheduler.scheduleTask(
-      ScheduleDynamicChannelsTask.ID,
-      new ScheduledTask(
-        ScheduleDynamicChannelsTask,
-        // Temporary
-        hoursCrontab(1),
-        container.get<interfaces.AutoFactory<ScheduleDynamicChannelsTask>>(
-          ScheduleDynamicChannelsTask.KEY,
-        ),
-        undefined,
-        {
-          runAtStartup: true,
-          runOnSchedule: true,
-        },
       ),
     );
 

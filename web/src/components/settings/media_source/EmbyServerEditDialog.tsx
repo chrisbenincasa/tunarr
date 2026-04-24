@@ -51,7 +51,7 @@ type Props = {
   server?: EmbyServerSettings;
 };
 
-export type EmbyServerSettingsForm = MarkOptional<
+type EmbyServerSettingsForm = MarkOptional<
   StrictOmit<EmbyServerSettings, 'libraries'>,
   'id'
 > & {

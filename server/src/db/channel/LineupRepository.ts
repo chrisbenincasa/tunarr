@@ -1,4 +1,3 @@
-import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { globalOptions } from '@/globals.js';
 import { FileSystemService } from '@/services/FileSystemService.js';
 import { KEYS } from '@/types/inject.js';
@@ -58,12 +57,10 @@ import { MaterializeProgramsCommand } from '../../commands/MaterializeProgramsCo
 import { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
 import {
   asyncMapToRecord,
-  groupByFunc,
   groupByUniqProp,
   isDefined,
   isNonEmptyString,
   mapReduceAsyncSeq,
-  programExternalIdString,
   run,
 } from '../../util/index.ts';
 import { ProgramConverter } from '../converters/ProgramConverter.ts';
@@ -102,42 +99,39 @@ const SqliteMaxDepthLimit = 1000;
 
 type ProgramRelationOperation = { operation: 'add' | 'remove'; id: string };
 
-function channelProgramToLineupItemFunc(
-  dbIdByUniqueId: Record<string, string>,
-): (p: ChannelProgram) => LineupItem {
-  return (p) =>
-    match(p)
-      .returnType<LineupItem>()
-      .with({ type: 'content' }, (program) => ({
-        type: 'content',
-        id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId]!,
-        durationMs: program.duration,
-        startOffsetMs: program.startOffsetMs,
-      }))
-      .with({ type: 'custom' }, (program) => ({
-        type: 'content',
-        durationMs: program.duration,
-        id: program.id,
-        customShowId: program.customShowId,
-      }))
-      .with({ type: 'filler' }, (program) => ({
-        type: 'content',
-        durationMs: program.duration,
-        id: program.id,
-        fillerListId: program.fillerListId,
-        fillerType: program.fillerType,
-      }))
-      .with({ type: 'redirect' }, (program) => ({
-        type: 'redirect',
-        channel: program.channel,
-        durationMs: program.duration,
-      }))
-      .with({ type: 'flex' }, (program) => ({
-        type: 'offline',
-        durationMs: program.duration,
-        fillerConfig: program.fillerConfig,
-      }))
-      .exhaustive();
+function channelProgramToLineupItemFunc(p: ChannelProgram): LineupItem {
+  return match(p)
+    .returnType<LineupItem>()
+    .with({ type: 'content' }, (program) => ({
+      type: 'content',
+      id: program.id,
+      durationMs: program.duration,
+      startOffsetMs: program.startOffsetMs,
+    }))
+    .with({ type: 'custom' }, (program) => ({
+      type: 'content',
+      durationMs: program.duration,
+      id: program.id,
+      customShowId: program.customShowId,
+    }))
+    .with({ type: 'filler' }, (program) => ({
+      type: 'content',
+      durationMs: program.duration,
+      id: program.id,
+      fillerListId: program.fillerListId,
+      fillerType: program.fillerType,
+    }))
+    .with({ type: 'redirect' }, (program) => ({
+      type: 'redirect',
+      channel: program.channel,
+      durationMs: program.duration,
+    }))
+    .with({ type: 'flex' }, (program) => ({
+      type: 'offline',
+      durationMs: program.duration,
+      fillerConfig: program.fillerConfig,
+    }))
+    .exhaustive();
 }
 
 @injectable()
@@ -159,7 +153,6 @@ export class LineupRepository {
     private materializeLineupCommand: MaterializeLineupCommand,
     @inject(MaterializeProgramsCommand)
     private materializeProgramsCommand: MaterializeProgramsCommand,
-    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(ProgramConverter) private programConverter: ProgramConverter,
   ) {}
 
@@ -853,31 +846,11 @@ export class LineupRepository {
       });
     };
 
-    const createNewLineup = async (
+    const createNewLineup = (
       programs: ChannelProgram[],
       lineupPrograms: ChannelProgram[] = programs,
     ) => {
-      const upsertedPrograms =
-        await this.programDB.upsertContentPrograms(programs);
-      const dbIdByUniqueId = groupByFunc(
-        upsertedPrograms,
-        programExternalIdString,
-        (p) => p.uuid,
-      );
-      return map(
-        lineupPrograms,
-        channelProgramToLineupItemFunc(dbIdByUniqueId),
-      );
-    };
-
-    const upsertPrograms = async (programs: ChannelProgram[]) => {
-      const upsertedPrograms =
-        await this.programDB.upsertContentPrograms(programs);
-      return groupByFunc(
-        upsertedPrograms,
-        programExternalIdString,
-        (p) => p.uuid,
-      );
+      return map(lineupPrograms, channelProgramToLineupItemFunc);
     };
 
     if (req.type === 'manual') {
@@ -886,14 +859,12 @@ export class LineupRepository {
           'createNewLineup',
           async () => {
             const programs = req.programs;
-            const dbIdByUniqueId = await upsertPrograms(programs);
-            const convertFunc = channelProgramToLineupItemFunc(dbIdByUniqueId);
             return seq.collect(req.lineup, (lineupItem) => {
               switch (lineupItem.type) {
                 case 'index': {
                   const program = nth(programs, lineupItem.index);
                   if (program) {
-                    return convertFunc({
+                    return channelProgramToLineupItemFunc({
                       ...program,
                       duration: lineupItem.duration ?? program.duration,
                     });
@@ -979,7 +950,7 @@ export class LineupRepository {
         );
       }
 
-      const newLineup = await createNewLineup(programs);
+      const newLineup = createNewLineup(programs);
 
       const updatedChannel = updateChannel(newLineup);
       await this.saveLineup(id, {
@@ -1061,14 +1032,12 @@ export class LineupRepository {
             item.channel,
           );
           p = {
-            persisted: true,
             type: 'flex',
             duration: item.durationMs,
           };
         }
       } else if (item.customShowId) {
         p = {
-          persisted: true,
           type: 'custom',
           customShowId: item.customShowId,
           duration: item.durationMs,
@@ -1078,7 +1047,6 @@ export class LineupRepository {
       } else if (isNonEmptyString(item.fillerListId)) {
         p = {
           ...item,
-          persisted: true,
           type: 'filler',
           fillerListId: item.fillerListId,
           fillerType: item.fillerType,
@@ -1088,7 +1056,6 @@ export class LineupRepository {
         if (dbProgramIds.has(item.id)) {
           p = {
             ...item,
-            persisted: true,
             uniqueId: item.id,
             duration: item.durationMs,
           } satisfies CondensedContentProgram;

@@ -71,7 +71,6 @@ function pushOrExtendFlex(
     const newItem: FlexProgram = {
       type: 'flex',
       duration: newDuration,
-      persisted: false,
     };
     lineup[lineup.length - 1] = newItem;
     return flexDurationMs;
@@ -79,7 +78,6 @@ function pushOrExtendFlex(
 
   const newItem: FlexProgram = {
     type: 'flex',
-    persisted: false,
     duration: flexDurationMs,
   };
 

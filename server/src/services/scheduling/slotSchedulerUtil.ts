@@ -231,7 +231,6 @@ export function createProgramIterators(
             () =>
               new FlexProgramIterator({
                 duration: -1,
-                persisted: false,
                 type: 'flex',
               }),
           )
@@ -242,7 +241,6 @@ export function createProgramIterators(
               channelName: slot.channelName ?? '',
               channelNumber: -1,
               duration: 1,
-              persisted: false,
             });
           })
           .with({ type: 'custom-show', order: 'next' }, (slot) => {
@@ -520,7 +518,6 @@ export function pushOrExtendFlex(
     const newItem: FlexProgram = {
       type: 'flex',
       duration: newDuration,
-      persisted: false,
     };
     lineup[lineup.length - 1] = newItem;
     return durationMs;
@@ -528,7 +525,6 @@ export function pushOrExtendFlex(
 
   const newItem: FlexProgram = {
     type: 'flex',
-    persisted: false,
     duration: durationMs,
   };
 

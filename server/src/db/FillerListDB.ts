@@ -1,6 +1,4 @@
-import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { KEYS } from '@/types/inject.js';
-import { isNonEmptyString, programExternalIdString } from '@/util/index.js';
 import {
   CreateFillerListRequest,
   UpdateFillerListRequest,
@@ -12,7 +10,6 @@ import { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
-  filter,
   find,
   forEach,
   groupBy,
@@ -54,7 +51,6 @@ import { DrizzleDBAccess } from './schema/index.ts';
 @injectable()
 export class FillerDB implements IFillerListDB {
   constructor(
-    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
   ) {}
@@ -105,31 +101,13 @@ export class FillerDB implements IFillerListDB {
         updateRequest.programs,
       );
 
-      const persisted = filter(
-        updateRequest.programs,
-        (p) => p.persisted && isNonEmptyString(p.id),
-      );
-
-      const upsertedPrograms = await this.programDB.upsertContentPrograms(
-        updateRequest.programs,
-      );
-
       const persistedFillerShowContent = map(
-        persisted,
+        updateRequest.programs,
         (p) =>
           ({
             fillerShowUuid: filler.uuid,
-            programUuid: p.id!,
-            index: programIndexById[p.id!]!,
-          }) satisfies NewFillerShowContent,
-      );
-      const newFillerShowContent = map(
-        upsertedPrograms,
-        (p) =>
-          ({
-            fillerShowUuid: filler.uuid,
-            programUuid: p.uuid,
-            index: programIndexById[programExternalIdString(p)]!,
+            programUuid: p.id,
+            index: programIndexById[p.id]!,
           }) satisfies NewFillerShowContent,
       );
 
@@ -138,10 +116,7 @@ export class FillerDB implements IFillerListDB {
           .where(eq(FillerShowContent.fillerShowUuid, filler.uuid))
           .run();
 
-        for (const fsc of chunk(
-          [...persistedFillerShowContent, ...newFillerShowContent],
-          1_000,
-        )) {
+        for (const fsc of chunk(persistedFillerShowContent, 1_000)) {
           tx.insert(FillerShowContent).values(fsc).run();
         }
       });
@@ -171,38 +146,20 @@ export class FillerDB implements IFillerListDB {
       createRequest.programs,
     );
 
-    const persisted = filter(createRequest.programs, (p) => p.persisted);
-
-    const upsertedPrograms = await this.programDB.upsertContentPrograms(
-      createRequest.programs,
-    );
-
     await this.db.insertInto('fillerShow').values(filler).execute();
 
     const persistedFillerShowContent = map(
-      persisted,
+      createRequest.programs,
       (p) =>
         ({
           fillerShowUuid: filler.uuid,
-          programUuid: p.id!,
+          programUuid: p.id,
           index: programIndexById[p.id!]!,
-        }) satisfies NewFillerShowContent,
-    );
-    const newFillerShowContent = map(
-      upsertedPrograms,
-      (p) =>
-        ({
-          fillerShowUuid: filler.uuid,
-          programUuid: p.uuid,
-          index: programIndexById[programExternalIdString(p)]!,
         }) satisfies NewFillerShowContent,
     );
 
     await Promise.all(
-      chunk(
-        [...persistedFillerShowContent, ...newFillerShowContent],
-        1_000,
-      ).map((fsc) =>
+      chunk(persistedFillerShowContent, 1_000).map((fsc) =>
         this.db.insertInto('fillerShowContent').values(fsc).execute(),
       ),
     );

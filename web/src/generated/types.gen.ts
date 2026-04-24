@@ -3678,10 +3678,9 @@ export type GetApiChannelsByIdProgrammingResponses = {
         programs: {
             [key: string]: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -3689,15 +3688,13 @@ export type GetApiChannelsByIdProgrammingResponses = {
         };
         lineup: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -3705,33 +3702,29 @@ export type GetApiChannelsByIdProgrammingResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
             };
         } | {
             type: 'filler';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
             fillerListId: string;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
             };
             fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback' | 'mid';
         } | {
             type: 'redirect';
-            persisted: boolean;
             duration: number;
             icon?: string;
             channel: string;
@@ -3739,7 +3732,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
             channelName: string;
         } | {
             type: 'flex';
-            persisted: boolean;
             duration: number;
             icon?: string;
             fillerConfig?: {
@@ -4179,16 +4171,14 @@ export type PostApiChannelsByIdProgrammingData = {
         type: 'manual';
         programs: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgramInput;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -4196,17 +4186,15 @@ export type PostApiChannelsByIdProgrammingData = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgramInput;
             };
         } | {
             type: 'redirect';
-            persisted: boolean;
             duration: number;
             icon?: string;
             channel: string;
@@ -4214,7 +4202,6 @@ export type PostApiChannelsByIdProgrammingData = {
             channelName: string;
         } | {
             type: 'flex';
-            persisted: boolean;
             duration: number;
             icon?: string;
             fillerConfig?: {
@@ -4227,17 +4214,15 @@ export type PostApiChannelsByIdProgrammingData = {
             };
         } | {
             type: 'filler';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
             fillerListId: string;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgramInput;
@@ -4701,10 +4686,9 @@ export type PostApiChannelsByIdProgrammingResponses = {
         programs: {
             [key: string]: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -4712,15 +4696,13 @@ export type PostApiChannelsByIdProgrammingResponses = {
         };
         lineup: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -4728,33 +4710,29 @@ export type PostApiChannelsByIdProgrammingResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
             };
         } | {
             type: 'filler';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
             fillerListId: string;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
             };
             fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback' | 'mid';
         } | {
             type: 'redirect';
-            persisted: boolean;
             duration: number;
             icon?: string;
             channel: string;
@@ -4762,7 +4740,6 @@ export type PostApiChannelsByIdProgrammingResponses = {
             channelName: string;
         } | {
             type: 'flex';
-            persisted: boolean;
             duration: number;
             icon?: string;
             fillerConfig?: {
@@ -5227,10 +5204,9 @@ export type GetChannelFallbacksResponses = {
      */
     200: {
         type: 'content';
-        persisted: boolean;
         duration: number;
         icon?: string;
-        id?: string;
+        id: string;
         uniqueId: string;
         startOffsetMs?: number;
         program: TerminalProgram;
@@ -5275,7 +5251,6 @@ export type GetApiChannelsAllLineupsResponses = {
         id: string;
         programs: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -5288,7 +5263,6 @@ export type GetApiChannelsAllLineupsResponses = {
             timeRemaining?: number;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -5296,10 +5270,9 @@ export type GetApiChannelsAllLineupsResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -5310,7 +5283,6 @@ export type GetApiChannelsAllLineupsResponses = {
             timeRemaining?: number;
         } | {
             type: 'redirect';
-            persisted: boolean;
             duration: number;
             icon?: string;
             channel: string;
@@ -5322,7 +5294,6 @@ export type GetApiChannelsAllLineupsResponses = {
             timeRemaining?: number;
         } | {
             type: 'flex';
-            persisted: boolean;
             duration: number;
             icon?: string;
             fillerConfig?: {
@@ -5390,7 +5361,6 @@ export type GetApiChannelsByIdLineupResponses = {
         id: string;
         programs: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -5403,7 +5373,6 @@ export type GetApiChannelsByIdLineupResponses = {
             timeRemaining?: number;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -5411,10 +5380,9 @@ export type GetApiChannelsByIdLineupResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -5425,7 +5393,6 @@ export type GetApiChannelsByIdLineupResponses = {
             timeRemaining?: number;
         } | {
             type: 'redirect';
-            persisted: boolean;
             duration: number;
             icon?: string;
             channel: string;
@@ -5437,7 +5404,6 @@ export type GetApiChannelsByIdLineupResponses = {
             timeRemaining?: number;
         } | {
             type: 'flex';
-            persisted: boolean;
             duration: number;
             icon?: string;
             fillerConfig?: {
@@ -5491,7 +5457,6 @@ export type GetApiChannelsByIdNowPlayingResponses = {
      */
     200: {
         type: 'content';
-        persisted: boolean;
         duration: number;
         icon?: string;
         id: string;
@@ -5504,7 +5469,6 @@ export type GetApiChannelsByIdNowPlayingResponses = {
         timeRemaining?: number;
     } | {
         type: 'custom';
-        persisted: boolean;
         duration: number;
         icon?: string;
         id: string;
@@ -5512,10 +5476,9 @@ export type GetApiChannelsByIdNowPlayingResponses = {
         index: number;
         program?: {
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
@@ -5526,7 +5489,6 @@ export type GetApiChannelsByIdNowPlayingResponses = {
         timeRemaining?: number;
     } | {
         type: 'redirect';
-        persisted: boolean;
         duration: number;
         icon?: string;
         channel: string;
@@ -5538,7 +5500,6 @@ export type GetApiChannelsByIdNowPlayingResponses = {
         timeRemaining?: number;
     } | {
         type: 'flex';
-        persisted: boolean;
         duration: number;
         icon?: string;
         fillerConfig?: {
@@ -5820,15 +5781,13 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
         startTime: number;
         lineup: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -5836,33 +5795,29 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
             };
         } | {
             type: 'filler';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
             fillerListId: string;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
             };
             fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback' | 'mid';
         } | {
             type: 'redirect';
-            persisted: boolean;
             duration: number;
             icon?: string;
             channel: string;
@@ -5870,7 +5825,6 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
             channelName: string;
         } | {
             type: 'flex';
-            persisted: boolean;
             duration: number;
             icon?: string;
             fillerConfig?: {
@@ -5887,10 +5841,9 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
         programs: {
             [key: string]: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -6158,15 +6111,13 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
         startTime: number;
         lineup: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -6174,33 +6125,29 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
             };
         } | {
             type: 'filler';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
             fillerListId: string;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
             };
             fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback' | 'mid';
         } | {
             type: 'redirect';
-            persisted: boolean;
             duration: number;
             icon?: string;
             channel: string;
@@ -6208,7 +6155,6 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
             channelName: string;
         } | {
             type: 'flex';
-            persisted: boolean;
             duration: number;
             icon?: string;
             fillerConfig?: {
@@ -6225,10 +6171,9 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
         programs: {
             [key: string]: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -7016,7 +6961,6 @@ export type GetApiCustomShowsResponses = {
         contentCount: number;
         programs?: Array<{
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -7024,10 +6968,9 @@ export type GetApiCustomShowsResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -7049,10 +6992,9 @@ export type CreateCustomShowData = {
         name: string;
         programs?: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgramInput;
@@ -7076,7 +7018,6 @@ export type CreateCustomShowResponses = {
         contentCount: number;
         programs?: Array<{
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -7084,10 +7025,9 @@ export type CreateCustomShowResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -7157,7 +7097,6 @@ export type GetApiCustomShowsByIdResponses = {
         contentCount: number;
         programs?: Array<{
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -7165,10 +7104,9 @@ export type GetApiCustomShowsByIdResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -7190,10 +7128,9 @@ export type PutApiCustomShowsByIdData = {
         name?: string;
         programs?: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgramInput;
@@ -7227,7 +7164,6 @@ export type PutApiCustomShowsByIdResponses = {
         contentCount: number;
         programs?: Array<{
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -7235,10 +7171,9 @@ export type PutApiCustomShowsByIdResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -7277,7 +7212,6 @@ export type GetApiCustomShowsByIdProgramsResponses = {
      */
     200: Array<{
         type: 'custom';
-        persisted: boolean;
         duration: number;
         icon?: string;
         id: string;
@@ -7285,10 +7219,9 @@ export type GetApiCustomShowsByIdProgramsResponses = {
         index: number;
         program?: {
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
@@ -7332,7 +7265,6 @@ export type SyncCustomShowResponses = {
         contentCount: number;
         programs?: Array<{
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -7340,10 +7272,9 @@ export type SyncCustomShowResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -7377,16 +7308,14 @@ export type GetApiFillerListsResponses = {
         contentCount: number;
         programs?: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -7394,10 +7323,9 @@ export type GetApiFillerListsResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -7413,16 +7341,14 @@ export type PostApiFillerListsData = {
         name: string;
         programs: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgramInput;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -7430,10 +7356,9 @@ export type PostApiFillerListsData = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgramInput;
@@ -7505,16 +7430,14 @@ export type GetApiFillerListsByIdResponses = {
         contentCount: number;
         programs?: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -7522,10 +7445,9 @@ export type GetApiFillerListsByIdResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -7541,16 +7463,14 @@ export type PutApiFillerListsByIdData = {
         name?: string;
         programs?: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgramInput;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -7558,10 +7478,9 @@ export type PutApiFillerListsByIdData = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgramInput;
@@ -7592,16 +7511,14 @@ export type PutApiFillerListsByIdResponses = {
         contentCount: number;
         programs?: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -7609,10 +7526,9 @@ export type PutApiFillerListsByIdResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -7645,16 +7561,14 @@ export type GetApiFillerListsByIdProgramsResponses = {
      */
     200: Array<{
         type: 'content';
-        persisted: boolean;
         duration: number;
         icon?: string;
-        id?: string;
+        id: string;
         uniqueId: string;
         startOffsetMs?: number;
         program: TerminalProgram;
     } | {
         type: 'custom';
-        persisted: boolean;
         duration: number;
         icon?: string;
         id: string;
@@ -7662,10 +7576,9 @@ export type GetApiFillerListsByIdProgramsResponses = {
         index: number;
         program?: {
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
-            id?: string;
+            id: string;
             uniqueId: string;
             startOffsetMs?: number;
             program: TerminalProgram;
@@ -7768,10 +7681,9 @@ export type GetApiProgramsByIdDescendantsResponses = {
      */
     200: Array<{
         type: 'content';
-        persisted: boolean;
         duration: number;
         icon?: string;
-        id?: string;
+        id: string;
         uniqueId: string;
         startOffsetMs?: number;
         program: TerminalProgram;
@@ -8472,7 +8384,6 @@ export type GetApiDebugHelpersBuildGuideResponses = {
         id: string;
         programs: Array<{
             type: 'content';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -8485,7 +8396,6 @@ export type GetApiDebugHelpersBuildGuideResponses = {
             timeRemaining?: number;
         } | {
             type: 'custom';
-            persisted: boolean;
             duration: number;
             icon?: string;
             id: string;
@@ -8493,10 +8403,9 @@ export type GetApiDebugHelpersBuildGuideResponses = {
             index: number;
             program?: {
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
-                id?: string;
+                id: string;
                 uniqueId: string;
                 startOffsetMs?: number;
                 program: TerminalProgram;
@@ -8507,7 +8416,6 @@ export type GetApiDebugHelpersBuildGuideResponses = {
             timeRemaining?: number;
         } | {
             type: 'redirect';
-            persisted: boolean;
             duration: number;
             icon?: string;
             channel: string;
@@ -8519,7 +8427,6 @@ export type GetApiDebugHelpersBuildGuideResponses = {
             timeRemaining?: number;
         } | {
             type: 'flex';
-            persisted: boolean;
             duration: number;
             icon?: string;
             fillerConfig?: {
@@ -8569,22 +8476,6 @@ export type GetApiDebugDbBackupData = {
 };
 
 export type GetApiDebugDbBackupResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type PostApiDebugPlexByProgramIdUpdateExternalIdsData = {
-    body?: never;
-    path: {
-        programId: string;
-    };
-    query?: never;
-    url: '/api/debug/plex/{programId}/update_external_ids';
-};
-
-export type PostApiDebugPlexByProgramIdUpdateExternalIdsResponses = {
     /**
      * Default Response
      */
@@ -9333,10 +9224,9 @@ export type GetApiMediaLibrariesByLibraryIdProgramsResponses = {
      */
     200: Array<{
         type: 'content';
-        persisted: boolean;
         duration: number;
         icon?: string;
-        id?: string;
+        id: string;
         uniqueId: string;
         startOffsetMs?: number;
         program: TerminalProgram;
@@ -11100,7 +10990,6 @@ export type GetApiGuideChannelsResponses = {
             id: string;
             programs: Array<{
                 type: 'content';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
                 id: string;
@@ -11113,7 +11002,6 @@ export type GetApiGuideChannelsResponses = {
                 timeRemaining?: number;
             } | {
                 type: 'custom';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
                 id: string;
@@ -11121,10 +11009,9 @@ export type GetApiGuideChannelsResponses = {
                 index: number;
                 program?: {
                     type: 'content';
-                    persisted: boolean;
                     duration: number;
                     icon?: string;
-                    id?: string;
+                    id: string;
                     uniqueId: string;
                     startOffsetMs?: number;
                     program: TerminalProgram;
@@ -11135,7 +11022,6 @@ export type GetApiGuideChannelsResponses = {
                 timeRemaining?: number;
             } | {
                 type: 'redirect';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
                 channel: string;
@@ -11147,7 +11033,6 @@ export type GetApiGuideChannelsResponses = {
                 timeRemaining?: number;
             } | {
                 type: 'flex';
-                persisted: boolean;
                 duration: number;
                 icon?: string;
                 fillerConfig?: {

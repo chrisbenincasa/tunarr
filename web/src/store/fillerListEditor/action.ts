@@ -1,7 +1,6 @@
 import { zipWithIndex } from '@/helpers/util.ts';
 import useStore from '@/store/index.ts';
 import type { AddedMedia } from '@/types/index.ts';
-import { ApiProgramMinter } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import type {
   ContentProgram,
@@ -11,7 +10,7 @@ import type {
 } from '@tunarr/types';
 import { merge } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Imported } from '../../helpers/constants.ts';
 
 export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
   useStore.setState(({ fillerListEditor }) => {
@@ -20,12 +19,6 @@ export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
       const allNewPrograms = seq.collect(programs, (item) => {
         const result = match(item)
           .returnType<ContentProgram | CustomProgram | null>()
-          // There might be a way to consolidate these in a type-safe way, but I'm
-          // not sure right now.
-          .with(
-            { type: P.union(Plex, Jellyfin, Emby), media: P.select() },
-            (item) => ApiProgramMinter.mintProgram2(item),
-          )
           .with(
             { type: 'custom-show', program: P.select() },
             (program) => program,

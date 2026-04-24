@@ -15,10 +15,9 @@ import dayjs from 'dayjs';
 import { count, eq, sum } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
-import { chunk, isNil, orderBy, partition, uniqBy } from 'lodash-es';
+import { chunk, isNil, orderBy, uniqBy } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { IProgramDB } from './interfaces/IProgramDB.ts';
 import { MediaSourceId, MediaSourceType } from './schema/base.ts';
 import { CustomShow, type NewCustomShow } from './schema/CustomShow.ts';
 import {
@@ -33,7 +32,6 @@ import { Program } from './schema/Program.ts';
 @injectable()
 export class CustomShowDB {
   constructor(
-    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
   ) {}
@@ -127,7 +125,7 @@ export class CustomShowDB {
     }
 
     if (updateRequest.programs && updateRequest.programs.length > 0) {
-      await this.upsertCustomShowContent(show.uuid, updateRequest.programs);
+      this.upsertCustomShowContent(show.uuid, updateRequest.programs);
     }
 
     const updates: Partial<NewCustomShow> = {};
@@ -177,7 +175,7 @@ export class CustomShowDB {
     await this.db.insertInto('customShow').values(show).execute();
 
     if (createRequest.programs.length > 0) {
-      await this.upsertCustomShowContent(show.uuid, createRequest.programs);
+      this.upsertCustomShowContent(show.uuid, createRequest.programs);
     }
 
     return show.uuid;
@@ -264,10 +262,10 @@ export class CustomShowDB {
       .execute();
   }
 
-  async upsertCustomShowContent(
+  upsertCustomShowContent(
     customShowId: string,
     programs: ContentProgram[],
-  ): Promise<void> {
+  ): void {
     if (programs.length === 0) {
       return;
     }
@@ -275,9 +273,7 @@ export class CustomShowDB {
     for (let i = 0; i < programs.length; i++) {
       const program = programs[i]!;
       if (
-        (program.persisted ||
-          isCustomProgram(program) ||
-          program.program.sourceType === 'local') &&
+        (isCustomProgram(program) || program.program.sourceType === 'local') &&
         isNonEmptyString(program.id)
       ) {
         const existing = newProgramIndexesById.get(program.id) ?? [];
@@ -298,26 +294,17 @@ export class CustomShowDB {
       }
     }
 
-    const [persisted, needsPersist] = partition(
-      programs,
-      (p) => p.persisted && isNonEmptyString(p.id),
-    );
-    const upsertedPrograms = await this.programDB.upsertContentPrograms(
-      uniqBy(needsPersist, (p) => p.uniqueId),
-    );
     const allPrograms: {
       uuid: string;
       sourceType: MediaSourceType;
       mediaSourceId: MediaSourceId;
       externalKey: string;
-    }[] = uniqBy(persisted, (p) => p.id!)
-      .map((p) => ({
-        uuid: p.id!,
-        sourceType: p.program.sourceType,
-        mediaSourceId: tag<MediaSourceId>(p.program.mediaSourceId),
-        externalKey: p.program.externalId,
-      }))
-      .concat(upsertedPrograms);
+    }[] = uniqBy(programs, (p) => p.id).map((p) => ({
+      uuid: p.id,
+      sourceType: p.program.sourceType,
+      mediaSourceId: tag<MediaSourceId>(p.program.mediaSourceId),
+      externalKey: p.program.externalId,
+    }));
 
     const allNewCustomContent = orderBy(
       allPrograms.flatMap((program) => {

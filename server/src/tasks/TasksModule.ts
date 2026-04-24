@@ -9,7 +9,6 @@ import { CleanupSessionsTask } from '@/tasks/CleanupSessionsTask.js';
 import { OnDemandChannelStateTask } from '@/tasks/OnDemandChannelStateTask.js';
 import type { ReconcileProgramDurationsTaskRequest } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
-import { ScheduleDynamicChannelsTask } from '@/tasks/ScheduleDynamicChannelsTask.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { autoFactoryKey, factoryKey, KEYS } from '@/types/inject.js';
 import type { interfaces } from 'inversify';
@@ -22,9 +21,7 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import type { BackupTaskFactory } from './BackupTask.ts';
 import { BackupTask } from './BackupTask.ts';
 import { ClearM3uCacheTask } from './ClearM3uCacheTask.ts';
-import { SaveJellyfinProgramExternalIdsTask } from './jellyfin/SaveJellyfinProgramExternalIdsTask.ts';
 import { NoopTask } from './NoopTask.ts';
-import { SavePlexProgramExternalIdsTask } from './plex/SavePlexProgramExternalIdsTask.ts';
 import type {
   UpdatePlexPlayStatusScheduledTaskFactory,
   UpdatePlexPlayStatusScheduleRequest,
@@ -52,11 +49,6 @@ const TasksModule = new ContainerModule((bind) => {
     OnDemandChannelStateTask.KEY,
   ).toAutoFactory(OnDemandChannelStateTask);
 
-  bind(ScheduleDynamicChannelsTask).toSelf();
-  bind<interfaces.Factory<ScheduleDynamicChannelsTask>>(
-    ScheduleDynamicChannelsTask.KEY,
-  ).toAutoFactory(ScheduleDynamicChannelsTask);
-
   bind(CleanupSessionsTask).toSelf();
   bind<interfaces.Factory<CleanupSessionsTask>>(
     CleanupSessionsTask.KEY,
@@ -73,16 +65,6 @@ const TasksModule = new ContainerModule((bind) => {
   bind<interfaces.AutoFactory<ReconcileProgramDurationsTask>>(
     autoFactoryKey(ReconcileProgramDurationsTask),
   ).toAutoFactory(ReconcileProgramDurationsTask);
-
-  bind(SavePlexProgramExternalIdsTask).toSelf();
-  bind<interfaces.AutoFactory<SavePlexProgramExternalIdsTask>>(
-    autoFactoryKey(SavePlexProgramExternalIdsTask),
-  ).toAutoFactory(SavePlexProgramExternalIdsTask);
-
-  bind(SaveJellyfinProgramExternalIdsTask).toSelf();
-  bind<interfaces.AutoFactory<SaveJellyfinProgramExternalIdsTask>>(
-    autoFactoryKey(SaveJellyfinProgramExternalIdsTask),
-  ).toAutoFactory(SaveJellyfinProgramExternalIdsTask);
 
   bind(ClearM3uCacheTask).toSelf();
 

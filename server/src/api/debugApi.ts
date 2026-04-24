@@ -1,8 +1,6 @@
 import { DebugPlexApiRouter } from '@/api/debug/debugPlexApi.js';
 import type { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { ArchiveDatabaseBackupKey } from '@/db/backup/ArchiveDatabaseBackup.js';
-import { PlexTaskQueue } from '@/tasks/TaskQueue.js';
-import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { DateTimeRange } from '@/types/DateTimeRange.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -290,29 +288,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         });
 
       return res.send();
-    },
-  );
-
-  fastify.post(
-    '/debug/plex/:programId/update_external_ids',
-    {
-      schema: {
-        tags: ['Debug'],
-        params: z.object({
-          programId: z.string(),
-        }),
-      },
-    },
-    async (req, res) => {
-      const result = await PlexTaskQueue.add(
-        new SavePlexProgramExternalIdsTask(
-          req.serverCtx.programDB,
-          req.serverCtx.mediaSourceApiFactory,
-        ),
-        { programId: req.params.programId },
-      );
-
-      return res.send(result);
     },
   );
 

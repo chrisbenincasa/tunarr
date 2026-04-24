@@ -18,8 +18,6 @@ import { useToggle } from '@uidotdev/usehooks';
 import { map } from 'lodash-es';
 import type { MouseEvent } from 'react';
 import { Fragment, useCallback } from 'react';
-import { match } from 'ts-pattern';
-import { Emby, Jellyfin, Local, Plex } from '../../helpers/constants.ts';
 import { typedProperty } from '../../helpers/util.ts';
 import {
   addSelectedMedia,
@@ -33,7 +31,7 @@ import { ProgramTypeIcon } from '../base/ProgramTypeIcon.tsx';
 import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 import { ProgramSubtitle } from './extractSubtitle.tsx';
 
-export interface ProgramListItemProps {
+interface ProgramListItemProps {
   item: ProgramOrFolder;
   style?: React.CSSProperties;
   index?: number;
@@ -70,43 +68,12 @@ export const ProgramListItem = ({
           },
         ]);
       } else {
-        match(item)
-          .with({ sourceType: Plex }, (plex) =>
-            addSelectedMedia({
-              type: Plex,
-              mediaSource: selectedServer!,
-              id: plex.uuid,
-              libraryId: plex.libraryId,
-              persisted: false,
-            }),
-          )
-          .with({ sourceType: Jellyfin }, (jf) =>
-            addSelectedMedia({
-              type: Jellyfin,
-              mediaSource: selectedServer!,
-              id: jf.uuid,
-              libraryId: jf.libraryId,
-              persisted: false,
-            }),
-          )
-          .with({ sourceType: Emby }, (emby) =>
-            addSelectedMedia({
-              type: Emby,
-              mediaSource: selectedServer!,
-              id: emby.uuid,
-              libraryId: emby.libraryId,
-              persisted: false,
-            }),
-          )
-          .with({ sourceType: Local }, (local) =>
-            addSelectedMedia({
-              type: Local,
-              mediaSource: selectedServer!,
-              id: local.uuid,
-              persisted: true,
-            }),
-          )
-          .exhaustive();
+        addSelectedMedia({
+          type: item.sourceType,
+          mediaSource: selectedServer!,
+          id: item.uuid,
+          libraryId: item.libraryId,
+        });
       }
     },
     [item, selectedServer, selectedMediaIds],

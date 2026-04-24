@@ -112,7 +112,6 @@ export class WeightedFillerProgramIterator
           duration: program.program.duration,
           fillerListId: this.slotDef.fillerListId,
           id: program.program.uuid,
-          persisted: true,
           fillerType: this.fillerType,
         };
       }
@@ -128,7 +127,6 @@ export class WeightedFillerProgramIterator
       duration: p.duration,
       fillerListId: this.slotDef.fillerListId,
       id: p.uuid,
-      persisted: true,
       fillerType: this.fillerType,
     };
   }

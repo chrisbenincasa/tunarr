@@ -56,7 +56,7 @@ import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 import { ChannelLineupListItem } from './ChannelLineupListItem.tsx';
 import { MidRollGroupRow } from './MidRollGroupRow.tsx';
 
-export type CommonProps = {
+type CommonProps = {
   moveProgram?: (originalIndex: number, toIndex: number) => void;
   deleteProgram?: (index: number) => void;
   // If given, the list will be rendered using react-window
@@ -295,7 +295,6 @@ const ProgramListItem = ({
             primary={<>{titleParts}</>}
             secondary={smallViewport ? startTime : null}
             sx={{
-              fontStyle: program.persisted ? 'normal' : 'italic',
               textOverflow: 'ellipsis',
               overflow: 'hidden',
               whiteSpace: 'nowrap',

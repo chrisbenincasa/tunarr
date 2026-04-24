@@ -301,7 +301,7 @@ export function EditChannelForm({
     </Paper>
   );
 }
-export type EditChannelFormProps = {
+type EditChannelFormProps = {
   channel: Channel;
   isNew: boolean;
   initialTab?: EditChannelTabs;

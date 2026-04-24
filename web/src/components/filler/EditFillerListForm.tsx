@@ -27,13 +27,13 @@ import type { UIFillerListProgram } from '../../types/index.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
 import ChannelLineupList from '../channel_config/ChannelLineupList.tsx';
 
-export type FillerListMutationArgs = {
+type FillerListMutationArgs = {
   id?: string;
   name: string;
   programs: UIFillerListProgram[];
 };
 
-export type FillerListFormType = Omit<FillerListMutationArgs, 'id'>;
+type FillerListFormType = Omit<FillerListMutationArgs, 'id'>;
 
 type EditFillerListFormProps = {
   fillerList: FillerList;

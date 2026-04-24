@@ -13,7 +13,7 @@ const ProgramGridItemInner = <T extends ProgramOrFolder>(
   props: GridItemProps<T>,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
-  const { item, index, moveModal, disableSelection, persisted = false } = props;
+  const { item, index, moveModal, disableSelection } = props;
   const currentServer = useCurrentMediaSource();
   const navigate = useNavigate();
 
@@ -61,14 +61,12 @@ const ProgramGridItemInner = <T extends ProgramOrFolder>(
                 type: props.item.sourceType,
                 id: item.uuid,
                 mediaSource: currentServer!,
-                persisted: true,
               }
             : {
                 type: props.item.sourceType,
                 id: item.uuid,
                 mediaSource: currentServer!,
                 libraryId: item.libraryId,
-                persisted: !!props.persisted,
               },
         aspectRatio: isMusicItem(item)
           ? 'square'
@@ -79,16 +77,13 @@ const ProgramGridItemInner = <T extends ProgramOrFolder>(
             : 'portrait',
         isPlaylist: item.type === 'playlist',
         isFolder: item.type === 'folder',
-        persisted,
       }) satisfies GridItemMetadata,
     [
       currentServer,
       isEpisode,
       isMusicItem,
       item,
-      persisted,
       props.item.sourceType,
-      props.persisted,
       thumbnailUrlFunc,
     ],
   );

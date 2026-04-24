@@ -27,13 +27,7 @@ import type {
   ProgramWithRelationsOrm,
   TvSeasonOrm,
 } from '@/db/schema/derivedTypes.js';
-import type {
-  MarkNonNullable,
-  Maybe,
-  Nullable,
-  PagedResult,
-} from '@/types/util.js';
-import type { ChannelProgram } from '@tunarr/types';
+import type { Maybe, Nullable, PagedResult } from '@/types/util.js';
 import type {
   Dictionary,
   MarkOptional,
@@ -163,11 +157,6 @@ export interface IProgramDB {
     newExternalId: NewProgramExternalId,
     oldExternalId?: MinimalProgramExternalId,
   ): Promise<void>;
-
-  upsertContentPrograms(
-    programs: ChannelProgram[],
-    programUpsertBatchSize?: number,
-  ): Promise<MarkNonNullable<ProgramDao, 'mediaSourceId'>[]>;
 
   upsertPrograms(
     program: NewProgramWithRelations,

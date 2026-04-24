@@ -49,7 +49,7 @@ type Props = {
   server?: JellyfinServerSettings;
 };
 
-export type JellyfinServerSettingsForm = MarkOptional<
+type JellyfinServerSettingsForm = MarkOptional<
   StrictOmit<JellyfinServerSettings, 'libraries'>,
   'id'
 > & {

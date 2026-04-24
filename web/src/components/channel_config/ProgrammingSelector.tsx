@@ -1,14 +1,13 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Keyboard, Mouse } from '@mui/icons-material';
 import {
   Alert,
   Box,
   FormControl,
-  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   Stack,
-  Switch,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -26,15 +25,8 @@ import {
   orderBy,
   some,
 } from 'lodash-es';
-import { Trans, useLingui } from '@lingui/react/macro';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Emby,
-  Imported,
-  Jellyfin,
-  Local,
-  Plex,
-} from '../../helpers/constants.ts';
+import { Imported } from '../../helpers/constants.ts';
 import { useMediaSourceLibraries } from '../../hooks/media-sources/useMediaSourceLibraries.ts';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
@@ -50,13 +42,7 @@ import { LibraryProgramGrid } from '../library/LibraryProgramGrid.tsx';
 import { SearchInput } from '../search/SearchInput.tsx';
 import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceButton.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
-import { EmbyLibrarySelector } from './emby/EmbyLibrarySelector.tsx';
-import { EmbyProgrammingSelector } from './emby/EmbyProgrammingSelector.tsx';
 import { ImportedLibrarySelector } from './ImportedLibrarySeletor.tsx';
-import { JellyfinLibrarySelector } from './jellyfin/JellyfinLibrarySelector.tsx';
-import { JellyfinProgrammingSelector } from './jellyfin/JellyfinProgrammingSelector.tsx';
-import { PlexLibrarySelector } from './plex/PlexLibrarySelector.tsx';
-import PlexProgrammingSelector from './plex/PlexProgrammingSelector.tsx';
 import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
 
 type Props = {
@@ -87,7 +73,6 @@ export const ProgrammingSelector = ({
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
-  const [useSyncedSources, setUseSyncedSources] = useState(true);
   const [queryBuilderType, setQueryBuilderType] = useState<'text' | 'click'>(
     'text',
   );
@@ -139,7 +124,6 @@ export const ProgrammingSelector = ({
   const renderMediaSourcePrograms = () => {
     const noSyncedLibraries =
       selectedServer?.type !== 'local' &&
-      useSyncedSources &&
       !librariesLoading &&
       !some(libraries, (lib) => lib.enabled && !!lib.lastScannedAt);
 
@@ -149,8 +133,8 @@ export const ProgrammingSelector = ({
           <Trans>
             This media source has no enabled or scanned libraries. Enable
             libraries for this source on the{' '}
-            <RouterLink to="/settings/sources">Media Sources</RouterLink> page or
-            manually trigger scans on the{' '}
+            <RouterLink to="/settings/sources">Media Sources</RouterLink> page
+            or manually trigger scans on the{' '}
             <RouterLink to="/library">Library</RouterLink> page.
           </Trans>
         </Alert>
@@ -171,64 +155,38 @@ export const ProgrammingSelector = ({
       );
     }
 
-    if (selectedLibrary) {
-      switch (selectedLibrary.type) {
-        case Plex:
-          return (
-            <PlexProgrammingSelector
+    switch (selectedLibrary?.type) {
+      case 'custom-show':
+        return (
+          <CustomShowProgrammingSelector
+            toggleOrSetSelectedProgramsDrawer={
+              toggleOrSetSelectedProgramsDrawer
+            }
+          />
+        );
+      case Imported:
+        return (
+          <Stack gap={2}>
+            <SearchInput
+              mediaSourceId={tag<MediaSourceId>(selectedServer!.id)}
+              libraryId={selectedLibrary.view.id}
+            />
+            <SelectedProgrammingActions
               toggleOrSetSelectedProgramsDrawer={
                 toggleOrSetSelectedProgramsDrawer
               }
             />
-          );
-        case Jellyfin:
-          return (
-            <JellyfinProgrammingSelector
-              toggleOrSetSelectedProgramsDrawer={
-                toggleOrSetSelectedProgramsDrawer
-              }
+            <LibraryProgramGrid
+              mediaSource={selectedServer}
+              library={{
+                ...selectedLibrary.view,
+                mediaSource: selectedServer!,
+              }}
             />
-          );
-        case Emby:
-          return (
-            <EmbyProgrammingSelector
-              toggleOrSetSelectedProgramsDrawer={
-                toggleOrSetSelectedProgramsDrawer
-              }
-            />
-          );
-        case 'custom-show':
-          return (
-            <CustomShowProgrammingSelector
-              toggleOrSetSelectedProgramsDrawer={
-                toggleOrSetSelectedProgramsDrawer
-              }
-            />
-          );
-        case Imported:
-          return (
-            <Stack gap={2}>
-              <SearchInput
-                mediaSourceId={tag<MediaSourceId>(selectedServer!.id)}
-                libraryId={selectedLibrary.view.id}
-              />
-              <SelectedProgrammingActions
-                toggleOrSetSelectedProgramsDrawer={
-                  toggleOrSetSelectedProgramsDrawer
-                }
-              />
-              <LibraryProgramGrid
-                mediaSource={selectedServer}
-                library={{
-                  ...selectedLibrary.view,
-                  mediaSource: selectedServer!,
-                }}
-              />
-            </Stack>
-          );
-        default:
-          return null;
-      }
+          </Stack>
+        );
+      default:
+        break;
     }
 
     if (!mediaSourcesLoading && !selectedServer && !viewingCustomShows) {
@@ -247,7 +205,11 @@ export const ProgrammingSelector = ({
           <Alert
             variant="filled"
             severity="error"
-            action={<AddMediaSourceButton ButtonProps={{ color: 'inherit', variant: 'outlined' }} />}
+            action={
+              <AddMediaSourceButton
+                ButtonProps={{ color: 'inherit', variant: 'outlined' }}
+              />
+            }
           >
             <Trans>No Media Sources detected.</Trans>
           </Alert>
@@ -263,23 +225,7 @@ export const ProgrammingSelector = ({
       return;
     }
 
-    if (useSyncedSources) {
-      return <ImportedLibrarySelector initialLibraryId={initialLibraryId} />;
-    }
-
-    switch (selectedServer.type) {
-      case Plex: {
-        return <PlexLibrarySelector initialLibraryId={initialLibraryId} />;
-      }
-      case Jellyfin: {
-        return <JellyfinLibrarySelector initialLibraryId={initialLibraryId} />;
-      }
-      case Emby: {
-        return <EmbyLibrarySelector initialLibraryId={initialLibraryId} />;
-      }
-      case Local:
-        return null;
-    }
+    return <ImportedLibrarySelector initialLibraryId={initialLibraryId} />;
   };
 
   const hasAnySources = !isEmpty(mediaSources) || !isEmpty(customShows);
@@ -317,7 +263,9 @@ export const ProgrammingSelector = ({
                   </MenuItem>
                 ))}
                 {entityType !== 'custom-show' && customShows.length > 0 && (
-                  <MenuItem value="custom-shows"><Trans>Custom Shows</Trans></MenuItem>
+                  <MenuItem value="custom-shows">
+                    <Trans>Custom Shows</Trans>
+                  </MenuItem>
                 )}
               </Select>
             </FormControl>
@@ -345,17 +293,6 @@ export const ProgrammingSelector = ({
           )}
           <ProgramViewToggleButton sx={{ ml: { sm: undefined, md: 'auto' } }} />
           <Box sx={{ flexBasis: '100%' }} />
-          {selectedServer?.type !== 'local' && (
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={useSyncedSources}
-                  onChange={(_, v) => setUseSyncedSources(v)}
-                />
-              }
-              label={t`Show only synced libraries`}
-            />
-          )}
         </Stack>
       </Box>
       {renderMediaSourcePrograms()}

@@ -171,12 +171,7 @@ export const ChannelProgramGrid = ({
 
   const renderProgramGridItem = useCallback(
     <T extends ProgramOrFolder>(props: GridItemProps<T>) => (
-      <ProgramGridItem
-        key={props.item.uuid}
-        disableSelection
-        persisted
-        {...props}
-      />
+      <ProgramGridItem key={props.item.uuid} disableSelection {...props} />
     ),
     [],
   );

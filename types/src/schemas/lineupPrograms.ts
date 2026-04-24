@@ -22,7 +22,6 @@ export const BaseProgramSchema = z.object({
     z.literal('custom'),
     z.literal('filler'),
   ]),
-  persisted: z.boolean(),
   duration: z.number(),
   icon: z.string().optional(),
 });
@@ -75,7 +74,7 @@ export type ContentProgramOriginalProgram = z.infer<
 
 export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   type: z.literal('content'),
-  id: z.string().optional(), // Populated if persisted
+  id: z.string(),
   // Always populated. IFF persisted then uniqueId = id
   // ELSE "{source_type}|{source_id}|{external_item_id}"
   uniqueId: z.string(),

@@ -124,7 +124,6 @@ export function padStartTimes(
     newProgramList.push({
       type: 'flex',
       duration: paddingDuration,
-      persisted: false,
     });
     lastStartTime += paddingDuration;
   });

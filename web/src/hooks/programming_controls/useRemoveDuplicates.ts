@@ -1,16 +1,11 @@
-import { isNonEmptyString } from '@/helpers/util.ts';
 import type { UIChannelProgram } from '@/types/index.ts';
-import { createExternalId } from '@tunarr/shared';
-import { seq } from '@tunarr/shared/util';
 import {
   isContentProgram,
   isCustomProgram,
   isFlexProgram,
   isRedirectProgram,
-  tag,
 } from '@tunarr/types';
-import { isValidMultiExternalIdType } from '@tunarr/types/schemas';
-import { forEach, reject, some } from 'lodash-es';
+import { reject } from 'lodash-es';
 import { useCallback } from 'react';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
@@ -28,7 +23,6 @@ export const useRemoveDuplicates = () => {
 
 export const removeDuplicatePrograms = (programs: UIChannelProgram[]) => {
   const seenDbIds = new Set<string>();
-  const seenIds = new Set<string>();
   const seenRedirects = new Set<string>();
   const seenCustom = new Set<string>();
 
@@ -59,29 +53,10 @@ export const removeDuplicatePrograms = (programs: UIChannelProgram[]) => {
       return true;
     }
 
-    if (p.persisted && isNonEmptyString(p.id)) {
-      if (seenDbIds.has(p.id)) {
-        return true;
-      }
-      seenDbIds.add(p.id);
-      return false;
+    if (seenDbIds.has(p.id)) {
+      return true;
     }
-
-    const externalIds = seq.collect(p.program.identifiers, (id) => {
-      if (
-        isValidMultiExternalIdType(id.type) &&
-        isNonEmptyString(id.sourceId)
-      ) {
-        return createExternalId(id.type, tag(id.sourceId), id.id);
-      }
-      return;
-    });
-
-    const seenAny = some(externalIds, (id) => seenIds.has(id));
-    if (!seenAny) {
-      forEach(externalIds, (id) => seenIds.add(id));
-    }
-
-    return seenAny;
+    seenDbIds.add(p.id);
+    return false;
   });
 };

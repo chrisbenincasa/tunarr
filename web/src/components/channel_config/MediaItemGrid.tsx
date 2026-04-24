@@ -25,7 +25,7 @@ import {
   map,
   sumBy,
 } from 'lodash-es';
-import type { ComponentType, ForwardedRef, ReactNode } from 'react';
+import type { ForwardedRef, ReactNode } from 'react';
 import {
   Fragment,
   useCallback,
@@ -40,6 +40,7 @@ import {
   useIntersectionObserver,
   useResizeObserver,
 } from 'usehooks-ts';
+import { TopBarPadddingPx } from '../../helpers/constants.ts';
 import { InlineModal } from '../InlineModal.tsx';
 import { AlphanumericFilters } from './AlphanumericFilters.tsx';
 
@@ -51,17 +52,7 @@ export interface GridItemProps<ItemType> {
   depth: number;
   ref: ForwardedRef<HTMLDivElement>;
   disableSelection?: boolean;
-  persisted?: boolean; // Temp hack
 }
-
-export interface ListItemProps<ItemType> {
-  item: ItemType;
-  index: number;
-  style?: React.CSSProperties;
-  disableSelection?: boolean;
-}
-
-export type RenderGridItem<ItemType> = ComponentType<GridItemProps<ItemType>>;
 
 export interface NestedGridProps<ItemType> {
   parent: Nullable<ItemType>;
@@ -71,14 +62,6 @@ export interface NestedGridProps<ItemType> {
 export type RenderNestedGrid<ItemType> = (
   props: NestedGridProps<ItemType>,
 ) => ReactNode;
-
-export interface GridInlineModalProps<ItemType> {
-  open: boolean;
-  modalItem: Nullable<ItemType>;
-  modalIndex: number;
-  rowSize: number;
-  depth: number;
-}
 
 type MediaItemGridProps<PageDataType, ItemType> = {
   getPageDataSize: (page: PageDataType) => { total?: number; size: number };
@@ -99,9 +82,7 @@ type ModalState<ItemType> = {
   modalItem: Nullable<ItemType>;
 };
 
-// magic number for top bar padding; TODO: calc it off ref
-export const TopBarPadddingPx = 64;
-export const StickyHeaderPaddingPx = 60.5;
+const StickyHeaderPaddingPx = 60.5;
 
 export function MediaItemGrid<PageDataType, ItemType>(
   props: MediaItemGridProps<PageDataType, ItemType>,

@@ -33,7 +33,6 @@ export class ContentProgramOrderedIterator extends ProgramOrdereredIterator<Cond
     return {
       type: 'content',
       duration: program.duration,
-      persisted: true,
       id: program.uuid,
       uniqueId: program.uuid,
     };
@@ -58,7 +57,6 @@ export class CustomProgramOrderedIterator extends ProgramOrdereredIterator<Conde
       duration: program.duration,
       id: program.uuid,
       index: this.indexById[program.uuid]!,
-      persisted: true,
       type: 'custom',
     };
   }

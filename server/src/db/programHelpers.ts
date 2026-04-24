@@ -1,7 +1,5 @@
-import { isNonEmptyString } from '@/util/index.js';
-import { createExternalId } from '@tunarr/shared';
 import type { ContentProgram, CustomProgram } from '@tunarr/types';
-import { isContentProgram, isCustomProgram, tag } from '@tunarr/types';
+import { isContentProgram, isCustomProgram } from '@tunarr/types';
 import { reduce } from 'lodash-es';
 
 // Takes a listing of programs and makes a mapping of a unique identifier,
@@ -16,17 +14,8 @@ export function createPendingProgramIndexMap(
   return reduce(
     programs,
     (acc, p) => {
-      if ((p.persisted || isCustomProgram(p)) && isNonEmptyString(p.id)) {
+      if (isContentProgram(p) || isCustomProgram(p)) {
         acc[p.id] = idx++;
-        // TODO: handle other types of programs
-      } else if (isContentProgram(p) && p.program.sourceType !== 'local') {
-        acc[
-          createExternalId(
-            p.program.sourceType,
-            tag(p.program.mediaSourceId),
-            p.program.externalId,
-          )
-        ] = idx++;
       }
       return acc;
     },

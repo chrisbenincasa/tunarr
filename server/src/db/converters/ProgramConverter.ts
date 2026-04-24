@@ -236,7 +236,6 @@ export class ProgramConverter {
     program: TerminalProgram,
   ): MarkRequired<ContentProgram, 'id'> {
     return {
-      persisted: true,
       type: 'content',
       duration: program.duration,
       id: program.uuid,
@@ -301,10 +300,8 @@ export class ProgramConverter {
   offlineLineupItemToProgram(
     channel: ChannelWithRelations | ChannelOrmWithRelations,
     program: OfflineItem,
-    persisted: boolean = true,
   ): FlexProgram {
     return {
-      persisted,
       type: 'flex',
       icon: channel.icon?.path,
       duration: program.durationMs,
@@ -341,7 +338,6 @@ export class ProgramConverter {
     channel: MarkRequired<DeepPartial<Channel | ChannelOrm>, 'name' | 'number'>,
   ): RedirectProgram {
     return {
-      persisted: true,
       type: 'redirect',
       channel: item.channel,
       channelName: channel.name,

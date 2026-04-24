@@ -7,10 +7,6 @@ import {
   type EditorsState,
   createChannelEditorState,
 } from './channelEditor/store.ts';
-import {
-  type PlexMetadataState,
-  createPlexMetadataState,
-} from './plexMetadata/store.ts';
 import type { ProgrammingState } from './programming/store.ts';
 import { createProgrammingState } from './programming/store.ts';
 import {
@@ -34,7 +30,6 @@ export type State = ThemeEditorState &
   SettingsState &
   ProgrammingListingsState &
   EditorsState &
-  PlexMetadataState &
   ProgrammingState;
 
 type PersistedState = PersistedSettingsState & ThemeEditorState;
@@ -48,7 +43,6 @@ const useStore = create<State>()(
           ...createProgrammingListingsState(...set),
           ...createChannelEditorState(...set),
           ...createThemeEditorState(...set),
-          ...createPlexMetadataState(...set),
           ...createProgrammingState(...set),
         }),
         {

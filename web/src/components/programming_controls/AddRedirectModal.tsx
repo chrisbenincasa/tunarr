@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Box,
   CircularProgress,
@@ -21,6 +22,7 @@ import { filter, find, isNil, isUndefined } from 'lodash-es';
 import { useEffect } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
+import { betterHumanize } from '../../helpers/dayjs.ts';
 import { uuidRegexPattern } from '../../helpers/util.ts';
 import { useChannels } from '../../hooks/useChannels.ts';
 import {
@@ -28,10 +30,8 @@ import {
   setProgramAtIndex,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import { NumericFormControllerText } from '../util/TypedController.tsx';
 import type { UIRedirectProgram } from '../../types/index.ts';
-import { betterHumanize } from '../../helpers/dayjs.ts';
-import { Trans, useLingui } from '@lingui/react/macro';
+import { NumericFormControllerText } from '../util/TypedController.tsx';
 
 dayjs.extend(duration);
 
@@ -97,7 +97,6 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
         channelNumber: channel.number,
         duration: data.redirectDuration * 1000,
         type: 'redirect',
-        persisted: false,
       };
 
       if (isUndefined(props.initialProgram)) {
@@ -130,7 +129,9 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
             rules={{ minLength: 1, pattern: new RegExp(uuidRegexPattern) }}
             render={({ field }) => (
               <FormControl fullWidth margin="normal">
-                <InputLabel><Trans>Channel</Trans></InputLabel>
+                <InputLabel>
+                  <Trans>Channel</Trans>
+                </InputLabel>
                 <Select label={t`Channel`} {...field}>
                   {channelOptions?.map((channel) => (
                     <MenuItem key={channel.number} value={channel.id}>
@@ -161,7 +162,9 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
     } else {
       return (
         <Typography>
-          <Trans>Error occurred while loading channels, please try again soon.</Trans>{' '}
+          <Trans>
+            Error occurred while loading channels, please try again soon.
+          </Trans>{' '}
           {error ? error.message : null}
         </Typography>
       );
@@ -171,7 +174,11 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
   return (
     <Dialog open={props.open}>
       <DialogTitle>
-        {isUndefined(props.initialProgram) ? <Trans>Add Channel Redirect</Trans> : <Trans>Edit Channel Redirect</Trans>}
+        {isUndefined(props.initialProgram) ? (
+          <Trans>Add Channel Redirect</Trans>
+        ) : (
+          <Trans>Edit Channel Redirect</Trans>
+        )}
       </DialogTitle>
       <DialogContent>
         <Box
@@ -183,7 +190,9 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => props.onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => props.onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button variant="contained" form="redirect-channel-form" type="submit">
           <Trans>Save</Trans>
         </Button>
