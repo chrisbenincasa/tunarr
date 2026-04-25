@@ -82,6 +82,7 @@ import { loggingDef } from '../util/logging/loggingDef.ts';
 import { EventService } from './EventService.ts';
 import { OnDemandChannelService } from './OnDemandChannelService.ts';
 import { XmlTvWriter } from './XmlTvWriter.ts';
+import { findMidRollAnchorIndex, isSameProgramSegment } from './tvGuideUtil.ts';
 
 export type ChannelAndPrograms = ChannelOrm & {
   programs: Pick<ProgramOrm, 'uuid'>[];
@@ -533,11 +534,11 @@ export class TVGuideService {
         );
       }
 
-      const lineupItem = lineup.items[targetIndex]!;
-
+      const anchorIndex = findMidRollAnchorIndex(lineup.items, targetIndex);
+      const lineupItem = lineup.items[anchorIndex]!;
       return {
-        index: targetIndex,
-        startTimeMs: startOfCycle + accumulate[targetIndex]!,
+        index: anchorIndex,
+        startTimeMs: startOfCycle + accumulate[anchorIndex]!,
         lineupItem,
       };
     }
@@ -787,7 +788,23 @@ export class TVGuideService {
         });
       } else {
         melded = 0;
-        programs.push(program);
+        const lastProgram =
+          programs.length > 0 ? programs[programs.length - 1] : undefined;
+        if (
+          lastProgram &&
+          isSameProgramSegment(lastProgram.lineupItem, currentProgram)
+        ) {
+          programs[programs.length - 1] = {
+            ...lastProgram,
+            lineupItem: {
+              ...lastProgram.lineupItem,
+              durationMs:
+                lastProgram.lineupItem.durationMs + currentProgram.durationMs,
+            },
+          };
+        } else {
+          programs.push(program);
+        }
       }
     };
 

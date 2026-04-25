@@ -126,7 +126,6 @@ export const RandomSlotTable = () => {
 
   useEffect(() => {
     const sub = watch((value, { name }) => {
-      console.log(name);
       if (name === 'randomDistribution') {
         match([prevDistributionType, value.randomDistribution])
           .with([P._, P.nullish], () => {})

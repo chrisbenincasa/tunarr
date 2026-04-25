@@ -1,5 +1,9 @@
 import type { CondensedChannelProgram, FillerProgram } from '@tunarr/types';
-import type { BaseSlot, SlotFillerTypes } from '@tunarr/types/api';
+import type {
+  BaseSlot,
+  MidRollConfig,
+  SlotFillerTypes,
+} from '@tunarr/types/api';
 import { isEmpty, some } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { Nullable } from '../../types/util.ts';
@@ -19,6 +23,7 @@ export abstract class SlotImpl<
     pre: [],
     tail: [],
     fallback: [],
+    mid: [],
   };
 
   constructor(
@@ -81,6 +86,20 @@ export abstract class SlotImpl<
 
   hasAnyFillerSettings() {
     return some(this.fillerIteratorsByType, (v) => !isEmpty(v));
+  }
+
+  get midRollConfig(): MidRollConfig | undefined {
+    switch (this.slot.type) {
+      case 'filler':
+      case 'flex':
+      case 'redirect':
+        return;
+      case 'movie':
+      case 'show':
+      case 'custom-show':
+      case 'smart-collection':
+        return this.slot.midRoll;
+    }
   }
 
   get type() {

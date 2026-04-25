@@ -12,6 +12,7 @@ import type {
   BaseShowProgrammingSlot,
   BaseSlot,
   FillerProgrammingSlot,
+  MidRollConfig,
   SlotFillerTypes,
 } from '@tunarr/types/api';
 import { FillerTypes } from '@tunarr/types/schemas';
@@ -41,6 +42,10 @@ import type { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
 import type { Nullable } from '../../types/util.ts';
 import { isNonEmptyArray, retrySimple } from '../../util/index.ts';
 import { FlexProgramIterator } from './FlexProgramIterator.ts';
+import {
+  calculateMidRollBreaks,
+  programQualifiesForMidRoll,
+} from './midRollUtil.ts';
 import {
   ContentProgramChunkedShuffle,
   CustomProgramChunkedShuffle,
@@ -747,6 +752,163 @@ export class PaddedProgram {
     return programDur + fillerDur + this.padMs;
   }
 }
+/**
+ * Builds a sequence of PaddedPrograms to fill a mid-roll commercial break.
+ * Picks filler items from the slot until breakDurationMs is consumed.
+ * Any remaining time (e.g. when no more filler fits) becomes padMs on the last
+ * item and will be emitted as fallback filler or flex by the emission loop.
+ */
+function buildMidRollBreak(
+  slot: SlotImpl<BaseSlot>,
+  breakDurationMs: number,
+  timeCursorMs: number,
+): PaddedProgram[] {
+  const items: PaddedProgram[] = [];
+  let remainingMs = breakDurationMs;
+
+  while (remainingMs > 0) {
+    const filler = slot.getFillerOfType('mid', {
+      slotDuration: remainingMs,
+      timeCursor: timeCursorMs,
+    });
+    if (!filler || filler.duration <= 0) break;
+
+    const usedDuration = Math.min(filler.duration, remainingMs);
+    items.push(
+      new PaddedProgram(
+        {
+          ...filler,
+          duration: usedDuration,
+          fillerType: 'mid',
+        } satisfies FillerProgram,
+        0,
+        {},
+      ),
+    );
+    remainingMs -= usedDuration;
+  }
+
+  if (remainingMs > 0) {
+    if (items.length > 0) {
+      const lastIdx = items.length - 1;
+      const lastItem = items[lastIdx]!;
+      items[lastIdx] = new PaddedProgram(
+        lastItem.program,
+        remainingMs,
+        lastItem.filler,
+      );
+    } else {
+      // No filler configured – emit the full break as flex
+      items.push(
+        new PaddedProgram(
+          { type: 'flex', duration: remainingMs, persisted: false },
+          0,
+          {},
+        ),
+      );
+    }
+  }
+
+  return items;
+}
+
+/**
+ * Splits a padded program into a flat list of PaddedPrograms for mid-roll
+ * filler insertion. Content segments alternate with break filler sequences.
+ * If the program doesn't qualify or mid-roll is disabled, returns the original
+ * program unchanged.
+ */
+const defaultMidRollConfig: MidRollConfig = {
+  intervalMs: 30 * 60 * 1000,
+  maxBreaks: 0,
+  breakDurationMs: 3 * 60 * 1000,
+  minProgramDurationMs: 60 * 60 * 1000,
+};
+
+export function applyMidRollBreaks(
+  paddedProgram: PaddedProgram,
+  slot: SlotImpl<BaseSlot>,
+  midRollConfig: MidRollConfig | undefined,
+  slotDurationMs: number | undefined,
+  timeCursorMs: number,
+): PaddedProgram[] {
+  if (!slot.hasFillerOfType('mid')) {
+    return [paddedProgram];
+  }
+
+  const effectiveConfig = midRollConfig ?? defaultMidRollConfig;
+
+  const { program } = paddedProgram;
+  if (!programQualifiesForMidRoll(program, effectiveConfig)) {
+    return [paddedProgram];
+  }
+
+  const result = calculateMidRollBreaks(
+    program.duration,
+    effectiveConfig,
+    slotDurationMs,
+  );
+  if (!result) {
+    return [paddedProgram];
+  }
+
+  const flat: PaddedProgram[] = [];
+
+  result.segments.forEach((segment, idx) => {
+    const isFirst = idx === 0;
+    const isLast = idx === result.segments.length - 1;
+
+    const segmentProgram: CondensedChannelProgram = {
+      ...program,
+      duration: segment.durationMs,
+      ...(program.type === 'content'
+        ? { startOffsetMs: segment.startOffsetMs }
+        : {}),
+    };
+
+    const fillerForSegment: Partial<
+      Record<SlotFillerTypes, CondensedChannelProgram>
+    > = {};
+
+    if (isFirst) {
+      if (paddedProgram.filler.head)
+        fillerForSegment.head = paddedProgram.filler.head;
+      if (paddedProgram.filler.pre)
+        fillerForSegment.pre = paddedProgram.filler.pre;
+    }
+
+    if (isLast) {
+      if (paddedProgram.filler.post)
+        fillerForSegment.post = paddedProgram.filler.post;
+      if (paddedProgram.filler.tail)
+        fillerForSegment.tail = paddedProgram.filler.tail;
+    }
+
+    flat.push(
+      new PaddedProgram(
+        segmentProgram,
+        isLast ? paddedProgram.padMs : 0,
+        fillerForSegment,
+      ),
+    );
+
+    // After each non-last segment, insert the commercial break as its own items
+    if (!isLast) {
+      const breakCursor =
+        timeCursorMs + segment.startOffsetMs + segment.durationMs;
+      flat.push(
+        ...buildMidRollBreak(
+          slot,
+          effectiveConfig.breakDurationMs,
+          breakCursor,
+        ),
+      );
+    }
+  });
+
+  return flat;
+}
+
 export function createIndexByIdMap(
   programs: SlotSchedulerProgram[],
   customShowId,

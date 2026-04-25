@@ -34,6 +34,7 @@ import type {
 } from './slotSchedulerUtil.js';
 import {
   addHeadAndTailFillerToSlot,
+  applyMidRollBreaks,
   createPaddedProgram,
   createProgramIterators,
   createProgramMap,
@@ -288,6 +289,16 @@ export async function scheduleTimeSlots(
       );
     }
 
+    const expandedPrograms = paddedPrograms.flatMap((pp) =>
+      applyMidRollBreaks(
+        pp,
+        currSlot,
+        currSlot.midRollConfig,
+        slotDuration,
+        timeCursor.valueOf(),
+      ),
+    );
+
     // We have two options here if there is remaining time in the slot
     // If we want to be "greedy", we can keep attempting to look for items
     // to fill the time for this slot. This works mainly if we're doing a
@@ -298,19 +309,19 @@ export async function scheduleTimeSlots(
       currSlot.type !== 'filler'
     ) {
       distributeFlex(
-        paddedPrograms,
+        expandedPrograms,
         schedule.padMs,
         Math.max(
           0,
-          slotDuration - sumBy(paddedPrograms, (p) => p.totalDuration),
+          slotDuration - sumBy(expandedPrograms, (p) => p.totalDuration),
         ),
       );
     } else {
-      const lastProgram = last(paddedPrograms)!;
+      const lastProgram = last(expandedPrograms)!;
       lastProgram.padMs += remainingTimeInSlot;
     }
 
-    forEach(paddedPrograms, ({ program, padMs, filler }) => {
+    forEach(expandedPrograms, ({ program, padMs, filler }) => {
       pushProgram(filler.head);
       pushProgram(filler.pre);
       pushProgram(program);

@@ -28,8 +28,8 @@ export const materializeProgramList = (
       const program = programLookup[p.id ?? ''] ?? programLookup[p.uniqueId];
       if (program) {
         content = {
-          ...p,
           ...program,
+          ...p,
           startTimeOffset: offset,
         };
       }

@@ -21,7 +21,7 @@ import { TimePicker } from '@mui/x-date-pickers';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { find, isNil, map } from 'lodash-es';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { match } from 'ts-pattern';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
@@ -29,6 +29,7 @@ import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
+import { MidRollConfigPanel } from './MidRollConfigPanel.tsx';
 import { SlotFillerDialogPanel } from './SlotFillerDialogPanel.tsx';
 import { TimeSlotConfigDialogPanel } from './TimeSlotConfigDialogPanel.tsx';
 
@@ -94,7 +95,34 @@ export const EditTimeSlotDialogContent = ({
   );
 
   const slotType = formMethods.watch('type');
+  const fillerValues = formMethods.watch('filler' as never) as
+    | { types?: string[] }[]
+    | undefined;
+  const hasMidFiller =
+    fillerValues?.some((f) => f.types?.includes('mid')) ?? false;
   const [tab, setTab] = useState(0);
+
+  useEffect(() => {
+    if (!hasMidFiller && tab === 3) {
+      setTab(0);
+    }
+    if (hasMidFiller && !formMethods.getValues('midRoll' as never)) {
+      formMethods.setValue(
+        'midRoll.intervalMs' as never,
+        (30 * 60 * 1000) as never,
+      );
+      formMethods.setValue(
+        'midRoll.breakDurationMs' as never,
+        (3 * 60 * 1000) as never,
+      );
+      formMethods.setValue('midRoll.maxBreaks' as never, 0 as never);
+      formMethods.setValue(
+        'midRoll.minProgramDurationMs' as never,
+        (60 * 60 * 1000) as never,
+      );
+      formMethods.setValue('midRoll.programTypes' as never, [] as never);
+    }
+  }, [hasMidFiller, tab, formMethods]);
 
   const newSlotForType = useCallback(
     (type: TimeSlotViewModel['type']) => {
@@ -208,12 +236,14 @@ export const EditTimeSlotDialogContent = ({
             onChange={(_, tab: number) => setTab(tab)}
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >
-            <Tab label="Programming" />
+            <Tab label="Programming" value={0} />
             <Tab
               label="Filler"
+              value={1}
               disabled={slotType === 'flex' || fillerLists.length === 0}
             />
-            <Tab label="Config" />
+            <Tab label="Config" value={2} />
+            {hasMidFiller && <Tab label="Mid-Roll" value={3} />}
           </Tabs>
           <TabPanel value={tab} index={0}>
             <Stack gap={2} useFlexGap>
@@ -282,6 +312,9 @@ export const EditTimeSlotDialogContent = ({
             </TabPanel>
             <TabPanel value={tab} index={2}>
               <TimeSlotConfigDialogPanel />
+            </TabPanel>
+            <TabPanel value={tab} index={3}>
+              <MidRollConfigPanel />
             </TabPanel>
           </FormProvider>
         </Box>

@@ -14,7 +14,6 @@ export const ShowSearchSlotProgrammingForm = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const enabled = useMemo(() => searchQuery.length >= 1, [searchQuery]);
   const show = watch('show');
-  console.log(watch());
 
   const search = useMemo(
     () => ({

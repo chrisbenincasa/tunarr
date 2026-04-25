@@ -3,8 +3,6 @@ import {
   DynamicContentConfigSchema,
   LineupScheduleSchema,
 } from '../api/Scheduling.js';
-import { ChannelIconSchema } from './utilSchemas.js';
-export * from './lineupPrograms.js';
 import {
   CondensedContentProgramSchema,
   CondensedCustomProgramSchema,
@@ -15,6 +13,8 @@ import {
   FlexProgramSchema,
   RedirectProgramSchema,
 } from './lineupPrograms.js';
+import { ChannelIconSchema } from './utilSchemas.js';
+export * from './lineupPrograms.js';
 
 export const ChannelProgramSchema = z.discriminatedUnion('type', [
   ContentProgramSchema,

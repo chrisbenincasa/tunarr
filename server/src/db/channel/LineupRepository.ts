@@ -1,6 +1,8 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import { globalOptions } from '@/globals.js';
 import { FileSystemService } from '@/services/FileSystemService.js';
 import { KEYS } from '@/types/inject.js';
+import { typedProperty } from '@/types/path.js';
 import { jsonSchema } from '@/types/schemas.js';
 import { Nullable } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
@@ -14,12 +16,16 @@ import {
   ChannelProgram,
   CondensedChannelProgram,
   CondensedChannelProgramming,
+  CondensedContentProgram,
   ContentProgram,
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
+import { CondensedFillerProgram } from '@tunarr/types/schemas';
+import { and, eq, inArray, notInArray } from 'drizzle-orm';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
 import {
+  chunk,
   drop,
   entries,
   filter,
@@ -32,9 +38,9 @@ import {
   map,
   mapValues,
   nth,
+  omit,
   omitBy,
   partition,
-  omit,
   reject,
   sum,
   sumBy,
@@ -49,6 +55,17 @@ import { MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { MaterializeLineupCommand } from '../../commands/MaterializeLineupCommand.ts';
 import { MaterializeProgramsCommand } from '../../commands/MaterializeProgramsCommand.ts';
+import { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
+import {
+  asyncMapToRecord,
+  groupByFunc,
+  groupByUniqProp,
+  isDefined,
+  isNonEmptyString,
+  mapReduceAsyncSeq,
+  programExternalIdString,
+  run,
+} from '../../util/index.ts';
 import { ProgramConverter } from '../converters/ProgramConverter.ts';
 import {
   ContentItem,
@@ -61,7 +78,6 @@ import {
   LineupSchema,
   PendingProgram,
 } from '../derived_types/Lineup.ts';
-import { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
 import {
   ChannelAndLineup,
   ChannelAndRawLineup,
@@ -75,22 +91,8 @@ import {
   NewChannelProgram,
 } from '../schema/ChannelPrograms.ts';
 import { DB } from '../schema/db.ts';
-import { DrizzleDBAccess } from '../schema/index.ts';
 import { ChannelOrmWithPrograms } from '../schema/derivedTypes.ts';
-import {
-  asyncMapToRecord,
-  groupByFunc,
-  groupByUniqProp,
-  isDefined,
-  isNonEmptyString,
-  mapReduceAsyncSeq,
-  programExternalIdString,
-  run,
-} from '../../util/index.ts';
-import { typedProperty } from '@/types/path.js';
-import { globalOptions } from '@/globals.js';
-import { and, eq, inArray, notInArray } from 'drizzle-orm';
-import { chunk } from 'lodash-es';
+import { DrizzleDBAccess } from '../schema/index.ts';
 
 // Module-level cache shared within this module
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
@@ -110,6 +112,7 @@ function channelProgramToLineupItemFunc(
         type: 'content',
         id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId]!,
         durationMs: program.duration,
+        startOffsetMs: program.startOffsetMs,
       }))
       .with({ type: 'custom' }, (program) => ({
         type: 'content',
@@ -1071,24 +1074,23 @@ export class LineupRepository {
           index: customShowIndexes[item.customShowId]![item.id] ?? -1,
           id: item.id,
         };
-      } else if (item.fillerListId) {
+      } else if (isNonEmptyString(item.fillerListId)) {
         p = {
+          ...item,
           persisted: true,
           type: 'filler',
           fillerListId: item.fillerListId,
           fillerType: item.fillerType,
-          id: item.id,
           duration: item.durationMs,
-        };
+        } satisfies CondensedFillerProgram;
       } else {
         if (dbProgramIds.has(item.id)) {
           p = {
+            ...item,
             persisted: true,
-            type: 'content',
-            id: item.id,
             uniqueId: item.id,
             duration: item.durationMs,
-          };
+          } satisfies CondensedContentProgram;
         }
       }
 

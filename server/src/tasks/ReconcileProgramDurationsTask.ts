@@ -127,8 +127,13 @@ export class ReconcileProgramDurationsTask extends Task2<
       const newLineupItems = map(lineup.items, (item) => {
         if (isContentItem(item) && item.fillerType !== 'fallback') {
           const dbItemDuration = cachedPrograms[item.id];
+          if (isUndefined(dbItemDuration)) {
+            return item;
+          }
+          // TODO: Do we need to figure out how to update with start time offsets here?
+          // How frequently does this actually pick up inconsistencies
           if (
-            !isUndefined(dbItemDuration) &&
+            isUndefined(item.startOffsetMs) &&
             dbItemDuration !== item.durationMs
           ) {
             this.logger.debug('Found duration mismatch: %s', item.id);

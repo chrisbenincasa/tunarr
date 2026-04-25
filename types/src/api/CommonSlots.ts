@@ -25,9 +25,21 @@ export const SlotFillerTypes = z.enum([
   'post',
   'tail',
   'fallback',
+  'mid',
 ]);
 
 export type SlotFillerTypes = z.infer<typeof SlotFillerTypes>;
+
+export const MidRollConfigSchema = z.object({
+  intervalMs: z.number().positive(),
+  maxBreaks: z.number().int().nonnegative(),
+  breakDurationMs: z.number().positive(),
+  minProgramDurationMs: z.number().nonnegative(),
+  programTypes: z
+    .array(z.enum(['movie', 'episode', 'track', 'music_video', 'other_video']))
+    .optional(),
+});
+export type MidRollConfig = z.infer<typeof MidRollConfigSchema>;
 
 export const SlotFiller = z.object({
   types: z.array(SlotFillerTypes).nonempty(),
@@ -41,6 +53,7 @@ export type SlotFiller = z.infer<typeof SlotFiller>;
 
 export const Slot = z.object({
   filler: z.array(SlotFiller).optional(),
+  midRoll: MidRollConfigSchema.optional(),
 });
 
 //

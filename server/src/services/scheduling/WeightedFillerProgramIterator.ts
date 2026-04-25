@@ -71,7 +71,7 @@ export class WeightedFillerProgramIterator
   current(state: IterationState): Nullable<FillerProgram> {
     let idx = 0;
     if (state.slotDuration > this.maxDuration) {
-      idx = this.weightedPrograms.length - 1;
+      idx = this.weightedPrograms.length;
     } else {
       while (idx < this.weightedPrograms.length) {
         if (this.weightedPrograms[idx]!.program.duration > state.slotDuration) {
