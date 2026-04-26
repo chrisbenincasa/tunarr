@@ -10,7 +10,7 @@ export async function loadCatalog(locale: string) {
   if (i18n.locale === locale) return;
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const { messages } = await import(`./locales/${locale}/messages`);
+    const { messages } = await import(`./locales/${locale}/messages.js`);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     i18n.loadAndActivate({ locale, messages });
   } catch {
