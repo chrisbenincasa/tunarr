@@ -36,6 +36,7 @@ export type ProgramAndTimeElapsed = {
   program: StreamLineupItem;
   timeElapsed: number;
   programIndex: number;
+  contentStartOffsetMs?: number;
 };
 
 // Taking advantage of structural typing for transition
@@ -372,12 +373,19 @@ export class StreamProgramCalculator {
             backingItem.uuid,
           );
         }
-        break;
+
+        return {
+          program,
+          timeElapsed,
+          programIndex: currentProgramIndex,
+          contentStartOffsetMs: lineupItem.startOffsetMs,
+        };
       }
       case 'offline': {
         program = {
           ...createOfflineStreamLineupItem(lineupItem.durationMs, timestamp),
           programBeginMs: timestamp - timeElapsed,
+          fillerConfig: lineupItem.fillerConfig,
         };
         break;
       }
@@ -402,7 +410,7 @@ export class StreamProgramCalculator {
   }
 
   async createLineupItem(
-    { program, timeElapsed }: ProgramAndTimeElapsed,
+    { program, timeElapsed, contentStartOffsetMs }: ProgramAndTimeElapsed,
     streamDuration: number,
     channel: ChannelOrm,
     effectiveNow: number,
@@ -433,9 +441,18 @@ export class StreamProgramCalculator {
     if (program.type === 'offline') {
       //offline case
       //look for a random filler to play
-      const fillerPrograms = await this.fillerDB.getFillersFromChannel(
+      const fillerConfig = program.fillerConfig;
+      let fillerPrograms = await this.fillerDB.getFillersFromChannel(
         channel.uuid,
       );
+
+      // Filter by allowed filler lists if configured
+      if (fillerConfig?.fillerListIds?.length) {
+        const allowedIds = new Set(fillerConfig.fillerListIds);
+        fillerPrograms = fillerPrograms.filter((f) =>
+          allowedIds.has(f.fillerShowUuid),
+        );
+      }
 
       let filler: Nullable<ProgramOrmWithExternalIds> = null;
       let fillerListId: Nullable<string> = null;
@@ -455,6 +472,14 @@ export class StreamProgramCalculator {
         fillerPrograms,
         streamDuration,
         effectiveNow,
+        fillerConfig
+          ? {
+              fillerRepeatCooldownOverrideMs:
+                fillerConfig.fillerRepeatCooldownMs,
+              fillerListCooldownOverrides:
+                fillerConfig.fillerListCooldownOverrides,
+            }
+          : undefined,
       );
       this.logger.trace('Got filler picker result: %O', randomResult);
       filler = randomResult.filler;
@@ -546,10 +571,12 @@ export class StreamProgramCalculator {
       };
     }
 
+    const mediaStartOffset = timeElapsed + (contentStartOffsetMs ?? 0);
+
     if (program.type === 'commercial') {
       return {
         ...program,
-        startOffset: timeElapsed + (program.startOffset ?? 0),
+        startOffset: mediaStartOffset + (program.startOffset ?? 0),
         streamDuration,
       };
     }
@@ -557,7 +584,7 @@ export class StreamProgramCalculator {
     return {
       ...program,
       type: 'program',
-      startOffset: timeElapsed + (program.startOffset ?? 0),
+      startOffset: mediaStartOffset + (program.startOffset ?? 0),
       streamDuration,
     };
   }

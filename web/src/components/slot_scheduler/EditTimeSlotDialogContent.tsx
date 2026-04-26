@@ -108,21 +108,17 @@ export const EditTimeSlotDialogContent = ({
     if (!hasMidFiller && tab === 3) {
       setTab(0);
     }
-    if (hasMidFiller && !formMethods.getValues('midRoll' as never)) {
-      formMethods.setValue(
-        'midRoll.intervalMs' as never,
-        (30 * 60 * 1000) as never,
-      );
-      formMethods.setValue(
-        'midRoll.breakDurationMs' as never,
-        (3 * 60 * 1000) as never,
-      );
-      formMethods.setValue('midRoll.maxBreaks' as never, 0 as never);
-      formMethods.setValue(
-        'midRoll.minProgramDurationMs' as never,
-        (60 * 60 * 1000) as never,
-      );
-      formMethods.setValue('midRoll.programTypes' as never, [] as never);
+    if (hasMidFiller && !formMethods.getValues('midRoll')) {
+      formMethods.setValue('midRoll', {
+        intervalMs: 30 * 60 * 1000,
+        breakRule: { type: 'fixed_interval', intervalMs: 30 * 60 * 1000 },
+        breakDurationMs: 3 * 60 * 1000,
+        maxBreaks: 0,
+        minProgramDurationMs: 60 * 60 * 1000,
+        tailBufferMs: 0,
+        programTypes: [],
+        strategy: 'eager',
+      });
     }
   }, [hasMidFiller, tab, formMethods]);
 

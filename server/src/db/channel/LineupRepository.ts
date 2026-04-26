@@ -135,6 +135,7 @@ function channelProgramToLineupItemFunc(
       .with({ type: 'flex' }, (program) => ({
         type: 'offline',
         durationMs: program.duration,
+        fillerConfig: program.fillerConfig,
       }))
       .exhaustive();
 }

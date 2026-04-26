@@ -56,7 +56,7 @@ export class RegenerateChannelLineupCommand {
         });
 
         // Regenerate schedule at the new start time.
-        await this.channelDB.replaceChannelPrograms(channelId, programIds);
+        this.channelDB.replaceChannelPrograms(channelId, programIds);
         await this.channelDB.saveLineup(channelId, { items: lineupItems });
         await this.channelDB.updateChannelDuration(
           channelId,
@@ -85,7 +85,7 @@ export class RegenerateChannelLineupCommand {
         });
 
         // Regenerate schedule at the new start time.
-        await this.channelDB.replaceChannelPrograms(channelId, programIds);
+        this.channelDB.replaceChannelPrograms(channelId, programIds);
         await this.channelDB.saveLineup(channelId, { items: lineupItems });
         await this.channelDB.updateChannelDuration(
           channelId,
@@ -128,6 +128,7 @@ function channelProgramToLineupItem(p: ChannelProgram) {
     .with({ type: 'flex' }, (program) => ({
       type: 'offline',
       durationMs: program.duration,
+      fillerConfig: program.fillerConfig,
     }))
     .otherwise(() => null);
 }

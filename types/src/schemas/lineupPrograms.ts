@@ -27,8 +27,20 @@ export const BaseProgramSchema = z.object({
   icon: z.string().optional(),
 });
 
+export const OfflineFillerConfigSchema = z.object({
+  fillerListIds: z.array(z.string().uuid()).optional(),
+  fillerRepeatCooldownMs: z.number().nonnegative().optional(),
+  fillerListCooldownOverrides: z
+    .record(z.string(), z.number().nonnegative())
+    .optional(),
+  origin: z.enum(['flex', 'midroll']).default('flex').optional(),
+});
+
+export type OfflineFillerConfig = z.infer<typeof OfflineFillerConfigSchema>;
+
 export const FlexProgramSchema = BaseProgramSchema.extend({
   type: z.literal('flex'),
+  fillerConfig: OfflineFillerConfigSchema.optional(),
 });
 
 export const RedirectProgramSchema = BaseProgramSchema.extend({

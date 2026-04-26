@@ -49,7 +49,6 @@ import {
   uniq,
   uniqBy,
 } from 'lodash-es';
-import { DeepReadonly } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
@@ -91,7 +90,7 @@ export type ChannelAndPrograms = ChannelOrm & {
 // LineupItem + optional index + startTime
 type GuideItem = {
   // The underlying lineup item
-  lineupItem: DeepReadonly<LineupItem>;
+  lineupItem: LineupItem;
   // Index in the channel lineup sequence
   index?: number;
   // Start time of the program in this guide generation
@@ -1315,10 +1314,15 @@ export class TVGuideService {
           programming,
         };
       })
-      .with({ type: 'offline' }, () => {
-        let title = isNonEmptyString(channel.guideFlexTitle)
-          ? channel.guideFlexTitle
-          : channel.name;
+      .with({ type: 'offline' }, (offlineItem) => {
+        let title: string;
+        if (offlineItem.fillerConfig?.origin === 'midroll') {
+          title = 'Commercial Break';
+        } else {
+          title = isNonEmptyString(channel.guideFlexTitle)
+            ? channel.guideFlexTitle
+            : channel.name;
+        }
         if (isPaused) {
           title += ' (paused)';
         }

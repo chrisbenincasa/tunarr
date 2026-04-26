@@ -19,8 +19,10 @@ export type FlatDisplayItem =
   | { kind: 'group-header'; group: MidRollGroup; expanded: boolean }
   | { kind: 'group-child'; program: UIChannelProgram; group: MidRollGroup };
 
-function isMidRollFiller(p: UIChannelProgram): boolean {
-  return p.type === 'filler' && p.fillerType === 'mid';
+function isMidRollBreak(p: UIChannelProgram): boolean {
+  if (p.type === 'filler' && p.fillerType === 'mid') return true;
+  if (p.type === 'flex' && p.fillerConfig?.origin === 'midroll') return true;
+  return false;
 }
 
 function getContentId(p: UIChannelProgram): string | undefined {
@@ -45,7 +47,7 @@ export function groupMidRollItems(
     if (
       (current.type === 'content' || current.type === 'custom') &&
       i + 1 < programs.length &&
-      isMidRollFiller(programs[i + 1])
+      isMidRollBreak(programs[i + 1])
     ) {
       const contentId = getContentId(current);
       const groupItems: UIChannelProgram[] = [current];
@@ -53,7 +55,7 @@ export function groupMidRollItems(
 
       while (j < programs.length) {
         const next = programs[j];
-        if (isMidRollFiller(next)) {
+        if (isMidRollBreak(next)) {
           groupItems.push(next);
           j++;
         } else if (

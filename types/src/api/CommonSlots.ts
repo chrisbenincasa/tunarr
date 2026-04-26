@@ -30,17 +30,6 @@ export const SlotFillerTypes = z.enum([
 
 export type SlotFillerTypes = z.infer<typeof SlotFillerTypes>;
 
-export const MidRollConfigSchema = z.object({
-  intervalMs: z.number().positive(),
-  maxBreaks: z.number().int().nonnegative(),
-  breakDurationMs: z.number().positive(),
-  minProgramDurationMs: z.number().nonnegative(),
-  programTypes: z
-    .array(z.enum(['movie', 'episode', 'track', 'music_video', 'other_video']))
-    .optional(),
-});
-export type MidRollConfig = z.infer<typeof MidRollConfigSchema>;
-
 export const SlotFiller = z.object({
   types: z.array(SlotFillerTypes).nonempty(),
   fillerListId: z.uuid(),
@@ -50,6 +39,88 @@ export const SlotFiller = z.object({
 });
 
 export type SlotFiller = z.infer<typeof SlotFiller>;
+
+export const MidRollBreakRuleSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('fixed_interval'),
+    intervalMs: z.number().positive(),
+  }),
+  z.object({
+    type: z.literal('percentage'),
+    points: z.array(z.number().gt(0).lt(100)).nonempty(),
+  }),
+  z.object({
+    type: z.literal('initial_then_interval'),
+    initialDelayMs: z.number().positive(),
+    intervalMs: z.number().positive(),
+  }),
+]);
+
+export type MidRollBreakRule = z.infer<typeof MidRollBreakRuleSchema>;
+
+export const MidRollConfigSchema = z
+  .object({
+    // V1 simple field (kept for backward compat; ignored when breakRule is set)
+    intervalMs: z.number().positive().optional(),
+    // V2 structured break rule. Falls back to fixed_interval(intervalMs) if absent.
+    breakRule: MidRollBreakRuleSchema.optional(),
+    maxBreaks: z.number().int().nonnegative(),
+    minProgramDurationMs: z.number().nonnegative(),
+    tailBufferMs: z.number().nonnegative().default(0),
+    // Fixed duration (V1). Used when min/max are not set.
+    breakDurationMs: z.number().positive().optional(),
+    // Duration range (V2). System picks a random duration in [min, max] per break.
+    breakDurationMinMs: z.number().positive().optional(),
+    breakDurationMaxMs: z.number().positive().optional(),
+    programTypes: z
+      .array(
+        z.enum(['movie', 'episode', 'track', 'music_video', 'other_video']),
+      )
+      .optional(),
+    // 'eager' = resolve filler at schedule time (V1 behavior)
+    // 'lazy'  = emit offline placeholders, resolve at stream time
+    strategy: z.enum(['eager', 'lazy']).default('eager'),
+  })
+  .refine(
+    (data) => {
+      return data.intervalMs !== undefined || data.breakRule !== undefined;
+    },
+    { message: 'Either intervalMs or breakRule must be set' },
+  )
+  .refine(
+    (data) => {
+      if (
+        data.breakDurationMinMs !== undefined ||
+        data.breakDurationMaxMs !== undefined
+      ) {
+        return (
+          data.breakDurationMinMs !== undefined &&
+          data.breakDurationMaxMs !== undefined &&
+          data.breakDurationMaxMs >= data.breakDurationMinMs
+        );
+      }
+      return true;
+    },
+    {
+      message:
+        'breakDurationMinMs and breakDurationMaxMs must both be set, and max >= min',
+    },
+  )
+  .refine(
+    (data) => {
+      return (
+        data.breakDurationMs !== undefined ||
+        (data.breakDurationMinMs !== undefined &&
+          data.breakDurationMaxMs !== undefined)
+      );
+    },
+    {
+      message:
+        'At least one of breakDurationMs or breakDurationMinMs/breakDurationMaxMs must be set',
+    },
+  );
+
+export type MidRollConfig = z.infer<typeof MidRollConfigSchema>;
 
 export const Slot = z.object({
   filler: z.array(SlotFiller).optional(),

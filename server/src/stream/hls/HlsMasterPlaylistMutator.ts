@@ -1,3 +1,4 @@
+import { isDefined } from '../../util/index.ts';
 import type { AudioRenditionInfo, SubtitleRenditionInfo } from '../types.ts';
 export type { SubtitleRenditionInfo };
 
@@ -82,11 +83,12 @@ export class HlsMasterPlaylistMutator {
       // The default rendition is muxed with video, so no URI is needed.
       // Alternate renditions also reference the same muxed segments since
       // all audio tracks are interleaved in the same TS output.
-      const uriPart = isDefault ? '' : `,URI="${options.streamBaseUrl}stream.m3u8"`;
-      const channelsPart =
-        rendition.channels != null
-          ? `,CHANNELS="${rendition.channels}"`
-          : '';
+      const uriPart = isDefault
+        ? ''
+        : `,URI="${options.streamBaseUrl}stream.m3u8"`;
+      const channelsPart = isDefined(rendition.channels)
+        ? `,CHANNELS="${rendition.channels}"`
+        : '';
       mediaTags.push(
         `#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",LANGUAGE="${rendition.language}",NAME="${title}",DEFAULT=${this.getYesNo(isDefault)},AUTOSELECT=${this.getYesNo(isDefault)}${channelsPart}${uriPart}`,
       );

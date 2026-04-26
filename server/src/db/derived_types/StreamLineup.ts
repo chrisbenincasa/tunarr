@@ -2,6 +2,7 @@
 // but contain a bit more context and are used during an
 // active streaming session
 
+import type { OfflineFillerConfig } from '@tunarr/types/schemas';
 import type { MarkRequired, StrictOmit } from 'ts-essentials';
 import type { EmbyT, JellyfinT, LocalT } from '../../types/internal.ts';
 import type { MarkNotNilable } from '../../types/util.ts';
@@ -126,6 +127,7 @@ export type MinimalPlexBackedStreamLineupItem = SpecificProgramSourceOrmType<
 export type OfflineStreamLineupItem = BaseStreamLineupItem & {
   type: 'offline';
   duration: number;
+  fillerConfig?: OfflineFillerConfig;
 };
 
 type BaseContentBackedStreamLineupItem = BaseStreamLineupItem & {

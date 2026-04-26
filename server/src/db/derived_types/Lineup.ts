@@ -3,8 +3,9 @@ import {
   LineupScheduleSchema,
   SchedulingOperationSchema,
 } from '@tunarr/types/api';
-import { FillerType } from '@tunarr/types/schemas';
+import { FillerType, OfflineFillerConfigSchema } from '@tunarr/types/schemas';
 import { first } from 'lodash-es';
+import type { DeepReadonly } from 'ts-essentials';
 import { z } from 'zod/v4';
 
 const BaseLineupItemSchema = z.object({
@@ -32,6 +33,7 @@ export type ContentItem = z.infer<typeof ContentLineupItemSchema>;
 export const OfflineLineupItemSchema = z
   .object({
     type: z.literal('offline'),
+    fillerConfig: OfflineFillerConfigSchema.optional(),
   })
   .merge(BaseLineupItemSchema);
 
@@ -54,8 +56,10 @@ export const LineupItemSchema = z.discriminatedUnion('type', [
 export type LineupItem = z.infer<typeof LineupItemSchema>;
 
 function isItemOfType<T extends LineupItem>(discrim: string) {
-  return function (t: LineupItem | undefined): t is T {
-    return t?.type === discrim;
+  return function <U extends LineupItem | DeepReadonly<LineupItem> | undefined>(
+    t: U,
+  ): t is U & T {
+    return (t as LineupItem | undefined)?.type === discrim;
   };
 }
 

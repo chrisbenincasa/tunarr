@@ -289,14 +289,8 @@ export async function scheduleTimeSlots(
       );
     }
 
-    const expandedPrograms = paddedPrograms.flatMap((pp) =>
-      applyMidRollBreaks(
-        pp,
-        currSlot,
-        currSlot.midRollConfig,
-        slotDuration,
-        timeCursor.valueOf(),
-      ),
+    const finalPrograms: PaddedProgram[] = paddedPrograms.flatMap((pp) =>
+      applyMidRollBreaks(pp, currSlot, currSlot.midRollConfig, random),
     );
 
     // We have two options here if there is remaining time in the slot
@@ -309,19 +303,21 @@ export async function scheduleTimeSlots(
       currSlot.type !== 'filler'
     ) {
       distributeFlex(
-        expandedPrograms,
+        finalPrograms,
         schedule.padMs,
         Math.max(
           0,
-          slotDuration - sumBy(expandedPrograms, (p) => p.totalDuration),
+          slotDuration - sumBy(finalPrograms, (p) => p.totalDuration),
         ),
       );
     } else {
-      const lastProgram = last(expandedPrograms)!;
-      lastProgram.padMs += remainingTimeInSlot;
+      const lastProgram = last(finalPrograms);
+      if (lastProgram) {
+        lastProgram.padMs += remainingTimeInSlot;
+      }
     }
 
-    forEach(expandedPrograms, ({ program, padMs, filler }) => {
+    forEach(finalPrograms, ({ program, padMs, filler }) => {
       pushProgram(filler.head);
       pushProgram(filler.pre);
       pushProgram(program);

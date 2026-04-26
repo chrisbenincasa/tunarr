@@ -20,6 +20,8 @@ This is a monorepo with four main packages:
 - Never cast types using `as any`
 - Never use inline `import()` type annotations — use top-level `import type` statements instead
 - All edits must comply with the project's ESLint rules. Run `pnpm lint-changed` to verify before considering work complete
+- **Nullability checks**: For values typed `T | undefined` (not `T | null`), always use `!== undefined` — never `!= null`. The loose equality `!= null` catches both `null` and `undefined`, which is misleading when `null` is not a possible value. Reserve `!= null` for values that are genuinely `T | null | undefined`.
+- **No unguarded non-null assertions (`!`)**: Never use `!` to assert a value is non-null/non-undefined without first narrowing its type via a conditional check, early return, or explicit throw. If a value is optional, either guard it with an `if` check that narrows the type, or throw an explicit error explaining the invariant. The `!` operator silently crashes at runtime when the assumption is wrong.
 
 ## Development Setup
 

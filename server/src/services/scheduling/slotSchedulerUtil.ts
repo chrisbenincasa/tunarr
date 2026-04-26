@@ -1,13 +1,14 @@
 import constants from '@tunarr/shared/constants';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import {
+  isContentProgram,
   isFlexProgram,
   type CondensedChannelProgram,
+  type CondensedContentProgram,
   type FillerProgram,
   type FlexProgram,
 } from '@tunarr/types';
 import type {
-  BaseCustomShowProgrammingSlot,
   BaseMovieProgrammingSlot,
   BaseShowProgrammingSlot,
   BaseSlot,
@@ -15,6 +16,7 @@ import type {
   MidRollConfig,
   SlotFillerTypes,
 } from '@tunarr/types/api';
+import type { OfflineFillerConfig } from '@tunarr/types/schemas';
 import { FillerTypes } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import {
@@ -43,9 +45,9 @@ import type { Nullable } from '../../types/util.ts';
 import { isNonEmptyArray, retrySimple } from '../../util/index.ts';
 import { FlexProgramIterator } from './FlexProgramIterator.ts';
 import {
-  calculateMidRollBreaks,
-  programQualifiesForMidRoll,
-} from './midRollUtil.ts';
+  resolveBreakDuration,
+  resolveBreakPoints,
+} from './midRollBreakRules.ts';
 import {
   ContentProgramChunkedShuffle,
   CustomProgramChunkedShuffle,
@@ -410,12 +412,15 @@ export function createProgramIterators(
 
 export function slotMayHaveFiller(
   slot: BaseSlot,
-): slot is
-  | BaseMovieProgrammingSlot
-  | BaseShowProgrammingSlot
-  | BaseCustomShowProgrammingSlot {
+): slot is Extract<
+  BaseSlot,
+  { type: 'movie' | 'show' | 'custom-show' | 'smart-collection' }
+> {
   return (
-    slot.type === 'show' || slot.type === 'movie' || slot.type === 'custom-show'
+    slot.type === 'show' ||
+    slot.type === 'movie' ||
+    slot.type === 'custom-show' ||
+    slot.type === 'smart-collection'
   );
 }
 
@@ -752,166 +757,9 @@ export class PaddedProgram {
     return programDur + fillerDur + this.padMs;
   }
 }
-/**
- * Builds a sequence of PaddedPrograms to fill a mid-roll commercial break.
- * Picks filler items from the slot until breakDurationMs is consumed.
- * Any remaining time (e.g. when no more filler fits) becomes padMs on the last
- * item and will be emitted as fallback filler or flex by the emission loop.
- */
-function buildMidRollBreak(
-  slot: SlotImpl<BaseSlot>,
-  breakDurationMs: number,
-  timeCursorMs: number,
-): PaddedProgram[] {
-  const items: PaddedProgram[] = [];
-  let remainingMs = breakDurationMs;
-
-  while (remainingMs > 0) {
-    const filler = slot.getFillerOfType('mid', {
-      slotDuration: remainingMs,
-      timeCursor: timeCursorMs,
-    });
-    if (!filler || filler.duration <= 0) break;
-
-    const usedDuration = Math.min(filler.duration, remainingMs);
-    items.push(
-      new PaddedProgram(
-        {
-          ...filler,
-          duration: usedDuration,
-          fillerType: 'mid',
-        } satisfies FillerProgram,
-        0,
-        {},
-      ),
-    );
-    remainingMs -= usedDuration;
-  }
-
-  if (remainingMs > 0) {
-    if (items.length > 0) {
-      const lastIdx = items.length - 1;
-      const lastItem = items[lastIdx]!;
-      items[lastIdx] = new PaddedProgram(
-        lastItem.program,
-        remainingMs,
-        lastItem.filler,
-      );
-    } else {
-      // No filler configured – emit the full break as flex
-      items.push(
-        new PaddedProgram(
-          { type: 'flex', duration: remainingMs, persisted: false },
-          0,
-          {},
-        ),
-      );
-    }
-  }
-
-  return items;
-}
-
-/**
- * Splits a padded program into a flat list of PaddedPrograms for mid-roll
- * filler insertion. Content segments alternate with break filler sequences.
- * If the program doesn't qualify or mid-roll is disabled, returns the original
- * program unchanged.
- */
-const defaultMidRollConfig: MidRollConfig = {
-  intervalMs: 30 * 60 * 1000,
-  maxBreaks: 0,
-  breakDurationMs: 3 * 60 * 1000,
-  minProgramDurationMs: 60 * 60 * 1000,
-};
-
-export function applyMidRollBreaks(
-  paddedProgram: PaddedProgram,
-  slot: SlotImpl<BaseSlot>,
-  midRollConfig: MidRollConfig | undefined,
-  slotDurationMs: number | undefined,
-  timeCursorMs: number,
-): PaddedProgram[] {
-  if (!slot.hasFillerOfType('mid')) {
-    return [paddedProgram];
-  }
-
-  const effectiveConfig = midRollConfig ?? defaultMidRollConfig;
-
-  const { program } = paddedProgram;
-  if (!programQualifiesForMidRoll(program, effectiveConfig)) {
-    return [paddedProgram];
-  }
-
-  const result = calculateMidRollBreaks(
-    program.duration,
-    effectiveConfig,
-    slotDurationMs,
-  );
-  if (!result) {
-    return [paddedProgram];
-  }
-
-  const flat: PaddedProgram[] = [];
-
-  result.segments.forEach((segment, idx) => {
-    const isFirst = idx === 0;
-    const isLast = idx === result.segments.length - 1;
-
-    const segmentProgram: CondensedChannelProgram = {
-      ...program,
-      duration: segment.durationMs,
-      ...(program.type === 'content'
-        ? { startOffsetMs: segment.startOffsetMs }
-        : {}),
-    };
-
-    const fillerForSegment: Partial<
-      Record<SlotFillerTypes, CondensedChannelProgram>
-    > = {};
-
-    if (isFirst) {
-      if (paddedProgram.filler.head)
-        fillerForSegment.head = paddedProgram.filler.head;
-      if (paddedProgram.filler.pre)
-        fillerForSegment.pre = paddedProgram.filler.pre;
-    }
-
-    if (isLast) {
-      if (paddedProgram.filler.post)
-        fillerForSegment.post = paddedProgram.filler.post;
-      if (paddedProgram.filler.tail)
-        fillerForSegment.tail = paddedProgram.filler.tail;
-    }
-
-    flat.push(
-      new PaddedProgram(
-        segmentProgram,
-        isLast ? paddedProgram.padMs : 0,
-        fillerForSegment,
-      ),
-    );
-
-    // After each non-last segment, insert the commercial break as its own items
-    if (!isLast) {
-      const breakCursor =
-        timeCursorMs + segment.startOffsetMs + segment.durationMs;
-      flat.push(
-        ...buildMidRollBreak(
-          slot,
-          effectiveConfig.breakDurationMs,
-          breakCursor,
-        ),
-      );
-    }
-  });
-
-  return flat;
-}
-
 export function createIndexByIdMap(
   programs: SlotSchedulerProgram[],
-  customShowId,
+  customShowId: string,
 ) {
   return reduce(
     programs,
@@ -927,4 +775,198 @@ export function createIndexByIdMap(
     },
     {} as Record<string, number>,
   );
+}
+
+export function applyMidRollBreaks(
+  paddedProgram: PaddedProgram,
+  slot: SlotImpl<BaseSlot>,
+  midRollConfig: MidRollConfig | undefined,
+  random: Random,
+): PaddedProgram[] {
+  if (!midRollConfig || slot.getMidFillerListIds().length === 0) {
+    return [paddedProgram];
+  }
+
+  const program = paddedProgram.program;
+  if (!isContentProgram(program)) return [paddedProgram];
+
+  if (midRollConfig.programTypes) {
+    const programType = (
+      program as CondensedContentProgram & { subtype?: string }
+    ).subtype;
+    if (
+      programType &&
+      !midRollConfig.programTypes.includes(programType as never)
+    ) {
+      return [paddedProgram];
+    }
+  }
+
+  const programDurationMs = program.duration;
+  const breakPoints = resolveBreakPoints(programDurationMs, midRollConfig);
+  if (!breakPoints) return [paddedProgram];
+
+  if (midRollConfig.strategy === 'lazy') {
+    return buildLazyBreaks(
+      paddedProgram,
+      breakPoints,
+      midRollConfig,
+      slot,
+      random,
+    );
+  }
+  return buildEagerBreaks(
+    paddedProgram,
+    breakPoints,
+    midRollConfig,
+    slot,
+    random,
+  );
+}
+
+function buildEagerBreaks(
+  paddedProgram: PaddedProgram,
+  breakPoints: { offsetMs: number }[],
+  config: MidRollConfig,
+  slot: SlotImpl<BaseSlot>,
+  random: Random,
+): PaddedProgram[] {
+  const program = paddedProgram.program as CondensedContentProgram;
+  const baseOffset = program.startOffsetMs ?? 0;
+  const result: PaddedProgram[] = [];
+  let segmentStart = 0;
+
+  for (const bp of breakPoints) {
+    const segmentDuration = bp.offsetMs - segmentStart;
+    result.push(
+      new PaddedProgram(
+        {
+          ...program,
+          duration: segmentDuration,
+          startOffsetMs: baseOffset + segmentStart,
+        },
+        0,
+        {},
+      ),
+    );
+
+    const breakDuration = resolveBreakDuration(config, random);
+    const fillers = fillDurationWithFiller(slot, breakDuration);
+
+    for (const filler of fillers.fillers) {
+      result.push(new PaddedProgram(filler, 0, {}));
+    }
+
+    const remainder = breakDuration - fillers.totalDuration;
+    if (remainder > 0) {
+      const flex: FlexProgram = {
+        type: 'flex',
+        duration: remainder,
+        persisted: false,
+      };
+      result.push(new PaddedProgram(flex, 0, {}));
+    }
+
+    segmentStart = bp.offsetMs;
+  }
+
+  const lastSegmentDuration = program.duration - segmentStart;
+  const lastSegment = new PaddedProgram(
+    {
+      ...program,
+      duration: lastSegmentDuration,
+      startOffsetMs: baseOffset + segmentStart,
+    },
+    paddedProgram.padMs,
+    { ...paddedProgram.filler },
+  );
+  result.push(lastSegment);
+
+  return result;
+}
+
+function buildLazyBreaks(
+  paddedProgram: PaddedProgram,
+  breakPoints: { offsetMs: number }[],
+  config: MidRollConfig,
+  slot: SlotImpl<BaseSlot>,
+  random: Random,
+): PaddedProgram[] {
+  const program = paddedProgram.program as CondensedContentProgram;
+  const baseOffset = program.startOffsetMs ?? 0;
+  const midFillerListIds = slot.getMidFillerListIds();
+  const result: PaddedProgram[] = [];
+  let segmentStart = 0;
+
+  for (const bp of breakPoints) {
+    const segmentDuration = bp.offsetMs - segmentStart;
+    result.push(
+      new PaddedProgram(
+        {
+          ...program,
+          duration: segmentDuration,
+          startOffsetMs: baseOffset + segmentStart,
+        },
+        0,
+        {},
+      ),
+    );
+
+    const breakDuration = resolveBreakDuration(config, random);
+    const fillerConfig: OfflineFillerConfig = {
+      fillerListIds: midFillerListIds.length > 0 ? midFillerListIds : undefined,
+      origin: 'midroll',
+    };
+    const flex: FlexProgram = {
+      type: 'flex',
+      duration: breakDuration,
+      persisted: false,
+      fillerConfig,
+    };
+    result.push(new PaddedProgram(flex, 0, {}));
+
+    segmentStart = bp.offsetMs;
+  }
+
+  const lastSegmentDuration = program.duration - segmentStart;
+  const lastSegment = new PaddedProgram(
+    {
+      ...program,
+      duration: lastSegmentDuration,
+      startOffsetMs: baseOffset + segmentStart,
+    },
+    paddedProgram.padMs,
+    { ...paddedProgram.filler },
+  );
+  result.push(lastSegment);
+
+  return result;
+}
+
+function fillDurationWithFiller(
+  slot: SlotImpl<BaseSlot>,
+  targetDurationMs: number,
+  maxAttempts: number = 10,
+): { fillers: FillerProgram[]; totalDuration: number } {
+  const fillers: FillerProgram[] = [];
+  let totalDuration = 0;
+  let attempts = 0;
+
+  while (totalDuration < targetDurationMs && attempts < maxAttempts) {
+    const remaining = targetDurationMs - totalDuration;
+    const filler = slot.getFillerOfType('mid', {
+      slotDuration: remaining,
+      timeCursor: -1,
+    });
+
+    if (!filler) break;
+
+    if (totalDuration + filler.duration <= targetDurationMs) {
+      fillers.push({ ...filler, fillerType: 'mid' });
+      totalDuration += filler.duration;
+    }
+    attempts++;
+  }
+
+  return { fillers, totalDuration };
 }

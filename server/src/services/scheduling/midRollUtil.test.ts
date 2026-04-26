@@ -6,7 +6,6 @@ import {
 } from './midRollUtil.ts';
 
 const baseConfig: MidRollConfig = {
-  enabled: true,
   intervalMs: 30 * 60 * 1000, // 30 minutes
   maxBreaks: 10,
   breakDurationMs: 3 * 60 * 1000, // 3 minutes

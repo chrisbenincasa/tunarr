@@ -18,6 +18,7 @@ import {
   EmptyFillerPickResult,
   FillerPickResult,
   IFillerPicker,
+  type FillerPickOptions,
 } from '../interfaces/IFillerPicker.ts';
 
 // A (near) re-implementation of the original DTV filler picker.
@@ -38,13 +39,16 @@ export class FillerPickerV2 implements IFillerPicker {
     fillers: ChannelFillerShowWithContent[],
     maxDuration: number,
     now = +dayjs(),
+    options?: FillerPickOptions,
   ): Promise<FillerPickResult> {
     if (isEmpty(fillers)) {
       return Promise.resolve(EmptyFillerPickResult);
     }
 
     const fillerRepeatCooldownMs =
-      channel.fillerRepeatCooldown ?? DefaultFillerCooldownMillis;
+      options?.fillerRepeatCooldownOverrideMs ??
+      channel.fillerRepeatCooldown ??
+      DefaultFillerCooldownMillis;
 
     const channelHistoryForFiller =
       await this.programPlayHistoryDB.getFillerHistory(channel.uuid);
@@ -82,7 +86,12 @@ export class FillerPickerV2 implements IFillerPicker {
       const timeSincePlayedFiller = lastPlay
         ? now - dayjs(lastPlay.playedAt).valueOf()
         : OneDayMillis;
-      const fillerCooldownMs = cooldown * 1000;
+      const listCooldownOverride =
+        options?.fillerListCooldownOverrides?.[fillerShow.uuid];
+      const fillerCooldownMs =
+        listCooldownOverride !== undefined
+          ? listCooldownOverride * 1000
+          : cooldown * 1000;
 
       if (timeSincePlayedFiller >= fillerCooldownMs) {
         // Check whether this list has at least one program that fits
