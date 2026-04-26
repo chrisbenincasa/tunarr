@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { Autocomplete, CircularProgress, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import type { MediaSourceId } from '@tunarr/shared';
@@ -25,6 +26,7 @@ export function FacetStringValueSearchNode({
   libraryId,
   field,
 }: Props) {
+  const { t } = useLingui();
   const { control, setValue, watch } = useFormContext<SearchForm>();
   const [facetSearchInputValue, setFacetSearchInputValue] = useDebounceValue(
     '',
@@ -96,7 +98,7 @@ export function FacetStringValueSearchNode({
             sx={{ minWidth: 200 }}
             renderInput={(params) => (
               <TextField
-                label="Value"
+                label={t`Value`}
                 {...params}
                 slotProps={{
                   input: {

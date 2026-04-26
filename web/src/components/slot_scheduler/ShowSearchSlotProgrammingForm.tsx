@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { Autocomplete, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { createTypeSearchField } from '@tunarr/shared/util';
@@ -9,6 +10,7 @@ import { ProgramSearchAutocomplete } from '../ProgramSearchAutocomplete.tsx';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
 export const ShowSearchSlotProgrammingForm = () => {
+  const { t } = useLingui();
   const { control, setValue, watch } =
     useFormContext<CommonShowSlotViewModel>();
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,7 +59,7 @@ export const ShowSearchSlotProgrammingForm = () => {
               setValue('seasonFilter', []);
             }}
             onQueryChange={setSearchQuery}
-            label="Show"
+            label={t`Show`}
           />
         )}
       />
@@ -79,7 +81,7 @@ export const ShowSearchSlotProgrammingForm = () => {
             getOptionKey={(season) => season.index}
             getOptionLabel={(season) => season.title}
             renderInput={(params) => (
-              <TextField {...params} label={'Seasons'} />
+              <TextField {...params} label={t`Seasons`} />
             )}
             onChange={(_, seasons) =>
               setValue(

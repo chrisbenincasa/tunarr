@@ -1,6 +1,7 @@
 import { EditCustomShowsForm } from '@/components/custom-shows/EditCustomShowForm.tsx';
 import { useSuspendedStore } from '@/hooks/useSuspendedStore.ts';
 import useStore from '@/store/index.ts';
+import { Trans } from '@lingui/react/macro';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -15,7 +16,7 @@ export function NewCustomShowPage() {
       <Box>
         <Breadcrumbs />
         <Typography variant="h4" sx={{ mb: 2 }}>
-          New Custom Show
+          <Trans>New Custom Show</Trans>
         </Typography>
       </Box>
       <PaddedPaper sx={{ mb: 2 }}>

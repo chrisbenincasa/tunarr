@@ -13,6 +13,7 @@ import {
   Select,
 } from '@mui/material';
 import { useProgramShuffle } from '../../hooks/programming_controls/useRandomSort.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 
 type Props = {
   open: boolean;
@@ -29,6 +30,7 @@ export const ShuffleProgrammingModal = ({
   onShuffleTypeChange,
   shuffleType,
 }: Props) => {
+  const { t } = useLingui();
   const shuffler = useProgramShuffle();
 
   const handleShuffle = () => {
@@ -38,32 +40,32 @@ export const ShuffleProgrammingModal = ({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth>
-      <DialogTitle>Shuffle Programming</DialogTitle>
+      <DialogTitle><Trans>Shuffle Programming</Trans></DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
           <FormControl sx={{ width: '100%' }}>
-            <InputLabel>Shuffle Grouping</InputLabel>
+            <InputLabel><Trans>Shuffle Grouping</Trans></InputLabel>
             <Select
-              label="Shuffle Grouping"
+              label={t`Shuffle Grouping`}
               value={shuffleType}
               onChange={(v) =>
                 onShuffleTypeChange(v.target.value as ShuffleGroupingValue)
               }
             >
-              <MenuItem value={'none'}>None</MenuItem>
-              <MenuItem value={'show'}>Show</MenuItem>
+              <MenuItem value={'none'}><Trans>None</Trans></MenuItem>
+              <MenuItem value={'show'}><Trans>Show</Trans></MenuItem>
             </Select>
             <FormHelperText>
-              Shuffle programming in a channel, optionally grouping programs by
-              certain criteria.
+              <Trans>Shuffle programming in a channel, optionally grouping programs by
+              certain criteria.</Trans>
               <br />
               <ul>
                 <li>
-                  <strong>None:</strong> Do not group programs at all. Normal
-                  shuffle.
+                  <strong><Trans>None:</Trans></strong>{' '}<Trans>Do not group programs at all. Normal
+                  shuffle.</Trans>
                 </li>
                 <li>
-                  <strong>Show:</strong> Group episode programs by their show.
+                  <strong><Trans>Show:</Trans></strong>{' '}<Trans>Group episode programs by their show.</Trans>
                 </li>
               </ul>
             </FormHelperText>
@@ -71,13 +73,13 @@ export const ShuffleProgrammingModal = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button
           onClick={() => handleShuffle()}
           startIcon={<Shuffle />}
           variant="contained"
         >
-          Shuffle
+          <Trans>Shuffle</Trans>
         </Button>
       </DialogActions>
     </Dialog>

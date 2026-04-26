@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Delete, Edit, Sync } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import {
@@ -35,6 +36,7 @@ import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
 
 export default function CustomShowsPage() {
+  const { t } = useLingui();
   const { data: customShows } = useCustomShows();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -54,11 +56,13 @@ export default function CustomShowsPage() {
     onError: (e) => {
       snackbar.enqueueSnackbar({
         message: (
-          <span>
-            Error deleting custom show: {e.message}
-            <br />
-            Please consider opening a bug with details!
-          </span>
+          <Trans>
+            <span>
+              Error deleting custom show: {e.message}
+              <br />
+              Please consider opening a bug with details!
+            </span>
+          </Trans>
         ),
         variant: 'error',
       });
@@ -86,18 +90,19 @@ export default function CustomShowsPage() {
         aria-describedby="delete-custom-show-description"
       >
         <DialogTitle id="delete-custom-show-title">
-          Delete Custom Show "
-          {find(customShows, { id: deleteConfirmationId })?.name}"?
+          <Trans>Delete Custom Show "{find(customShows, { id: deleteConfirmationId })?.name}"?</Trans>
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-custom-show-description">
-            Deleting a Custom Show will remove its programming from channels
-            that use it. This action cannot be undone.
+            <Trans>
+              Deleting a Custom Show will remove its programming from channels
+              that use it. This action cannot be undone.
+            </Trans>
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirmationId(undefined)} autoFocus>
-            Cancel
+            <Trans>Cancel</Trans>
           </Button>
           <Button
             onClick={() =>
@@ -105,7 +110,7 @@ export default function CustomShowsPage() {
             }
             variant="contained"
           >
-            Delete
+            <Trans>Delete</Trans>
           </Button>
         </DialogActions>
       </Dialog>
@@ -116,7 +121,7 @@ export default function CustomShowsPage() {
     ({ row: { original: show } }: { row: MRT_Row<CustomShow> }) => {
       return (
         <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
-          <Tooltip title="Edit" placement="top">
+          <Tooltip title={t`Edit`} placement="top">
             <IconButton
               to={`/library/custom-shows/${show.id}/edit`}
               component={Link}
@@ -124,7 +129,7 @@ export default function CustomShowsPage() {
               <Edit />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete" placement="top">
+          <Tooltip title={t`Delete`} placement="top">
             <IconButton onClick={(e) => handleCustomShowDelete(e, show.id)}>
               <Delete />
             </IconButton>
@@ -132,19 +137,19 @@ export default function CustomShowsPage() {
         </Box>
       );
     },
-    [handleCustomShowDelete],
+    [handleCustomShowDelete, t],
   );
 
   const columns = useMemo<MRT_ColumnDef<CustomShow>[]>(
     () => [
       {
-        header: 'Name',
+        header: t`Name`,
         accessorKey: 'name',
         Cell: ({ row }) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {row.original.name}
             {row.original.syncMediaSourceId && (
-              <Tooltip title="Synced with external playlist">
+              <Tooltip title={t`Synced with external playlist`}>
                 <Sync fontSize="small" color="primary" />
               </Tooltip>
             )}
@@ -152,12 +157,12 @@ export default function CustomShowsPage() {
         ),
       },
       {
-        header: '# Programs',
+        header: t`# Programs`,
         accessorKey: 'contentCount',
         filterVariant: 'range',
       },
     ],
-    [],
+    [t],
   );
 
   const table = useMaterialReactTable({
@@ -199,12 +204,14 @@ export default function CustomShowsPage() {
         flexDirection={{ xs: 'column', md: 'row' }}
       >
         <Box flexDirection={'column'} flexGrow={1}>
-          <Typography variant="h4">Custom Shows</Typography>
+          <Typography variant="h4"><Trans>Custom Shows</Trans></Typography>
 
           <Typography maxWidth={'800px'}>
-            Custom Shows are sequences of videos that represent a episodes of a
-            virtual TV show. When you add these shows to a channel, the schedule
-            tools will treat the videos as if they belonged to a single TV show.
+            <Trans>
+              Custom Shows are sequences of videos that represent a episodes of a
+              virtual TV show. When you add these shows to a channel, the schedule
+              tools will treat the videos as if they belonged to a single TV show.
+            </Trans>
           </Typography>
         </Box>
         <RouterButtonLink
@@ -213,7 +220,7 @@ export default function CustomShowsPage() {
           startIcon={<AddCircleIcon />}
           sx={{ alignSelf: 'end' }}
         >
-          New
+          <Trans>New</Trans>
         </RouterButtonLink>
       </Box>
       <TableContainer component={Paper} sx={{ width: '100%' }}>

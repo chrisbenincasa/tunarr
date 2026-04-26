@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Album, Folder, Home, Mic, Tv } from '@mui/icons-material';
 import { Breadcrumbs, Link } from '@mui/material';
 import type { ProgramOrFolder } from '@tunarr/types';
@@ -50,7 +51,7 @@ export const LibraryListViewBreadcrumbs = ({
         onClick={clearParentContext}
       >
         <Home sx={{ mr: 0.5 }} fontSize="inherit" />
-        Root
+        <Trans>Root</Trans>
       </Link>
       {contextLinks}
     </Breadcrumbs>

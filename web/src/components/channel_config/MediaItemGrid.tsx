@@ -3,6 +3,7 @@ import {
   getImagesPerRow,
 } from '@/helpers/inlineModalUtil.ts';
 import type { Nullable } from '@/types/util';
+import { Trans } from '@lingui/react/macro';
 import {
   Box,
   CircularProgress,
@@ -430,7 +431,7 @@ export function MediaItemGrid<PageDataType, ItemType>(
           fontStyle={'italic'}
           sx={{ textAlign: 'center', mt: 2 }}
         >
-          No results
+          <Trans>No results</Trans>
         </Typography>
       )}
       {depth === 0 && data && scrollParams.max !== 0 && !hasNextPage && (
@@ -439,7 +440,7 @@ export function MediaItemGrid<PageDataType, ItemType>(
           fontStyle={'italic'}
           sx={{ textAlign: 'center', mt: 2 }}
         >
-          The End.
+          <Trans>The End.</Trans>
         </Typography>
       )}
     </Box>

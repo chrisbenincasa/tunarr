@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
 import { Box, Typography } from '@mui/material';
 import { useChannels } from '../../hooks/useChannels';
@@ -22,7 +23,7 @@ export default function NoChannelsCreated() {
         <Box>
           <SettingsRemoteIcon fontSize="large" />
           <Typography variant="h5">
-            You haven't created any channels yet.
+            <Trans>You haven't created any channels yet.</Trans>
           </Typography>
           <RouterButtonLink
             variant="contained"
@@ -33,7 +34,7 @@ export default function NoChannelsCreated() {
             }}
             to="/channels/new"
           >
-            Create a Channel
+            <Trans>Create a Channel</Trans>
           </RouterButtonLink>
         </Box>
       </PaddedPaper>

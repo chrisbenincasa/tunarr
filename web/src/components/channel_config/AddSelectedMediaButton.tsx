@@ -1,4 +1,5 @@
 import { useAddSelectedItems } from '@/hooks/programming_controls/useAddProgramming.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { AddCircle } from '@mui/icons-material';
 import { CircularProgress, Tooltip } from '@mui/material';
 import Button, { type ButtonProps } from '@mui/material/Button';
@@ -15,6 +16,7 @@ export default function AddSelectedMediaButton({
   tooltipTitle,
   ...rest
 }: Props) {
+  const { t } = useLingui();
   const selectedMedia = useStore((s) => s.selectedMedia);
   const { addSelectedItems, isLoading } = useAddSelectedItems();
 
@@ -22,8 +24,8 @@ export default function AddSelectedMediaButton({
     <Tooltip
       title={
         selectedMedia.length === 0
-          ? 'No programs selected'
-          : tooltipTitle ?? 'Add all selected programs to channel'
+          ? t`No programs selected`
+          : tooltipTitle ?? t`Add all selected programs to channel`
       }
     >
       <span>
@@ -39,7 +41,7 @@ export default function AddSelectedMediaButton({
             )
           }
         >
-          {buttonText ?? 'Add All'}
+          {buttonText ?? <Trans>Add All</Trans>}
         </Button>
       </span>
     </Tooltip>

@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import languages from '@cospired/i18n-iso-languages/index';
 import type {
   AutocompleteChangeReason,
@@ -49,6 +50,7 @@ export const LanguageAutocomplete = ({
   textFieldProps,
   ...rest
 }: Props) => {
+  const { t } = useLingui();
   const selectedCodes = useMemo(
     () => map(values, (pref) => pref.iso6392),
     [values],
@@ -125,7 +127,7 @@ export const LanguageAutocomplete = ({
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Language"
+          label={t`Language`}
           variant="outlined"
           helperText={
             <span>

@@ -2,6 +2,7 @@ import {
   useCurrentMediaSource,
   useCurrentMediaSourceView,
 } from '@/store/programmingSelector/selectors';
+import { useLingui } from '@lingui/react/macro';
 import { Box, Tab, Tabs } from '@mui/material';
 
 import { useState } from 'react';
@@ -21,6 +22,7 @@ type Props = {
 export function EmbyProgrammingSelector({
   toggleOrSetSelectedProgramsDrawer,
 }: Props) {
+  const { t } = useLingui();
   const selectedServer = useCurrentMediaSource(Emby);
   const selectedLibrary = useCurrentMediaSourceView(Emby);
   const [tabValue, setTabValue] = useState(TabValues.Library);
@@ -44,7 +46,7 @@ export function EmbyProgrammingSelector({
           variant="scrollable"
           allowScrollButtonsMobile
         >
-          <Tab value={TabValues.Library} label="Library" />
+          <Tab value={TabValues.Library} label={t`Library`} />
         </Tabs>
         <EmbyProgramGrid
           alphanumericFilter={null}

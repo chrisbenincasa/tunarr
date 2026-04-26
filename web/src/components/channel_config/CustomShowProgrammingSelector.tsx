@@ -19,8 +19,8 @@ import { seq } from '@tunarr/shared/util';
 import { isCustomProgram, type CustomShow } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { isEmpty, isUndefined, map } from 'lodash-es';
-import pluralize from 'pluralize';
 import { Fragment, useCallback, useState, type MouseEvent } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { toggle } from '../../helpers/util';
@@ -47,6 +47,7 @@ function CustomShowListItem({
   customShow,
   selectShow,
 }: CustomShowListItemProps) {
+  const { t } = useLingui();
   const formatter = useProgramTitleFormatter();
   const [open, setOpen] = useState(false);
 
@@ -94,7 +95,7 @@ function CustomShowListItem({
         <Tooltip
           title={
             !open
-              ? 'Click to preview the items in this Custom Show. Note that only the whole show can be added at once.'
+              ? t`Click to preview the items in this Custom Show. Note that only the whole show can be added at once.`
               : ''
           }
           placement="top"
@@ -104,13 +105,10 @@ function CustomShowListItem({
         <ListItemText
           // TODO add season and episode number?
           primary={customShow.name}
-          secondary={`${customShow.contentCount} ${pluralize(
-            'Program',
-            customShow.contentCount,
-          )}`}
+          secondary={<Plural value={customShow.contentCount} one="# Program" other="# Programs" />}
         />
         <Button onClick={(e) => onClick(e, customShow)} variant="contained">
-          Add Show
+          <Trans>Add Show</Trans>
         </Button>
       </ListItemButton>
       <Collapse in={open} timeout="auto" unmountOnExit sx={{ width: '100%' }}>

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Clear, Help } from '@mui/icons-material';
 import {
   FormControl,
@@ -29,6 +30,7 @@ export function SearchFilterBuilder({
   libraryId,
   mediaSourceId,
 }: SearchBuilderProps) {
+  const { t } = useLingui();
   const formMethods = useFormContext<SearchForm>();
 
   const { getSearchExpression } = useSearchQueryParser();
@@ -68,19 +70,19 @@ export function SearchFilterBuilder({
                 return (
                   <>
                     <TextField
-                      label="Filter"
+                      label={t`Filter`}
                       error={!!fieldState.error}
                       helperText={
                         fieldState.error?.type === 'validExpression' ? (
                           <span>
-                            Could not parse this filter expression. Check the{' '}
+                            <Trans>Could not parse this filter expression. Check the{' '}
                             <Link
                               href="https://tunarr.com/misc/search"
                               target="_blank"
                             >
                               documentation
                             </Link>{' '}
-                            for information about filter expressions.
+                            for information about filter expressions.</Trans>
                           </span>
                         ) : (
                           <span> </span>
@@ -102,7 +104,7 @@ export function SearchFilterBuilder({
                               )}
                               <InputAdornment position="end">
                                 <Tooltip
-                                  title="Add a filter expression to fine-tune results of the search"
+                                  title={t`Add a filter expression to fine-tune results of the search`}
                                   placement="top"
                                   sx={{ textAlign: 'center' }}
                                   slotProps={{

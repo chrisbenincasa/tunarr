@@ -13,6 +13,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { Trans } from '@lingui/react/macro';
 import { useQueryClient } from '@tanstack/react-query';
 import { createExternalId } from '@tunarr/shared';
 import { tag } from '@tunarr/types';
@@ -154,6 +155,12 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
     setImageLoaded(true);
   };
 
+  const startedAgo = dayjs(firstProgram?.start).fromNow();
+  const remainingTime =
+    globalDayjs
+      .duration(dayjs(firstProgram?.stop ?? 0).diff(dayjs()))
+      .humanize() + ' ';
+
   return (
     <Card
       sx={{
@@ -202,23 +209,22 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
       >
         <CardContent sx={{ flex: 1 }}>
           <Typography gutterBottom variant="h4">
-            Now Playing:
+            <Trans>Now Playing:</Trans>
           </Typography>
           <Typography gutterBottom variant="h5" component="div">
             {details?.showTitle ?? details?.title}
           </Typography>
           {details?.showTitle && <Typography>{details.title}</Typography>}
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Started {dayjs(firstProgram?.start).fromNow()} -{' '}
-            {globalDayjs
-              .duration(dayjs(firstProgram?.stop ?? 0).diff(dayjs()))
-              .humanize() + ' '}
-            remaining
+            <Trans>
+              Started {startedAgo} - {remainingTime}
+              remaining
+            </Trans>
           </Typography>
         </CardContent>
         <CardActions>
           <Button startIcon={<ZoomIn />} size="small" onClick={toggleOpen}>
-            Details
+            <Trans>Details</Trans>
           </Button>
 
           {firstProgram?.type === 'content' &&
@@ -236,7 +242,9 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
                 href={`${backendUri}/api/programs/${firstProgram.id}/external-link`}
                 target="_blank"
               >
-                View in {capitalize(firstProgram.program.sourceType)}
+                <Trans>
+                  View in {capitalize(firstProgram.program.sourceType)}
+                </Trans>
               </Button>
             )}
         </CardActions>

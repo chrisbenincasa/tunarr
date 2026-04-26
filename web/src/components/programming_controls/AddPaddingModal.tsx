@@ -20,6 +20,7 @@ import {
   StartTimePaddingOptions,
   usePadStartTimes,
 } from '../../hooks/programming_controls/usePadStartTimes.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 
 type AddPaddingModalProps = {
   open: boolean;
@@ -27,6 +28,7 @@ type AddPaddingModalProps = {
 };
 
 const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
+  const { t } = useLingui();
   const [currentPadding, setCurrentPadding] = useState<StartTimePadding | null>(
     null,
   );
@@ -45,18 +47,18 @@ const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
 
   return (
     <Dialog open={open}>
-      <DialogTitle>Pad Start Times</DialogTitle>
+      <DialogTitle><Trans>Pad Start Times</Trans></DialogTitle>
       <DialogContent sx={{ py: 0 }}>
         <DialogContentText>
-          Adds Flex breaks after each TV episode or movie to ensure that the
-          program starts at one of the allowed minute marks.
+          <Trans>Adds Flex breaks after each TV episode or movie to ensure that the
+          program starts at one of the allowed minute marks.</Trans>
         </DialogContentText>
         <FormGroup sx={{ flexGrow: 1, flexWrap: 'nowrap' }}>
           <FormControl fullWidth sx={{ my: 1 }}>
-            <InputLabel>Pad Start Times</InputLabel>
+            <InputLabel><Trans>Pad Start Times</Trans></InputLabel>
             <Select<StartTimePadding['key']>
               value={currentPadding?.key ?? -1}
-              label={'Pad Start Times'}
+              label={t`Pad Start Times`}
               onChange={(e) =>
                 handlePaddingChange(
                   handleNumericFormValue(e.target.value, true),
@@ -73,7 +75,7 @@ const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
         </FormGroup>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button
           onClick={() => {
             padStartTimes(currentPadding);
@@ -82,7 +84,7 @@ const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
           startIcon={<PaddingIcon />}
           variant="contained"
         >
-          Add Padding
+          <Trans>Add Padding</Trans>
         </Button>
       </DialogActions>
     </Dialog>

@@ -26,6 +26,7 @@ import {
   orderBy,
   some,
 } from 'lodash-es';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Emby,
@@ -70,6 +71,7 @@ export const ProgrammingSelector = ({
   initialLibraryId,
   toggleOrSetSelectedProgramsDrawer,
 }: Props) => {
+  const { t } = useLingui();
   const { entityType, onSourceChange } = useProgrammingSelectionContext();
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
@@ -144,11 +146,13 @@ export const ProgrammingSelector = ({
     if (noSyncedLibraries) {
       return (
         <Alert severity="error">
-          This media source has no enabled or scanned libraries. Enable
-          libraries for this source on the{' '}
-          <RouterLink to="/settings/sources">Media Sources</RouterLink> page or
-          manually trigger scans on the{' '}
-          <RouterLink to="/library">Library</RouterLink> page.
+          <Trans>
+            This media source has no enabled or scanned libraries. Enable
+            libraries for this source on the{' '}
+            <RouterLink to="/settings/sources">Media Sources</RouterLink> page or
+            manually trigger scans on the{' '}
+            <RouterLink to="/library">Library</RouterLink> page.
+          </Trans>
         </Alert>
       );
     }
@@ -231,11 +235,13 @@ export const ProgrammingSelector = ({
       return (
         <>
           <Typography variant="h6" fontWeight={600} align="left" sx={{ mt: 3 }}>
-            Connect Media Source
+            <Trans>Connect Media Source</Trans>
           </Typography>
           <Typography sx={{ mb: 3 }} align="left">
-            To use Tunarr, you need to first connect a media source. This will
-            allow you to build custom channels with your content.
+            <Trans>
+              To use Tunarr, you need to first connect a media source. This will
+              allow you to build custom channels with your content.
+            </Trans>
           </Typography>
 
           <Alert
@@ -243,7 +249,7 @@ export const ProgrammingSelector = ({
             severity="error"
             action={<AddMediaSourceButton ButtonProps={{ color: 'inherit', variant: 'outlined' }} />}
           >
-            No Media Sources detected.
+            <Trans>No Media Sources detected.</Trans>
           </Alert>
         </>
       );
@@ -295,9 +301,9 @@ export const ProgrammingSelector = ({
         >
           {hasAnySources && (
             <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
-              <InputLabel>Media Source</InputLabel>
+              <InputLabel>{t`Media Source`}</InputLabel>
               <Select
-                label="Media Source"
+                label={t`Media Source`}
                 value={
                   viewingCustomShows
                     ? 'custom-shows'
@@ -311,7 +317,7 @@ export const ProgrammingSelector = ({
                   </MenuItem>
                 ))}
                 {entityType !== 'custom-show' && customShows.length > 0 && (
-                  <MenuItem value="custom-shows">Custom Shows</MenuItem>
+                  <MenuItem value="custom-shows"><Trans>Custom Shows</Trans></MenuItem>
                 )}
               </Select>
             </FormControl>
@@ -347,7 +353,7 @@ export const ProgrammingSelector = ({
                   onChange={(_, v) => setUseSyncedSources(v)}
                 />
               }
-              label="Show only synced libraries"
+              label={t`Show only synced libraries`}
             />
           )}
         </Stack>

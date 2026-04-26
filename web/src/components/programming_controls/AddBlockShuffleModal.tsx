@@ -28,6 +28,7 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
+import { Trans, useLingui } from '@lingui/react/macro';
 
 type AddBlockShuffleModalProps = {
   open: boolean;
@@ -44,6 +45,7 @@ const AddBlockShuffleModal = ({
   blockShuffle,
   canUsePerfectSync,
 }: AddBlockShuffleModalProps) => {
+  const { t } = useLingui();
   const { control, watch, getValues } = useForm<BlockShuffleConfig>({
     defaultValues: {
       shuffleType: 'Fixed',
@@ -74,21 +76,21 @@ const AddBlockShuffleModal = ({
 
   return (
     <Dialog open={open}>
-      <DialogTitle>Block Shuffle</DialogTitle>
+      <DialogTitle><Trans>Block Shuffle</Trans></DialogTitle>
       <DialogContent sx={{ py: 0 }}>
         <DialogContentText sx={{ mb: 1 }}>
-          Alternate programs in blocks. You can pick the number of programs
+          <Trans>Alternate programs in blocks. You can pick the number of programs
           per-type in each block and if the order of shows in each block should
-          be randomized.
+          be randomized.</Trans>
           <br />
         </DialogContentText>
         <DialogContentText variant="body2" component="div">
-          Grouping works as follows:
+          <Trans>Grouping works as follows:</Trans>
           <ul>
-            <li>TV shows are grouped by show</li>
-            <li>Music tracks are grouped by artist</li>
-            <li>Movies are grouped altogether</li>
-            <li>Custom show programs are grouped by their parent show</li>
+            <li><Trans>TV shows are grouped by show</Trans></li>
+            <li><Trans>Music tracks are grouped by artist</Trans></li>
+            <li><Trans>Movies are grouped altogether</Trans></li>
+            <li><Trans>Custom show programs are grouped by their parent show</Trans></li>
           </ul>
         </DialogContentText>
         <Stack spacing={2} sx={{ my: 2 }} divider={<Divider />}>
@@ -99,7 +101,7 @@ const AddBlockShuffleModal = ({
                   control={control}
                   name="blockSize"
                   TextFieldProps={{
-                    label: '# of Programs',
+                    label: t`# of Programs`,
                   }}
                 />
               </FormControl>
@@ -108,7 +110,7 @@ const AddBlockShuffleModal = ({
                   width: ['100%', '50%'],
                 }}
               >
-                <InputLabel id="sort-block-shuffle-type">Type</InputLabel>
+                <InputLabel id="sort-block-shuffle-type"><Trans>Type</Trans></InputLabel>
                 <Controller
                   control={control}
                   name="shuffleType"
@@ -116,11 +118,11 @@ const AddBlockShuffleModal = ({
                     <Select
                       {...field}
                       id="sort-block-shuffle-type"
-                      label="Type"
+                      label={t`Type`}
                       onChange={(e) => field.onChange(e.target.value)}
                     >
-                      <MenuItem value={'Fixed'}>Fixed</MenuItem>
-                      <MenuItem value={'Random'}>Random</MenuItem>
+                      <MenuItem value={'Fixed'}><Trans>Fixed</Trans></MenuItem>
+                      <MenuItem value={'Random'}><Trans>Random</Trans></MenuItem>
                     </Select>
                   )}
                 />
@@ -130,13 +132,13 @@ const AddBlockShuffleModal = ({
           <Box sx={{ display: isRandom ? 'none' : undefined }}>
             <Stack direction={['column', 'row']} spacing={2} useFlexGap>
               <FormControl sx={{ width: ['100%', '50%'] }}>
-                <InputLabel>Movie Sort</InputLabel>
+                <InputLabel><Trans>Movie Sort</Trans></InputLabel>
                 <Controller
                   control={control}
                   name="sortOptions.movies.sort"
                   render={({ field }) => (
                     <Select
-                      label="Movie Sort"
+                      label={t`Movie Sort`}
                       {...field}
                       onChange={(e) => field.onChange(e.target.value)}
                     >
@@ -148,7 +150,7 @@ const AddBlockShuffleModal = ({
                           }}
                         >
                           <SortByAlpha sx={{ height: 23, mr: 1 }} />
-                          Alphabetical
+                          <Trans>Alphabetical</Trans>
                         </Box>
                       </MenuItem>
                       <MenuItem value="release_date">
@@ -159,7 +161,7 @@ const AddBlockShuffleModal = ({
                           }}
                         >
                           <CalendarIcon sx={{ height: 23, mr: 1 }} />
-                          Release Date
+                          <Trans>Release Date</Trans>
                         </Box>
                       </MenuItem>
                     </Select>
@@ -167,14 +169,14 @@ const AddBlockShuffleModal = ({
                 />
               </FormControl>
               <FormControl sx={{ width: ['100%', '50%'] }}>
-                <InputLabel>Movie Sort Order</InputLabel>
+                <InputLabel><Trans>Movie Sort Order</Trans></InputLabel>
                 <Controller
                   control={control}
                   name="sortOptions.movies.order"
                   render={({ field }) => (
                     <Select
                       {...field}
-                      label="Movie Sort Order"
+                      label={t`Movie Sort Order`}
                       onChange={(e) => field.onChange(e.target.value)}
                     >
                       <MenuItem value="asc">
@@ -185,7 +187,7 @@ const AddBlockShuffleModal = ({
                           }}
                         >
                           <ArrowUpward sx={{ height: 23, mr: 1 }} />
-                          Ascending
+                          <Trans>Ascending</Trans>
                         </Box>
                       </MenuItem>
                       <MenuItem value="desc">
@@ -196,7 +198,7 @@ const AddBlockShuffleModal = ({
                           }}
                         >
                           <ArrowDownward sx={{ height: 23, mr: 1 }} />
-                          Descending
+                          <Trans>Descending</Trans>
                         </Box>
                       </MenuItem>
                     </Select>
@@ -205,7 +207,7 @@ const AddBlockShuffleModal = ({
               </FormControl>
             </Stack>
             <FormHelperText>
-              Customize how movie blocks are sorted
+              <Trans>Customize how movie blocks are sorted</Trans>
             </FormHelperText>
           </Box>
           <FormControl fullWidth>
@@ -213,11 +215,11 @@ const AddBlockShuffleModal = ({
               control={
                 <CheckboxFormController control={control} name="loopBlocks" />
               }
-              label="Loop Short Programs"
+              label={t`Loop Short Programs`}
             />
             <FormHelperText>
-              If set, any programming group with fewer episodes will be looped
-              in order to make perfectly even blocks.
+              <Trans>If set, any programming group with fewer episodes will be looped
+              in order to make perfectly even blocks.</Trans>
             </FormHelperText>
           </FormControl>
           <FormControl fullWidth>
@@ -226,26 +228,26 @@ const AddBlockShuffleModal = ({
                 <CheckboxFormController control={control} name="perfectSync" />
               }
               disabled={usePerfectSyncDisabled}
-              label="Experimental: Make perfect schedule loop"
+              label={t`Experimental: Make perfect schedule loop`}
             />
             <FormHelperText>
-              Calculates a schedule where all programs end at the same time,
-              creating a perfectly looping schedule.
+              <Trans>Calculates a schedule where all programs end at the same time,
+              creating a perfectly looping schedule.</Trans>
               <br />
               {usePerfectSyncDisabled &&
-                'This option is disabled because it would calculate a schedule that is too long.'}
+                t`This option is disabled because it would calculate a schedule that is too long.`}
             </FormHelperText>
           </FormControl>
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button
           onClick={() => handleBlockShuffle()}
           startIcon={<ShuffleIcon />}
           variant="contained"
         >
-          Block Shuffle
+          <Trans>Block Shuffle</Trans>
         </Button>
       </DialogActions>
     </Dialog>

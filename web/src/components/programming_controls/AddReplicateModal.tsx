@@ -17,6 +17,7 @@ import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { useReplicatePrograms } from '../../hooks/programming_controls/useReplicatePrograms';
 import { NumericFormControllerText } from '../util/TypedController';
+import { Trans, useLingui } from '@lingui/react/macro';
 
 type AddReplicateModalProps = {
   open: boolean;
@@ -31,6 +32,7 @@ type FormValues = {
 };
 
 const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
+  const { t } = useLingui();
   const replicateProgram = useReplicatePrograms();
 
   const {
@@ -57,7 +59,7 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
 
   return (
     <Dialog open={open}>
-      <DialogTitle>Replicate Programs</DialogTitle>
+      <DialogTitle><Trans>Replicate Programs</Trans></DialogTitle>
       <DialogContent>
         <Box
           component="form"
@@ -65,37 +67,37 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
           onSubmit={handleSubmit(onSubmit)}
         >
           <DialogContentText>
-            Makes multiple copies of the schedule and plays them in sequence
+            <Trans>Makes multiple copies of the schedule and plays them in sequence</Trans>
           </DialogContentText>
 
           <NumericFormControllerText
             control={control}
             name="numberOfReplications"
-            prettyFieldName="Number of Replications"
+            prettyFieldName={t`Number of Replications`}
             rules={{ required: true, minLength: 1, min: 2 }}
             TextFieldProps={{
               fullWidth: true,
               margin: 'normal',
-              label: 'Number of Replications',
+              label: t`Number of Replications`,
               helperText: ({ field, formState: { errors } }) =>
                 isNil(errors['numberOfReplications'])
-                  ? `Your list will be replicated ${field.value} times`
-                  : 'Please choose a valuegst greater than 1',
+                  ? t`Your list will be replicated ${field.value} times`
+                  : t`Please choose a value greater than 1`,
             }}
           />
 
           <FormControl fullWidth>
-            <InputLabel>Type</InputLabel>
+            <InputLabel><Trans>Type</Trans></InputLabel>
             <Controller
               name="type"
               control={control}
               render={({ field }) => (
-                <Select label="Type" {...field}>
+                <Select label={t`Type`} {...field}>
                   <MenuItem key={'fixed'} value={'fixed'}>
-                    Fixed
+                    <Trans>Fixed</Trans>
                   </MenuItem>
                   <MenuItem key={'random'} value={'random'}>
-                    Shuffle
+                    <Trans>Shuffle</Trans>
                   </MenuItem>
                 </Select>
               )}
@@ -104,9 +106,9 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button variant="contained" form="replication-form" type="submit">
-          Save
+          <Trans>Save</Trans>
         </Button>
       </DialogActions>
     </Dialog>

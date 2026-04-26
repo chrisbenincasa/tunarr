@@ -2,6 +2,7 @@ import { EditCustomShowsForm } from '@/components/custom-shows/EditCustomShowFor
 import { useCustomShowWithProgramming } from '@/hooks/useCustomShows.ts';
 import { Route } from '@/routes/library/custom-shows_/$showId/edit.tsx';
 import useStore from '@/store/index.ts';
+import { Trans } from '@lingui/react/macro';
 import { LinearProgress } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -22,7 +23,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
       <Box>
         <Breadcrumbs />
         <Typography variant="h4" sx={{ mb: 2 }}>
-          {isNew ? 'New Custom Show' : customShow.name}
+          {isNew ? <Trans>New Custom Show</Trans> : customShow.name}
         </Typography>
       </Box>
       <PaddedPaper sx={{ mb: 2 }}>

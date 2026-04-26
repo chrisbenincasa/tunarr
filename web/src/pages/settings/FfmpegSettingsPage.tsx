@@ -1,4 +1,5 @@
 import { useSystemState } from '@/hooks/useSystemSettings.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import type { SelectChangeEvent } from '@mui/material';
 import {
   Box,
@@ -51,6 +52,7 @@ type FfmpegLogOptions = TupleToUnion<typeof FfmpegLogOptions>;
 type FfmpegFormValues = DeepRequired<Omit<FfmpegSettings, 'configVersion'>>;
 
 export default function FfmpegSettingsPage() {
+  const { t } = useLingui();
   const { data: ffmpegSettings, error } = useFfmpegSettings();
   const ffmpegInfo = useQuery({
     ...getApiFfmpegInfoOptions(),
@@ -126,7 +128,7 @@ export default function FfmpegSettingsPage() {
     // mutationFn: apiClient.updateFfmpegSettings,
     onSuccess: (data) => {
       setRestoreTunarrDefaults(false);
-      snackbar.enqueueSnackbar('Settings Saved!', {
+      snackbar.enqueueSnackbar(t`Settings Saved!`, {
         variant: 'success',
       });
       reset(data, { keepValues: true });
@@ -169,7 +171,7 @@ export default function FfmpegSettingsPage() {
   return (
     <Box component="form" onSubmit={handleSubmit(updateFfmpegSettings)}>
       <Typography variant="h5" sx={{ mb: 2 }}>
-        Global Options
+        <Trans>Global Options</Trans>
       </Typography>
       <Stack spacing={3} useFlexGap sx={{ mb: 2 }}>
         {!systemState.data.isInContainer && (
@@ -181,10 +183,8 @@ export default function FfmpegSettingsPage() {
                 render={({ field }) => (
                   <TextField
                     id="ffmpeg-executable-path"
-                    label="FFmpeg Executable Path"
-                    helperText={
-                      'FFmpeg version 7.1+ recommended. Check your current version in the sidebar'
-                    }
+                    label={t`FFmpeg Executable Path`}
+                    helperText={t`FFmpeg version 7.1+ recommended. Check your current version in the sidebar`}
                     {...field}
                   />
                 )}
@@ -197,10 +197,8 @@ export default function FfmpegSettingsPage() {
                 render={({ field }) => (
                   <TextField
                     id="ffprobe-executable-path"
-                    label="FFprobe Executable Path"
-                    helperText={
-                      'FFprobe version 6.0+ recommended. Check your current version in the sidebar'
-                    }
+                    label={t`FFprobe Executable Path`}
+                    helperText={t`FFprobe version 6.0+ recommended. Check your current version in the sidebar`}
                     {...field}
                   />
                 )}
@@ -212,33 +210,35 @@ export default function FfmpegSettingsPage() {
           <Stack spacing={2} direction={{ sm: 'column', md: 'row' }}>
             <FormControl sx={{ flexBasis: '50%' }}>
               <InputLabel id="ffmpeg-logging-label">
-                FFMPEG Log Method
+                <Trans>FFMPEG Log Method</Trans>
               </InputLabel>
               <Select<(typeof FfmpegLogOptions)[number]>
                 labelId="ffmpeg-logging-label"
                 id="ffmpeg-logging"
-                label="FFMPEG Log Method"
+                label={t`FFMPEG Log Method`}
                 value={logSelectValue}
                 onChange={(e: SelectChangeEvent<FfmpegLogOptions>) =>
                   handleFfmpegLogChange(e.target.value)
                 }
               >
-                <MenuItem value="disable">Disabled</MenuItem>
-                <MenuItem value="console">Console</MenuItem>
-                <MenuItem value="file">File</MenuItem>
+                <MenuItem value="disable"><Trans>Disabled</Trans></MenuItem>
+                <MenuItem value="console"><Trans>Console</Trans></MenuItem>
+                <MenuItem value="file"><Trans>File</Trans></MenuItem>
               </Select>
 
               <FormHelperText>
-                Enable ffmpeg logging to different sinks. Outputting to a file
-                will create a new log file for every spawned ffmpeg process in
-                the Tunarr log directory. These files are automatically cleaned
-                up by a background process.
+                <Trans>
+                  Enable ffmpeg logging to different sinks. Outputting to a file
+                  will create a new log file for every spawned ffmpeg process in
+                  the Tunarr log directory. These files are automatically cleaned
+                  up by a background process.
+                </Trans>
               </FormHelperText>
             </FormControl>
             {logSelectValue !== 'disable' && (
               <FormControl sx={{ flex: 1 }}>
                 <InputLabel id="ffmpeg-logging-level">
-                  FFMPEG Log Level
+                  <Trans>FFMPEG Log Level</Trans>
                 </InputLabel>
                 <Controller
                   control={control}
@@ -247,7 +247,7 @@ export default function FfmpegSettingsPage() {
                     <Select
                       labelId="ffmpeg-logging-level"
                       id="ffmpeg-logging-level"
-                      label="FFMPEG Log Level"
+                      label={t`FFMPEG Log Level`}
                       {...field}
                     >
                       {map(FfmpegLogLevels, (level) => (
@@ -260,14 +260,16 @@ export default function FfmpegSettingsPage() {
                 />
 
                 <FormHelperText>
-                  Log level to pass to ffmpeg. Read more about ffmpeg's log
-                  levels{' '}
-                  <MuiLink
-                    target="_blank"
-                    href="https://ffmpeg.org/ffmpeg.html#:~:text=%2Dloglevel%20%5Bflags%2B%5Dloglevel%20%7C%20%2Dv%20%5Bflags%2B%5Dloglevel"
-                  >
-                    here
-                  </MuiLink>
+                  <Trans>
+                    Log level to pass to ffmpeg. Read more about ffmpeg's log
+                    levels{' '}
+                    <MuiLink
+                      target="_blank"
+                      href="https://ffmpeg.org/ffmpeg.html#:~:text=%2Dloglevel%20%5Bflags%2B%5Dloglevel%20%7C%20%2Dv%20%5Bflags%2B%5Dloglevel"
+                    >
+                      here
+                    </MuiLink>
+                  </Trans>
                 </FormHelperText>
               </FormControl>
             )}
@@ -275,7 +277,7 @@ export default function FfmpegSettingsPage() {
         </Stack>
         <FormControl sx={{ flexBasis: { xs: '100%', md: '50%' } }}>
           <InputLabel id="hls-direct-output-format-label">
-            HLS Direct Output Format
+            <Trans>HLS Direct Output Format</Trans>
           </InputLabel>
           <Controller
             control={control}
@@ -283,7 +285,7 @@ export default function FfmpegSettingsPage() {
             render={({ field }) => (
               <Select
                 id="hls-direct-output-format"
-                label="HLS Direct Output Format"
+                label={t`HLS Direct Output Format`}
                 labelId="hls-direct-output-format-label"
                 {...field}
               >
@@ -294,8 +296,10 @@ export default function FfmpegSettingsPage() {
             )}
           />
           <FormHelperText>
-            Channels configured to use the HLS Direct stream mode will output in
-            the selected container format.
+            <Trans>
+              Channels configured to use the HLS Direct stream mode will output in
+              the selected container format.
+            </Trans>
           </FormHelperText>
         </FormControl>
         <FormControl fullWidth>
@@ -305,21 +309,23 @@ export default function FfmpegSettingsPage() {
             render={({ field }) => (
               <TextField
                 id="ffmpeg-transcode-path"
-                label="FFmpeg Transcode Path"
+                label={t`FFmpeg Transcode Path`}
                 helperText={
-                  <span>
-                    Configure the directory where Tunarr writes HLS segment
-                    files when transcoding. Tunarr will create the target
-                    directory (but not intermediate directories) if it doesn't
-                    exist.
-                    <br />
-                    Changing this field will only affect new sessions. Existing
-                    sessions will continue writing to the previous setting, but
-                    will clean out segments when the segment ends.
-                    <br />
-                    When unset, Tunarr will write segments to its current
-                    working directory.
-                  </span>
+                  <Trans>
+                    <span>
+                      Configure the directory where Tunarr writes HLS segment
+                      files when transcoding. Tunarr will create the target
+                      directory (but not intermediate directories) if it doesn't
+                      exist.
+                      <br />
+                      Changing this field will only affect new sessions. Existing
+                      sessions will continue writing to the previous setting, but
+                      will clean out segments when the segment ends.
+                      <br />
+                      When unset, Tunarr will write segments to its current
+                      working directory.
+                    </span>
+                  </Trans>
                 }
                 {...field}
               />
@@ -329,11 +335,11 @@ export default function FfmpegSettingsPage() {
       </Stack>
       <Divider sx={{ my: 1 }} />
       <Typography variant="h5" sx={{ mb: 2 }}>
-        Audio &amp; Subtitle Options
+        <Trans>Audio &amp; Subtitle Options</Trans>
       </Typography>
       <Stack spacing={3} sx={{ mb: 2 }}>
         <Box>
-          <Typography variant="h6">Subtitles</Typography>
+          <Typography variant="h6"><Trans>Subtitles</Trans></Typography>
           <FormControl fullWidth>
             <Controller
               control={control}
@@ -341,27 +347,29 @@ export default function FfmpegSettingsPage() {
               render={({ field }) => (
                 <FormControlLabel
                   control={<Switch {...field} checked={field.value} />}
-                  label="Enable embedded subtitle extraction"
+                  label={t`Enable embedded subtitle extraction`}
                 />
               )}
             />
 
             <FormHelperText>
-              Enabling embedded subtitle extaction will periodically scan your
-              upcoming programming for embedded text-based subtitle streams and
-              extract them to a local cache. This is necessary in order to
-              enable subtitle burning for text-based subtitles which are not
-              external streams.
+              <Trans>
+                Enabling embedded subtitle extaction will periodically scan your
+                upcoming programming for embedded text-based subtitle streams and
+                extract them to a local cache. This is necessary in order to
+                enable subtitle burning for text-based subtitles which are not
+                external streams.
+              </Trans>
             </FormHelperText>
           </FormControl>
         </Box>
 
         <Divider />
         <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-          Audio Language Preferences
+          <Trans>Audio Language Preferences</Trans>
         </Typography>
         <Typography variant="subtitle1" sx={{ mb: 2 }}>
-          Configure preferred audio languages globally.
+          <Trans>Configure preferred audio languages globally.</Trans>
         </Typography>
         <FormControl fullWidth>
           <Controller
@@ -371,7 +379,7 @@ export default function FfmpegSettingsPage() {
               validate: {
                 minLength: (v) =>
                   isEmpty(v)
-                    ? 'Must define at least one language preference'
+                    ? t`Must define at least one language preference`
                     : undefined,
               },
             }}
@@ -396,7 +404,7 @@ export default function FfmpegSettingsPage() {
               setRestoreTunarrDefaults(false);
             }}
           >
-            Reset Changes
+            <Trans>Reset Changes</Trans>
           </Button>
         )}
         <Button
@@ -406,24 +414,26 @@ export default function FfmpegSettingsPage() {
           }
           type="submit"
         >
-          Save
+          <Trans>Save</Trans>
         </Button>
       </Stack>
       <Divider sx={{ mt: 2 }} />
 
       <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
-        Transcoding Configs
+        <Trans>Transcoding Configs</Trans>
       </Typography>
       <Typography variant="subtitle1">
-        Configure transcoding settings for Tunarr's streams. Each channel is
-        assigned one transcode configuration.
+        <Trans>
+          Configure transcoding settings for Tunarr's streams. Each channel is
+          assigned one transcode configuration.
+        </Trans>
       </Typography>
       <TranscodeConfigsTable />
       <UnsavedNavigationAlert isDirty={isDirty} />
       <DeleteConfirmationDialog
         open={!isNull(confirmDeleteTranscodeConfig)}
-        title={`Delete Transcoding Config "${confirmDeleteTranscodeConfig?.name}"?`}
-        body="All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
+        title={t`Delete Transcoding Config "${confirmDeleteTranscodeConfig?.name}"?`}
+        body={t`All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created.`}
         onConfirm={() =>
           deleteTranscodeConfig.mutate({
             path: { id: confirmDeleteTranscodeConfig!.id },

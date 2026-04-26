@@ -2,6 +2,7 @@ import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Construction as OrganizeIcon,
 } from '@mui/icons-material';
+import { Trans } from '@lingui/react/macro';
 import { Button } from '@mui/material';
 import React, { useState } from 'react';
 import { StyledMenu } from '../base/StyledMenu.tsx';
@@ -28,7 +29,7 @@ export function ChannelProgrammingTools() {
         onClick={handleClick}
         variant="outlined"
       >
-        Tools
+        <Trans>Tools</Trans>
       </Button>
 
       <StyledMenu

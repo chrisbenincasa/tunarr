@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Box, LinearProgress, Typography } from '@mui/material';
 import type {
   InfiniteData,
@@ -155,7 +156,7 @@ export function MediaItemList<PageDataType, ItemType>(
             fontStyle={'italic'}
             sx={{ textAlign: 'center', mt: 2 }}
           >
-            No results
+            <Trans>No results</Trans>
           </Typography>
         )}
       </Box>

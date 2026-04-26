@@ -9,6 +9,7 @@ import type {
   ShowTimeSlotViewModel,
   TimeSlotViewModel,
 } from '@/model/TimeSlotModels.ts';
+import { Trans } from '@lingui/react/macro';
 import AddIcon from '@mui/icons-material/Add';
 import { Button } from '@mui/material';
 import dayjs from 'dayjs';
@@ -127,7 +128,7 @@ export const AddTimeSlotButton = ({
       variant="contained"
       onClick={() => addSlot()}
     >
-      Add Slot
+      <Trans>Add Slot</Trans>
     </Button>
   );
 };

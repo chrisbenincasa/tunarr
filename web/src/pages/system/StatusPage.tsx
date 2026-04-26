@@ -1,5 +1,6 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { useM3ULink } from '@/hooks/useM3ULink';
 import { useSystemHealthChecks } from '@/hooks/useSystemHealthChecks';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
@@ -79,6 +80,7 @@ const CopyToClipboardButton = (
 };
 
 export const StatusPage = () => {
+  const { t } = useLingui();
   const { backendUri } = useSettings();
   const systemSettings = useSystemSettings();
   const systemHealthQuery = useSystemHealthChecks();
@@ -95,14 +97,14 @@ export const StatusPage = () => {
       await queryClient.invalidateQueries({
         queryKey: getApiSystemHealthQueryKey(),
       });
-      snackbar.enqueueSnackbar(`Successfully ran system fixer ${fixerId}`, {
+      snackbar.enqueueSnackbar(t`Successfully ran system fixer ${fixerId}`, {
         variant: 'success',
       });
     },
     onError: (err, { path: { fixerId } }) => {
       console.error(err);
       snackbar.enqueueSnackbar(
-        `Error while running system fixer ${fixerId}. Check server logs for details.`,
+        t`Error while running system fixer ${fixerId}. Check server logs for details.`,
         { variant: 'error' },
       );
     },
@@ -179,7 +181,7 @@ export const StatusPage = () => {
                     runSystemFixer.mutate({ path: { fixerId: fixer } });
                   }}
                 >
-                  Attempt Auto-Fix
+                  <Trans>Attempt Auto-Fix</Trans>
                 </Button>
               )}
             </TableCell>
@@ -205,7 +207,7 @@ export const StatusPage = () => {
         <Stack gap={2} useFlexGap direction={['column', 'row']}>
           <Box sx={{ pb: 2, flex: 1 }}>
             <Typography sx={{ mb: 1 }} variant="h5">
-              System Health
+              <Trans>System Health</Trans>
             </Typography>
             {systemHealthQuery.isLoading && <LinearProgress />}
             {renderHealthCheckResults()}
@@ -215,7 +217,7 @@ export const StatusPage = () => {
 
           <Box sx={{ pb: 2, flex: 1 }}>
             <Typography sx={{ mb: 1 }} variant="h5">
-              System Info
+              <Trans>System Info</Trans>
             </Typography>
             {systemSettings.isLoading && <LinearProgress />}
             {systemSettings.data && (
@@ -224,7 +226,7 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong>Tunarr Backend URL:</strong>
+                        <strong><Trans>Tunarr Backend URL:</Trans></strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -239,7 +241,7 @@ export const StatusPage = () => {
                   <TableRow>
                     <TableCell>
                       <Typography>
-                        <strong>Search Server URL:</strong>
+                        <strong><Trans>Search Server URL:</Trans></strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -259,7 +261,7 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong>XMLTV Link:</strong>
+                        <strong><Trans>XMLTV Link:</Trans></strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -274,7 +276,7 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong>Channels M3U Link:</strong>
+                        <strong><Trans>Channels M3U Link:</Trans></strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -289,7 +291,7 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong>Data Directory:</strong>
+                        <strong><Trans>Data Directory:</Trans></strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -306,7 +308,7 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong>Logs Directory:</strong>
+                        <strong><Trans>Logs Directory:</Trans></strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -323,14 +325,14 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong>Backups:</strong>
+                        <strong><Trans>Backups:</Trans></strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography>
                         {isEmpty(systemSettings.data.backup.configurations)
-                          ? 'Disabled'
-                          : 'Enabled'}
+                          ? t`Disabled`
+                          : t`Enabled`}
                       </Typography>
                     </TableCell>
                   </TableRow>

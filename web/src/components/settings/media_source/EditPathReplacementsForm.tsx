@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { ArrowRightAlt, Delete } from '@mui/icons-material';
 import {
   Box,
@@ -15,6 +16,7 @@ type FormSubtype = {
 };
 
 export const EditPathReplacementsForm = () => {
+  const { t } = useLingui();
   const form = useFormContext<FormSubtype>();
   const arr = useFieldArray({
     control: form.control,
@@ -24,18 +26,18 @@ export const EditPathReplacementsForm = () => {
   return (
     <Stack gap={1}>
       <Stack direction="row" flexWrap={'wrap'} alignItems={'center'}>
-        <Typography>Path Replacements</Typography>
+        <Typography><Trans>Path Replacements</Trans></Typography>
         <Button
           onClick={() => arr.append({ localPath: '', serverPath: '' })}
           sx={{ marginLeft: 'auto' }}
         >
-          Add
+          <Trans>Add</Trans>
         </Button>
         <Box sx={{ width: '100%' }} />
         <Typography variant="subtitle2">
-          When file paths on the remote server differ from the paths Tunarr can
+          <Trans>When file paths on the remote server differ from the paths Tunarr can
           see, use Path Replacements to instruct Tunarr how to stream media from
-          disk.
+          disk.</Trans>
         </Typography>
       </Stack>
       <Stack gap={1}>
@@ -50,7 +52,7 @@ export const EditPathReplacementsForm = () => {
                   minLength: 1,
                 }}
                 render={({ field }) => (
-                  <TextField sx={{ flex: 1 }} label="Server Path" {...field} />
+                  <TextField sx={{ flex: 1 }} label={t`Server Path`} {...field} />
                 )}
               />
               <ArrowRightAlt fontSize="large" sx={{ alignSelf: 'center' }} />
@@ -62,7 +64,7 @@ export const EditPathReplacementsForm = () => {
                   minLength: 1,
                 }}
                 render={({ field }) => (
-                  <TextField sx={{ flex: 1 }} label="Local Path" {...field} />
+                  <TextField sx={{ flex: 1 }} label={t`Local Path`} {...field} />
                 )}
               />
               <Box alignSelf={'center'} pl={1}>

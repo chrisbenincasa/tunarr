@@ -1,4 +1,5 @@
 import { StyledMenu } from '@/components/base/StyledMenu.tsx';
+import { Trans } from '@lingui/react/macro';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { Shuffle } from '@mui/icons-material';
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
@@ -44,7 +45,7 @@ export const RandomSlotPresetButton = () => {
         ref={anchorRef}
         variant="outlined"
       >
-        Presets
+        <Trans>Presets</Trans>
       </Button>
       <StyledMenu
         anchorEl={anchorRef.current}

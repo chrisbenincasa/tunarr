@@ -17,6 +17,7 @@ import { isNil } from 'lodash-es';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { betterHumanize } from '../../helpers/dayjs.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 
 type AddBreaksModalProps = {
   open: boolean;
@@ -30,6 +31,7 @@ type AddBreaksForm = {
 };
 
 const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
+  const { t } = useLingui();
   const addBreaks = useAddBreaks();
 
   const {
@@ -60,11 +62,11 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
       component="form"
       onSubmit={handleSubmit(doSubmit, console.error)}
     >
-      <DialogTitle>Add Breaks</DialogTitle>
+      <DialogTitle><Trans>Add Breaks</Trans></DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Adds Flex breaks between programs, attempting to avoid groups of
-          consecutive programs that exceed the specified number of minutes.
+          <Trans>Adds Flex breaks between programs, attempting to avoid groups of
+          consecutive programs that exceed the specified number of minutes.</Trans>
         </DialogContentText>
         <Box sx={{ mt: 2 }}>
           <Stack flex={1} gap={1}>
@@ -87,14 +89,14 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
                       }),
                     );
                   }}
-                  label="After Every"
+                  label={t`After Every`}
                   slotProps={{
                     textField: {
                       fullWidth: true,
                       error: !isNil(error),
                       helperText:
                         field.value === 0
-                          ? 'after every program'
+                          ? t`after every program`
                           : betterHumanize(dayjs.duration(field.value), {
                               exact: true,
                               style: 'full',
@@ -128,7 +130,7 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
                         }),
                       );
                     }}
-                    label="Min Duration"
+                    label={t`Min Duration`}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -175,7 +177,7 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
                         }),
                       );
                     }}
-                    label="Max Duration"
+                    label={t`Max Duration`}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -202,9 +204,9 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button variant="contained" type="submit">
-          Save
+          <Trans>Save</Trans>
         </Button>
       </DialogActions>
     </Dialog>

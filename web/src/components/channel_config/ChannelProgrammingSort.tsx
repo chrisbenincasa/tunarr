@@ -71,7 +71,7 @@ export function ChannelProgrammingSort() {
             endIcon={<KeyboardArrowDownIcon />}
             onClick={handleClick}
           >
-            Sort
+            {t`Sort`}
           </Button>
         )}
         {sort === 'random' && (
@@ -79,12 +79,12 @@ export function ChannelProgrammingSort() {
             startIcon={<ShuffleIcon />}
             onClick={() => shuffler(shuffleType)}
           >
-            Random{shuffleType === 'show' ? ' (by show)' : ''}
+            {shuffleType === 'show' ? t`Random (by show)` : t`Random`}
           </Button>
         )}
         {sort === 'cyclic' && (
           <Button startIcon={<CyclicIcon />} onClick={() => cyclicShuffle()}>
-            Cyclic Shuffle
+            {t`Cyclic Shuffle`}
           </Button>
         )}
         {(sort === 'alpha-asc' || sort === 'alpha-desc') && (
@@ -95,7 +95,7 @@ export function ChannelProgrammingSort() {
               setSort(sort === 'alpha-asc' ? 'alpha-desc' : 'alpha-asc');
             }}
           >
-            A-Z {sort === 'alpha-asc' ? '(asc)' : '(desc)'}
+            {sort === 'alpha-asc' ? t`A-Z (asc)` : t`A-Z (desc)`}
           </Button>
         )}
         {(sort === 'release-asc' || sort === 'release-desc') && (
@@ -106,7 +106,7 @@ export function ChannelProgrammingSort() {
               setSort(sort === 'release-asc' ? 'release-desc' : 'release-asc');
             }}
           >
-            Release Date {sort === 'release-asc' ? '(asc)' : '(desc)'}
+            {sort === 'release-asc' ? t`Release Date (asc)` : t`Release Date (desc)`}
           </Button>
         )}
         {(sort === 'episode-asc' || sort === 'episode-desc') && (
@@ -117,7 +117,7 @@ export function ChannelProgrammingSort() {
               setSort(sort === 'episode-asc' ? 'episode-desc' : 'episode-asc');
             }}
           >
-            Sort TV Shows {sort === 'episode-asc' ? '(asc)' : '(desc)'}
+            {sort === 'episode-asc' ? t`Sort TV Shows (asc)` : t`Sort TV Shows (desc)`}
           </Button>
         )}
         {sort === 'block' && (
@@ -125,7 +125,7 @@ export function ChannelProgrammingSort() {
             startIcon={<BlockShuffleIcon />}
             onClick={() => setAddBlockShuffleModalOpen(true)}
           >
-            Block Shuffle
+            {t`Block Shuffle`}
           </Button>
         )}
         {sort && (
@@ -137,7 +137,7 @@ export function ChannelProgrammingSort() {
 
       <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
         <MenuItem divider disabled>
-          Sort By...
+          {t`Sort By...`}
         </MenuItem>
         <ElevatedTooltip
           elevation={5}
@@ -152,7 +152,7 @@ export function ChannelProgrammingSort() {
               handleClose();
             }}
           >
-            <ShuffleIcon /> Random&hellip;
+            <ShuffleIcon /> {t`Random...`}
           </MenuItem>
         </ElevatedTooltip>
 
@@ -170,7 +170,7 @@ export function ChannelProgrammingSort() {
             }}
           >
             <CyclicIcon />
-            Cyclic Shuffle
+            {t`Cyclic Shuffle`}
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip
@@ -187,7 +187,7 @@ export function ChannelProgrammingSort() {
             }}
           >
             <BlockShuffleIcon />
-            Block Shuffle
+            {t`Block Shuffle`}
           </MenuItem>
         </ElevatedTooltip>
 
@@ -205,7 +205,7 @@ export function ChannelProgrammingSort() {
             }}
           >
             <SortByAlphaIcon />
-            Alphabetically
+            {t`Alphabetically`}
           </MenuItem>
         </ElevatedTooltip>
 
@@ -223,7 +223,7 @@ export function ChannelProgrammingSort() {
             }}
           >
             <ReleaseDateIcon />
-            Release Date
+            {t`Release Date`}
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip
@@ -240,7 +240,7 @@ export function ChannelProgrammingSort() {
             }}
           >
             <SortTVIcon />
-            Sort TV Shows
+            {t`Sort TV Shows`}
           </MenuItem>
         </ElevatedTooltip>
       </StyledMenu>

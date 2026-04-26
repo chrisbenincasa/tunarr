@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Box,
   Button,
@@ -27,6 +28,7 @@ import {
 import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
 
 export default function HdhrSettingsPage() {
+  const { t } = useLingui();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
     React.useState<boolean>(false);
 
@@ -54,7 +56,7 @@ export default function HdhrSettingsPage() {
   const updateHdhrSettingsMutation = useMutation({
     ...putApiHdhrSettingsMutation(),
     onSuccess: (data) => {
-      snackbar.enqueueSnackbar('Settings Saved!', {
+      snackbar.enqueueSnackbar(t`Settings Saved!`, {
         variant: 'success',
       });
       setRestoreTunarrDefaults(false);
@@ -76,9 +78,9 @@ export default function HdhrSettingsPage() {
   };
 
   if (isPending) {
-    return <h1>HDHR: Loading...</h1>;
+    return <h1><Trans>HDHR: Loading...</Trans></h1>;
   } else if (error) {
-    return <h1>HDHR: {error.message}</h1>;
+    return <h1>HDHR: {error.message}</h1>; {/* Error messages are technical */}
   }
 
   return (
@@ -92,18 +94,18 @@ export default function HdhrSettingsPage() {
                 name="autoDiscoveryEnabled"
               />
             }
-            label="Enable SSDP server"
+            label={t`Enable SSDP server`}
           />
-          <FormHelperText>* Restart required</FormHelperText>
+          <FormHelperText><Trans>* Restart required</Trans></FormHelperText>
         </FormControl>
       </Grid>
       <NumericFormControllerText
         control={control}
         name="tunerCount"
-        prettyFieldName="Tuner Count"
+        prettyFieldName={t`Tuner Count`}
         TextFieldProps={{
           id: 'tuner-count',
-          label: 'Tuner Count',
+          label: t`Tuner Count`,
           fullWidth: true,
           variant: 'filled',
         }}
@@ -124,7 +126,7 @@ export default function HdhrSettingsPage() {
                 setRestoreTunarrDefaults(true);
               }}
             >
-              Restore Default Settings
+              <Trans>Restore Default Settings</Trans>
             </Button>
           )}
         </Stack>
@@ -137,7 +139,7 @@ export default function HdhrSettingsPage() {
                 setRestoreTunarrDefaults(false);
               }}
             >
-              Reset Changes
+              <Trans>Reset Changes</Trans>
             </Button>
           )}
           <Button
@@ -147,7 +149,7 @@ export default function HdhrSettingsPage() {
             }
             type="submit"
           >
-            Save
+            <Trans>Save</Trans>
           </Button>
         </Stack>
       </Stack>

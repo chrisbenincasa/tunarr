@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Save } from '@mui/icons-material';
 import {
   Button,
@@ -43,6 +44,7 @@ export const CreateSmartCollectionDialog = ({
   onClose,
   initialQuery,
 }: Props) => {
+  const { t } = useLingui();
   const { data: existingCollections } = useSmartCollections();
   const snackbar = useSnackbar();
   const {
@@ -103,16 +105,15 @@ export const CreateSmartCollectionDialog = ({
       console.error(errors);
       snackbar.enqueueSnackbar({
         variant: 'error',
-        message:
-          'Error saving new Smart Collection. Check server logs and browser console for details.',
+        message: t`Error saving new Smart Collection. Check server logs and browser console for details.`,
       });
     },
-    [snackbar],
+    [snackbar, t],
   );
 
   return (
     <>
-      <DialogTitle>Save Smart Collection</DialogTitle>
+      <DialogTitle><Trans>Save Smart Collection</Trans></DialogTitle>
       <DialogContent>
         <Stack gap={2} sx={{ pt: 1 }}>
           <Controller
@@ -138,13 +139,13 @@ export const CreateSmartCollectionDialog = ({
                       </MenuItem>
                     ))}
                     <MenuItem value="new">
-                      Save as new collection&hellip;
+                      <Trans>Save as new collection&hellip;</Trans>
                     </MenuItem>
                   </Select>
                   <FormHelperText>
                     {field.value === 'new'
-                      ? 'Creates a new collection'
-                      : `Existing query: ${filterString}`}
+                      ? t`Creates a new collection`
+                      : t`Existing query: ${filterString}`}
                   </FormHelperText>
                 </FormControl>
               );
@@ -158,14 +159,14 @@ export const CreateSmartCollectionDialog = ({
                 required: true,
                 minLength: 1,
               }}
-              render={({ field }) => <TextField label="Name" {...field} />}
+              render={({ field }) => <TextField label={t`Name`} {...field} />}
             />
           )}
           <Controller
             name="keywords"
             control={control}
             render={({ field }) => (
-              <TextField disabled label="Keywords" {...field} />
+              <TextField disabled label={t`Keywords`} {...field} />
             )}
           />
           <Controller
@@ -174,7 +175,7 @@ export const CreateSmartCollectionDialog = ({
             render={({ field }) => (
               <TextField
                 disabled
-                label="Filter"
+                label={t`Filter`}
                 {...field}
                 value={
                   field.value ? search.searchFilterToString(field.value) : ''
@@ -185,14 +186,14 @@ export const CreateSmartCollectionDialog = ({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button
           variant="contained"
           disabled={!isValid}
           startIcon={<Save />}
           onClick={handleSubmit(saveSmartCollection, handleError)}
         >
-          Save
+          <Trans>Save</Trans>
         </Button>
       </DialogActions>
     </>

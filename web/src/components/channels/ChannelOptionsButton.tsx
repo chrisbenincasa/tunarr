@@ -2,6 +2,7 @@ import type { channelListOptions } from '@/types/index.ts';
 import { Settings } from '@mui/icons-material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Button, IconButton, useMediaQuery, useTheme } from '@mui/material';
+import { Trans } from '@lingui/react/macro';
 import type { Channel } from '@tunarr/types';
 import { isNull } from 'lodash-es';
 import { useState } from 'react';
@@ -54,7 +55,7 @@ export const ChannelOptionsButton = ({ channel, hideItems }: Props) => {
           onClick={(event) => handleClick(event, channel)}
           endIcon={<KeyboardArrowDownIcon />}
         >
-          Options
+          <Trans>Options</Trans>
         </Button>
       )}
       {channelMenu && (

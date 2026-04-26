@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Checkbox, FormControlLabel, Menu, MenuItem } from '@mui/material';
 import type { MediaSourceContentType } from '@tunarr/types';
 import { reject } from 'lodash-es';
@@ -92,7 +93,7 @@ export const SearchFieldRestrictMenu = ({
         disabled={searchFields.size === 0}
         onClick={() => onSearchFieldsChanged(new Set())}
       >
-        Clear
+        <Trans>Clear</Trans>
       </MenuItem>
       <MenuItem
         disabled={difference(searchRestrictOptionKeys, searchFields).size === 0}
@@ -100,7 +101,7 @@ export const SearchFieldRestrictMenu = ({
           onSearchFieldsChanged(new Set([...searchRestrictOptionKeys]))
         }
       >
-        Select All
+        <Trans>Select All</Trans>
       </MenuItem>
       {searchRestrictOptions.map(({ key, name, selectedDefault }) => (
         <MenuItem dense disableRipple disableTouchRipple key={key}>

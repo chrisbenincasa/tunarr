@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { MoreVert, PlayArrowOutlined } from '@mui/icons-material';
 import {
   Box,
@@ -32,6 +33,7 @@ import { useDayjs } from '../../hooks/useDayjs.ts';
 import type { Nullable } from '../../types/util.ts';
 
 export default function TaskSettingsPage() {
+  const { t } = useLingui();
   const snackbar = useSnackbar();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -63,14 +65,14 @@ export default function TaskSettingsPage() {
           onSuccess: () => {
             snackbar.enqueueSnackbar({
               variant: 'success',
-              message: `Successfully scheduled ${taskId} (running in background).`,
+              message: t`Successfully scheduled ${taskId} (running in background).`,
             });
           },
           onError: (e) => {
             console.error(e);
             snackbar.enqueueSnackbar({
               variant: 'error',
-              message: `Error while scheduling ${taskId}. Check server logs for details`,
+              message: t`Error while scheduling ${taskId}. Check server logs for details`,
             });
           },
         },
@@ -78,17 +80,17 @@ export default function TaskSettingsPage() {
       setSelectedTaskMenu(null);
       setMenuRef(null);
     },
-    [runTaskNowMutation, snackbar],
+    [runTaskNowMutation, snackbar, t],
   );
 
   const columns = useMemo<MRT_ColumnDef<Task>[]>(
     () => [
       {
-        header: 'Name',
+        header: t`Name`,
         accessorKey: 'name',
       },
       {
-        header: 'Description',
+        header: t`Description`,
         id: 'description',
         accessorFn: (row) => {
           return row.description ?? '-';
@@ -96,7 +98,7 @@ export default function TaskSettingsPage() {
         enableSorting: false,
       },
       {
-        header: 'Last Scheduled Execution',
+        header: t`Last Scheduled Execution`,
         id: 'lastScheduledExecution',
         accessorFn: (originalRow) => {
           const max = maxBy(
@@ -111,7 +113,7 @@ export default function TaskSettingsPage() {
         },
       },
       {
-        header: 'Next Scheduled Execution',
+        header: t`Next Scheduled Execution`,
         id: 'nextScheduledExecution',
         accessorFn: (originalRow) => {
           const min = minBy(
@@ -126,7 +128,7 @@ export default function TaskSettingsPage() {
         },
       },
     ],
-    [dayjs],
+    [dayjs, t],
   );
 
   const openTaskActionMenu = useCallback(
@@ -174,7 +176,7 @@ export default function TaskSettingsPage() {
               <ListItemIcon>
                 <PlayArrowOutlined />
               </ListItemIcon>
-              <ListItemText primary="Run" />
+              <ListItemText primary={t`Run`} />
             </MenuItem>
           </Menu>
         </Box>
@@ -200,7 +202,7 @@ export default function TaskSettingsPage() {
             <ListItem
               disableGutters
               secondaryAction={
-                <Tooltip title="Run now">
+                <Tooltip title={t`Run now`}>
                   <IconButton
                     edge="end"
                     onClick={() => runTaskNow(task.id)}
@@ -231,7 +233,7 @@ export default function TaskSettingsPage() {
                   <Stack direction="row" gap={2} mt={0.5} flexWrap="wrap">
                     <Box>
                       <Typography variant="caption" color="text.secondary">
-                        Last run
+                        <Trans>Last run</Trans>
                       </Typography>
                       <Typography variant="body2">
                         {lastEpoch
@@ -241,7 +243,7 @@ export default function TaskSettingsPage() {
                     </Box>
                     <Box>
                       <Typography variant="caption" color="text.secondary">
-                        Next run
+                        <Trans>Next run</Trans>
                       </Typography>
                       <Typography variant="body2">
                         {nextEpoch
@@ -262,10 +264,12 @@ export default function TaskSettingsPage() {
   return (
     <Stack gap={2}>
       <Box>
-        <Typography variant="h4">Tasks</Typography>
+        <Typography variant="h4"><Trans>Tasks</Trans></Typography>
         <Typography>
-          Tunarr runs various tasks, sometimes on a schedule, for background
-          operations.
+          <Trans>
+            Tunarr runs various tasks, sometimes on a schedule, for background
+            operations.
+          </Trans>
         </Typography>
       </Box>
       {isMobile ? renderMobileList() : <MRT_Table table={table} />}

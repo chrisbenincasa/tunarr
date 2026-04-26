@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Add,
   Delete,
@@ -31,6 +32,7 @@ import { slotOrderOptions } from '../../helpers/slotSchedulerUtil.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 
 export const SlotFillerDialogPanel = () => {
+  const { t } = useLingui();
   const { control, watch } = useFormContext<BaseSlot>();
   const fillerFields = useFieldArray({ control, name: 'filler' });
   const { data: fillerLists } = useFillerLists();
@@ -96,7 +98,7 @@ export const SlotFillerDialogPanel = () => {
         disabled={isEmpty(fillerListOptions)}
         onClick={handleAddNewFillerList}
       >
-        Add filler
+        <Trans>Add filler</Trans>
       </Button>
       {fillerFields.fields.map((fillerField, idx) => (
         <>
@@ -126,7 +128,7 @@ export const SlotFillerDialogPanel = () => {
                       <TextField
                         {...params}
                         fullWidth
-                        label="Filler List"
+                        label={t`Filler List`}
                         helperText={' '}
                       />
                     )}
@@ -173,7 +175,7 @@ export const SlotFillerDialogPanel = () => {
                   >
                     <ToggleButton value="head">
                       <FirstPage />
-                      Head
+                      <Trans>Head</Trans>
                     </ToggleButton>
                     <ToggleButton value={'pre'}>
                       <LowPriority
@@ -183,19 +185,22 @@ export const SlotFillerDialogPanel = () => {
                           mr: 1,
                         }}
                       />{' '}
-                      Pre
+                      <Trans>Pre</Trans>
+                    </ToggleButton>
+                    <ToggleButton value="mid">
+                      <VerticalAlignCenter sx={{ mr: 1 }} /> Mid
                     </ToggleButton>
                     <ToggleButton value="mid">
                       <VerticalAlignCenter sx={{ mr: 1 }} /> Mid
                     </ToggleButton>
                     <ToggleButton value="post">
-                      <LowPriority sx={{ mr: 1 }} /> Post
+                      <LowPriority sx={{ mr: 1 }} /> <Trans>Post</Trans>
                     </ToggleButton>
                     <ToggleButton value="tail">
-                      <LastPage sx={{ mr: 1 }} /> Tail
+                      <LastPage sx={{ mr: 1 }} /> <Trans>Tail</Trans>
                     </ToggleButton>
                     <ToggleButton value="fallback">
-                      <Repeat /> Fallback
+                      <Repeat /> <Trans>Fallback</Trans>
                     </ToggleButton>
                   </ToggleButtonGroup>
                 )}

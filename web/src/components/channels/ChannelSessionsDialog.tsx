@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogTitle,
 } from '@mui/material';
+import { Trans } from '@lingui/react/macro';
 import type { Channel } from '@tunarr/types';
 import type { Nullable } from '../../types/util.ts';
 
@@ -21,12 +22,12 @@ export const ChannelSessionsDialog = ({ open, onClose, channel }: Props) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>"{channel.name}" Sessions</DialogTitle>
+      <DialogTitle><Trans>"{channel.name}" Sessions</Trans></DialogTitle>
       <DialogContent>
         <pre>{JSON.stringify(channel.sessions, undefined, 2)}</pre>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Close</Button>
+        <Button onClick={() => onClose()}><Trans>Close</Trans></Button>
       </DialogActions>
     </Dialog>
   );

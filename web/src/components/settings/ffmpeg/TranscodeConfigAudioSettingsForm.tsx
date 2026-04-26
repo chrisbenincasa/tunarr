@@ -1,4 +1,5 @@
 import { useTypedAppFormContext } from '@/hooks/form.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   FormControl,
   FormHelperText,
@@ -44,6 +45,7 @@ export const TranscodeConfigAudioSettingsForm = ({
   initialConfig,
   showAdvancedSettings,
 }: BaseTranscodeConfigProps) => {
+  const { t } = useLingui();
   const formOpts = useBaseTranscodeConfigFormOptions(initialConfig);
   const form = useTypedAppFormContext({ ...formOpts });
   const [loudnormEnabled, setLoudnormEnabled] = useState(
@@ -75,12 +77,12 @@ export const TranscodeConfigAudioSettingsForm = ({
               <field.BasicSelectInput
                 formControlProps={{ fullWidth: true }}
                 selectProps={{
-                  label: 'Audio Format',
+                  label: t`Audio Format`,
                 }}
                 options={AudioFormats}
                 helperText={
                   field.form.state.values.audioFormat === 'copy'
-                    ? 'Passthrough audio unchanged. Other settings will not apply.'
+                    ? t`Passthrough audio unchanged. Other settings will not apply.`
                     : ''
                 }
               />
@@ -97,7 +99,7 @@ export const TranscodeConfigAudioSettingsForm = ({
                 children={(field) => (
                   <field.BasicTextInput
                     fullWidth
-                    label="Audio Bitrate"
+                    label={t`Audio Bitrate`}
                     disabled={encoder === 'copy'}
                     slotProps={{
                       input: {
@@ -108,7 +110,7 @@ export const TranscodeConfigAudioSettingsForm = ({
                     }}
                     helperText={
                       encoder === 'copy'
-                        ? 'Bitrate cannot be changed when copying input audio'
+                        ? t`Bitrate cannot be changed when copying input audio`
                         : null
                     }
                   />
@@ -126,7 +128,7 @@ export const TranscodeConfigAudioSettingsForm = ({
                 children={(field) => (
                   <field.BasicTextInput
                     fullWidth
-                    label="Audio Buffer Size"
+                    label={t`Audio Buffer Size`}
                     disabled={encoder === 'copy'}
                     slotProps={{
                       input: {
@@ -137,7 +139,7 @@ export const TranscodeConfigAudioSettingsForm = ({
                     }}
                     helperText={
                       encoder === 'copy'
-                        ? 'Buffer size cannot be changed when copying input audio'
+                        ? t`Buffer size cannot be changed when copying input audio`
                         : null
                     }
                   />
@@ -156,7 +158,7 @@ export const TranscodeConfigAudioSettingsForm = ({
                 children={(field) => (
                   <field.BasicTextInput
                     fullWidth
-                    label="Audio Sample Rate"
+                    label={t`Audio Sample Rate`}
                     disabled={encoder === 'copy'}
                     slotProps={{
                       input: {
@@ -167,7 +169,7 @@ export const TranscodeConfigAudioSettingsForm = ({
                     }}
                     helperText={
                       encoder === 'copy'
-                        ? 'Sample rate cannot be changed when copying input audio'
+                        ? t`Sample rate cannot be changed when copying input audio`
                         : null
                     }
                   />
@@ -180,7 +182,7 @@ export const TranscodeConfigAudioSettingsForm = ({
           <form.AppField
             name="audioChannels"
             children={(field) => (
-              <field.BasicTextInput fullWidth label="Audio Channels" />
+              <field.BasicTextInput fullWidth label={t`Audio Channels`} />
             )}
           />
         </Grid>
@@ -190,10 +192,8 @@ export const TranscodeConfigAudioSettingsForm = ({
             children={(field) => (
               <field.BasicTextInput
                 fullWidth
-                label="Audio Volume"
-                helperText={
-                  'Adjust the output volume (not recommended). Values higher than 100 will boost the audio.'
-                }
+                label={t`Audio Volume`}
+                helperText={t`Adjust the output volume (not recommended). Values higher than 100 will boost the audio.`}
                 slotProps={{
                   input: {
                     endAdornment: (
@@ -207,16 +207,17 @@ export const TranscodeConfigAudioSettingsForm = ({
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <FormControl fullWidth>
-            <InputLabel>Audio Loudness Normalization</InputLabel>
+            <InputLabel><Trans>Audio Loudness Normalization</Trans></InputLabel>
             <Select
-              label="Audio Loudness Normalization"
+              label={t`Audio Loudness Normalization`}
               value={loudnormEnabled ? 'enabled' : 'disabled'}
               onChange={() => onLoudnormChange(!loudnormEnabled)}
             >
-              <MenuItem value={'disabled'}>Disabled</MenuItem>
-              <MenuItem value={'enabled'}>Enabled (loudnorm)</MenuItem>
+              <MenuItem value={'disabled'}><Trans>Disabled</Trans></MenuItem>
+              <MenuItem value={'enabled'}><Trans>Enabled (loudnorm)</Trans></MenuItem>
             </Select>
             <FormHelperText>
+              <Trans>
               Enable{' '}
               <Link
                 href="https://en.wikipedia.org/wiki/EBU_R_128"
@@ -226,6 +227,7 @@ export const TranscodeConfigAudioSettingsForm = ({
               </Link>{' '}
               loudness normalization via the <code>loudnorm</code> FFmpeg
               filter. May increase CPU usage during streaming.
+              </Trans>
             </FormHelperText>
           </FormControl>
         </Grid>
@@ -241,22 +243,22 @@ export const TranscodeConfigAudioSettingsForm = ({
             return (
               <Stack>
                 <Typography component="h6" variant="h6" mb={1}>
-                  Advanced Video Options
+                  <Trans>Advanced Video Options</Trans>
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 2 }}>
-                  Advanced options relating to audio. In general, do not change
-                  these unless you know what you are doing!
+                  <Trans>Advanced options relating to audio. In general, do not change
+                  these unless you know what you are doing!</Trans>
                 </Typography>
                 {!!state.values.audioLoudnormConfig && (
                   <>
-                    <Typography sx={{ mb: 1 }}>Loudnorm Options</Typography>
+                    <Typography sx={{ mb: 1 }}><Trans>Loudnorm Options</Trans></Typography>
                     <Stack direction={{ sm: 'column', md: 'row' }} spacing={2}>
                       <form.AppField
                         name="audioLoudnormConfig.i"
                         children={(field) => (
                           <field.BasicTextInput
                             fullWidth
-                            label="Loudness Target"
+                            label={t`Loudness Target`}
                             helperText="[-70.0, -5.0]"
                           />
                         )}
@@ -266,7 +268,7 @@ export const TranscodeConfigAudioSettingsForm = ({
                         children={(field) => (
                           <field.BasicTextInput
                             fullWidth
-                            label="Loudness Range Target"
+                            label={t`Loudness Range Target`}
                             helperText="[1.0, 50.0]"
                           />
                         )}
@@ -276,7 +278,7 @@ export const TranscodeConfigAudioSettingsForm = ({
                         children={(field) => (
                           <field.BasicTextInput
                             fullWidth
-                            label="Max True Peak"
+                            label={t`Max True Peak`}
                             helperText="[-9.0, 0.0]"
                           />
                         )}

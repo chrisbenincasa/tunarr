@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import type { FieldPrefix } from '@/types/SearchBuilder.ts';
 import Add from '@mui/icons-material/Add';
 import Delete from '@mui/icons-material/Delete';
@@ -40,6 +41,7 @@ export function SearchGroupNode({
   mediaSourceId,
   mediaTypeFilter,
 }: GroupNodeProps) {
+  const { t } = useLingui();
   const { control } = useFormContext();
   const prefix = isNonEmptyString(formKey)
     ? (`${formKey}.` as const)
@@ -68,23 +70,23 @@ export function SearchGroupNode({
         }}
       >
         <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel>Field</InputLabel>
+          <InputLabel>{t`Field`}</InputLabel>
           <Controller
             control={control}
             name={getFieldName('op')}
             render={({ field }) => (
               <Select
-                label="Field"
+                label={t`Field`}
                 MenuProps={{ sx: { maxHeight: 375 } }}
                 {...field}
               >
-                <MenuItem value="and">Match all of</MenuItem>
-                <MenuItem value="or">Match any of</MenuItem>
+                <MenuItem value="and">{t`Match all of`}</MenuItem>
+                <MenuItem value="or">{t`Match any of`}</MenuItem>
               </Select>
             )}
           />
         </FormControl>
-        <Tooltip title="Add field">
+        <Tooltip title={t`Add field`}>
           <IconButton
             onClick={() =>
               append({
@@ -101,7 +103,7 @@ export function SearchGroupNode({
             <Add />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Add group">
+        <Tooltip title={t`Add group`}>
           <IconButton
             onClick={() => append({ type: 'op', children: [], op: 'and' })}
           >

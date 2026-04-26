@@ -1,6 +1,7 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 import { isNonEmptyString } from '@/helpers/util.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Delete, Edit } from '@mui/icons-material';
 import {
   Dialog,
@@ -40,6 +41,7 @@ import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
 const TableName = 'FillerLists';
 
 export default function FillerListsPage() {
+  const { t } = useLingui();
   const queryClient = useQueryClient();
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<
     string | undefined
@@ -59,11 +61,13 @@ export default function FillerListsPage() {
     onError: (e) => {
       snackbar.enqueueSnackbar({
         message: (
-          <span>
-            Error deleting filler list: {e.message}
-            <br />
-            Please consider opening a bug with details!
-          </span>
+          <Trans>
+            <span>
+              Error deleting filler list: {e.message}
+              <br />
+              Please consider opening a bug with details!
+            </span>
+          </Trans>
         ),
         variant: 'error',
       });
@@ -96,18 +100,19 @@ export default function FillerListsPage() {
         aria-describedby="delete-filler-list-description"
       >
         <DialogTitle id="delete-filler-list-title">
-          Delete Filler List "
-          {find(fillerLists, { id: deleteConfirmationId })?.name}"?
+          <Trans>Delete Filler List "{find(fillerLists, { id: deleteConfirmationId })?.name}"?</Trans>
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-filler-list-description">
-            Deleting a Filler will remove all programming from the channel. This
-            action cannot be undone.
+            <Trans>
+              Deleting a Filler will remove all programming from the channel. This
+              action cannot be undone.
+            </Trans>
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirmationId(undefined)} autoFocus>
-            Cancel
+            <Trans>Cancel</Trans>
           </Button>
           <Button
             onClick={() =>
@@ -115,7 +120,7 @@ export default function FillerListsPage() {
             }
             variant="contained"
           >
-            Delete
+            <Trans>Delete</Trans>
           </Button>
         </DialogActions>
       </Dialog>
@@ -126,7 +131,7 @@ export default function FillerListsPage() {
     ({ row: { original: filler } }: { row: MRT_Row<FillerList> }) => {
       return (
         <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
-          <Tooltip title="Edit" placement="top">
+          <Tooltip title={t`Edit`} placement="top">
             <IconButton
               to={`/library/fillers/${filler.id}/edit`}
               component={RouterLink}
@@ -134,7 +139,7 @@ export default function FillerListsPage() {
               <Edit />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete" placement="top">
+          <Tooltip title={t`Delete`} placement="top">
             <IconButton
               onClick={(ev) => {
                 ev.preventDefault();
@@ -148,22 +153,22 @@ export default function FillerListsPage() {
         </Box>
       );
     },
-    [],
+    [t],
   );
 
   const columns = useMemo<MRT_ColumnDef<FillerList>[]>(
     () => [
       {
-        header: 'Name',
+        header: t`Name`,
         accessorKey: 'name',
       },
       {
-        header: '# Programs',
+        header: t`# Programs`,
         accessorKey: 'contentCount',
         filterVariant: 'range',
       },
     ],
-    [],
+    [t],
   );
 
   const table = useMaterialReactTable({
@@ -177,10 +182,12 @@ export default function FillerListsPage() {
         <Typography
           sx={{ py: '2rem', textAlign: 'center', fontStyle: 'italic' }}
         >
-          You have no Filler Lists. Create your first Filler List{' '}
-          <Link component={RouterLink} to="/library/fillers/new">
-            here.
-          </Link>
+          <Trans>
+            You have no Filler Lists. Create your first Filler List{' '}
+            <Link component={RouterLink} to="/library/fillers/new">
+              here.
+            </Link>
+          </Trans>
         </Typography>
       );
     },
@@ -209,12 +216,14 @@ export default function FillerListsPage() {
       <Box display="flex" mb={2} alignItems="flex-start">
         <Box flexDirection={'column'} flexGrow={1}>
           <Typography flexGrow={1} variant="h4">
-            Filler Lists
+            <Trans>Filler Lists</Trans>
           </Typography>
           <Typography maxWidth={'800px'}>
-            Filler lists are collections of videos that you may want to play
-            during 'flex' time segments. Flex is time within a channel that does
-            not have a program scheduled (usually used for padding).
+            <Trans>
+              Filler lists are collections of videos that you may want to play
+              during 'flex' time segments. Flex is time within a channel that does
+              not have a program scheduled (usually used for padding).
+            </Trans>
           </Typography>
         </Box>
 
@@ -225,7 +234,7 @@ export default function FillerListsPage() {
           startIcon={<AddCircleIcon />}
           sx={{ alignSelf: 'end' }}
         >
-          New
+          <Trans>New</Trans>
         </Button>
       </Box>
 

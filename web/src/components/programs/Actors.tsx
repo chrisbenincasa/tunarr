@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import {
   Avatar,
   Box,
@@ -54,7 +55,7 @@ export default function Actors({ program }: Props) {
         color="text.primary"
         sx={{ mt: 4 }}
       >
-        Cast & Crew
+        <Trans>Cast & Crew</Trans>
       </Typography>
       <Grid
         container
@@ -153,7 +154,7 @@ export default function Actors({ program }: Props) {
       {hasMore && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
           <Button variant="outlined" onClick={handleLoadMore}>
-            Load More
+            <Trans>Load More</Trans>
           </Button>
         </Box>
       )}

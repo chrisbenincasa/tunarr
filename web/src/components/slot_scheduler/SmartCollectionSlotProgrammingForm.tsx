@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { Autocomplete, TextField } from '@mui/material';
 import { filter, find, first, map } from 'lodash-es';
 import { useMemo } from 'react';
@@ -8,6 +9,7 @@ import type { CommonSmartCollectionViewModel } from '../../model/CommonSlotModel
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
 export const SmartCollectionSlotProgrammingForm = () => {
+  const { t } = useLingui();
   const { watch, control } = useFormContext<CommonSmartCollectionViewModel>();
   const programOptions = useSlotProgramOptionsContext();
   const [type] = watch(['type']);
@@ -47,7 +49,7 @@ export const SmartCollectionSlotProgrammingForm = () => {
               value ? field.onChange(value.collectionId) : void 0
             }
             renderInput={(params) => (
-              <TextField {...params} label="Smart Collection" />
+              <TextField {...params} label={t`Smart Collection`} />
             )}
           />
         )}

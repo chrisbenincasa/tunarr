@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { TextField } from '@mui/material';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { SearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export const StringValueSearchNode = ({ formKey }: Props) => {
+  const { t } = useLingui();
   const { control } = useFormContext<SearchForm>();
 
   return (
@@ -19,7 +21,7 @@ export const StringValueSearchNode = ({ formKey }: Props) => {
       render={({ field }) => {
         return (
           <TextField
-            label="Value"
+            label={t`Value`}
             size="small"
             {...field}
             onChange={(e) => field.onChange([e.target.value])}

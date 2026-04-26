@@ -1,5 +1,6 @@
 import type { TabProps } from '@mui/material';
 import { Tab, Tabs, Typography } from '@mui/material';
+import { useLingui } from '@lingui/react/macro';
 import { seq } from '@tunarr/shared/util';
 import type { ContentProgram, ContentProgramParent } from '@tunarr/types';
 import {
@@ -26,12 +27,15 @@ type ProgramTabProps = TabProps & {
   programType: ContentProgramType;
 };
 
-const ProgramTypeToLabel: Record<ContentProgramType, string> = {
-  episode: 'Shows',
-  movie: 'Movies',
-  music_video: 'Music Videos',
-  other_video: 'Other Videos',
-  track: 'Artists',
+const useProgramTypeToLabel = (): Record<ContentProgramType, string> => {
+  const { t } = useLingui();
+  return {
+    episode: t`Shows`,
+    movie: t`Movies`,
+    music_video: t`Music Videos`,
+    other_video: t`Other Videos`,
+    track: t`Artists`,
+  };
 };
 
 const ProgramTypeToGridType: Record<
@@ -51,6 +55,7 @@ const ProgramTypeTab = ({
   selected,
   ...rest
 }: ProgramTabProps) => {
+  const programTypeToLabel = useProgramTypeToLabel();
   return (
     <Tab
       {...rest}
@@ -60,7 +65,7 @@ const ProgramTypeTab = ({
             component="span"
             sx={{ verticalAlign: 'middle', fontSize: '0.875rem' }}
           >
-            {ProgramTypeToLabel[programType]}
+            {programTypeToLabel[programType]}
             <Typography
               component="span"
               sx={{

@@ -1,5 +1,6 @@
 import PaddedPaper from '@/components/base/PaddedPaper.tsx';
 import Breadcrumbs from '@/components/Breadcrumbs.tsx';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Delete,
   Movie,
@@ -26,6 +27,7 @@ import { deleteApiTrashMutation } from '../../generated/@tanstack/react-query.ge
 import { invalidateQueryPrefix } from '../../helpers/queryUtil.ts';
 
 export const TrashPage = () => {
+  const { t } = useLingui();
   const [itemTypes, setItemTypes] = useState<ProgramType[]>([]);
   const snackbar = useSnackbar();
   const queryClient = useQueryClient();
@@ -34,7 +36,7 @@ export const TrashPage = () => {
     ...deleteApiTrashMutation(),
     onSuccess: async () => {
       snackbar.enqueueSnackbar({
-        message: 'Successfully emptied trash.',
+        message: t`Successfully emptied trash.`,
         variant: 'success',
       });
       await queryClient.invalidateQueries({
@@ -45,8 +47,7 @@ export const TrashPage = () => {
       console.error(err);
       snackbar.enqueueSnackbar({
         variant: 'error',
-        message:
-          'Encountered an error when emptying trash. Check console logs for details.',
+        message: t`Encountered an error when emptying trash. Check console logs for details.`,
       });
     },
   });
@@ -95,13 +96,17 @@ export const TrashPage = () => {
     <Stack spacing={2}>
       <Box>
         <Breadcrumbs />
-        <Typography variant="h4">Trash</Typography>
+        <Typography variant="h4">
+          <Trans>Trash</Trans>
+        </Typography>
         <Box display={'flex'} alignContent={'center'} sx={{ mt: 1 }}>
-          Trashed items are items that were previously scanned, but not found in
-          a recent scan. This could be due to missing files or a media server no
-          longer returning the item from its API. These items will be unplayable
-          in channels in their current state. When the trash is emptied, their
-          spots in channels will be replaced with flex.
+          <Trans>
+            Trashed items are items that were previously scanned, but not found
+            in a recent scan. This could be due to missing files or a media
+            server no longer returning the item from its API. These items will
+            be unplayable in channels in their current state. When the trash is
+            emptied, their spots in channels will be replaced with flex.
+          </Trans>
         </Box>
       </Box>
       <PaddedPaper>
@@ -114,20 +119,20 @@ export const TrashPage = () => {
             sx={{ flexGrow: 1 }}
           >
             <ToggleButton value="movie">
-              <Movie sx={{ mr: 1 }} /> Movies
+              <Movie sx={{ mr: 1 }} /> <Trans>Movies</Trans>
             </ToggleButton>
             <ToggleButton value="episode">
               {' '}
-              <Tv sx={{ mr: 1 }} /> Episodes
+              <Tv sx={{ mr: 1 }} /> <Trans>Episodes</Trans>
             </ToggleButton>
             <ToggleButton value="track">
-              <MusicNote sx={{ mr: 1 }} /> Tracks
+              <MusicNote sx={{ mr: 1 }} /> <Trans>Tracks</Trans>
             </ToggleButton>
             <ToggleButton value="other_video">
-              <Videocam sx={{ mr: 1 }} /> Other Videos
+              <Videocam sx={{ mr: 1 }} /> <Trans>Other Videos</Trans>
             </ToggleButton>
             <ToggleButton value="music_video">
-              <MusicVideo sx={{ mr: 1 }} /> Music Videos
+              <MusicVideo sx={{ mr: 1 }} /> <Trans>Music Videos</Trans>
             </ToggleButton>
           </ToggleButtonGroup>
           <Button
@@ -137,7 +142,7 @@ export const TrashPage = () => {
             variant="contained"
             color="error"
           >
-            Empty Trash
+            <Trans>Empty Trash</Trans>
           </Button>
         </Stack>
         <LibraryProgramGrid searchRequest={request} />;

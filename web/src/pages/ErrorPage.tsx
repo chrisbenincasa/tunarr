@@ -1,4 +1,5 @@
 import { useBrowserInfo } from '@/hooks/useBrowserInfo';
+import { Trans } from '@lingui/react/macro';
 import GitHub from '@mui/icons-material/GitHub';
 import Refresh from '@mui/icons-material/Refresh';
 import { Box, Button, Collapse, Stack, Typography } from '@mui/material';
@@ -49,9 +50,9 @@ export function ErrorPage({ error }: Props) {
       />
       <div style={{ textAlign: 'center' }}>
         <Typography variant="h2" sx={{ pb: 1 }}>
-          Oops!
+          <Trans>Oops!</Trans>
         </Typography>
-        <Typography>Looks like something went wrong.</Typography>
+        <Typography><Trans>Looks like something went wrong.</Trans></Typography>
       </div>
       <Stack direction="row" sx={{ justifyContent: 'center' }} gap={2}>
         <Button
@@ -59,7 +60,7 @@ export function ErrorPage({ error }: Props) {
           variant="contained"
           startIcon={<Refresh />}
         >
-          Refresh Page
+          <Trans>Refresh Page</Trans>
         </Button>
         <Button
           component="a"
@@ -70,8 +71,8 @@ export function ErrorPage({ error }: Props) {
           disabled={versionLoading}
         >
           {versionLoading
-            ? 'Generating Bug Report Link...'
-            : 'File a Bug Report'}
+            ? <Trans>Generating Bug Report Link...</Trans>
+            : <Trans>File a Bug Report</Trans>}
         </Button>
       </Stack>
       {stack && (

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { useIsDarkMode } from '@/hooks/useTunarrTheme.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
@@ -73,6 +74,7 @@ function ProgramDetailsDialogContent({
   isLoading,
   panelVisibility = DefaultPanelVisibility,
 }: ContentProps) {
+  const { t } = useLingui();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const [moreMenuAnchorEl, setMoreMenuAnchorEl] =
@@ -163,19 +165,19 @@ function ProgramDetailsDialogContent({
             allowScrollButtonsMobile
             sx={{ mb: 2 }}
           >
-            {visibility.metadata && <Tab value={'metadata'} label="Overview" />}
+            {visibility.metadata && <Tab value={'metadata'} label={t`Overview`} />}
 
             {visibility.stream_details &&
               programId &&
               isNonEmptyString(programId) &&
               isTerminalItemType(programType) && (
-                <Tab value="stream_details" label="Stream Info" />
+                <Tab value="stream_details" label={t`Stream Info`} />
               )}
 
             {visibility.program_details && (
               <Tab
                 value="program_details"
-                label={`${prettifySnakeCaseString(programType)} Info`}
+                label={t`${prettifySnakeCaseString(programType)} Info`}
               />
             )}
           </Tabs>
@@ -255,7 +257,7 @@ function ProgramDetailsDialogContent({
             <>
               <ErrorBoundary
                 fallback={
-                  <>Failed to load stream details! Check logs for details</>
+                  <><Trans>Failed to load stream details! Check logs for details</Trans></>
                 }
               >
                 <Suspense fallback={<LinearProgress />}>
@@ -270,7 +272,7 @@ function ProgramDetailsDialogContent({
           {visibility.program_details && programData?.uuid ? (
             <ErrorBoundary
               fallback={
-                <>Failed to load item details! Check logs for details</>
+                <><Trans>Failed to load item details! Check logs for details</Trans></>
               }
             >
               <Suspense fallback={<LinearProgress />}>

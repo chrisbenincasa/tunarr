@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { ClearAll } from '@mui/icons-material';
 import { Button } from '@mui/material';
 
@@ -10,7 +11,7 @@ export const ClearSlotsButton = ({ fields, remove }: Props) => {
   return (
     fields.length > 0 && (
       <Button onClick={() => remove()} sx={{ mr: 1 }} startIcon={<ClearAll />}>
-        Clear All
+        <Trans>Clear All</Trans>
       </Button>
     )
   );

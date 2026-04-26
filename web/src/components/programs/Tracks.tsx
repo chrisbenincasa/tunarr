@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { List, ListItem, ListItemText, Typography } from '@mui/material';
 import type { MusicAlbum } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -17,7 +18,7 @@ export default function Tracks({ program }: Props) {
         color="text.primary"
         sx={{ mt: 4 }}
       >
-        Tracks
+        <Trans>Tracks</Trans>
       </Typography>
       <List>
         {tracks.map((track) => (

@@ -2,6 +2,7 @@ import { Root } from '@/App';
 import { TanStackRouterDevtools } from '@/dev/TanStackRouterDevtools';
 import { ErrorPage } from '@/pages/ErrorPage';
 import type { RouterContext } from '@/types/RouterContext';
+import { Trans } from '@lingui/react/macro';
 import { createRootRouteWithContext } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { isNonEmptyString, search as tunarrSearch } from '@tunarr/shared/util';
@@ -64,8 +65,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootPage,
   notFoundComponent: () => (
     <div>
-      <p>Not found!</p>
-      <RouterLink to="/">Go Home</RouterLink>
+      <p><Trans>Not found!</Trans></p>
+      <RouterLink to="/"><Trans>Go Home</Trans></RouterLink>
     </div>
   ),
   errorComponent: ({ error, reset }) => {

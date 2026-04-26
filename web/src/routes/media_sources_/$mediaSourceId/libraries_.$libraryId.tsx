@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Box, Stack, Typography } from '@mui/material';
 import { createFileRoute } from '@tanstack/react-router';
 import { ProgramViewToggleButton } from '../../../components/base/ProgramViewToggleButton.tsx';
@@ -29,12 +30,12 @@ function MediaSourceBrowserPage() {
     <Box>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" sx={{ display: 'inline-flex', width: '100%' }}>
-          <span>Media Source: "{library.mediaSource.name}"</span>
+          <span><Trans>Media Source: "{library.mediaSource.name}"</Trans></span>
           <ProgramViewToggleButton sx={{ ml: { sm: undefined, md: 'auto' } }} />
         </Typography>
-        <Typography variant="subtitle1">Library: {library.name}</Typography>
+        <Typography variant="subtitle1"><Trans>Library: {library.name}</Trans></Typography>
         <Typography variant="subtitle1">
-          Search is currently scoped to this Media Source Library.
+          <Trans>Search is currently scoped to this Media Source Library.</Trans>
         </Typography>
       </Box>
       <Stack gap={2}>

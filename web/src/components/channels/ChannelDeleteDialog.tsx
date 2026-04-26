@@ -6,6 +6,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
+import { Trans } from '@lingui/react/macro';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Channel } from '@tunarr/types';
 import type { SyntheticEvent } from 'react';
@@ -64,23 +65,25 @@ export const ChannelDeleteDialog = ({ open, onClose, channel }: Props) => {
       {open && (
         <>
           <DialogTitle id="delete-channel-title">
-            Delete Channel "{channel.name}"?
+            <Trans>Delete Channel "{channel.name}"?</Trans>
           </DialogTitle>
           <DialogContent>
             <DialogContentText id="delete-channel-description">
-              Deleting a Channel will remove all programming from the channel.
-              This action cannot be undone.
+              <Trans>
+                Deleting a Channel will remove all programming from the channel.
+                This action cannot be undone.
+              </Trans>
             </DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose} autoFocus>
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button
               onClick={(e) => removeChannel(e, channel.id)}
               variant="contained"
             >
-              Delete
+              <Trans>Delete</Trans>
             </Button>
           </DialogActions>
         </>

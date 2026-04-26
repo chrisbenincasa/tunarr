@@ -1,12 +1,13 @@
 import { Launch } from '@mui/icons-material';
 import { Box, Grid, Paper, Stack, Typography } from '@mui/material';
+import { Trans } from '@lingui/react/macro';
+import { plural, t } from '@lingui/core/macro';
 import { seq } from '@tunarr/shared/util';
 import type { ChannelStreamMode } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
 import { find, round, uniq } from 'lodash-es';
 import { useMemo } from 'react';
 import { match } from 'ts-pattern';
-import { pluralizeWithCount } from '../../helpers/util.ts';
 import { useTranscodeConfigs } from '../../hooks/settingsHooks.ts';
 import { useChannelAndProgramming } from '../../hooks/useChannelLineup.ts';
 import { RouterLink } from '../base/RouterLink.tsx';
@@ -49,20 +50,21 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
   const channelDurationString = useMemo(() => {
     const dur = globalDayjs.duration(channel.duration);
     if (+dur <= 0) {
-      return '0 mins';
+      return t`0 mins`;
     }
 
-    const days = dur.asDays();
+    const days = round(dur.asDays(), 2);
     if (days >= 1) {
-      return pluralizeWithCount('days', round(days, 2));
+      return t`${plural(days, { one: '# day', other: '# days' })}`;
     }
 
-    const hours = dur.asHours();
+    const hours = round(dur.asHours());
     if (hours >= 1) {
-      return pluralizeWithCount('hour', round(hours));
+      return t`${plural(hours, { one: '# hour', other: '# hours' })}`;
     }
 
-    return pluralizeWithCount('minute', round(dur.asMinutes(), 2));
+    const minutes = round(dur.asMinutes(), 2);
+    return t`${plural(minutes, { one: '# minute', other: '# minutes' })}`;
   }, [channel.duration]);
 
   return (
@@ -82,7 +84,9 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
       <Grid size={{ xs: 12, md: 4 }} sx={{ p: [0.5, 1] }}>
         <Stack direction="row">
           <div>
-            <Typography variant="overline">Total Runtime</Typography>
+            <Typography variant="overline">
+              <Trans>Total Runtime</Trans>
+            </Typography>
             <Typography variant="h5">{channelDurationString}</Typography>
           </div>
           <Box></Box>
@@ -91,14 +95,18 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
       <Grid size={{ xs: 12, md: 4 }} sx={{ p: [0.5, 1] }}>
         <Stack direction="row">
           <div>
-            <Typography variant="overline">Programs</Typography>
+            <Typography variant="overline">
+              <Trans>Programs</Trans>
+            </Typography>
             <Typography variant="h5">{uniqPrograms}</Typography>
           </div>
         </Stack>
       </Grid>
       <Grid size={{ xs: 12, md: 2 }} sx={{ p: [0.5, 1] }}>
         <Box sx={{ flex: 1 }}>
-          <Typography variant="overline">Stream Mode</Typography>
+          <Typography variant="overline">
+            <Trans>Stream Mode</Trans>
+          </Typography>
           <Typography variant="h5">
             {ChannelStreamModeToPrettyString[channel.streamMode]}
           </Typography>
@@ -107,14 +115,16 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
       <Grid size={{ xs: 12, md: 2 }} sx={{ p: [0.5, 1] }}>
         <Box sx={{ flex: 1 }}>
           <Typography variant="overline">
-            Transcode Config{' '}
-            <RouterLink
-              to={`/settings/ffmpeg/$configId`}
-              params={{ configId: transcodeConfig?.id ?? '' }}
-            >
-              {' '}
-              <Launch sx={{ fontSize: 'inherit' }} />
-            </RouterLink>
+            <Trans>
+              Transcode Config{' '}
+              <RouterLink
+                to={`/settings/ffmpeg/$configId`}
+                params={{ configId: transcodeConfig?.id ?? '' }}
+              >
+                {' '}
+                <Launch sx={{ fontSize: 'inherit' }} />
+              </RouterLink>
+            </Trans>
           </Typography>
           <Typography
             sx={{

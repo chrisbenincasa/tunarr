@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { Autocomplete, TextField } from '@mui/material';
 import type { RedirectProgrammingTimeSlot } from '@tunarr/types/api';
 import { filter, find, first, map } from 'lodash-es';
@@ -7,6 +8,7 @@ import type { RedirectProgramOption } from '../../helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 
 export const RedirectProgrammingForm = () => {
+  const { t } = useLingui();
   const { control } = useFormContext<RedirectProgrammingTimeSlot>();
   const programOptions = useSlotProgramOptionsContext();
 
@@ -41,7 +43,7 @@ export const RedirectProgrammingForm = () => {
           onChange={(_, value) =>
             value ? field.onChange(value.channelId) : void 0
           }
-          renderInput={(params) => <TextField {...params} label="Program" />}
+          renderInput={(params) => <TextField {...params} label={t`Program`} />}
         />
       )}
     />

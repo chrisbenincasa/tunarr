@@ -4,6 +4,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { TimePicker } from '@mui/x-date-pickers';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
@@ -23,6 +24,7 @@ const AddRestrictHoursModal = ({
   open,
   onClose,
 }: AddRestrictHoursModalProps) => {
+  const { t } = useLingui();
   const [startOffset, setStartOffset] = useState(0);
   const [endOffset, setEndOffset] = useState(
     dayjs.duration({ hours: 4 }).asMilliseconds(),
@@ -80,19 +82,22 @@ const AddRestrictHoursModal = ({
   );
 
   const scheduleText = useMemo(() => {
-    let text = `Programming starts at ${start.format('LT')} and stops at ${end.format('LT')}`;
+    const startTime = start.format('LT');
+    const endTime = end.format('LT');
+    let text = t`Programming starts at ${startTime} and stops at ${endTime}`;
     if (endOffset >= OneDayMillis) {
-      return (text += ' the following day.');
+      return (text += t` the following day.`);
     }
-  }, [end, endOffset, start]);
+    return text;
+  }, [end, endOffset, start, t]);
 
   return (
     <Dialog open={open}>
-      <DialogTitle>Restrict Hours</DialogTitle>
+      <DialogTitle><Trans>Restrict Hours</Trans></DialogTitle>
       <DialogContent>
         <DialogContentText>
-          The channel's regular programming between the specified hours. Flex
-          time will fill up the remaining hours.
+          <Trans>The channel's regular programming between the specified hours. Flex
+          time will fill up the remaining hours.</Trans>
         </DialogContentText>
         <Stack
           direction="row"
@@ -104,7 +109,7 @@ const AddRestrictHoursModal = ({
             sx={{ flex: 1 }}
             value={start}
             onChange={handleStartOffset}
-            label="Start Time"
+            label={t`Start Time`}
             closeOnSelect={false}
             slotProps={{
               textField: {
@@ -112,13 +117,13 @@ const AddRestrictHoursModal = ({
               },
             }}
           />
-          <Typography>TO</Typography>
+          <Typography><Trans>TO</Trans></Typography>
           <TimePicker
             sx={{ flex: 1 }}
             value={end}
             maxTime={start.add(1, 'day')}
             onChange={handleToOffset}
-            label="End Time"
+            label={t`End Time`}
             closeOnSelect={false}
             slotProps={{
               textField: {
@@ -131,9 +136,9 @@ const AddRestrictHoursModal = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button variant="contained" onClick={() => handleClick()}>
-          Save
+          <Trans>Save</Trans>
         </Button>
       </DialogActions>
     </Dialog>

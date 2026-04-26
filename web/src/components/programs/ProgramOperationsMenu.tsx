@@ -1,12 +1,14 @@
+import { Trans } from '@lingui/react/macro';
 import { Info, Refresh } from '@mui/icons-material';
 import type { PopoverProps } from '@mui/material';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
-import { isTerminalItemType, ProgramLike, TupleToUnion } from '@tunarr/types';
+import type { ProgramLike, TupleToUnion } from '@tunarr/types';
+import { isTerminalItemType } from '@tunarr/types';
 import { useToggle } from '@uidotdev/usehooks';
 import { merge } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
-import { DeepRequired } from 'ts-essentials';
+import type { DeepRequired } from 'ts-essentials';
 import { useScanNow } from '../../hooks/useScanNow.ts';
 import ProgramDetailsDialog from './ProgramDetailsDialog.tsx';
 
@@ -70,7 +72,7 @@ export const ProgramOperationsMenu = ({
             <ListItemIcon>
               <Info fontSize="small" />
             </ListItemIcon>
-            <ListItemText>View Full Details</ListItemText>
+            <ListItemText><Trans>View Full Details</Trans></ListItemText>
           </MenuItem>
         )}
         {availableOptions.scan && (
@@ -79,7 +81,7 @@ export const ProgramOperationsMenu = ({
               <Refresh fontSize="small" />
             </ListItemIcon>
             <ListItemText>
-              Scan {prettifySnakeCaseString(programType)}
+              <Trans>Scan {prettifySnakeCaseString(programType)}</Trans>
             </ListItemText>
           </MenuItem>
         )}

@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro';
 import { Autocomplete, TextField } from '@mui/material';
 import type { BaseSlot } from '@tunarr/types/api';
 import { filter, find, first, map } from 'lodash-es';
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export const ShowSlotProgrammingForm = ({ programOptions }: Props) => {
+  const { t } = useLingui();
   const { watch, control } = useFormContext<BaseSlot>();
   const [type] = watch(['type']);
 
@@ -50,7 +52,7 @@ export const ShowSlotProgrammingForm = ({ programOptions }: Props) => {
             onChange={(_, value) =>
               value ? field.onChange(value.showId) : void 0
             }
-            renderInput={(params) => <TextField {...params} label="Program" />}
+            renderInput={(params) => <TextField {...params} label={t`Program`} />}
           />
         )}
       />

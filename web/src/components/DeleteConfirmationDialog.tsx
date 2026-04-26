@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import type { DialogProps } from '@mui/material';
 import {
   Button,
@@ -51,9 +52,11 @@ const DeleteConfirmationDialogContent = ({
         </DialogContent>
       )}
       <DialogActions>
-        <Button onClick={() => cancel()}>Cancel</Button>
+        <Button onClick={() => cancel()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button variant="contained" color="error" onClick={() => confirm()}>
-          Delete
+          <Trans>Delete</Trans>
         </Button>
       </DialogActions>
     </>

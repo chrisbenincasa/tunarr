@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Delete } from '@mui/icons-material';
 import { Checkbox, IconButton, Link, Stack, Tooltip } from '@mui/material';
 import type { SubtitleFilter, SubtitlePreference } from '@tunarr/types';
@@ -18,6 +19,7 @@ import { LanguageAutocomplete } from '../LanguageAutocomplete.tsx';
 const TableName = 'ChannelSubtitlePreferencesTable';
 
 export const ChannelSubtitlePreferencesTable = () => {
+  const { t } = useLingui();
   const { watch, control, setValue } = useChannelFormContext();
   const prefFields = useFieldArray({ control, name: 'subtitlePreferences' });
   const prefs = watch('subtitlePreferences');
@@ -26,7 +28,7 @@ export const ChannelSubtitlePreferencesTable = () => {
   const columns = useMemo<MRT_ColumnDef<SubtitlePreference>[]>(() => {
     return [
       {
-        header: 'Priority',
+        header: t`Priority`,
         accessorKey: 'priority',
         Cell({ cell }) {
           return cell.getValue<number>() + 1;
@@ -34,7 +36,7 @@ export const ChannelSubtitlePreferencesTable = () => {
         enableEditing: false,
       },
       {
-        header: 'Language',
+        header: t`Language`,
         id: 'langugeCode',
         accessorFn(originalRow) {
           return languageBy3LetterCode[originalRow.langugeCode];
@@ -42,7 +44,7 @@ export const ChannelSubtitlePreferencesTable = () => {
         enableEditing: false,
       },
       {
-        header: 'Allow External',
+        header: t`Allow External`,
         accessorKey: 'allowExternal',
         enableEditing: false,
         Cell({ row, cell }) {
@@ -59,7 +61,7 @@ export const ChannelSubtitlePreferencesTable = () => {
         },
       },
       {
-        header: 'Allow Image Based',
+        header: t`Allow Image Based`,
         accessorKey: 'allowImageBased',
         enableEditing: false,
         Cell({ row, cell }) {
@@ -76,29 +78,31 @@ export const ChannelSubtitlePreferencesTable = () => {
         },
       },
       {
-        header: 'Filter Type',
+        header: t`Filter Type`,
         Header: () => {
           return (
             <>
-              Filter&nbsp;
+              <Trans>Filter</Trans>&nbsp;
               <Tooltip
                 title={
                   <>
-                    Filter which subtitle tracks are considered
-                    <br />
-                    <strong>Any: </strong> All subtitle tracks are considered{' '}
-                    <br />
-                    <strong>Forced: </strong>Only consider{' '}
-                    <Link
-                      href="https://partnerhelp.netflixstudios.com/hc/en-us/articles/224198488-What-is-a-Forced-Narrative-subtitle"
-                      target="_blank"
-                    >
-                      "forced"
-                    </Link>
-                    subtitle tracks <br />
-                    <strong>Default: </strong>Only consider default subtitle
-                    tracks <br />
-                    <strong>None: </strong> Do not select any subtitles
+                    <Trans>
+                      Filter which subtitle tracks are considered
+                      <br />
+                      <strong>Any: </strong> All subtitle tracks are considered{' '}
+                      <br />
+                      <strong>Forced: </strong>Only consider{' '}
+                      <Link
+                        href="https://partnerhelp.netflixstudios.com/hc/en-us/articles/224198488-What-is-a-Forced-Narrative-subtitle"
+                        target="_blank"
+                      >
+                        "forced"
+                      </Link>
+                      subtitle tracks <br />
+                      <strong>Default: </strong>Only consider default subtitle
+                      tracks <br />
+                      <strong>None: </strong> Do not select any subtitles
+                    </Trans>
                   </>
                 }
                 placement="top"
@@ -144,7 +148,7 @@ export const ChannelSubtitlePreferencesTable = () => {
         }
         onRemove={() => {}}
         textFieldProps={{
-          label: 'Add Language Preference',
+          label: t`Add Language Preference`,
         }}
       />
     );

@@ -2,6 +2,7 @@ import EmbyIcon from '@/assets/emby.svg?react';
 import JellyfinIcon from '@/assets/jellyfin.svg?react';
 import PlexIcon from '@/assets/plex.svg?react';
 import { usePlexLogin } from '@/hooks/plex/usePlexLogin.tsx';
+import { Trans } from '@lingui/react/macro';
 import { Add, Computer } from '@mui/icons-material';
 import {
   Box,
@@ -79,7 +80,7 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
         startIcon={<Add />}
         {...ButtonProps}
       >
-        Add
+        <Trans>Add</Trans>
       </Button>
       <Menu
         open={open}
@@ -101,7 +102,7 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
               <PlexIcon />
             </SvgIcon>
           </ListItemIcon>
-          <ListItemText>Plex (Auto)</ListItemText>
+          <ListItemText><Trans>Plex (Auto)</Trans></ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleOpenMediaSourceDialog('plex')}>
           <ListItemIcon>
@@ -109,7 +110,7 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
               <PlexIcon />
             </SvgIcon>
           </ListItemIcon>
-          <ListItemText>Plex (Manual)</ListItemText>
+          <ListItemText><Trans>Plex (Manual)</Trans></ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleOpenMediaSourceDialog('jellyfin')}>
           <ListItemIcon>
@@ -117,7 +118,7 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
               <JellyfinIcon />
             </SvgIcon>
           </ListItemIcon>
-          <ListItemText>Jellyfin</ListItemText>
+          <ListItemText><Trans>Jellyfin</Trans></ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleOpenMediaSourceDialog('emby')}>
           <ListItemIcon>
@@ -125,13 +126,13 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
               <EmbyIcon />
             </SvgIcon>
           </ListItemIcon>
-          <ListItemText>Emby</ListItemText>
+          <ListItemText><Trans>Emby</Trans></ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleOpenMediaSourceDialog('local')}>
           <ListItemIcon>
             <Computer />
           </ListItemIcon>
-          <ListItemText>Local</ListItemText>
+          <ListItemText><Trans>Local</Trans></ListItemText>
         </MenuItem>
       </Menu>
       <PlexServerEditDialog

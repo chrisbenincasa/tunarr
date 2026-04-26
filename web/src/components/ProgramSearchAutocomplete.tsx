@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Autocomplete, ListItem, TextField } from '@mui/material';
 import type { ProgramOrFolder } from '@tunarr/types';
 import type { SearchRequest } from '@tunarr/types/schemas';
@@ -27,8 +28,10 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
   value,
   onChange,
   onQueryChange,
-  label = 'Program',
+  label,
 }: Props<ProgramT>) => {
+  const { t } = useLingui();
+  const defaultLabel = t`Program`;
   const results = useProgramInfiniteSearch(searchQuery, enabled);
 
   const { ref } = useIntersectionObserver({
@@ -80,16 +83,16 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
     <Autocomplete
       options={options}
       getOptionLabel={(value) =>
-        value.type === 'sentinel' ? 'Loading...' : value.title
+        value.type === 'sentinel' ? t`Loading...` : value.title
       }
       value={value}
       isOptionEqualToValue={optionEqualToValue}
-      noOptionsText="Search for shows"
+      noOptionsText={t`Search for shows`}
       renderOption={(optProps, opt) => {
         if (opt.type === 'sentinel') {
           return (
             <ListItem id="sentinel" ref={ref}>
-              Loading&hellip;
+              <Trans>Loading…</Trans>
             </ListItem>
           );
         }
@@ -100,7 +103,7 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
           onChange(value);
         }
       }}
-      renderInput={(params) => <TextField {...params} label={label} />}
+      renderInput={(params) => <TextField {...params} label={label ?? defaultLabel} />}
       autoComplete
       onInputChange={(_, newInputValue) => {
         onQueryChange(newInputValue);

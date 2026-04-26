@@ -1,5 +1,6 @@
 import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
 import { isNonEmptyString } from '@/helpers/util';
+import { t } from '@lingui/core/macro';
 import useStore from '@/store';
 import { useQuery } from '@tanstack/react-query';
 import { seq } from '@tunarr/shared/util';
@@ -62,7 +63,7 @@ function useSyncedProgrammingOptions() {
     if (showCount > 0) {
       opts.push({
         type: 'show',
-        description: 'Shows',
+        description: t`Shows`,
         value: '',
         showId: '',
       });
@@ -107,17 +108,17 @@ export const useSlotProgramOptions = (channelId?: string) => {
     });
 
     const opts: ProgramOption[] = [
-      { value: 'flex', description: 'Flex', type: 'flex' },
+      { value: 'flex', description: t`Flex`, type: 'flex' },
       ...syncedOptions,
     ];
     const nameById: Record<string, string> = {
-      flex: 'Flex',
-      movie: 'Movies',
+      flex: t`Flex`,
+      movie: t`Movies`,
     };
 
     if (contentPrograms.length) {
       if (some(contentPrograms, ({ program }) => program.type === 'movie')) {
-        opts.push({ description: 'Movies', value: 'movie', type: 'movie' });
+        opts.push({ description: t`Movies`, value: 'movie', type: 'movie' });
       }
     }
 
@@ -154,7 +155,7 @@ export const useSlotProgramOptions = (channelId?: string) => {
     const redirectOpts = channels.map(
       (p) =>
         ({
-          description: `Redirect to "${p.name}"`,
+          description: t`Redirect to "${p.name}"`,
           value: `redirect.${p.id}`,
           type: 'redirect',
           channelId: p.id,

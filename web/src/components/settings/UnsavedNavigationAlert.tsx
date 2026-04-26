@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -51,18 +52,22 @@ export default function UnsavedNavigationAlert({
       aria-describedby="alert-dialog-description"
     >
       <DialogTitle id="alert-dialog-title">
-        {'You have unsaved changes!'}
+        <Trans>You have unsaved changes!</Trans>
       </DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description">
-          If you proceed, all unsaved changes will be lost. Are you sure you
-          want to proceed?
+          <Trans>
+            If you proceed, all unsaved changes will be lost. Are you sure you
+            want to proceed?
+          </Trans>
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={reset}>Cancel</Button>
+        <Button onClick={reset}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button onClick={handleProceed} autoFocus variant="contained">
-          Proceed
+          <Trans>Proceed</Trans>
         </Button>
       </DialogActions>
     </Dialog>

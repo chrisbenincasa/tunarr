@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
@@ -23,24 +24,20 @@ export default function VersionFooter() {
       }}
     >
       {versionError ? (
-        <Typography
-          component="p"
-          variant="overline"
-        >{`Version: unknown`}</Typography>
+        <Typography component="p" variant="overline">
+          <Trans>Version: unknown</Trans>
+        </Typography>
       ) : (
         <>
-          <Typography
-            component="p"
-            variant="overline"
-          >{`Version: ${version.tunarr}`}</Typography>
-          <Typography
-            component="p"
-            variant="overline"
-          >{`FFMPEG: ${version.ffmpeg}`}</Typography>
-          <Typography
-            component="p"
-            variant="overline"
-          >{`NodeJS: ${version.nodejs}`}</Typography>
+          <Typography component="p" variant="overline">
+            <Trans>Version: {version.tunarr}</Trans>
+          </Typography>
+          <Typography component="p" variant="overline">
+            <Trans>FFMPEG: {version.ffmpeg}</Trans>
+          </Typography>
+          <Typography component="p" variant="overline">
+            <Trans>NodeJS: {version.nodejs}</Trans>
+          </Typography>
         </>
       )}
     </Box>

@@ -1,7 +1,7 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
 import type { Maybe } from '@/types/util.ts';
-import { Trans } from '@lingui/react/macro';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { Check, Close, Edit, MoreVert } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import type { BoxProps } from '@mui/material';
@@ -43,7 +43,6 @@ import {
   useMaterialReactTable,
   type MRT_ColumnDef, //if using TypeScript (optional, but recommended)
 } from 'material-react-table';
-import pluralize from 'pluralize';
 import React, { useEffect, useMemo, useState } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import {
@@ -89,6 +88,7 @@ const GlowingCircle = styled(Box, {
 }));
 
 export default function ChannelsPage() {
+  const { t } = useLingui();
   const { data: channels } = useChannelsSuspense({
     refetchOnWindowFocus: true,
   });
@@ -234,7 +234,7 @@ export default function ChannelsPage() {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         {renderChannelMenu(channel)}
         {!mediumViewport && (
-          <Tooltip title="Edit Channel Settings" placement="top">
+          <Tooltip title={t`Edit Channel Settings`} placement="top">
             <RouterIconButtonLink
               to={'/channels/$channelId/edit'}
               params={{ channelId: channel.id }}
@@ -270,7 +270,7 @@ export default function ChannelsPage() {
           const sessions = cell.getValue<ChannelSession[] | undefined>();
           if (!sessions || isEmpty(sessions)) {
             return (
-              <Tooltip placement="top" title="No active sessions">
+              <Tooltip placement="top" title={t`No active sessions`}>
                 <Box
                   sx={{
                     width: '10px',
@@ -291,10 +291,10 @@ export default function ChannelsPage() {
               placement="top"
               title={
                 <Box component="span" sx={{ textAlign: 'center' }}>
-                  {sessions.length} {pluralize('session', sessions.length)}
+                  <Plural value={sessions.length} one="# session" other="# sessions" />
                   <br />
-                  {totalConnections} {totalConnections > 1 ? 'total' : ''}
-                  {pluralize('connection', totalConnections)}
+                  {totalConnections > 1 && <Trans>{totalConnections} total</Trans>}{' '}
+                  <Plural value={totalConnections} one="# connection" other="# connections" />
                 </Box>
               }
             >
@@ -312,7 +312,7 @@ export default function ChannelsPage() {
         },
       },
       {
-        header: 'Icon',
+        header: t`Icon`,
         accessorKey: 'icon',
         size: 100,
         Cell: ({ cell }) => {
@@ -327,22 +327,22 @@ export default function ChannelsPage() {
         enableSorting: false,
       },
       {
-        header: 'Number',
+        header: t`Number`,
         accessorKey: 'number',
         minSize: 120,
         size: 120,
       },
       {
-        header: 'Name',
+        header: t`Name`,
         accessorKey: 'name',
         size: 250,
       },
       {
-        header: '# Programs',
+        header: t`# Programs`,
         accessorKey: 'programCount',
       },
       {
-        header: 'Duration',
+        header: t`Duration`,
         accessorKey: 'duration',
         Cell: ({ cell }) =>
           betterHumanize(dayjs.duration(cell.getValue<number>()), {
@@ -350,7 +350,7 @@ export default function ChannelsPage() {
           }),
       },
       {
-        header: 'Stealth?',
+        header: t`Stealth?`,
         accessorKey: 'stealth',
         Cell: ({ cell }) => (cell.getValue<boolean>() ? <Check /> : <Close />),
         muiTableBodyCellProps: {
@@ -361,7 +361,7 @@ export default function ChannelsPage() {
         size: 150,
       },
       {
-        header: 'On-Demand?',
+        header: t`On-Demand?`,
         accessorKey: 'onDemand.enabled',
         Cell: ({ cell }) => (cell.getValue<boolean>() ? <Check /> : <Close />),
         filterVariant: 'checkbox',
@@ -369,7 +369,7 @@ export default function ChannelsPage() {
         id: 'onDemand',
       },
       {
-        header: 'Transcode Config',
+        header: t`Transcode Config`,
         accessorFn: (row) =>
           find(transcodeConfigs, { id: row.transcodeConfigId }),
         id: 'transcodeConfigId',
@@ -392,14 +392,14 @@ export default function ChannelsPage() {
         enableSorting: false,
       },
     ],
-    [transcodeConfigs],
+    [transcodeConfigs, t],
   );
 
   const renderSessionStatus = (channel: ChannelRow) => {
     const sessions = channel.sessions;
     if (!sessions || isEmpty(sessions)) {
       return (
-        <Tooltip placement="top" title="No active sessions">
+        <Tooltip placement="top" title={t`No active sessions`}>
           <Box
             sx={{
               width: '10px',
@@ -419,10 +419,10 @@ export default function ChannelsPage() {
         placement="top"
         title={
           <Box component="span" sx={{ textAlign: 'center' }}>
-            {sessions.length} {pluralize('session', sessions.length)}
+            <Plural value={sessions.length} one="# session" other="# sessions" />
             <br />
-            {totalConnections} {totalConnections > 1 ? 'total' : ''}
-            {pluralize('connection', totalConnections)}
+            {totalConnections > 1 && <Trans>{totalConnections} total</Trans>}{' '}
+            <Plural value={totalConnections} one="# connection" other="# connections" />
           </Box>
         }
       >
@@ -491,8 +491,7 @@ export default function ChannelsPage() {
                       Ch {channel.number} · {channel.name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {channel.programCount}{' '}
-                      {pluralize('program', channel.programCount)} ·{' '}
+                      <Plural value={channel.programCount} one="# program" other="# programs" /> ·{' '}
                       {betterHumanize(dayjs.duration(channel.duration), {
                         style: 'short',
                       })}
@@ -566,14 +565,14 @@ export default function ChannelsPage() {
       <Box display="flex" mb={2}>
         {renderConfirmationDialog()}
         <Typography flexGrow={1} variant="h3">
-          Channels
+          <Trans>Channels</Trans>
         </Typography>
         <RouterButtonLink
           to="/channels/new"
           variant="contained"
           startIcon={<AddCircleIcon />}
         >
-          New
+          <Trans>New</Trans>
         </RouterButtonLink>
       </Box>
 

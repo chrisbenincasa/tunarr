@@ -1,4 +1,5 @@
 import { useSettings } from '@/store/settings/selectors.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Collapse,
   Divider,
@@ -70,6 +71,7 @@ const ChannelStreamModeOptions: {
 ] as const;
 
 export default function ChannelTranscodingConfig() {
+  const { t } = useLingui();
   const { backendUri } = useSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const transcodeConfigs = useTranscodeConfigs();
@@ -124,21 +126,20 @@ export default function ChannelTranscodingConfig() {
       <Stack divider={<Divider />} gap={2}>
         <Box>
           <Typography sx={{ mb: 1 }} variant="h5">
-            Transcoding Settings
+            <Trans>Transcoding Settings</Trans>
           </Typography>
           <Typography variant="subtitle1">
-            Use these settings to override global ffmpeg settings for this
-            channel.
+            <Trans>Use these settings to override global ffmpeg settings for this channel.</Trans>
           </Typography>
           <Stack direction={{ sm: 'column', md: 'row' }} useFlexGap spacing={2}>
             <FormControl margin="normal">
-              <InputLabel>Channel Stream Mode</InputLabel>
+              <InputLabel>{t`Channel Stream Mode`}</InputLabel>
               <Controller
                 control={control}
                 name="streamMode"
                 render={({ field }) => (
                   <Select<ChannelStreamMode>
-                    label="Channel Resolution"
+                    label={t`Channel Stream Mode`}
                     {...field}
                   >
                     {ChannelStreamModeOptions.map((opt) => (
@@ -150,26 +151,28 @@ export default function ChannelTranscodingConfig() {
                 )}
               />
               <FormHelperText>
-                The streaming mode affects the type of underlying transcoding
-                process used to create the channel's video stream.
-                <br />
-                Learn more about Tunarr's stream modes{' '}
-                <Link
-                  target="_blank"
-                  href="https://tunarr.com/configure/channels/transcoding/#stream-mode"
-                >
-                  here
-                </Link>
-                !
+                <Trans>
+                  The streaming mode affects the type of underlying transcoding
+                  process used to create the channel's video stream.
+                  <br />
+                  Learn more about Tunarr's stream modes{' '}
+                  <Link
+                    target="_blank"
+                    href="https://tunarr.com/configure/channels/transcoding/#stream-mode"
+                  >
+                    here
+                  </Link>
+                  !
+                </Trans>
               </FormHelperText>
             </FormControl>
             <FormControl margin="normal">
-              <InputLabel>Channel Transcode Config</InputLabel>
+              <InputLabel>{t`Channel Transcode Config`}</InputLabel>
               <Controller
                 control={control}
                 name="transcodeConfigId"
                 render={({ field }) => (
-                  <Select<string> label="Channel Transcode Config" {...field}>
+                  <Select<string> label={t`Channel Transcode Config`} {...field}>
                     {transcodeConfigs.data.map((opt) => (
                       <MenuItem key={opt.id} value={opt.id}>
                         {opt.name}
@@ -179,12 +182,14 @@ export default function ChannelTranscodingConfig() {
                 )}
               />
               <FormHelperText>
-                Choose the transcode configuration to use for this channel.
-                Configure transcode configurations on the{' '}
-                <RouterLink to="/settings/ffmpeg">
-                  FFmpeg settings page
-                </RouterLink>
-                .
+                <Trans>
+                  Choose the transcode configuration to use for this channel.
+                  Configure transcode configurations on the{' '}
+                  <RouterLink to="/settings/ffmpeg">
+                    FFmpeg settings page
+                  </RouterLink>
+                  .
+                </Trans>
               </FormHelperText>
             </FormControl>
           </Stack>
@@ -192,14 +197,14 @@ export default function ChannelTranscodingConfig() {
         <Stack gap={1}>
           <Stack>
             <Typography sx={{ mb: 1 }} variant="h5">
-              Audio &amp; Subtitles
+              <Trans>Audio &amp; Subtitles</Trans>
             </Typography>
             <Typography variant="subtitle1">
-              Override global audio and subtitle settings for this channel.
+              <Trans>Override global audio and subtitle settings for this channel.</Trans>
             </Typography>
             <Divider sx={{ my: 2 }} />
             <FormControlLabel
-              label="Enable Subtitles"
+              label={t`Enable Subtitles`}
               sx={{
                 width: 'auto',
               }}
@@ -216,16 +221,18 @@ export default function ChannelTranscodingConfig() {
             <Collapse in={subtitlesEnabled}>
               <Divider sx={{ my: 2 }} />
               <Typography>
-                Configure subtitle preferences. Preferences are evaluated in
-                order of priority. The first matching subtitle stream on a
-                program will be used.
+                <Trans>
+                  Configure subtitle preferences. Preferences are evaluated in
+                  order of priority. The first matching subtitle stream on a
+                  program will be used.
+                </Trans>
               </Typography>
               <ChannelSubtitlePreferencesTable />
             </Collapse>
           </Stack>
         </Stack>
         <Box>
-          <Typography variant="h5">Watermark</Typography>
+          <Typography variant="h5"><Trans>Watermark</Trans></Typography>
           <FormControl fullWidth>
             <FormControlLabel
               control={
@@ -238,11 +245,13 @@ export default function ChannelTranscodingConfig() {
                   }
                 />
               }
-              label="Enable Watermark"
+              label={t`Enable Watermark`}
             />
             <FormHelperText>
-              Renders a channel icon (also known as bug or Digital On-screen
-              Graphic) on top of the channel's stream.
+              <Trans>
+                Renders a channel icon (also known as bug or Digital On-screen
+                Graphic) on top of the channel's stream.
+              </Trans>
             </FormHelperText>
           </FormControl>
           {watermark?.enabled &&
@@ -332,7 +341,7 @@ export default function ChannelTranscodingConfig() {
                         <ImageUploadInput
                           // TODO: This should be something like {channel.id}_fallback_picture.ext
                           fileRenamer={typedProperty('name')}
-                          label="Watermark Image URL"
+                          label={t`Watermark Image URL`}
                           onFormValueChange={(newPath) =>
                             field.onChange(newPath)
                           }
@@ -341,7 +350,7 @@ export default function ChannelTranscodingConfig() {
                           value={field.value ?? ''}
                         >
                           <FormHelperText>
-                            Leave blank to use the channel's icon.
+                            <Trans>Leave blank to use the channel's icon.</Trans>
                           </FormHelperText>
                         </ImageUploadInput>
                       )}
@@ -349,12 +358,12 @@ export default function ChannelTranscodingConfig() {
                   </Grid>
                   <Grid size={{ xs: 12 }}>
                     <FormControl fullWidth margin="normal">
-                      <InputLabel>Position</InputLabel>
+                      <InputLabel>{t`Position`}</InputLabel>
                       <Controller
                         name="watermark.position"
                         control={control}
                         render={({ field }) => (
-                          <Select label="Position" {...field}>
+                          <Select label={t`Position`} {...field}>
                             {map(watermarkPositionOptions, (opt) => (
                               <MenuItem key={opt.value} value={opt.value}>
                                 {opt.label}
@@ -403,7 +412,7 @@ export default function ChannelTranscodingConfig() {
                   </Grid>
                   <Grid size={{ xs: 12 }}>
                     <FormControl fullWidth>
-                      <Typography gutterBottom>Opacity</Typography>
+                      <Typography gutterBottom><Trans>Opacity</Trans></Typography>
                       <Box sx={{ px: 2 }}>
                         <Slider
                           min={0}
@@ -435,11 +444,10 @@ export default function ChannelTranscodingConfig() {
                             name="watermark.fixedSize"
                           />
                         }
-                        label="Disable Image Scaling"
+                        label={t`Disable Image Scaling`}
                       />
                       <FormHelperText>
-                        The image will be rendered at its actual size without
-                        any scaling applied.
+                        <Trans>The image will be rendered at its actual size without any scaling applied.</Trans>
                       </FormHelperText>
                     </FormControl>
                   </Grid>
@@ -452,13 +460,15 @@ export default function ChannelTranscodingConfig() {
                             name="watermark.animated"
                           />
                         }
-                        label="Enable Animation"
+                        label={t`Enable Animation`}
                       />
                       <FormHelperText>
-                        Enable if the watermark is an animated GIF or PNG. The
-                        watermark will loop according to the image's
-                        configuration. If this option is enabled and the image
-                        is not animated, there will be playback errors.
+                        <Trans>
+                          Enable if the watermark is an animated GIF or PNG. The
+                          watermark will loop according to the image's
+                          configuration. If this option is enabled and the image
+                          is not animated, there will be playback errors.
+                        </Trans>
                       </FormHelperText>
                     </FormControl>
                   </Grid>
@@ -486,13 +496,15 @@ export default function ChannelTranscodingConfig() {
                               name="watermark.fadeConfig.0.leadingEdge"
                             />
                           }
-                          label="Display Watermark on Leading Edge"
+                          label={t`Display Watermark on Leading Edge`}
                         />
                         <FormHelperText>
-                          When enabled, intermittent watermarks fade in
-                          immediately when a stream is initialized. When
-                          disabled, the first watermark fade-in occurs after a
-                          full period.
+                          <Trans>
+                            When enabled, intermittent watermarks fade in
+                            immediately when a stream is initialized. When
+                            disabled, the first watermark fade-in occurs after a
+                            full period.
+                          </Trans>
                         </FormHelperText>
                       </FormControl>
                     </Grid>

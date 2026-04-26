@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { CopyAll } from '@mui/icons-material';
 import { Button, Stack, TextField } from '@mui/material';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export const ProgramStreamDetails = ({ programId }: Props) => {
+  const { t } = useLingui();
   const { data: result } = useSuspenseQuery({
     ...getApiProgramsByIdStreamDetailsOptions({ path: { id: programId } }),
     staleTime: 60_000,
@@ -27,10 +29,10 @@ export const ProgramStreamDetails = ({ programId }: Props) => {
         variant="contained"
         sx={{ alignSelf: 'flex-end' }}
       >
-        Copy to Clipboard
+        <Trans>Copy to Clipboard</Trans>
       </Button>
       <TextField
-        label="Stream JSON"
+        label={t`Stream JSON`}
         multiline
         maxRows={15}
         fullWidth

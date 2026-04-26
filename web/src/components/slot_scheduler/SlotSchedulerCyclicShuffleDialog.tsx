@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Save } from '@mui/icons-material';
 import {
   Autocomplete,
@@ -42,6 +43,7 @@ type Props = {
 };
 
 const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
+  const { t } = useLingui();
   const { reset } = useRandomSlotFormContext();
   const [searchQueryString, setSearchQueryString] = useState('');
   const enabled = useMemo(
@@ -161,18 +163,18 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
 
   return (
     <>
-      <DialogTitle>Configure Cyclic Shuffle</DialogTitle>
+      <DialogTitle><Trans>Configure Cyclic Shuffle</Trans></DialogTitle>
       <DialogContent>
         <Stack gap={2}>
           <DialogContentText>
-            Cyclic Shuffle randomly shuffles groups of programming.
+            <Trans>Cyclic Shuffle randomly shuffles groups of programming.</Trans>
           </DialogContentText>
           <Box>
             <Stack direction={'row'} spacing={1}>
               {selectedShows.map((show) => (
                 <Chip
                   key={show.uuid}
-                  label={`Show: ${show.title}`}
+                  label={t`Show: ${show.title}`}
                   onDelete={() =>
                     setSelectedShows((prev) =>
                       reject(prev, { uuid: show.uuid }),
@@ -183,7 +185,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
               {selectedCustomShows.map((cs) => (
                 <Chip
                   key={`custom-show.${cs.customShowId}`}
-                  label={`Custom Show: ${cs.description}`}
+                  label={t`Custom Show: ${cs.description}`}
                   onDelete={() =>
                     setSelectedCustomShows((prev) =>
                       reject(prev, { customShowId: cs.customShowId }),
@@ -194,7 +196,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
               {selectedFiller.map((cs) => (
                 <Chip
                   key={`filler.${cs.fillerListId}`}
-                  label={`Filler List: ${cs.description}`}
+                  label={t`Filler List: ${cs.description}`}
                   onDelete={() =>
                     setSelectedFiller((prev) =>
                       reject(prev, { fillerListId: cs.fillerListId }),
@@ -205,22 +207,22 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
             </Stack>
           </Box>
           <FormControl>
-            <InputLabel>Type</InputLabel>
+            <InputLabel>{t`Type`}</InputLabel>
             <Select
               value={focusedView}
-              label="Type"
+              label={t`Type`}
               fullWidth
               onChange={(value) =>
                 setFocusedView(value.target.value as FocusedView)
               }
             >
-              <MenuItem value="show">Show</MenuItem>
+              <MenuItem value="show"><Trans>Show</Trans></MenuItem>
               {programOptions.dropdownOpts.some(
                 (opt) => opt.type === 'custom-show',
-              ) && <MenuItem value="custom-show">Custom Show</MenuItem>}
+              ) && <MenuItem value="custom-show"><Trans>Custom Show</Trans></MenuItem>}
               {programOptions.dropdownOpts.some(
                 (opt) => opt.type === 'filler',
-              ) && <MenuItem value="filler">Filler List</MenuItem>}
+              ) && <MenuItem value="filler"><Trans>Filler List</Trans></MenuItem>}
             </Select>
           </FormControl>
           {focusedView === 'show' && (
@@ -231,7 +233,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
               onChange={(show) => setSelectedShows((prev) => [...prev, show])}
               onQueryChange={setSearchQueryString}
               searchQuery={searchQuery}
-              label="Show"
+              label={t`Show`}
             />
           )}
           {focusedView === 'custom-show' && (
@@ -251,7 +253,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
                   : void 0
               }
               renderInput={(params) => (
-                <TextField {...params} label="Custom Show" />
+                <TextField {...params} label={t`Custom Show`} />
               )}
             />
           )}
@@ -268,13 +270,13 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
               onChange={(_, value) =>
                 value ? setSelectedFiller((prev) => [...prev, value]) : void 0
               }
-              renderInput={(params) => <TextField {...params} label="Filler" />}
+              renderInput={(params) => <TextField {...params} label={t`Filler`} />}
             />
           )}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button
           startIcon={<Save />}
           variant="contained"
@@ -283,7 +285,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
           )}
           onClick={() => confirmSchedule()}
         >
-          Save
+          <Trans>Save</Trans>
         </Button>
       </DialogActions>
     </>

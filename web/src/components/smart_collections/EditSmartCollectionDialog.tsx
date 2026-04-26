@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Save } from '@mui/icons-material';
 import {
   Alert,
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export const EditSmartCollectionDialog = (props: Props) => {
+  const { t } = useLingui();
   const snackbar = useSnackbar();
 
   const {
@@ -82,7 +84,7 @@ export const EditSmartCollectionDialog = (props: Props) => {
     console.error(err);
     snackbar.enqueueSnackbar({
       variant: 'error',
-      message: 'Error updating Smart Collection. Check logs for details.',
+      message: t`Error updating Smart Collection. Check logs for details.`,
     });
   };
 
@@ -94,7 +96,7 @@ export const EditSmartCollectionDialog = (props: Props) => {
     return (
       <>
         <DialogTitle>
-          Editing Smart Collection "{smartCollection.name}"
+          <Trans>Editing Smart Collection "{smartCollection.name}"</Trans>
         </DialogTitle>
         <DialogContent>
           <Stack sx={{ mt: 1 }} gap={1}>
@@ -103,20 +105,20 @@ export const EditSmartCollectionDialog = (props: Props) => {
               name="name"
               rules={{ required: true, minLength: 1 }}
               render={({ field }) => (
-                <TextField fullWidth label="Name" {...field} />
+                <TextField fullWidth label={t`Name`} {...field} />
               )}
             />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={props.onClose}>Cancel</Button>
+          <Button onClick={props.onClose}><Trans>Cancel</Trans></Button>
           <Button
             disabled={!isValid || !isDirty}
             startIcon={<Save />}
             variant="contained"
             onClick={handleSubmit(handleSave, handleSubmitError)}
           >
-            Save
+            <Trans>Save</Trans>
           </Button>
         </DialogActions>
       </>
@@ -128,7 +130,7 @@ export const EditSmartCollectionDialog = (props: Props) => {
       {isLoading && <LinearProgress />}
       {isError && (
         <Alert variant="filled" severity="error">
-          Failed to load Smart Collection
+          <Trans>Failed to load Smart Collection</Trans>
         </Alert>
       )}
       {smartCollection && renderForm()}

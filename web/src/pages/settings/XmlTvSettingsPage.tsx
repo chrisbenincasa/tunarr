@@ -1,4 +1,5 @@
 import { useSettings } from '@/store/settings/selectors.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Box,
   Button,
@@ -26,6 +27,7 @@ import { putApiXmltvSettingsMutation } from '../../generated/@tanstack/react-que
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 
 export default function XmlTvSettingsPage() {
+  const { t } = useLingui();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
   const { backendUri } = useSettings();
   const { data, error } = useXmlTvSettings();
@@ -52,7 +54,7 @@ export default function XmlTvSettingsPage() {
   const updateXmlTvSettingsMutation = useMutation({
     ...putApiXmltvSettingsMutation(),
     onSuccess: (data) => {
-      snackbar.enqueueSnackbar('Settings Saved!', {
+      snackbar.enqueueSnackbar(t`Settings Saved!`, {
         variant: 'success',
       });
       setRestoreTunarrDefaults(false);
@@ -85,26 +87,28 @@ export default function XmlTvSettingsPage() {
           render={({ field }) => (
             <TextField
               id="output-path"
-              label="Output Path"
+              label={t`Output Path`}
               InputProps={{
                 readOnly: true,
                 disabled: true,
               }}
               helperText={
-                <span>
-                  You can edit this location in your settings.json within your
-                  Tunarr data directory
-                  <br />
-                  <strong>NOTE:</strong> When manually adding the XMLTV location
-                  to a client like Plex, do not use this file directly. Instead,
-                  use the generated XMLTV from the Tunarr API endpoint:{' '}
-                  {
-                    new URL(
-                      '/api/xmltv.xml',
-                      isEmpty(backendUri) ? document.location.href : backendUri,
-                    ).href
-                  }
-                </span>
+                <Trans>
+                  <span>
+                    You can edit this location in your settings.json within your
+                    Tunarr data directory
+                    <br />
+                    <strong>NOTE:</strong> When manually adding the XMLTV location
+                    to a client like Plex, do not use this file directly. Instead,
+                    use the generated XMLTV from the Tunarr API endpoint:{' '}
+                    {
+                      new URL(
+                        '/api/xmltv.xml',
+                        isEmpty(backendUri) ? document.location.href : backendUri,
+                      ).href
+                    }
+                  </span>
+                </Trans>
               }
               {...field}
             />
@@ -115,22 +119,22 @@ export default function XmlTvSettingsPage() {
         <NumericFormControllerText
           control={control}
           name="programmingHours"
-          prettyFieldName="EPG (Hours)"
+          prettyFieldName={t`EPG (Hours)`}
           TextFieldProps={{
             id: 'epg-hours',
-            label: 'EPG (Hours)',
-            helperText: 'Number of hours to include in the XMLTV file',
+            label: t`EPG (Hours)`,
+            helperText: t`Number of hours to include in the XMLTV file`,
             sx: { mb: 2 },
           }}
         />
         <NumericFormControllerText
           control={control}
           name="refreshHours"
-          prettyFieldName="Refresh Timer (Hours)"
+          prettyFieldName={t`Refresh Timer (Hours)`}
           TextFieldProps={{
             id: 'refresh-hours',
-            label: 'Refresh Timer (Hours)',
-            helperText: 'How often the XMLTV file is regenerated',
+            label: t`Refresh Timer (Hours)`,
+            helperText: t`How often the XMLTV file is regenerated`,
           }}
         />
       </Stack>
@@ -155,11 +159,13 @@ export default function XmlTvSettingsPage() {
           control={
             <CheckboxFormController control={control} name="useShowPoster" />
           }
-          label="Use Show Poster"
+          label={t`Use Show Poster`}
         />
         <FormHelperText>
-          If enabled, TV show episodes will use the poster of their show,
-          instead of the individual episode poster.
+          <Trans>
+            If enabled, TV show episodes will use the poster of their show,
+            instead of the individual episode poster.
+          </Trans>
         </FormHelperText>
       </FormControl>
       <UnsavedNavigationAlert isDirty={isDirty} />
@@ -181,7 +187,7 @@ export default function XmlTvSettingsPage() {
                 setRestoreTunarrDefaults(true);
               }}
             >
-              Restore Default Settings
+              <Trans>Restore Default Settings</Trans>
             </Button>
           )}
         </Stack>
@@ -199,7 +205,7 @@ export default function XmlTvSettingsPage() {
                 setRestoreTunarrDefaults(false);
               }}
             >
-              Reset Changes
+              <Trans>Reset Changes</Trans>
             </Button>
           )}
           <Button
@@ -209,7 +215,7 @@ export default function XmlTvSettingsPage() {
             }
             type="submit"
           >
-            Save
+            <Trans>Save</Trans>
           </Button>
         </Stack>
       </Stack>

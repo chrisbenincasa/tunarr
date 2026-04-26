@@ -29,7 +29,8 @@ import {
   uniqBy,
   values,
 } from 'lodash-es';
-import pluralize from 'pluralize';
+import { Trans, useLingui } from '@lingui/react/macro';
+import { plural } from '@lingui/core/macro';
 import type { HTMLAttributes } from 'react';
 import { useMemo, useState } from 'react';
 import { match, P } from 'ts-pattern';
@@ -52,6 +53,7 @@ interface FilmOptionType {
 }
 
 export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
+  const { t } = useLingui();
   const { count, increment, decrement } = useCounter(0);
   const removeProgramming = useRemoveProgramming();
   const [removeRequest, setRemoveRequest] = useState<RemoveProgrammingRequest>(
@@ -208,10 +210,13 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
       return null;
     }
 
-    return `${details.totalPrograms} ${pluralize(
-      type ?? 'program',
-      details.totalPrograms,
-    )}, ${betterHumanize(dayjs.duration(details.totalDuration), {
+    const count = details.totalPrograms;
+    const programLabel = type === 'episode'
+      ? plural(count, { one: 'episode', other: 'episodes' })
+      : type === 'track'
+        ? plural(count, { one: 'track', other: 'tracks' })
+        : plural(count, { one: 'program', other: 'programs' });
+    return t`${count} ${programLabel}, ${betterHumanize(dayjs.duration(details.totalDuration), {
       style: 'short',
     })}`;
   };
@@ -221,10 +226,10 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
   return (
     <>
       <Dialog open={open} scroll={'paper'}>
-        <DialogTitle>Remove Programming</DialogTitle>
+        <DialogTitle><Trans>Remove Programming</Trans></DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Pick specific programming to remove from the channel.
+            <Trans>Pick specific programming to remove from the channel.</Trans>
           </DialogContentText>
 
           <Autocomplete
@@ -268,7 +273,7 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
                 : []
             }
             renderInput={(params) => (
-              <TextField {...params} label="Select Shows to Remove" />
+              <TextField {...params} label={t`Select Shows to Remove`} />
             )}
             renderOption={(
               props: HTMLAttributes<HTMLLIElement>,
@@ -347,7 +352,7 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
                 }
               }}
               renderInput={(params) => (
-                <TextField {...params} label="Select Artists to Remove" />
+                <TextField {...params} label={t`Select Artists to Remove`} />
               )}
               renderOption={(
                 props: HTMLAttributes<HTMLLIElement>,
@@ -412,7 +417,7 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
                   }
                 >
                   <ListItemText
-                    primary={`Remove All ${movieCount} ${pluralize('Movie', movieCount)}`}
+                    primary={t`Remove All ${movieCount} ${plural(movieCount, { one: 'Movie', other: 'Movies' })}`}
                     secondary={getProgramCounts('movies')}
                   />
                 </ListItem>
@@ -421,13 +426,13 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
+          <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
           <Button
             variant="contained"
             onClick={() => removeShowsProgramming()}
             disabled={isEmptyRemoveRequest}
           >
-            {`Remove ${count} ${pluralize('program', count)}`}
+            <Trans>Remove {count} {plural(count, { one: 'program', other: 'programs' })}</Trans>
           </Button>
         </DialogActions>
       </Dialog>

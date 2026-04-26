@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Box, Grid, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import type { MusicAlbum, MusicArtist } from '@tunarr/types';
@@ -104,7 +105,7 @@ export default function Albums({ program }: Props) {
         color="text.primary"
         sx={{ mt: 4 }}
       >
-        Albums
+        <Trans>Albums</Trans>
       </Typography>
       <Grid
         container

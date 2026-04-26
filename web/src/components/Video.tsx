@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { Route } from '@/routes/channels_/$channelId/watch.tsx';
 import { PlayArrow, Replay } from '@mui/icons-material';
 import { Alert, Box } from '@mui/material';
@@ -91,7 +92,7 @@ export default function Video({ channelId }: VideoProps) {
     if (!hlsSupported) {
       return (
         <Alert severity="error" sx={{ my: 2 }}>
-          HLS not supported in this browser!
+          <Trans>HLS not supported in this browser!</Trans>
         </Alert>
       );
     }
@@ -99,9 +100,11 @@ export default function Video({ channelId }: VideoProps) {
     if (!isNil(transcodeConfig) && transcodeConfig.audioFormat === 'ac3') {
       return (
         <Alert severity="warning" sx={{ my: 2 }}>
-          Tunarr is currently configured to use the AC3 audio encoder. This
-          audio format is not supported by browsers. The resultant stream will
-          likely not have audio or will not play at all.
+          <Trans>
+            Tunarr is currently configured to use the AC3 audio encoder. This
+            audio format is not supported by browsers. The resultant stream will
+            likely not have audio or will not play at all.
+          </Trans>
         </Alert>
       );
     }
@@ -116,7 +119,7 @@ export default function Video({ channelId }: VideoProps) {
           onClick={() => reloadStream()}
           startIcon={loadedStream ? <Replay /> : <PlayArrow />}
         >
-          {loadedStream ? 'Reload' : 'Load'} Stream
+          {loadedStream ? <Trans>Reload Stream</Trans> : <Trans>Load Stream</Trans>}
         </Button>
       </Box>
     );

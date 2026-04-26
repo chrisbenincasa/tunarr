@@ -1,5 +1,7 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { alternateColors } from '@/helpers/util.ts';
+import { plural } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
 import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts';
 import type {
   ProgramTooLongWarning,
@@ -24,7 +26,6 @@ import { seq } from '@tunarr/shared/util';
 import type { BaseSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { map, round, sum, uniqBy, values } from 'lodash-es';
-import pluralize from 'pluralize';
 import type { ListChildComponentProps } from 'react-window';
 import { FixedSizeList } from 'react-window';
 import { getEpisodeShowId } from '../../helpers/programUtil.ts';
@@ -139,7 +140,7 @@ export const SlotProgrammingTooLongWarningDetails = ({
             sx={{ mr: 1, color: (theme) => theme.palette.warning.main }}
           />
         )}
-        <Typography>Programs Too Long</Typography>
+        <Typography><Trans>Programs Too Long</Trans></Typography>
       </AccordionSummary>
       <AccordionDetails>
         <Stack>
@@ -151,26 +152,28 @@ export const SlotProgrammingTooLongWarningDetails = ({
                 )
               }
             >
-              Remove All
+              <Trans>Remove All</Trans>
             </Button>
           </Stack>
           <div>
             <p>
+              <Trans>
               {warning.programs.length} of {slot.programCount}{' '}
-              {pluralize('program', slot.programCount)} exceed the length of
+              {plural(slot.programCount, { one: 'program', other: 'programs' })} exceed the length of
               this slot ({betterHumanize(dayjs.duration(slot.durationMs ?? 0))}
               ). Average program length: {averageLength.humanize()}
+              </Trans>
               <br />
-              This could cause the following slot's programs to go unscheduled.
-              Possible solutions include:
+              <Trans>This could cause the following slot's programs to go unscheduled.
+              Possible solutions include:</Trans>
             </p>
             <ul>
               {}
               {slotType === 'time' && (
-                <li>Increasing "Max Lateness" for the schedule.</li>
+                <li><Trans>Increasing "Max Lateness" for the schedule.</Trans></li>
               )}
-              <li>Increasing the slot duration.</li>
-              <li>Removing overrun programs from the channel.</li>
+              <li><Trans>Increasing the slot duration.</Trans></li>
+              <li><Trans>Removing overrun programs from the channel.</Trans></li>
             </ul>
           </div>
           <Box sx={{ width: '100%', height: 400 }}>

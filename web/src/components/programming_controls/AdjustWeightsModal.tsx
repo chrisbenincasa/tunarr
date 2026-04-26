@@ -4,6 +4,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import { Trans } from '@lingui/react/macro';
 
 type AdjustWeightsModalProps = {
   open: boolean;
@@ -17,22 +18,22 @@ const AdjustWeightsModal = ({ open, onClose }: AdjustWeightsModalProps) => {
 
   return (
     <Dialog open={open}>
-      <DialogTitle>Adjust Weights</DialogTitle>
+      <DialogTitle><Trans>Adjust Weights</Trans></DialogTitle>
       <DialogContent>
         <DialogContentText>
-          This allows you to pick the weights for each of the shows, so you can
-          decide that some shows should be less frequent than other shows.
+          <Trans>This allows you to pick the weights for each of the shows, so you can
+          decide that some shows should be less frequent than other shows.</Trans>
         </DialogContentText>
         <ButtonGroup>
-          <Button variant="contained">Manual</Button>
-          <Button>Automatic</Button>
+          <Button variant="contained"><Trans>Manual</Trans></Button>
+          <Button><Trans>Automatic</Trans></Button>
         </ButtonGroup>
         <Box sx={{ display: 'flex', my: 1 }}>{/* To do */}</Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button variant="contained" onClick={() => adjustWeightProgramming()}>
-          Save
+          <Trans>Save</Trans>
         </Button>
       </DialogActions>
     </Dialog>

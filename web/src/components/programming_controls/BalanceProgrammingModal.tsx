@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { Trans } from '@lingui/react/macro';
 
 type Props = {
   open: boolean;
@@ -40,17 +41,17 @@ export const BalanceProgrammingModal = ({ open, onClose }: Props) => {
 
   return (
     <Dialog open={open}>
-      <DialogTitle>Balance Prorgramming</DialogTitle>
+      <DialogTitle><Trans>Balance Programming</Trans></DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Attempts to balance programming groups by either total lineup duration
+          <Trans>Attempts to balance programming groups by either total lineup duration
           or number of unique programs. For instance, for a channel with many
           seasons of one show and few seasons of another, balancing will attempt
           to create an even mix of both shows by inserting repeats of the show
-          with fewer episodes.
+          with fewer episodes.</Trans>
         </DialogContentText>
         <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column' }}>
-          <Typography sx={{ mb: 1 }}>Balance By:</Typography>
+          <Typography sx={{ mb: 1 }}><Trans>Balance By:</Trans></Typography>
           <ToggleButtonGroup
             color="primary"
             value={balanceType}
@@ -58,15 +59,15 @@ export const BalanceProgrammingModal = ({ open, onClose }: Props) => {
             onChange={handleChange}
             sx={{ flex: 1, alignSelf: 'center' }}
           >
-            <ToggleButton value="duration">Duration</ToggleButton>
-            <ToggleButton value="programCount">Program Count</ToggleButton>
+            <ToggleButton value="duration"><Trans>Duration</Trans></ToggleButton>
+            <ToggleButton value="programCount"><Trans>Program Count</Trans></ToggleButton>
           </ToggleButtonGroup>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
         <Button variant="contained" onClick={() => runBalance()}>
-          Balance
+          <Trans>Balance</Trans>
         </Button>
       </DialogActions>
     </Dialog>

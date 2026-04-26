@@ -2,6 +2,7 @@ import { EditFillerListForm } from '@/components/filler/EditFillerListForm.tsx';
 import { useFillerListWithProgramming } from '@/hooks/useFillerLists.ts';
 import { Route } from '@/routes/library/fillers_/$fillerId/edit.tsx';
 import useStore from '@/store/index.ts';
+import { Trans } from '@lingui/react/macro';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -18,7 +19,7 @@ export default function EditFillerPage() {
       <Box>
         <Box>
           <Typography variant="h4" sx={{ mb: 2 }}>
-            Edit Filler List
+            <Trans>Edit Filler List</Trans>
           </Typography>
         </Box>
         <PaddedPaper sx={{ mb: 2 }}>

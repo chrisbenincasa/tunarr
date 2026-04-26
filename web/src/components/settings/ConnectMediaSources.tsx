@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import jellyfinSvg from '@/assets/jellyfin.svg';
 import plexSvg from '@/assets/plex.svg';
 import { useMediaSources } from '@/hooks/settingsHooks.ts';
@@ -39,8 +40,12 @@ export default function ConnectMediaSources(props: CardProps) {
                 <TableHead>
                   <TableRow>
                     <TableCell></TableCell>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Edit</TableCell>
+                    <TableCell>
+                      <Trans>Name</Trans>
+                    </TableCell>
+                    <TableCell>
+                      <Trans>Edit</Trans>
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
