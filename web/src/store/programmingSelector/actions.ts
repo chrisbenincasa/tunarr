@@ -1,18 +1,11 @@
 import type { Nullable } from '@/types/util.ts';
 import { type Maybe } from '@/types/util.ts';
 import type { Library, MediaSourceType, ProgramOrFolder } from '@tunarr/types';
-import {
-  getChildCount,
-  isTerminalItemType,
-  type EmbyServerSettings,
-  type JellyfinServerSettings,
-  type MediaSourceSettings,
-  type PlexServerSettings,
-} from '@tunarr/types';
+import { type MediaSourceSettings } from '@tunarr/types';
 import { type PlexFilter, type PlexSort } from '@tunarr/types/api';
 import type { SearchRequest } from '@tunarr/types/schemas';
 
-import { groupBy, has, isArray, map, reject, some, uniq } from 'lodash-es';
+import { groupBy, has, reject, some, uniq } from 'lodash-es';
 import { match } from 'ts-pattern';
 import useStore from '..';
 import { Emby, Jellyfin, Local, Plex } from '../../helpers/constants.ts';
@@ -22,7 +15,6 @@ import {
 } from '../../helpers/plexSearchUtil.ts';
 import { groupSelectedMedia } from '../../helpers/util';
 
-import type { ExternalSourceSelectedMedia } from './store';
 import {
   type MediaItems,
   type MediaSourceView,
@@ -40,31 +32,6 @@ export const setProgrammingListingServer = (
 export const setProgrammingListLibrary = (library: MediaSourceView) =>
   useStore.setState((state) => {
     state.currentMediaSourceView = library;
-  });
-
-export const setProgrammingGenre = (genre?: string) =>
-  useStore.setState((state) => {
-    state.currentMediaGenre = genre;
-  });
-
-export const setPlexProgrammingListLibrarySubview = (
-  subview?: 'collections' | 'playlists',
-) =>
-  useStore.setState((state) => {
-    if (
-      state.currentMediaSourceView?.type === 'plex' &&
-      state.currentMediaSourceView.view.type === 'library'
-    ) {
-      state.currentMediaSourceView.view.subview = subview;
-    }
-  });
-
-export const clearPlexProgrammingListLibrarySubview = () =>
-  setPlexProgrammingListLibrarySubview();
-
-export const clearProgrammingListLibrary = () =>
-  useStore.setState((state) => {
-    state.currentMediaSourceView = undefined;
   });
 
 export const addKnownMediaForServer = (
@@ -86,28 +53,6 @@ export const addKnownMediaForServer = (
     for (const item of items) {
       byGuid[item.uuid] = item;
     }
-    // switch (items.type) {
-    //   case Plex: {
-    //     break;
-    //   }
-    //   case Jellyfin:
-    //     for (const item of items.items) {
-    //       byGuid[item.externalId] = { type: items.type, item };
-    //     }
-    //     break;
-    //   case Emby:
-    //     for (const item of items.items) {
-    //       byGuid[item.Id] = { type: items.type, item };
-    //     }
-    //     break;
-    //   case Imported:
-    //     for (const item of items.items) {
-    //       // TODO: do we need to separate groupings here because they
-    //       // are in a different ID page?
-    //       byGuid[item.uuid] = { type: items.type, item };
-    //     }
-    //     break;
-    // }
 
     // known media is an overwrite operation, not dealing with
     // lists here. we always want the most up-to-date view of
@@ -145,66 +90,6 @@ export const addKnownMediaForServer = (
     }
 
     return state;
-  });
-
-export const addPlexSelectedMedia = (
-  server: PlexServerSettings,
-  libraryId: string,
-  media: ProgramOrFolder[],
-) =>
-  useStore.setState((state) => {
-    const newSelectedMedia: SelectedMedia[] = map(
-      media,
-      (m) =>
-        ({
-          type: Plex,
-          mediaSource: server,
-          id: m.uuid,
-          childCount: isTerminalItemType(m) ? 0 : m.childCount,
-          libraryId,
-          persisted: false,
-        }) satisfies ExternalSourceSelectedMedia,
-    );
-
-    state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
-  });
-
-export const addJellyfinSelectedMedia = (
-  server: JellyfinServerSettings,
-  media: ProgramOrFolder | ProgramOrFolder[],
-) =>
-  useStore.setState((state) => {
-    const newMedia = (isArray(media) ? media : [media]).map((m) => {
-      return {
-        type: Jellyfin,
-        mediaSource: server,
-        libraryId: m.libraryId,
-        id: m.uuid,
-        childCount: getChildCount(m) ?? 0,
-        persisted: false,
-      } satisfies ExternalSourceSelectedMedia;
-    });
-
-    state.selectedMedia = [...state.selectedMedia, ...newMedia];
-  });
-
-export const addEmbySelectedMedia = (
-  server: EmbyServerSettings,
-  media: ProgramOrFolder | ProgramOrFolder[],
-) =>
-  useStore.setState((state) => {
-    const newMedia = (isArray(media) ? media : [media]).map((m) => {
-      return {
-        type: Emby,
-        mediaSource: server,
-        libraryId: m.libraryId,
-        id: m.uuid,
-        childCount: getChildCount(m) ?? 0,
-        persisted: false,
-      } satisfies ExternalSourceSelectedMedia;
-    });
-
-    state.selectedMedia = [...state.selectedMedia, ...newMedia];
   });
 
 export const addSelectedMedia = (media: SelectedMedia | SelectedMedia[]) =>
@@ -263,24 +148,6 @@ export const removeSelectedMedia = (media: SelectedMedia[]) =>
     };
 
     state.selectedMedia = reject(state.selectedMedia, it);
-  });
-
-export const removePlexSelectedMedia = (serverId: string, ids: string[]) =>
-  useStore.setState((state) => {
-    const idsSet = new Set([...ids]);
-    state.selectedMedia = reject(
-      state.selectedMedia,
-      (m) =>
-        m.type === Plex && m.mediaSource.id === serverId && idsSet.has(m.id),
-    );
-  });
-
-export const removeCustomShowSelectedMedia = (csId: string) =>
-  useStore.setState((state) => {
-    state.selectedMedia = reject(
-      state.selectedMedia,
-      (m) => m.type === 'custom-show' && m.customShowId === csId,
-    );
   });
 
 export const clearSelectedMedia = () =>

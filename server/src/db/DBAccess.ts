@@ -165,8 +165,6 @@ class Connection {
     const newMigrationTableExists = tables.some(
       (table) => table.name === MigrationTableName,
     );
-    console.log(tables);
-
     const legacyMigrationTableExists = tables.some(
       (table) => table.name === 'mikro_orm_migrations',
     );
@@ -249,7 +247,7 @@ class Connection {
       // This will run our placeholder "first" migration which will
       // force kysely to create the migration tables.
       // Now port over the legacy migrations
-      console.log('migrate up');
+      this.logger.debug('No migration tables exist, running initial migration');
       await migrator.migrateUp();
     } else {
       this.logger.debug('New migration table already exists');

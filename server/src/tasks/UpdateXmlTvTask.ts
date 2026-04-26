@@ -5,7 +5,6 @@ import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { globalOptions } from '@/globals.js';
 import { TVGuideService } from '@/services/TvGuideService.js';
-import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { KEYS } from '@/types/inject.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { isNonEmptyString, mapAsyncSeq } from '@/util/index.js';
@@ -46,7 +45,6 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(new LazyServiceIdentifier(() => MediaSourceApiFactory))
     private mediaSourceApiFactory: MediaSourceApiFactory,
-    @inject(LineupCreator) private lineupCreator: LineupCreator,
     @inject(EventService) private eventService: EventService,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
   ) {
@@ -78,8 +76,6 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
         // Re-read
         xmltvSettings = this.settingsDB.xmlTvSettings();
       }
-
-      await this.lineupCreator.promoteAllPendingLineups();
 
       if (isNonEmptyString(channelId)) {
         await this.guideService.refreshGuide(

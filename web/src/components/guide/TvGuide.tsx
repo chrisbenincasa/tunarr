@@ -409,7 +409,6 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
       const fillerLength = lineup.programs[0].start - startUnix;
       alignedLineup.unshift({
         type: 'flex',
-        persisted: false,
         duration: fillerLength,
         start: startUnix,
         stop: lineup.programs[0].start,
@@ -437,7 +436,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
 
   const programId =
     modalProgram?.type === 'custom'
-      ? modalProgram.program?.uniqueId
+      ? modalProgram.program?.id
       : modalProgram?.type === 'content'
         ? modalProgram?.id
         : null;

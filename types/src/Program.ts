@@ -120,7 +120,7 @@ export const isFillerProgram = isProgramType<FillerProgram>('filler');
 
 export function programUniqueId(program: BaseProgram): string | null {
   if (isContentProgram(program)) {
-    return program.uniqueId;
+    return program.id;
   } else if (isFlexProgram(program)) {
     return 'flex'; // Cannot really be unique identified
   } else if (isRedirectProgram(program)) {

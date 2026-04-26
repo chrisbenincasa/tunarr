@@ -1,5 +1,4 @@
 import { unwrapNil } from '@/helpers/util.ts';
-import { ApiProgramMinter } from '@tunarr/shared';
 import { forProgramType, seq } from '@tunarr/shared/util';
 import {
   type Channel,
@@ -25,7 +24,7 @@ import {
   tail,
 } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Imported } from '../../helpers/constants.ts';
 import {
   type AddedMedia,
   type UIChannelProgram,
@@ -284,24 +283,14 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
       channelEditor.dirty.programs = true;
       const addedDuration = sumBy(programs, (program) =>
         match(program)
-          .with(
-            { type: P.union(Plex, Jellyfin, Emby) },
-            ({ media }) => media.duration ?? 0,
-          )
           .with({ type: 'custom-show' }, ({ program }) => program.duration ?? 0)
-          .with({ type: 'imported' }, ({ media }) => media.duration)
+          .with({ type: Imported }, ({ media }) => media.duration)
           .exhaustive(),
       );
 
       // Convert any external program types to our internal representation
       const allNewPrograms = seq.collect(programs, (item) => {
         const result = match(item)
-          // There might be a way to consolidate these in a type-safe way, but I'm
-          // not sure right now.
-          .with(
-            { type: P.union(Plex, Jellyfin, Emby), media: P.select() },
-            (item) => ApiProgramMinter.mintProgram2(item),
-          )
           .with(
             { type: 'custom-show', program: P.select() },
             (program) => program,
@@ -358,7 +347,7 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
                 custom: ({ program }) => program,
               }),
             ),
-            (p) => p.id ?? p.uniqueId,
+            (p) => p.id,
           ),
           isNil,
         ),

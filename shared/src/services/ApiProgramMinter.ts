@@ -2,7 +2,6 @@ import type { TerminalProgram } from '@tunarr/types';
 import {
   isEpisodeWithHierarchy,
   isMusicTrackWithHierarchy,
-  tag,
   type ContentProgram,
   type ExternalId,
 } from '@tunarr/types';
@@ -15,27 +14,18 @@ import {
 } from '@tunarr/types/schemas';
 import { isNil } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { createExternalId } from '../index.js';
 import { seq } from '../util/index.js';
 import { parsePlexGuid } from '../util/plexUtil.js';
 
 export class ApiProgramMinter {
   private constructor() {}
 
-  static mintProgram2(item: TerminalProgram): ContentProgram | null {
-    const id =
-      item.sourceType === 'local'
-        ? item.uuid
-        : createExternalId(
-            item.sourceType,
-            tag(item.mediaSourceId),
-            item.externalId,
-          );
+  static mintProgram(item: TerminalProgram): ContentProgram | null {
     const base = {
+      id: item.uuid,
       duration: item.duration,
-      persisted: false,
       type: 'content' as const,
-      uniqueId: id,
+      uniqueId: item.uuid,
       program: item,
     };
     switch (item.type) {

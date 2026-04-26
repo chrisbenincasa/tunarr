@@ -1,17 +1,17 @@
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
 import { TextField } from '@mui/material';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import { isUndefined, omit } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
 import {
   addProgramsToCurrentChannel,
   setProgramAtIndex,
 } from '../../store/channelEditor/actions.ts';
-import { isUndefined, omit } from 'lodash-es';
 import type { UIFlexProgram } from '../../types/index.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
 
@@ -72,13 +72,12 @@ const AddFlexModal = ({
           {
             ...omit(initialProgram, 'index'),
             duration: parsedDuration * 1000,
-            persisted: false,
           },
           initialProgram.index,
         );
       } else {
         addProgramsToCurrentChannel([
-          { type: 'flex', duration: parsedDuration * 1000, persisted: false },
+          { type: 'flex', duration: parsedDuration * 1000 },
         ]);
       }
       onClose();

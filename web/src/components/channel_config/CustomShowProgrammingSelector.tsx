@@ -62,8 +62,7 @@ function CustomShowListItem({
     } else if (!isUndefined(programs) && !isEmpty(programs)) {
       return seq.collect(
         programs.filter(
-          (program) =>
-            isCustomProgram(program) && program.persisted && program.program,
+          (program) => isCustomProgram(program) && program.program,
         ),
         (program) => {
           return (

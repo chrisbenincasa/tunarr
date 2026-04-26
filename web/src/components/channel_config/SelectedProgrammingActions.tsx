@@ -1,11 +1,7 @@
-import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
 import { useAddSelectedItems } from '@/hooks/programming_controls/useAddProgramming.ts';
 import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
-import type {
-  EmbyMediaSourceView,
-  SelectedMedia,
-} from '@/store/programmingSelector/store.ts';
-import { type JellyfinMediaSourceView } from '@/store/programmingSelector/store.ts';
+import type { SelectedMedia } from '@/store/programmingSelector/store.ts';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { AddCircle, CheckBoxOutlined, Grading } from '@mui/icons-material';
 import {
   Box,
@@ -15,26 +11,16 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import type { EmbyItemKind } from '@tunarr/types/emby';
-import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
-import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback, useState } from 'react';
 import { match, P } from 'ts-pattern';
-import {
-  getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems,
-  getJellyfinLibraryItems,
-} from '../../generated/sdk.gen.ts';
-import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Imported } from '../../helpers/constants.ts';
 import { enumerateSyncedItems } from '../../helpers/programUtil.ts';
 import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 import useStore from '../../store/index.ts';
 import {
-  addEmbySelectedMedia,
-  addJellyfinSelectedMedia,
   addKnownMediaForServer,
-  addPlexSelectedMedia,
   addSelectedMedia,
   clearSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
@@ -54,10 +40,6 @@ export default function SelectedProgrammingActions({
   const { t } = useLingui();
   const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndView();
   const currentGenre = useStore((s) => s.currentMediaGenre);
-  const { urlFilter: plexSearch } = useStore(
-    ({ plexSearch: plexQuery }) => plexQuery,
-  );
-
   const selectedMedia = useStore((s) => s.selectedMedia);
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
@@ -69,15 +51,6 @@ export default function SelectedProgrammingActions({
     clearSelectedMedia();
   }, []);
   const currentSearchRequest = useStore((s) => s.currentSearchRequest);
-
-  const directPlexSearchFn = useDirectPlexSearch(
-    selectedServer,
-    selectedLibrary?.type === 'plex' && selectedLibrary?.view.type === 'library'
-      ? selectedLibrary.view
-      : null,
-    plexSearch,
-    true,
-  );
 
   const selectAllItems = useCallback(() => {
     if (!isNil(selectedServer)) {
@@ -100,13 +73,11 @@ export default function SelectedProgrammingActions({
               .with({ sourceType: 'local' }, () => ({
                 type: 'local',
                 id: program.uuid,
-                persisted: true,
                 mediaSource: selectedServer,
               }))
               .with({ sourceType: P._ }, (other) => ({
                 type: other.sourceType,
                 id: program.uuid,
-                persisted: true,
                 mediaSource: selectedServer,
                 libraryId:
                   selectedLibrary?.type === Imported
@@ -118,83 +89,6 @@ export default function SelectedProgrammingActions({
           addSelectedMedia(selectedMedia);
           addKnownMediaForServer(selectedServer.id, res);
         });
-      } else if (!isNil(selectedLibrary)) {
-        switch (selectedServer.type) {
-          case Plex:
-            prom = directPlexSearchFn().then((response) => {
-              if (selectedLibrary.type !== 'plex') {
-                throw new Error('');
-              }
-              switch (selectedLibrary.view.type) {
-                case 'library':
-                  addPlexSelectedMedia(
-                    selectedServer,
-                    selectedLibrary.view.library.uuid,
-                    response.result,
-                  );
-                  addKnownMediaForServer(selectedServer.id, response.result);
-                  break;
-                case 'playlists':
-                  response.result.forEach((item) => {
-                    addPlexSelectedMedia(selectedServer, item.libraryId, [
-                      item,
-                    ]);
-                    addKnownMediaForServer(selectedServer.id, [item]);
-                  });
-              }
-            });
-            break;
-          case Jellyfin: {
-            const library = selectedLibrary as JellyfinMediaSourceView;
-
-            prom = getJellyfinLibraryItems({
-              path: {
-                mediaSourceId: selectedServer.id,
-                libraryId: library.view.externalId,
-              },
-              query: {
-                itemTypes: match(library.view.childType)
-                  .returnType<JellyfinItemKind[]>()
-                  .with('movie', () => ['Movie'])
-                  .with('show', () => ['Series'])
-                  .with('artist', () => ['MusicArtist'])
-                  .with('music_video', () => ['MusicVideo'])
-                  .otherwise(() => []),
-                recursive: true,
-                genres: currentGenre,
-              },
-              throwOnError: true,
-            }).then(({ data: response }) => {
-              addJellyfinSelectedMedia(selectedServer, response.result);
-              addKnownMediaForServer(selectedServer.id, response.result);
-            });
-            break;
-          }
-          case Emby: {
-            const library = selectedLibrary as EmbyMediaSourceView;
-
-            prom = getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems({
-              path: {
-                mediaSourceId: selectedServer.id,
-                libraryId: library.view.externalId,
-              },
-              query: {
-                itemTypes: match(library.view.childType)
-                  .returnType<EmbyItemKind[]>()
-                  .with('movie', () => ['Movie'])
-                  .with('show', () => ['Series'])
-                  .with('artist', () => ['MusicArtist'])
-                  .with('music_video', () => ['MusicVideo'])
-                  .otherwise(() => []),
-              },
-              throwOnError: true,
-            }).then(({ data: response }) => {
-              addEmbySelectedMedia(selectedServer, response.result);
-              addKnownMediaForServer(selectedServer.id, response.result);
-            });
-            break;
-          }
-        }
       }
 
       if (!prom) {
@@ -219,7 +113,6 @@ export default function SelectedProgrammingActions({
     selectedLibrary,
     removeAllItems,
     currentSearchRequest,
-    directPlexSearchFn,
     currentGenre,
     snackbar,
   ]);
@@ -248,7 +141,11 @@ export default function SelectedProgrammingActions({
       }}
     >
       <Box>
-        <Plural value={selectedMedia.length} one="# Selected Item" other="# Selected Items" />
+        <Plural
+          value={selectedMedia.length}
+          one="# Selected Item"
+          other="# Selected Items"
+        />
 
         {selectedMedia.length > 0 && (
           <Link

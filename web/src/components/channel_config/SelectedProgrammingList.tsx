@@ -78,26 +78,6 @@ const ImportedProgramListItem = ({
     default:
       break;
   }
-  // if (media.Type === 'CollectionFolder') {
-  //   // TODO: Show the size
-  //   title = `Media - ${media.Name}`;
-  // } else if (media.Type === 'Series') {
-  //   secondary = `${media.ChildCount ?? 0} ${pluralize(
-  //     'season',
-  //     media.ChildCount ?? 0,
-  //   )}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
-  //     'episode',
-  //     media.RecursiveItemCount ?? 0,
-  //   )}`;
-  // } else if (media.Type === 'Season') {
-  //   secondary = `${media.SeriesName} - ${media.Name} (${
-  //     media.ChildCount ?? 0
-  //   } ${pluralize('episode', media.ChildCount ?? 0)})`;
-  // } else if (media.Type === 'Movie') {
-  //   secondary = `Movie${
-  //     media.ProductionYear ? ', ' + media.ProductionYear : ''
-  //   }`;
-  // }
 
   return (
     <ListItem

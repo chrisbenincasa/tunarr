@@ -17,7 +17,7 @@ export function EditChannelTabPanel(props: EditChannelTabPanelProps) {
     </div>
   );
 }
-export interface EditChannelTabPanelProps {
+interface EditChannelTabPanelProps {
   children?: React.ReactNode;
   currentValue: EditChannelTabs;
   value: EditChannelTabs;

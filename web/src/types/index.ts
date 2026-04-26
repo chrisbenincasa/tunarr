@@ -127,11 +127,10 @@ export type AddedImportedMedia = {
  * Media type going from "selected" -> "added to entity".
  */
 export type AddedMedia =
-  | AddedPlexMedia
-  | AddedJellyfinMedia
-  | AddedEmbyMedia
-  | AddedCustomShowProgram
-  | AddedImportedMedia;
+  // | AddedPlexMedia
+  // | AddedJellyfinMedia
+  // | AddedEmbyMedia
+  AddedCustomShowProgram | AddedImportedMedia;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export type Prettify<Type> = Type extends Function

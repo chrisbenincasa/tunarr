@@ -181,7 +181,6 @@ export class PlexHierarchyTraversal {
           }
         }
 
-        console.log('artist id', artistId);
         if (isNonEmptyString(artistId)) {
           const existing = seenItems.get(artistId);
           if (existing?.type === 'artist') {

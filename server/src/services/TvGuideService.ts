@@ -1113,11 +1113,7 @@ export class TVGuideService {
       const programs = guideItems.map((guideItem) => {
         const channelItem = match(guideItem.lineupItem)
           .when(isOfflineItem, (item) =>
-            this.programConverter.offlineLineupItemToProgram(
-              channel,
-              item,
-              true,
-            ),
+            this.programConverter.offlineLineupItemToProgram(channel, item),
           )
           .when(isRedirectItem, (item) => {
             // const redirectChannel = find(channelReferences, { uuid: item.channel });

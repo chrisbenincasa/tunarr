@@ -74,7 +74,7 @@ export class CustomShowSyncService {
     );
 
     if (programs.length > 0) {
-      await this.customShowDB.upsertCustomShowContent(show.uuid, programs);
+      this.customShowDB.upsertCustomShowContent(show.uuid, programs);
     } else {
       this.logger.warn(
         'Got 0 items from external playlist (type = %s id = %s)',
@@ -138,7 +138,7 @@ export class CustomShowSyncService {
     ).expandAncestors(allPlaylistItems);
 
     return seq.collect(expandedItems, (item) =>
-      ApiProgramMinter.mintProgram2(item),
+      ApiProgramMinter.mintProgram(item),
     );
   }
 }

@@ -409,10 +409,9 @@ export const ProgramWeekCalendarView = ({
         </Stack>
       </Stack>
       {(openProgramDetails?.type === 'content' ||
-        (openProgramDetails?.type === 'custom' &&
-          openProgramDetails?.uniqueId)) && (
+        (openProgramDetails?.type === 'custom' && openProgramDetails?.id)) && (
         <ProgramDetailsDialog
-          programId={openProgramDetails?.uniqueId}
+          programId={openProgramDetails?.id}
           programType={openProgramDetails?.program.type}
           open={!!openProgramDetails}
           onClose={() => setOpenProgramDetails(null)}

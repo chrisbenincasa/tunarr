@@ -1,7 +1,7 @@
-import { describe, expect, test, vi, beforeEach } from 'vitest';
 import { renderWithProviders, screen } from '@/test/utils';
-import AddFlexModal from './AddFlexModal';
 import type { UIFlexProgram } from '@/types/index';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+import AddFlexModal from './AddFlexModal';
 
 // Mock the store actions
 const mockAddProgramsToCurrentChannel = vi.fn();
@@ -29,14 +29,17 @@ describe('AddFlexModal', () => {
     const initialProgram: UIFlexProgram & { index: number } = {
       type: 'flex',
       duration: 300000, // 5 minutes in ms
-      persisted: false,
       uiIndex: 0,
       originalIndex: 0,
       index: 0,
     };
 
     renderWithProviders(
-      <AddFlexModal open={true} onClose={() => {}} initialProgram={initialProgram} />,
+      <AddFlexModal
+        open={true}
+        onClose={() => {}}
+        initialProgram={initialProgram}
+      />,
     );
 
     expect(screen.getByText('Edit Flex Time')).toBeInTheDocument();
@@ -65,7 +68,9 @@ describe('AddFlexModal', () => {
     await user.clear(input);
     await user.type(input, '0');
 
-    expect(screen.getByText('Duration must be greater than 0.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Duration must be greater than 0.'),
+    ).toBeInTheDocument();
   });
 
   test('shows humanized duration in helper text for valid input', () => {
@@ -86,7 +91,7 @@ describe('AddFlexModal', () => {
     await user.click(saveButton);
 
     expect(mockAddProgramsToCurrentChannel).toHaveBeenCalledWith([
-      { type: 'flex', duration: 300000, persisted: false }, // 300 seconds in ms
+      { type: 'flex', duration: 300000 },
     ]);
     expect(onClose).toHaveBeenCalled();
   });
@@ -96,14 +101,17 @@ describe('AddFlexModal', () => {
     const initialProgram: UIFlexProgram & { index: number } = {
       type: 'flex',
       duration: 600000, // 10 minutes
-      persisted: false,
       uiIndex: 0,
       originalIndex: 0,
       index: 5,
     };
 
     const { user } = renderWithProviders(
-      <AddFlexModal open={true} onClose={onClose} initialProgram={initialProgram} />,
+      <AddFlexModal
+        open={true}
+        onClose={onClose}
+        initialProgram={initialProgram}
+      />,
     );
 
     const saveButton = screen.getByRole('button', { name: 'Save' });
@@ -113,7 +121,6 @@ describe('AddFlexModal', () => {
       expect.objectContaining({
         type: 'flex',
         duration: 600000,
-        persisted: false,
       }),
       5,
     );

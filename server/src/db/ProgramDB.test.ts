@@ -20,7 +20,6 @@ import { ProgramExternalIdRepository } from './program/ProgramExternalIdReposito
 import { ProgramUpsertRepository } from './program/ProgramUpsertRepository.ts';
 import { ProgramMetadataRepository } from './program/ProgramMetadataRepository.ts';
 import { ProgramGroupingUpsertRepository } from './program/ProgramGroupingUpsertRepository.ts';
-import { ProgramGroupingMinter } from './converters/ProgramGroupingMinter.ts';
 import { ProgramSearchRepository } from './program/ProgramSearchRepository.ts';
 import { ProgramStateRepository } from './program/ProgramStateRepository.ts';
 import { NewArtwork } from './schema/Artwork.ts';
@@ -103,9 +102,6 @@ const test = baseTest.extend<Fixture>({
     const dbAccess = DBAccess.instance;
     const logger = LoggerFactory.child({ className: 'ProgramDB' });
 
-    // Mock the task factories required by ProgramUpsertRepository
-    const mockTaskFactory = () => ({ enqueue: async () => {} }) as any;
-
     const metadataRepo = new ProgramMetadataRepository(dbAccess.drizzle!);
     const externalIdRepo = new ProgramExternalIdRepository(
       logger,
@@ -120,13 +116,8 @@ const test = baseTest.extend<Fixture>({
     const upsertRepo = new ProgramUpsertRepository(
       logger,
       dbAccess.drizzle!,
-      mockTaskFactory,
-      mockTaskFactory,
-      () => ({}) as any, // ProgramDaoMinterFactory
       externalIdRepo,
       metadataRepo,
-      groupingUpsertRepo,
-      new ProgramGroupingMinter(),
     );
     const programDb = new ProgramDB(
       new BasicProgramRepository(dbAccess.db!, dbAccess.drizzle!),

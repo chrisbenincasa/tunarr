@@ -30,7 +30,6 @@ export function addBreaks(
         durWithoutBreak = 0;
         const duration = random.integer(+minDuration, +maxDuration);
         newPrograms.push({
-          persisted: false,
           type: 'flex',
           duration,
         });

@@ -36,7 +36,7 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
         seq.collect(lineup.lineup, (p) =>
           match(p)
             .with({ type: 'content' }, ({ id }) => id)
-            .with({ type: 'custom' }, ({ program }) => program?.id)
+            .with({ type: 'custom' }, ({ id }) => id)
             .otherwise(() => null),
         ),
       ).length,

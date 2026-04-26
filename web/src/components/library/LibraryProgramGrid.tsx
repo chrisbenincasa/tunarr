@@ -204,7 +204,6 @@ export const LibraryProgramGrid = ({
       <ProgramGridItem
         key={gridItemProps.item.uuid}
         disableSelection={disableProgramSelection}
-        persisted
         {...gridItemProps}
       />
     );

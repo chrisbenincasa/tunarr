@@ -26,13 +26,10 @@ function isMidRollBreak(p: UIChannelProgram): boolean {
 }
 
 function getContentId(p: UIChannelProgram): string | undefined {
-  if (p.type === 'content') {
-    return p.uniqueId ?? p.id;
-  }
-  if (p.type === 'custom') {
+  if (p.type === 'content' || p.type === 'custom') {
     return p.id;
   }
-  return undefined;
+  return;
 }
 
 export function groupMidRollItems(

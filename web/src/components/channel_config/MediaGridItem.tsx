@@ -60,7 +60,6 @@ export type GridItemMetadata = {
   thumbnailUrl: string | null;
   selectedMedia?: SelectedMedia;
   isFolder?: boolean;
-  persisted: boolean;
   itemType: ProgramOrFolder['type'];
 };
 
@@ -105,7 +104,6 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
       childCount,
       mayHaveChildren = false,
       isFolder = false,
-      persisted,
     },
     style,
     isModalOpen,
@@ -255,7 +253,7 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
                 />
               </Tooltip>
             )}
-            {persisted && !isStructuralItemType(itemType) && (
+            {!isStructuralItemType(itemType) && (
               <InfoSharp
                 inheritViewBox
                 onClick={(e) => showInfo(e)}
@@ -375,7 +373,7 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
           </ImageListItem>
         </div>
       </Fade>
-      {persisted && !isStructuralItemType(itemType) && (
+      {!isStructuralItemType(itemType) && (
         <ProgramDetailsDialog
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}

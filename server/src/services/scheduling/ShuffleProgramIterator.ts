@@ -44,9 +44,7 @@ export class ContentProgramShuffleIterator extends ShuffleProgramIterator<Conden
     return {
       type: 'content',
       duration: program.duration,
-      persisted: true,
       id: program.uuid,
-      uniqueId: program.uuid,
     };
   }
 }
@@ -85,7 +83,6 @@ export class CustomProgramShuffleIterator extends ShuffleProgramIterator<Condens
       duration: program.duration,
       id: program.uuid,
       index: this.indexById[program.uuid]!,
-      persisted: true,
       type: 'custom',
     };
   }

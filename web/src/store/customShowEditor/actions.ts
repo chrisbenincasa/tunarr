@@ -1,5 +1,4 @@
 import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
-import { ApiProgramMinter } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import {
   type ContentProgram,
@@ -8,7 +7,7 @@ import {
 } from '@tunarr/types';
 import { findIndex, forEach, inRange, merge } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Imported } from '../../helpers/constants.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
 import { type AddedMedia } from '../../types/index.ts';
 import useStore from '../index.ts';
@@ -20,12 +19,6 @@ export const addMediaToCurrentCustomShow = (programs: AddedMedia[]) =>
       const allNewPrograms = seq.collect(programs, (item) => {
         const result = match(item)
           .returnType<ContentProgram | null>()
-          // There might be a way to consolidate these in a type-safe way, but I'm
-          // not sure right now.
-          .with(
-            { type: P.union(Plex, Jellyfin, Emby), media: P.select() },
-            (item) => ApiProgramMinter.mintProgram2(item),
-          )
           .with({ type: 'custom-show', program: P.select() }, () => null)
           .with(
             {

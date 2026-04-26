@@ -7,7 +7,6 @@ import type {
 import { type CustomProgram, type MediaSourceSettings } from '@tunarr/types';
 import { type PlexSearch } from '@tunarr/types/api';
 import type { SearchRequest } from '@tunarr/types/schemas';
-import type { StrictOmit } from 'ts-essentials';
 import { type StateCreator } from 'zustand';
 import type { Imported, Local } from '../../types/MediaSource';
 import {
@@ -38,7 +37,7 @@ export type JellyfinSelectedMedia = Typed<
 export type EmbySelectedMedia = Typed<ExternalSourceSelectedMedia, Emby>;
 
 export type LocalLibrarySelectedMedia = Typed<
-  StrictOmit<ExternalSourceSelectedMedia, 'persisted'>,
+  ExternalSourceSelectedMedia,
   Local
 >;
 
@@ -46,7 +45,6 @@ export type ExternalSourceSelectedMedia = {
   mediaSource: MediaSourceSettings;
   libraryId: string;
   id: ItemUuid;
-  persisted: boolean;
   childCount?: number;
   type: Plex | Jellyfin | Emby;
 };
@@ -54,7 +52,6 @@ export type ExternalSourceSelectedMedia = {
 export type LocalSourceSelectedMedia = {
   mediaSource: MediaSourceSettings;
   id: ItemUuid;
-  persisted: true;
   childCount?: number;
   type: Local;
 };
@@ -105,16 +102,9 @@ export type ImportedMediaSourceLibraryView = TypedView<
 export type LocalMediaSourceView = TypedView<MediaSourceLibrary, Local>;
 
 export type MediaSourceView =
-  | PlexMediaSourceView
-  | JellyfinMediaSourceView
-  | EmbyMediaSourceView
   | ImportedMediaSourceLibraryView
   | CustomShowView
   | LocalMediaSourceView;
-
-type TypedItem<T, Type> = TypedKey<T, Type, 'item'>;
-
-export type MediaGenre = TypedItem<string, Jellyfin | Plex | Emby>;
 
 export type MediaItems = ProgramOrFolder | Library;
 

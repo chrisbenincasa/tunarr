@@ -14,8 +14,6 @@ CREATE TABLE `__new_custom_show_content` (
 	`index` integer NOT NULL,
 	PRIMARY KEY(`content_uuid`, `custom_show_uuid`, `index`),
 	FOREIGN KEY (`content_uuid`) REFERENCES `program`(`uuid`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`custom_show_uuid`) REFERENCES `custom_show`(`uuid`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`content_uuid`) REFERENCES `program`(`uuid`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`custom_show_uuid`) REFERENCES `custom_show`(`uuid`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint

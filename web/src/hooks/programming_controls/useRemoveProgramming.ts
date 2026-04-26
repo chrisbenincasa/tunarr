@@ -112,7 +112,7 @@ export const removeProgramming = (
     }
 
     if (request.replaceWithFlex) {
-      return createFlexProgram(program.duration, false);
+      return createFlexProgram(program.duration);
     }
 
     return;

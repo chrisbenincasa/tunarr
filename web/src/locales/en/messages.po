@@ -36,21 +36,21 @@ msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlis
 msgstr "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
 
 #. placeholder {0}: customShow.contentCount
-#: src/components/channel_config/SelectedProgrammingList.tsx:200
+#: src/components/channel_config/SelectedProgrammingList.tsx:180
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, one {# item} other {# items}}"
 
 #. placeholder {0}: channel.programCount
 #. placeholder {0}: programList.length
 #. placeholder {0}: value?.programCount ?? 0
-#: src/components/channel_config/ChannelLineupList.tsx:527
+#: src/components/channel_config/ChannelLineupList.tsx:526
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:47
 #: src/pages/channels/ChannelsPage.tsx:494
 msgid "{0, plural, one {# program} other {# programs}}"
 msgstr "{0, plural, one {# program} other {# programs}}"
 
 #. placeholder {0}: customShow.contentCount
-#: src/components/channel_config/CustomShowProgrammingSelector.tsx:108
+#: src/components/channel_config/CustomShowProgrammingSelector.tsx:107
 msgid "{0, plural, one {# Program} other {# Programs}}"
 msgstr "{0, plural, one {# Program} other {# Programs}}"
 
@@ -61,7 +61,7 @@ msgid "{0, plural, one {# season} other {# seasons}}, {1, plural, one {# total e
 msgstr "{0, plural, one {# season} other {# seasons}}, {1, plural, one {# total episode} other {# total episodes}}"
 
 #. placeholder {0}: selectedMedia.length
-#: src/components/channel_config/SelectedProgrammingActions.tsx:251
+#: src/components/channel_config/SelectedProgrammingActions.tsx:144
 msgid "{0, plural, one {# Selected Item} other {# Selected Items}}"
 msgstr "{0, plural, one {# Selected Item} other {# Selected Items}}"
 
@@ -99,7 +99,7 @@ msgid "{0, plural, one {program} other {programs}}"
 msgstr "{0, plural, one {program} other {programs}}"
 
 #. placeholder {0}: selectedMedia.length
-#: src/components/channel_config/SelectedProgrammingList.tsx:287
+#: src/components/channel_config/SelectedProgrammingList.tsx:267
 msgid "{0, plural, one {Selected Item} other {Selected Items}}"
 msgstr "{0, plural, one {Selected Item} other {Selected Items}}"
 
@@ -311,7 +311,7 @@ msgstr "about "
 msgid "Access Token"
 msgstr "Access Token"
 
-#: src/components/library/ProgramListItem.tsx:161
+#: src/components/library/ProgramListItem.tsx:128
 #: src/components/settings/AddPlexServer.tsx:14
 #: src/components/settings/media_source/AddMediaSourceButton.tsx:83
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx:34
@@ -324,7 +324,7 @@ msgid "Add"
 msgstr "Add"
 
 #. placeholder {0}: item.type
-#: src/components/library/ProgramListItem.tsx:158
+#: src/components/library/ProgramListItem.tsx:125
 msgid "Add {0}"
 msgstr "Add {0}"
 
@@ -337,23 +337,22 @@ msgid "Add a filter expression to fine-tune results of the search"
 msgstr "Add a filter expression to fine-tune results of the search"
 
 #: src/components/channel_config/AddSelectedMediaButton.tsx:44
-msgid "Add All"
-msgstr "Add All"
+#~ msgid "Add All"
+#~ msgstr "Add All"
 
 #: src/components/channel_config/AddSelectedMediaButton.tsx:28
-msgid "Add all selected programs to channel"
-msgstr "Add all selected programs to channel"
+#~ msgid "Add all selected programs to channel"
+#~ msgstr "Add all selected programs to channel"
 
 #: src/components/channel_config/AddProgrammingButton.tsx:82
 #: src/components/programming_controls/AddBreaksModal.tsx:65
 msgid "Add Breaks"
 msgstr "Add Breaks"
 
-#: src/components/programming_controls/AddRedirectModal.tsx:174
+#: src/components/programming_controls/AddRedirectModal.tsx:178
 msgid "Add Channel Redirect"
 msgstr "Add Channel Redirect"
 
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:383
 #: src/components/search/SearchGroupNode.tsx:89
 msgid "Add field"
 msgstr "Add field"
@@ -366,11 +365,10 @@ msgstr "Add filler"
 msgid "Add Flex"
 msgstr "Add Flex"
 
-#: src/components/programming_controls/AddFlexModal.tsx:91
+#: src/components/programming_controls/AddFlexModal.tsx:90
 msgid "Add Flex Time"
 msgstr "Add Flex Time"
 
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:397
 #: src/components/search/SearchGroupNode.tsx:106
 msgid "Add group"
 msgstr "Add group"
@@ -380,7 +378,7 @@ msgid "Add Language Preference"
 msgstr "Add Language Preference"
 
 #: src/components/channel_config/AddProgrammingButton.tsx:50
-#: src/components/channel_config/SelectedProgrammingActions.tsx:312
+#: src/components/channel_config/SelectedProgrammingActions.tsx:209
 #: src/components/custom-shows/EditCustomShowForm.tsx:440
 #: src/components/filler/EditFillerListForm.tsx:183
 msgid "Add Media"
@@ -408,11 +406,11 @@ msgstr "Add programming to custom show"
 msgid "Add Redirect"
 msgstr "Add Redirect"
 
-#: src/components/channel_config/SelectedProgrammingActions.tsx:312
+#: src/components/channel_config/SelectedProgrammingActions.tsx:209
 msgid "Add Selected Media"
 msgstr "Add Selected Media"
 
-#: src/components/channel_config/CustomShowProgrammingSelector.tsx:111
+#: src/components/channel_config/CustomShowProgrammingSelector.tsx:110
 msgid "Add Show"
 msgstr "Add Show"
 
@@ -457,8 +455,8 @@ msgid "Adjust Weights"
 msgstr "Adjust Weights"
 
 #: src/components/channel_config/plex/PlexProgrammingFilterToolbar.tsx:60
-msgid "Advanced"
-msgstr "Advanced"
+#~ msgid "Advanced"
+#~ msgstr "Advanced"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:249
 msgid "Advanced options relating to audio. In general, do not change these unless you know what you are doing!"
@@ -491,8 +489,8 @@ msgid "All channels assigned to this config will be set to use the default confi
 msgstr "All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
 
 #: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx:104
-msgid "All Genres"
-msgstr "All Genres"
+#~ msgid "All Genres"
+#~ msgstr "All Genres"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx:290
 msgid "All lists are used"
@@ -540,7 +538,7 @@ msgid "Amount"
 msgstr "Amount"
 
 #. placeholder {0}: error.message
-#: src/components/guide/TvGuide.tsx:581
+#: src/components/guide/TvGuide.tsx:580
 msgid "An error occurred: {0}"
 msgstr "An error occurred: {0}"
 
@@ -678,8 +676,8 @@ msgid "Balance..."
 msgstr "Balance..."
 
 #: src/components/channel_config/plex/PlexProgrammingFilterToolbar.tsx:59
-msgid "Basic"
-msgstr "Basic"
+#~ msgid "Basic"
+#~ msgstr "Basic"
 
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx:119
 msgid "Basic button group"
@@ -754,9 +752,9 @@ msgstr "Calculating Slots..."
 #: src/components/DeleteConfirmationDialog.tsx:56
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:244
 #: src/components/programming_controls/AddBreaksModal.tsx:207
-#: src/components/programming_controls/AddFlexModal.tsx:111
+#: src/components/programming_controls/AddFlexModal.tsx:110
 #: src/components/programming_controls/AddPaddingModal.tsx:78
-#: src/components/programming_controls/AddRedirectModal.tsx:186
+#: src/components/programming_controls/AddRedirectModal.tsx:194
 #: src/components/programming_controls/AddReplicateModal.tsx:109
 #: src/components/programming_controls/AddRerunBlockModal.tsx:87
 #: src/components/programming_controls/AddRestrictHoursModal.tsx:139
@@ -767,7 +765,6 @@ msgstr "Calculating Slots..."
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx:478
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:501
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:330
-#: src/components/settings/media_source/MediaSourceDeleteDialog.tsx:43
 #: src/components/settings/media_source/PlexServerEditDialog.tsx:345
 #: src/components/settings/UnsavedNavigationAlert.tsx:67
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:469
@@ -809,7 +806,7 @@ msgid "Change the verbosity of specific categories of logs. Useful if debugging 
 msgstr "Change the verbosity of specific categories of logs. Useful if debugging a specific feature."
 
 #: src/components/programming_controls/AddRedirectModal.tsx:133
-#: src/components/programming_controls/AddRedirectModal.tsx:134
+#: src/components/programming_controls/AddRedirectModal.tsx:135
 msgid "Channel"
 msgstr "Channel"
 
@@ -882,7 +879,7 @@ msgstr "Check"
 msgid "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
 msgstr "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
 
-#: src/components/channel_config/SelectedProgrammingActions.tsx:258
+#: src/components/channel_config/SelectedProgrammingActions.tsx:155
 #: src/components/search/SearchFieldRestrictMenu.tsx:96
 msgid "Clear"
 msgstr "Clear"
@@ -897,19 +894,19 @@ msgstr "Clear All"
 msgid "Clear Schedule"
 msgstr "Clear Schedule"
 
-#: src/components/channel_config/CustomShowProgrammingSelector.tsx:98
+#: src/components/channel_config/CustomShowProgrammingSelector.tsx:97
 msgid "Click to preview the items in this Custom Show. Note that only the whole show can be added at once."
 msgstr "Click to preview the items in this Custom Show. Note that only the whole show can be added at once."
 
-#: src/components/channel_config/SelectedProgrammingList.tsx:243
+#: src/components/channel_config/SelectedProgrammingList.tsx:223
 #: src/components/channels/ChannelSessionsDialog.tsx:30
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:171
 msgid "Close"
 msgstr "Close"
 
 #: src/components/channel_config/plex/PlexProgrammingSelector.tsx:141
-msgid "Collections"
-msgstr "Collections"
+#~ msgid "Collections"
+#~ msgstr "Collections"
 
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:158
 msgid "Commit"
@@ -952,7 +949,7 @@ msgstr "Configure what appears on your channel when there is no suitable filler 
 msgid "Congrats, you're ready to start building channels! Just click Finish below to start working on your first channel."
 msgstr "Congrats, you're ready to start building channels! Just click Finish below to start working on your first channel."
 
-#: src/components/channel_config/ProgrammingSelector.tsx:238
+#: src/components/channel_config/ProgrammingSelector.tsx:196
 msgid "Connect Media Source"
 msgstr "Connect Media Source"
 
@@ -1054,7 +1051,7 @@ msgstr "Custom Show"
 
 #. placeholder {0}: customShow.name
 #. placeholder {0}: showName ?? ''
-#: src/components/channel_config/SelectedProgrammingList.tsx:199
+#: src/components/channel_config/SelectedProgrammingList.tsx:179
 #: src/hooks/slot_scheduler/useSlotName.ts:31
 msgid "Custom Show - {0}"
 msgstr "Custom Show - {0}"
@@ -1068,7 +1065,7 @@ msgstr "Custom show programs are grouped by their parent show"
 msgid "Custom Show: {0}"
 msgstr "Custom Show: {0}"
 
-#: src/components/channel_config/ProgrammingSelector.tsx:320
+#: src/components/channel_config/ProgrammingSelector.tsx:267
 #: src/hooks/useNavItems.tsx:84
 #: src/hooks/useRouteName.ts:121
 #: src/pages/library/CustomShowsPage.tsx:207
@@ -1104,7 +1101,7 @@ msgstr "Dark"
 msgid "Data Directory:"
 msgstr "Data Directory:"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:245
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:180
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:251
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:260
 msgid "Day"
@@ -1131,7 +1128,6 @@ msgstr "Default Config"
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx:186
 #: src/components/DeleteConfirmationDialog.tsx:59
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:75
-#: src/components/settings/media_source/MediaSourceDeleteDialog.tsx:51
 #: src/components/smart_collections/SmartCollectionsTable.tsx:124
 #: src/pages/channels/ChannelsPage.tsx:207
 #: src/pages/library/CustomShowsPage.tsx:113
@@ -1172,8 +1168,8 @@ msgid "Delete Media Source \"{0}\"?"
 msgstr "Delete Media Source \"{0}\"?"
 
 #: src/components/settings/media_source/MediaSourceDeleteDialog.tsx:33
-msgid "Delete Media Source?"
-msgstr "Delete Media Source?"
+#~ msgid "Delete Media Source?"
+#~ msgstr "Delete Media Source?"
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx:367
 #: src/components/slot_scheduler/TimeSlotTable.tsx:377
@@ -1205,8 +1201,8 @@ msgid "Deleting a media source will remove all of its associated programs from T
 msgstr "Deleting a media source will remove all of its associated programs from Tunarr."
 
 #: src/components/settings/media_source/MediaSourceDeleteDialog.tsx:36
-msgid "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
-msgstr "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
+#~ msgid "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
+#~ msgstr "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx:84
 msgid "Desc"
@@ -1322,16 +1318,16 @@ msgstr "Duplicates"
 msgid "Duration"
 msgstr "Duration"
 
-#: src/components/programming_controls/AddFlexModal.tsx:97
-#: src/components/programming_controls/AddRedirectModal.tsx:152
+#: src/components/programming_controls/AddFlexModal.tsx:96
+#: src/components/programming_controls/AddRedirectModal.tsx:153
 msgid "Duration (seconds)"
 msgstr "Duration (seconds)"
 
-#: src/components/programming_controls/AddFlexModal.tsx:105
+#: src/components/programming_controls/AddFlexModal.tsx:104
 msgid "Duration must be greater than 0."
 msgstr "Duration must be greater than 0."
 
-#: src/components/programming_controls/AddFlexModal.tsx:103
+#: src/components/programming_controls/AddFlexModal.tsx:102
 msgid "Duration must be numeric"
 msgstr "Duration must be numeric"
 
@@ -1359,7 +1355,7 @@ msgstr "Edit"
 msgid "Edit Channel"
 msgstr "Edit Channel"
 
-#: src/components/programming_controls/AddRedirectModal.tsx:174
+#: src/components/programming_controls/AddRedirectModal.tsx:180
 msgid "Edit Channel Redirect"
 msgstr "Edit Channel Redirect"
 
@@ -1371,7 +1367,7 @@ msgstr "Edit Channel Settings"
 msgid "Edit Filler List"
 msgstr "Edit Filler List"
 
-#: src/components/programming_controls/AddFlexModal.tsx:91
+#: src/components/programming_controls/AddFlexModal.tsx:90
 msgid "Edit Flex Time"
 msgstr "Edit Flex Time"
 
@@ -1552,7 +1548,7 @@ msgstr "Error copying channel m3u link to clipboard"
 msgid "Error copying to clipboard!"
 msgstr "Error copying to clipboard!"
 
-#: src/components/programming_controls/AddRedirectModal.tsx:164
+#: src/components/programming_controls/AddRedirectModal.tsx:165
 msgid "Error occurred while loading channels, please try again soon."
 msgstr "Error occurred while loading channels, please try again soon."
 
@@ -1560,7 +1556,7 @@ msgstr "Error occurred while loading channels, please try again soon."
 msgid "Error Options"
 msgstr "Error Options"
 
-#: src/components/channel_config/SelectedProgrammingActions.tsx:209
+#: src/components/channel_config/SelectedProgrammingActions.tsx:103
 msgid "Error querying Plex. Check console log and consider reporting a bug!"
 msgstr "Error querying Plex. Check console log and consider reporting a bug!"
 
@@ -1577,7 +1573,7 @@ msgid "Error saving new Smart Collection. Check server logs and browser console 
 msgstr "Error saving new Smart Collection. Check server logs and browser console for details."
 
 #. placeholder {0}: error.message
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:96
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:86
 msgid "Error saving programs. {0}"
 msgstr "Error saving programs. {0}"
 
@@ -1732,10 +1728,6 @@ msgstr "FFprobe Executable Path"
 msgid "FFprobe version 6.0+ recommended. Check your current version in the sidebar"
 msgstr "FFprobe version 6.0+ recommended. Check your current version in the sidebar"
 
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:255
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:257
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:367
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:373
 #: src/components/search/SearchGroupNode.tsx:73
 #: src/components/search/SearchGroupNode.tsx:79
 #: src/components/search/SearchValueNode.tsx:271
@@ -1882,8 +1874,8 @@ msgstr "Generating Bug Report Link..."
 
 #: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx:94
 #: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx:96
-msgid "Genre"
-msgstr "Genre"
+#~ msgid "Genre"
+#~ msgstr "Genre"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx:174
 msgid "Global Options"
@@ -2053,7 +2045,7 @@ msgstr "Interval (minutes)"
 msgid "Inverse linear decay, heavier weighting."
 msgstr "Inverse linear decay, heavier weighting."
 
-#: src/components/channel_config/MediaGridItem.tsx:245
+#: src/components/channel_config/MediaGridItem.tsx:243
 msgid "Item was not present during the last scan"
 msgstr "Item was not present during the last scan"
 
@@ -2125,17 +2117,8 @@ msgstr "Level"
 msgid "Libraries"
 msgstr "Libraries"
 
-#: src/components/channel_config/emby/EmbyLibrarySelector.tsx:80
-#: src/components/channel_config/emby/EmbyLibrarySelector.tsx:82
-#: src/components/channel_config/emby/EmbyProgrammingSelector.tsx:49
 #: src/components/channel_config/ImportedLibrarySeletor.tsx:102
 #: src/components/channel_config/ImportedLibrarySeletor.tsx:104
-#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx:128
-#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx:130
-#: src/components/channel_config/jellyfin/JellyfinProgrammingSelector.tsx:47
-#: src/components/channel_config/plex/PlexLibrarySelector.tsx:126
-#: src/components/channel_config/plex/PlexLibrarySelector.tsx:128
-#: src/components/channel_config/plex/PlexProgrammingSelector.tsx:134
 #: src/hooks/useNavItems.tsx:69
 #: src/hooks/useRouteName.ts:95
 #: src/pages/library/LibraryIndexPage.tsx:12
@@ -2160,19 +2143,19 @@ msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for e
 msgstr "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx:517
-msgid "Limit"
-msgstr "Limit"
+#~ msgid "Limit"
+#~ msgstr "Limit"
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx:521
-msgid "Limit must be numeric"
-msgstr "Limit must be numeric"
+#~ msgid "Limit must be numeric"
+#~ msgstr "Limit must be numeric"
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx:54
 msgid "Linear"
 msgstr "Linear"
 
 #: src/components/base/ProgramViewToggleButton.tsx:39
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:240
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:175
 msgid "List"
 msgstr "List"
 
@@ -2282,12 +2265,10 @@ msgstr "Manually add an access token from your Emby server"
 msgid "Manually add an access token from your Jellyfin server"
 msgstr "Manually add an access token from your Jellyfin server"
 
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:377
 #: src/components/search/SearchGroupNode.tsx:83
 msgid "Match all of"
 msgstr "Match all of"
 
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:378
 #: src/components/search/SearchGroupNode.tsx:84
 msgid "Match any of"
 msgstr "Match any of"
@@ -2330,8 +2311,8 @@ msgstr "Maximum number of days to precalculate the schedule. Note that the lengt
 msgid "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel.<0/><1>Note: Previewing the schedule in the browser for long lengths of time can cause UI performance issues</1>"
 msgstr "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel.<0/><1>Note: Previewing the schedule in the browser for long lengths of time can cause UI performance issues</1>"
 
-#: src/components/channel_config/ProgrammingSelector.tsx:304
-#: src/components/channel_config/ProgrammingSelector.tsx:306
+#: src/components/channel_config/ProgrammingSelector.tsx:250
+#: src/components/channel_config/ProgrammingSelector.tsx:252
 #: src/components/custom-shows/EditCustomShowForm.tsx:316
 msgid "Media Source"
 msgstr "Media Source"
@@ -2387,7 +2368,7 @@ msgstr "Minimum Program Duration (minutes)"
 msgid "Modify Programming"
 msgstr "Modify Programming"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:255
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:190
 msgid "Month"
 msgstr "Month"
 
@@ -2535,11 +2516,11 @@ msgstr "No active sessions"
 msgid "No media sources connected."
 msgstr "No media sources connected."
 
-#: src/components/channel_config/ProgrammingSelector.tsx:252
+#: src/components/channel_config/ProgrammingSelector.tsx:214
 msgid "No Media Sources detected."
 msgstr "No Media Sources detected."
 
-#: src/components/channel_config/ChannelLineupList.tsx:501
+#: src/components/channel_config/ChannelLineupList.tsx:500
 msgid "No programming added yet"
 msgstr "No programming added yet"
 
@@ -2552,10 +2533,10 @@ msgid "No programming scheduled for this time period"
 msgstr "No programming scheduled for this time period"
 
 #: src/components/channel_config/AddSelectedMediaButton.tsx:27
-msgid "No programs selected"
-msgstr "No programs selected"
+#~ msgid "No programs selected"
+#~ msgstr "No programs selected"
 
-#: src/components/channel_config/MediaItemGrid.tsx:434
+#: src/components/channel_config/MediaItemGrid.tsx:415
 #: src/components/channel_config/MediaItemList.tsx:159
 msgid "No results"
 msgstr "No results"
@@ -2639,8 +2620,8 @@ msgstr "Open in {0}"
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx:275
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx:281
-msgid "Operation"
-msgstr "Operation"
+#~ msgid "Operation"
+#~ msgstr "Operation"
 
 #: src/components/search/SearchValueNode.tsx:248
 #: src/components/search/SearchValueNode.tsx:300
@@ -2763,8 +2744,8 @@ msgstr "Playlist"
 
 #: src/components/channel_config/plex/PlexLibrarySelector.tsx:119
 #: src/components/channel_config/plex/PlexProgrammingSelector.tsx:151
-msgid "Playlists"
-msgstr "Playlists"
+#~ msgid "Playlists"
+#~ msgstr "Playlists"
 
 #: src/components/programming_controls/AddReplicateModal.tsx:85
 msgid "Please choose a value greater than 1"
@@ -2850,7 +2831,7 @@ msgstr "Programs"
 msgid "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
 msgstr "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:91
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:81
 msgid "Programs saved!"
 msgstr "Programs saved!"
 
@@ -2917,7 +2898,7 @@ msgstr "Read Less"
 msgid "Read More"
 msgstr "Read More"
 
-#: src/components/programming_controls/AddRedirectModal.tsx:147
+#: src/components/programming_controls/AddRedirectModal.tsx:148
 msgid "Redirect duration"
 msgstr "Redirect duration"
 
@@ -2975,7 +2956,7 @@ msgstr "Release Date (desc)"
 msgid "Reload Stream"
 msgstr "Reload Stream"
 
-#: src/components/library/ProgramListItem.tsx:160
+#: src/components/library/ProgramListItem.tsx:127
 msgid "Remove"
 msgstr "Remove"
 
@@ -3049,7 +3030,7 @@ msgstr "Replicate..."
 msgid "Rescan Interval (hours)"
 msgstr "Rescan Interval (hours)"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:298
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:233
 #: src/components/custom-shows/EditCustomShowForm.tsx:425
 #: src/components/filler/EditFillerListForm.tsx:172
 msgid "Reset"
@@ -3064,7 +3045,7 @@ msgstr "Reset"
 msgid "Reset Changes"
 msgstr "Reset Changes"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:282
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:217
 msgid "Reset changes made to the channel's lineup"
 msgstr "Reset changes made to the channel's lineup"
 
@@ -3101,11 +3082,11 @@ msgstr "Restrict Hours"
 msgid "Restrict search fields"
 msgstr "Restrict search fields"
 
-#: src/components/channel_config/SelectedProgrammingActions.tsx:296
+#: src/components/channel_config/SelectedProgrammingActions.tsx:193
 msgid "Review"
 msgstr "Review"
 
-#: src/components/channel_config/SelectedProgrammingActions.tsx:296
+#: src/components/channel_config/SelectedProgrammingActions.tsx:193
 msgid "Review Selections"
 msgstr "Review Selections"
 
@@ -3140,12 +3121,12 @@ msgstr "Sample rate cannot be changed when copying input audio"
 
 #: src/components/channel_config/ChannelEditActions.tsx:98
 #: src/components/channel_config/ChannelEditActions.tsx:118
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:333
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:268
 #: src/components/custom-shows/EditCustomShowForm.tsx:456
 #: src/components/filler/EditFillerListForm.tsx:199
 #: src/components/programming_controls/AddBreaksModal.tsx:209
-#: src/components/programming_controls/AddFlexModal.tsx:113
-#: src/components/programming_controls/AddRedirectModal.tsx:188
+#: src/components/programming_controls/AddFlexModal.tsx:112
+#: src/components/programming_controls/AddRedirectModal.tsx:197
 #: src/components/programming_controls/AddReplicateModal.tsx:111
 #: src/components/programming_controls/AddRerunBlockModal.tsx:89
 #: src/components/programming_controls/AddRestrictHoursModal.tsx:141
@@ -3204,7 +3185,6 @@ msgstr "Schedule programming in blocks that are either count or duration based. 
 msgid "Schedule programming using slots assigned a start time and duration."
 msgstr "Schedule programming using slots assigned a start time and duration."
 
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:532
 #: src/hooks/useRouteName.ts:147
 msgid "Search"
 msgstr "Search"
@@ -3234,7 +3214,7 @@ msgstr "Search…"
 msgid "Seasons"
 msgstr "Seasons"
 
-#: src/components/channel_config/SelectedProgrammingActions.tsx:282
+#: src/components/channel_config/SelectedProgrammingActions.tsx:179
 #: src/components/search/SearchFieldRestrictMenu.tsx:104
 msgid "Select All"
 msgstr "Select All"
@@ -3315,8 +3295,8 @@ msgid "Show Advanced"
 msgstr "Show Advanced"
 
 #: src/components/channel_config/ProgrammingSelector.tsx:356
-msgid "Show only synced libraries"
-msgstr "Show only synced libraries"
+#~ msgid "Show only synced libraries"
+#~ msgstr "Show only synced libraries"
 
 #: src/pages/guide/GuidePage.tsx:155
 msgid "Show Stealth"
@@ -3408,8 +3388,6 @@ msgid "Software (No GPU)"
 msgstr "Software (No GPU)"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx:74
-#: src/components/channel_config/plex/PlexSortField.tsx:89
-#: src/components/channel_config/plex/PlexSortField.tsx:92
 msgid "Sort"
 msgstr "Sort"
 
@@ -3595,7 +3573,7 @@ msgstr "Test"
 msgid "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
 msgstr "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
 
-#: src/components/channel_config/MediaItemGrid.tsx:443
+#: src/components/channel_config/MediaItemGrid.tsx:424
 msgid "The End."
 msgstr "The End."
 
@@ -3685,7 +3663,7 @@ msgstr "This is the name of the fake program that will appear in the TV guide wh
 msgid "This is used by iptv clients to categorize the channels. You can leave it as 'tunarr' if you don't need this sort of classification."
 msgstr "This is used by iptv clients to categorize the channels. You can leave it as 'tunarr' if you don't need this sort of classification."
 
-#: src/components/channel_config/ProgrammingSelector.tsx:149
+#: src/components/channel_config/ProgrammingSelector.tsx:133
 msgid "This media source has no enabled or scanned libraries. Enable libraries for this source on the <0>Media Sources</0> page or manually trigger scans on the <1>Library</1> page."
 msgstr "This media source has no enabled or scanned libraries. Enable libraries for this source on the <0>Media Sources</0> page or manually trigger scans on the <1>Library</1> page."
 
@@ -3746,7 +3724,7 @@ msgstr "TO"
 msgid "To use Tunarr, you must first connect at least one media source. Media sources provide all content used to create channels in Tunarr. Plex and Jellyfin are currently supported."
 msgstr "To use Tunarr, you must first connect at least one media source. Media sources provide all content used to create channels in Tunarr. Plex and Jellyfin are currently supported."
 
-#: src/components/channel_config/ProgrammingSelector.tsx:241
+#: src/components/channel_config/ProgrammingSelector.tsx:199
 msgid "To use Tunarr, you need to first connect a media source. This will allow you to build custom channels with your content."
 msgstr "To use Tunarr, you need to first connect a media source. This will allow you to build custom channels with your content."
 
@@ -3768,7 +3746,7 @@ msgid "Tools"
 msgstr "Tools"
 
 #. placeholder {0}: isNonEmptyString(query.query) && totalHits >= 1000 ? '>1000' : totalHits
-#: src/components/library/LibraryProgramGrid.tsx:234
+#: src/components/library/LibraryProgramGrid.tsx:233
 msgid "Total hits: {0}"
 msgstr "Total hits: {0}"
 
@@ -3889,9 +3867,6 @@ msgstr "VA-API Device"
 msgid "VAAPI Capabilities"
 msgstr "VAAPI Capabilities"
 
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:187
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:216
-#: src/components/channel_config/plex/PlexFilterBuilder.tsx:236
 #: src/components/search/DateSearchValueNode.tsx:131
 #: src/components/search/DateSearchValueNode.tsx:152
 #: src/components/search/DateSearchValueNode.tsx:170
@@ -3981,7 +3956,7 @@ msgstr "Web Settings"
 msgid "Web version = {0}, Server version = {1}"
 msgstr "Web version = {0}, Server version = {1}"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:250
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:185
 msgid "Week"
 msgstr "Week"
 

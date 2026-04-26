@@ -7,26 +7,14 @@ import { v4 } from 'uuid';
 import { test as baseTest, describe, expect, vi } from 'vitest';
 import { bootstrapTunarr } from '../bootstrap.ts';
 import { setGlobalOptionsUnchecked } from '../globals.ts';
-import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { CustomShowDB } from './CustomShowDB.ts';
 import { DBAccess } from './DBAccess.ts';
-import { ProgramDB } from './ProgramDB.ts';
-import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
-import { ProgramExternalIdRepository } from './program/ProgramExternalIdRepository.ts';
-import { ProgramGroupingRepository } from './program/ProgramGroupingRepository.ts';
-import { ProgramGroupingUpsertRepository } from './program/ProgramGroupingUpsertRepository.ts';
-import { ProgramGroupingMinter } from './converters/ProgramGroupingMinter.ts';
-import { ProgramMetadataRepository } from './program/ProgramMetadataRepository.ts';
-import { ProgramSearchRepository } from './program/ProgramSearchRepository.ts';
-import { ProgramStateRepository } from './program/ProgramStateRepository.ts';
-import { ProgramUpsertRepository } from './program/ProgramUpsertRepository.ts';
 import type { MediaSourceId, MediaSourceName } from './schema/base.ts';
 import { CustomShow } from './schema/CustomShow.ts';
 import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
 import { CustomShowContent } from './schema/CustomShowContent.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
 import { MediaSource } from './schema/MediaSource.ts';
-import { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
 import type { NewProgramDao } from './schema/Program.ts';
 import { Program } from './schema/Program.ts';
 
@@ -51,7 +39,6 @@ vi.mock('@/tasks/TaskQueue.js', () => ({
 type Fixture = {
   db: string;
   mediaSourceId: MediaSourceId;
-  mediaLibraryId: string;
   customShowDb: CustomShowDB;
   drizzle: DrizzleDBAccess;
 };
@@ -86,135 +73,10 @@ const test = baseTest.extend<Fixture>({
     });
     await use(uuid);
   },
-  mediaLibraryId: async ({ mediaSourceId }, use) => {
-    const drizzle = DBAccess.instance.getConnection(':memory:')!.drizzle!;
-    const uuid = v4();
-    await drizzle.insert(MediaSourceLibrary).values({
-      uuid,
-      name: 'Test Movie Library',
-      mediaType: 'movies',
-      mediaSourceId,
-      externalKey: 'test-library-key',
-      enabled: true,
-    });
-    await use(uuid);
-  },
   customShowDb: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
-    const logger = LoggerFactory.child({ className: 'ProgramDB' });
-
-    const mockTaskFactory = () => ({ enqueue: async () => {} }) as any;
-
-    // Minimal stub of ProgramDaoMinter — only implements what upsertContentPrograms
-    // needs when converting non-persisted TerminalPrograms to DB rows.
-    const mockMinterFactory = () => ({
-      mint2(mediaSource: any, library: any, program: any) {
-        if (!program.canonicalId) return undefined;
-        const now = +dayjs();
-        return {
-          program: {
-            uuid: v4(),
-            sourceType: program.sourceType,
-            externalSourceId: tag<MediaSourceName>(mediaSource.name),
-            mediaSourceId: tag<MediaSourceId>(program.mediaSourceId),
-            externalKey: program.externalId,
-            canonicalId: program.canonicalId,
-            libraryId: library?.uuid ?? null,
-            duration: program.duration,
-            title: program.title ?? null,
-            type: program.type,
-            state: 'ok',
-            createdAt: now,
-            updatedAt: now,
-            rating: null,
-            summary: null,
-            plot: null,
-            tagline: null,
-            originalAirDate: null,
-            year: null,
-            episode: null,
-            episodeIcon: null,
-            plexRatingKey: null,
-            plexFilePath: null,
-            filePath: null,
-            parentExternalKey: null,
-            grandparentExternalKey: null,
-            showTitle: null,
-            seasonNumber: null,
-            seasonIcon: null,
-            seasonUuid: null,
-            showIcon: null,
-            tvShowUuid: null,
-            albumName: null,
-            albumUuid: null,
-            artistName: null,
-            artistUuid: null,
-            icon: null,
-            localMediaFolderId: null,
-            localMediaSourcePathId: null,
-          },
-          externalIds: [],
-          genres: [],
-          studios: [],
-          artwork: [],
-          credits: [],
-          versions: [],
-          subtitles: [],
-          tags: [],
-        };
-      },
-      mintExternalIds() {
-        return [];
-      },
-    });
-
-    const metadataRepo = new ProgramMetadataRepository(
-      dbAccess.getConnection(':memory:')!.drizzle!,
-    );
-    const externalIdRepo = new ProgramExternalIdRepository(
-      logger,
-      dbAccess.getKyselyDatabase(':memory:')!,
-      dbAccess.getConnection(':memory:')!.drizzle!,
-    );
-    const groupingUpsertRepo = new ProgramGroupingUpsertRepository(
-      dbAccess.getKyselyDatabase(':memory:')!,
-      dbAccess.getConnection(':memory:')!.drizzle!,
-      metadataRepo,
-    );
-    const upsertRepo = new ProgramUpsertRepository(
-      logger,
-      dbAccess.getConnection(':memory:')!.drizzle!,
-      mockTaskFactory,
-      mockTaskFactory,
-      mockMinterFactory as any,
-      externalIdRepo,
-      metadataRepo,
-      groupingUpsertRepo,
-      new ProgramGroupingMinter(),
-    );
-    const programDb = new ProgramDB(
-      new BasicProgramRepository(
-        dbAccess.getKyselyDatabase(':memory:')!,
-        dbAccess.getConnection(':memory:')!.drizzle!,
-      ),
-      new ProgramGroupingRepository(
-        logger,
-        dbAccess.getKyselyDatabase(':memory:')!,
-        dbAccess.getConnection(':memory:')!.drizzle!,
-      ),
-      externalIdRepo,
-      upsertRepo,
-      metadataRepo,
-      groupingUpsertRepo,
-      new ProgramSearchRepository(
-        dbAccess.getKyselyDatabase(':memory:')!,
-        dbAccess.getConnection(':memory:')!.drizzle!,
-      ),
-      new ProgramStateRepository(dbAccess.getConnection(':memory:')!.drizzle!),
-    );
 
     const customShowDb = new CustomShowDB(
-      programDb,
       dbAccess.getKyselyDatabase(':memory:')!,
       dbAccess.getConnection(':memory:')!.drizzle!,
     );
@@ -285,7 +147,6 @@ function makePersistedContentProgram(program: NewProgramDao): ContentProgram {
     type: 'content',
     id: program.uuid,
     uniqueId: program.uuid,
-    persisted: true,
     duration: program.duration,
     program: {
       type: 'movie',
@@ -295,32 +156,6 @@ function makePersistedContentProgram(program: NewProgramDao): ContentProgram {
       canonicalId: program.canonicalId,
       libraryId: program.libraryId ?? '',
       title: program.title ?? '',
-    } as ContentProgram['program'],
-  };
-}
-
-function makeNewContentProgram(
-  mediaSourceId: MediaSourceId,
-  mediaLibraryId: string,
-  overrides?: { title?: string; externalKey?: string },
-): ContentProgram {
-  const externalKey = overrides?.externalKey ?? faker.string.alphanumeric(10);
-  const canonicalId = v4();
-  const duration = faker.number.int({ min: 60000, max: 7200000 });
-  return {
-    type: 'content',
-    persisted: false,
-    duration,
-    uniqueId: `plex|${mediaSourceId}|${externalKey}`,
-    program: {
-      type: 'movie',
-      sourceType: 'plex',
-      mediaSourceId,
-      externalId: externalKey,
-      canonicalId,
-      libraryId: mediaLibraryId,
-      title: overrides?.title ?? faker.word.words(3),
-      duration,
     } as ContentProgram['program'],
   };
 }
@@ -780,80 +615,5 @@ describe('CustomShowDB', () => {
       expect(content[1]!.contentUuid).toBe(program2.uuid);
     });
 
-    test('should upsert and save new (non-persisted) programs to a new custom show', async ({
-      customShowDb,
-      drizzle,
-      mediaSourceId,
-      mediaLibraryId,
-    }) => {
-      const programs = [
-        makeNewContentProgram(mediaSourceId, mediaLibraryId, {
-          externalKey: 'key-aaa',
-        }),
-        makeNewContentProgram(mediaSourceId, mediaLibraryId, {
-          externalKey: 'key-bbb',
-        }),
-      ];
-
-      const showId = await customShowDb.createShow({
-        name: 'New Programs Show',
-        programs,
-      });
-
-      const content = await drizzle.query.customShowContent.findMany({
-        where: (fields, { eq }) => eq(fields.customShowUuid, showId),
-        orderBy: (fields, { asc }) => asc(fields.index),
-      });
-
-      expect(content).toHaveLength(2);
-
-      // Both programs should now exist in the program table
-      const savedPrograms = await drizzle.query.program.findMany({
-        where: (fields, { inArray }) =>
-          inArray(
-            fields.uuid,
-            content.map((c) => c.contentUuid),
-          ),
-      });
-      expect(savedPrograms).toHaveLength(2);
-    });
-
-    test('should save both persisted and new programs to a new custom show', async ({
-      customShowDb,
-      drizzle,
-      mediaSourceId,
-      mediaLibraryId,
-    }) => {
-      const existingProgram = await insertProgram(
-        drizzle,
-        createProgram(mediaSourceId, { title: 'Already In DB' }),
-      );
-      const newProgram = makeNewContentProgram(mediaSourceId, mediaLibraryId, {
-        title: 'Needs Inserting',
-        externalKey: 'brand-new-key',
-      });
-
-      const showId = await customShowDb.createShow({
-        name: 'Mixed Show',
-        programs: [makePersistedContentProgram(existingProgram), newProgram],
-      });
-
-      const content = await drizzle.query.customShowContent.findMany({
-        where: (fields, { eq }) => eq(fields.customShowUuid, showId),
-        orderBy: (fields, { asc }) => asc(fields.index),
-      });
-
-      expect(content).toHaveLength(2);
-
-      // First entry is the pre-existing program
-      expect(content[0]!.contentUuid).toBe(existingProgram.uuid);
-
-      // Second entry was newly inserted
-      const insertedProgram = await drizzle.query.program.findFirst({
-        where: (fields, { eq }) => eq(fields.uuid, content[1]!.contentUuid),
-      });
-      expect(insertedProgram).toBeDefined();
-      expect(insertedProgram!.title).toBe('Needs Inserting');
-    });
   });
 });
