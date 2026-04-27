@@ -22,6 +22,12 @@ See below for an example of our schedule now that we have Flex after our two epi
 
 ![Time Slots preview with flex](../../assets/scheduling-tools-time_slots_previewflex.png)
 
+## Slot Linking
+
+By default, each time slot maintains its own episode cursor. If the same show appears in multiple time slots (e.g. a morning and evening airing), each slot independently starts at episode 1 and advances separately.
+
+To make multiple time slots share a single episode iterator, use [Slot Linking](slot-linking.md). In **continue** mode, the slots advance together sequentially. In **rerun** mode, every linked slot plays the same episode before the group moves on -- useful for simulating same-day reruns at different times.
+
 ## Padding
 
 Padding controls how Tunarr handles the gap between when a program finishes and when the next scheduled slot is due to start. When a program ends before its slot's start time, Tunarr fills the gap with [Flex](/configure/channels/flex) content (or silence if no filler is configured) so that the next program begins at exactly the scheduled time.

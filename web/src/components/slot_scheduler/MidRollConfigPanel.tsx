@@ -1,4 +1,6 @@
-import { t } from '@lingui/core/macro';
+import type { MessageDescriptor } from '@lingui/core';
+import { i18n } from '@lingui/core';
+import { msg, t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import { Add } from '@mui/icons-material';
 import {
@@ -61,10 +63,13 @@ const allProgramTypes = Object.keys(programTypeLabels) as NonNullable<
   MidRollConfig['programTypes']
 >;
 
-const breakRuleLabels: Record<MidRollBreakRuleFormFields['type'], string> = {
-  fixed_interval: t`Fixed Interval`,
-  percentage: t`Percentage-Based`,
-  initial_then_interval: t`Initial Delay + Interval`,
+const breakRuleLabels: Record<
+  MidRollBreakRuleFormFields['type'],
+  MessageDescriptor
+> = {
+  fixed_interval: msg`Fixed Interval`,
+  percentage: msg`Percentage-Based`,
+  initial_then_interval: msg`Initial Delay + Interval`,
 };
 
 function msToMinutes(ms: number): number {
@@ -178,7 +183,7 @@ export const MidRollConfigPanel = () => {
         >
           {Object.entries(breakRuleLabels).map(([value, label]) => (
             <MenuItem key={value} value={value}>
-              {label}
+              {i18n.t(label)}
             </MenuItem>
           ))}
         </Select>

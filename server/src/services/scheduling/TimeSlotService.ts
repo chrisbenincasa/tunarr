@@ -27,7 +27,6 @@ import {
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { Nilable } from '../../types/util.ts';
-import { slotIteratorKey } from './ProgramIterator.ts';
 import type {
   PaddedProgram,
   SlotSchedulerProgram,
@@ -35,13 +34,15 @@ import type {
 import {
   addHeadAndTailFillerToSlot,
   applyMidRollBreaks,
+  createFillerIterators,
   createPaddedProgram,
-  createProgramIterators,
   createProgramMap,
+  createSlotIterators,
+  createSlotProgramIterator,
   deduplicatePrograms,
   distributeFlex,
+  getFillerIteratorsForSlot,
   maybeAddPrePostFiller,
-  slotFillerIterators,
 } from './slotSchedulerUtil.js';
 import { TimeSlotImpl } from './TimeSlotImpl.js';
 
@@ -99,11 +100,13 @@ export async function scheduleTimeSlots(
   // Load programs
   // TODO: include redirects and custom programs!
   const allPrograms = deduplicatePrograms(programs);
-  const contentProgramIteratorsById = createProgramIterators(
+  const programMap = createProgramMap(allPrograms);
+  const fillerIterators = createFillerIterators(
     schedule.slots,
-    createProgramMap(allPrograms),
+    programMap,
     random,
   );
+  const slotIterators = createSlotIterators(schedule.slots, programMap, random);
 
   const periodDuration = dayjs.duration(1, schedule.period);
   const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
@@ -116,9 +119,10 @@ export async function scheduleTimeSlots(
           ...slot,
           startTime: slot.startTime,
         },
-        contentProgramIteratorsById[slotIteratorKey(slot)]!,
+        ('id' in slot ? slotIterators.get(slot.id) : undefined) ??
+          createSlotProgramIterator(slot, programMap, random),
         random,
-        slotFillerIterators(slot, contentProgramIteratorsById),
+        getFillerIteratorsForSlot(slot, fillerIterators),
       ),
   );
 

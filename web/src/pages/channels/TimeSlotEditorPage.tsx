@@ -3,7 +3,6 @@ import ChannelLineupList from '@/components/channel_config/ChannelLineupList.tsx
 import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormProvider.tsx';
 import { TimeSlotTable } from '@/components/slot_scheduler/TimeSlotTable.tsx';
 import type { DropdownOption } from '@/helpers/DropdownOption.ts';
-import { Trans, useLingui } from '@lingui/react/macro';
 import {
   OneDayMillis,
   OneWeekMillis,
@@ -14,6 +13,7 @@ import type {
   TimeSlotViewModel,
 } from '@/model/TimeSlotModels.ts';
 import { useChannelEditorLazy } from '@/store/selectors.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { ArrowBack, Autorenew, ExpandMore } from '@mui/icons-material';
 import type { SelectChangeEvent } from '@mui/material';
 import {
@@ -327,7 +327,9 @@ export default function TimeSlotEditorPage() {
               >
                 <Grid size={{ sm: 16, md: 5 }}>
                   <FormControl fullWidth margin="normal">
-                    <InputLabel><Trans>Period</Trans></InputLabel>
+                    <InputLabel>
+                      <Trans>Period</Trans>
+                    </InputLabel>
                     <Controller
                       control={control}
                       name="period"
@@ -337,26 +339,32 @@ export default function TimeSlotEditorPage() {
                           {...field}
                           onChange={(e) => handlePeriodChange(e)}
                         >
-                          <MenuItem value="day"><Trans>Daily</Trans></MenuItem>
-                          <MenuItem value="week"><Trans>Weekly</Trans></MenuItem>
+                          <MenuItem value="day">
+                            <Trans>Daily</Trans>
+                          </MenuItem>
+                          <MenuItem value="week">
+                            <Trans>Weekly</Trans>
+                          </MenuItem>
                         </Select>
                       )}
                     />
                     <FormHelperText>
                       <Trans>
-                        By default, time slots are time of the day-based, you can
-                        change it to time of the day + day of the week. That means
-                        scheduling 7x the number of time slots. If you change from
-                        daily to weekly, the current schedule will be repeated 7
-                        times. If you change from weekly to daily, many of the
-                        slots will be deleted.
+                        By default, time slots are time of the day-based, you
+                        can change it to time of the day + day of the week. That
+                        means scheduling 7x the number of time slots. If you
+                        change from daily to weekly, the current schedule will
+                        be repeated 7 times. If you change from weekly to daily,
+                        many of the slots will be deleted.
                       </Trans>
                     </FormHelperText>
                   </FormControl>
                 </Grid>
                 <Grid size={{ sm: 16, md: 5 }}>
                   <FormControl fullWidth margin="normal">
-                    <InputLabel><Trans>Max Lateness</Trans></InputLabel>
+                    <InputLabel>
+                      <Trans>Max Lateness</Trans>
+                    </InputLabel>
                     <Controller
                       control={control}
                       name="latenessMs"
@@ -373,16 +381,18 @@ export default function TimeSlotEditorPage() {
 
                     <FormHelperText>
                       <Trans>
-                        Allows programs to play a bit late if the previous program
-                        took longer than usual. If a program is too late, Flex is
-                        scheduled instead.
+                        Allows programs to play a bit late if the previous
+                        program took longer than usual. If a program is too
+                        late, Flex is scheduled instead.
                       </Trans>
                     </FormHelperText>
                   </FormControl>
                 </Grid>
                 <Grid size={{ sm: 16, md: 5 }}>
                   <FormControl fullWidth margin="normal">
-                    <InputLabel><Trans>Pad Times</Trans></InputLabel>
+                    <InputLabel>
+                      <Trans>Pad Times</Trans>
+                    </InputLabel>
                     <Controller
                       control={control}
                       name="padMs"
@@ -408,7 +418,9 @@ export default function TimeSlotEditorPage() {
 
                 <Grid size={{ sm: 16, md: 5 }}>
                   <FormControl fullWidth margin="normal">
-                    <InputLabel><Trans>Flex Style</Trans></InputLabel>
+                    <InputLabel>
+                      <Trans>Flex Style</Trans>
+                    </InputLabel>
                     <Controller
                       control={control}
                       name="flexPreference"
@@ -448,9 +460,9 @@ export default function TimeSlotEditorPage() {
 
                     <FormHelperText sx={{ ml: 1 }}>
                       <Trans>
-                        Maximum number of days to precalculate the schedule. Note
-                        that the length of the schedule is also bounded by the
-                        maximum number of programs allowed in a channel.
+                        Maximum number of days to precalculate the schedule.
+                        Note that the length of the schedule is also bounded by
+                        the maximum number of programs allowed in a channel.
                         <br />
                         <strong>
                           Note: Previewing the schedule in the browser for long
@@ -478,7 +490,9 @@ export default function TimeSlotEditorPage() {
           </Box>
         </PaddedPaper>
         <PaddedPaper>
-          <Typography sx={{ mb: 1 }}><Trans>Programming Preview</Trans></Typography>
+          <Typography sx={{ mb: 1 }}>
+            <Trans>Programming Preview</Trans>
+          </Typography>
           <Divider sx={{ mb: 1 }} />
           <DateTimePicker
             label={t`Programming Start`}

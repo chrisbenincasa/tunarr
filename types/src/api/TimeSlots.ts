@@ -79,8 +79,10 @@ export type MaterializedCustomShowTimeSlot = z.infer<
   typeof MaterializedCustomShowTimeSlot
 >;
 
-export const FillerShowProgrammingTimeSlotSchema =
-  FillerProgrammingSlotSchema.extend(BaseTimeSlot.shape);
+export const FillerShowProgrammingTimeSlotSchema = z.object({
+  ...BaseTimeSlot.shape,
+  ...FillerProgrammingSlotSchema.shape,
+});
 
 export const MaterializedFillerTimeSlot = z.object({
   ...FillerShowProgrammingTimeSlotSchema.shape,

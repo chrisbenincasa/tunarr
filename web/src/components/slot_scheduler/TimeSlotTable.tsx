@@ -1,10 +1,10 @@
 import { OneDayMillis } from '@/helpers/constants.ts';
 import { getTimeSlotId, OneWeekMillis } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptionsContext } from '@/hooks/programming_controls/useSlotProgramOptions';
-import { plural } from '@lingui/core/macro';
-import { Trans, useLingui } from '@lingui/react/macro';
 import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails.ts';
 import type { TimeSlotViewModel } from '@/model/TimeSlotModels.ts';
+import { plural } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Delete, Edit, Warning } from '@mui/icons-material';
 import {
   Box,
@@ -46,17 +46,18 @@ import {
 import { useMemo, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { formatSlotOrder } from '../../helpers/slots.ts';
-import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
+import { useTimeSlotFormContext } from '../../hooks/slot_scheduler/useTimeSlotFormContext.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
-import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
-import type {
-  SlotWarning,
-  TimeSlotTableRowType,
+import {
+  slotIsLinkable,
+  type SlotWarning,
+  type TimeSlotTableRowType,
 } from '../../model/CommonSlotModels.ts';
 import { AddTimeSlotButton } from './AddTimeSlotButton.tsx';
 import { ClearSlotsButton } from './ClearSlotsButton.tsx';
 import { EditTimeSlotDialogContent } from './EditTimeSlotDialogContent.tsx';
+import { TimeSlotTableProgramCell } from './TimeSlotTableProgramCell.tsx';
 import { TimeSlotWarningsDialog } from './TimeSlotWarningsDialog.tsx';
 
 dayjs.extend(localizedFormat);
@@ -87,7 +88,7 @@ export const TimeSlotTable = () => {
   const { t } = useLingui();
   const providedDjs = useDayjs();
   const localeData = useMemo(() => providedDjs().localeData(), [providedDjs]);
-  const { watch, slotArray } = useTimeSlotFormContext();
+  const { watch, slotArray, setValue, getValues } = useTimeSlotFormContext();
   const [currentPeriod, latenessMs] = watch(['period', 'latenessMs']);
   const programOptions = useSlotProgramOptionsContext();
   const startOfPeriod = dayjs().startOf(currentPeriod);
@@ -112,8 +113,6 @@ export const TimeSlotTable = () => {
   const [currentSlotWarningsIndex, setCurrentSlotWarningsIndex] = useState<
     number | null
   >(null);
-
-  const getSlotName = useSlotName();
 
   const rows = useMemo(() => {
     return map(
@@ -210,7 +209,9 @@ export const TimeSlotTable = () => {
             );
           } else if (row.original.type === 'show' && row.original.missingShow) {
             return (
-              <Tooltip title={t`This show is marked as missing in the database.`}>
+              <Tooltip
+                title={t`This show is marked as missing in the database.`}
+              >
                 <Warning sx={{ fontSize: 'inherit' }} color="warning" />
               </Tooltip>
             );
@@ -218,7 +219,9 @@ export const TimeSlotTable = () => {
 
           return match(row.original)
             .with({ type: 'show', missingShow: P.nonNullable }, () => (
-              <Tooltip title={t`This show is marked as missing in the database.`}>
+              <Tooltip
+                title={t`This show is marked as missing in the database.`}
+              >
                 <Warning sx={{ fontSize: 'inherit' }} color="warning" />
               </Tooltip>
             ))
@@ -264,29 +267,11 @@ export const TimeSlotTable = () => {
         enableEditing: true,
         Cell: ({ cell }) => {
           const value = cell.getValue<TimeSlotViewModel>();
-          return getSlotName(value) ?? '-';
+          return <TimeSlotTableProgramCell model={value} />;
         },
         grow: true,
         size: 350,
       },
-      // {
-      //   header: '# of Programs',
-      //   id: 'programCount',
-      //   enableEditing: false,
-      //   Cell({ row }) {
-      //     const programming = row.original;
-      //     switch (programming.type) {
-      //       case 'movie':
-      //       case 'show':
-      //       case 'custom-show':
-      //       case 'filler':
-      //         return row.original.programCount;
-      //       case 'flex':
-      //       case 'redirect':
-      //         return '-';
-      //     }
-      //   },
-      // },
       {
         header: t`Order`,
         accessorFn: formatSlotOrder,
@@ -352,7 +337,40 @@ export const TimeSlotTable = () => {
         },
       },
     ];
-  }, [currentPeriod, getSlotName, startOfPeriod, t]);
+  }, [currentPeriod, startOfPeriod, t]);
+
+  const handleDeleteSlot = (row: MRT_Row<TimeSlotTableRowType>) => {
+    const index = row.original.originalIndex;
+    const currentSlots = getValues('slots');
+    const deletedSlot = currentSlots[index];
+    const deletedGroup = slotIsLinkable(deletedSlot)
+      ? deletedSlot.iterationGroup
+      : undefined;
+
+    const newSlots = currentSlots
+      .filter((_, idx) => idx !== index)
+      .map((slot) => {
+        if (
+          deletedGroup &&
+          slotIsLinkable(slot) &&
+          slot.iterationGroup === deletedGroup
+        ) {
+          const othersInGroup = currentSlots.filter(
+            (s, i) =>
+              i !== index &&
+              s !== slot &&
+              slotIsLinkable(s) &&
+              s.iterationGroup === deletedGroup,
+          );
+          if (othersInGroup.length === 0) {
+            return { ...slot, iterationGroup: undefined, linkMode: undefined };
+          }
+        }
+        return slot;
+      });
+
+    setValue('slots', newSlots, { shouldDirty: true, shouldTouch: true });
+  };
 
   const renderActionCell = ({
     row,
@@ -375,9 +393,7 @@ export const TimeSlotTable = () => {
           </IconButton>
         </Tooltip>
         <Tooltip title={t`Delete Slot`} placement="top">
-          <IconButton
-            onClick={() => slotArray.remove(row.original.originalIndex)}
-          >
+          <IconButton onClick={() => handleDeleteSlot(row)}>
             <Delete />
           </IconButton>
         </Tooltip>
@@ -396,7 +412,6 @@ export const TimeSlotTable = () => {
         visibleInShowHideMenu: false,
       },
     },
-    positionActionsColumn: 'last',
     enableRowActions: true,
     // TODO: Can enable this with custom options to filter by show name
     enableGlobalFilter: false,
@@ -453,7 +468,9 @@ export const TimeSlotTable = () => {
         fullWidth
         onClose={() => setCurrentEditingSlot(null)}
       >
-        <DialogTitle><Trans>Edit Slot</Trans></DialogTitle>
+        <DialogTitle>
+          <Trans>Edit Slot</Trans>
+        </DialogTitle>
         {currentEditingSlot && (
           <EditTimeSlotDialogContent
             slot={currentEditingSlot.slot}

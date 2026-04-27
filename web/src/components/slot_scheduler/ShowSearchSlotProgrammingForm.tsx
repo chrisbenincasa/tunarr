@@ -1,9 +1,9 @@
 import { useLingui } from '@lingui/react/macro';
 import { Autocomplete, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { createTypeSearchField } from '@tunarr/shared/util';
+import { createTypeSearchField, isNonEmptyString } from '@tunarr/shared/util';
 import { useMemo, useState } from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { getApiProgramsByIdChildrenOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import type { CommonShowSlotViewModel } from '../../model/CommonSlotModels.ts';
 import { ProgramSearchAutocomplete } from '../ProgramSearchAutocomplete.tsx';
@@ -11,13 +11,13 @@ import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
 export const ShowSearchSlotProgrammingForm = () => {
   const { t } = useLingui();
-  const { control, setValue, watch } =
-    useFormContext<CommonShowSlotViewModel>();
+  const { control, setValue } = useFormContext<CommonShowSlotViewModel>();
   const [searchQuery, setSearchQuery] = useState('');
   const enabled = useMemo(() => searchQuery.length >= 1, [searchQuery]);
-  const show = watch('show');
-  const seasonFilter = watch('seasonFilter');
-  const seasonExcludeFilter = watch('seasonExcludeFilter');
+  const [show, seasonFilter, seasonExcludeFilter, iterationGroup] = useWatch({
+    control: control,
+    name: ['show', 'seasonFilter', 'seasonExcludeFilter', 'iterationGroup'],
+  });
 
   const search = useMemo(
     () => ({
@@ -73,6 +73,7 @@ export const ShowSearchSlotProgrammingForm = () => {
             }}
             onQueryChange={setSearchQuery}
             label={t`Show`}
+            disabled={isNonEmptyString(iterationGroup)}
           />
         )}
       />
@@ -87,7 +88,11 @@ export const ShowSearchSlotProgrammingForm = () => {
                 ? []
                 : allSeasons.filter((opt) => field.value.includes(opt.index))
             }
-            disabled={!show || showChildrenQuery.isLoading}
+            disabled={
+              !show ||
+              showChildrenQuery.isLoading ||
+              isNonEmptyString(iterationGroup)
+            }
             multiple
             getOptionKey={(season) => season.index}
             getOptionLabel={(season) => season.title}
@@ -115,7 +120,11 @@ export const ShowSearchSlotProgrammingForm = () => {
                 ? []
                 : allSeasons.filter((opt) => field.value.includes(opt.index))
             }
-            disabled={!show || showChildrenQuery.isLoading}
+            disabled={
+              !show ||
+              showChildrenQuery.isLoading ||
+              isNonEmptyString(iterationGroup)
+            }
             multiple
             getOptionKey={(season) => season.index}
             getOptionLabel={(season) => season.title}

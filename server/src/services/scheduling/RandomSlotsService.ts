@@ -24,11 +24,7 @@ import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { Nilable } from '../../types/util.ts';
 import { isNonEmptyArray, zipWithIndex } from '../../util/index.ts';
-import {
-  slotIteratorKey,
-  type IterationState,
-  type ProgramIterator,
-} from './ProgramIterator.ts';
+import { type IterationState } from './ProgramIterator.ts';
 import { RandomSlotImpl } from './RandomSlotImpl.ts';
 import type {
   PaddedProgram,
@@ -37,14 +33,16 @@ import type {
 import {
   addHeadAndTailFillerToSlot,
   applyMidRollBreaks,
+  createFillerIterators,
   createPaddedProgram,
-  createProgramIterators,
   createProgramMap,
+  createSlotIterators,
+  createSlotProgramIterator,
   deduplicatePrograms,
   distributeFlex,
+  getFillerIteratorsForSlot,
   maybeAddPrePostFiller,
   pushOrExtendFlex,
-  slotFillerIterators,
 } from './slotSchedulerUtil.js';
 
 export const random = new Random(MersenneTwister19937.autoSeed());
@@ -57,7 +55,6 @@ dayjs.extend(dayjsMod);
 class ScheduleContext {
   #startTime: dayjs.Dayjs;
   #timeCursor: dayjs.Dayjs;
-  #programmingIteratorsById: Record<string, ProgramIterator>;
   #workingLineup: CondensedChannelProgram[] = [];
   #sortedSlots: RandomSlotImpl[];
   #slotLastPlayed: Map<number, number> = new Map<number, number>();
@@ -78,9 +75,15 @@ class ScheduleContext {
       discardCount,
     );
     this.#random = new Random(this.#engine);
-    this.#programmingIteratorsById = createProgramIterators(
+    const programMap = createProgramMap(deduplicatePrograms(programming));
+    const fillerIterators = createFillerIterators(
       schedule.slots,
-      createProgramMap(deduplicatePrograms(programming)),
+      programMap,
+      this.#random,
+    );
+    const slotIterators = createSlotIterators(
+      schedule.slots,
+      programMap,
       this.#random,
     );
     this.#startTime = this.#timeCursor = startTime;
@@ -89,9 +92,10 @@ class ScheduleContext {
       (slot) =>
         new RandomSlotImpl(
           slot,
-          this.#programmingIteratorsById[slotIteratorKey(slot)]!,
+          ('id' in slot ? slotIterators.get(slot.id) : undefined) ??
+            createSlotProgramIterator(slot, programMap, this.#random),
           this.#random,
-          slotFillerIterators(slot, this.programmingIteratorsById),
+          getFillerIteratorsForSlot(slot, fillerIterators),
         ),
     );
   }
@@ -116,10 +120,6 @@ class ScheduleContext {
 
   get timeCursor() {
     return this.#timeCursor;
-  }
-
-  get programmingIteratorsById() {
-    return this.#programmingIteratorsById;
   }
 
   getNextProgramForSlot(

@@ -14,6 +14,7 @@ import type { TimeSlotViewModel } from '../../model/TimeSlotModels.ts';
 export const TimeSlotConfigDialogPanel = () => {
   const { t } = useLingui();
   const { control } = useFormContext<TimeSlotViewModel>();
+
   return (
     <Stack>
       <FormControl fullWidth margin="normal">

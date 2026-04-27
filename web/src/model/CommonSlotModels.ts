@@ -1,6 +1,3 @@
-import type { FieldArrayWithId } from 'react-hook-form';
-import type { RandomSlotForm } from './SlotModels.ts';
-
 import {
   BaseSlotOrdering,
   MidRollConfigSchema,
@@ -13,19 +10,40 @@ import {
   Show,
   SmartCollection,
 } from '@tunarr/types/schemas';
+import type { FieldArrayWithId } from 'react-hook-form';
 import z from 'zod';
+import type { RandomSlotForm } from './SlotModels.ts';
 import type { TimeSlotForm } from './TimeSlotModels.ts';
+
+export const LinkModeSchema = z.enum(['continue', 'rerun']);
+export type LinkMode = z.infer<typeof LinkModeSchema>;
+
+const LinkableSlot = z.object({
+  id: z.uuid(),
+  iterationGroup: z.uuid().optional(),
+  linkMode: LinkModeSchema.default('continue').optional(),
+});
+
+export type LinkableSlot = z.infer<typeof LinkableSlot>;
 
 export const WithSlotFiller = z.object({
   filler: z.array(SlotFiller).optional(),
   midRoll: MidRollConfigSchema.optional(),
 });
 
+export type WithSlotFiller = z.infer<typeof WithSlotFiller>;
+
 export const CommonMovieSlotViewModel = z.object({
+  ...LinkableSlot.shape,
+  ...BaseSlotOrdering.shape,
+  ...WithSlotFiller.shape,
   type: z.literal('movie'),
 });
 
 export const CommonCustomShowSlotViewModel = z.object({
+  ...LinkableSlot.shape,
+  ...BaseSlotOrdering.shape,
+  ...WithSlotFiller.shape,
   type: z.literal('custom-show'),
   customShowId: z.uuid(),
   customShow: CustomShowSchema.omit({
@@ -40,6 +58,7 @@ export type CommonCustomShowSlotViewModel = z.infer<
 >;
 
 export const CommonFillerSlotViewModel = z.object({
+  ...LinkableSlot.shape,
   type: z.literal('filler'),
   fillerListId: z.uuid(),
   order: SlotProgrammingFillerOrder,
@@ -55,7 +74,9 @@ export type CommonFillerSlotViewModel = z.infer<
 >;
 
 export const CommonShowSlotViewModel = z.object({
+  ...LinkableSlot.shape,
   ...BaseSlotOrdering.shape,
+  ...WithSlotFiller.shape,
   type: z.literal('show'),
   showId: z.string(),
   show: Show.nullable(),
@@ -80,6 +101,9 @@ export const CommonRedirectSlotViewModel = z.object({
 });
 
 export const CommonSmartCollectionViewModel = z.object({
+  ...LinkableSlot.shape,
+  ...BaseSlotOrdering.shape,
+  ...WithSlotFiller.shape,
   type: z.literal('smart-collection'),
   smartCollectionId: z.uuid(),
   smartCollection: SmartCollection.nullable(),
@@ -102,6 +126,139 @@ export const CommonSlotViewModel = z.discriminatedUnion('type', [
 
 export type CommonSlotViewModel = z.infer<typeof CommonSlotViewModel>;
 
+export type LinkableSlotViewModel = Extract<
+  CommonSlotViewModel,
+  { type: 'movie' | 'show' | 'custom-show' | 'smart-collection' | 'filler' }
+>;
+
+export function slotIsLinkable(
+  slot: CommonSlotViewModel,
+): slot is LinkableSlotViewModel {
+  switch (slot.type) {
+    case 'custom-show':
+    case 'filler':
+    case 'movie':
+    case 'show':
+    case 'smart-collection':
+      return true;
+    case 'flex':
+    case 'redirect':
+      return false;
+  }
+}
+
+export type SlotLinkingContent =
+  | {
+      type: 'movie';
+      order: z.infer<typeof BaseSlotOrdering>['order'];
+      direction: z.infer<typeof BaseSlotOrdering>['direction'];
+      filler?: WithSlotFiller['filler'];
+      midRoll?: WithSlotFiller['midRoll'];
+    }
+  | {
+      type: 'show';
+      showId: string;
+      show: CommonShowSlotViewModel['show'];
+      missingShow?: CommonShowSlotViewModel['missingShow'];
+      order: z.infer<typeof BaseSlotOrdering>['order'];
+      direction: z.infer<typeof BaseSlotOrdering>['direction'];
+      seasonFilter: number[];
+      seasonExcludeFilter: number[];
+      filler?: WithSlotFiller['filler'];
+      midRoll?: WithSlotFiller['midRoll'];
+    }
+  | {
+      type: 'custom-show';
+      customShowId: string;
+      customShow: CommonCustomShowSlotViewModel['customShow'];
+      order: z.infer<typeof BaseSlotOrdering>['order'];
+      direction: z.infer<typeof BaseSlotOrdering>['direction'];
+      isMissing: boolean;
+      filler?: WithSlotFiller['filler'];
+      midRoll?: WithSlotFiller['midRoll'];
+    }
+  | {
+      type: 'smart-collection';
+      smartCollectionId: string;
+      smartCollection: CommonSmartCollectionViewModel['smartCollection'];
+      order: z.infer<typeof BaseSlotOrdering>['order'];
+      direction: z.infer<typeof BaseSlotOrdering>['direction'];
+      isMissing: boolean;
+      filler?: WithSlotFiller['filler'];
+      midRoll?: WithSlotFiller['midRoll'];
+    }
+  | {
+      type: 'filler';
+      fillerListId: string;
+      fillerList: CommonFillerSlotViewModel['fillerList'];
+      order: CommonFillerSlotViewModel['order'];
+      durationWeighting: CommonFillerSlotViewModel['durationWeighting'];
+      decayFactor: number;
+      recoveryFactor: number;
+      isMissing: boolean;
+    };
+
+export function copySlotForLinking(
+  slot: LinkableSlotViewModel,
+): SlotLinkingContent {
+  switch (slot.type) {
+    case 'movie':
+      return {
+        type: 'movie',
+        order: slot.order,
+        direction: slot.direction,
+        filler: slot.filler,
+        midRoll: slot.midRoll,
+      };
+    case 'show':
+      return {
+        type: 'show',
+        showId: slot.showId,
+        show: slot.show,
+        missingShow: slot.missingShow,
+        order: slot.order,
+        direction: slot.direction,
+        seasonFilter: [...slot.seasonFilter],
+        seasonExcludeFilter: [...slot.seasonExcludeFilter],
+        filler: slot.filler,
+        midRoll: slot.midRoll,
+      };
+    case 'custom-show':
+      return {
+        type: 'custom-show',
+        customShowId: slot.customShowId,
+        customShow: slot.customShow,
+        order: slot.order,
+        direction: slot.direction,
+        isMissing: slot.isMissing,
+        filler: slot.filler,
+        midRoll: slot.midRoll,
+      };
+    case 'smart-collection':
+      return {
+        type: 'smart-collection',
+        smartCollectionId: slot.smartCollectionId,
+        smartCollection: slot.smartCollection,
+        order: slot.order,
+        direction: slot.direction,
+        isMissing: slot.isMissing,
+        filler: slot.filler,
+        midRoll: slot.midRoll,
+      };
+    case 'filler':
+      return {
+        type: 'filler',
+        fillerListId: slot.fillerListId,
+        fillerList: slot.fillerList,
+        order: slot.order,
+        durationWeighting: slot.durationWeighting,
+        decayFactor: slot.decayFactor,
+        recoveryFactor: slot.recoveryFactor,
+        isMissing: slot.isMissing,
+      };
+  }
+}
+
 export type ProgramTooLongWarning = {
   type: 'program_too_long';
   programs: { id: string; duration: number }[];
@@ -109,8 +266,8 @@ export type ProgramTooLongWarning = {
 
 export type SlotWarning = ProgramTooLongWarning;
 
-export type TimeSlotTableDataType = FieldArrayWithId<TimeSlotForm, 'slots'>;
-export type RandomSlotTableDataType = FieldArrayWithId<RandomSlotForm, 'slots'>;
+type TimeSlotTableDataType = FieldArrayWithId<TimeSlotForm, 'slots'>;
+type RandomSlotTableDataType = FieldArrayWithId<RandomSlotForm, 'slots'>;
 
 export type SlotTableWarnings = {
   warnings: SlotWarning[];

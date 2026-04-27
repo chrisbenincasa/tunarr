@@ -2935,6 +2935,7 @@ export type GetChannelsResponses = {
             width: number;
             duration: number;
             position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            useDefaultIconFallback?: boolean;
         };
         id: string;
         name: string;
@@ -3020,6 +3021,7 @@ export type CreateChannelV2Data = {
                 width: number;
                 duration: number;
                 position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                useDefaultIconFallback?: boolean;
             };
             id: string;
             name: string;
@@ -3136,6 +3138,7 @@ export type CreateChannelV2Responses = {
             width: number;
             duration: number;
             position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            useDefaultIconFallback?: boolean;
         };
         id: string;
         name: string;
@@ -3294,6 +3297,7 @@ export type GetChannelsByNumberV2Responses = {
             width: number;
             duration: number;
             position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            useDefaultIconFallback?: boolean;
         };
         id: string;
         name: string;
@@ -3377,6 +3381,7 @@ export type PutApiChannelsByIdData = {
             width: number;
             duration: number;
             position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            useDefaultIconFallback?: boolean;
         };
         id: string;
         name: string;
@@ -3487,6 +3492,7 @@ export type PutApiChannelsByIdResponses = {
             width: number;
             duration: number;
             position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            useDefaultIconFallback?: boolean;
         };
         id: string;
         name: string;
@@ -3671,6 +3677,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
             width: number;
             duration: number;
             position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            useDefaultIconFallback?: boolean;
         };
         name?: string;
         number?: number;
@@ -3739,6 +3746,9 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3775,6 +3785,9 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 seasonExcludeFilter: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3813,19 +3826,52 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 startTime: number;
                 padMs?: number;
             } | {
+                startTime: number;
+                padMs?: number;
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                midRoll?: {
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
+                    maxBreaks: number;
+                    minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
+                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
+                };
                 type: 'filler';
                 fillerListId: string;
                 order: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
-                startTime: number;
-                padMs?: number;
             } | {
                 type: 'custom-show';
                 customShowId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3862,6 +3908,9 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3899,6 +3948,9 @@ export type GetApiChannelsByIdProgrammingResponses = {
             padMs: number;
             padStyle: 'slot' | 'episode';
             slots: Array<{
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3941,6 +3993,9 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 direction: 'asc' | 'desc';
                 type: 'movie';
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4014,6 +4069,9 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 channelId: string;
                 channelName?: string;
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4068,6 +4126,36 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 };
                 weight: number;
                 index?: number;
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                midRoll?: {
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
+                    maxBreaks: number;
+                    minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
+                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
+                };
                 type: 'filler';
                 fillerListId: string;
                 order: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
@@ -4075,6 +4163,9 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 decayFactor: number;
                 recoveryFactor: number;
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4210,6 +4301,9 @@ export type PostApiChannelsByIdProgrammingData = {
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4246,6 +4340,9 @@ export type PostApiChannelsByIdProgrammingData = {
                 seasonExcludeFilter?: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4284,19 +4381,52 @@ export type PostApiChannelsByIdProgrammingData = {
                 startTime: number;
                 padMs?: number;
             } | {
+                startTime: number;
+                padMs?: number;
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                midRoll?: {
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
+                    maxBreaks: number;
+                    minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
+                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
+                };
                 type: 'filler';
                 fillerListId: string;
                 order: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
-                startTime: number;
-                padMs?: number;
             } | {
                 type: 'custom-show';
                 customShowId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4333,6 +4463,9 @@ export type PostApiChannelsByIdProgrammingData = {
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4376,6 +4509,9 @@ export type PostApiChannelsByIdProgrammingData = {
             padMs: number;
             padStyle: 'slot' | 'episode';
             slots: Array<{
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4418,6 +4554,9 @@ export type PostApiChannelsByIdProgrammingData = {
                 direction?: 'asc' | 'desc';
                 type: 'movie';
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4491,6 +4630,9 @@ export type PostApiChannelsByIdProgrammingData = {
                 channelId: string;
                 channelName?: string;
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4545,6 +4687,36 @@ export type PostApiChannelsByIdProgrammingData = {
                 };
                 weight: number;
                 index?: number;
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                midRoll?: {
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
+                    maxBreaks: number;
+                    minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
+                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
+                };
                 type: 'filler';
                 fillerListId: string;
                 order: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
@@ -4552,6 +4724,9 @@ export type PostApiChannelsByIdProgrammingData = {
                 decayFactor: number;
                 recoveryFactor: number;
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4635,6 +4810,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
             width: number;
             duration: number;
             position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            useDefaultIconFallback?: boolean;
         };
         name?: string;
         number?: number;
@@ -4703,6 +4879,9 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4739,6 +4918,9 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 seasonExcludeFilter: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4777,19 +4959,52 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 startTime: number;
                 padMs?: number;
             } | {
+                startTime: number;
+                padMs?: number;
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                midRoll?: {
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
+                    maxBreaks: number;
+                    minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
+                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
+                };
                 type: 'filler';
                 fillerListId: string;
                 order: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
-                startTime: number;
-                padMs?: number;
             } | {
                 type: 'custom-show';
                 customShowId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4826,6 +5041,9 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4863,6 +5081,9 @@ export type PostApiChannelsByIdProgrammingResponses = {
             padMs: number;
             padStyle: 'slot' | 'episode';
             slots: Array<{
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4905,6 +5126,9 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 direction: 'asc' | 'desc';
                 type: 'movie';
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4978,6 +5202,9 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 channelId: string;
                 channelName?: string;
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5032,6 +5259,36 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 };
                 weight: number;
                 index?: number;
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                midRoll?: {
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
+                    maxBreaks: number;
+                    minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
+                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
+                };
                 type: 'filler';
                 fillerListId: string;
                 order: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
@@ -5039,6 +5296,9 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 decayFactor: number;
                 recoveryFactor: number;
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5184,6 +5444,7 @@ export type GetApiChannelsAllLineupsResponses = {
             width: number;
             duration: number;
             position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            useDefaultIconFallback?: boolean;
         };
         name: string;
         number: number;
@@ -5292,6 +5553,7 @@ export type GetApiChannelsByIdLineupResponses = {
             width: number;
             duration: number;
             position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            useDefaultIconFallback?: boolean;
         };
         name: string;
         number: number;
@@ -5536,6 +5798,9 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5572,6 +5837,9 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 seasonExcludeFilter?: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5610,19 +5878,52 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 startTime: number;
                 padMs?: number;
             } | {
+                startTime: number;
+                padMs?: number;
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                midRoll?: {
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
+                    maxBreaks: number;
+                    minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
+                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
+                };
                 type: 'filler';
                 fillerListId: string;
                 order: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
-                startTime: number;
-                padMs?: number;
             } | {
                 type: 'custom-show';
                 customShowId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5659,6 +5960,9 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5699,6 +6003,10 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
 };
 
 export type PostApiChannelsByChannelIdScheduleTimeSlotsErrors = {
+    /**
+     * Default Response
+     */
+    400: string;
     /**
      * Default Response
      */
@@ -5779,6 +6087,9 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
             padMs: number;
             padStyle: 'slot' | 'episode';
             slots: Array<{
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5821,6 +6132,9 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 direction?: 'asc' | 'desc';
                 type: 'movie';
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5894,6 +6208,9 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 channelId: string;
                 channelName?: string;
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5948,6 +6265,36 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 };
                 weight: number;
                 index?: number;
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                midRoll?: {
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
+                    maxBreaks: number;
+                    minProgramDurationMs: number;
+                    tailBufferMs?: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
+                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy?: 'eager' | 'lazy';
+                };
                 type: 'filler';
                 fillerListId: string;
                 order: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
@@ -5955,6 +6302,9 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 decayFactor: number;
                 recoveryFactor: number;
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6012,6 +6362,10 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
 };
 
 export type PostApiChannelsByChannelIdScheduleSlotsErrors = {
+    /**
+     * Default Response
+     */
+    400: string;
     /**
      * Default Response
      */
@@ -6110,6 +6464,9 @@ export type GetApiChannelsByIdScheduleResponses = {
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6146,6 +6503,9 @@ export type GetApiChannelsByIdScheduleResponses = {
                 seasonExcludeFilter: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6236,6 +6596,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         width: number;
                         duration: number;
                         position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                        useDefaultIconFallback?: boolean;
                     };
                     id: string;
                     name: string;
@@ -6303,6 +6664,9 @@ export type GetApiChannelsByIdScheduleResponses = {
                 customShowId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6344,14 +6708,44 @@ export type GetApiChannelsByIdScheduleResponses = {
                 } | null;
                 isMissing: boolean;
             } | {
+                startTime: number;
+                padMs?: number;
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                midRoll?: {
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
+                    maxBreaks: number;
+                    minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
+                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
+                };
                 type: 'filler';
                 fillerListId: string;
                 order: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
-                startTime: number;
-                padMs?: number;
                 fillerList: {
                     id: string;
                     name: string;
@@ -6365,6 +6759,9 @@ export type GetApiChannelsByIdScheduleResponses = {
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6410,6 +6807,9 @@ export type GetApiChannelsByIdScheduleResponses = {
             padMs: number;
             padStyle: 'slot' | 'episode';
             slots: Array<{
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6452,6 +6852,9 @@ export type GetApiChannelsByIdScheduleResponses = {
                 direction: 'asc' | 'desc';
                 type: 'movie';
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6577,6 +6980,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         width: number;
                         duration: number;
                         position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                        useDefaultIconFallback?: boolean;
                     };
                     id: string;
                     name: string;
@@ -6640,6 +7044,9 @@ export type GetApiChannelsByIdScheduleResponses = {
                 } | null;
                 isMissing: boolean;
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6705,6 +7112,36 @@ export type GetApiChannelsByIdScheduleResponses = {
                 };
                 weight: number;
                 index?: number;
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                midRoll?: {
+                    intervalMs?: number;
+                    breakRule?: {
+                        type: 'fixed_interval';
+                        intervalMs: number;
+                    } | {
+                        type: 'percentage';
+                        points: Array<number>;
+                    } | {
+                        type: 'initial_then_interval';
+                        initialDelayMs: number;
+                        intervalMs: number;
+                    };
+                    maxBreaks: number;
+                    minProgramDurationMs: number;
+                    tailBufferMs: number;
+                    breakDurationMs?: number;
+                    breakDurationMinMs?: number;
+                    breakDurationMaxMs?: number;
+                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
+                    strategy: 'eager' | 'lazy';
+                };
                 type: 'filler';
                 fillerListId: string;
                 order: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
@@ -6718,6 +7155,9 @@ export type GetApiChannelsByIdScheduleResponses = {
                 } | null;
                 isMissing: boolean;
             } | {
+                id: string;
+                iterationGroup?: string;
+                linkMode?: 'continue' | 'rerun';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -8258,6 +8698,7 @@ export type GetApiDebugHelpersBuildGuideResponses = {
             width: number;
             duration: number;
             position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            useDefaultIconFallback?: boolean;
         };
         name: string;
         number: number;
@@ -10861,6 +11302,7 @@ export type GetApiGuideChannelsResponses = {
                 width: number;
                 duration: number;
                 position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                useDefaultIconFallback?: boolean;
             };
             name: string;
             number: number;

@@ -22,12 +22,14 @@ import { TimePicker } from '@mui/x-date-pickers';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { find, isNil, map } from 'lodash-es';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { match } from 'ts-pattern';
+import { v4 } from 'uuid';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
+import { useTimeSlotFormContext } from '../../hooks/slot_scheduler/useTimeSlotFormContext.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
-import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
+import { slotIsLinkable, type LinkMode } from '../../model/CommonSlotModels.ts';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
 import { MidRollConfigPanel } from './MidRollConfigPanel.tsx';
@@ -56,8 +58,35 @@ export const EditTimeSlotDialogContent = ({
   onClose,
 }: EditTimeSlotDialogContentProps) => {
   const { t } = useLingui();
-  const { getValues: getSlotFormValues, slotArray } = useTimeSlotFormContext();
+  const {
+    getValues: getSlotFormValues,
+    slotArray,
+    watch: watchParent,
+  } = useTimeSlotFormContext();
   const currentPeriod = getSlotFormValues('period');
+  const allSlots = watchParent('slots');
+  const linkableSlots = useMemo(
+    () => allSlots.filter(slotIsLinkable),
+    [allSlots],
+  );
+
+  const handleLinkSourceSlot = useCallback(
+    (sourceSlotId: string, groupId: string, linkMode: LinkMode) => {
+      const idx = slotArray.fields.findIndex(
+        (s) => 'id' in s && s.id === sourceSlotId,
+      );
+      const field = idx !== -1 ? slotArray.fields[idx] : undefined;
+      if (field !== undefined && slotIsLinkable(field)) {
+        slotArray.update(idx, {
+          ...field,
+          iterationGroup: groupId,
+          linkMode,
+        });
+      }
+    },
+    [slotArray],
+  );
+
   const { data: fillerLists } = useFillerLists();
   const programOptions = useSlotProgramOptionsContext();
 
@@ -133,6 +162,7 @@ export const EditTimeSlotDialogContent = ({
         .returnType<TimeSlotViewModel>()
         .with('custom-show', () => {
           return {
+            id: v4(),
             startTime,
             type: 'custom-show',
             order: 'next',
@@ -144,6 +174,7 @@ export const EditTimeSlotDialogContent = ({
           };
         })
         .with('movie', () => ({
+          id: v4(),
           startTime,
           type: 'movie',
           order: 'alphanumeric',
@@ -155,6 +186,7 @@ export const EditTimeSlotDialogContent = ({
             (opt): opt is FillerProgramOption => opt.type === 'filler',
           );
           return {
+            id: v4(),
             type: 'filler',
             order: 'shuffle_prefer_short',
             decayFactor: 0.5,
@@ -184,6 +216,7 @@ export const EditTimeSlotDialogContent = ({
         .with('show', () => {
           const opt = programOptions.find((opt) => opt.type === 'show');
           return {
+            id: v4(),
             startTime,
             type: 'show' as const,
             showId: opt?.showId ?? '',
@@ -200,6 +233,7 @@ export const EditTimeSlotDialogContent = ({
             (opt) => opt.type === 'smart-collection',
           );
           return {
+            id: v4(),
             startTime,
             type: 'smart-collection' as const,
             order: 'next',
@@ -244,68 +278,73 @@ export const EditTimeSlotDialogContent = ({
             <Tab label={t`Config`} value={2} />
             {hasMidFiller && <Tab label={t`Mid-Roll`} value={3} />}
           </Tabs>
-          <TabPanel value={tab} index={0}>
-            <Stack gap={2} useFlexGap>
-              <Stack direction="row" gap={1}>
-                {currentPeriod === 'week' && (
-                  <FormControl fullWidth>
-                    <InputLabel>{t`Day`}</InputLabel>
-                    <Controller
-                      control={control}
-                      name={`startTime`}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          fullWidth
-                          value={Math.floor(field.value / OneDayMillis)}
-                          label={t`Day`}
-                          onChange={(e) =>
-                            updateSlotDay(
-                              e.target.value as number,
-                              field.onChange,
-                            )
-                          }
-                        >
-                          {map(DaysOfWeekMenuItems, ({ value, name }) => (
-                            <MenuItem key={value} value={value}>
-                              {name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      )}
-                    />
-                  </FormControl>
-                )}
-                <Controller
-                  control={control}
-                  name={`startTime`}
-                  render={({ field, fieldState: { error } }) => {
-                    return (
-                      <TimePicker
-                        reduceAnimations
-                        {...field}
-                        value={dayjs().startOf(currentPeriod).add(field.value)}
-                        onChange={(value) =>
-                          updateSlotTime(value, field.onChange)
-                        }
-                        label={t`Start Time`}
-                        closeOnSelect={false}
-                        slotProps={{
-                          textField: {
-                            error: !isNil(error),
-                          },
-                        }}
+          <FormProvider {...formMethods}>
+            <TabPanel value={tab} index={0}>
+              <Stack gap={2} useFlexGap>
+                <Stack direction="row" gap={1}>
+                  {currentPeriod === 'week' && (
+                    <FormControl fullWidth>
+                      <InputLabel>{t`Day`}</InputLabel>
+                      <Controller
+                        control={control}
+                        name={`startTime`}
+                        render={({ field }) => (
+                          <Select
+                            {...field}
+                            fullWidth
+                            value={Math.floor(field.value / OneDayMillis)}
+                            label={t`Day`}
+                            onChange={(e) =>
+                              updateSlotDay(
+                                e.target.value as number,
+                                field.onChange,
+                              )
+                            }
+                          >
+                            {map(DaysOfWeekMenuItems, ({ value, name }) => (
+                              <MenuItem key={value} value={value}>
+                                {name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        )}
                       />
-                    );
-                  }}
+                    </FormControl>
+                  )}
+                  <Controller
+                    control={control}
+                    name={`startTime`}
+                    render={({ field, fieldState: { error } }) => {
+                      return (
+                        <TimePicker
+                          reduceAnimations
+                          {...field}
+                          value={dayjs()
+                            .startOf(currentPeriod)
+                            .add(field.value)}
+                          onChange={(value) =>
+                            updateSlotTime(value, field.onChange)
+                          }
+                          label={t`Start Time`}
+                          closeOnSelect={false}
+                          slotProps={{
+                            textField: {
+                              error: !isNil(error),
+                            },
+                          }}
+                        />
+                      );
+                    }}
+                  />
+                </Stack>
+                <EditSlotProgrammingForm
+                  newSlotForType={newSlotForType}
+                  allSlots={linkableSlots}
+                  onLinkSourceSlot={handleLinkSourceSlot}
                 />
               </Stack>
-              <FormProvider {...formMethods}>
-                <EditSlotProgrammingForm newSlotForType={newSlotForType} />
-              </FormProvider>
-            </Stack>
-          </TabPanel>
-          <FormProvider {...formMethods}>
+            </TabPanel>
+
             <TabPanel value={tab} index={1}>
               <SlotFillerDialogPanel />
             </TabPanel>

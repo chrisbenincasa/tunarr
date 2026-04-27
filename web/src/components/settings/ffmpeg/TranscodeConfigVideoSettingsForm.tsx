@@ -11,7 +11,7 @@ import type { SupportedHardwareAccels } from '@tunarr/types/schemas';
 import { useMemo } from 'react';
 import { getApiFfmpegInfoOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 import { TranscodeResolutionOptions } from '../../../helpers/constants.ts';
-import type { DropdownOption } from '../../../helpers/DropdownOption';
+import type { DropdownOption } from '../../../helpers/DropdownOption.ts';
 import {
   resolutionFromAnyString,
   resolutionToString,

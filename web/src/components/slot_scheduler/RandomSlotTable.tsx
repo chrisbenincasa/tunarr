@@ -24,6 +24,7 @@ import Edit from '@mui/icons-material/Edit';
 import {
   Box,
   Button,
+  Chip,
   Dialog,
   DialogTitle,
   IconButton,
@@ -57,7 +58,7 @@ import {
 } from 'material-react-table';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { P, match } from 'ts-pattern';
-import { formatSlotOrder } from '../../helpers/slots.ts';
+import { formatSlotOrder, iterationGroupColor } from '../../helpers/slots.ts';
 import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
 import {
   useStoreBackedTableSettings,
@@ -261,7 +262,34 @@ export const RandomSlotTable = () => {
         enableEditing: true,
         Cell: ({ cell }) => {
           const value = cell.getValue<SlotViewModel>();
-          return getSlotName(value);
+          const group =
+            'iterationGroup' in value ? value.iterationGroup : undefined;
+          const mode =
+            'linkMode' in value
+              ? (value as { linkMode?: string }).linkMode
+              : undefined;
+          const groupSlotCount = group
+            ? currentSlots.filter(
+                (s) => 'iterationGroup' in s && s.iterationGroup === group,
+              ).length
+            : 0;
+          return (
+            <Stack direction="row" alignItems="center" gap={0.5}>
+              {getSlotName(value)}
+              {group && (
+                <Chip
+                  label={`${capitalize(mode ?? 'continue')} (${groupSlotCount})`}
+                  size="small"
+                  sx={{
+                    backgroundColor: iterationGroupColor(group),
+                    color: '#fff',
+                    fontSize: '0.7rem',
+                    height: 20,
+                  }}
+                />
+              )}
+            </Stack>
+          );
         },
         grow: true,
         size: 350,
@@ -276,7 +304,9 @@ export const RandomSlotTable = () => {
               placement="top"
               title={t`Order of programming within the slot`}
             >
-              <span><Trans>Order</Trans></span>
+              <span>
+                <Trans>Order</Trans>
+              </span>
             </Tooltip>
           );
         },
@@ -324,22 +354,52 @@ export const RandomSlotTable = () => {
 
   const onDeleteSlot = useCallback(
     (index: number) => {
+      const deletedSlot = currentSlots[index];
+      const deletedGroup =
+        'iterationGroup' in deletedSlot
+          ? deletedSlot.iterationGroup
+          : undefined;
+
       const removedSlotWeight = currentSlots[index].weight;
       const newLength = currentSlots.length - 1;
       const distributed = removedSlotWeight / newLength;
-      setValue(
-        'slots',
-        seq.collect(currentSlots, (slot, idx) => {
-          if (idx === index) {
-            return;
-          }
 
-          return {
-            ...slot,
-            weight: floor(slot.weight + distributed, 2),
-          };
-        }),
-      );
+      const newSlots = seq.collect(currentSlots, (slot, idx) => {
+        if (idx === index) return;
+
+        const updated = {
+          ...slot,
+          weight: floor(slot.weight + distributed, 2),
+        };
+
+        if (
+          deletedGroup &&
+          'iterationGroup' in slot &&
+          slot.iterationGroup === deletedGroup
+        ) {
+          const othersInGroup = currentSlots.filter(
+            (s, i) =>
+              i !== index &&
+              i !== idx &&
+              'iterationGroup' in s &&
+              s.iterationGroup === deletedGroup,
+          );
+          if (othersInGroup.length === 0) {
+            return {
+              ...updated,
+              iterationGroup: undefined,
+              linkMode: undefined,
+            };
+          }
+        }
+
+        return updated;
+      });
+
+      setValue('slots', newSlots, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
     },
     [currentSlots, setValue],
   );
@@ -489,7 +549,9 @@ export const RandomSlotTable = () => {
         fullWidth
         onClose={() => setCurrentEditingSlot(null)}
       >
-        <DialogTitle><Trans>Edit Slot</Trans></DialogTitle>
+        <DialogTitle>
+          <Trans>Edit Slot</Trans>
+        </DialogTitle>
         {currentEditingSlot && (
           <EditRandomSlotDialogContent
             slot={currentEditingSlot.slot}

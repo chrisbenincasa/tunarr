@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import { some } from 'lodash-es';
 import type { StrictExclude, StrictExtract } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
-import type { DropdownOption } from './DropdownOption';
+import type { DropdownOption } from './DropdownOption.ts';
 import { extractProgramGrandparent } from './programUtil.ts';
 
 export type CustomShowProgramOption = DropdownOption<string> & {

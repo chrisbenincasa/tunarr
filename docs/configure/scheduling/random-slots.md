@@ -56,6 +56,12 @@ Determines how flex is added to a slot to fill in leftover time, either due to b
 
 Currently, Tunarr can only statically precalculate a schedule. This option determines how far into the future the schedule will be calculated before saving the lineup for playback.
 
+## Slot Linking
+
+By default, each slot is isolated and maintains its own position in its program list. If you have multiple slots for the same show, they will independently iterate through episodes, which can result in duplicates.
+
+To coordinate episode progression across slots, use [Slot Linking](slot-linking.md). Linked slots share a single iterator and support two modes: **continue** (each slot picks up where the last left off) and **rerun** (all slots play the same episode before advancing).
+
 ## Presets
 
 The Slot Editor also comes with some preset configurations based on the content of the channel.

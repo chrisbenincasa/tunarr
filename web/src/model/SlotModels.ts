@@ -1,6 +1,5 @@
 import {
   BaseRandomSlotSchema,
-  BaseSlotOrdering,
   type RandomSlotSchedule,
 } from '@tunarr/types/api';
 import type { StrictOmit } from 'ts-essentials';
@@ -8,9 +7,9 @@ import z from 'zod';
 import {
   CommonCustomShowSlotViewModel,
   CommonFillerSlotViewModel,
+  CommonMovieSlotViewModel,
   CommonShowSlotViewModel,
   CommonSmartCollectionViewModel,
-  WithSlotFiller,
 } from './CommonSlotModels.ts';
 
 const BaseSlot = z.object({
@@ -19,18 +18,14 @@ const BaseSlot = z.object({
 
 export const MovieSlotViewModel = z.object({
   ...BaseSlot.shape,
-  ...BaseSlotOrdering.shape,
-  ...WithSlotFiller.shape,
-  type: z.literal('movie'),
+  ...CommonMovieSlotViewModel.shape,
 });
 
 export type MovieSlotViewModel = z.infer<typeof MovieSlotViewModel>;
 
 export const ShowSlotViewModel = z.object({
   ...BaseSlot.shape,
-  ...BaseSlotOrdering.shape,
   ...CommonShowSlotViewModel.shape,
-  ...WithSlotFiller.shape,
 });
 
 export type ShowSlotViewModel = z.infer<typeof ShowSlotViewModel>;
@@ -59,16 +54,12 @@ export type FillerSlotViewModel = z.infer<typeof FillerSlotViewModel>;
 
 export const CustomShowSlotViewModel = z.object({
   ...BaseSlot.shape,
-  ...BaseSlotOrdering.shape,
   ...CommonCustomShowSlotViewModel.shape,
-  ...WithSlotFiller.shape,
 });
 
 export const SmartCollectionTimeSlotViewModel = z.object({
   ...BaseSlot.shape,
-  ...BaseSlotOrdering.shape,
   ...CommonSmartCollectionViewModel.shape,
-  ...WithSlotFiller.shape,
 });
 
 export type SmartCollectionTimeSlotViewModel = z.infer<
