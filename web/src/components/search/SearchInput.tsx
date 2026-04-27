@@ -9,11 +9,15 @@ import {
   Tooltip,
 } from '@mui/material';
 import type { MediaSourceId } from '@tunarr/shared';
-import { isNonEmptyString, search as tunarrSearch } from '@tunarr/shared/util';
+import {
+  isNonEmptyString,
+  search,
+  search as tunarrSearch,
+} from '@tunarr/shared/util';
 import type { SearchFilter, SearchRequest } from '@tunarr/types/schemas';
 import { useToggle } from '@uidotdev/usehooks';
 import { difference, isEmpty, isEqual } from 'lodash-es';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
@@ -68,6 +72,11 @@ function searchFormDefaultValues(
     queryBuilderType: 'text',
   };
 }
+
+type InitialQuery = {
+  filter?: SearchFilter;
+  keywords?: string;
+};
 
 export const SearchInput = ({
   libraryId,
@@ -171,6 +180,42 @@ export const SearchInput = ({
     [getSearchExpression, searchRestrctState],
   );
 
+  const initialQuery = useMemo((): InitialQuery => {
+    let parsedFilter =
+      searchForm.filter.type === 'structured'
+        ? searchForm.filter.filter
+        : (parseToSearchFilterOrNull(searchForm.filter.expression) ??
+          undefined);
+    if (mediaSourceId || libraryId) {
+      const newChildren: SearchFilter[] = [];
+      if (parsedFilter) {
+        newChildren.push(parsedFilter);
+      }
+      if (mediaSourceId) {
+        newChildren.push(search.makeMediaSourceIdFilter(mediaSourceId));
+      }
+      if (libraryId) {
+        newChildren.push(search.makeLibraryIdFilter(libraryId));
+      }
+      parsedFilter = {
+        op: 'and',
+        type: 'op',
+        children: newChildren,
+      };
+    }
+
+    return {
+      keywords: searchForm.keywords,
+      filter: parsedFilter,
+    };
+  }, [
+    parseToSearchFilterOrNull,
+    searchForm.filter,
+    searchForm.keywords,
+    mediaSourceId,
+    libraryId,
+  ]);
+
   return (
     <Box
       component="form"
@@ -270,13 +315,7 @@ export const SearchInput = ({
       >
         <CreateSmartCollectionDialog
           onClose={() => toggleSmartCollectionModal(false)}
-          initialQuery={{
-            filter:
-              searchForm.filter.type === 'structured'
-                ? searchForm.filter.filter
-                : (parseToSearchFilterOrNull(searchForm.filter.expression) ??
-                  undefined),
-          }}
+          initialQuery={initialQuery}
         />
       </Dialog>
     </Box>

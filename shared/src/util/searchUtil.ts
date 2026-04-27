@@ -21,6 +21,7 @@ import type {
   StrictOmit,
 } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
+import type { MediaSourceId } from '../index.js';
 import { emptyStringToNull, isNonEmptyString } from './index.js';
 import { inConstArr, invert } from './seq.js';
 
@@ -66,6 +67,7 @@ const FactedStringFields = [
 
 const StringFields = [
   ...FactedStringFields,
+  'media_source_id',
   'library_id',
   'title',
   'show_title',
@@ -363,8 +365,8 @@ export const virtualFieldToIndexField: Record<string, string> = {
   subtitle_language: 'subtitleLanguages',
   audio_codec: 'audioCodec',
   audio_channels: 'audioChannels',
-  // library_name: 'libraryName',
-  // media_source_name: 'mediaSourceName'
+  media_source_id: 'mediaSourceId',
+  library_id: 'libraryId',
 };
 
 export const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);
@@ -1290,10 +1292,38 @@ export function makeSearchTypeFilter(
     type: 'value',
     fieldSpec: {
       key: 'type',
-      name: 'Type',
+      name: 'type',
       op: '=',
       type: 'string',
       value: [searchItemTypeFromContentType(mediaType)],
+    },
+  };
+}
+
+export function makeMediaSourceIdFilter(
+  mediaSourceId: MediaSourceId,
+): SearchFilterValueNode {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: 'mediaSourceId',
+      name: 'media_source_id',
+      op: '=',
+      type: 'string',
+      value: [mediaSourceId],
+    },
+  };
+}
+
+export function makeLibraryIdFilter(libraryId: string): SearchFilterValueNode {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: 'libraryId',
+      name: 'library_id',
+      op: '=',
+      type: 'string',
+      value: [libraryId],
     },
   };
 }
