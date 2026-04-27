@@ -30,6 +30,12 @@ Tunarr traverses folders to discover metadata and media files which can then be 
 
     Add music libraries with artist/album organization and embedded metadata support.
 
+-   **[Music Videos](music_videos.md)**
+
+    ---
+
+    Add music video files with artist, album, and genre metadata via NFO files.
+
 </div>
 
 ## Generating Metadata

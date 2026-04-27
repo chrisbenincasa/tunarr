@@ -34,6 +34,12 @@ Tunarr offers a range of tools for modifying channel schedules. Before diving in
 
     Cycle through programming in a repeating pattern.
 
+-   **[Mid-Roll Breaks](mid-roll-breaks.md)**
+
+    ---
+
+    Insert commercial-style breaks within programs using filler content.
+
 -   **[Replicate](replicate.md)**
 
     ---
@@ -56,5 +62,6 @@ Tunarr offers a range of tools for modifying channel schedules. Before diving in
 | Random variety with control over duration | [Slot Editor](random-slots.md) |
 | Simple random playback | [Block Shuffle](block-shuffle.md) |
 | Predictable rotation through content | [Cyclic Shuffle](cyclic-shuffle.md) |
+| Simulate TV commercial breaks within programs | [Mid-Roll Breaks](mid-roll-breaks.md) |
 | Extend a schedule before applying other tools | [Replicate](replicate.md) |
 | Clean up fragmented flex time | [Consolidate](consolidate.md) |

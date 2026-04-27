@@ -28,4 +28,22 @@ Expand the menu on the right to view a summary of your changes, then select "ADD
 
 ![Filler add items save](/assets/library-filler-save.png)
 
-To use a filler list with your channels, edit your channel and select the [Flex](/configure/channels/flex) tab. 
+To use a filler list with your channels, edit your channel and select the [Flex](/configure/channels/flex) tab.
+
+## Filler Types
+
+When using slot-based scheduling tools ([Slot Editor](/configure/scheduling/random-slots), [Time Slots](/configure/scheduling/time-slots)), filler lists can be assigned to specific positions within a slot:
+
+| Type | When it plays |
+|------|--------------|
+| **Head** | At the beginning of each slot |
+| **Pre** | Before each program within a slot |
+| **Post** | After each program within a slot |
+| **Tail** | At the end of each slot |
+| **Mid** | During [mid-roll breaks](/configure/scheduling/mid-roll-breaks) inserted within a program |
+| **Fallback** | During flex time in the slot |
+
+!!! note
+    These filler types are only available in slot-based schedulers. When adding filler directly to a channel via the Flex tab, the filler is used to fill flex time only.
+
+For details on mid-roll breaks, see the [Mid-Roll Breaks](/configure/scheduling/mid-roll-breaks) scheduling guide.

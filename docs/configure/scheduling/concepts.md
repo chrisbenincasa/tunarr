@@ -13,4 +13,5 @@
     * **Pre**: Filler that plays _before_ each program within a slot
     * **Post**: Filler that plays _after_ each program within a slot
     * **Tail**: Filler that plays at the _end_ of each slot
+    * **Mid**: Filler that plays during [mid-roll breaks](mid-roll-breaks.md) inserted _within_ a program
     * **Fallback**: Filler that is played during flex time in the slot
