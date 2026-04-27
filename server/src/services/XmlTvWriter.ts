@@ -95,7 +95,7 @@ export class XmlTvWriter {
     };
 
     const iconSrc = resolveIconUrl(channel.icon, '{{host}}/images/tunarr.png');
-    if (iconSrc != null) {
+    if (iconSrc) {
       partial.icon = [
         {
           src: escape(iconSrc),

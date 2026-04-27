@@ -265,7 +265,7 @@ export function ChannelPropertiesEditor() {
                 )}
 
                 {!imagePath && useDefaultIconFallback === false && (
-                  <Tooltip title="Restore default logo">
+                  <Tooltip title={t`Restore default logo`}>
                     <IconButton
                       aria-label="Restore default channel logo"
                       onClick={() =>
