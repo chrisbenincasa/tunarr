@@ -104,6 +104,7 @@ export const AddRandomSlotButton = ({ onAdd }: AddRandomSlotButtonProps) => {
         order: 'next',
         show: null,
         seasonFilter: [],
+        seasonExcludeFilter: [],
       }))
       .with({ type: 'flex' }, () => ({
         ...baseSlot,

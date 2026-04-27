@@ -414,8 +414,8 @@ msgstr "Add Selected Media"
 msgid "Add Show"
 msgstr "Add Show"
 
-#: src/components/slot_scheduler/AddRandomSlotButton.tsx:135
-#: src/components/slot_scheduler/AddTimeSlotButton.tsx:131
+#: src/components/slot_scheduler/AddRandomSlotButton.tsx:136
+#: src/components/slot_scheduler/AddTimeSlotButton.tsx:132
 msgid "Add Slot"
 msgstr "Add Slot"
 
@@ -767,10 +767,10 @@ msgstr "Calculating Slots..."
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:330
 #: src/components/settings/media_source/PlexServerEditDialog.tsx:345
 #: src/components/settings/UnsavedNavigationAlert.tsx:67
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:469
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:322
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:470
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:323
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:156
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:279
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:280
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:189
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:114
 #: src/pages/channels/ChannelsPage.tsx:200
@@ -921,11 +921,11 @@ msgstr "Completely randomizes the order of programs."
 msgid "Component"
 msgstr "Component"
 
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:243
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:244
 msgid "Config"
 msgstr "Config"
 
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:166
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:167
 msgid "Configure Cyclic Shuffle"
 msgstr "Configure Cyclic Shuffle"
 
@@ -973,7 +973,7 @@ msgstr "Consolidate"
 msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
 msgstr "Consolidates contiguous match flex and redirect blocks into singular spans"
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:393
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:394
 #: src/components/slot_scheduler/RandomSlotTable.tsx:293
 msgid "Cooldown"
 msgstr "Cooldown"
@@ -1043,8 +1043,8 @@ msgid "Custom Program"
 msgstr "Custom Program"
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx:52
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:222
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:256
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:223
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:257
 #: src/hooks/useProgramTitleFormatter.ts:42
 msgid "Custom Show"
 msgstr "Custom Show"
@@ -1061,7 +1061,7 @@ msgid "Custom show programs are grouped by their parent show"
 msgstr "Custom show programs are grouped by their parent show"
 
 #. placeholder {0}: cs.description
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:188
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:189
 msgid "Custom Show: {0}"
 msgstr "Custom Show: {0}"
 
@@ -1085,7 +1085,7 @@ msgstr "Customize how movie blocks are sorted"
 msgid "Cyclic Shuffle"
 msgstr "Cyclic Shuffle"
 
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:170
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:171
 msgid "Cyclic Shuffle randomly shuffles groups of programming."
 msgstr "Cyclic Shuffle randomly shuffles groups of programming."
 
@@ -1102,8 +1102,8 @@ msgid "Data Directory:"
 msgstr "Data Directory:"
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx:180
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:251
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:260
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:252
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:261
 msgid "Day"
 msgstr "Day"
 
@@ -1312,7 +1312,7 @@ msgid "Duplicates"
 msgstr "Duplicates"
 
 #: src/components/programming_controls/BalanceProgrammingModal.tsx:62
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:364
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:365
 #: src/components/slot_scheduler/RandomSlotTable.tsx:232
 #: src/pages/channels/ChannelsPage.tsx:346
 msgid "Duration"
@@ -1331,7 +1331,7 @@ msgstr "Duration must be greater than 0."
 msgid "Duration must be numeric"
 msgstr "Duration must be numeric"
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:326
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:327
 msgid "Dynamic"
 msgstr "Dynamic"
 
@@ -1615,6 +1615,10 @@ msgstr "Escape Hatches"
 msgid "Every"
 msgstr "Every"
 
+#: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx:123
+msgid "Exclude Seasons"
+msgstr "Exclude Seasons"
+
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:148
 msgid "Existing query: {filterString}"
 msgstr "Existing query: {filterString}"
@@ -1743,10 +1747,10 @@ msgstr "File"
 msgid "File a Bug Report"
 msgstr "File a Bug Report"
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:299
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:239
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:300
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:240
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:46
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:273
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:274
 #: src/components/slot_scheduler/TimeSlotTable.tsx:304
 msgid "Filler"
 msgstr "Filler"
@@ -1775,7 +1779,7 @@ msgstr "Filler is resolved at schedule time. The guide shows specific filler tit
 #: src/components/channel_config/ChannelFlexConfig.tsx:298
 #: src/components/channel_config/ChannelFlexConfig.tsx:301
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx:131
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:225
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:226
 msgid "Filler List"
 msgstr "Filler List"
 
@@ -1784,7 +1788,7 @@ msgid "Filler List Cooldown (seconds)"
 msgstr "Filler List Cooldown (seconds)"
 
 #. placeholder {0}: cs.description
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:199
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:200
 msgid "Filler List: {0}"
 msgstr "Filler List: {0}"
 
@@ -1823,7 +1827,7 @@ msgstr "Finish"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:124
 #: src/components/programming_controls/AddReplicateModal.tsx:97
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:323
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:324
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx:316
 msgid "Fixed"
 msgstr "Fixed"
@@ -1858,7 +1862,7 @@ msgstr "For more details on manually retrieving a Plex token, see <0>here</0>"
 msgid "Force Scan"
 msgstr "Force Scan"
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:437
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:438
 msgid "Frequency"
 msgstr "Frequency"
 
@@ -2007,6 +2011,10 @@ msgstr "Image"
 #: src/components/channel_config/ChannelFlexConfig.tsx:425
 msgid "Image URL"
 msgstr "Image URL"
+
+#: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx:95
+msgid "Include Seasons"
+msgstr "Include Seasons"
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:173
 msgid "Increasing \"Max Lateness\" for the schedule."
@@ -2343,8 +2351,8 @@ msgstr "Media Type"
 msgid "Message"
 msgstr "Message"
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:300
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:244
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:301
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:245
 msgid "Mid-Roll"
 msgstr "Mid-Roll"
 
@@ -2793,7 +2801,7 @@ msgid "Program"
 msgstr "Program"
 
 #: src/components/programming_controls/BalanceProgrammingModal.tsx:63
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:337
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:338
 msgid "Program Count"
 msgstr "Program Count"
 
@@ -2803,8 +2811,8 @@ msgstr "Program JSON"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx:412
 #: src/components/filler/EditFillerListForm.tsx:152
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:298
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:237
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:299
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:238
 #: src/hooks/useRouteName.ts:79
 msgid "Programming"
 msgstr "Programming"
@@ -3140,9 +3148,9 @@ msgstr "Sample rate cannot be changed when copying input audio"
 #: src/components/programming_controls/AddRestrictHoursModal.tsx:141
 #: src/components/programming_controls/AdjustWeightsModal.tsx:36
 #: src/components/settings/general/GeneralSettingsForm.tsx:496
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:476
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:329
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:288
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:477
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:330
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:289
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:196
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:121
 #: src/pages/channels/RandomSlotEditorPage.tsx:270
@@ -3218,7 +3226,6 @@ msgid "Search…"
 msgstr "Search…"
 
 #: src/components/programs/Seasons.tsx:35
-#: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx:84
 msgid "Seasons"
 msgstr "Seasons"
 
@@ -3292,9 +3299,9 @@ msgid "Settings Saved!"
 msgstr "Settings Saved!"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx:56
-#: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx:62
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:219
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:236
+#: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx:75
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:220
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:237
 msgid "Show"
 msgstr "Show"
 
@@ -3315,7 +3322,7 @@ msgid "Show:"
 msgstr "Show:"
 
 #. placeholder {0}: show.title
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:177
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:178
 msgid "Show: {0}"
 msgstr "Show: {0}"
 
@@ -3450,7 +3457,7 @@ msgid "Start"
 msgstr "Start"
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx:112
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:290
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:291
 #: src/components/slot_scheduler/TimeSlotTable.tsx:248
 msgid "Start Time"
 msgstr "Start Time"
@@ -3825,8 +3832,8 @@ msgstr "TV shows are grouped by show"
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx:57
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx:59
 #: src/components/slot_scheduler/RandomSlotTable.tsx:222
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:210
-#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:213
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:211
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:214
 #: src/pages/settings/MediaSourceSettingsPage.tsx:74
 msgid "Type"
 msgstr "Type"
@@ -3977,7 +3984,7 @@ msgid "Weight"
 msgstr "Weight"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx:243
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:437
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:438
 msgid "Weight %"
 msgstr "Weight %"
 
@@ -4046,7 +4053,7 @@ msgstr "You haven't created any channels yet."
 msgid "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
 msgstr "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:448
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:449
 msgid "You must create at least one <0>filler list</0> before assigning filler to a lot."
 msgstr "You must create at least one <0>filler list</0> before assigning filler to a lot."
 
