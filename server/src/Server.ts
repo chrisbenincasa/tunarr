@@ -53,7 +53,7 @@ const currentDirectory = dirname(filename(import.meta.url));
 
 @injectable()
 export class Server {
-  private app: ServerType;
+  private app!: ServerType;
 
   constructor(
     @inject(KEYS.ServerOptions) private serverOptions: ServerOptions,
@@ -194,7 +194,10 @@ export class Server {
       })
       .register(fastifyMultipart)
       .addHook('onRequest', (_req, _res, done) => {
-        ServerRequestContext.create(container.get(ServerContext), done);
+        ServerRequestContext.create(
+          container.get(ServerContext),
+          done as (...args: unknown[]) => unknown,
+        );
       })
       .register(
         fp((f, _, done) => {

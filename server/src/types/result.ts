@@ -101,18 +101,14 @@ export abstract class Result<T, out E extends WrappedError = WrappedError> {
       .catch((e) => Result.failure(e));
   }
 
-  async flatMapAsync<U, E2 extends E = E>(
+  async flatMapAsync<U, E2 extends WrappedError = WrappedError>(
     f: (t: T) => Promise<Result<U, E2>>,
-  ): Promise<Result<U, E2>> {
+  ): Promise<Result<U, E | E2>> {
     if (this.isFailure()) {
-      return this as unknown as Failure<U, E2>;
+      return this as unknown as Result<never, E | E2>;
     }
 
-    try {
-      return f(this._data!);
-    } catch (e) {
-      return Result.failure(e);
-    }
+    return f(this._data!);
   }
 
   flatMap<U, E2 extends WrappedError = WrappedError>(
@@ -228,10 +224,7 @@ export abstract class Result<T, out E extends WrappedError = WrappedError> {
   }
 }
 
-export class Success<T, E extends WrappedError = WrappedError> extends Result<
-  T,
-  E
-> {
+class Success<T, E extends WrappedError = WrappedError> extends Result<T, E> {
   protected readonly _error: undefined = undefined;
   constructor(data: T) {
     super();
@@ -247,10 +240,7 @@ export class Success<T, E extends WrappedError = WrappedError> extends Result<
   }
 }
 
-export class Failure<T, E extends WrappedError = WrappedError> extends Result<
-  T,
-  E
-> {
+class Failure<T, E extends WrappedError = WrappedError> extends Result<T, E> {
   constructor(e: E) {
     super();
     this._error = e;

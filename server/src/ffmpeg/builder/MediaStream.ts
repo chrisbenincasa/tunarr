@@ -52,16 +52,16 @@ export type VideoInputKind = 'video' | 'stillimage' | 'filter';
 
 export class VideoStream implements MediaStream {
   readonly kind: StreamKind = 'video' as const;
-  index: number;
-  codec: string;
+  index!: number;
+  codec!: string;
   profile?: string;
-  pixelFormat: Nullable<PixelFormat>;
-  frameSize: FrameSize;
+  pixelFormat!: Nullable<PixelFormat>;
+  frameSize!: FrameSize;
   frameRate?: string;
   inputKind: VideoInputKind = 'video' as const;
-  colorFormat: Nullable<ColorFormat>;
-  providedSampleAspectRatio: Nullable<string>;
-  displayAspectRatio: string;
+  colorFormat!: Nullable<ColorFormat>;
+  providedSampleAspectRatio!: Nullable<string>;
+  displayAspectRatio!: string;
 
   protected constructor(fields: MarkOptional<VideoStreamFields, 'inputKind'>) {
     // Unfortunately TS is not 'smart' enough to let us
@@ -284,8 +284,8 @@ export type SubtitleMethod =
   (typeof SubtitleMethods)[keyof typeof SubtitleMethods];
 
 export abstract class SubtitleStream implements MediaStream {
-  readonly kind: 'subtitle';
-  readonly inputKind: SubtitleInputKind;
+  readonly kind: 'subtitle' = 'subtitle' as const;
+  abstract readonly inputKind: SubtitleInputKind;
 
   constructor(
     public readonly codec: string,
@@ -299,12 +299,10 @@ export abstract class SubtitleStream implements MediaStream {
 }
 
 export class EmbeddedSubtitleStream extends SubtitleStream {
-  readonly kind = 'subtitle' as const;
   readonly inputKind: SubtitleInputKind = 'embedded';
 }
 
 export class ExternalSubtitleStream extends SubtitleStream {
-  readonly kind = 'subtitle' as const;
   readonly inputKind: SubtitleInputKind = 'external';
 
   constructor(codec: string, method: SubtitleMethod) {

@@ -33,8 +33,7 @@ import {
   SearchFilterQuerySchema,
   TerminalProgramSchema,
 } from '@tunarr/types/schemas';
-import axios, { AxiosHeaders, isAxiosError } from 'axios';
-import type { HttpHeader } from 'fastify/types/utils.js';
+import axios, { isAxiosError } from 'axios';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   compact,
@@ -42,9 +41,7 @@ import {
   first,
   head,
   isNil,
-  isNull,
   map,
-  omitBy,
   trimStart,
   values,
 } from 'lodash-es';
@@ -74,6 +71,7 @@ import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetc
 import { TypedError } from '../types/errors.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Maybe } from '../types/util.ts';
+import { extractAxiosHeaders } from '../util/axios.ts';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -472,16 +470,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               responseType: 'stream',
             });
 
-            let headers: Partial<Record<HttpHeader, string | string[]>>;
-            if (proxyRes.headers instanceof AxiosHeaders) {
-              headers = {
-                ...proxyRes.headers,
-              };
-            } else {
-              headers = { ...omitBy(proxyRes.headers, isNull) };
-            }
-
-            return res.status(200).headers(headers).send(proxyRes.data);
+            return res
+              .status(200)
+              .headers(extractAxiosHeaders(proxyRes.headers))
+              .send(proxyRes.data);
           } catch (e) {
             if (isAxiosError(e) && e.response?.status === 404) {
               return res.status(404).send();
@@ -719,16 +711,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               responseType: 'stream',
             });
 
-            let headers: Partial<Record<HttpHeader, string | string[]>>;
-            if (proxyRes.headers instanceof AxiosHeaders) {
-              headers = {
-                ...proxyRes.headers,
-              };
-            } else {
-              headers = { ...omitBy(proxyRes.headers, isNull) };
-            }
-
-            return res.status(200).headers(headers).send(proxyRes.data);
+            return res
+              .status(200)
+              .headers(extractAxiosHeaders(proxyRes.headers))
+              .send(proxyRes.data);
           } catch (e) {
             if (isAxiosError(e) && e.response?.status === 404) {
               logger.error(

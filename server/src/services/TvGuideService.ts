@@ -147,7 +147,7 @@ export class TVGuideService {
   // usage for no benefit. They are not used outside of guide
   // generation.
   private accumulateTable: Record<string, number[]> = {};
-  private channelsById: Record<string, ChannelWithLineup>;
+  private channelsById?: Record<string, ChannelWithLineup>;
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
@@ -516,7 +516,7 @@ export class TVGuideService {
           updatedChannel.channel.duration,
           channel.duration,
         );
-        this.channelsById[channel.uuid] = updatedChannel;
+        this.channelsById![channel.uuid] = updatedChannel;
         channel = updatedChannel.channel;
         lineup = updatedChannel.lineup;
         channelProgress =
@@ -633,7 +633,7 @@ export class TVGuideService {
         );
       } else {
         channelRedirectStack.push(redirectChannel);
-        const channel2 = this.channelsById[redirectChannel];
+        const channel2 = this.channelsById![redirectChannel];
         // TODO: Just update the lineup file directly at this point
         if (isUndefined(channel2)) {
           this.logger.error(
@@ -972,7 +972,7 @@ export class TVGuideService {
   ): Promise<ChannelPrograms> {
     devAssert(!isEmpty(this.accumulateTable));
     const currentUpdateTimeMs = this.currentUpdateTime[channelId]!;
-    const channelToUpdate = this.channelsById[channelId]!;
+    const channelToUpdate = this.channelsById![channelId]!;
     return this.getChannelPrograms(
       currentUpdateTimeMs,
       this.currentEndTime[channelToUpdate.channel.uuid]!,
@@ -998,7 +998,7 @@ export class TVGuideService {
                 await this.buildGuideInternal(channelId);
               if (
                 writeXmlTv &&
-                !this.channelsById[channelId]!.channel.stealth
+                !this.channelsById![channelId]!.channel.stealth
               ) {
                 await this.writeXmlTv();
               }
@@ -1332,7 +1332,7 @@ export class TVGuideService {
         };
       })
       .with({ type: 'redirect' }, (redirect) => {
-        const backingChannel = this.channelsById[redirect.channel]!;
+        const backingChannel = this.channelsById![redirect.channel]!;
         return {
           ...baseItem,
           programming: {

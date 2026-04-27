@@ -21,7 +21,6 @@ import type {
   NewProgramVersion,
   NewProgramWithRelations,
   ProgramGroupingOrmWithRelations,
-  ProgramGroupingWithExternalIds,
   ProgramOrmWithExternalIds,
   ProgramWithExternalIds,
   ProgramWithRelationsOrm,
@@ -36,7 +35,6 @@ import type {
 } from 'ts-essentials';
 import type { NewArtwork } from '../schema/Artwork.ts';
 import type { NewGenre } from '../schema/Genre.ts';
-import type { RemoteMediaSourceType } from '../schema/MediaSource.ts';
 import type { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
 import type { MediaSourceId, MediaSourceType } from '../schema/base.js';
 import type { PageParams } from './IChannelDB.ts';
@@ -80,10 +78,6 @@ export interface IProgramDB {
     chunkSize?: number,
   ): Promise<ProgramGroupingOrmWithRelations[]>;
 
-  getProgramParent(
-    programId: string,
-  ): Promise<Maybe<ProgramGroupingWithExternalIds>>;
-
   getChildren(
     parentId: string,
     parentType: 'season' | 'album',
@@ -125,13 +119,6 @@ export interface IProgramDB {
       | Set<readonly [RemoteSourceType, MediaSourceId, string]>,
     chunkSize?: number,
   ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
-
-  lookupByMediaSource(
-    sourceType: RemoteMediaSourceType,
-    sourceId: MediaSourceId,
-    mediaType?: ProgramType,
-    chunkSize?: number,
-  ): Promise<ProgramDao[]>;
 
   programIdsByExternalIds(
     ids: Set<[string, string, string]>,

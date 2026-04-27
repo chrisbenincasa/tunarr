@@ -86,6 +86,7 @@ yargs(hideBin(process.argv))
     },
   ])
   .version(getTunarrVersion())
+  // @ts-expect-error yarg types are wrong.
   .command(commands)
   .help()
   .parseAsync()

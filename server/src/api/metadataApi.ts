@@ -2,19 +2,10 @@ import { TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { tag } from '@tunarr/types';
-import axios, { AxiosHeaders } from 'axios';
+import axios from 'axios';
 import dayjs from 'dayjs';
 import type { FastifyReply } from 'fastify';
-import type { HttpHeader } from 'fastify/types/utils.d.ts';
-import {
-  head,
-  isArray,
-  isNil,
-  isNull,
-  isString,
-  isUndefined,
-  omitBy,
-} from 'lodash-es';
+import { head, isArray, isNil, isNull, isString, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
 import { createHash } from 'node:crypto';
 import type stream from 'node:stream';
@@ -25,6 +16,7 @@ import {
 } from '../db/custom_types/ProgramSourceType.ts';
 import type { MediaSourceId } from '../db/schema/base.js';
 import { getServerContext } from '../ServerContext.ts';
+import { extractAxiosHeaders } from '../util/axios.ts';
 
 const externalIdSchema = z
   .string()
@@ -149,14 +141,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
             responseType: 'stream',
           });
 
-          let headers: Partial<Record<HttpHeader, string | string[]>>;
-          if (proxyRes.headers instanceof AxiosHeaders) {
-            headers = {
-              ...proxyRes.headers,
-            };
-          } else {
-            headers = { ...omitBy(proxyRes.headers, isNull) };
-          }
+          const headers = extractAxiosHeaders(proxyRes.headers);
 
           // Attempt to not return 0 byte streams, nor cache them.
           if (headers['content-length']) {

@@ -35,10 +35,9 @@ type Opts = {
 };
 
 export class RollingLogDestination {
-  private initialized = false;
   private scheduledTask: Maybe<UnknownScheduledTask>;
-  private destination: SonicBoomType;
-  private currentFileName: string;
+  private destination?: SonicBoomType;
+  private currentFileName?: string;
   private createdFileNames: string[] = [];
   private rotatePattern: RegExp;
   private destinationReady = false;
@@ -49,7 +48,7 @@ export class RollingLogDestination {
   }
 
   initDestination(): SonicBoomType {
-    if (this.initialized || this.destination) {
+    if (this.destination) {
       return this.destination;
     }
 
@@ -81,7 +80,12 @@ export class RollingLogDestination {
       this.destinationReady = true;
     });
 
-    if (this.opts.maxSizeBytes && this.opts.maxSizeBytes > 0) {
+    // TODO: Fix this!!
+    if (
+      this.opts.maxSizeBytes &&
+      this.opts.maxSizeBytes > 0 &&
+      this.currentFileName
+    ) {
       let currentSize = getFileSize(this.currentFileName);
       this.destination.on('write', (size) => {
         currentSize += size;
@@ -112,7 +116,7 @@ export class RollingLogDestination {
   }
 
   deinitialize() {
-    if (!this.initialized) {
+    if (!this.destination) {
       return;
     }
 

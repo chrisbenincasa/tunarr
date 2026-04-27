@@ -20,27 +20,9 @@ export type TaskMetadata<
   out: OutType;
 };
 
-export type TaskArgsType<Id, Default = unknown[]> =
-  Id extends Tag<Id, TaskMetadata<infer Args, unknown>>
-    ? Args extends unknown[]
-      ? Args
-      : Default
-    : Default;
-
 export type TaskOutputType<Id, Default = void> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Id extends Tag<Id, TaskMetadata<any, infer Out>> ? Out : Default;
-
-export type TaskType<Id> =
-  Id extends Tag<Id, TaskMetadata<infer Args, infer Out>>
-    ? Task<Args, Out>
-    : Task;
-
-export type TaskFactory<
-  Id extends TaskId,
-  ArgsType extends unknown[] = TaskArgsType<Id>,
-  OutType = TaskOutputType<Id>,
-> = (...args: ArgsType) => Task<ArgsType, OutType>;
 
 const emptyRequestSchema = z.undefined();
 
@@ -59,7 +41,7 @@ export abstract class Task2<
   abstract readonly schema: RequestSchema;
   private _logLevel: LogLevels = 'trace';
 
-  #logger: Logger;
+  #logger!: Logger;
 
   constructor(logger: Logger = LoggerFactory.child({ className: this.name })) {
     this.logger = logger;

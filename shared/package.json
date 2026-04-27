@@ -8,11 +8,11 @@
   "author": "chrisbenincasa",
   "type": "module",
   "scripts": {
-    "bundle": "tsc",
-    "build": "tsc --declaration",
-    "build-dev": "tsc --declaration --watch",
+    "bundle": "tsgo",
+    "build": "tsgo --declaration",
+    "build-dev": "tsgo --declaration --watch",
     "clean": "rimraf ./dist/",
-    "dev": "tsc --declaration --watch",
+    "dev": "tsgo --declaration --watch",
     "generate-search-diagram": "tsx scripts/generate_search_diagram.ts",
     "test": "vitest --run"
   },
@@ -47,13 +47,14 @@
     "@rollup/plugin-swc": "^0.4.0",
     "@types/lodash-es": "4.17.9",
     "@types/node": "22.10.7",
-    "@vitest/coverage-v8": "^3.2.4",
+    "@typescript/native-preview": "catalog:",
+    "@vitest/coverage-v8": "catalog:vitest",
     "rimraf": "^5.0.5",
     "ts-essentials": "^9.4.2",
     "tsup": "^8.0.2",
     "tsx": "^4.20.5",
     "typescript": "catalog:",
-    "vitest": "^3.2.4"
+    "vitest": "catalog:vitest"
   },
   "peerDependencies": {
     "ts-pattern": "^5.4.0"

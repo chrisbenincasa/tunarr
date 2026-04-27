@@ -184,7 +184,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       // in fastify on the send).
       // TODO: We could probably record periodic heartbeats by listening
       // to the data event on this piped stream. Just debounce them!
-      const piped = session.rawStream.pipe(
+      const piped = session.rawStream!.pipe(
         new PassThrough({ allowHalfOpen: false }),
       );
 

@@ -40,22 +40,22 @@ export type FrameStateOpts = MarkOptional<
 >;
 
 export class FrameState {
-  scaledSize: FrameSize;
-  paddedSize: FrameSize;
+  scaledSize!: FrameSize;
+  paddedSize!: FrameSize;
   croppedSize?: FrameSize;
-  isAnamorphic: boolean;
-  realtime: boolean;
-  videoFormat: VideoFormat;
-  videoPreset: Nullable<string>;
-  videoProfile: Nullable<string>;
-  frameRate: Nullable<number>;
-  videoTrackTimescale: Nullable<number>;
-  videoBitrate: Nullable<number>;
-  videoBufferSize: Nullable<number>;
-  frameDataLocation: FrameDataLocation;
-  deinterlace: boolean;
-  pixelFormat: Nullable<PixelFormat>;
-  colorFormat: Nullable<ColorFormat>;
+  isAnamorphic!: boolean;
+  realtime!: boolean;
+  videoFormat!: VideoFormat;
+  videoPreset!: Nullable<string>;
+  videoProfile!: Nullable<string>;
+  frameRate!: Nullable<number>;
+  videoTrackTimescale!: Nullable<number>;
+  videoBitrate!: Nullable<number>;
+  videoBufferSize!: Nullable<number>;
+  frameDataLocation!: FrameDataLocation;
+  deinterlace!: boolean;
+  pixelFormat!: Nullable<PixelFormat>;
+  colorFormat!: Nullable<ColorFormat>;
   infiniteLoop: boolean = false;
 
   forceSoftwareOverlay = false;

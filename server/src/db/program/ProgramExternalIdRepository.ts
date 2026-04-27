@@ -1,18 +1,30 @@
 import { KEYS } from '@/types/inject.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
-import { seq } from '@tunarr/shared/util';
-import { flatMapAsyncSeq, isNonEmptyString } from '../../util/index.ts';
 import { createExternalId } from '@tunarr/shared';
-import { and, eq, isNull as dbIsNull, isNotNull, sql } from 'drizzle-orm';
+import { seq } from '@tunarr/shared/util';
+import dayjs from 'dayjs';
+import { and, isNull as dbIsNull, eq, isNotNull, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
-import { chunk, first, isEmpty, isNil, last, map, mapValues } from 'lodash-es';
-import type { MarkOptional, MarkRequired } from 'ts-essentials';
-import dayjs from 'dayjs';
+import {
+  chunk,
+  first,
+  groupBy,
+  isEmpty,
+  isNil,
+  map,
+  mapValues,
+  partition,
+} from 'lodash-es';
+import type { Dictionary, MarkOptional, MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
+import {
+  flatMapAsyncSeq,
+  groupByUniq,
+  isNonEmptyString,
+} from '../../util/index.ts';
 import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType.ts';
 import { programSourceTypeFromString } from '../custom_types/ProgramSourceType.ts';
-import { withProgramByExternalId } from '../programQueryHelpers.ts';
 import type {
   MinimalProgramExternalId,
   NewProgramExternalId,
@@ -26,12 +38,6 @@ import type { MediaSourceId, RemoteSourceType } from '../schema/base.ts';
 import type { DB } from '../schema/db.ts';
 import type { ProgramWithRelationsOrm } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
-import type { ProgramType } from '../schema/Program.ts';
-import { groupByUniq } from '../../util/index.ts';
-import type { RemoteMediaSourceType } from '../schema/MediaSource.ts';
-import type { ProgramDao } from '../schema/Program.ts';
-import type { Dictionary } from 'ts-essentials';
-import { groupBy, partition } from 'lodash-es';
 
 @injectable()
 export class ProgramExternalIdRepository {
@@ -121,40 +127,6 @@ export class ProgramExternalIdRepository {
       });
       programs.push(...seq.collect(results, (r) => r.program));
     }
-
-    return programs;
-  }
-
-  async lookupByMediaSource(
-    sourceType: RemoteMediaSourceType,
-    sourceId: MediaSourceId,
-    programType: ProgramType | undefined,
-    chunkSize: number = 200,
-  ): Promise<ProgramDao[]> {
-    const programs: ProgramDao[] = [];
-    let chunk: ProgramDao[] = [];
-    let lastId: string | undefined;
-    do {
-      const result = await this.db
-        .selectFrom('programExternalId')
-        .select('programExternalId.uuid')
-        .select((eb) =>
-          withProgramByExternalId(eb, { joins: {} }, (qb) =>
-            qb.$if(!!programType, (eb) =>
-              eb.where('program.type', '=', programType!),
-            ),
-          ),
-        )
-        .where('programExternalId.sourceType', '=', sourceType)
-        .where('programExternalId.mediaSourceId', '=', sourceId)
-        .$if(!!lastId, (x) => x.where('programExternalId.uuid', '>', lastId!))
-        .orderBy('programExternalId.uuid asc')
-        .limit(chunkSize)
-        .execute();
-      chunk = seq.collect(result, (eid) => eid.program);
-      programs.push(...chunk);
-      lastId = last(result)?.uuid;
-    } while (chunk.length > 0);
 
     return programs;
   }
@@ -308,28 +280,27 @@ export class ProgramExternalIdRepository {
 
     if (!isEmpty(singles)) {
       try {
-        const singleResults = chunk(singles, chunkSize).flatMap(
-          (singleChunk) =>
-            this.drizzleDB.transaction((tx) =>
-              tx
-                .insert(ProgramExternalId)
-                .values(singleChunk.map(toInsertableProgramExternalId))
-                .onConflictDoUpdate({
-                  target: [
-                    ProgramExternalId.programUuid,
-                    ProgramExternalId.sourceType,
-                  ],
-                  targetWhere: dbIsNull(ProgramExternalId.mediaSourceId),
-                  set: {
-                    updatedAt: sql`excluded.updated_at`,
-                    externalFilePath: sql`excluded.external_file_path`,
-                    directFilePath: sql`excluded.direct_file_path`,
-                    programUuid: sql`excluded.program_uuid`,
-                  },
-                })
-                .returning()
-                .all(),
-            ),
+        const singleResults = chunk(singles, chunkSize).flatMap((singleChunk) =>
+          this.drizzleDB.transaction((tx) =>
+            tx
+              .insert(ProgramExternalId)
+              .values(singleChunk.map(toInsertableProgramExternalId))
+              .onConflictDoUpdate({
+                target: [
+                  ProgramExternalId.programUuid,
+                  ProgramExternalId.sourceType,
+                ],
+                targetWhere: dbIsNull(ProgramExternalId.mediaSourceId),
+                set: {
+                  updatedAt: sql`excluded.updated_at`,
+                  externalFilePath: sql`excluded.external_file_path`,
+                  directFilePath: sql`excluded.direct_file_path`,
+                  programUuid: sql`excluded.program_uuid`,
+                },
+              })
+              .returning()
+              .all(),
+          ),
         );
         logger.trace('Upserted %d external IDs', singleResults.length);
         allExternalIds.push(...singleResults);
@@ -340,29 +311,28 @@ export class ProgramExternalIdRepository {
 
     if (!isEmpty(multiples)) {
       try {
-        const multiResults = chunk(multiples, chunkSize).flatMap(
-          (multiChunk) =>
-            this.drizzleDB.transaction((tx) =>
-              tx
-                .insert(ProgramExternalId)
-                .values(multiChunk.map(toInsertableProgramExternalId))
-                .onConflictDoUpdate({
-                  target: [
-                    ProgramExternalId.programUuid,
-                    ProgramExternalId.sourceType,
-                    ProgramExternalId.mediaSourceId,
-                  ],
-                  targetWhere: isNotNull(ProgramExternalId.mediaSourceId),
-                  set: {
-                    updatedAt: sql`excluded.updated_at`,
-                    externalFilePath: sql`excluded.external_file_path`,
-                    directFilePath: sql`excluded.direct_file_path`,
-                    programUuid: sql`excluded.program_uuid`,
-                  },
-                })
-                .returning()
-                .all(),
-            ),
+        const multiResults = chunk(multiples, chunkSize).flatMap((multiChunk) =>
+          this.drizzleDB.transaction((tx) =>
+            tx
+              .insert(ProgramExternalId)
+              .values(multiChunk.map(toInsertableProgramExternalId))
+              .onConflictDoUpdate({
+                target: [
+                  ProgramExternalId.programUuid,
+                  ProgramExternalId.sourceType,
+                  ProgramExternalId.mediaSourceId,
+                ],
+                targetWhere: isNotNull(ProgramExternalId.mediaSourceId),
+                set: {
+                  updatedAt: sql`excluded.updated_at`,
+                  externalFilePath: sql`excluded.external_file_path`,
+                  directFilePath: sql`excluded.direct_file_path`,
+                  programUuid: sql`excluded.program_uuid`,
+                },
+              })
+              .returning()
+              .all(),
+          ),
         );
         logger.trace('Upserted %d external IDs', multiResults.length);
         allExternalIds.push(...multiResults);

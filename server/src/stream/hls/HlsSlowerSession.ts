@@ -30,7 +30,7 @@ export class HlsSlowerSession extends BaseHlsSession {
   // Start in lookahead mode
   #realtimeTranscode: boolean = false;
   #programCalculator: StreamProgramCalculator;
-  #concatSession: FfmpegTranscodeSession;
+  #concatSession?: FfmpegTranscodeSession;
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -52,7 +52,7 @@ export class HlsSlowerSession extends BaseHlsSession {
       {
         allowSkip: true,
         channelId: this.channel.uuid,
-        startTime: this.transcodedUntil.valueOf(),
+        startTime: (this.transcodedUntil ?? dayjs()).valueOf(),
         sessionToken,
       },
     );
@@ -119,7 +119,7 @@ export class HlsSlowerSession extends BaseHlsSession {
       });
 
       transcodeSessionResult.forEach((transcodeSession) => {
-        this.transcodedUntil = this.transcodedUntil.add(
+        this.transcodedUntil = (this.transcodedUntil ?? dayjs()).add(
           transcodeSession.streamDuration,
         );
       });

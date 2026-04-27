@@ -3,6 +3,7 @@ import Migration1735044379_AddHlsDirect from '@/migration/db/Migration1735044379
 import type { Migration, MigrationProvider } from 'kysely';
 import { CompiledQuery } from 'kysely';
 import { mapValues } from 'lodash-es';
+import type { Dictionary } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import LegacyMigration0 from './db/LegacyMigration0.ts';
 import LegacyMigration1 from './db/LegacyMigration1.ts';
@@ -95,7 +96,10 @@ export class DirectMigrationProvider implements MigrationProvider {
   // transition away. Legacy migrations are thus prefixed with '_'
   // to ensure they are always run first
   getMigrationsSync(): Record<string, TunarrDatabaseMigration> {
-    return mapValues(
+    return mapValues<
+      Dictionary<TunarrDatabaseMigration>,
+      TunarrDatabaseMigration
+    >(
       {
         _ALWAYS_FIRST: FirstMigration,
         _Legacy_Migration00: LegacyMigration0,

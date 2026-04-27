@@ -15,34 +15,32 @@ import type {
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import { chunk, isEmpty, orderBy, sum, uniq } from 'lodash-es';
+import type { MarkRequired } from 'ts-essentials';
+import {
+  createManyRelationAgg,
+  mapRawJsonRelationResult,
+} from '../../util/drizzleUtil.ts';
+import type { PageParams } from '../interfaces/IChannelDB.ts';
+import type { ProgramGroupingChildCounts } from '../interfaces/IProgramDB.ts';
 import { Artwork } from '../schema/Artwork.ts';
 import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
 import { Program, ProgramType } from '../schema/Program.ts';
+import { ProgramExternalId } from '../schema/ProgramExternalId.ts';
 import {
   ProgramGrouping,
   ProgramGroupingType,
   type ProgramGroupingTypes,
 } from '../schema/ProgramGrouping.ts';
-import { ProgramExternalId } from '../schema/ProgramExternalId.ts';
 import { ProgramGroupingExternalId } from '../schema/ProgramGroupingExternalId.ts';
 import type { MediaSourceId, RemoteSourceType } from '../schema/base.ts';
 import type { DB } from '../schema/db.ts';
 import type {
   MusicAlbumOrm,
   ProgramGroupingOrmWithRelations,
-  ProgramGroupingWithExternalIds,
   ProgramWithRelationsOrm,
   TvSeasonOrm,
 } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
-import type { MarkRequired } from 'ts-essentials';
-import {
-  createManyRelationAgg,
-  mapRawJsonRelationResult,
-} from '../../util/drizzleUtil.ts';
-import { selectProgramsBuilder } from '../programQueryHelpers.ts';
-import type { PageParams } from '../interfaces/IChannelDB.ts';
-import type { ProgramGroupingChildCounts } from '../interfaces/IProgramDB.ts';
 
 @injectable()
 export class ProgramGroupingRepository {
@@ -171,31 +169,6 @@ export class ProgramGroupingRepository {
     }
 
     return programs;
-  }
-
-  async getProgramParent(
-    programId: string,
-  ): Promise<Maybe<ProgramGroupingWithExternalIds>> {
-    const p = await selectProgramsBuilder(this.db, {
-      joins: { tvSeason: true, trackAlbum: true },
-    })
-      .where('program.uuid', '=', programId)
-      .executeTakeFirst()
-      .then((program) => program?.tvSeason ?? program?.trackAlbum);
-
-    if (p) {
-      const eids = await this.db
-        .selectFrom('programGroupingExternalId')
-        .where('groupUuid', '=', p.uuid)
-        .selectAll()
-        .execute();
-      return {
-        ...p,
-        externalIds: eids,
-      };
-    }
-
-    return;
   }
 
   getChildren(

@@ -1,5 +1,5 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import { ChannelProgram } from '@tunarr/types';
+import { CondensedChannelProgram } from '@tunarr/types';
 import { inject, injectable, interfaces } from 'inversify';
 import { sum } from 'lodash-es';
 import { match, P } from 'ts-pattern';
@@ -8,6 +8,7 @@ import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
 import { KEYS } from '../types/inject.ts';
+import { Nullable } from '../types/util.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 
 type Request = {
@@ -44,7 +45,7 @@ export class RegenerateChannelLineupCommand {
           },
         });
 
-        const lineupItems = seq.collect(
+        const lineupItems = seq.collect<CondensedChannelProgram, LineupItem>(
           result.lineup,
           channelProgramToLineupItem,
         );
@@ -98,7 +99,9 @@ export class RegenerateChannelLineupCommand {
   }
 }
 
-function channelProgramToLineupItem(p: ChannelProgram) {
+function channelProgramToLineupItem(
+  p: CondensedChannelProgram,
+): Nullable<LineupItem> {
   return match(p)
     .returnType<LineupItem | null>()
     .with({ type: 'content', id: P.when(isNonEmptyString) }, (program) => ({

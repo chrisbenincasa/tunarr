@@ -2,11 +2,6 @@ import {
   HardwareAccelerationMode,
   TranscodeAudioOutputFormat,
 } from '@/db/schema/TranscodeConfig.js';
-import type {
-  FeatureFlagService} from '../../../services/FeatureFlagService.ts';
-import {
-  resolveFeatureFlagFromEnv,
-} from '../../../services/FeatureFlagService.ts';
 import {
   SubtitleMethods,
   type AudioStream,
@@ -69,6 +64,8 @@ import { filter, first, isNil, isNull, isUndefined, merge } from 'lodash-es';
 import path from 'node:path';
 import type { DeepReadonly, MarkRequired } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
+import type { FeatureFlagService } from '../../../services/FeatureFlagService.ts';
+import { resolveFeatureFlagFromEnv } from '../../../services/FeatureFlagService.ts';
 import {
   AudioFormats,
   OutputFormatTypes,
@@ -160,17 +157,17 @@ export class PipelineBuilderContext {
   videoStream?: VideoStream;
   audioStream?: AudioStream;
   subtitleStream?: SubtitleStream;
-  ffmpegState: FfmpegState;
-  desiredState: FrameState;
+  ffmpegState!: FfmpegState;
+  desiredState!: FrameState;
   desiredAudioState?: AudioState;
-  pipelineOptions: DeepReadonly<PipelineOptions>;
+  pipelineOptions!: DeepReadonly<PipelineOptions>;
 
-  pipelineSteps: PipelineStep[];
-  filterChain: FilterChain;
-  hasWatermark: boolean;
-  shouldDeinterlace: boolean;
-  is10BitOutput: boolean;
-  isIntelVaapiOrQsv: boolean;
+  pipelineSteps!: PipelineStep[];
+  filterChain!: FilterChain;
+  hasWatermark!: boolean;
+  shouldDeinterlace!: boolean;
+  is10BitOutput!: boolean;
+  isIntelVaapiOrQsv!: boolean;
 
   constructor(props: PipelineBuilderContextProps) {
     merge(this, props);
@@ -223,7 +220,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     className: this.constructor.name,
   });
   protected decoder: Nullable<Decoder> = null;
-  protected context: PipelineBuilderContext;
+  protected context!: PipelineBuilderContext;
   protected featureFlagService: Pick<FeatureFlagService, 'get'> = {
     get: resolveFeatureFlagFromEnv,
   };

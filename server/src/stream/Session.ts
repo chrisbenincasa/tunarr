@@ -1,5 +1,4 @@
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import type { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
@@ -33,29 +32,24 @@ export type HlsSessionType = StrictExtract<
 export type HlsConcatSessionType =
   `${HlsSessionType}${typeof ConcatSessionSuffix}`;
 
-export type SessionType =
-  | ChannelStreamMode
-  | ChannelConcatStreamMode;
+export type SessionType = ChannelStreamMode | ChannelConcatStreamMode;
 
 // TODO: sort these all out.... and write docs
 type StreamSessionEvents = {
-  state: (newState: SessionState, oldState: SessionState) => void;
-  start: () => void;
-  stop: () => void;
-  cleanup: () => void;
-  cleanupScheduled: (delayMs: number) => void;
-  error: (e: unknown) => void;
-  addConnection: (token: string, connection: StreamConnectionDetails) => void;
-  removeConnection: (
-    token: string,
-    connection: StreamConnectionDetails,
-  ) => void;
-  end: () => void;
+  state: [newState: SessionState, oldState: SessionState];
+  start: [];
+  stop: [];
+  cleanup: [];
+  cleanupScheduled: [delayMs: number];
+  error: [e: unknown];
+  addConnection: [token: string, connection: StreamConnectionDetails];
+  removeConnection: [token: string, connection: StreamConnectionDetails];
+  end: [];
 };
 
 export abstract class Session<
   TOpts extends SessionOptions = SessionOptions,
-> extends (events.EventEmitter as new () => TypedEventEmitter<StreamSessionEvents>) {
+> extends events.EventEmitter<StreamSessionEvents> {
   public abstract readonly sessionType: SessionType;
   protected lock = new Mutex();
   protected logger: Logger;

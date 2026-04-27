@@ -34,7 +34,6 @@ import {
   IFillerListDB,
 } from './interfaces/IFillerListDB.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
-import { withFillerPrograms } from './programQueryHelpers.ts';
 import { ChannelFillerShow } from './schema/ChannelFillerShow.ts';
 import { FillerShow, NewFillerShow } from './schema/FillerShow.ts';
 import {
@@ -55,13 +54,27 @@ export class FillerDB implements IFillerListDB {
     @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
   ) {}
 
-  getFiller(id: string): Promise<Maybe<FillerShowWithContent>> {
-    return this.db
-      .selectFrom('fillerShow')
-      .where('uuid', '=', id)
-      .selectAll()
-      .select((eb) => withFillerPrograms(eb, { fields: ['program.uuid'] }))
-      .executeTakeFirst();
+  async getFiller(id: string): Promise<Maybe<FillerShowWithContent>> {
+    const result = await this.drizzle.query.fillerShows.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, id),
+      with: {
+        fillerShowContent: {
+          with: {
+            program: true,
+          },
+        },
+      },
+    });
+
+    if (!result) return;
+
+    return {
+      ...result,
+      fillerContent: result.fillerShowContent.map((content, idx) => ({
+        ...content.program,
+        index: idx,
+      })),
+    } satisfies FillerShowWithContent;
   }
 
   async getFillerListsByIds(
@@ -154,7 +167,7 @@ export class FillerDB implements IFillerListDB {
         ({
           fillerShowUuid: filler.uuid,
           programUuid: p.id,
-          index: programIndexById[p.id!]!,
+          index: programIndexById[p.id]!,
         }) satisfies NewFillerShowContent,
     );
 

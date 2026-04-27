@@ -24,11 +24,7 @@ import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
-import {
-  withProgramChannels,
-  withProgramCustomShows,
-  withProgramFillerShows,
-} from './programQueryHelpers.ts';
+
 import {
   MediaSourceId,
   MediaSourceName,
@@ -168,15 +164,16 @@ export class MediaSourceDB {
     // 2. use program_external_id table
     // 3. not delete programs if they still have another reference via
     //    the external id table (program that exists on 2 servers)
-    const allPrograms = await this.db
-      .selectFrom('program')
-      .select('uuid')
-      .where('sourceType', '=', deletedServer.type)
-      .where('mediaSourceId', '=', deletedServer.uuid)
-      .select(withProgramChannels)
-      .select(withProgramFillerShows)
-      .select(withProgramCustomShows)
-      .execute();
+    const allPrograms = await this.drizzleDB.query.program.findMany({
+      where: (fields, { eq, and }) =>
+        and(
+          eq(fields.sourceType, deletedServer.type),
+          eq(fields.mediaSourceId, deletedServer.uuid),
+        ),
+      columns: {
+        uuid: true,
+      },
+    });
 
     const allGroupings = await this.db
       .selectFrom('programGrouping')
