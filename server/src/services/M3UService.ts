@@ -2,7 +2,8 @@ import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
 import { devAssert } from '@/util/debug.js';
-import { attempt, isDefined, isNonEmptyString } from '@/util/index.js';
+import { attempt, isDefined } from '@/util/index.js';
+import { resolveIconUrl } from '@/util/iconUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Mutex } from 'async-mutex';
 import { inject, injectable } from 'inversify';
@@ -58,13 +59,10 @@ export class M3uService {
         continue;
       }
       const channelId = getChannelId(channel.number);
-      data += `#EXTINF:-1 tvg-id="${channelId}" channel-id="${channelId}" CUID="${channelId}" tvg-chno="${
-        channel.number
-      }" tvg-name="${channel.name}" tvg-logo="${
-        isNonEmptyString(channel.icon?.path)
-          ? channel.icon.path
-          : '{{host}}/images/tunarr.png'
-      }" group-title="${channel.groupTitle}",${channel.name}\n`;
+      const logoUrl = resolveIconUrl(channel.icon, '{{host}}/images/tunarr.png');
+      const logoAttr =
+        logoUrl != null ? ` tvg-logo="${logoUrl}"` : '';
+      data += `#EXTINF:-1 tvg-id="${channelId}" channel-id="${channelId}" CUID="${channelId}" tvg-chno="${channel.number}" tvg-name="${channel.name}"${logoAttr} group-title="${channel.groupTitle}",${channel.name}\n`;
 
       data += `{{host}}/stream/channels/${channel.uuid}?streamMode=${channel.streamMode}\n`;
     }

@@ -78,6 +78,10 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
         },
       ],
     },
+    icon: {
+      ...channel.icon,
+      useDefaultIconFallback: channel.icon?.useDefaultIconFallback ?? true,
+    },
     onDemand: {
       enabled: channel.onDemand.enabled,
     },

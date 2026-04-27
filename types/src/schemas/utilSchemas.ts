@@ -100,6 +100,7 @@ export const ChannelIconSchema = z.object({
       z.literal('bottom-right'),
     ])
     .catch('bottom-right'),
+  useDefaultIconFallback: z.boolean().optional().catch(true),
 });
 
 export const TimeUnitSchema = z.union([

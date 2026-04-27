@@ -3,6 +3,7 @@ import { ChannelOrm } from '@/db/schema/Channel.js';
 import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
 import { firstDefined, groupByFunc, isNonEmptyString } from '@/util/index.js';
+import { resolveIconUrl } from '@/util/iconUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   writeXmltv,
@@ -93,13 +94,15 @@ export class XmlTvWriter {
       ],
     };
 
-    if (channel.icon) {
+    const iconSrc = resolveIconUrl(channel.icon, '{{host}}/images/tunarr.png');
+    if (iconSrc) {
       partial.icon = [
         {
-          src: isNonEmptyString(channel.icon.path)
-            ? escape(channel.icon.path)
-            : '{{host}}/images/tunarr.png',
-          width: channel.icon.width <= 0 ? 250 : channel.icon.width,
+          src: escape(iconSrc),
+          width:
+            channel.icon?.width && channel.icon.width > 0
+              ? channel.icon.width
+              : 250,
         },
       ];
     }

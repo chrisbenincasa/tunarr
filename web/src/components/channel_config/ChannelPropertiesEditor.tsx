@@ -1,4 +1,6 @@
 import ClearIcon from '@mui/icons-material/Clear';
+import HideImageOutlinedIcon from '@mui/icons-material/HideImageOutlined';
+import RestoreIcon from '@mui/icons-material/Restore';
 import {
   Box,
   Divider,
@@ -21,8 +23,6 @@ import useStore from '../../store/index.ts';
 import TunarrLogo from '../TunarrLogo.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import { NumericFormControllerText } from '../util/TypedController.tsx';
-
-const DefaultIconPath = '';
 
 export function ChannelPropertiesEditor() {
   const { t } = useLingui();
@@ -66,6 +66,7 @@ export function ChannelPropertiesEditor() {
   );
 
   const imagePath = watch('icon.path');
+  const useDefaultIconFallback = watch('icon.useDefaultIconFallback');
 
   const isChannelFormat = (str: string) => {
     // Regex to match "Channel 123" format
@@ -193,7 +194,7 @@ export function ChannelPropertiesEditor() {
                 )}
               />
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, mb: 1 }}>
-                {DefaultIconPath !== imagePath ? (
+                {imagePath ? (
                   <Box
                     component="img"
                     width="10%"
@@ -201,8 +202,27 @@ export function ChannelPropertiesEditor() {
                     sx={{ mr: 1 }}
                     ref={imgRef}
                   />
-                ) : (
+                ) : useDefaultIconFallback !== false ? (
                   <TunarrLogo style={{ width: '132px' }} />
+                ) : (
+                  <Box
+                    sx={{
+                      width: '132px',
+                      height: '106px',
+                      border: '2px dashed',
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mr: 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <HideImageOutlinedIcon
+                      sx={{ fontSize: 40, color: 'text.disabled' }}
+                    />
+                  </Box>
                 )}
 
                 <Controller
@@ -211,9 +231,14 @@ export function ChannelPropertiesEditor() {
                   render={({ field }) => (
                     <ImageUploadInput
                       FormControlProps={{ fullWidth: true }}
-                      value={field.value}
+                      value={field.value ?? ''}
                       onFormValueChange={(newPath) => {
                         field.onChange(newPath);
+                        if (newPath) {
+                          setValue('icon.useDefaultIconFallback', true, {
+                            shouldDirty: true,
+                          });
+                        }
                       }}
                       fileRenamer={renameFile}
                       label={t`Thumbnail URL`}
@@ -223,15 +248,33 @@ export function ChannelPropertiesEditor() {
                   )}
                 />
 
-                {DefaultIconPath !== imagePath && (
-                  <Tooltip title={t`Remove custom icon`}>
+                {(imagePath || useDefaultIconFallback !== false) && (
+                  <Tooltip title={t`Remove icon`}>
                     <IconButton
                       aria-label="Remove channel icon"
-                      onClick={() =>
-                        setValue('icon.path', '', { shouldDirty: true })
-                      }
+                      onClick={() => {
+                        setValue('icon.path', '', { shouldDirty: true });
+                        setValue('icon.useDefaultIconFallback', false, {
+                          shouldDirty: true,
+                        });
+                      }}
                     >
                       <ClearIcon />
+                    </IconButton>
+                  </Tooltip>
+                )}
+
+                {!imagePath && useDefaultIconFallback === false && (
+                  <Tooltip title={t`Restore default logo`}>
+                    <IconButton
+                      aria-label="Restore default channel logo"
+                      onClick={() =>
+                        setValue('icon.useDefaultIconFallback', true, {
+                          shouldDirty: true,
+                        })
+                      }
+                    >
+                      <RestoreIcon />
                     </IconButton>
                   </Tooltip>
                 )}

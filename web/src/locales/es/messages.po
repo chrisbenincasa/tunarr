@@ -45,7 +45,7 @@ msgstr ""
 #. placeholder {0}: value?.programCount ?? 0
 #: src/components/channel_config/ChannelLineupList.tsx:526
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:47
-#: src/pages/channels/ChannelsPage.tsx:494
+#: src/pages/channels/ChannelsPage.tsx:492
 msgid "{0, plural, one {# program} other {# programs}}"
 msgstr ""
 
@@ -66,8 +66,8 @@ msgid "{0, plural, one {# Selected Item} other {# Selected Items}}"
 msgstr ""
 
 #. placeholder {0}: sessions.length
-#: src/pages/channels/ChannelsPage.tsx:294
-#: src/pages/channels/ChannelsPage.tsx:422
+#: src/pages/channels/ChannelsPage.tsx:293
+#: src/pages/channels/ChannelsPage.tsx:423
 msgid "{0, plural, one {# session} other {# sessions}}"
 msgstr ""
 
@@ -210,13 +210,13 @@ msgstr ""
 msgid "{remainingTime} left"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:297
-#: src/pages/channels/ChannelsPage.tsx:425
+#: src/pages/channels/ChannelsPage.tsx:296
+#: src/pages/channels/ChannelsPage.tsx:426
 msgid "{totalConnections, plural, one {# connection} other {# connections}}"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:296
-#: src/pages/channels/ChannelsPage.tsx:424
+#: src/pages/channels/ChannelsPage.tsx:295
+#: src/pages/channels/ChannelsPage.tsx:425
 msgid "{totalConnections} total"
 msgstr ""
 
@@ -232,7 +232,7 @@ msgstr ""
 msgid "# of Programs"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:341
+#: src/pages/channels/ChannelsPage.tsx:342
 #: src/pages/library/CustomShowsPage.tsx:160
 #: src/pages/library/FillerListsPage.tsx:166
 msgid "# Programs"
@@ -538,7 +538,7 @@ msgid "Amount"
 msgstr ""
 
 #. placeholder {0}: error.message
-#: src/components/guide/TvGuide.tsx:580
+#: src/components/guide/TvGuide.tsx:579
 msgid "An error occurred: {0}"
 msgstr ""
 
@@ -773,7 +773,7 @@ msgstr ""
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:279
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:189
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:114
-#: src/pages/channels/ChannelsPage.tsx:201
+#: src/pages/channels/ChannelsPage.tsx:200
 #: src/pages/library/CustomShowsPage.tsx:105
 #: src/pages/library/FillerListsPage.tsx:115
 msgid "Cancel"
@@ -789,7 +789,7 @@ msgstr ""
 msgid "Cannot disable libraries when they are locked"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:111
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:112
 msgid "Cannot use a channel number <= 0"
 msgstr ""
 
@@ -811,7 +811,7 @@ msgid "Channel"
 msgstr ""
 
 #. placeholder {0}: channel.number
-#: src/pages/channels/ChannelSummaryPage.tsx:45
+#: src/pages/channels/ChannelSummaryPage.tsx:44
 msgid "Channel #{0}"
 msgstr ""
 
@@ -819,25 +819,25 @@ msgstr ""
 msgid "Channel Fallback"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:167
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:168
 msgid "Channel Group"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:163
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:170
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:164
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:171
 msgid "Channel group is required"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:153
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:154
 msgid "Channel Name"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:149
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:155
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:150
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:156
 msgid "Channel name is required"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:142
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:143
 msgid "Channel Number"
 msgstr ""
 
@@ -858,7 +858,7 @@ msgstr ""
 #: src/App.tsx:95
 #: src/hooks/useNavItems.tsx:63
 #: src/hooks/useRouteName.ts:38
-#: src/pages/channels/ChannelsPage.tsx:568
+#: src/pages/channels/ChannelsPage.tsx:566
 msgid "Channels"
 msgstr ""
 
@@ -1129,7 +1129,7 @@ msgstr ""
 #: src/components/DeleteConfirmationDialog.tsx:59
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:75
 #: src/components/smart_collections/SmartCollectionsTable.tsx:124
-#: src/pages/channels/ChannelsPage.tsx:207
+#: src/pages/channels/ChannelsPage.tsx:206
 #: src/pages/library/CustomShowsPage.tsx:113
 #: src/pages/library/CustomShowsPage.tsx:132
 #: src/pages/library/FillerListsPage.tsx:123
@@ -1143,7 +1143,7 @@ msgid "Delete \"{0}\""
 msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx:225
-#: src/pages/channels/ChannelsPage.tsx:186
+#: src/pages/channels/ChannelsPage.tsx:185
 msgid "Delete Channel"
 msgstr ""
 
@@ -1184,7 +1184,7 @@ msgid "Delete Transcoding Config \"{0}\"?"
 msgstr ""
 
 #: src/components/channels/ChannelDeleteDialog.tsx:72
-#: src/pages/channels/ChannelsPage.tsx:190
+#: src/pages/channels/ChannelsPage.tsx:189
 msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
 msgstr ""
 
@@ -1314,7 +1314,7 @@ msgstr ""
 #: src/components/programming_controls/BalanceProgrammingModal.tsx:62
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:364
 #: src/components/slot_scheduler/RandomSlotTable.tsx:232
-#: src/pages/channels/ChannelsPage.tsx:345
+#: src/pages/channels/ChannelsPage.tsx:346
 msgid "Duration"
 msgstr ""
 
@@ -1359,7 +1359,7 @@ msgstr ""
 msgid "Edit Channel Redirect"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:237
+#: src/pages/channels/ChannelsPage.tsx:236
 msgid "Edit Channel Settings"
 msgstr ""
 
@@ -1473,7 +1473,7 @@ msgstr ""
 msgid "Enable Watermark"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:262
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:305
 #: src/pages/system/StatusPage.tsx:335
 msgid "Enabled"
 msgstr ""
@@ -1522,7 +1522,7 @@ msgstr ""
 msgid "Enter your Jellyfin password to generate a new access token.<0/><1>NOTE:</1> These are never saved to the Tunarr DB. Instead they are sent to Jellyfin to exchange for a session token."
 msgstr ""
 
-#: src/components/channel_config/EditChannelForm.tsx:243
+#: src/components/channel_config/EditChannelForm.tsx:247
 msgid "EPG"
 msgstr ""
 
@@ -1834,7 +1834,7 @@ msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx:68
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx:47
-#: src/components/channel_config/EditChannelForm.tsx:242
+#: src/components/channel_config/EditChannelForm.tsx:246
 #: src/hooks/programming_controls/useSlotProgramOptions.ts:111
 #: src/hooks/programming_controls/useSlotProgramOptions.ts:115
 #: src/hooks/slot_scheduler/useSlotName.ts:21
@@ -1862,7 +1862,7 @@ msgstr ""
 msgid "Frequency"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:130
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:131
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx:88
 #: src/pages/settings/SettingsLayout.tsx:31
 msgid "General"
@@ -1963,7 +1963,7 @@ msgstr ""
 msgid "How often to insert a break"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:315
+#: src/pages/channels/ChannelsPage.tsx:314
 msgid "Icon"
 msgstr ""
 
@@ -2433,7 +2433,7 @@ msgstr ""
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:162
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:108
 #: src/components/smart_collections/SmartCollectionsTable.tsx:59
-#: src/pages/channels/ChannelsPage.tsx:336
+#: src/pages/channels/ChannelsPage.tsx:337
 #: src/pages/library/CustomShowsPage.tsx:146
 #: src/pages/library/FillerListsPage.tsx:162
 #: src/pages/settings/MediaSourceSettingsPage.tsx:82
@@ -2460,7 +2460,7 @@ msgstr ""
 #: src/hooks/useRouteName.ts:51
 #: src/hooks/useRouteName.ts:113
 #: src/hooks/useRouteName.ts:125
-#: src/pages/channels/ChannelsPage.tsx:575
+#: src/pages/channels/ChannelsPage.tsx:573
 #: src/pages/library/CustomShowsPage.tsx:223
 #: src/pages/library/FillerListsPage.tsx:237
 msgid "New"
@@ -2507,8 +2507,8 @@ msgstr ""
 msgid "Next Scheduled Execution"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:273
-#: src/pages/channels/ChannelsPage.tsx:402
+#: src/pages/channels/ChannelsPage.tsx:272
+#: src/pages/channels/ChannelsPage.tsx:403
 msgid "No active sessions"
 msgstr ""
 
@@ -2558,7 +2558,7 @@ msgstr ""
 msgid "Normalize Frame Rate"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:107
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:108
 msgid "Not a valid number"
 msgstr ""
 
@@ -2576,7 +2576,7 @@ msgstr ""
 msgid "Now Playing:"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:330
+#: src/pages/channels/ChannelsPage.tsx:331
 msgid "Number"
 msgstr ""
 
@@ -2593,15 +2593,15 @@ msgstr ""
 msgid "Nvidia Capabilities"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:241
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:284
 msgid "On-Demand"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:243
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:286
 msgid "On-Demand channels resume from where you left off. Programming is paused when the channel is not streaming.<0/><1>NOTE:</1> While the channel is inactive, the TV Guide for the channel will be empty."
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:364
+#: src/pages/channels/ChannelsPage.tsx:365
 msgid "On-Demand?"
 msgstr ""
 
@@ -2814,7 +2814,7 @@ msgstr ""
 msgid "Programming Preview"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:180
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:181
 #: src/pages/channels/TimeSlotEditorPage.tsx:484
 msgid "Programming Start"
 msgstr ""
@@ -2846,7 +2846,7 @@ msgstr ""
 msgid "Programs Too Long"
 msgstr ""
 
-#: src/components/channel_config/EditChannelForm.tsx:241
+#: src/components/channel_config/EditChannelForm.tsx:245
 msgid "Properties"
 msgstr ""
 
@@ -2972,7 +2972,11 @@ msgid "Remove All {movieCount} {movieCount, plural, one {Movie} other {Movies}}"
 msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx:227
-msgid "Remove custom icon"
+#~ msgid "Remove custom icon"
+#~ msgstr ""
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:252
+msgid "Remove icon"
 msgstr ""
 
 #: src/components/programming_controls/RemoveShowsModal.tsx:229
@@ -3064,6 +3068,10 @@ msgstr ""
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:110
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx:190
 msgid "Resolution"
+msgstr ""
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:268
+msgid "Restore default logo"
 msgstr ""
 
 #: src/pages/settings/HdhrSettingsPage.tsx:129
@@ -3458,7 +3466,7 @@ msgstr ""
 msgid "Stealth Mode"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:353
+#: src/pages/channels/ChannelsPage.tsx:354
 msgid "Stealth?"
 msgstr ""
 
@@ -3478,7 +3486,7 @@ msgstr ""
 msgid "Stream Mode"
 msgstr ""
 
-#: src/components/channel_config/EditChannelForm.tsx:244
+#: src/components/channel_config/EditChannelForm.tsx:248
 msgid "Streaming"
 msgstr ""
 
@@ -3637,7 +3645,7 @@ msgstr ""
 msgid "This channel is set up to use <0>{0}Slots</0> for programming. Any manual changes on this page will likely make this channel stop adhering to that schedule."
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:120
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:121
 msgid "This channel number has already been used"
 msgstr ""
 
@@ -3657,7 +3665,7 @@ msgstr ""
 msgid "This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled."
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:169
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:170
 msgid "This is used by iptv clients to categorize the channels. You can leave it as 'tunarr' if you don't need this sort of classification."
 msgstr ""
 
@@ -3678,7 +3686,7 @@ msgstr ""
 msgid "Threads"
 msgstr ""
 
-#: src/components/channel_config/ChannelPropertiesEditor.tsx:219
+#: src/components/channel_config/ChannelPropertiesEditor.tsx:244
 msgid "Thumbnail URL"
 msgstr ""
 
@@ -3757,7 +3765,7 @@ msgstr ""
 msgid "Tracks"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:372
+#: src/pages/channels/ChannelsPage.tsx:373
 msgid "Transcode Config"
 msgstr ""
 

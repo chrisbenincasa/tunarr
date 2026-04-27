@@ -15,7 +15,7 @@ import { seq } from '@tunarr/shared/util';
 import type { Channel } from '@tunarr/types';
 import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
 import dayjs, { type Dayjs } from 'dayjs';
-import { compact, isEmpty, isNull, isUndefined, round } from 'lodash-es';
+import { compact, isNull, isUndefined, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { useInterval } from 'usehooks-ts';
@@ -27,8 +27,8 @@ import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
 import { useTvGuides, useTvGuidesPrefetch } from '../../hooks/useTvGuide';
 import type { Maybe, Nullable } from '../../types/util.ts';
-import TunarrLogo from '../TunarrLogo';
 import PaddedPaper from '../base/PaddedPaper';
+import { ChannelIconDisplay } from '../channels/ChannelIconDisplay.tsx';
 import { ChannelOptionsMenu } from '../channels/ChannelOptionsMenu.tsx';
 import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 import { TvGuideGridChild } from './TvGuideGridChild.tsx';
@@ -492,11 +492,10 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
                   disableRipple
                   disableElevation
                   startIcon={
-                    isEmpty(channel.icon?.path) ? (
-                      <TunarrLogo style={{ width: '40px' }} />
-                    ) : (
-                      <img style={{ width: '40px' }} src={channel.icon?.path} />
-                    )
+                    <ChannelIconDisplay
+                      icon={channel.icon}
+                      style={{ width: '40px' }}
+                    />
                   }
                   onClick={(event) => handleClick(event, channel)}
                   endIcon={<KeyboardArrowDownIcon />}

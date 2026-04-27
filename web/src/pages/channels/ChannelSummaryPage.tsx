@@ -13,8 +13,7 @@ import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { ChannelNowPlayingCard } from '../../components/channels/ChannelNowPlayingCard.tsx';
 import { ChannelPrograms } from '../../components/channels/ChannelPrograms.tsx';
 import { ChannelSummaryQuickStats } from '../../components/channels/ChannelSummaryQuickStats.tsx';
-import TunarrLogo from '../../components/TunarrLogo.tsx';
-import { isNonEmptyString } from '../../helpers/util.ts';
+import { ChannelIconDisplay } from '../../components/channels/ChannelIconDisplay.tsx';
 import { useChannelAndProgramming } from '../../hooks/useChannelLineup.ts';
 import { Route } from '../../routes/channels_/$channelId/index.tsx';
 
@@ -33,11 +32,11 @@ export const ChannelSummaryPage = () => {
       <Stack direction="row" alignItems="flex-start" spacing={1}>
         <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
           <Box>
-            {isNonEmptyString(channel.icon.path) ? (
-              <Box component="img" width={[48, 132]} src={channel.icon.path} />
-            ) : (
-              <TunarrLogo style={{ width: smallViewport ? '48px' : '132px' }} />
-            )}
+            <ChannelIconDisplay
+              icon={channel.icon}
+              imgStyle={{ width: smallViewport ? '48px' : '132px' }}
+              style={{ width: smallViewport ? '48px' : '132px' }}
+            />
           </Box>
           <Typography variant={smallViewport ? 'h5' : 'h4'} noWrap>
             {channel.name}

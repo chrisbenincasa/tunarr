@@ -16,6 +16,7 @@ import { binarySearchRange } from '@/util/binarySearch.js';
 import { devAssert } from '@/util/debug.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
+import { resolveIconUrl } from '@/util/iconUtil.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import throttle from '@/util/throttle.js';
 import constants from '@tunarr/shared/constants';
@@ -1190,9 +1191,8 @@ export class TVGuideService {
 
     const icon = isNonEmptyString(materializedItem.icon)
       ? materializedItem.icon
-      : isNonEmptyString(channel.icon?.path)
-        ? channel.icon.path
-        : makeLocalUrl('/images/tunarr.png');
+      : (resolveIconUrl(channel.icon, makeLocalUrl('/images/tunarr.png')) ??
+        makeLocalUrl('/images/tunarr.png'));
 
     const program = match(materializedItem)
       .returnType<TvGuideProgram>()
