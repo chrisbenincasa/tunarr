@@ -459,6 +459,57 @@ export class SearchParser extends EmbeddedActionsParser {
     ]);
   });
 
+  private dateValue = this.RULE('dateValue', () => {
+    return this.OR([
+      {
+        GATE: () => {
+          const first = this.LA(1);
+          const second = this.LA(2);
+          return (
+            first.tokenType === OpenQuote &&
+            second.tokenType === StringChars &&
+            /^\d{4}-\d{2}-\d{2}$|^\d{8}$/.test(second.image)
+          );
+        },
+        ALT: () => {
+          this.CONSUME(OpenQuote);
+          const value = this.CONSUME(StringChars, {
+            ERR_MSG:
+              'Date fields should be in the format "YYYY-MM-DD" or "YYYYMMDD"',
+          }).image;
+          this.CONSUME2(CloseQuote);
+          return value;
+        },
+      },
+      {
+        GATE: () => {
+          const first = this.LA(1);
+          const second = this.LA(2);
+          return (
+            first.tokenType === Integer &&
+            /^\d{4}$/.test(first.image) &&
+            second.tokenType === Identifier &&
+            /^-\d{2}-\d{2}$/.test(second.image)
+          );
+        },
+        ALT: () => {
+          const year = this.CONSUME(Integer).image;
+          const rest = this.CONSUME(Identifier).image;
+          return year + rest;
+        },
+      },
+      {
+        GATE: () => {
+          const first = this.LA(1);
+          return first.tokenType === Integer && /^\d{8}$/.test(first.image);
+        },
+        ALT: () => {
+          return this.CONSUME2(Integer).image;
+        },
+      },
+    ]);
+  });
+
   private stringOperator = this.RULE('string_operator', () => {
     return this.OR<{
       op: StringOps;
@@ -645,7 +696,7 @@ export class SearchParser extends EmbeddedActionsParser {
             },
           ]);
 
-          const value = this.SUBRULE(this.searchValue);
+          const value = this.SUBRULE(this.dateValue);
           return {
             type: 'single_date_query',
             op,
@@ -672,9 +723,9 @@ export class SearchParser extends EmbeddedActionsParser {
             },
           ]);
           const values: string[] = [];
-          values.push(this.SUBRULE2(this.searchValue));
+          values.push(this.SUBRULE2(this.dateValue));
           this.OPTION(() => this.CONSUME2(Comma));
-          values.push(this.SUBRULE3(this.searchValue));
+          values.push(this.SUBRULE3(this.dateValue));
           this.OR4([
             {
               ALT: () => this.CONSUME3(CloseParenGroup),

@@ -650,3 +650,411 @@ describe('searchFilterToString', () => {
     expect(searchFilterToString(request)).toEqual(input);
   });
 });
+
+describe('dateValue parser rule', () => {
+  function parseDateValue(input: string): string {
+    const lexerResult = tokenizeSearchQuery(input);
+    expect(lexerResult.errors, JSON.stringify(lexerResult.errors)).toHaveLength(
+      0,
+    );
+    const parser = new SearchParser();
+    parser.input = lexerResult.tokens;
+    // Access private rule at runtime for unit testing
+    const result = (parser as any).dateValue();
+    expect(parser.errors, JSON.stringify(parser.errors, null, 2)).toHaveLength(
+      0,
+    );
+    return result;
+  }
+
+  function expectDateValueRejected(input: string) {
+    const lexerResult = tokenizeSearchQuery(input);
+    if (lexerResult.errors.length > 0) {
+      return;
+    }
+    const parser = new SearchParser();
+    parser.input = lexerResult.tokens;
+    (parser as any).dateValue();
+    expect(parser.errors.length).toBeGreaterThan(0);
+  }
+
+  describe('accepts YYYY-MM-DD format', () => {
+    test('unquoted', () => {
+      expect(parseDateValue('2025-03-02')).toBe('2025-03-02');
+    });
+
+    test('quoted', () => {
+      expect(parseDateValue('"2025-03-02"')).toBe('2025-03-02');
+    });
+
+    test('first day of year', () => {
+      expect(parseDateValue('2025-01-01')).toBe('2025-01-01');
+    });
+
+    test('last day of year', () => {
+      expect(parseDateValue('2025-12-31')).toBe('2025-12-31');
+    });
+
+    test('year 2000 boundary', () => {
+      expect(parseDateValue('2000-01-01')).toBe('2000-01-01');
+    });
+
+    test('far future date', () => {
+      expect(parseDateValue('2099-06-15')).toBe('2099-06-15');
+    });
+
+    test('far past date', () => {
+      expect(parseDateValue('1900-01-01')).toBe('1900-01-01');
+    });
+  });
+
+  describe('accepts YYYYMMDD format', () => {
+    test('unquoted', () => {
+      expect(parseDateValue('20250302')).toBe('20250302');
+    });
+
+    test('quoted', () => {
+      expect(parseDateValue('"20250302"')).toBe('20250302');
+    });
+
+    test('year 1999 compact', () => {
+      expect(parseDateValue('19991231')).toBe('19991231');
+    });
+  });
+
+  describe('rejects invalid formats', () => {
+    test('single-digit month and day', () => {
+      expectDateValueRejected('2025-3-2');
+    });
+
+    test('two-digit year', () => {
+      expectDateValueRejected('25-03-02');
+    });
+
+    test('plain text', () => {
+      expectDateValueRejected('hello');
+    });
+
+    test('year-month only', () => {
+      expectDateValueRejected('2025-03');
+    });
+
+    test('6-digit number', () => {
+      expectDateValueRejected('202503');
+    });
+
+    test('5-digit number', () => {
+      expectDateValueRejected('12345');
+    });
+
+    test('9-digit number', () => {
+      expectDateValueRejected('123456789');
+    });
+
+    test('4-digit year only', () => {
+      expectDateValueRejected('2025');
+    });
+
+    test('extra date segments', () => {
+      expectDateValueRejected('2025-03-02-01');
+    });
+
+    test('slash-separated date', () => {
+      expectDateValueRejected('2025/03/02');
+    });
+
+    test('dot-separated date', () => {
+      expectDateValueRejected('2025.03.02');
+    });
+
+    test('empty quoted string', () => {
+      expectDateValueRejected('""');
+    });
+
+    test('quoted non-date string', () => {
+      expectDateValueRejected('"hello"');
+    });
+
+    test('quoted incomplete date', () => {
+      expectDateValueRejected('"2025-03"');
+    });
+
+    test('quoted 6-digit number', () => {
+      expectDateValueRejected('"202503"');
+    });
+
+    test('floating point number', () => {
+      expectDateValueRejected('2025.0302');
+    });
+
+    test('space-separated digits', () => {
+      expectDateValueRejected('2025 0302');
+    });
+  });
+
+  describe('full date queries', () => {
+    test('equality with YYYY-MM-DD', () => {
+      const query = parseAndCheckExpression('release_date = 2025-01-01');
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: '=',
+        value: '2025-01-01',
+      } satisfies SearchClause);
+    });
+
+    test('equality with YYYYMMDD', () => {
+      const query = parseAndCheckExpression('release_date = 20250101');
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: '=',
+        value: '20250101',
+      } satisfies SearchClause);
+    });
+
+    test('equality with colon operator', () => {
+      const query = parseAndCheckExpression('release_date:2025-01-01');
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: '=',
+        value: '2025-01-01',
+      } satisfies SearchClause);
+    });
+
+    test('less than', () => {
+      const query = parseAndCheckExpression('release_date < 2020-01-01');
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: '<',
+        value: '2020-01-01',
+      } satisfies SearchClause);
+    });
+
+    test('less than or equal', () => {
+      const query = parseAndCheckExpression('release_date <= 2020-12-31');
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: '<=',
+        value: '2020-12-31',
+      } satisfies SearchClause);
+    });
+
+    test('greater than', () => {
+      const query = parseAndCheckExpression('release_date > 2020-01-01');
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: '>',
+        value: '2020-01-01',
+      } satisfies SearchClause);
+    });
+
+    test('greater than or equal', () => {
+      const query = parseAndCheckExpression('release_date >= 2020-01-01');
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: '>=',
+        value: '2020-01-01',
+      } satisfies SearchClause);
+    });
+
+    test('between inclusive with YYYY-MM-DD', () => {
+      const query = parseAndCheckExpression(
+        'release_date between [2020-01-01, 2023-12-31]',
+      );
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: 'between',
+        value: ['2020-01-01', '2023-12-31'],
+        includeLow: true,
+        includeHigher: true,
+      } satisfies SearchClause);
+    });
+
+    test('between exclusive with YYYYMMDD', () => {
+      const query = parseAndCheckExpression(
+        'release_date between (20200101, 20231231)',
+      );
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: 'between',
+        value: ['20200101', '20231231'],
+        includeLow: false,
+        includeHigher: false,
+      } satisfies SearchClause);
+    });
+
+    test('between half-open with mixed formats', () => {
+      const query = parseAndCheckExpression(
+        'release_date between [20200101, 2023-12-31)',
+      );
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: 'between',
+        value: ['20200101', '2023-12-31'],
+        includeLow: true,
+        includeHigher: false,
+      } satisfies SearchClause);
+    });
+
+    test('quoted date value in equality', () => {
+      const query = parseAndCheckExpression('release_date = "2025-06-15"');
+      expect(query).toMatchObject({
+        type: 'single_date_query',
+        field: 'release_date',
+        op: '=',
+        value: '2025-06-15',
+      } satisfies SearchClause);
+    });
+
+    test('compound: date AND string', () => {
+      const query = parseAndCheckExpression(
+        'release_date > 2020-01-01 AND title ~ "Matrix"',
+      );
+      expect(query).toMatchObject({
+        type: 'binary_clause',
+        op: 'and',
+        lhs: {
+          type: 'single_date_query',
+          field: 'release_date',
+          op: '>',
+          value: '2020-01-01',
+        },
+        rhs: {
+          type: 'single_query',
+          field: 'title',
+          op: 'contains',
+          value: 'Matrix',
+        },
+      } satisfies SearchClause);
+    });
+
+    test('compound: string AND date between', () => {
+      const query = parseAndCheckExpression(
+        'type = "movie" AND release_date between [2020-01-01, 2025-12-31]',
+      );
+      expect(query).toMatchObject({
+        type: 'binary_clause',
+        op: 'and',
+        lhs: {
+          type: 'single_query',
+          field: 'type',
+          op: '=',
+          value: 'movie',
+        },
+        rhs: {
+          type: 'single_date_query',
+          field: 'release_date',
+          op: 'between',
+          value: ['2020-01-01', '2025-12-31'],
+          includeLow: true,
+          includeHigher: true,
+        },
+      } satisfies SearchClause);
+    });
+
+    test('compound: date AND numeric AND string', () => {
+      const query = parseAndCheckExpression(
+        'release_date >= 2000-01-01 AND minutes > 90 AND genre = "Action"',
+      );
+      expect(query).toMatchObject({
+        type: 'binary_clause',
+        op: 'and',
+        lhs: {
+          type: 'single_date_query',
+          field: 'release_date',
+          op: '>=',
+          value: '2000-01-01',
+        },
+        rhs: {
+          type: 'binary_clause',
+          op: 'and',
+          lhs: {
+            type: 'single_numeric_query',
+            field: 'minutes',
+            op: '>',
+            value: 90,
+          },
+          rhs: {
+            type: 'single_query',
+            field: 'genre',
+            op: '=',
+            value: 'Action',
+          },
+        },
+      } satisfies SearchClause);
+    });
+
+    test('date in parenthesized group', () => {
+      const query = parseAndCheckExpression(
+        '(release_date >= 2020-01-01 AND release_date <= 2025-12-31) OR genre = "Comedy"',
+      );
+      expect(query).toMatchObject({
+        type: 'binary_clause',
+        op: 'or',
+        lhs: {
+          type: 'search_group',
+          clauses: [
+            {
+              type: 'binary_clause',
+              op: 'and',
+              lhs: {
+                type: 'single_date_query',
+                field: 'release_date',
+                op: '>=',
+                value: '2020-01-01',
+              },
+              rhs: {
+                type: 'single_date_query',
+                field: 'release_date',
+                op: '<=',
+                value: '2025-12-31',
+              },
+            },
+          ],
+        },
+        rhs: {
+          type: 'single_query',
+          field: 'genre',
+          op: '=',
+          value: 'Comedy',
+        },
+      } satisfies SearchClause);
+    });
+
+    test('rejects invalid date in full query', () => {
+      const lexerResult = tokenizeSearchQuery('release_date = hello');
+      expect(lexerResult.errors).toHaveLength(0);
+      const parser = new SearchParser();
+      parser.input = lexerResult.tokens;
+      parser.searchExpression();
+      expect(parser.errors.length).toBeGreaterThan(0);
+    });
+
+    test('rejects incomplete date in full query', () => {
+      const lexerResult = tokenizeSearchQuery('release_date = 2025-03');
+      expect(lexerResult.errors).toHaveLength(0);
+      const parser = new SearchParser();
+      parser.input = lexerResult.tokens;
+      parser.searchExpression();
+      expect(parser.errors.length).toBeGreaterThan(0);
+    });
+
+    test('rejects 6-digit number in full query', () => {
+      const lexerResult = tokenizeSearchQuery('release_date = 202503');
+      expect(lexerResult.errors).toHaveLength(0);
+      const parser = new SearchParser();
+      parser.input = lexerResult.tokens;
+      parser.searchExpression();
+      expect(parser.errors.length).toBeGreaterThan(0);
+    });
+  });
+});

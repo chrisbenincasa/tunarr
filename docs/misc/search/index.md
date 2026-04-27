@@ -25,6 +25,9 @@ Tunarr's search feature different typed fields, such as `string`, `number`, and 
 | `in` | Set includes | `title IN ["30 Rock", "Arrested Development"]` |
 | `not in` | Set excludes | `genre NOT IN [comedy, horror]` |
 
+!!! note
+    Only **double-quotes** are supported for quoted strings.
+
 ## Number & Date
 
 | Operator | Description | Example
@@ -36,6 +39,9 @@ Tunarr's search feature different typed fields, such as `string`, `number`, and 
 | `<=` | Greater Than or Equal To | `minutes >= 60` |
 | `!=` | Not Equals | `video_height != 2160` |
 | `between` | Range query (`[]` used for inclusive and `()` for exclusive ranges) | `minutes between [10, 30]` |
+
+!!! info
+    Date fields accept only 2 formats: `YYYY-MM-DD` or `YYYYMMDD` and can optionally be wrapped in double-quotes.
 
 ## Compound Queries
 
