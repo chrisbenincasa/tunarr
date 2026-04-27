@@ -1,6 +1,5 @@
 import type { Func } from '@/types/func.js';
-import type { MarkNonNullable, Maybe, Nilable, Try } from '@/types/util.js';
-import { createExternalId } from '@tunarr/shared';
+import type { Maybe, Nilable, Try } from '@/types/util.js';
 import type { TupleToUnion } from '@tunarr/types';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
@@ -9,7 +8,6 @@ import {
   chunk,
   compact,
   concat,
-  flatMap,
   identity,
   isArray,
   isEmpty,
@@ -25,7 +23,6 @@ import {
   once,
   range,
   reduce,
-  reject,
   trim,
   zipWith,
 } from 'lodash-es';
@@ -34,7 +31,6 @@ import { fileURLToPath } from 'node:url';
 import { format, inspect } from 'node:util';
 import { isPromise } from 'node:util/types';
 import type { DeepReadonly, DeepWritable, NonEmptyArray } from 'ts-essentials';
-import type { NewProgramDao, ProgramDao } from '../db/schema/Program.ts';
 
 dayjs.extend(duration);
 
@@ -301,7 +297,7 @@ export function time<T>(
   }
 }
 
-export function deepCopyArray<T>(value: T[] | undefined): T[] | undefined {
+function deepCopyArray<T>(value: T[] | undefined): T[] | undefined {
   if (isUndefined(value)) {
     return value;
   }
@@ -398,35 +394,8 @@ export function retrySimple<T>(f: () => Nilable<T>, times: number): Nilable<T> {
   return;
 }
 
-function enumKeys<O extends object, K extends keyof O = keyof O>(obj: O): K[] {
-  return Object.keys(obj).filter((k) => !Number.isNaN(k)) as K[];
-}
-
-export function enumFromString<O extends object>(
-  obj: O,
-  str: string,
-): O | undefined {
-  for (const key of enumKeys(obj)) {
-    const value = obj[key];
-    if ((key as string).toLowerCase() === str) {
-      return value as O;
-    }
-  }
-  return;
-}
-
 export function nilToUndefined<T>(t: T | undefined | null): T | undefined {
   return isNil(t) ? undefined : t;
-}
-
-export function emptyStringToUndefined(
-  s: string | undefined,
-): string | undefined {
-  if (isUndefined(s)) {
-    return s;
-  }
-
-  return s.length === 0 ? undefined : s;
 }
 
 export function isNonEmptyString(v: unknown): v is string {
@@ -444,22 +413,9 @@ export function ifDefined<T, U>(
   return isUndefined(ret) ? null : ret;
 }
 
-export function flipMap<K extends string | number, V extends string | number>(
-  m: Record<K, Iterable<V>>,
-): Record<V, K> {
-  const acc: Record<V, K> = {} as Record<V, K>;
-  for (const [key, vs] of Object.entries<Iterable<V>>(m)) {
-    for (const v of vs) {
-      acc[v] = key as K;
-    }
-  }
-
-  return acc;
-}
-
 export const filename = (path: string) => fileURLToPath(path);
 
-export const currentEnv = once(() => {
+const currentEnv = once(() => {
   const env = process.env.NODE_ENV;
   return env ?? 'production';
 });
@@ -475,25 +431,8 @@ export const zipWithIndex = <T>(
   return zipWith(seq, range(start, seq.length), (s, i) => [s, i]);
 };
 
-export function scale(
-  coll: readonly number[] | null | undefined,
-  factor: number,
-): number[] {
-  return map(coll, (c) => c * factor);
-}
-
 export function run<T>(f: () => T): T {
   return f();
-}
-
-// If makeLast == true, value will be inserted on a one-element array
-// If makeLast == false, value will only be inserted in between 2 array values
-export function intersperse<T>(
-  arr: T[],
-  v: T[],
-  makeLast: boolean = false,
-): T[] {
-  return flatMap(arr, (x, i) => (i === 0 && !makeLast ? [x] : [x, ...v]));
 }
 
 export function isSuccess<T>(x: Try<T>): x is T {
@@ -504,22 +443,11 @@ export function isDefined<T>(x: T | undefined): x is T {
   return !isUndefined(x);
 }
 
-export function isDefinedAnd<T>(
-  x: T | undefined,
-  iff: (value: T) => boolean,
-): x is T {
-  return isDefined(x) && iff(x);
-}
-
 export function nullToUndefined<T>(x: T | null | undefined): T | undefined {
   if (isNull(x)) {
     return undefined;
   }
   return x;
-}
-
-export function removeErrors<T>(coll: Try<T>[] | null | undefined): T[] {
-  return reject(coll, isError) satisfies T[] as T[];
 }
 
 export function parseIntOrNull(s: string): number | null {
@@ -609,16 +537,6 @@ export function inTuple<Arr extends readonly string[], S extends string>(
   }
 
   return false;
-}
-
-export function programExternalIdString(
-  p: MarkNonNullable<ProgramDao, 'mediaSourceId'> | NewProgramDao,
-) {
-  if (p.sourceType === 'local') {
-    return p.externalKey; // This should never hit, but if it does externalKey will point to the file path.
-  } else {
-    return createExternalId(p.sourceType, p.mediaSourceId, p.externalKey);
-  }
 }
 
 export function unzip<T, U>(tups: [T, U][]): [T[], U[]] {

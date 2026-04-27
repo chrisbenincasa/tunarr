@@ -5,6 +5,7 @@ packages:
   - shared
 
 catalog:
+  "@typescript/native-preview": beta
   '@typescript-eslint/eslint-plugin': ^8.55.0
   '@typescript-eslint/parser': ^8.55.0
   dayjs: ^1.11.14
@@ -13,5 +14,11 @@ catalog:
   random-js: 2.1.0
   typescript: 5.9.3
   zod: ^4.3.6
+
+catalogs:
+  vitest:
+    "@vitest/coverage-v8": ^4.1.5
+    vitest: ^4.1.5
+
 
 enablePrePostScripts: true

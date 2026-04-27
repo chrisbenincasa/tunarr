@@ -28,7 +28,6 @@ import { ProgramStateRepository } from './program/ProgramStateRepository.ts';
 import { ProgramUpsertRepository } from './program/ProgramUpsertRepository.ts';
 import type { NewArtwork } from './schema/Artwork.js';
 import type { NewGenre } from './schema/Genre.js';
-import type { RemoteMediaSourceType } from './schema/MediaSource.js';
 import type { ProgramDao, ProgramType } from './schema/Program.js';
 import type {
   MinimalProgramExternalId,
@@ -49,7 +48,6 @@ import type {
   NewProgramGroupingWithRelations,
   NewProgramWithRelations,
   ProgramGroupingOrmWithRelations,
-  ProgramGroupingWithExternalIds,
   ProgramOrmWithExternalIds,
   ProgramWithExternalIds,
   ProgramWithRelationsOrm,
@@ -132,12 +130,6 @@ export class ProgramDB implements IProgramDB {
     return this.progGrouping.getProgramGroupingsByExternalIds(eids, chunkSize);
   }
 
-  getProgramParent(
-    programId: string,
-  ): Promise<Maybe<ProgramGroupingWithExternalIds>> {
-    return this.progGrouping.getProgramParent(programId);
-  }
-
   getChildren(
     parentId: string,
     parentType: 'season' | 'album',
@@ -190,20 +182,6 @@ export class ProgramDB implements IProgramDB {
     chunkSize?: number,
   ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
     return this.externalIdRepo.lookupByExternalIds(ids, chunkSize);
-  }
-
-  lookupByMediaSource(
-    sourceType: RemoteMediaSourceType,
-    sourceId: MediaSourceId,
-    mediaType?: ProgramType,
-    chunkSize?: number,
-  ): Promise<ProgramDao[]> {
-    return this.externalIdRepo.lookupByMediaSource(
-      sourceType,
-      sourceId,
-      mediaType,
-      chunkSize,
-    );
   }
 
   programIdsByExternalIds(

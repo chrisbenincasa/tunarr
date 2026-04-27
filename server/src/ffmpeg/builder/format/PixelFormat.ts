@@ -52,8 +52,8 @@ export interface PixelFormat extends Equatable<PixelFormat> {
 }
 
 export abstract class BasePixelFormat implements PixelFormat {
-  name: ValidPixelFormatName;
-  bitDepth: number;
+  abstract name: ValidPixelFormatName;
+  abstract bitDepth: number;
 
   abstract toHardwareFormat(): Maybe<PixelFormat>;
   abstract toSoftwareFormat(): Maybe<PixelFormat>;
@@ -169,6 +169,9 @@ export class PixelFormatNv12 extends HardwarePixelFormat {
 
 // Special-case frames for VA-API
 export class PixelFormatVaapi extends HardwarePixelFormat {
+  readonly name: ValidPixelFormatName;
+  readonly bitDepth: number;
+
   constructor(readonly underlying: PixelFormat) {
     super(underlying);
     this.name = this.underlying.name;
@@ -179,6 +182,9 @@ export class PixelFormatVaapi extends HardwarePixelFormat {
 // Special-case format for CUDA. Represnts "some" form of
 // pixel format that is optimized for GPU transcoding (e.g. nv12 or p010)
 export class PixelFormatCuda extends HardwarePixelFormat {
+  readonly name: ValidPixelFormatName;
+  readonly bitDepth: number;
+
   constructor(readonly underlying: PixelFormat) {
     super(underlying);
     this.name = this.underlying.name;

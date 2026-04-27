@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json --noEmit",
-    "build-dev": "tsc -p tsconfig.build.json --noEmit --watch",
+    "build": "tsgo -p tsconfig.build.json --noEmit",
+    "build-dev": "tsgo -p tsconfig.build.json --noEmit --watch",
     "bundle": "vite build",
     "dev": "vite",
     "extract-messages": "lingui extract",
@@ -16,7 +16,7 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest --run",
-    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+    "typecheck": "tsgo -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
     "@cospired/i18n-iso-languages": "^4.2.0",
@@ -80,6 +80,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@typescript/native-preview": "catalog:",
     "@types/lodash-es": "4.17.9",
     "@types/pluralize": "^0.0.33",
     "@types/react": "^18.2.15",

@@ -150,7 +150,7 @@ export class RootLoggerWrapper extends BaseLoggerWrapper {
       const wrapped = categoryLogger.child(args, opts);
       return wrapped;
     } else {
-      const newLogger = this.wrappedLogger.child(childOpts, opts);
+      const newLogger = this.wrappedLogger.child(childOpts, opts) as Logger;
       const wrapped = new LoggerWrapper(newLogger);
       this.children[className] = wrapped;
       return wrapped;
@@ -208,7 +208,7 @@ export class LoggerWrapper extends BaseLoggerWrapper {
       caller: isProduction ? undefined : className, // Don't include this twice in production
     };
     const newChild = new LoggerWrapper(
-      this.wrappedLogger.child(childOpts, opts),
+      this.wrappedLogger.child(childOpts, opts) as Logger,
     );
     this.children[className] = newChild;
     return newChild;

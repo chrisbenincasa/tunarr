@@ -3,6 +3,7 @@ import type { PixelFormat } from '../format/PixelFormat.ts';
 import { BaseFfmpegHardwareCapabilities } from './BaseFfmpegHardwareCapabilities.ts';
 
 export class QsvHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
+  readonly type = 'qsv';
   constructor(
     private underlyingCapabilities: BaseFfmpegHardwareCapabilities,
     private decoderOptions: string[],

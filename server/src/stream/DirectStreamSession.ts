@@ -13,7 +13,7 @@ import { Session } from './Session.js';
 export abstract class DirectStreamSession<
   TOpts extends SessionOptions = SessionOptions,
 > extends Session<TOpts> {
-  #stream: Readable;
+  #stream?: Readable;
 
   protected constructor(channel: ChannelOrmWithTranscodeConfig, opts: TOpts) {
     super(channel, opts);
@@ -61,7 +61,7 @@ export abstract class DirectStreamSession<
       this.logger.debug(
         `Took stream ${round(end - start, 4)}ms to provide data`,
       );
-      this.#stream.removeListener('data', onceListener);
+      this.#stream?.removeListener('data', onceListener);
     });
 
     this.#stream.once('data', onceListener);

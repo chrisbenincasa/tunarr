@@ -6,6 +6,7 @@ export const settingsCommands: CommandModule = {
   command: 'settings <command>',
   describe: 'View/Update settings',
   builder: (yargs) =>
+    // @ts-expect-error yarg types are wrong.
     yargs.command(SettingsViewCommand).command(SettingsUpdateCommand),
   handler: () => {},
 };

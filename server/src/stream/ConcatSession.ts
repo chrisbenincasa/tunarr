@@ -17,7 +17,7 @@ export type ConcatSessionFactory = (
 ) => ConcatSession;
 
 export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
-  #transcodeSession: FfmpegTranscodeSession;
+  #transcodeSession?: FfmpegTranscodeSession;
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,

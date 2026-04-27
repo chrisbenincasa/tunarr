@@ -1,4 +1,3 @@
-import type { TypedEventEmitter } from '@/types/eventEmitter.js';
 import type { Nullable } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import type { Dayjs } from 'dayjs';
@@ -20,7 +19,7 @@ enum State {
  * with the underlying ffmpeg process, emits relevant events, and contains
  * metadata about the stream.
  */
-export class FfmpegTranscodeSession extends (events.EventEmitter as new () => TypedEventEmitter<FfmpegEvents>) {
+export class FfmpegTranscodeSession extends events.EventEmitter<FfmpegEvents> {
   private logger = LoggerFactory.child({
     className: FfmpegTranscodeSession.name,
     caller: import.meta,

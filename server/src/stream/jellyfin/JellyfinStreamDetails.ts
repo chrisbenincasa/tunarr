@@ -58,7 +58,7 @@ import {
 
 @injectable()
 export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<JellyfinT> {
-  private jellyfin: JellyfinApiClient;
+  private jellyfin?: JellyfinApiClient;
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
@@ -364,7 +364,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
                 streamIndex: details.index,
               },
               ({ extension: ext }) =>
-                this.jellyfin.getSubtitles(
+                this.jellyfin!.getSubtitles(
                   item.externalKey,
                   firstMediaSource.Id!,
                   index,
@@ -414,10 +414,12 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
       // We have to check that we can hit this URL or the stream will not work
       if (isNonEmptyString(placeholderThumbPath)) {
         const path = `/Items/${placeholderThumbPath}/Images/Primary`;
-        const result = await attempt(() => this.jellyfin.doHead({ url: path }));
+        const result = await attempt(() =>
+          this.jellyfin!.doHead({ url: path }),
+        );
         if (!isError(result)) {
           streamDetails.placeholderImage = new HttpStreamSource(
-            this.jellyfin.getFullUrl(path),
+            this.jellyfin!.getFullUrl(path),
           );
         }
       }

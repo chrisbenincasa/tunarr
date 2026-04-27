@@ -3,7 +3,6 @@ import {
   ReadableFfmpegSettings,
   SettingsChangeEvents,
 } from '@/db/interfaces/ISettingsDB.js';
-import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { deepCopy, isProduction } from '@/util/index.js';
 import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
@@ -89,9 +88,7 @@ export const SettingsFileSchema = z.object({
       ),
     }),
   }),
-  featureFlags: FeatureFlagsSchema.default(() =>
-    FeatureFlagsSchema.parse({}),
-  ),
+  featureFlags: FeatureFlagsSchema.default(() => FeatureFlagsSchema.parse({})),
 });
 
 export type SettingsFile = z.infer<typeof SettingsFileSchema>;
@@ -132,11 +129,11 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
   featureFlags: FeatureFlagsSchema.parse({}),
 });
 
-abstract class ITypedEventEmitter extends (events.EventEmitter as new () => TypedEventEmitter<SettingsChangeEvents>) {}
+abstract class ITypedEventEmitter extends events.EventEmitter<SettingsChangeEvents> {}
 
 @injectable()
 export class SettingsDB extends ITypedEventEmitter implements ISettingsDB {
-  private logger: Logger;
+  private logger?: Logger;
   private db: Low<SettingsFile>;
 
   constructor(db: Low<SettingsFile>) {

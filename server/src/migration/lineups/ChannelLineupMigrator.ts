@@ -5,7 +5,7 @@ import { Json } from '@/types/schemas.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import { inject, injectable, interfaces } from 'inversify';
-import { findIndex, isArray } from 'lodash-es';
+import { findIndex, isArray, isString } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { CurrentLineupSchemaVersion } from '../../db/derived_types/Lineup.ts';
@@ -60,7 +60,12 @@ export class ChannelLineupMigrator extends JsonFileMigrator<
       return;
     }
 
-    const version = getFirstValue('$.version@number()', lineup, parseIntOrNull);
+    const version = getFirstValue('$.version@number()', lineup, (value) => {
+      if (!isString(value)) {
+        return;
+      }
+      return parseIntOrNull(value);
+    });
     let currVersion = version ?? 0;
 
     if (currVersion === CurrentLineupSchemaVersion) {

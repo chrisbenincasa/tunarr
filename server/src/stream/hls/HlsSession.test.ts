@@ -21,13 +21,15 @@ vi.mock('@/util/logging/LoggerFactory.js', () => ({
   },
 }));
 
-vi.mock('@/stream/ConnectionTracker.js', () => ({
-  ConnectionTracker: vi.fn().mockImplementation(() => ({
-    on: vi.fn(),
-    recordHeartbeat: vi.fn(),
-    removeStaleConnections: vi.fn(() => []),
-  })),
-}));
+vi.mock('@/stream/ConnectionTracker.ts', () => {
+  return {
+    ConnectionTracker: class {
+      on = vi.fn();
+      recordHeartbeat = vi.fn();
+      removeStaleConnections = vi.fn(() => []);
+    },
+  };
+});
 
 const channelUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 

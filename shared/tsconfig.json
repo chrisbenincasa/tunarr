@@ -26,6 +26,7 @@
         "emitDecoratorMetadata": true,
         "esModuleInterop": true,
         "types": [
+            "node",
             "vitest/globals",
         ]
     },

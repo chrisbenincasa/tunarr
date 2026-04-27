@@ -3,8 +3,8 @@ import type {
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
 import type { Maybe, Nilable } from '../../types/util.ts';
-import type { FillerShow } from '../schema/FillerShow.ts';
-import type { ProgramDao } from '../schema/Program.ts';
+import type { FillerShow, FillerShowOrm } from '../schema/FillerShow.ts';
+import type { ProgramOrm } from '../schema/Program.ts';
 import type {
   ChannelFillerShowWithContent,
   ProgramWithRelationsOrm,
@@ -47,9 +47,9 @@ export interface IFillerListDB {
   ): Promise<ChannelFillerShowWithContent[]>;
 }
 
-export type FillerShowWithContent = FillerShow & {
+export type FillerShowWithContent = FillerShowOrm & {
   fillerContent: Array<
-    ProgramDao & {
+    ProgramOrm & {
       index: number;
     }
   >;

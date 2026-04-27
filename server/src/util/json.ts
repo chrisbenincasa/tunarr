@@ -1,7 +1,7 @@
 import { JSONPath } from 'jsonpath-plus';
 import { first, identity, isArray } from 'lodash-es';
-import { Json } from '../types/schemas.ts';
-import { Nilable } from '../types/util.ts';
+import type { Json } from '../types/schemas.ts';
+import type { Nilable } from '../types/util.ts';
 
 export function getFirstValue<Output = unknown>(
   path: string,

@@ -12,6 +12,10 @@ import { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import type { ProgramStream } from '@/stream/ProgramStream.js';
 import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
 import type { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
+import type {
+  AudioRenditionInfo,
+  SubtitleRenditionInfo,
+} from '@/stream/types.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
@@ -24,10 +28,6 @@ import { filter, isEmpty, last, maxBy, sortBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
-import type {
-  AudioRenditionInfo,
-  SubtitleRenditionInfo,
-} from '@/stream/types.js';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
 import { BaseHlsSession } from './BaseHlsSession.js';
 import { HlsMasterPlaylistMutator } from './HlsMasterPlaylistMutator.js';
@@ -53,7 +53,7 @@ export interface HlsSessionOptions extends BaseHlsSessionOptions {
  * endpoint and outputs an HLS format + segments
  */
 export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
-  #playlistStart: Dayjs;
+  #playlistStart?: Dayjs;
   #hlsPlaylistMutator: HlsPlaylistMutator = new HlsPlaylistMutator();
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
@@ -127,7 +127,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         const playlistLines = await this.readPlaylist();
         if (playlistLines) {
           const trimResult = this.#hlsPlaylistMutator.trimPlaylist(
-            this.#playlistStart,
+            this.#playlistStart!,
             filterOpts,
             playlistLines,
             {
@@ -231,7 +231,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       channelId: this.channel.uuid,
       startTime: await this.onDemandService.getLiveTimestamp(
         this.channel.uuid,
-        +this.transcodedUntil,
+        +(this.transcodedUntil ?? dayjs()),
       ),
     });
 
@@ -293,20 +293,19 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       }
 
       transcodeSessionResult.forEach((transcodeSession) => {
-        this.transcodedUntil = this.transcodedUntil.add(
+        this.transcodedUntil = (this.transcodedUntil ?? dayjs()).add(
           transcodeSession.streamDuration,
         );
         this.#currentSession = transcodeSession;
         this.#currentSubtitleRendition = programStream.renditions?.subtitle;
-        this.#currentAudioRenditions =
-          programStream.renditions?.audio ?? [];
+        this.#currentAudioRenditions = programStream.renditions?.audio ?? [];
       });
 
       if (this.sessionOptions.streamMode === 'hls') {
         // await this.trimPlaylistAndDeleteSegments();
       }
       await programStream.start();
-      return programStream.transcodeSession.wait();
+      return programStream.transcodeSession!.wait();
     });
 
     if (transcodeResult.isFailure()) {

@@ -1,16 +1,15 @@
 import dayjs from 'dayjs';
 import events from 'events';
 import { injectable } from 'inversify';
-import { TypedEventEmitter } from '../../types/eventEmitter.ts';
 
 type Events = {
-  scanStart: (libraryId: string) => void;
-  scanEnd: (libraryId: string) => void;
-  scanProgress: (libraryId: string, percentComplete: number) => void;
-  scanQueued: (libraryId: string) => void;
+  scanStart: [libraryId: string];
+  scanEnd: [libraryId: string];
+  scanProgress: [libraryId: string, percentComplete: number];
+  scanQueued: [libraryId: string];
 };
 
-abstract class Emitter extends (events.EventEmitter as new () => TypedEventEmitter<Events>) {}
+abstract class Emitter extends events.EventEmitter<Events> {}
 
 type NotScanningState = {
   state: 'not_scanning';

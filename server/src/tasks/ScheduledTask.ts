@@ -30,20 +30,7 @@ type ScheduledTaskOptions = {
 
 export type UnknownScheduledTask = ScheduledTask<z.ZodType, unknown>;
 
-export class ScheduledTask<
-  // // TaskInputSchemaT extends z.ZodType = z.ZodUnknown,
-  // // TaskOutputTypeT = unknown,
-  // // TaskT extends Task2<TaskInputSchemaT, TaskOutputTypeT> = Task2<
-  // //   TaskInputSchemaT,
-  // //   TaskOutputTypeT
-  // // >,
-  // TaskT extends Task2<z.ZodUnknown, unknown>,
-  // TaskInputSchemaT extends z.ZodType = TaskT extends Task2<infer In, unknown> ? In : never,
-  // TaskOutputTypeT = TaskT extends Task2<z.ZodUnknown, infer Out> ? Out : never,
-  TaskInputSchemaT extends z.ZodType,
-  OutputT,
-  // TaskT extends TaskConstructor<TaskInputSchemaT, OutputT>,
-> {
+export class ScheduledTask<TaskInputSchemaT extends z.ZodType, OutputT> {
   protected logger: Logger;
   protected scheduledJob: schedule.Job;
 

@@ -11,7 +11,6 @@ import {
   mapRawJsonRelationResult,
 } from '../../util/drizzleUtil.ts';
 import type { PageParams } from '../interfaces/IChannelDB.ts';
-import { withPrograms } from '../programQueryHelpers.ts';
 import { Artwork } from '../schema/Artwork.ts';
 import { ChannelOrm } from '../schema/Channel.ts';
 import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
@@ -25,7 +24,6 @@ import { ProgramGroupingExternalIdOrm } from '../schema/ProgramGroupingExternalI
 import type { DB } from '../schema/db.ts';
 import type {
   ChannelOrmWithRelations,
-  ChannelWithPrograms,
   MusicAlbumOrm,
   MusicArtistOrm,
   MusicArtistWithExternalIds,
@@ -80,54 +78,6 @@ export class ChannelProgramRepository {
     }
 
     return;
-  }
-
-  async getChannelAndProgramsOld(
-    uuid: string,
-  ): Promise<ChannelWithPrograms | undefined> {
-    return this.db
-      .selectFrom('channel')
-      .selectAll(['channel'])
-      .where('channel.uuid', '=', uuid)
-      .leftJoin(
-        'channelPrograms',
-        'channel.uuid',
-        'channelPrograms.channelUuid',
-      )
-      .select((eb) =>
-        withPrograms(eb, {
-          joins: {
-            customShows: true,
-            tvShow: [
-              'programGrouping.uuid',
-              'programGrouping.title',
-              'programGrouping.summary',
-              'programGrouping.type',
-            ],
-            tvSeason: [
-              'programGrouping.uuid',
-              'programGrouping.title',
-              'programGrouping.summary',
-              'programGrouping.type',
-            ],
-            trackArtist: [
-              'programGrouping.uuid',
-              'programGrouping.title',
-              'programGrouping.summary',
-              'programGrouping.type',
-            ],
-            trackAlbum: [
-              'programGrouping.uuid',
-              'programGrouping.title',
-              'programGrouping.summary',
-              'programGrouping.type',
-            ],
-          },
-        }),
-      )
-      .groupBy('channel.uuid')
-      .orderBy('channel.number asc')
-      .executeTakeFirst();
   }
 
   async getChannelTvShows(
@@ -421,10 +371,7 @@ export class ChannelProgramRepository {
     return result?.program;
   }
 
-  replaceChannelPrograms(
-    channelId: string,
-    programIds: string[],
-  ): void {
+  replaceChannelPrograms(channelId: string, programIds: string[]): void {
     const uniqueIds = uniq(programIds);
     this.drizzleDB.transaction((tx) => {
       tx.delete(ChannelPrograms)

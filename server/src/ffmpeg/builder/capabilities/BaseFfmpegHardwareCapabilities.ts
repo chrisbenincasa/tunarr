@@ -9,7 +9,7 @@ export interface FfmpegHardwareCapabilitiesFactory {
   getCapabilities(): Promise<BaseFfmpegHardwareCapabilities>;
 }
 export abstract class BaseFfmpegHardwareCapabilities {
-  readonly type: string;
+  abstract readonly type: string;
   constructor() {}
 
   // Convenience

@@ -138,10 +138,6 @@ export class ChannelDB implements IChannelDB {
     return this.channelProgram.getChannelAndPrograms(uuid, typeFilter);
   }
 
-  getChannelAndProgramsOld(uuid: string) {
-    return this.channelProgram.getChannelAndProgramsOld(uuid);
-  }
-
   getChannelTvShows(
     id: string,
     pageParams?: PageParams,

@@ -75,7 +75,7 @@ type FfmpegStateFields = MarkRequired<
 >;
 
 export class FfmpegState {
-  readonly version: FfmpegVersionResult;
+  readonly version!: FfmpegVersionResult;
 
   threadCount: Nullable<number> = null;
   start: Nullable<Duration> = null;
