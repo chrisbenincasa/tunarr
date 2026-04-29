@@ -46,6 +46,12 @@ Click the **NEW** button to create your first channel, which will take you to th
 
 </div>
 
+## Bulk Actions
+
+The Channels page supports selecting multiple channels at once using row checkboxes. When channels are selected, a toolbar appears at the bottom of the page with bulk actions:
+
+- **Assign Fillers**: Add or replace [filler lists](/configure/library/filler#bulk-filler-assignment) across all selected channels in one operation.
+
 ## Getting Started
 
 1. Create a new channel with [Properties](properties.md)
