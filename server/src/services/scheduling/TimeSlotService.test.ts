@@ -968,6 +968,96 @@ describe('TimeSlotService', () => {
     });
   });
 
+  describe('max lateness', () => {
+    test('inner loop allows programs to overflow into the lateness buffer', async () => {
+      // Slot A (movie) at 0, Slot B (show) at 2h — bounds Slot A to 2 hours.
+      // Movies are 28 min each → padded to 30 min (padMs=30min).
+      // With latenessMs=0:    4 × 30min = 120min fills the slot exactly.
+      // With latenessMs=30min: a 5th movie should fit (150min = 120 + 30).
+      const HOUR_MS = 60 * 60 * 1000;
+      const THIRTY_MIN = 30 * 60 * 1000;
+      const TWENTY_EIGHT_MIN = 28 * 60 * 1000;
+
+      const movies: SlotSchedulerProgram[] = Array.from(
+        { length: 10 },
+        (_, i) => ({
+          ...createFakeProgramOrm({
+            uuid: `lateness-movie-${i}`,
+            title: `Lateness Movie ${i}`,
+            type: 'movie',
+            duration: TWENTY_EIGHT_MIN,
+          }),
+          parentFillerLists: [],
+          parentCustomShows: [],
+          parentSmartCollections: [],
+        }),
+      );
+
+      const makeSchedule = (latenessMs: number): TimeSlotSchedule => ({
+        type: 'time',
+        flexPreference: 'end',
+        maxDays: 1,
+        padMs: THIRTY_MIN,
+        slots: [
+          {
+            startTime: 0,
+            type: 'movie',
+            order: 'next',
+            direction: 'asc',
+          },
+          {
+            startTime: 2 * HOUR_MS,
+            type: 'show',
+            showId: 'no-match-show',
+            order: 'next',
+            direction: 'asc',
+            seasonFilter: [],
+          },
+        ],
+        period: 'day',
+        latenessMs,
+        timeZoneOffset: 0,
+      });
+
+      const startTime = dayjs().startOf('day');
+      const seed = [1, 2, 3, 4];
+
+      // Helper: content programs starting within the first 3 hours
+      const countFirstSlotContent = (
+        result: Awaited<ReturnType<typeof scheduleTimeSlots>>,
+      ) => {
+        let t = result.startTime;
+        let count = 0;
+        for (const item of result.lineup) {
+          if (t >= result.startTime + 3 * HOUR_MS) break;
+          if (item.type === 'content') count++;
+          t += item.duration;
+        }
+        return count;
+      };
+
+      // Baseline: latenessMs=0 → exactly 4 movies fit in the 2h slot
+      const resultNoLateness = await scheduleTimeSlots(
+        makeSchedule(0),
+        movies,
+        seed,
+        undefined,
+        startTime,
+      );
+      expect(countFirstSlotContent(resultNoLateness)).toBe(4);
+
+      // With latenessMs=30min → 5 movies should fit (overflows by 30min)
+      const resultWithLateness = await scheduleTimeSlots(
+        makeSchedule(THIRTY_MIN),
+        movies,
+        seed,
+        undefined,
+        startTime,
+      );
+      expect(countFirstSlotContent(resultWithLateness)).toBe(5);
+    });
+  });
+
   describe('DST handling', () => {
     // US Eastern timezone DST transitions in 2025:
     //   Spring forward: March 9, 2025 at 2:00 AM EST -> 3:00 AM EDT (23-hour day)
