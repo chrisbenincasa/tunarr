@@ -35,17 +35,23 @@ msgstr ""
 msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
 msgstr ""
 
+#. placeholder {0}: selectedChannelIds.length
+#: src/components/channels/BulkActionsToolbar.tsx:34
+msgid "{0, plural, one {# channel selected} other {# channels selected}}"
+msgstr ""
+
 #. placeholder {0}: customShow.contentCount
 #: src/components/channel_config/SelectedProgrammingList.tsx:180
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr ""
 
 #. placeholder {0}: channel.programCount
+#. placeholder {0}: filler.contentCount
 #. placeholder {0}: programList.length
-#. placeholder {0}: value?.programCount ?? 0
 #: src/components/channel_config/ChannelLineupList.tsx:526
+#: src/components/channels/BulkAssignFillersDialog.tsx:189
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:47
-#: src/pages/channels/ChannelsPage.tsx:492
+#: src/pages/channels/ChannelsPage.tsx:517
 msgid "{0, plural, one {# program} other {# programs}}"
 msgstr ""
 
@@ -66,8 +72,8 @@ msgid "{0, plural, one {# Selected Item} other {# Selected Items}}"
 msgstr ""
 
 #. placeholder {0}: sessions.length
-#: src/pages/channels/ChannelsPage.tsx:293
-#: src/pages/channels/ChannelsPage.tsx:423
+#: src/pages/channels/ChannelsPage.tsx:298
+#: src/pages/channels/ChannelsPage.tsx:438
 msgid "{0, plural, one {# session} other {# sessions}}"
 msgstr ""
 
@@ -210,13 +216,13 @@ msgstr ""
 msgid "{remainingTime} left"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:296
-#: src/pages/channels/ChannelsPage.tsx:426
+#: src/pages/channels/ChannelsPage.tsx:307
+#: src/pages/channels/ChannelsPage.tsx:447
 msgid "{totalConnections, plural, one {# connection} other {# connections}}"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:295
-#: src/pages/channels/ChannelsPage.tsx:425
+#: src/pages/channels/ChannelsPage.tsx:305
+#: src/pages/channels/ChannelsPage.tsx:445
 msgid "{totalConnections} total"
 msgstr ""
 
@@ -232,9 +238,9 @@ msgstr ""
 msgid "# of Programs"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:342
+#: src/pages/channels/ChannelsPage.tsx:357
 #: src/pages/library/CustomShowsPage.tsx:160
-#: src/pages/library/FillerListsPage.tsx:166
+#: src/pages/library/FillerListsPage.tsx:184
 msgid "# Programs"
 msgstr ""
 
@@ -248,7 +254,7 @@ msgid "<0>Error deleting custom show: {0}<1/>Please consider opening a bug with 
 msgstr ""
 
 #. placeholder {0}: e.message
-#: src/pages/library/FillerListsPage.tsx:64
+#: src/pages/library/FillerListsPage.tsx:68
 msgid "<0>Error deleting filler list: {0}<1/>Please consider opening a bug with details!</0>"
 msgstr ""
 
@@ -427,6 +433,14 @@ msgstr ""
 msgid "Add TV Shows or Movies to programming list."
 msgstr ""
 
+#. placeholder {0}: data.added
+#. placeholder {1}: data.added
+#. placeholder {2}: data.alreadyExisted
+#: src/components/channels/BulkAssignFillersDialog.tsx:62
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:57
+msgid "Added {0} {1, plural, one {assignment} other {assignments}}, {2} already existed."
+msgstr ""
+
 #: src/components/channel_config/AddProgrammingButton.tsx:63
 msgid "Adds a channel redirect. During this period of time, the channel will redirect to another channel."
 msgstr ""
@@ -546,6 +560,13 @@ msgstr ""
 msgid "An error occurred: {0}"
 msgstr ""
 
+#. placeholder {0}: selectedChannelIds.length
+#. placeholder {0}: selectedChannelIds.size
+#: src/components/channels/BulkAssignFillersDialog.tsx:247
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:210
+msgid "Apply to {0, plural, one {# channel} other {# channels}}"
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx:502
 msgid "Apply to Program Types (empty = all)"
 msgstr ""
@@ -570,6 +591,23 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:190
 msgid "Ascending"
+msgstr ""
+
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:123
+msgid "Assign \"{fillerName}\" to Channels"
+msgstr ""
+
+#: src/components/channels/BulkActionsToolbar.tsx:46
+msgid "Assign Fillers"
+msgstr ""
+
+#. placeholder {0}: selectedChannelIds.length
+#: src/components/channels/BulkAssignFillersDialog.tsx:142
+msgid "Assign Fillers to {0, plural, one {# Channel} other {# Channels}}"
+msgstr ""
+
+#: src/pages/library/FillerListsPage.tsx:141
+msgid "Assign to Channels"
 msgstr ""
 
 #: src/pages/system/StatusPage.tsx:184
@@ -752,8 +790,10 @@ msgstr ""
 msgid "Calculating Slots..."
 msgstr ""
 
+#: src/components/channels/BulkAssignFillersDialog.tsx:240
 #: src/components/channels/ChannelDeleteDialog.tsx:80
 #: src/components/DeleteConfirmationDialog.tsx:56
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:203
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:244
 #: src/components/programming_controls/AddBreaksModal.tsx:207
 #: src/components/programming_controls/AddFlexModal.tsx:110
@@ -778,9 +818,9 @@ msgstr ""
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:301
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:189
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:114
-#: src/pages/channels/ChannelsPage.tsx:200
+#: src/pages/channels/ChannelsPage.tsx:206
 #: src/pages/library/CustomShowsPage.tsx:105
-#: src/pages/library/FillerListsPage.tsx:115
+#: src/pages/library/FillerListsPage.tsx:122
 msgid "Cancel"
 msgstr ""
 
@@ -861,9 +901,10 @@ msgid "Channel Transcode Config"
 msgstr ""
 
 #: src/App.tsx:95
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:169
 #: src/hooks/useNavItems.tsx:63
 #: src/hooks/useRouteName.ts:38
-#: src/pages/channels/ChannelsPage.tsx:566
+#: src/pages/channels/ChannelsPage.tsx:605
 msgid "Channels"
 msgstr ""
 
@@ -897,6 +938,10 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx:112
 msgid "Clear Schedule"
+msgstr ""
+
+#: src/components/channels/BulkActionsToolbar.tsx:49
+msgid "Clear Selection"
 msgstr ""
 
 #: src/components/channel_config/CustomShowProgrammingSelector.tsx:97
@@ -988,6 +1033,8 @@ msgid "Cooldown"
 msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx:218
+#: src/components/channels/BulkAssignFillersDialog.tsx:213
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:145
 msgid "Cooldown (seconds)"
 msgstr ""
 
@@ -996,11 +1043,11 @@ msgstr ""
 msgid "Copied {0} URL to clipboard"
 msgstr ""
 
-#: src/components/channels/ChannelOptionsMenu.tsx:139
+#: src/components/channels/ChannelOptionsMenu.tsx:143
 msgid "Copied channel \"{channelName}\" m3u link to clipboard"
 msgstr ""
 
-#: src/components/channels/ChannelOptionsMenu.tsx:156
+#: src/components/channels/ChannelOptionsMenu.tsx:162
 msgid "Copied Channel ID!"
 msgstr ""
 
@@ -1014,11 +1061,11 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: src/components/channels/ChannelOptionsMenu.tsx:166
+#: src/components/channels/ChannelOptionsMenu.tsx:173
 msgid "Copy Channel ID"
 msgstr ""
 
-#: src/components/channels/ChannelOptionsMenu.tsx:151
+#: src/components/channels/ChannelOptionsMenu.tsx:156
 msgid "Copy M3U URL"
 msgstr ""
 
@@ -1138,11 +1185,11 @@ msgstr ""
 #: src/components/DeleteConfirmationDialog.tsx:59
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:75
 #: src/components/smart_collections/SmartCollectionsTable.tsx:124
-#: src/pages/channels/ChannelsPage.tsx:206
+#: src/pages/channels/ChannelsPage.tsx:212
 #: src/pages/library/CustomShowsPage.tsx:113
 #: src/pages/library/CustomShowsPage.tsx:132
-#: src/pages/library/FillerListsPage.tsx:123
-#: src/pages/library/FillerListsPage.tsx:142
+#: src/pages/library/FillerListsPage.tsx:130
+#: src/pages/library/FillerListsPage.tsx:160
 msgid "Delete"
 msgstr ""
 
@@ -1151,8 +1198,8 @@ msgstr ""
 msgid "Delete \"{0}\""
 msgstr ""
 
-#: src/components/channels/ChannelOptionsMenu.tsx:225
-#: src/pages/channels/ChannelsPage.tsx:185
+#: src/components/channels/ChannelOptionsMenu.tsx:238
+#: src/pages/channels/ChannelsPage.tsx:191
 msgid "Delete Channel"
 msgstr ""
 
@@ -1167,7 +1214,7 @@ msgid "Delete Custom Show \"{0}\"?"
 msgstr ""
 
 #. placeholder {0}: find(fillerLists, { id: deleteConfirmationId })?.name
-#: src/pages/library/FillerListsPage.tsx:103
+#: src/pages/library/FillerListsPage.tsx:107
 msgid "Delete Filler List \"{0}\"?"
 msgstr ""
 
@@ -1193,7 +1240,7 @@ msgid "Delete Transcoding Config \"{0}\"?"
 msgstr ""
 
 #: src/components/channels/ChannelDeleteDialog.tsx:72
-#: src/pages/channels/ChannelsPage.tsx:189
+#: src/pages/channels/ChannelsPage.tsx:195
 msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
 msgstr ""
 
@@ -1201,7 +1248,7 @@ msgstr ""
 msgid "Deleting a Custom Show will remove its programming from channels that use it. This action cannot be undone."
 msgstr ""
 
-#: src/pages/library/FillerListsPage.tsx:107
+#: src/pages/library/FillerListsPage.tsx:114
 msgid "Deleting a Filler will remove all programming from the channel. This action cannot be undone."
 msgstr ""
 
@@ -1223,6 +1270,10 @@ msgstr ""
 
 #: src/pages/settings/TaskSettingsPage.tsx:93
 msgid "Description"
+msgstr ""
+
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:173
+msgid "Deselect All"
 msgstr ""
 
 #: src/components/channels/ChannelNowPlayingCard.tsx:227
@@ -1259,7 +1310,7 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
-#: src/hooks/useVersion.tsx:70
+#: src/hooks/useVersion.tsx:77
 msgid "Dismiss"
 msgstr ""
 
@@ -1312,7 +1363,7 @@ msgstr ""
 msgid "Duplicate"
 msgstr ""
 
-#: src/components/channels/ChannelOptionsMenu.tsx:212
+#: src/components/channels/ChannelOptionsMenu.tsx:223
 msgid "Duplicate Channel"
 msgstr ""
 
@@ -1323,7 +1374,7 @@ msgstr ""
 #: src/components/programming_controls/BalanceProgrammingModal.tsx:62
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:403
 #: src/components/slot_scheduler/RandomSlotTable.tsx:233
-#: src/pages/channels/ChannelsPage.tsx:346
+#: src/pages/channels/ChannelsPage.tsx:361
 msgid "Duration"
 msgstr ""
 
@@ -1355,12 +1406,12 @@ msgstr ""
 #: src/hooks/useRouteName.ts:75
 #: src/hooks/useRouteName.ts:109
 #: src/pages/library/CustomShowsPage.tsx:124
-#: src/pages/library/FillerListsPage.tsx:134
+#: src/pages/library/FillerListsPage.tsx:152
 #: src/pages/welcome/WelcomePage.tsx:185
 msgid "Edit"
 msgstr ""
 
-#: src/components/channels/ChannelOptionsMenu.tsx:108
+#: src/components/channels/ChannelOptionsMenu.tsx:109
 msgid "Edit Channel"
 msgstr ""
 
@@ -1368,9 +1419,9 @@ msgstr ""
 msgid "Edit Channel Redirect"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:236
-msgid "Edit Channel Settings"
-msgstr ""
+#: src/pages/channels/ChannelsPage.tsx:245
+#~ msgid "Edit Channel Settings"
+#~ msgstr ""
 
 #: src/pages/library/EditFillerPage.tsx:22
 msgid "Edit Filler List"
@@ -1386,6 +1437,10 @@ msgstr ""
 
 #: src/pages/settings/MediaSourceSettingsPage.tsx:144
 msgid "Edit Media Source"
+msgstr ""
+
+#: src/components/channels/ChannelOptionsMenu.tsx:126
+msgid "Edit Programming"
 msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx:415
@@ -1545,11 +1600,21 @@ msgstr ""
 msgid "Episodes"
 msgstr ""
 
+#. placeholder {0}: e.message
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:77
+msgid "Error assigning filler: {0}"
+msgstr ""
+
+#. placeholder {0}: e.message
+#: src/components/channels/BulkAssignFillersDialog.tsx:82
+msgid "Error assigning fillers: {0}"
+msgstr ""
+
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx:63
 msgid "Error Audio"
 msgstr ""
 
-#: src/components/channels/ChannelOptionsMenu.tsx:140
+#: src/components/channels/ChannelOptionsMenu.tsx:144
 msgid "Error copying channel m3u link to clipboard"
 msgstr ""
 
@@ -1743,8 +1808,8 @@ msgstr ""
 
 #: src/components/search/SearchGroupNode.tsx:73
 #: src/components/search/SearchGroupNode.tsx:79
-#: src/components/search/SearchValueNode.tsx:271
-#: src/components/search/SearchValueNode.tsx:273
+#: src/components/search/SearchValueNode.tsx:268
+#: src/components/search/SearchValueNode.tsx:270
 msgid "Field"
 msgstr ""
 
@@ -1803,11 +1868,11 @@ msgstr ""
 
 #: src/hooks/useNavItems.tsx:74
 #: src/hooks/useRouteName.ts:99
-#: src/pages/library/FillerListsPage.tsx:219
+#: src/pages/library/FillerListsPage.tsx:245
 msgid "Filler Lists"
 msgstr ""
 
-#: src/pages/library/FillerListsPage.tsx:222
+#: src/pages/library/FillerListsPage.tsx:248
 msgid "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
 msgstr ""
 
@@ -1976,7 +2041,7 @@ msgstr ""
 msgid "How often to insert a break"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:314
+#: src/pages/channels/ChannelsPage.tsx:329
 msgid "Icon"
 msgstr ""
 
@@ -2074,12 +2139,12 @@ msgstr ""
 msgid "Jellyfin"
 msgstr ""
 
-#: src/components/search/SearchInput.tsx:188
+#: src/components/search/SearchInput.tsx:232
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:169
 msgid "Keywords"
 msgstr ""
 
-#: src/components/search/SearchInput.tsx:223
+#: src/components/search/SearchInput.tsx:267
 msgid "Keywords perform full text search across all (or configured) fields"
 msgstr ""
 
@@ -2395,8 +2460,8 @@ msgid "Minimum Program Duration (minutes)"
 msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx:123
-msgid "Modify Programming"
-msgstr ""
+#~ msgid "Modify Programming"
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx:190
 msgid "Month"
@@ -2463,9 +2528,9 @@ msgstr ""
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:162
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:108
 #: src/components/smart_collections/SmartCollectionsTable.tsx:59
-#: src/pages/channels/ChannelsPage.tsx:337
+#: src/pages/channels/ChannelsPage.tsx:352
 #: src/pages/library/CustomShowsPage.tsx:146
-#: src/pages/library/FillerListsPage.tsx:162
+#: src/pages/library/FillerListsPage.tsx:180
 #: src/pages/settings/MediaSourceSettingsPage.tsx:82
 #: src/pages/settings/TaskSettingsPage.tsx:89
 msgid "Name"
@@ -2490,9 +2555,9 @@ msgstr ""
 #: src/hooks/useRouteName.ts:51
 #: src/hooks/useRouteName.ts:113
 #: src/hooks/useRouteName.ts:125
-#: src/pages/channels/ChannelsPage.tsx:573
+#: src/pages/channels/ChannelsPage.tsx:612
 #: src/pages/library/CustomShowsPage.tsx:223
-#: src/pages/library/FillerListsPage.tsx:237
+#: src/pages/library/FillerListsPage.tsx:263
 msgid "New"
 msgstr ""
 
@@ -2537,9 +2602,17 @@ msgstr ""
 msgid "Next Scheduled Execution"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:272
-#: src/pages/channels/ChannelsPage.tsx:403
+#: src/pages/channels/ChannelsPage.tsx:277
+#: src/pages/channels/ChannelsPage.tsx:418
 msgid "No active sessions"
+msgstr ""
+
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:128
+msgid "No channels found. Create a channel first."
+msgstr ""
+
+#: src/components/channels/BulkAssignFillersDialog.tsx:154
+msgid "No filler lists found. Create a filler list first."
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx:142
@@ -2606,7 +2679,7 @@ msgstr ""
 msgid "Now Playing:"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:331
+#: src/pages/channels/ChannelsPage.tsx:346
 msgid "Number"
 msgstr ""
 
@@ -2631,7 +2704,7 @@ msgstr ""
 msgid "On-Demand channels resume from where you left off. Programming is paused when the channel is not streaming.<0/><1>NOTE:</1> While the channel is inactive, the TV Guide for the channel will be empty."
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:365
+#: src/pages/channels/ChannelsPage.tsx:380
 msgid "On-Demand?"
 msgstr ""
 
@@ -2653,8 +2726,8 @@ msgstr ""
 #~ msgid "Operation"
 #~ msgstr ""
 
-#: src/components/search/SearchValueNode.tsx:248
-#: src/components/search/SearchValueNode.tsx:300
+#: src/components/search/SearchValueNode.tsx:245
+#: src/components/search/SearchValueNode.tsx:297
 msgid "Operator"
 msgstr ""
 
@@ -2942,7 +3015,7 @@ msgstr ""
 msgid "Redirect to Channel {0}"
 msgstr ""
 
-#: src/hooks/useVersion.tsx:63
+#: src/hooks/useVersion.tsx:70
 msgid "Refresh"
 msgstr ""
 
@@ -3049,6 +3122,10 @@ msgstr ""
 msgid "Repeats"
 msgstr ""
 
+#: src/components/channels/BulkAssignFillersDialog.tsx:165
+msgid "Replace all existing fillers"
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx:62
 msgid "Replicate Programs"
 msgstr ""
@@ -3118,7 +3195,7 @@ msgstr ""
 msgid "Restrict Hours"
 msgstr ""
 
-#: src/components/search/SearchInput.tsx:204
+#: src/components/search/SearchInput.tsx:248
 msgid "Restrict search fields"
 msgstr ""
 
@@ -3191,7 +3268,7 @@ msgstr ""
 msgid "Save as new collection…"
 msgstr ""
 
-#: src/components/search/SearchInput.tsx:252
+#: src/components/search/SearchInput.tsx:296
 msgid "Save as Smart Collection"
 msgstr ""
 
@@ -3258,6 +3335,7 @@ msgid "Select a slot to link to"
 msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx:179
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:175
 #: src/components/search/SearchFieldRestrictMenu.tsx:104
 msgid "Select All"
 msgstr ""
@@ -3503,11 +3581,11 @@ msgstr ""
 msgid "Stealth Mode"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:354
+#: src/pages/channels/ChannelsPage.tsx:369
 msgid "Stealth?"
 msgstr ""
 
-#: src/components/channels/ChannelOptionsMenu.tsx:194
+#: src/components/channels/ChannelOptionsMenu.tsx:204
 msgid "Stop Transcode Session"
 msgstr ""
 
@@ -3624,7 +3702,7 @@ msgstr ""
 msgid "The image will be rendered at its actual size without any scaling applied."
 msgstr ""
 
-#: src/hooks/useVersion.tsx:37
+#: src/hooks/useVersion.tsx:44
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 msgstr ""
 
@@ -3816,7 +3894,7 @@ msgstr ""
 msgid "Tracks"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:373
+#: src/pages/channels/ChannelsPage.tsx:388
 msgid "Transcode Config"
 msgstr ""
 
@@ -3941,7 +4019,7 @@ msgstr ""
 msgid "Value"
 msgstr ""
 
-#: src/hooks/useVersion.tsx:35
+#: src/hooks/useVersion.tsx:41
 msgid "Version Mismatch!"
 msgstr ""
 
@@ -3999,7 +4077,7 @@ msgstr ""
 msgid "Watch"
 msgstr ""
 
-#: src/components/channels/ChannelOptionsMenu.tsx:180
+#: src/components/channels/ChannelOptionsMenu.tsx:189
 msgid "Watch Channel"
 msgstr ""
 
@@ -4017,7 +4095,7 @@ msgstr ""
 
 #. placeholder {0}: trimStart(__TUNARR_VERSION__, 'v')
 #. placeholder {1}: trimStart(query.data?.tunarr, 'v')
-#: src/hooks/useVersion.tsx:43
+#: src/hooks/useVersion.tsx:50
 msgid "Web version = {0}, Server version = {1}"
 msgstr ""
 
@@ -4029,6 +4107,8 @@ msgstr ""
 msgid "Weekly"
 msgstr ""
 
+#: src/components/channels/BulkAssignFillersDialog.tsx:200
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx:134
 #: src/components/slot_scheduler/RandomSlotTable.tsx:340
 msgid "Weight"
 msgstr ""
@@ -4083,7 +4163,7 @@ msgstr ""
 msgid "XMLTV Link:"
 msgstr ""
 
-#: src/pages/library/FillerListsPage.tsx:185
+#: src/pages/library/FillerListsPage.tsx:203
 msgid "You have no Filler Lists. Create your first Filler List <0>here.</0>"
 msgstr ""
 

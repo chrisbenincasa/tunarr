@@ -2,7 +2,7 @@ import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
 import type { Maybe } from '@/types/util.ts';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
-import { Check, Close, Edit, MoreVert } from '@mui/icons-material';
+import { Check, Close, MoreVert } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import type { BoxProps } from '@mui/material';
 import {
@@ -37,19 +37,18 @@ import {
 } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { find, isEmpty, map, sum } from 'lodash-es';
-import type { MRT_Row } from 'material-react-table';
+import type { MRT_Row, MRT_RowSelectionState } from 'material-react-table';
 import {
   MaterialReactTable,
   useMaterialReactTable,
-  type MRT_ColumnDef, //if using TypeScript (optional, but recommended)
+  type MRT_ColumnDef,
 } from 'material-react-table';
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  RouterButtonLink,
-  RouterIconButtonLink,
-} from '../../components/base/RouterButtonLink.tsx';
+import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
 import { RouterLink } from '../../components/base/RouterLink.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
+import { BulkActionsToolbar } from '../../components/channels/BulkActionsToolbar.tsx';
+import { BulkAssignFillersDialog } from '../../components/channels/BulkAssignFillersDialog.tsx';
 import { ChannelIconDisplay } from '../../components/channels/ChannelIconDisplay.tsx';
 import { ChannelOptionsMenu } from '../../components/channels/ChannelOptionsMenu.tsx';
 import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
@@ -108,6 +107,13 @@ export default function ChannelsPage() {
   );
   const tableSettings = useStoreBackedTableSettings('Channels');
   const { addListener, removeListener } = useServerEvents();
+  const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
+  const [bulkFillersOpen, setBulkFillersOpen] = useState(false);
+
+  const selectedChannelIds = useMemo(
+    () => Object.keys(rowSelection).filter((id) => rowSelection[id]),
+    [rowSelection],
+  );
 
   useEffect(() => {
     const key = addListener((ev) => {
@@ -219,7 +225,6 @@ export default function ChannelsPage() {
         onClose={() => handleChannelMenuClose()}
         open={channelMenuOpen === row.id}
         row={row}
-        hideItems={['edit']}
       />
     );
   };
@@ -232,7 +237,7 @@ export default function ChannelsPage() {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         {renderChannelMenu(channel)}
-        {!mediumViewport && (
+        {/* {!mediumViewport && (
           <Tooltip title={t`Edit Channel Settings`} placement="top">
             <RouterIconButtonLink
               to={'/channels/$channelId/edit'}
@@ -242,7 +247,7 @@ export default function ChannelsPage() {
               <Edit />
             </RouterIconButtonLink>
           </Tooltip>
-        )}
+        )} */}
         <IconButton
           id="channel-options-button"
           aria-controls={channelMenuOpen ? 'channel-options-menu' : undefined}
@@ -290,10 +295,20 @@ export default function ChannelsPage() {
               placement="top"
               title={
                 <Box component="span" sx={{ textAlign: 'center' }}>
-                  <Plural value={sessions.length} one="# session" other="# sessions" />
+                  <Plural
+                    value={sessions.length}
+                    one="# session"
+                    other="# sessions"
+                  />
                   <br />
-                  {totalConnections > 1 && <Trans>{totalConnections} total</Trans>}{' '}
-                  <Plural value={totalConnections} one="# connection" other="# connections" />
+                  {totalConnections > 1 && (
+                    <Trans>{totalConnections} total</Trans>
+                  )}{' '}
+                  <Plural
+                    value={totalConnections}
+                    one="# connection"
+                    other="# connections"
+                  />
                 </Box>
               }
             >
@@ -420,10 +435,20 @@ export default function ChannelsPage() {
         placement="top"
         title={
           <Box component="span" sx={{ textAlign: 'center' }}>
-            <Plural value={sessions.length} one="# session" other="# sessions" />
+            <Plural
+              value={sessions.length}
+              one="# session"
+              other="# sessions"
+            />
             <br />
-            {totalConnections > 1 && <Trans>{totalConnections} total</Trans>}{' '}
-            <Plural value={totalConnections} one="# connection" other="# connections" />
+            {totalConnections > 1 && (
+              <Trans>{totalConnections} total</Trans>
+            )}{' '}
+            <Plural
+              value={totalConnections}
+              one="# connection"
+              other="# connections"
+            />
           </Box>
         }
       >
@@ -489,7 +514,12 @@ export default function ChannelsPage() {
                       Ch {channel.number} · {channel.name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      <Plural value={channel.programCount} one="# program" other="# programs" /> ·{' '}
+                      <Plural
+                        value={channel.programCount}
+                        one="# program"
+                        other="# programs"
+                      />{' '}
+                      ·{' '}
                       {betterHumanize(dayjs.duration(channel.duration), {
                         style: 'short',
                       })}
@@ -536,8 +566,17 @@ export default function ChannelsPage() {
     columns: columnsNew,
     data: channels,
     enableRowActions: true,
+    enableRowSelection: !smallViewport,
+    enableSelectAll: true,
+    getRowId: (row) => row.id,
     layoutMode: 'grid',
+    positionToolbarAlertBanner: 'none',
     ...tableSettings,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      ...tableSettings.state,
+      rowSelection,
+    },
     muiTableBodyRowProps: ({ row }) => ({
       sx: {
         cursor: 'pointer',
@@ -548,7 +587,7 @@ export default function ChannelsPage() {
     }),
     displayColumnDefOptions: {
       'mrt-row-actions': {
-        size: mediumViewport ? 60 : 100,
+        size: 60,
         grow: false,
         Header: '',
         visibleInShowHideMenu: false,
@@ -581,6 +620,21 @@ export default function ChannelsPage() {
           <MaterialReactTable table={table} />
         </TableContainer>
       )}
+
+      {selectedChannelIds.length > 0 && (
+        <BulkActionsToolbar
+          selectedChannelIds={selectedChannelIds}
+          allChannels={channels}
+          onClearSelection={() => setRowSelection({})}
+          onAssignFillers={() => setBulkFillersOpen(true)}
+        />
+      )}
+
+      <BulkAssignFillersDialog
+        open={bulkFillersOpen}
+        onClose={() => setBulkFillersOpen(false)}
+        selectedChannelIds={selectedChannelIds}
+      />
 
       <NoChannelsCreated />
       <ChannelSessionsDialog

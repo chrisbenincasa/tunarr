@@ -13,6 +13,8 @@ import { type ChannelSession, type CreateChannelRequest } from '@tunarr/types';
 import {
   BasicIdParamSchema,
   BasicPagingSchema,
+  BulkAssignFillersRequestSchema,
+  BulkAssignFillersResponseSchema,
   MaterializedSchedule,
   PagedResult,
   RandomSlotScheduleSchema,
@@ -368,6 +370,25 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       return res.send();
+    },
+  );
+
+  fastify.post(
+    '/channels/bulk/fillers',
+    {
+      schema: {
+        operationId: 'bulkAssignFillers',
+        tags: ['Channels'],
+        body: BulkAssignFillersRequestSchema,
+        response: {
+          200: BulkAssignFillersResponseSchema,
+          400: z.string(),
+        },
+      },
+    },
+    async (req, res) => {
+      const result = req.serverCtx.fillerDB.bulkAssignFillers(req.body);
+      return res.send(result);
     },
   );
 
