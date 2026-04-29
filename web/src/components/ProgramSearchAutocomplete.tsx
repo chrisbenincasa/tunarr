@@ -15,6 +15,7 @@ type Props<ProgramT extends ProgramOrFolder> = {
   onChange: (value: ProgramT) => void;
   onQueryChange: (value: string) => void;
   label?: string;
+  disabled?: boolean;
 };
 
 type AutocompleteOpt<ProgramT extends ProgramOrFolder> =
@@ -29,6 +30,7 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
   onChange,
   onQueryChange,
   label,
+  disabled,
 }: Props<ProgramT>) => {
   const { t } = useLingui();
   const defaultLabel = t`Program`;
@@ -103,11 +105,14 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
           onChange(value);
         }
       }}
-      renderInput={(params) => <TextField {...params} label={label ?? defaultLabel} />}
+      renderInput={(params) => (
+        <TextField {...params} label={label ?? defaultLabel} />
+      )}
       autoComplete
       onInputChange={(_, newInputValue) => {
         onQueryChange(newInputValue);
       }}
+      disabled={disabled}
       getOptionDisabled={(opt) => opt.type === 'sentinel'}
       slotProps={{
         listbox: {

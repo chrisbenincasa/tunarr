@@ -9,17 +9,20 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import type { BaseSlot } from '@tunarr/types/api';
 import { find, map } from 'lodash-es';
 import { useMemo } from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { slotOrderOptions } from '../../helpers/slotSchedulerUtil.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
+import type { CommonSlotViewModel } from '../../model/CommonSlotModels.ts';
 
 export const SlotOrderFormControl = () => {
   const { t } = useLingui();
-  const { watch, control } = useFormContext<BaseSlot>();
-  const [type, order] = watch(['type', 'order']);
+  const { control } = useFormContext<CommonSlotViewModel>();
+  const [type, order, iterationGroup] = useWatch({
+    control,
+    name: ['type', 'order', 'iterationGroup'],
+  });
 
   const handleDirectionChange = (
     newDirection: string | null,
@@ -50,9 +53,17 @@ export const SlotOrderFormControl = () => {
             return (
               <FormControl fullWidth>
                 <InputLabel>{t`Weighting`}</InputLabel>
-                <Select label={t`Weighting`} {...field}>
-                  <MenuItem value="linear"><Trans>Linear</Trans></MenuItem>
-                  <MenuItem value="log"><Trans>Logarithmic</Trans></MenuItem>
+                <Select
+                  label={t`Weighting`}
+                  disabled={isNonEmptyString(iterationGroup)}
+                  {...field}
+                >
+                  <MenuItem value="linear">
+                    <Trans>Linear</Trans>
+                  </MenuItem>
+                  <MenuItem value="log">
+                    <Trans>Logarithmic</Trans>
+                  </MenuItem>
                 </Select>
                 {isNonEmptyString(helperText) && (
                   <FormHelperText>{helperText}</FormHelperText>
@@ -79,15 +90,20 @@ export const SlotOrderFormControl = () => {
               onChange={(_, value) =>
                 handleDirectionChange(value as string | null, field.onChange)
               }
+              disabled={isNonEmptyString(iterationGroup)}
             >
-              <ToggleButton value="asc"><Trans>Asc</Trans></ToggleButton>
-              <ToggleButton value="desc"><Trans>Desc</Trans></ToggleButton>
+              <ToggleButton value="asc">
+                <Trans>Asc</Trans>
+              </ToggleButton>
+              <ToggleButton value="desc">
+                <Trans>Desc</Trans>
+              </ToggleButton>
             </ToggleButtonGroup>
           )}
         />
       );
     }
-  }, [control, order, type, t]);
+  }, [type, order, control, t, iterationGroup]);
 
   if (type === 'flex' || type === 'redirect') {
     return null;
@@ -104,7 +120,11 @@ export const SlotOrderFormControl = () => {
           return (
             <FormControl fullWidth>
               <InputLabel>{t`Order`}</InputLabel>
-              <Select label={t`Order`} {...field}>
+              <Select
+                label={t`Order`}
+                disabled={isNonEmptyString(iterationGroup)}
+                {...field}
+              >
                 {map(opts, ({ description, value }) => (
                   <MenuItem key={value} value={value}>
                     {description}

@@ -1,6 +1,6 @@
 import { useLingui } from '@lingui/react/macro';
 import { Grid } from '@mui/material';
-import type { DropdownOption } from '../../../helpers/DropdownOption';
+import type { DropdownOption } from '../../../helpers/DropdownOption.ts';
 import { useTypedAppFormContext } from '../../../hooks/form.ts';
 import type { BaseTranscodeConfigProps } from './BaseTranscodeConfigProps.ts';
 import { useBaseTranscodeConfigFormOptions } from './useTranscodeConfigFormOptions.ts';

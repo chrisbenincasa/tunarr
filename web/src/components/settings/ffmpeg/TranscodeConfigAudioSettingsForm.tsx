@@ -18,7 +18,7 @@ import {
 } from '@tunarr/types/schemas';
 import { isNil } from 'lodash-es';
 import { useCallback, useState } from 'react';
-import type { DropdownOption } from '../../../helpers/DropdownOption';
+import type { DropdownOption } from '../../../helpers/DropdownOption.ts';
 import type { BaseTranscodeConfigProps } from './BaseTranscodeConfigProps.ts';
 import { useBaseTranscodeConfigFormOptions } from './useTranscodeConfigFormOptions.ts';
 
@@ -207,26 +207,32 @@ export const TranscodeConfigAudioSettingsForm = ({
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <FormControl fullWidth>
-            <InputLabel><Trans>Audio Loudness Normalization</Trans></InputLabel>
+            <InputLabel>
+              <Trans>Audio Loudness Normalization</Trans>
+            </InputLabel>
             <Select
               label={t`Audio Loudness Normalization`}
               value={loudnormEnabled ? 'enabled' : 'disabled'}
               onChange={() => onLoudnormChange(!loudnormEnabled)}
             >
-              <MenuItem value={'disabled'}><Trans>Disabled</Trans></MenuItem>
-              <MenuItem value={'enabled'}><Trans>Enabled (loudnorm)</Trans></MenuItem>
+              <MenuItem value={'disabled'}>
+                <Trans>Disabled</Trans>
+              </MenuItem>
+              <MenuItem value={'enabled'}>
+                <Trans>Enabled (loudnorm)</Trans>
+              </MenuItem>
             </Select>
             <FormHelperText>
               <Trans>
-              Enable{' '}
-              <Link
-                href="https://en.wikipedia.org/wiki/EBU_R_128"
-                target="_blank"
-              >
-                EBU R 128
-              </Link>{' '}
-              loudness normalization via the <code>loudnorm</code> FFmpeg
-              filter. May increase CPU usage during streaming.
+                Enable{' '}
+                <Link
+                  href="https://en.wikipedia.org/wiki/EBU_R_128"
+                  target="_blank"
+                >
+                  EBU R 128
+                </Link>{' '}
+                loudness normalization via the <code>loudnorm</code> FFmpeg
+                filter. May increase CPU usage during streaming.
               </Trans>
             </FormHelperText>
           </FormControl>
@@ -246,12 +252,16 @@ export const TranscodeConfigAudioSettingsForm = ({
                   <Trans>Advanced Video Options</Trans>
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 2 }}>
-                  <Trans>Advanced options relating to audio. In general, do not change
-                  these unless you know what you are doing!</Trans>
+                  <Trans>
+                    Advanced options relating to audio. In general, do not
+                    change these unless you know what you are doing!
+                  </Trans>
                 </Typography>
                 {!!state.values.audioLoudnormConfig && (
                   <>
-                    <Typography sx={{ mb: 1 }}><Trans>Loudnorm Options</Trans></Typography>
+                    <Typography sx={{ mb: 1 }}>
+                      <Trans>Loudnorm Options</Trans>
+                    </Typography>
                     <Stack direction={{ sm: 'column', md: 'row' }} spacing={2}>
                       <form.AppField
                         name="audioLoudnormConfig.i"

@@ -14,7 +14,7 @@ import { isNonEmptyString } from '@tunarr/shared/util';
 import { identity } from 'lodash-es';
 import { useMemo } from 'react';
 import type { StrictOmit } from 'ts-essentials';
-import type { DropdownOption } from '../../helpers/DropdownOption';
+import type { DropdownOption } from '../../helpers/DropdownOption.ts';
 import { useFieldContext } from '../../hooks/form.ts';
 
 export interface Converter<In, Out> {

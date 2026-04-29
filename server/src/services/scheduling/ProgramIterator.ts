@@ -63,6 +63,35 @@ export abstract class IndexBasedProgramIterator<
   }
 }
 
+export class RerunProgramIterator<
+  ProgramT extends CondensedChannelProgram = CondensedChannelProgram,
+> implements ProgramIterator<ProgramT>
+{
+  #consumedCount = 0;
+
+  constructor(
+    private inner: ProgramIterator<ProgramT>,
+    private groupSize: number,
+  ) {}
+
+  current(state: IterationState): ProgramT | null {
+    return this.inner.current(state);
+  }
+
+  next(): void {
+    this.#consumedCount++;
+    if (this.#consumedCount >= this.groupSize) {
+      this.inner.next();
+      this.#consumedCount = 0;
+    }
+  }
+
+  reset(): void {
+    this.#consumedCount = 0;
+    this.inner.reset();
+  }
+}
+
 export type WeightedProgram = {
   program: SlotSchedulerProgram;
   originalWeight: number;

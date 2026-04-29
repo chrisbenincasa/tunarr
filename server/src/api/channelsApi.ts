@@ -38,6 +38,7 @@ import {
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { globalOptions } from '@/globals.js';
+import { validateSlotGroups } from '@/services/scheduling/slotGroupValidator.js';
 import { deleteIfLocalAndCleared } from '@/util/iconUtil.js';
 import {
   head,
@@ -720,6 +721,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           200: TimeSlotScheduleWithPrograms,
+          400: z.string(),
           404: z.string(),
         },
       },
@@ -735,11 +737,21 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           .send(`Channel ID ${req.params.channelId} not found`);
       }
 
+      const groupValidation = validateSlotGroups(req.body.schedule.slots);
+      if (!groupValidation.valid) {
+        return res.status(400).send(groupValidation.errors.join('; '));
+      }
+
+      const sanitizedSchedule = {
+        ...req.body.schedule,
+        slots: groupValidation.sanitizedSlots,
+      };
+
       const { result } = await req.serverCtx.workerPool.queueTask({
         request: {
           type: 'channel',
           channelId: req.params.channelId,
-          schedule: req.body.schedule,
+          schedule: sanitizedSchedule,
           startTime: channel.startTime,
         },
         type: 'time-slots',
@@ -771,6 +783,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           200: SlotScheduleWithPrograms,
+          400: z.string(),
           404: z.string(),
         },
       },
@@ -786,11 +799,21 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           .send(`Channel ID ${req.params.channelId} not found`);
       }
 
+      const groupValidation = validateSlotGroups(req.body.schedule.slots);
+      if (!groupValidation.valid) {
+        return res.status(400).send(groupValidation.errors.join('; '));
+      }
+
+      const sanitizedSchedule = {
+        ...req.body.schedule,
+        slots: groupValidation.sanitizedSlots,
+      };
+
       const { result } = await req.serverCtx.workerPool.queueTask({
         request: {
           type: 'channel',
           channelId: req.params.channelId,
-          schedule: req.body.schedule,
+          schedule: sanitizedSchedule,
           startTime: channel.startTime,
         },
         type: 'schedule-slots',

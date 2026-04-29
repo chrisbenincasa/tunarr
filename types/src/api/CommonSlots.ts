@@ -122,9 +122,24 @@ export const MidRollConfigSchema = z
 
 export type MidRollConfig = z.infer<typeof MidRollConfigSchema>;
 
-export const Slot = z.object({
+export const LinkableSlot = z.object({
+  id: z.uuid(),
+  iterationGroup: z.uuid().optional(),
+  linkMode: z.enum(['continue', 'rerun']).default('continue').optional(),
+});
+
+export type LinkableSlot = z.infer<typeof LinkableSlot>;
+
+export const SlotWithFiller = z.object({
   filler: z.array(SlotFiller).optional(),
   midRoll: MidRollConfigSchema.optional(),
+});
+
+export type SlotWithFiller = z.infer<typeof SlotWithFiller>;
+
+export const Slot = z.object({
+  ...LinkableSlot.shape,
+  ...SlotWithFiller.shape,
 });
 
 //
@@ -174,6 +189,7 @@ export type BaseCustomShowProgrammingSlot = z.infer<
 >;
 
 export const FillerProgrammingSlotSchema = z.object({
+  ...Slot.shape,
   type: z.literal('filler'),
   fillerListId: z.uuid(),
   order: SlotProgrammingFillerOrder,
@@ -202,3 +218,41 @@ export const BaseSlotSchema = z.discriminatedUnion('type', [
 ]);
 
 export type BaseSlot = z.infer<typeof BaseSlotSchema>;
+
+export type LinkableBaseSlot = Extract<
+  BaseSlot,
+  { type: 'movie' | 'show' | 'custom-show' | 'smart-collection' }
+>;
+
+export type BaseSlotWithFiller = Extract<
+  BaseSlot,
+  { type: 'movie' | 'show' | 'custom-show' | 'smart-collection' }
+>;
+
+export function slotIsLinkable(slot: BaseSlot): slot is LinkableBaseSlot {
+  switch (slot.type) {
+    case 'custom-show':
+    case 'movie':
+    case 'show':
+    case 'smart-collection':
+      return true;
+    case 'flex':
+    case 'redirect':
+    case 'filler':
+      return false;
+  }
+}
+
+export function slotHasFiller(slot: BaseSlot): slot is BaseSlotWithFiller {
+  switch (slot.type) {
+    case 'custom-show':
+    case 'movie':
+    case 'show':
+    case 'smart-collection':
+      return true;
+    case 'flex':
+    case 'redirect':
+    case 'filler':
+      return false;
+  }
+}

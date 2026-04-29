@@ -1,14 +1,14 @@
 import type { CondensedChannelProgram, FillerProgram } from '@tunarr/types';
-import type {
-  BaseSlot,
-  MidRollConfig,
-  SlotFillerTypes,
+import {
+  slotHasFiller,
+  type BaseSlot,
+  type MidRollConfig,
+  type SlotFillerTypes,
 } from '@tunarr/types/api';
 import { isEmpty, some } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { Nullable } from '../../types/util.ts';
 import type { IterationState, ProgramIterator } from './ProgramIterator.js';
-import { slotMayHaveFiller } from './slotSchedulerUtil.js';
 
 export abstract class SlotImpl<
   SlotType extends BaseSlot,
@@ -35,7 +35,7 @@ export abstract class SlotImpl<
       ProgramIterator<FillerProgram>
     > = {},
   ) {
-    if (slotMayHaveFiller(this.slot) && this.slot.filler) {
+    if (slotHasFiller(this.slot) && this.slot.filler) {
       for (const filler of this.slot.filler) {
         const it = this.fillerIteratorsByListId[filler.fillerListId];
         if (!it) {
@@ -89,14 +89,14 @@ export abstract class SlotImpl<
   }
 
   getMidFillerListIds(): string[] {
-    if (!slotMayHaveFiller(this.slot) || !this.slot.filler) return [];
+    if (!slotHasFiller(this.slot) || !this.slot.filler) return [];
     return this.slot.filler
       .filter((f) => f.types.includes('mid'))
       .map((f) => f.fillerListId);
   }
 
   get midRollConfig(): MidRollConfig | undefined {
-    if (slotMayHaveFiller(this.slot)) {
+    if (slotHasFiller(this.slot)) {
       return this.slot.midRoll;
     }
     return undefined;

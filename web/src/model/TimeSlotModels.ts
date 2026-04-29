@@ -1,72 +1,66 @@
-import { BaseSlotOrdering, type TimeSlotSchedule } from '@tunarr/types/api';
+import type { TimeSlotSchedule } from '@tunarr/types/api';
 import z from 'zod';
 import {
   CommonCustomShowSlotViewModel,
   CommonFillerSlotViewModel,
+  CommonFlexSlotViewModel,
+  CommonMovieSlotViewModel,
+  CommonRedirectSlotViewModel,
   CommonShowSlotViewModel,
   CommonSmartCollectionViewModel,
-  WithSlotFiller,
 } from './CommonSlotModels.ts';
 
-export const BaseTimeSlot = z.object({
+const BaseTimeSlot = z.object({
   startTime: z.number(), // Offset from midnight in millis
   padMs: z.number().optional(),
 });
 
-export const MovieTimeSlotViewModel = z.object({
+const MovieTimeSlotViewModel = z.object({
+  ...CommonMovieSlotViewModel.shape,
   ...BaseTimeSlot.shape,
-  ...BaseSlotOrdering.shape,
-  ...WithSlotFiller.shape,
   type: z.literal('movie'),
 });
 
 export type MovieTimeSlotViewModel = z.infer<typeof MovieTimeSlotViewModel>;
 
 export const ShowTimeSlotViewModel = z.object({
-  ...BaseTimeSlot.shape,
-  ...BaseSlotOrdering.shape,
   ...CommonShowSlotViewModel.shape,
-  ...WithSlotFiller.shape,
+  ...BaseTimeSlot.shape,
 });
 
 export type ShowTimeSlotViewModel = z.infer<typeof ShowTimeSlotViewModel>;
 
-export const FlexTimeSlotViewModel = z.object({
+const FlexTimeSlotViewModel = z.object({
   ...BaseTimeSlot.shape,
-  type: z.literal('flex'),
+  ...CommonFlexSlotViewModel.shape,
 });
 
 export type FlexTimeSlotViewModel = z.infer<typeof FlexTimeSlotViewModel>;
 
-export const RedirectTimeSlotViewModel = z.object({
+const RedirectTimeSlotViewModel = z.object({
+  ...CommonRedirectSlotViewModel.shape,
   ...BaseTimeSlot.shape,
-  type: z.literal('redirect'),
-  channelId: z.string(),
 });
 
 export type RedirectTimeSlotViewModel = z.infer<
   typeof RedirectTimeSlotViewModel
 >;
 
-export const FillerTimeSlotViewModel = z.object({
+const FillerTimeSlotViewModel = z.object({
   ...BaseTimeSlot.shape,
   ...CommonFillerSlotViewModel.shape,
 });
 
 export type FillerTimeSlotViewModel = z.infer<typeof FillerTimeSlotViewModel>;
 
-export const CustomShowTimeSlotViewModel = z.object({
-  ...BaseTimeSlot.shape,
-  ...BaseSlotOrdering.shape,
+const CustomShowTimeSlotViewModel = z.object({
   ...CommonCustomShowSlotViewModel.shape,
-  ...WithSlotFiller.shape,
+  ...BaseTimeSlot.shape,
 });
 
-export const SmartCollectionTimeSlotViewModel = z.object({
-  ...BaseTimeSlot.shape,
-  ...BaseSlotOrdering.shape,
+const SmartCollectionTimeSlotViewModel = z.object({
   ...CommonSmartCollectionViewModel.shape,
-  ...WithSlotFiller.shape,
+  ...BaseTimeSlot.shape,
 });
 
 export const TimeSlotViewModel = z.discriminatedUnion('type', [

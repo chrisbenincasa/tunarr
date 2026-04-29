@@ -34,6 +34,12 @@ Tunarr offers a range of tools for modifying channel schedules. Before diving in
 
     Cycle through programming in a repeating pattern.
 
+-   **[Slot Linking](slot-linking.md)**
+
+    ---
+
+    Link slots together so they share episode progression, with continue or rerun modes.
+
 -   **[Mid-Roll Breaks](mid-roll-breaks.md)**
 
     ---
@@ -62,6 +68,7 @@ Tunarr offers a range of tools for modifying channel schedules. Before diving in
 | Random variety with control over duration | [Slot Editor](random-slots.md) |
 | Simple random playback | [Block Shuffle](block-shuffle.md) |
 | Predictable rotation through content | [Cyclic Shuffle](cyclic-shuffle.md) |
+| Coordinate episode progress across multiple slots | [Slot Linking](slot-linking.md) |
 | Simulate TV commercial breaks within programs | [Mid-Roll Breaks](mid-roll-breaks.md) |
 | Extend a schedule before applying other tools | [Replicate](replicate.md) |
 | Clean up fragmented flex time | [Consolidate](consolidate.md) |

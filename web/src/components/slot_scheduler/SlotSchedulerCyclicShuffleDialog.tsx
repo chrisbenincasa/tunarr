@@ -22,6 +22,7 @@ import type { Show } from '@tunarr/types';
 import { filter, isEmpty, map, reject } from 'lodash-es';
 import { useMemo, useState } from 'react';
 import type { StrictExtract } from 'ts-essentials';
+import { v4 } from 'uuid';
 import type {
   CustomShowProgramOption,
   FillerProgramOption,
@@ -99,6 +100,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
     const slots: SlotViewModel[] = [];
     for (const show of selectedShows) {
       slots.push({
+        id: v4(),
         type: 'show',
         cooldownMs: 0,
         durationSpec: {
@@ -117,6 +119,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
 
     for (const cs of selectedCustomShows) {
       slots.push({
+        id: v4(),
         type: 'custom-show',
         cooldownMs: 0,
         durationSpec: {
@@ -134,6 +137,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
 
     for (const f of selectedFiller) {
       slots.push({
+        id: v4(),
         type: 'filler',
         cooldownMs: 0,
         durationSpec: {
@@ -164,11 +168,15 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
 
   return (
     <>
-      <DialogTitle><Trans>Configure Cyclic Shuffle</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Configure Cyclic Shuffle</Trans>
+      </DialogTitle>
       <DialogContent>
         <Stack gap={2}>
           <DialogContentText>
-            <Trans>Cyclic Shuffle randomly shuffles groups of programming.</Trans>
+            <Trans>
+              Cyclic Shuffle randomly shuffles groups of programming.
+            </Trans>
           </DialogContentText>
           <Box>
             <Stack direction={'row'} spacing={1}>
@@ -217,13 +225,23 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
                 setFocusedView(value.target.value as FocusedView)
               }
             >
-              <MenuItem value="show"><Trans>Show</Trans></MenuItem>
+              <MenuItem value="show">
+                <Trans>Show</Trans>
+              </MenuItem>
               {programOptions.dropdownOpts.some(
                 (opt) => opt.type === 'custom-show',
-              ) && <MenuItem value="custom-show"><Trans>Custom Show</Trans></MenuItem>}
+              ) && (
+                <MenuItem value="custom-show">
+                  <Trans>Custom Show</Trans>
+                </MenuItem>
+              )}
               {programOptions.dropdownOpts.some(
                 (opt) => opt.type === 'filler',
-              ) && <MenuItem value="filler"><Trans>Filler List</Trans></MenuItem>}
+              ) && (
+                <MenuItem value="filler">
+                  <Trans>Filler List</Trans>
+                </MenuItem>
+              )}
             </Select>
           </FormControl>
           {focusedView === 'show' && (
@@ -271,13 +289,17 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
               onChange={(_, value) =>
                 value ? setSelectedFiller((prev) => [...prev, value]) : void 0
               }
-              renderInput={(params) => <TextField {...params} label={t`Filler`} />}
+              renderInput={(params) => (
+                <TextField {...params} label={t`Filler`} />
+              )}
             />
           )}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button
           startIcon={<Save />}
           variant="contained"

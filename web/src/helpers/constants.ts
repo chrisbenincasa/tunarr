@@ -1,7 +1,7 @@
 import { type Channel } from '@tunarr/types';
 import { range } from 'lodash-es';
 import { type MarkOptional } from 'ts-essentials';
-import type { DropdownOption } from './DropdownOption';
+import type { DropdownOption } from './DropdownOption.ts';
 
 export const OneDayMillis = 1000 * 60 * 60 * 24;
 export const OneWeekMillis = OneDayMillis * 7;

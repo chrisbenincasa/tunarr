@@ -26,12 +26,15 @@ import type { RandomSlot } from '@tunarr/types/api';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { find, isNil, map } from 'lodash-es';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import type { StrictOmit } from 'ts-essentials';
 import { match } from 'ts-pattern';
+import { v4 } from 'uuid';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
+import type { LinkMode } from '../../model/CommonSlotModels.ts';
+import { slotIsLinkable } from '../../model/CommonSlotModels.ts';
 import type { SlotViewModel } from '../../model/SlotModels.ts';
 import { RouterLink } from '../base/RouterLink.tsx';
 import { TabPanel } from '../TabPanel.tsx';
@@ -67,6 +70,36 @@ export const EditRandomSlotDialogContent = ({
     'randomDistribution',
     'lockWeights',
   ]);
+
+  const allSlots = useMemo(
+    () =>
+      currentSlots
+        .filter((s): s is typeof s & { id: string } => 'id' in s)
+        .map((s) => ({ ...s })),
+    [currentSlots],
+  );
+
+  const linkableSlots = useMemo(
+    () => allSlots.filter(slotIsLinkable),
+    [allSlots],
+  );
+
+  const handleLinkSourceSlot = useCallback(
+    (sourceSlotId: string, groupId: string, linkMode: LinkMode) => {
+      const idx = slotArray.fields.findIndex(
+        (s) => 'id' in s && s.id === sourceSlotId,
+      );
+      const field = idx !== -1 ? slotArray.fields[idx] : undefined;
+      if (field !== undefined && slotIsLinkable(field)) {
+        slotArray.update(idx, {
+          ...field,
+          iterationGroup: groupId,
+          linkMode,
+        });
+      }
+    },
+    [slotArray],
+  );
 
   const formMethods = useForm<SlotViewModel>({
     defaultValues: slot,
@@ -183,6 +216,7 @@ export const EditRandomSlotDialogContent = ({
       return match(type)
         .returnType<PartialRandomSlot>()
         .with('custom-show', () => ({
+          id: v4(),
           type: 'custom-show',
           order: 'next',
           direction: 'asc',
@@ -192,11 +226,13 @@ export const EditRandomSlotDialogContent = ({
           )!.customShowId,
         }))
         .with('movie', () => ({
+          id: v4(),
           type: 'movie',
           order: 'alphanumeric',
           direction: 'asc',
         }))
         .with('filler', () => ({
+          id: v4(),
           type: 'filler',
           order: 'shuffle_prefer_short',
           direction: 'asc',
@@ -216,6 +252,7 @@ export const EditRandomSlotDialogContent = ({
           direction: 'asc',
         }))
         .with('show', () => ({
+          id: v4(),
           type: 'show',
           showId: programOptions.find((opt) => opt.type === 'show')!.showId,
           order: 'next',
@@ -228,6 +265,7 @@ export const EditRandomSlotDialogContent = ({
             (opt) => opt.type === 'smart-collection',
           );
           return {
+            id: v4(),
             type: 'smart-collection' as const,
             order: 'next',
             direction: 'asc',
@@ -409,7 +447,11 @@ export const EditRandomSlotDialogContent = ({
                 )}
               </Stack>
               <FormProvider {...formMethods}>
-                <EditSlotProgrammingForm newSlotForType={newSlotForType} />
+                <EditSlotProgrammingForm
+                  newSlotForType={newSlotForType}
+                  allSlots={linkableSlots}
+                  onLinkSourceSlot={handleLinkSourceSlot}
+                />
               </FormProvider>
               {distribution === 'weighted' && (
                 <Stack direction="row" spacing={2} alignItems="center">
