@@ -1,4 +1,5 @@
 import type { channelListOptions } from '@/types/index.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   ContentCopy,
   CopyAll,
@@ -8,7 +9,6 @@ import {
   Tv,
 } from '@mui/icons-material';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
-import { Trans, useLingui } from '@lingui/react/macro';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { Channel } from '@tunarr/types';

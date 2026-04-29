@@ -588,3 +588,30 @@ export const UpdateFeatureFlagsRequestSchema = z.object({
 export type UpdateFeatureFlagsRequest = z.infer<
   typeof UpdateFeatureFlagsRequestSchema
 >;
+
+export const BulkAssignFillersRequestSchema = z.object({
+  channelIds: z.array(z.string().uuid()).min(1),
+  fillers: z
+    .array(
+      z.object({
+        fillerShowId: z.string().uuid(),
+        weight: z.number().int().positive(),
+        cooldownSeconds: z.number().int().nonnegative(),
+      }),
+    )
+    .min(1),
+  mode: z.enum(['add', 'replace']),
+});
+
+export type BulkAssignFillersRequest = z.infer<
+  typeof BulkAssignFillersRequestSchema
+>;
+
+export const BulkAssignFillersResponseSchema = z.object({
+  added: z.number(),
+  alreadyExisted: z.number(),
+});
+
+export type BulkAssignFillersResponse = z.infer<
+  typeof BulkAssignFillersResponseSchema
+>;
