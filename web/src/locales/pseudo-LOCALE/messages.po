@@ -740,7 +740,7 @@ msgstr ""
 msgid "Caching"
 msgstr ""
 
-#: src/hooks/slot_scheduler/useScheduleSlots.ts:73
+#: src/hooks/slot_scheduler/useScheduleSlots.ts:71
 msgid "Calculated {humanizedDuration} ({numShows} programs) of programming in {duration}ms"
 msgstr ""
 
@@ -774,7 +774,7 @@ msgstr ""
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:512
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:362
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:156
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:270
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:263
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:301
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:189
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:114
@@ -978,15 +978,15 @@ msgstr ""
 msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:196
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:189
 msgid "Continue"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:233
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:226
 msgid "Continue with New Content"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:239
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:232
 msgid "Controls what happens when this slot runs out of replayed content from earlier continue slots."
 msgstr ""
 
@@ -1764,7 +1764,7 @@ msgstr ""
 msgid "File a Bug Report"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:230
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:223
 msgid "Fill with Flex"
 msgstr ""
 
@@ -2183,16 +2183,16 @@ msgstr ""
 msgid "Linear"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:185
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:191
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:178
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:184
 msgid "Link Mode"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:285
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:278
 msgid "Link to existing slot"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:211
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:204
 msgid "Linked slots advance episode progression together sequentially."
 msgstr ""
 
@@ -2709,8 +2709,8 @@ msgstr ""
 msgid "Output video at a constant frame rate."
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:219
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:225
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:212
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:218
 msgid "Overflow Behavior"
 msgstr ""
 
@@ -3074,7 +3074,7 @@ msgstr ""
 msgid "Replicate..."
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:199
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:192
 msgid "Rerun"
 msgstr ""
 
@@ -3270,7 +3270,7 @@ msgstr ""
 msgid "Seasons"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:264
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:257
 msgid "Select a slot to link to"
 msgstr ""
 
@@ -3661,7 +3661,7 @@ msgstr ""
 msgid "Theme Settings"
 msgstr ""
 
-#: src/hooks/slot_scheduler/useScheduleSlots.ts:124
+#: src/hooks/slot_scheduler/useScheduleSlots.ts:122
 msgid "There was an error generating time slots. Check the browser console log for more information"
 msgstr ""
 
@@ -3738,7 +3738,7 @@ msgstr ""
 
 #. placeholder {0}: groupPeers.length
 #. placeholder {1}: groupPeers.length
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:178
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:171
 msgid "This slot is linked with {0} other {1, plural, one {slot} other {slots}}. Content fields are shared across the group."
 msgstr ""
 
@@ -3750,7 +3750,7 @@ msgstr ""
 #~ msgid "This slot is linked with {0} other slot(s). Content fields are shared across the group."
 #~ msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:206
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:199
 msgid "This slot replays content aired by continue slots earlier in the period."
 msgstr ""
 
@@ -3906,7 +3906,7 @@ msgstr ""
 msgid "Unit"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:174
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:167
 msgid "Unlink"
 msgstr ""
 

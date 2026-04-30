@@ -12,8 +12,13 @@ type ValidationResult<T> = {
   sanitizedSlots: T[];
 };
 
+type ValidationOptions = {
+  scheduleType?: 'time' | 'random';
+};
+
 export function validateSlotGroups<T extends BaseSlot>(
   slots: T[],
+  options: ValidationOptions = {},
 ): ValidationResult<T> {
   const errors: string[] = [];
 
@@ -65,10 +70,17 @@ export function validateSlotGroups<T extends BaseSlot>(
     const slotLinkModes = new Set(
       map(slots, (slot) => slot.linkMode ?? 'continue'),
     );
-    if (slotLinkModes.size > 1 && !slotLinkModes.has('continue')) {
-      errors.push(
-        `Group ${groupId} has rerun slots but no continue slot to produce content.`,
-      );
+    if (slotLinkModes.size > 1) {
+      if (options.scheduleType === 'random') {
+        errors.push(
+          `Group ${groupId} has mismatched linkMode values. ` +
+            `Random slot schedules require all slots in a group to use the same link mode.`,
+        );
+      } else if (!slotLinkModes.has('continue')) {
+        errors.push(
+          `Group ${groupId} has rerun slots but no continue slot to produce content.`,
+        );
+      }
     }
   }
 

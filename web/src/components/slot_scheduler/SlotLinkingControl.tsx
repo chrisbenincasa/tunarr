@@ -49,13 +49,6 @@ type SlotLinkingControlProps = {
   ) => void;
 };
 
-const contentSlotTypes = new Set([
-  'movie',
-  'show',
-  'custom-show',
-  'smart-collection',
-]);
-
 const useSlotIdentifier = () => {
   const dayjs = useDayjs();
   const { type, context } = usePolymorphicSlotFormContext();
