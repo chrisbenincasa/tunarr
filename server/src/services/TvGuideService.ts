@@ -296,12 +296,9 @@ export class TVGuideService {
     return seq.collect(programs, (program) => {
       const programEndTime =
         program.startTimeMs + program.lineupItem.durationMs;
-      const startsInRange =
-        program.startTimeMs >= beginningTimeMs &&
-        program.startTimeMs < endTimeMs;
-      const endsInRange =
-        programEndTime > beginningTimeMs && programEndTime <= endTimeMs;
-      if (startsInRange || endsInRange) {
+      // Standard interval overlap: two intervals [a, b) and [c, d) overlap
+      // iff a < d AND c < b.
+      if (program.startTimeMs < endTimeMs && beginningTimeMs < programEndTime) {
         return program;
       }
       return;
