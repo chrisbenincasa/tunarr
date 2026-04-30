@@ -307,7 +307,7 @@ describe('TVGuideService', () => {
       expect(result).toHaveLength(0);
     });
 
-    it('excludes a program that spans the entire range (neither begins nor ends in range)', async () => {
+    it('includes a program that spans the entire range (neither begins nor ends in range)', async () => {
       const channel = makeChannelOrm();
       // Starts 30 min before range, ends 30 min after range — spans [60, 120)
       const program = makeGuideItem(BASE + 30 * MIN, 120 * MIN);
@@ -319,7 +319,8 @@ describe('TVGuideService', () => {
         rangeStart,
         rangeEnd,
       );
-      expect(result).toHaveLength(0);
+      expect(result).toHaveLength(1);
+      expect(result![0]).toBe(program);
     });
 
     it('excludes a program entirely after the range', async () => {
@@ -337,7 +338,7 @@ describe('TVGuideService', () => {
       expect(result).toHaveLength(0);
     });
 
-    it('returns only the programs that begin or end in range from a mixed list', async () => {
+    it('returns only the programs that overlap the range from a mixed list', async () => {
       const channel = makeChannelOrm();
       // wholly before range
       const beforeRange = makeGuideItem(BASE, 30 * MIN);
@@ -345,7 +346,7 @@ describe('TVGuideService', () => {
       const endsInRange = makeGuideItem(BASE + 30 * MIN, 60 * MIN);
       // starts in range, ends after
       const startsInRange = makeGuideItem(BASE + 90 * MIN, 60 * MIN);
-      // spans range — excluded
+      // spans range — included (it overlaps the entire range)
       const spansRange = makeGuideItem(BASE + 30 * MIN, 120 * MIN);
       // wholly after range
       const afterRange = makeGuideItem(BASE + 150 * MIN, 30 * MIN);
@@ -363,9 +364,10 @@ describe('TVGuideService', () => {
         rangeStart,
         rangeEnd,
       );
-      expect(result).toHaveLength(2);
+      expect(result).toHaveLength(3);
       expect(result).toContain(endsInRange);
       expect(result).toContain(startsInRange);
+      expect(result).toContain(spansRange);
     });
 
     it('returns undefined for an unknown channel', async () => {
