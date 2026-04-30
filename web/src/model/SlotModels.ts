@@ -80,7 +80,7 @@ export type SlotViewModel = z.infer<typeof SlotViewModel>;
 
 export type RandomSlotForm = StrictOmit<
   RandomSlotSchedule,
-  'timeZoneOffset' | 'type' | 'slots'
+  'timeZoneOffset' | 'slots'
 > & {
   slots: SlotViewModel[];
 };
@@ -94,4 +94,5 @@ export const defaultRandomSlotSchedule: RandomSlotForm = {
   slots: [],
   // UI mechanism
   lockWeights: true,
+  type: 'random',
 };

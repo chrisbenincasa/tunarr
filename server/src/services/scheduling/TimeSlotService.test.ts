@@ -53,7 +53,11 @@ describe('createSlotIterators unit', () => {
     const mt = MersenneTwister19937.seed(42);
     const random = new Random(mt);
     const programMap = createProgramMap(episodes);
-    const iterators = createSlotIterators([slotA, slotB], programMap, random);
+    const { iterators } = createSlotIterators(
+      [slotA, slotB],
+      programMap,
+      random,
+    );
 
     const itA = iterators.get(slotA.id)!;
     const itB = iterators.get(slotB.id)!;
@@ -114,7 +118,11 @@ describe('createSlotIterators unit', () => {
     const mt = MersenneTwister19937.seed(42);
     const random = new Random(mt);
     const programMap = createProgramMap(episodes);
-    const iterators = createSlotIterators([slotA, slotB], programMap, random);
+    const { iterators } = createSlotIterators(
+      [slotA, slotB],
+      programMap,
+      random,
+    );
 
     const itA = iterators.get(slotA.id)!;
     const itB = iterators.get(slotB.id)!;
@@ -171,7 +179,7 @@ describe('createSlotIterators unit', () => {
     const mt = MersenneTwister19937.seed(42);
     const random = new Random(mt);
     const programMap = createProgramMap(episodes);
-    const iterators = createSlotIterators(
+    const { iterators } = createSlotIterators(
       [slotA, slotB, slotC],
       programMap,
       random,
@@ -234,7 +242,7 @@ describe('createSlotIterators unit', () => {
     const mt = MersenneTwister19937.seed(42);
     const random = new Random(mt);
     const programMap = createProgramMap(episodes);
-    const iterators = createSlotIterators([slotA], programMap, random);
+    const { iterators } = createSlotIterators([slotA], programMap, random);
 
     const itA = iterators.get(slotA.id)!;
     const state = { slotDuration: 60 * 60 * 1000, timeCursor: 0 };
@@ -243,6 +251,239 @@ describe('createSlotIterators unit', () => {
     itA.next();
     // groupSize=1, so every call to next() advances
     expect(itA.current(state)?.id).toBe('ep2');
+  });
+
+  test('mixed group: continue records, rerun(flex) replays and returns null when exhausted', () => {
+    const episodes: SlotSchedulerProgram[] = Array.from(
+      { length: 5 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `ep${i + 1}`,
+          title: `Episode ${i + 1}`,
+          type: 'episode',
+          duration: 30 * 60 * 1000,
+          episode: i + 1,
+          tvShowUuid: 'show1',
+          show: { uuid: 'show1' },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const groupId = randomUUID();
+    const continueSlot = {
+      id: randomUUID(),
+      startTime: 0,
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'continue' as const,
+    };
+    const rerunSlot = {
+      id: randomUUID(),
+      startTime: 12 * 60 * 60 * 1000,
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'rerun' as const,
+      rerunOverflow: 'flex' as const,
+    };
+
+    const mt = MersenneTwister19937.seed(42);
+    const random = new Random(mt);
+    const programMap = createProgramMap(episodes);
+    const { iterators } = createSlotIterators(
+      [continueSlot, rerunSlot],
+      programMap,
+      random,
+    );
+
+    const itContinue = iterators.get(continueSlot.id)!;
+    const itRerun = iterators.get(rerunSlot.id)!;
+    const state = { slotDuration: 60 * 60 * 1000, timeCursor: 0 };
+
+    // Rerun buffer is empty initially -- returns null
+    expect(itRerun.current(state)).toBeNull();
+
+    // Continue slot consumes ep1, ep2
+    expect(itContinue.current(state)?.id).toBe('ep1');
+    itContinue.next();
+    expect(itContinue.current(state)?.id).toBe('ep2');
+    itContinue.next();
+
+    // Rerun now replays from buffer
+    expect(itRerun.current(state)?.id).toBe('ep1');
+    itRerun.next();
+    expect(itRerun.current(state)?.id).toBe('ep2');
+    itRerun.next();
+
+    // Buffer exhausted -- flex mode returns null
+    expect(itRerun.current(state)).toBeNull();
+
+    // Continue slot is unaffected -- still at ep3
+    expect(itContinue.current(state)?.id).toBe('ep3');
+  });
+
+  test('mixed group: rerun(continue) pulls new content past buffer', () => {
+    const episodes: SlotSchedulerProgram[] = Array.from(
+      { length: 5 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `ep${i + 1}`,
+          title: `Episode ${i + 1}`,
+          type: 'episode',
+          duration: 30 * 60 * 1000,
+          episode: i + 1,
+          tvShowUuid: 'show1',
+          show: { uuid: 'show1' },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const groupId = randomUUID();
+    const continueSlot = {
+      id: randomUUID(),
+      startTime: 0,
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'continue' as const,
+    };
+    const rerunSlot = {
+      id: randomUUID(),
+      startTime: 12 * 60 * 60 * 1000,
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'rerun' as const,
+      rerunOverflow: 'continue' as const,
+    };
+
+    const mt = MersenneTwister19937.seed(42);
+    const random = new Random(mt);
+    const programMap = createProgramMap(episodes);
+    const { iterators } = createSlotIterators(
+      [continueSlot, rerunSlot],
+      programMap,
+      random,
+    );
+
+    const itContinue = iterators.get(continueSlot.id)!;
+    const itRerun = iterators.get(rerunSlot.id)!;
+    const state = { slotDuration: 60 * 60 * 1000, timeCursor: 0 };
+
+    // Continue consumes ep1
+    expect(itContinue.current(state)?.id).toBe('ep1');
+    itContinue.next();
+
+    // Rerun replays ep1 from buffer
+    expect(itRerun.current(state)?.id).toBe('ep1');
+    itRerun.next();
+
+    // Buffer exhausted, overflow=continue -- pulls ep2 from live iterator
+    expect(itRerun.current(state)?.id).toBe('ep2');
+    itRerun.next(); // Advances real iterator past ep2
+
+    // Continue slot now sees ep3 (ep2 was consumed by overflow)
+    expect(itContinue.current(state)?.id).toBe('ep3');
+  });
+
+  test('mixed group: period reset clears buffer and replay cursor', () => {
+    const episodes: SlotSchedulerProgram[] = Array.from(
+      { length: 5 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `ep${i + 1}`,
+          title: `Episode ${i + 1}`,
+          type: 'episode',
+          duration: 30 * 60 * 1000,
+          episode: i + 1,
+          tvShowUuid: 'show1',
+          show: { uuid: 'show1' },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const groupId = randomUUID();
+    const continueSlot = {
+      id: randomUUID(),
+      startTime: 0,
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'continue' as const,
+    };
+    const rerunSlot = {
+      id: randomUUID(),
+      startTime: 12 * 60 * 60 * 1000,
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'rerun' as const,
+      rerunOverflow: 'flex' as const,
+    };
+
+    const mt = MersenneTwister19937.seed(42);
+    const random = new Random(mt);
+    const programMap = createProgramMap(episodes);
+    const { iterators, resetPeriodCallbacks } = createSlotIterators(
+      [continueSlot, rerunSlot],
+      programMap,
+      random,
+    );
+
+    const itContinue = iterators.get(continueSlot.id)!;
+    const itRerun = iterators.get(rerunSlot.id)!;
+    const state = { slotDuration: 60 * 60 * 1000, timeCursor: 0 };
+
+    // Period 1: continue consumes ep1, ep2
+    expect(itContinue.current(state)?.id).toBe('ep1');
+    itContinue.next();
+    expect(itContinue.current(state)?.id).toBe('ep2');
+    itContinue.next();
+
+    // Rerun replays ep1
+    expect(itRerun.current(state)?.id).toBe('ep1');
+    itRerun.next();
+
+    // Reset period
+    for (const cb of resetPeriodCallbacks) cb();
+
+    // Buffer is cleared -- rerun returns null again
+    expect(itRerun.current(state)).toBeNull();
+
+    // Continue is still at ep3 (period reset doesn't affect iterator position)
+    expect(itContinue.current(state)?.id).toBe('ep3');
+    itContinue.next();
+
+    // Rerun now sees ep3 from fresh buffer
+    expect(itRerun.current(state)?.id).toBe('ep3');
   });
 });
 

@@ -18,10 +18,14 @@ import type { TimeSlotForm } from './TimeSlotModels.ts';
 export const LinkModeSchema = z.enum(['continue', 'rerun']);
 export type LinkMode = z.infer<typeof LinkModeSchema>;
 
+export const RerunOverflowSchema = z.enum(['flex', 'continue']);
+export type RerunOverflow = z.infer<typeof RerunOverflowSchema>;
+
 const LinkableSlot = z.object({
   id: z.uuid(),
   iterationGroup: z.uuid().optional(),
   linkMode: LinkModeSchema.default('continue').optional(),
+  rerunOverflow: RerunOverflowSchema.default('flex').optional(),
 });
 
 export type LinkableSlot = z.infer<typeof LinkableSlot>;

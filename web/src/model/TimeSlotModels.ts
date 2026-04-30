@@ -82,4 +82,5 @@ export type TimeSlotForm = {
   padMs: number;
   period: 'day' | 'week';
   slots: TimeSlotViewModel[];
+  type: 'time';
 };

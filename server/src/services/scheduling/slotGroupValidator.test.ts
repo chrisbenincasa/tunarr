@@ -80,7 +80,7 @@ describe('validateSlotGroups', () => {
     expect(result.errors[0]).toContain('content');
   });
 
-  test('rejects group with mismatched linkMode', () => {
+  test('accepts mixed linkMode group with at least one continue slot', () => {
     const result = validateSlotGroups([
       {
         type: 'show',
@@ -103,9 +103,34 @@ describe('validateSlotGroups', () => {
         linkMode: 'rerun',
       },
     ]);
-    expect(result.valid).toBe(false);
-    expect(result.errors.length).toBe(1);
-    expect(result.errors[0]).toContain('linkMode');
+    expect(result.valid).toBe(true);
+  });
+
+  test('rejects mixed linkMode group with no continue slot', () => {
+    const result = validateSlotGroups([
+      {
+        type: 'show',
+        showId: 'show1',
+        order: 'next',
+        direction: 'asc',
+        seasonFilter: [],
+        id: '1',
+        iterationGroup: validGroupId,
+        linkMode: 'rerun',
+      },
+      {
+        type: 'show',
+        showId: 'show1',
+        order: 'next',
+        direction: 'asc',
+        seasonFilter: [],
+        id: '2',
+        iterationGroup: validGroupId,
+        linkMode: 'rerun',
+      },
+    ]);
+    // All-rerun is still valid (legacy behavior)
+    expect(result.valid).toBe(true);
   });
 
   test('strips linkMode when iterationGroup is absent', () => {
