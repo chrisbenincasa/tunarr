@@ -25,6 +25,9 @@ Tunarr's search feature different typed fields, such as `string`, `number`, and 
 | `in` | Set includes | `title IN ["30 Rock", "Arrested Development"]` |
 | `not in` | Set excludes | `genre NOT IN [comedy, horror]` |
 
+!!! note
+    Only **double-quotes** are supported for quoted strings.
+
 ## Numbers
 
 | Operator | Description | Example
@@ -41,6 +44,9 @@ Tunarr's search feature different typed fields, such as `string`, `number`, and 
 
 Date fields support both absolute and relative date expressions.
 
+!!! info
+    Date fields accept only 2 formats: `YYYY-MM-DD` or `YYYYMMDD` and can optionally be wrapped in double-quotes.
+
 ### Absolute Dates
 
 | Operator | Description | Example
@@ -52,8 +58,6 @@ Date fields support both absolute and relative date expressions.
 | `>=` | On or After | `added_date >= 2024-06-01` |
 | `!=` | Not Equals | `release_date != 2000-01-01` |
 | `between` | Date range | `release_date between [2000-01-01, 2010-12-31]` |
-
-Dates use `YYYY-MM-DD` or `YYYYMMDD` format.
 
 ### Relative Dates
 

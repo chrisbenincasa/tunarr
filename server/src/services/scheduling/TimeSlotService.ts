@@ -268,7 +268,10 @@ export async function scheduleTimeSlots(
         slotDuration: slotDuration,
       });
       if (isNull(nextProgram)) break;
-      if (totalAddedDuration + nextProgram.duration > slotDuration) {
+      if (
+        totalAddedDuration + nextProgram.duration >
+        slotDuration + schedule.latenessMs
+      ) {
         break;
       }
       const nextPadded = createPaddedProgram(nextProgram, schedule.padMs);

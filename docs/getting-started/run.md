@@ -214,8 +214,9 @@ Setup:
 
 1. In terminal, execute `sudo mkdir /opt/tunarr/`
 2. Execute `sudo mkdir /opt/tunarr/streams`
-3. Execute a `sudo mv tunarr-linux-x64 /opt/tunarr/tunarr-linux-x64` (replace the first path with the path you downloaded Tunarr too, which will include the version)
-4. Execute `sudo nano /etc/systemd/tunarr.service`
+3. Execute a `sudo mv tunarr-linux-x64 /opt/tunarr/tunarr-linux-x64` (replace the first path with the path you downloaded Tunarr too, which will include the version) and `sudo mv meilisearch /opt/tunarr/meilisearch`
+  1. **NOTE**: On each update, you must replace BOTH the Tunarr and Meilisearch binaries in this directory.
+4. Execute `sudo nano /etc/systemd/system/tunarr.service`
 5. Copy and paste the service definition below:
 
 ```systemd
@@ -227,7 +228,7 @@ After=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/tunarr
-ExecStart=bash /opt/tunarr/tunarr-linux-x64
+ExecStart=/opt/tunarr/tunarr-linux-x64
 ExecReload=pkill -INT tunarr-linux-x64
 ExecStop=pkill -INT tunarr-linux-x64
 KillMode=process

@@ -21,6 +21,7 @@ import type {
   StrictOmit,
 } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
+import type { MediaSourceId } from '../index.js';
 import { emptyStringToNull, isNonEmptyString } from './index.js';
 import { inConstArr, invert } from './seq.js';
 
@@ -66,6 +67,7 @@ const FactedStringFields = [
 
 const StringFields = [
   ...FactedStringFields,
+  'media_source_id',
   'library_id',
   'title',
   'show_title',
@@ -407,8 +409,8 @@ export const virtualFieldToIndexField: Record<string, string> = {
   subtitle_language: 'subtitleLanguages',
   audio_codec: 'audioCodec',
   audio_channels: 'audioChannels',
-  // library_name: 'libraryName',
-  // media_source_name: 'mediaSourceName'
+  media_source_id: 'mediaSourceId',
+  library_id: 'libraryId',
 };
 
 export const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);
@@ -497,6 +499,57 @@ export class SearchParser extends EmbeddedActionsParser {
           });
 
           return valueParts.join('');
+        },
+      },
+    ]);
+  });
+
+  private dateValue = this.RULE('dateValue', () => {
+    return this.OR([
+      {
+        GATE: () => {
+          const first = this.LA(1);
+          const second = this.LA(2);
+          return (
+            first.tokenType === OpenQuote &&
+            second.tokenType === StringChars &&
+            /^\d{4}-\d{2}-\d{2}$|^\d{8}$/.test(second.image)
+          );
+        },
+        ALT: () => {
+          this.CONSUME(OpenQuote);
+          const value = this.CONSUME(StringChars, {
+            ERR_MSG:
+              'Date fields should be in the format "YYYY-MM-DD" or "YYYYMMDD"',
+          }).image;
+          this.CONSUME2(CloseQuote);
+          return value;
+        },
+      },
+      {
+        GATE: () => {
+          const first = this.LA(1);
+          const second = this.LA(2);
+          return (
+            first.tokenType === Integer &&
+            /^\d{4}$/.test(first.image) &&
+            second.tokenType === Identifier &&
+            /^-\d{2}-\d{2}$/.test(second.image)
+          );
+        },
+        ALT: () => {
+          const year = this.CONSUME(Integer).image;
+          const rest = this.CONSUME(Identifier).image;
+          return year + rest;
+        },
+      },
+      {
+        GATE: () => {
+          const first = this.LA(1);
+          return first.tokenType === Integer && /^\d{8}$/.test(first.image);
+        },
+        ALT: () => {
+          return this.CONSUME2(Integer).image;
         },
       },
     ]);
@@ -730,7 +783,7 @@ export class SearchParser extends EmbeddedActionsParser {
             },
           ]);
 
-          const value = this.SUBRULE(this.searchValue);
+          const value = this.SUBRULE(this.dateValue);
           return {
             type: 'single_date_query',
             op,
@@ -757,9 +810,9 @@ export class SearchParser extends EmbeddedActionsParser {
             },
           ]);
           const values: string[] = [];
-          values.push(this.SUBRULE2(this.searchValue));
+          values.push(this.SUBRULE2(this.dateValue));
           this.OPTION(() => this.CONSUME2(Comma));
-          values.push(this.SUBRULE3(this.searchValue));
+          values.push(this.SUBRULE3(this.dateValue));
           this.OR5([
             {
               ALT: () => this.CONSUME3(CloseParenGroup),
@@ -1420,10 +1473,38 @@ export function makeSearchTypeFilter(
     type: 'value',
     fieldSpec: {
       key: 'type',
-      name: 'Type',
+      name: 'type',
       op: '=',
       type: 'string',
       value: [searchItemTypeFromContentType(mediaType)],
+    },
+  };
+}
+
+export function makeMediaSourceIdFilter(
+  mediaSourceId: MediaSourceId,
+): SearchFilterValueNode {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: 'mediaSourceId',
+      name: 'media_source_id',
+      op: '=',
+      type: 'string',
+      value: [mediaSourceId],
+    },
+  };
+}
+
+export function makeLibraryIdFilter(libraryId: string): SearchFilterValueNode {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: 'libraryId',
+      name: 'library_id',
+      op: '=',
+      type: 'string',
+      value: [libraryId],
     },
   };
 }
