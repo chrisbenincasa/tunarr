@@ -47,3 +47,30 @@ When using slot-based scheduling tools ([Slot Editor](/configure/scheduling/rand
     These filler types are only available in slot-based schedulers. When adding filler directly to a channel via the Flex tab, the filler is used to fill flex time only.
 
 For details on mid-roll breaks, see the [Mid-Roll Breaks](/configure/scheduling/mid-roll-breaks) scheduling guide.
+
+## Bulk Filler Assignment
+
+Tunarr provides two ways to assign filler lists to multiple channels at once, saving time when you have many channels that share the same filler content.
+
+### Assign a Filler List to Multiple Channels
+
+From the **Library > Fillers** page, click the **Assign to Channels** button (playlist icon) in the row actions for any filler list. This opens a dialog where you can:
+
+1. Set the **weight** and **cooldown** for the filler list
+2. Select which channels should receive the filler list (use **Select All** / **Deselect All** for quick selection)
+3. Click **Apply** to add the filler list to all selected channels
+
+This uses "add" mode — existing filler assignments on those channels are preserved and the selected filler list is added alongside them. If a channel already has the filler list assigned, it will be skipped.
+
+### Assign Filler Lists to Selected Channels
+
+From the **Channels** page, use the row checkboxes to select one or more channels. A toolbar appears at the bottom of the page with an **Assign Fillers** button. Clicking it opens a dialog where you can:
+
+1. Toggle **Replace all existing fillers** to choose between:
+      - **Add mode** (default): keeps existing filler assignments and adds the selected ones
+      - **Replace mode**: removes all existing filler assignments on the selected channels and replaces them with the new selection
+2. Check the filler lists you want to assign
+3. For each selected filler list, configure its **weight** (1–100) and **cooldown** (seconds)
+4. Click **Apply** to save
+
+After applying, a notification shows how many assignments were added and how many already existed.

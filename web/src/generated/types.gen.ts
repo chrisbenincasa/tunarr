@@ -3558,6 +3558,42 @@ export type PutApiChannelsByIdResponses = {
 
 export type PutApiChannelsByIdResponse = PutApiChannelsByIdResponses[keyof PutApiChannelsByIdResponses];
 
+export type BulkAssignFillersData = {
+    body: {
+        channelIds: Array<string>;
+        fillers: Array<{
+            fillerShowId: string;
+            weight: number;
+            cooldownSeconds: number;
+        }>;
+        mode: 'add' | 'replace';
+    };
+    path?: never;
+    query?: never;
+    url: '/api/channels/bulk/fillers';
+};
+
+export type BulkAssignFillersErrors = {
+    /**
+     * Default Response
+     */
+    400: string;
+};
+
+export type BulkAssignFillersError = BulkAssignFillersErrors[keyof BulkAssignFillersErrors];
+
+export type BulkAssignFillersResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        added: number;
+        alreadyExisted: number;
+    };
+};
+
+export type BulkAssignFillersResponse = BulkAssignFillersResponses[keyof BulkAssignFillersResponses];
+
 export type GetApiChannelsByIdProgramsData = {
     body?: never;
     path: {

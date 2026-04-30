@@ -1,5 +1,7 @@
 import { KEYS } from '@/types/inject.js';
-import {
+import type {
+  BulkAssignFillersRequest,
+  BulkAssignFillersResponse,
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
@@ -381,5 +383,79 @@ export class FillerDB implements IFillerListDB {
         weight: result.weight,
       } satisfies ChannelFillerShowWithContent;
     });
+  }
+
+  bulkAssignFillers(
+    request: BulkAssignFillersRequest,
+  ): BulkAssignFillersResponse {
+    let added = 0;
+    let alreadyExisted = 0;
+
+    this.drizzle.transaction((tx) => {
+      if (request.mode === 'replace') {
+        tx.delete(ChannelFillerShow)
+          .where(inArray(ChannelFillerShow.channelUuid, request.channelIds))
+          .run();
+
+        const rows = request.channelIds.flatMap((channelId) =>
+          request.fillers.map((filler) => ({
+            channelUuid: channelId,
+            fillerShowUuid: filler.fillerShowId,
+            weight: filler.weight,
+            cooldown: filler.cooldownSeconds,
+          })),
+        );
+
+        for (const batch of chunk(rows, 1_000)) {
+          tx.insert(ChannelFillerShow).values(batch).run();
+        }
+
+        added = rows.length;
+      } else {
+        const existing = tx
+          .select({
+            channelUuid: ChannelFillerShow.channelUuid,
+            fillerShowUuid: ChannelFillerShow.fillerShowUuid,
+          })
+          .from(ChannelFillerShow)
+          .where(inArray(ChannelFillerShow.channelUuid, request.channelIds))
+          .all();
+
+        const existingSet = new Set(
+          existing.map((e) => `${e.channelUuid}:${e.fillerShowUuid}`),
+        );
+
+        const toInsert: Array<{
+          channelUuid: string;
+          fillerShowUuid: string;
+          weight: number;
+          cooldown: number;
+        }> = [];
+
+        for (const channelId of request.channelIds) {
+          for (const filler of request.fillers) {
+            const key = `${channelId}:${filler.fillerShowId}`;
+            if (existingSet.has(key)) {
+              alreadyExisted++;
+            } else {
+              toInsert.push({
+                channelUuid: channelId,
+                fillerShowUuid: filler.fillerShowId,
+                weight: filler.weight,
+                cooldown: filler.cooldownSeconds,
+              });
+            }
+          }
+        }
+
+        for (const batch of chunk(toInsert, 1_000)) {
+          tx.insert(ChannelFillerShow).values(batch).run();
+        }
+
+        added = toInsert.length;
+      }
+    });
+
+    return { added, alreadyExisted };
   }
 }

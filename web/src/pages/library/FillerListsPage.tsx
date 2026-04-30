@@ -2,7 +2,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { Delete, Edit } from '@mui/icons-material';
+import { Delete, Edit, PlaylistAdd } from '@mui/icons-material';
 import {
   Dialog,
   DialogActions,
@@ -31,6 +31,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
+import { AssignFillerToChannelsDialog } from '../../components/fillers/AssignFillerToChannelsDialog.tsx';
 import {
   deleteApiFillerListsByIdMutation,
   getApiFillerListsQueryKey,
@@ -45,6 +46,9 @@ export default function FillerListsPage() {
   const queryClient = useQueryClient();
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<
     string | undefined
+  >(undefined);
+  const [assignFiller, setAssignFiller] = useState<
+    { id: string; name: string } | undefined
   >(undefined);
   const snackbar = useSnackbar();
 
@@ -100,13 +104,16 @@ export default function FillerListsPage() {
         aria-describedby="delete-filler-list-description"
       >
         <DialogTitle id="delete-filler-list-title">
-          <Trans>Delete Filler List "{find(fillerLists, { id: deleteConfirmationId })?.name}"?</Trans>
+          <Trans>
+            Delete Filler List "
+            {find(fillerLists, { id: deleteConfirmationId })?.name}"?
+          </Trans>
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-filler-list-description">
             <Trans>
-              Deleting a Filler will remove all programming from the channel. This
-              action cannot be undone.
+              Deleting a Filler will remove all programming from the channel.
+              This action cannot be undone.
             </Trans>
           </DialogContentText>
         </DialogContent>
@@ -131,6 +138,17 @@ export default function FillerListsPage() {
     ({ row: { original: filler } }: { row: MRT_Row<FillerList> }) => {
       return (
         <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
+          <Tooltip title={t`Assign to Channels`} placement="top">
+            <IconButton
+              onClick={(ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                setAssignFiller({ id: filler.id, name: filler.name });
+              }}
+            >
+              <PlaylistAdd />
+            </IconButton>
+          </Tooltip>
           <Tooltip title={t`Edit`} placement="top">
             <IconButton
               to={`/library/fillers/${filler.id}/edit`}
@@ -213,6 +231,14 @@ export default function FillerListsPage() {
     <Box>
       <Breadcrumbs />
       {renderConfirmationDialog()}
+      {assignFiller !== undefined && (
+        <AssignFillerToChannelsDialog
+          open
+          onClose={() => setAssignFiller(undefined)}
+          fillerId={assignFiller.id}
+          fillerName={assignFiller.name}
+        />
+      )}
       <Box display="flex" mb={2} alignItems="flex-start">
         <Box flexDirection={'column'} flexGrow={1}>
           <Typography flexGrow={1} variant="h4">
@@ -221,8 +247,8 @@ export default function FillerListsPage() {
           <Typography maxWidth={'800px'}>
             <Trans>
               Filler lists are collections of videos that you may want to play
-              during 'flex' time segments. Flex is time within a channel that does
-              not have a program scheduled (usually used for padding).
+              during 'flex' time segments. Flex is time within a channel that
+              does not have a program scheduled (usually used for padding).
             </Trans>
           </Typography>
         </Box>
