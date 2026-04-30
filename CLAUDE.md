@@ -186,6 +186,11 @@ The web app uses a generated API client (`generated/`) created from the server's
 
 ## Important Implementation Notes
 
+### When changing the behavior of features
+
+- Always update relevant documentation.
+- Double-check for unintended side-effects of the change
+
 ### When Working with Database Code:
 
 - Prefer Drizzle ORM for new queries over Kysely
