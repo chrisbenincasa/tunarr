@@ -202,8 +202,8 @@ export class SmartCollectionsDB {
     for (;;) {
       const pageResult = await this.searchService.search('programs', {
         paging: { page, limit: 100 },
-        query: searchFilter ? null : maybeCollection.filter,
-        filter: searchFilter ? searchFilter : null,
+        query: maybeCollection.keywords,
+        filter: searchFilter,
       });
       if (pageResult.results.length === 0) {
         break;

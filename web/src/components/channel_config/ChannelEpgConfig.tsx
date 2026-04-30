@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
@@ -5,14 +6,13 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import FormHelperText from '@mui/material/FormHelperText';
 import TextField from '@mui/material/TextField';
-import { Trans, useLingui } from '@lingui/react/macro';
-import type { Channel } from '@tunarr/types';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
+import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import { NumericFormController } from '../util/TypedController.tsx';
 
 export default function ChannelEpgConfig() {
   const { t } = useLingui();
-  const { control } = useFormContext<Channel>();
+  const { control } = useChannelFormContext();
 
   return (
     <>
@@ -30,8 +30,8 @@ export default function ChannelEpgConfig() {
                 <FormHelperText>
                   <Trans>
                     "Stealth" channels are hidden from TV guides, spoofed HDHR,
-                    m3u playlist, etc. The channel can still be streamed directly
-                    or be used as a redirect target.
+                    m3u playlist, etc. The channel can still be streamed
+                    directly or be used as a redirect target.
                   </Trans>
                 </FormHelperText>
               </FormControl>

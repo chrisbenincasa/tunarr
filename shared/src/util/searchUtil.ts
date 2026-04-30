@@ -5,6 +5,7 @@ import type {
 } from '@tunarr/types';
 import type {
   NumericOperators,
+  SearchField,
   SearchFilter,
   SearchFilterOperatorNode,
   SearchFilterValueNode,
@@ -449,6 +450,10 @@ const dateFieldNormalizersByField = {
   release_date: normalizeReleaseDate,
   added_date: normalizeReleaseDate,
 } satisfies Record<string, Converter<string, number>>;
+
+const dateFieldDenormalizersByField = {
+  release_date: (ms) => dayjs(ms).format('YYYY-MM-DD'),
+} satisfies Record<string, Converter<number, string>>;
 
 export class SearchParser extends EmbeddedActionsParser {
   constructor() {
@@ -1373,6 +1378,29 @@ export function normalizeSearchFilter(input: SearchFilter): SearchFilter {
     .exhaustive();
 }
 
+interface Stringable {
+  toString(): string;
+}
+
+function findDenormalizer(
+  fieldSpec: SearchField,
+): Converter<number, Stringable> {
+  return match(fieldSpec)
+    .with(
+      { type: 'numeric', name: P.when(isNonEmptyString) },
+      (spec) => has(numericFieldDenormalizersByField, spec.name),
+      (spec) =>
+        numericFieldDenormalizersByField[spec.name] as Converter<number>,
+    )
+    .with(
+      { type: 'date', name: P.when(isNonEmptyString) },
+      (spec) => has(dateFieldDenormalizersByField, spec.name),
+      (spec) =>
+        dateFieldDenormalizersByField[spec.name] as Converter<number, string>,
+    )
+    .otherwise(() => identity);
+}
+
 export function searchFilterToString(input: SearchFilter): string {
   switch (input.type) {
     case 'op': {
@@ -1407,21 +1435,11 @@ export function searchFilterToString(input: SearchFilter): string {
         indexOperatorToSyntax[input.fieldSpec.op] ?? input.fieldSpec.op;
 
       // Get denormalizer for numeric fields (e.g., convert ms back to minutes)
-      const denormalizer: Converter<number> =
-        input.fieldSpec.type === 'numeric' &&
-        isNonEmptyString(input.fieldSpec.name) &&
-        has(numericFieldDenormalizersByField, input.fieldSpec.name)
-          ? (numericFieldDenormalizersByField[
-              input.fieldSpec.name
-            ] as Converter<number>)
-          : identity;
+      const denormalizer = findDenormalizer(input.fieldSpec);
 
       let valueString: string;
       if (isNumber(input.fieldSpec.value)) {
-        valueString =
-          input.fieldSpec.type === 'date'
-            ? dayjs(input.fieldSpec.value).format('YYYY-MM-DD')
-            : denormalizer(input.fieldSpec.value).toString();
+        valueString = denormalizer(input.fieldSpec.value).toString();
       } else if (input.fieldSpec.value.length === 0) {
         return '';
       } else if (

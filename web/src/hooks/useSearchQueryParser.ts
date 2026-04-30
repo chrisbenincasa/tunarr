@@ -1,4 +1,5 @@
 import { search } from '@tunarr/shared/util';
+import type { SearchFilter } from '@tunarr/types/schemas';
 import { isEmpty } from 'lodash-es';
 
 const parser = new search.SearchParser();
@@ -43,10 +44,15 @@ export function parseSearchQueryOrNull(input: string) {
   return result.query;
 }
 
-export function parseToSearchFilterOrNull(input: string) {
+function parseToSearchFilterOrNull(input: string): SearchFilter | null {
   const parsed = parseSearchQueryOrNull(input);
   if (!parsed) return null;
-  return search.parsedSearchToRequest(parsed);
+  try {
+    return search.parsedSearchToRequest(parsed);
+  } catch (e) {
+    console.error(e, 'Error while parsing search query');
+    return null;
+  }
 }
 
 export const useSearchQueryParser = () => {

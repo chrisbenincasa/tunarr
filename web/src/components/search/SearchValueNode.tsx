@@ -20,10 +20,11 @@ import { find, isArray, isNumber } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import type { ControllerRenderProps } from 'react-hook-form';
 import { Controller, useFormContext } from 'react-hook-form';
+import { match, P } from 'ts-pattern';
 import {
-  SearchFieldSpecs,
   getOperatorLabel,
   isUiSearchFieldSpecOfType,
+  SearchFieldSpecs,
 } from '../../helpers/searchBuilderConstants.ts';
 import { useGetFieldName } from '../../hooks/searchBuilderHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
@@ -157,31 +158,33 @@ export function SearchValueNode(props: ValueNodeProps) {
         selfValue.fieldSpec.type === 'numeric' ||
         selfValue.fieldSpec.type === 'date'
       ) {
-        if (isNumber(selfValue.fieldSpec.value) && newOp === 'to') {
-          setValue(getFieldName('fieldSpec.value'), [
-            selfValue.fieldSpec.value,
-            0,
-          ] as [number, number]);
-        } else if (isArray(selfValue.fieldSpec.value) && newOp !== 'to') {
-          setValue(
-            getFieldName('fieldSpec.value'),
-            selfValue.fieldSpec.value[0],
-          );
-        }
+        // Cover going from multi value <=> single
+        match([selfValue.fieldSpec, newOp])
+          .with([{ value: P.number }, 'to'], ([{ value }, _]) => {
+            setValue(getFieldName('fieldSpec.value'), [value, 0] as [
+              number,
+              number,
+            ]);
+          })
+          .with(
+            [{ value: [P.number, P._] }, P.not('to')],
+            ([
+              {
+                value: [first, _],
+              },
+              _1,
+            ]) => {
+              setValue(getFieldName('fieldSpec.value'), first);
+            },
+          )
+          .otherwise(() => void 0);
       }
       setValue(
         getFieldName('fieldSpec.op'),
         newOp as StringOperators | NumericOperators,
       );
     },
-    [
-      dayjs,
-      getFieldName,
-      selfValue.fieldSpec.op,
-      selfValue.fieldSpec.type,
-      selfValue.fieldSpec.value,
-      setValue,
-    ],
+    [getFieldName, selfValue.fieldSpec, setValue, dayjs],
   );
 
   const renderValueInput = useMemo(() => {
@@ -226,15 +229,9 @@ export function SearchValueNode(props: ValueNodeProps) {
 
   const renderOperatorInput = useCallback(
     (field: ControllerRenderProps<SearchForm, `${FieldPrefix}.fieldSpec`>) => {
-      const multiple =
-        isArray(selfValue.fieldSpec.value) &&
-        selfValue.fieldSpec.value.length > 1;
       const operators = seq.collect(
         OperatorsByType[selfValue.fieldSpec.type],
         (operator) => {
-          if (multiple && operator !== 'in' && operator !== 'not in') {
-            return;
-          }
           return (
             <MenuItem key={operator} value={operator}>
               {getOperatorLabel(selfValue.fieldSpec.type, operator)}

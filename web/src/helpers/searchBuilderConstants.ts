@@ -18,23 +18,11 @@ export type SearchFieldSpec<
   uiBijection?: Bij<ExpectedOutType<Typ>, string>;
 };
 
-export function isNumericSearchFieldSpec(
-  spec: SearchFieldSpec<SearchField['type']>,
-): spec is SearchFieldSpec<'numeric' | 'date'> {
-  return spec.type === 'numeric' || spec.type === 'date';
-}
-
 export function isUiSearchFieldSpecOfType<Typ extends SearchField['type']>(
   spec: SearchFieldSpec<SearchField['type']>,
   typ: Typ,
 ): spec is SearchFieldSpec<Typ> {
   return spec.type === typ;
-}
-
-export function isFactedStringSearchFieldSpec(
-  spec: SearchFieldSpec<SearchField['type']>,
-): spec is SearchFieldSpec<'faceted_string'> {
-  return spec.type === 'faceted_string';
 }
 
 export const numericBij: Bij<number, string> = {
@@ -259,41 +247,11 @@ interface Bij<In, Out = In> {
   from: (out: Out) => In;
 }
 
-type NormalizersMap = {
-  [K in keyof (typeof SearchFieldSpecs)[number]['name']]: Bij<
-    string,
-    ExpectedOutType<(typeof SearchFieldSpecs)[K]['type']>
-  >;
-};
-
-export const SearchFieldNormalizers = {
-  minutes: {
-    to: (mins: string): number => parseInt(mins) * 60 * 1000,
-    from: (ms: number) => (ms / 60 / 1000).toString(),
-  },
-  seconds: {
-    to: (seconds: string): number => parseInt(seconds) * 1000,
-    from: (ms: number) => (ms / 1000).toString(),
-  },
-} satisfies Partial<NormalizersMap>;
-
 type ExpectedOutType<Key extends SearchField['type']> = Key extends
   | 'string'
   | 'faceted_string'
   ? string
   : number;
-
-export function normalizeField<
-  Key extends keyof typeof SearchFieldSpecs,
-  OutType extends ExpectedOutType<(typeof SearchFieldSpecs)[number]['type']>,
->(key: Key, value: string): OutType | null {
-  if (key in SearchFieldNormalizers) {
-    SearchFieldNormalizers[key as keyof typeof SearchFieldNormalizers]?.to(
-      value,
-    );
-  }
-  return null;
-}
 
 const OperatorLabelByFieldType = {
   date: {
