@@ -5,12 +5,12 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import FormHelperText from '@mui/material/FormHelperText';
 import TextField from '@mui/material/TextField';
-import type { Channel } from '@tunarr/types';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
+import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import { NumericFormController } from '../util/TypedController.tsx';
 
 export default function ChannelEpgConfig() {
-  const { control } = useFormContext<Channel>();
+  const { control } = useChannelFormContext();
 
   return (
     <>
