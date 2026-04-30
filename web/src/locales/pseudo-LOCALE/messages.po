@@ -492,7 +492,7 @@ msgstr ""
 #~ msgid "All Genres"
 #~ msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:158
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:178
 msgid "All linked slots show the same episode, advancing only after all have played."
 msgstr ""
 
@@ -774,7 +774,7 @@ msgstr ""
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:512
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:362
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:156
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:191
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:214
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:301
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:189
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:114
@@ -978,7 +978,7 @@ msgstr ""
 msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:148
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:168
 msgid "Continue"
 msgstr ""
 
@@ -1259,7 +1259,7 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
-#: src/hooks/useVersion.tsx:70
+#: src/hooks/useVersion.tsx:77
 msgid "Dismiss"
 msgstr ""
 
@@ -1743,8 +1743,8 @@ msgstr ""
 
 #: src/components/search/SearchGroupNode.tsx:73
 #: src/components/search/SearchGroupNode.tsx:79
-#: src/components/search/SearchValueNode.tsx:271
-#: src/components/search/SearchValueNode.tsx:273
+#: src/components/search/SearchValueNode.tsx:268
+#: src/components/search/SearchValueNode.tsx:270
 msgid "Field"
 msgstr ""
 
@@ -2074,12 +2074,12 @@ msgstr ""
 msgid "Jellyfin"
 msgstr ""
 
-#: src/components/search/SearchInput.tsx:188
+#: src/components/search/SearchInput.tsx:232
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:169
 msgid "Keywords"
 msgstr ""
 
-#: src/components/search/SearchInput.tsx:223
+#: src/components/search/SearchInput.tsx:267
 msgid "Keywords perform full text search across all (or configured) fields"
 msgstr ""
 
@@ -2171,16 +2171,16 @@ msgstr ""
 msgid "Linear"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:137
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:143
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:157
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:163
 msgid "Link Mode"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:206
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:229
 msgid "Link to existing slot"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:163
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:183
 msgid "Linked slots advance episode progression together sequentially."
 msgstr ""
 
@@ -2653,8 +2653,8 @@ msgstr ""
 #~ msgid "Operation"
 #~ msgstr ""
 
-#: src/components/search/SearchValueNode.tsx:248
-#: src/components/search/SearchValueNode.tsx:300
+#: src/components/search/SearchValueNode.tsx:245
+#: src/components/search/SearchValueNode.tsx:297
 msgid "Operator"
 msgstr ""
 
@@ -2942,7 +2942,7 @@ msgstr ""
 msgid "Redirect to Channel {0}"
 msgstr ""
 
-#: src/hooks/useVersion.tsx:63
+#: src/hooks/useVersion.tsx:70
 msgid "Refresh"
 msgstr ""
 
@@ -3057,7 +3057,7 @@ msgstr ""
 msgid "Replicate..."
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:151
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:171
 msgid "Rerun"
 msgstr ""
 
@@ -3118,7 +3118,7 @@ msgstr ""
 msgid "Restrict Hours"
 msgstr ""
 
-#: src/components/search/SearchInput.tsx:204
+#: src/components/search/SearchInput.tsx:248
 msgid "Restrict search fields"
 msgstr ""
 
@@ -3191,7 +3191,7 @@ msgstr ""
 msgid "Save as new collection…"
 msgstr ""
 
-#: src/components/search/SearchInput.tsx:252
+#: src/components/search/SearchInput.tsx:296
 msgid "Save as Smart Collection"
 msgstr ""
 
@@ -3253,7 +3253,7 @@ msgstr ""
 msgid "Seasons"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:185
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:208
 msgid "Select a slot to link to"
 msgstr ""
 
@@ -3624,7 +3624,7 @@ msgstr ""
 msgid "The image will be rendered at its actual size without any scaling applied."
 msgstr ""
 
-#: src/hooks/useVersion.tsx:37
+#: src/hooks/useVersion.tsx:44
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 msgstr ""
 
@@ -3721,7 +3721,7 @@ msgstr ""
 
 #. placeholder {0}: groupPeers.length
 #. placeholder {1}: groupPeers.length
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:130
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:150
 msgid "This slot is linked with {0} other {1, plural, one {slot} other {slots}}. Content fields are shared across the group."
 msgstr ""
 
@@ -3885,7 +3885,7 @@ msgstr ""
 msgid "Unit"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:126
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:146
 msgid "Unlink"
 msgstr ""
 
@@ -3941,7 +3941,7 @@ msgstr ""
 msgid "Value"
 msgstr ""
 
-#: src/hooks/useVersion.tsx:35
+#: src/hooks/useVersion.tsx:41
 msgid "Version Mismatch!"
 msgstr ""
 
@@ -4017,7 +4017,7 @@ msgstr ""
 
 #. placeholder {0}: trimStart(__TUNARR_VERSION__, 'v')
 #. placeholder {1}: trimStart(query.data?.tunarr, 'v')
-#: src/hooks/useVersion.tsx:43
+#: src/hooks/useVersion.tsx:50
 msgid "Web version = {0}, Server version = {1}"
 msgstr ""
 

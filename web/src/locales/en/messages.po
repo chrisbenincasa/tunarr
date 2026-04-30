@@ -492,7 +492,7 @@ msgstr "All channels assigned to this config will be set to use the default conf
 #~ msgid "All Genres"
 #~ msgstr "All Genres"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:158
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:178
 msgid "All linked slots show the same episode, advancing only after all have played."
 msgstr "All linked slots show the same episode, advancing only after all have played."
 
@@ -774,7 +774,7 @@ msgstr "Calculating Slots..."
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:512
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:362
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:156
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:191
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:214
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:301
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:189
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:114
@@ -978,7 +978,7 @@ msgstr "Consolidate"
 msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
 msgstr "Consolidates contiguous match flex and redirect blocks into singular spans"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:148
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:168
 msgid "Continue"
 msgstr "Continue"
 
@@ -1259,7 +1259,7 @@ msgstr "Disable Watermarks"
 msgid "Disabled"
 msgstr "Disabled"
 
-#: src/hooks/useVersion.tsx:70
+#: src/hooks/useVersion.tsx:77
 msgid "Dismiss"
 msgstr "Dismiss"
 
@@ -1743,8 +1743,8 @@ msgstr "FFprobe version 6.0+ recommended. Check your current version in the side
 
 #: src/components/search/SearchGroupNode.tsx:73
 #: src/components/search/SearchGroupNode.tsx:79
-#: src/components/search/SearchValueNode.tsx:271
-#: src/components/search/SearchValueNode.tsx:273
+#: src/components/search/SearchValueNode.tsx:268
+#: src/components/search/SearchValueNode.tsx:270
 msgid "Field"
 msgstr "Field"
 
@@ -2074,12 +2074,12 @@ msgstr "Items from any filler list will not be chosen more frequently than this 
 msgid "Jellyfin"
 msgstr "Jellyfin"
 
-#: src/components/search/SearchInput.tsx:188
+#: src/components/search/SearchInput.tsx:232
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:169
 msgid "Keywords"
 msgstr "Keywords"
 
-#: src/components/search/SearchInput.tsx:223
+#: src/components/search/SearchInput.tsx:267
 msgid "Keywords perform full text search across all (or configured) fields"
 msgstr "Keywords perform full text search across all (or configured) fields"
 
@@ -2171,16 +2171,16 @@ msgstr "Like Random Shuffle, but tries to preserve the sequence of episodes for 
 msgid "Linear"
 msgstr "Linear"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:137
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:143
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:157
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:163
 msgid "Link Mode"
 msgstr "Link Mode"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:206
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:229
 msgid "Link to existing slot"
 msgstr "Link to existing slot"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:163
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:183
 msgid "Linked slots advance episode progression together sequentially."
 msgstr "Linked slots advance episode progression together sequentially."
 
@@ -2653,8 +2653,8 @@ msgstr "Open in {0}"
 #~ msgid "Operation"
 #~ msgstr "Operation"
 
-#: src/components/search/SearchValueNode.tsx:248
-#: src/components/search/SearchValueNode.tsx:300
+#: src/components/search/SearchValueNode.tsx:245
+#: src/components/search/SearchValueNode.tsx:297
 msgid "Operator"
 msgstr "Operator"
 
@@ -2944,7 +2944,7 @@ msgstr "Redirect to \"{0}\""
 msgid "Redirect to Channel {0}"
 msgstr "Redirect to Channel {0}"
 
-#: src/hooks/useVersion.tsx:63
+#: src/hooks/useVersion.tsx:70
 msgid "Refresh"
 msgstr "Refresh"
 
@@ -3059,7 +3059,7 @@ msgstr "Replicate Programs"
 msgid "Replicate..."
 msgstr "Replicate..."
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:151
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:171
 msgid "Rerun"
 msgstr "Rerun"
 
@@ -3120,7 +3120,7 @@ msgstr "Restore Default Settings"
 msgid "Restrict Hours"
 msgstr "Restrict Hours"
 
-#: src/components/search/SearchInput.tsx:204
+#: src/components/search/SearchInput.tsx:248
 msgid "Restrict search fields"
 msgstr "Restrict search fields"
 
@@ -3193,7 +3193,7 @@ msgstr "Save"
 msgid "Save as new collection…"
 msgstr "Save as new collection…"
 
-#: src/components/search/SearchInput.tsx:252
+#: src/components/search/SearchInput.tsx:296
 msgid "Save as Smart Collection"
 msgstr "Save as Smart Collection"
 
@@ -3255,7 +3255,7 @@ msgstr "Search…"
 msgid "Seasons"
 msgstr "Seasons"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:185
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:208
 msgid "Select a slot to link to"
 msgstr "Select a slot to link to"
 
@@ -3626,7 +3626,7 @@ msgstr "The End."
 msgid "The image will be rendered at its actual size without any scaling applied."
 msgstr "The image will be rendered at its actual size without any scaling applied."
 
-#: src/hooks/useVersion.tsx:37
+#: src/hooks/useVersion.tsx:44
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 msgstr "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 
@@ -3723,7 +3723,7 @@ msgstr "This show is marked as missing in the database."
 
 #. placeholder {0}: groupPeers.length
 #. placeholder {1}: groupPeers.length
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:130
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:150
 msgid "This slot is linked with {0} other {1, plural, one {slot} other {slots}}. Content fields are shared across the group."
 msgstr "This slot is linked with {0} other {1, plural, one {slot} other {slots}}. Content fields are shared across the group."
 
@@ -3887,7 +3887,7 @@ msgstr "Type"
 msgid "Unit"
 msgstr "Unit"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:126
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:146
 msgid "Unlink"
 msgstr "Unlink"
 
@@ -3943,7 +3943,7 @@ msgstr "VAAPI Capabilities"
 msgid "Value"
 msgstr "Value"
 
-#: src/hooks/useVersion.tsx:35
+#: src/hooks/useVersion.tsx:41
 msgid "Version Mismatch!"
 msgstr "Version Mismatch!"
 
@@ -4019,7 +4019,7 @@ msgstr "Web Settings"
 
 #. placeholder {0}: trimStart(__TUNARR_VERSION__, 'v')
 #. placeholder {1}: trimStart(query.data?.tunarr, 'v')
-#: src/hooks/useVersion.tsx:43
+#: src/hooks/useVersion.tsx:50
 msgid "Web version = {0}, Server version = {1}"
 msgstr "Web version = {0}, Server version = {1}"
 
