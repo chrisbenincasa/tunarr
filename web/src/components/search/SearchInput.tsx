@@ -20,7 +20,8 @@ import { useToggle } from '@uidotdev/usehooks';
 import { difference, isEmpty, isEqual } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
+import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
+import { match, P } from 'ts-pattern';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
 import { setSearchRequest } from '../../store/programmingSelector/actions.ts';
 import type { Maybe, Nullable } from '../../types/util.ts';
@@ -99,9 +100,10 @@ export const SearchInput = ({
 
   const formState = formMethods.formState;
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const searchForm = formMethods.watch();
-  const query = searchForm.filter;
+  const [filter, keywords] = useWatch({
+    control: formMethods.control,
+    name: ['filter', 'keywords'],
+  });
 
   // Some insane stuff we have to do to get reasonable UX with react-hook-form
   useEffect(() => {
@@ -119,7 +121,7 @@ export const SearchInput = ({
     formMethods,
     initialKeywords,
     initialSearchFilter,
-    query,
+    filter,
     savedInitialSearch,
     savedKeywords,
   ]);
@@ -183,11 +185,14 @@ export const SearchInput = ({
   );
 
   const initialQuery = useMemo((): InitialQuery => {
-    let parsedFilter =
-      searchForm.filter.type === 'structured'
-        ? searchForm.filter.filter
-        : (parseToSearchFilterOrNull(searchForm.filter.expression) ??
-          undefined);
+    let parsedFilter = match(filter)
+      .returnType<Maybe<SearchFilter>>()
+      .with({ type: 'structured' }, (f) => f.filter)
+      .with(
+        { type: 'text', expression: P.nonNullable },
+        ({ expression }) => parseToSearchFilterOrNull(expression) ?? undefined,
+      )
+      .otherwise(() => undefined);
     if (mediaSourceId || libraryId) {
       const newChildren: SearchFilter[] = [];
       if (parsedFilter) {
@@ -207,16 +212,10 @@ export const SearchInput = ({
     }
 
     return {
-      keywords: searchForm.keywords,
+      keywords: keywords,
       filter: parsedFilter,
     };
-  }, [
-    parseToSearchFilterOrNull,
-    searchForm.filter,
-    searchForm.keywords,
-    mediaSourceId,
-    libraryId,
-  ]);
+  }, [parseToSearchFilterOrNull, filter, keywords, mediaSourceId, libraryId]);
 
   return (
     <Box
@@ -296,7 +295,11 @@ export const SearchInput = ({
               <Box sx={{ marginLeft: 'auto' }}>
                 <Tooltip title={t`Save as Smart Collection`}>
                   <IconButton
-                    onClick={() => toggleSmartCollectionModal(true)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleSmartCollectionModal(true);
+                    }}
                     disabled={!!formState.errors.filter}
                   >
                     <Save />
