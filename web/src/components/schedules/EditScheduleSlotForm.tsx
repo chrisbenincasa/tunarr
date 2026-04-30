@@ -20,6 +20,7 @@ import type { MaterializedShowScheduleSlot } from '@tunarr/types/api';
 import {
   AnchorModeSchema,
   FillModes,
+  infiniteSlotIsLinkable,
   type MaterializedCustomShowScheduleSlot,
   type MaterializedScheduleSlot,
   type Schedule,
@@ -52,6 +53,7 @@ import { ShowSearchSlotProgrammingForm } from '../slot_scheduler/ShowSearchSlotP
 import { SlotFillerDialogPanel } from '../slot_scheduler/SlotFillerDialogPanel.tsx';
 import { TabPanel } from '../TabPanel.tsx';
 import { NumericFormControllerText } from '../util/TypedController.tsx';
+import { InfiniteSlotLinkingControl } from './InfiniteSlotLinkingControl.tsx';
 
 type Props = {
   schedule: Schedule;
@@ -312,6 +314,7 @@ export const EditScheduleSlotForm = ({ schedule, slot, isNew }: Props) => {
         >
           <Tab label="Programming" />
           <Tab label="Filler" disabled={fillerLists?.length === 0} />
+          {infiniteSlotIsLinkable(slot) && <Tab label="Linking" />}
         </Tabs>
         <TabPanel value={tab} index={0}>
           <Stack spacing={2}>
@@ -603,6 +606,11 @@ export const EditScheduleSlotForm = ({ schedule, slot, isNew }: Props) => {
         <TabPanel value={tab} index={1}>
           <SlotFillerDialogPanel />
         </TabPanel>
+        {infiniteSlotIsLinkable(slot) && (
+          <TabPanel value={tab} index={2}>
+            <InfiniteSlotLinkingControl schedule={schedule} />
+          </TabPanel>
+        )}
         <Stack spacing={2} direction="row" justifyContent="right">
           {(isDirty || (isDirty && !isSubmitting)) && (
             <Button

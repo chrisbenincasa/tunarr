@@ -29,6 +29,7 @@ import { MaterializeScheduleGenerationResult } from '../commands/scheduling/Mate
 import { container } from '../container.ts';
 import { InfiniteScheduleGenerator } from '../services/scheduling/InfiniteScheduleGenerator.ts';
 import { groupByUniq } from '../util/index.ts';
+import { validateInfiniteSlotGroups } from '../services/scheduling/infiniteSlotGroupValidator.ts';
 import {
   generatedScheduleItemToDto,
   scheduleDaoToDto,
@@ -116,10 +117,21 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         body: CreateInfiniteScheduleRequestSchema,
         response: {
           201: ScheduleSchema,
+          400: BaseErrorSchema,
         },
       },
     },
     async (req, res) => {
+      if (req.body.slots && req.body.slots.length > 0) {
+        const { valid, errors, sanitizedSlots } = validateInfiniteSlotGroups(
+          req.body.slots,
+        );
+        if (!valid) {
+          return res.status(400).send({ message: errors.join('; ') });
+        }
+        req.body.slots = sanitizedSlots;
+      }
+
       const result = await req.serverCtx.infiniteScheduleDB.createSchedule(
         req.body,
       );
@@ -137,11 +149,22 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
         body: UpdateInfiniteScheduleRequestSchema,
         response: {
           200: ScheduleSchema,
+          400: BaseErrorSchema,
           404: z.void(),
         },
       },
     },
     async (req, res) => {
+      if (req.body.slots && req.body.slots.length > 0) {
+        const { valid, errors, sanitizedSlots } = validateInfiniteSlotGroups(
+          req.body.slots,
+        );
+        if (!valid) {
+          return res.status(400).send({ message: errors.join('; ') });
+        }
+        req.body.slots = sanitizedSlots;
+      }
+
       const result = await req.serverCtx.infiniteScheduleDB.updateSchedule(
         req.params.id,
         req.body,
@@ -548,6 +571,9 @@ export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
           padMs: slot.padMs ?? null,
           padToMultiple: slot.padToMultiple ?? null,
           fillerConfig: slot.fillerConfig ?? null,
+          iterationGroup:
+            'iterationGroup' in slot ? (slot.iterationGroup ?? null) : null,
+          linkMode: 'linkMode' in slot ? (slot.linkMode ?? null) : null,
           createdAt: new Date(),
           updatedAt: new Date(),
           state: null,

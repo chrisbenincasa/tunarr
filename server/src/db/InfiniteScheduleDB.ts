@@ -389,6 +389,9 @@ export class InfiniteScheduleDB {
       padMs: slot.padMs ?? null,
       padToMultiple: slot.padToMultiple ?? null,
       fillerConfig: slot.fillerConfig ?? null,
+      iterationGroup:
+        'iterationGroup' in slot ? (slot.iterationGroup ?? null) : null,
+      linkMode: 'linkMode' in slot ? (slot.linkMode ?? null) : null,
       createdAt: now.toDate(),
       updatedAt: now.toDate(),
     }));
@@ -434,6 +437,9 @@ export class InfiniteScheduleDB {
         padMs: slot.padMs ?? null,
         padToMultiple: slot.padToMultiple ?? null,
         fillerConfig: slot.fillerConfig ?? null,
+        iterationGroup:
+          'iterationGroup' in slot ? (slot.iterationGroup ?? null) : null,
+        linkMode: 'linkMode' in slot ? (slot.linkMode ?? null) : null,
         createdAt: now.toDate(),
         updatedAt: now.toDate(),
       } satisfies NewInfiniteScheduleSlot;
@@ -473,6 +479,9 @@ export class InfiniteScheduleDB {
         padMs: slot.padMs ?? null,
         padToMultiple: slot.padToMultiple ?? null,
         fillerConfig: slot.fillerConfig ?? null,
+        iterationGroup:
+          'iterationGroup' in slot ? (slot.iterationGroup ?? null) : null,
+        linkMode: 'linkMode' in slot ? (slot.linkMode ?? null) : null,
         createdAt: now.toDate(),
         updatedAt: now.toDate(),
       };
@@ -508,11 +517,40 @@ export class InfiniteScheduleDB {
       .where(eq(InfiniteScheduleSlot.scheduleUuid, scheduleUuid));
 
     // Create new slots
+    let result: InfiniteScheduleSlot[] = [];
     if (slots.length > 0) {
-      return await this.createSlots(scheduleUuid, slots);
+      result = await this.createSlots(scheduleUuid, slots);
     }
 
-    return [];
+    await this.dissolveOrphanedGroups(scheduleUuid);
+    return result;
+  }
+
+  /**
+   * Auto-dissolve iteration groups that have only 1 remaining member.
+   */
+  async dissolveOrphanedGroups(scheduleUuid: string): Promise<void> {
+    const slots = await this.drizzle.query.infiniteScheduleSlot.findMany({
+      where: (fields, { eq }) => eq(fields.scheduleUuid, scheduleUuid),
+    });
+
+    const groupCounts = new Map<string, string[]>();
+    for (const slot of slots) {
+      if (slot.iterationGroup) {
+        const members = groupCounts.get(slot.iterationGroup) ?? [];
+        members.push(slot.uuid);
+        groupCounts.set(slot.iterationGroup, members);
+      }
+    }
+
+    for (const [, members] of groupCounts) {
+      if (members.length === 1) {
+        await this.drizzle
+          .update(InfiniteScheduleSlot)
+          .set({ iterationGroup: null, linkMode: null })
+          .where(eq(InfiniteScheduleSlot.uuid, members[0]!));
+      }
+    }
   }
 
   /**

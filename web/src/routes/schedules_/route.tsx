@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/schedules_')({
+export const Route = createFileRoute('/schedules')({
   component: RouteComponent,
   head() {
     return {

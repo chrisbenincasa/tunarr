@@ -4,7 +4,7 @@ import { isAxiosError } from 'axios';
 import { getScheduleByIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 import { EditSchedulePage } from '../../../pages/schedules/EditSchedulePage.tsx';
 
-export const Route = createFileRoute('/schedules_/$scheduleId/')({
+export const Route = createFileRoute('/schedules/$scheduleId/')({
   loader: async ({ context, params }) => {
     try {
       return await context.queryClient.ensureQueryData({

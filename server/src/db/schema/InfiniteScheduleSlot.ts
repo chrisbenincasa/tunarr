@@ -114,6 +114,10 @@ export const InfiniteScheduleSlot = sqliteTable(
     // Filler presets
     fillerConfig: text({ mode: 'json' }).$type<InfiniteSlotFillerConfig>(),
 
+    // Slot linking
+    iterationGroup: text(),
+    linkMode: text({ enum: ['continue', 'rerun'] }),
+
     createdAt: integer({ mode: 'timestamp_ms' }),
     updatedAt: integer({ mode: 'timestamp_ms' }),
   },

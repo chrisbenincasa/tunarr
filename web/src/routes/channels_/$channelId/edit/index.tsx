@@ -13,7 +13,7 @@ const editChannelParamsSchema = z.object({
     .catch(undefined),
 });
 
-export const Route = createFileRoute('/channels_/$channelId/edit/')({
+export const Route = createFileRoute('/channels/$channelId/edit/')({
   validateSearch: (search) => editChannelParamsSchema.parse(search),
   loader: async ({ params, context }) => {
     const channel = await context.queryClient.ensureQueryData(

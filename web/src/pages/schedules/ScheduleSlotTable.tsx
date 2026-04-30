@@ -1,10 +1,11 @@
 import { Edit } from '@mui/icons-material';
-import { Box, Stack } from '@mui/material';
+import { Box, Chip, Stack } from '@mui/material';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
-import type {
-  MaterializedSchedule2,
-  MaterializedScheduleSlot,
-  Schedule,
+import {
+  infiniteSlotIsLinkable,
+  type MaterializedSchedule2,
+  type MaterializedScheduleSlot,
+  type Schedule,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { capitalize, identity } from 'lodash-es';
@@ -22,6 +23,7 @@ import {
   RouterButtonLink,
   RouterIconButtonLink,
 } from '../../components/base/RouterButtonLink.tsx';
+import { iterationGroupColor } from '../../components/schedules/InfiniteSlotLinkingControl.tsx';
 
 type Props = {
   schedule: MaterializedSchedule2;
@@ -54,7 +56,8 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
         id: 'programming',
         enableEditing: true,
         Cell: ({ cell }) => {
-          return match(cell.getValue<MaterializedScheduleSlot>())
+          const slot = cell.getValue<MaterializedScheduleSlot>();
+          const label = match(slot)
             .with({ type: 'show' }, (show) => show.show?.title)
             .with({ type: 'custom-show' }, (cs) => cs.customShow?.name)
             .with({ type: 'flex' }, () => 'Flex')
@@ -65,6 +68,39 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
             .with({ type: 'filler' }, () => 'Filler')
             .with({ type: 'redirect' }, (r) => r.channel?.name)
             .exhaustive();
+
+          const iterationGroup = infiniteSlotIsLinkable(slot)
+            ? slot.iterationGroup
+            : undefined;
+          const linkMode = infiniteSlotIsLinkable(slot)
+            ? (slot.linkMode ?? 'continue')
+            : undefined;
+
+          const groupSlotCount = iterationGroup
+            ? schedule.slots.filter(
+                (s) =>
+                  infiniteSlotIsLinkable(s) &&
+                  s.iterationGroup === iterationGroup,
+              ).length
+            : 0;
+
+          return (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <span>{label}</span>
+              {iterationGroup && (
+                <Chip
+                  label={`${capitalize(linkMode ?? 'continue')} (${groupSlotCount})`}
+                  size="small"
+                  sx={{
+                    backgroundColor: iterationGroupColor(iterationGroup),
+                    color: '#fff',
+                    fontSize: '0.7rem',
+                    height: 20,
+                  }}
+                />
+              )}
+            </Stack>
+          );
         },
         grow: true,
         size: 350,
@@ -113,7 +149,7 @@ export const ScheduleSlotTable = ({ schedule }: Props) => {
         },
       },
     ];
-  }, []);
+  }, [schedule.slots]);
 
   const table = useMaterialReactTable({
     data: slotArray.fields,

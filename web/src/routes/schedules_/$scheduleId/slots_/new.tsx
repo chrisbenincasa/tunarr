@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { loadSchedule } from '../../../../helpers/routeLoaders.ts';
 import { EditScheduleSlot } from '../../../../pages/schedules/EditScheduleSlot.tsx';
 
-export const Route = createFileRoute('/schedules_/$scheduleId/slots_/new')({
+export const Route = createFileRoute('/schedules/$scheduleId/slots/new')({
   loader: ({ context, params }) => loadSchedule(context)(params.scheduleId),
   head: () => ({
     meta: [{ title: 'New Slot' }],

@@ -6039,6 +6039,8 @@ export type CreateScheduleForChannelData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -6079,6 +6081,8 @@ export type CreateScheduleForChannelData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -6221,6 +6225,8 @@ export type CreateScheduleForChannelData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
     };
     path: {
@@ -6307,6 +6313,8 @@ export type CreateScheduleForChannelResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -6347,6 +6355,8 @@ export type CreateScheduleForChannelResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -6489,6 +6499,8 @@ export type CreateScheduleForChannelResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
         createdAt?: number | null;
         updatedAt?: number | null;
@@ -12467,6 +12479,8 @@ export type GetSchedulesResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -12507,6 +12521,8 @@ export type GetSchedulesResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -12649,6 +12665,8 @@ export type GetSchedulesResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
         createdAt?: number | null;
         updatedAt?: number | null;
@@ -12707,6 +12725,8 @@ export type PostApiSchedulesData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -12747,6 +12767,8 @@ export type PostApiSchedulesData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -12889,12 +12911,25 @@ export type PostApiSchedulesData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
     };
     path?: never;
     query?: never;
     url: '/api/schedules';
 };
+
+export type PostApiSchedulesErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        message: string;
+    };
+};
+
+export type PostApiSchedulesError = PostApiSchedulesErrors[keyof PostApiSchedulesErrors];
 
 export type PostApiSchedulesResponses = {
     /**
@@ -12950,6 +12985,8 @@ export type PostApiSchedulesResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -12990,6 +13027,8 @@ export type PostApiSchedulesResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -13132,6 +13171,8 @@ export type PostApiSchedulesResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
         createdAt?: number | null;
         updatedAt?: number | null;
@@ -13388,6 +13429,8 @@ export type GetScheduleByIdResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
             customShow: {
                 id: string;
                 name: string;
@@ -13474,6 +13517,8 @@ export type GetScheduleByIdResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
             show: Show | null;
             /**
              * A show that existed in the DB at schedule time, but no longer exists.
@@ -13521,6 +13566,8 @@ export type GetScheduleByIdResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
             smartCollection: {
                 uuid: string;
                 name: string;
@@ -13585,6 +13632,8 @@ export type UpdateScheduleByIdData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -13625,6 +13674,8 @@ export type UpdateScheduleByIdData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -13767,6 +13818,8 @@ export type UpdateScheduleByIdData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
     };
     path: {
@@ -13780,8 +13833,16 @@ export type UpdateScheduleByIdErrors = {
     /**
      * Default Response
      */
+    400: {
+        message: string;
+    };
+    /**
+     * Default Response
+     */
     404: unknown;
 };
+
+export type UpdateScheduleByIdError = UpdateScheduleByIdErrors[keyof UpdateScheduleByIdErrors];
 
 export type UpdateScheduleByIdResponses = {
     /**
@@ -13837,6 +13898,8 @@ export type UpdateScheduleByIdResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -13877,6 +13940,8 @@ export type UpdateScheduleByIdResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -14019,6 +14084,8 @@ export type UpdateScheduleByIdResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
         createdAt?: number | null;
         updatedAt?: number | null;
@@ -14087,6 +14154,8 @@ export type AddSlotToScheduleData = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     } | {
         uuid?: string;
         slotIndex: number;
@@ -14127,6 +14196,8 @@ export type AddSlotToScheduleData = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     } | {
         uuid?: string;
         slotIndex: number;
@@ -14269,6 +14340,8 @@ export type AddSlotToScheduleData = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     };
     path: {
         id: string;
@@ -14321,6 +14394,8 @@ export type AddSlotToScheduleResponses = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     } | {
         uuid?: string;
         slotIndex: number;
@@ -14361,6 +14436,8 @@ export type AddSlotToScheduleResponses = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     } | {
         uuid?: string;
         slotIndex: number;
@@ -14503,6 +14580,8 @@ export type AddSlotToScheduleResponses = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     };
 };
 
@@ -14549,6 +14628,8 @@ export type UpdateScheduleSlotData = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     } | {
         uuid?: string;
         slotIndex: number;
@@ -14589,6 +14670,8 @@ export type UpdateScheduleSlotData = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     } | {
         uuid?: string;
         slotIndex: number;
@@ -14731,6 +14814,8 @@ export type UpdateScheduleSlotData = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     };
     path: {
         id: string;
@@ -14801,6 +14886,8 @@ export type UpdateScheduleSlotResponses = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     } | {
         uuid?: string;
         slotIndex: number;
@@ -14841,6 +14928,8 @@ export type UpdateScheduleSlotResponses = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     } | {
         uuid?: string;
         slotIndex: number;
@@ -14983,6 +15072,8 @@ export type UpdateScheduleSlotResponses = {
             seasonFilter?: Array<number> | null;
             flexPreference?: ('distribute' | 'end') | null;
         };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
     };
 };
 
@@ -15177,6 +15268,8 @@ export type GetChannelScheduleResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -15217,6 +15310,8 @@ export type GetChannelScheduleResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -15359,6 +15454,8 @@ export type GetChannelScheduleResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
         createdAt?: number | null;
         updatedAt?: number | null;
@@ -15417,6 +15514,8 @@ export type UpdateInfiniteScheduleData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -15457,6 +15556,8 @@ export type UpdateInfiniteScheduleData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -15599,6 +15700,8 @@ export type UpdateInfiniteScheduleData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
     };
     path: {
@@ -15673,6 +15776,8 @@ export type UpdateInfiniteScheduleResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -15713,6 +15818,8 @@ export type UpdateInfiniteScheduleResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -15855,6 +15962,8 @@ export type UpdateInfiniteScheduleResponses = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
         createdAt?: number | null;
         updatedAt?: number | null;
@@ -15909,6 +16018,8 @@ export type PreviewInfiniteScheduleData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -15949,6 +16060,8 @@ export type PreviewInfiniteScheduleData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         } | {
             uuid?: string;
             slotIndex: number;
@@ -16091,6 +16204,8 @@ export type PreviewInfiniteScheduleData = {
                 seasonFilter?: Array<number> | null;
                 flexPreference?: ('distribute' | 'end') | null;
             };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
         }>;
         fromTimeMs: number;
         toTimeMs: number;

@@ -116,16 +116,26 @@ export const BaseInfiniteSlotSchema = z.object({
 
 export type BaseScheduleSlot = z.infer<typeof BaseInfiniteSlotSchema>;
 
+export const LinkModeSchema = z.enum(['continue', 'rerun']);
+export type LinkMode = z.infer<typeof LinkModeSchema>;
+
+export const LinkableInfiniteSlot = z.object({
+  iterationGroup: z.uuid().optional(),
+  linkMode: LinkModeSchema.default('continue').optional(),
+});
+
 export const ShowScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('show'),
   showId: z.uuid(),
   slotConfig: InfiniteSlotConfigSchema.optional(),
+  ...LinkableInfiniteSlot.shape,
 });
 
 export const CustomShowScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('custom-show'),
   customShowId: z.uuid(),
   slotConfig: InfiniteSlotConfigSchema.optional(),
+  ...LinkableInfiniteSlot.shape,
 });
 
 export const FillerScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
@@ -147,6 +157,7 @@ export const SmartCollectionScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('smart-collection'),
   smartCollectionId: z.uuid(),
   slotConfig: InfiniteSlotConfigSchema.optional(),
+  ...LinkableInfiniteSlot.shape,
 });
 
 export const ScheduleSlotSchema = z.discriminatedUnion('type', [
@@ -159,6 +170,21 @@ export const ScheduleSlotSchema = z.discriminatedUnion('type', [
 ]);
 
 export type ScheduleSlot = z.infer<typeof ScheduleSlotSchema>;
+
+export type LinkableInfiniteSlotType = Extract<
+  ScheduleSlot,
+  { type: 'show' | 'custom-show' | 'smart-collection' }
+>;
+
+export function infiniteSlotIsLinkable(
+  slot: ScheduleSlot,
+): slot is LinkableInfiniteSlotType {
+  return (
+    slot.type === 'show' ||
+    slot.type === 'custom-show' ||
+    slot.type === 'smart-collection'
+  );
+}
 
 export const MaterializedRedirectScheduleSlotSchema = z.object({
   ...RedirectScheduleSlotSchema.shape,
@@ -435,6 +461,8 @@ export const UpdateInfiniteSlotRequestSchema = z.object({
   padToMultiple: z.number().int().positive().nullable().optional(),
   fillerConfig: InfiniteSlotFillerConfigSchema.nullable().optional(),
   order: SlotProgrammingFillerOrder.optional(), // For filler slots
+  iterationGroup: z.uuid().nullable().optional(),
+  linkMode: LinkModeSchema.nullable().optional(),
 });
 
 export type UpdateInfiniteSlotRequest = z.infer<

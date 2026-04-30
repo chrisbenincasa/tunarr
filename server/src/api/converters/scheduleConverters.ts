@@ -33,6 +33,8 @@ export function slotDaoToDto(slot: InfiniteScheduleSlot): ScheduleSlot {
       type: 'show',
       showId: slot.showId,
       slotConfig: nullToUndefined(slot.slotConfig),
+      iterationGroup: nullToUndefined(slot.iterationGroup),
+      linkMode: nullToUndefined(slot.linkMode),
     }))
     .with({ fillerListId: P.nonNullable, slotType: 'filler' }, (slot) => ({
       ...base,
@@ -47,6 +49,8 @@ export function slotDaoToDto(slot: InfiniteScheduleSlot): ScheduleSlot {
         type: 'smart-collection',
         smartCollectionId: slot.smartCollectionId,
         slotConfig: nullToUndefined(slot.slotConfig),
+        iterationGroup: nullToUndefined(slot.iterationGroup),
+        linkMode: nullToUndefined(slot.linkMode),
       }),
     )
     .with({ customShowId: P.nonNullable, slotType: 'custom-show' }, (slot) => ({
@@ -54,6 +58,8 @@ export function slotDaoToDto(slot: InfiniteScheduleSlot): ScheduleSlot {
       type: 'custom-show',
       customShowId: slot.customShowId,
       slotConfig: nullToUndefined(slot.slotConfig),
+      iterationGroup: nullToUndefined(slot.iterationGroup),
+      linkMode: nullToUndefined(slot.linkMode),
     }))
     .with({ slotType: 'flex' }, () => ({
       ...base,

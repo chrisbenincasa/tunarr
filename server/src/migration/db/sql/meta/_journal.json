@@ -316,6 +316,13 @@
       "when": 1776738933017,
       "tag": "0044_sour_the_initiative",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1777483989921,
+      "tag": "0045_add_slot_linking",
+      "breakpoints": true
     }
   ]
 }

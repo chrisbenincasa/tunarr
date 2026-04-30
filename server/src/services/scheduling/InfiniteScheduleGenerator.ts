@@ -51,6 +51,23 @@ interface ScheduleStateUpdate {
   slotSelectionUseCount: number;
 }
 
+function infiniteSlotContentKey(slot: InfiniteScheduleSlot): string {
+  switch (slot.slotType) {
+    case 'show':
+      return `show.${slot.showId}`;
+    case 'custom-show':
+      return `custom-show.${slot.customShowId}`;
+    case 'smart-collection':
+      return `smart-collection.${slot.smartCollectionId}`;
+    case 'filler':
+      return `filler.${slot.fillerListId}`;
+    case 'redirect':
+      return `redirect.${slot.redirectChannelId}`;
+    case 'flex':
+      return 'flex';
+  }
+}
+
 type SlotWithState = InfiniteScheduleSlot & {
   state: InfiniteScheduleSlotState | null;
 };
@@ -88,6 +105,52 @@ interface SlotIterator {
   current(): ProgramWithRelationsOrm | null;
   next(): void;
   getState(): IteratorStateUpdate;
+}
+
+class RerunSlotIterator implements SlotIterator {
+  private consumedCount = 0;
+
+  constructor(
+    private inner: SlotIterator,
+    private groupSize: number,
+  ) {}
+
+  get position() {
+    return this.inner.position;
+  }
+  set position(v: number) {
+    this.inner.position = v;
+  }
+
+  get programs() {
+    return this.inner.programs;
+  }
+  set programs(v: ProgramWithRelationsOrm[]) {
+    this.inner.programs = v;
+  }
+
+  get shuffleOrder() {
+    return this.inner.shuffleOrder;
+  }
+  set shuffleOrder(v: string[] | null) {
+    this.inner.shuffleOrder = v;
+  }
+
+  current(): ProgramWithRelationsOrm | null {
+    return this.inner.current();
+  }
+
+  next(): void {
+    this.consumedCount++;
+    if (this.consumedCount >= this.groupSize) {
+      this.inner.next();
+      this.consumedCount = 0;
+    }
+  }
+
+  getState(): IteratorStateUpdate {
+    return this.inner.getState();
+  }
 }
 
 @injectable()
@@ -203,9 +266,51 @@ export class InfiniteScheduleGenerator {
   ): Promise<SlotPrograms[]> {
     const results: SlotPrograms[] = [];
 
+    // Count rerun group members for RerunSlotIterator
+    const rerunGroupCounts = new Map<string, number>();
+    for (const slot of schedule.slots) {
+      if (slot.iterationGroup && slot.linkMode === 'rerun') {
+        rerunGroupCounts.set(
+          slot.iterationGroup,
+          (rerunGroupCounts.get(slot.iterationGroup) ?? 0) + 1,
+        );
+      }
+    }
+
+    const groupIterators = new Map<string, SlotIterator>();
+
     for (const slot of schedule.slots) {
       const programs = await this.getProgramsForSlot(slot);
-      const iterator = this.createIterator(slot, programs);
+
+      let iterator: SlotIterator;
+      const group = slot.iterationGroup;
+      const mode = slot.linkMode ?? 'continue';
+
+      if (group) {
+        if (mode === 'rerun') {
+          const existing = groupIterators.get(group);
+          if (existing) {
+            iterator = existing;
+          } else {
+            const baseIterator = this.createIterator(slot, programs);
+            const groupSize = rerunGroupCounts.get(group) ?? 1;
+            iterator = new RerunSlotIterator(baseIterator, groupSize);
+            groupIterators.set(group, iterator);
+          }
+        } else {
+          const contentKey = infiniteSlotContentKey(slot);
+          const compositeKey = `${group}::${contentKey}`;
+          const existing = groupIterators.get(compositeKey);
+          if (existing) {
+            iterator = existing;
+          } else {
+            iterator = this.createIterator(slot, programs);
+            groupIterators.set(compositeKey, iterator);
+          }
+        }
+      } else {
+        iterator = this.createIterator(slot, programs);
+      }
 
       const fillerDefs = slot.fillerConfig?.fillers;
       let fillerHelper: InfiniteSlotFillerHelper | null = null;
@@ -706,7 +811,10 @@ export class InfiniteScheduleGenerator {
 
     // Snap the initial cursor to the next padToMultiple boundary so the first
     // program also starts on a grid-aligned time.
-    if (schedule.padToMultiple > 1 && currentTimeMs % schedule.padToMultiple !== 0) {
+    if (
+      schedule.padToMultiple > 1 &&
+      currentTimeMs % schedule.padToMultiple !== 0
+    ) {
       const alignedStart =
         Math.ceil(currentTimeMs / schedule.padToMultiple) *
         schedule.padToMultiple;
@@ -1232,7 +1340,10 @@ export class InfiniteScheduleGenerator {
 
     // Snap the initial cursor to the next padToMultiple boundary so the first
     // program also starts on a grid-aligned time.
-    if (schedule.padToMultiple > 1 && currentTimeMs % schedule.padToMultiple !== 0) {
+    if (
+      schedule.padToMultiple > 1 &&
+      currentTimeMs % schedule.padToMultiple !== 0
+    ) {
       const alignedStart =
         Math.ceil(currentTimeMs / schedule.padToMultiple) *
         schedule.padToMultiple;
