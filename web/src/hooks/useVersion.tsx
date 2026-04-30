@@ -3,6 +3,7 @@ import { Button, Stack } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { trimStart } from 'lodash-es';
 import { useSnackbar } from 'notistack';
+import { useEffect } from 'react';
 import type { StrictOmit } from 'ts-essentials';
 import { getApiVersionOptions } from '../generated/@tanstack/react-query.gen.ts';
 
@@ -25,7 +26,11 @@ export const useVersion = (
     !query.isLoading &&
     trimStart(query.data?.tunarr, 'v') !== trimStart(__TUNARR_VERSION__, 'v');
 
-  if (versionMismatch && import.meta.env.PROD) {
+  useEffect(() => {
+    if (!versionMismatch || !import.meta.env.PROD) {
+      return;
+    }
+
     snackbar.enqueueSnackbar({
       key: 'version_mismatch',
       preventDuplicate: true,
@@ -68,7 +73,7 @@ export const useVersion = (
         );
       },
     });
-  }
+  }, [query.data?.tunarr, snackbar, versionMismatch]);
 
   return query;
 };
