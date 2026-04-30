@@ -59,6 +59,8 @@ import type { ProgramIterator } from './ProgramIterator.js';
 import {
   fillerSlotIteratorKey,
   getProgramOrderer,
+  RecordingProgramIterator,
+  ReplayProgramIterator,
   RerunProgramIterator,
   slotIteratorKey,
 } from './ProgramIterator.js';
@@ -384,18 +386,38 @@ export function createSlotProgramIterator(
     .exhaustive();
 }
 
+export type SlotIteratorResult = {
+  iterators: Map<string, ProgramIterator>;
+  resetPeriodCallbacks: (() => void)[];
+};
+
+type GroupClassification = 'all-rerun' | 'all-continue' | 'mixed';
+
 export function createSlotIterators(
   slots: BaseSlot[],
   programBySlotType: ProgramMapping,
   random: Random,
-): Map<string, ProgramIterator> {
+): SlotIteratorResult {
   const result = new Map<string, ProgramIterator>();
+  const resetPeriodCallbacks: (() => void)[] = [];
 
+  // Phase 1: Classify each group by its mix of linkMode values.
+  const groupModes = new Map<string, Set<string>>();
   const rerunGroupMeta = new Map<string, { count: number }>();
+
   for (const slot of slots) {
-    if (!slotIsLinkable(slot)) continue;
-    const { iterationGroup: group, linkMode: mode } = slot;
-    if (group && mode === 'rerun') {
+    if (!slotIsLinkable(slot) || !slot.iterationGroup) continue;
+    const group = slot.iterationGroup;
+    const mode = slot.linkMode ?? 'continue';
+
+    const modes = groupModes.get(group);
+    if (modes) {
+      modes.add(mode);
+    } else {
+      groupModes.set(group, new Set([mode]));
+    }
+
+    if (mode === 'rerun') {
       const existing = rerunGroupMeta.get(group);
       if (existing) {
         existing.count++;
@@ -405,7 +427,34 @@ export function createSlotIterators(
     }
   }
 
+  const groupClassification = new Map<string, GroupClassification>();
+  for (const [groupId, modes] of groupModes) {
+    if (modes.size === 1) {
+      groupClassification.set(
+        groupId,
+        modes.has('rerun') ? 'all-rerun' : 'all-continue',
+      );
+    } else {
+      groupClassification.set(groupId, 'mixed');
+    }
+  }
+
+  // Phase 2: Build iterators per group classification.
   const groupIterators = new Map<string, ProgramIterator>();
+  const groupRecorders = new Map<string, RecordingProgramIterator>();
+
+  const getOrCreateRecorder = (
+    group: string,
+    slot: BaseSlot,
+  ): RecordingProgramIterator => {
+    const existing = groupRecorders.get(group);
+    if (existing) return existing;
+    const base = createSlotProgramIterator(slot, programBySlotType, random);
+    const recorder = new RecordingProgramIterator(base);
+    groupRecorders.set(group, recorder);
+    resetPeriodCallbacks.push(() => recorder.resetPeriod());
+    return recorder;
+  };
 
   for (const slot of slots) {
     const linkable = slotIsLinkable(slot) ? slot : undefined;
@@ -414,27 +463,33 @@ export function createSlotIterators(
     const mode = linkable?.linkMode ?? 'continue';
 
     const iterator = (() => {
-      if (group) {
-        if (mode === 'rerun') {
-          const existing = groupIterators.get(group);
-          if (existing) return existing;
+      if (!group) {
+        return createSlotProgramIterator(slot, programBySlotType, random);
+      }
 
-          const baseIterator = createSlotProgramIterator(
-            slot,
-            programBySlotType,
-            random,
-          );
-          const meta = rerunGroupMeta.get(group);
-          if (!meta) {
-            throw new Error(`Missing rerun group metadata for group ${group}`);
-          }
-          const newIterator = new RerunProgramIterator(
-            baseIterator,
-            meta.count,
-          );
-          groupIterators.set(group, newIterator);
-          return newIterator;
+      const classification = groupClassification.get(group);
+
+      // Legacy all-rerun: use existing RerunProgramIterator.
+      if (classification === 'all-rerun') {
+        const existing = groupIterators.get(group);
+        if (existing) return existing;
+
+        const baseIterator = createSlotProgramIterator(
+          slot,
+          programBySlotType,
+          random,
+        );
+        const meta = rerunGroupMeta.get(group);
+        if (!meta) {
+          throw new Error(`Missing rerun group metadata for group ${group}`);
         }
+        const newIterator = new RerunProgramIterator(baseIterator, meta.count);
+        groupIterators.set(group, newIterator);
+        return newIterator;
+      }
+
+      // All-continue: shared iterator keyed by group + content key.
+      if (classification === 'all-continue') {
         const contentKey = slotIteratorKey(slot);
         const compositeKey = `${group}::${contentKey}`;
         const existing = groupIterators.get(compositeKey);
@@ -447,7 +502,20 @@ export function createSlotIterators(
         groupIterators.set(compositeKey, newIterator);
         return newIterator;
       }
-      return createSlotProgramIterator(slot, programBySlotType, random);
+
+      // Mixed group: continue slots get a RecordingProgramIterator,
+      // rerun slots get a ReplayProgramIterator.
+      const recorder = getOrCreateRecorder(group, slot);
+
+      if (mode === 'continue') {
+        return recorder;
+      }
+
+      // mode === 'rerun'
+      const overflowMode = linkable?.rerunOverflow ?? 'flex';
+      const replay = new ReplayProgramIterator(recorder, overflowMode);
+      resetPeriodCallbacks.push(() => replay.resetPeriod());
+      return replay;
     })();
 
     if (slotId !== undefined) {
@@ -455,7 +523,7 @@ export function createSlotIterators(
     }
   }
 
-  return result;
+  return { iterators: result, resetPeriodCallbacks };
 }
 
 export function getFillerIteratorsForSlot(

@@ -62,10 +62,12 @@ export function validateSlotGroups<T extends BaseSlot>(
         `Group ${groupId} has mismatched content keys: ${[...slotContentKeys].join(', ')}`,
       );
     }
-    const slotLinkModes = new Set(map(slots, (slot) => slot.linkMode));
-    if (slotLinkModes.size > 1) {
+    const slotLinkModes = new Set(
+      map(slots, (slot) => slot.linkMode ?? 'continue'),
+    );
+    if (slotLinkModes.size > 1 && !slotLinkModes.has('continue')) {
       errors.push(
-        `Group ${groupId} has mismatched linkMode values: ${[...slotLinkModes].join(', ')}`,
+        `Group ${groupId} has rerun slots but no continue slot to produce content.`,
       );
     }
   }

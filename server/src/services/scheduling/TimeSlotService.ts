@@ -106,7 +106,8 @@ export async function scheduleTimeSlots(
     programMap,
     random,
   );
-  const slotIterators = createSlotIterators(schedule.slots, programMap, random);
+  const { iterators: slotIterators, resetPeriodCallbacks } =
+    createSlotIterators(schedule.slots, programMap, random);
 
   const periodDuration = dayjs.duration(1, schedule.period);
   const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
@@ -156,6 +157,7 @@ export async function scheduleTimeSlots(
     timeCursor = timeCursor.add(program.duration);
   };
 
+  let lastPeriodIndex = -1;
   let dstActive = timeCursor.utcOffset() !== startOfYear.utcOffset();
   while (timeCursor.isBefore(upperLimit)) {
     const inDst = timeCursor.utcOffset() !== startOfYear.utcOffset();
@@ -172,8 +174,14 @@ export async function scheduleTimeSlots(
     } else if (startedinDst && !dstActive) {
       dstOffset = -OneHourMillis;
     }
-    let currOffset =
-      (timeCursor.diff(startOfCurrentPeriod) + dstOffset) % periodMs;
+    const totalOffsetMs = timeCursor.diff(startOfCurrentPeriod) + dstOffset;
+    let currOffset = totalOffsetMs % periodMs;
+
+    const currentPeriodIndex = Math.floor(totalOffsetMs / periodMs);
+    if (currentPeriodIndex !== lastPeriodIndex) {
+      for (const cb of resetPeriodCallbacks) cb();
+      lastPeriodIndex = currentPeriodIndex;
+    }
 
     let currSlot: TimeSlotImpl<CondensedChannelProgram> | null = null;
     let lateMillis: number | null = null;

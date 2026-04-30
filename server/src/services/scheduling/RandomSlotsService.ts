@@ -81,7 +81,7 @@ class ScheduleContext {
       programMap,
       this.#random,
     );
-    const slotIterators = createSlotIterators(
+    const { iterators: slotIterators } = createSlotIterators(
       schedule.slots,
       programMap,
       this.#random,

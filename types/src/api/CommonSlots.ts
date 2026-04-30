@@ -126,6 +126,7 @@ export const LinkableSlot = z.object({
   id: z.uuid(),
   iterationGroup: z.uuid().optional(),
   linkMode: z.enum(['continue', 'rerun']).default('continue').optional(),
+  rerunOverflow: z.enum(['flex', 'continue']).default('flex').optional(),
 });
 
 export type LinkableSlot = z.infer<typeof LinkableSlot>;

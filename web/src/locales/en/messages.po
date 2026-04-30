@@ -493,8 +493,8 @@ msgstr "All channels assigned to this config will be set to use the default conf
 #~ msgstr "All Genres"
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx:178
-msgid "All linked slots show the same episode, advancing only after all have played."
-msgstr "All linked slots show the same episode, advancing only after all have played."
+#~ msgid "All linked slots show the same episode, advancing only after all have played."
+#~ msgstr "All linked slots show the same episode, advancing only after all have played."
 
 #: src/components/channel_config/ChannelFlexConfig.tsx:290
 msgid "All lists are used"
@@ -774,7 +774,7 @@ msgstr "Calculating Slots..."
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:512
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:362
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:156
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:214
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:270
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:301
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:189
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:114
@@ -978,9 +978,17 @@ msgstr "Consolidate"
 msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
 msgstr "Consolidates contiguous match flex and redirect blocks into singular spans"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:168
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:196
 msgid "Continue"
 msgstr "Continue"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:233
+msgid "Continue with New Content"
+msgstr "Continue with New Content"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:239
+msgid "Controls what happens when this slot runs out of replayed content from earlier continue slots."
+msgstr "Controls what happens when this slot runs out of replayed content from earlier continue slots."
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:432
 #: src/components/slot_scheduler/RandomSlotTable.tsx:323
@@ -1756,6 +1764,10 @@ msgstr "File"
 msgid "File a Bug Report"
 msgstr "File a Bug Report"
 
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:230
+msgid "Fill with Flex"
+msgstr "Fill with Flex"
+
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:338
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:274
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:46
@@ -2171,16 +2183,16 @@ msgstr "Like Random Shuffle, but tries to preserve the sequence of episodes for 
 msgid "Linear"
 msgstr "Linear"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:157
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:163
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:185
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:191
 msgid "Link Mode"
 msgstr "Link Mode"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:229
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:285
 msgid "Link to existing slot"
 msgstr "Link to existing slot"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:183
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:211
 msgid "Linked slots advance episode progression together sequentially."
 msgstr "Linked slots advance episode progression together sequentially."
 
@@ -2697,6 +2709,11 @@ msgstr "Output Path"
 msgid "Output video at a constant frame rate."
 msgstr "Output video at a constant frame rate."
 
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:219
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:225
+msgid "Overflow Behavior"
+msgstr "Overflow Behavior"
+
 #: src/components/channel_config/ChannelTranscodingConfig.tsx:203
 msgid "Override global audio and subtitle settings for this channel."
 msgstr "Override global audio and subtitle settings for this channel."
@@ -3059,7 +3076,7 @@ msgstr "Replicate Programs"
 msgid "Replicate..."
 msgstr "Replicate..."
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:171
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:199
 msgid "Rerun"
 msgstr "Rerun"
 
@@ -3255,7 +3272,7 @@ msgstr "Search…"
 msgid "Seasons"
 msgstr "Seasons"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:208
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:264
 msgid "Select a slot to link to"
 msgstr "Select a slot to link to"
 
@@ -3723,7 +3740,7 @@ msgstr "This show is marked as missing in the database."
 
 #. placeholder {0}: groupPeers.length
 #. placeholder {1}: groupPeers.length
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:150
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:178
 msgid "This slot is linked with {0} other {1, plural, one {slot} other {slots}}. Content fields are shared across the group."
 msgstr "This slot is linked with {0} other {1, plural, one {slot} other {slots}}. Content fields are shared across the group."
 
@@ -3734,6 +3751,10 @@ msgstr "This slot is linked with {0} other {1, plural, one {slot} other {slots}}
 #: src/components/slot_scheduler/SlotLinkingControl.tsx:116
 #~ msgid "This slot is linked with {0} other slot(s). Content fields are shared across the group."
 #~ msgstr "This slot is linked with {0} other slot(s). Content fields are shared across the group."
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:206
+msgid "This slot replays content aired by continue slots earlier in the period."
+msgstr "This slot replays content aired by continue slots earlier in the period."
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx:129
 msgid "Threads"
@@ -3887,7 +3908,7 @@ msgstr "Type"
 msgid "Unit"
 msgstr "Unit"
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:146
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:174
 msgid "Unlink"
 msgstr "Unlink"
 
