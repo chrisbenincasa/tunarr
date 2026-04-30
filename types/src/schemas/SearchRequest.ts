@@ -81,7 +81,7 @@ const DateSearchFieldSchema = z.object({
   type: z.literal('date'),
   op: z.enum(DateOperators),
   value: z.number().or(z.tuple([z.number(), z.number()])),
-  relativeDate: RelativeDateExprSchema.exactOptional(),
+  relativeDate: RelativeDateExprSchema.optional(),
 });
 
 export type DateSearchField = z.infer<typeof DateSearchFieldSchema>;
