@@ -67,9 +67,7 @@ export const useScheduleSlots = () => {
 
   const showPerfSnackbar = useCallback(
     (maxDays: number, duration: number, numShows: number) => {
-      const humanizedDuration = dayjs
-        .duration(maxDays, 'days')
-        .humanize();
+      const humanizedDuration = dayjs.duration(maxDays, 'days').humanize();
       const message = t`Calculated ${humanizedDuration} (${numShows} programs) of programming in ${duration}ms`;
       snackbar.enqueueSnackbar(message, {
         variant: 'info',
@@ -154,10 +152,8 @@ export const useScheduleSlots = () => {
 
   return useMemo(
     () => ({
-      scheduleTimeSlots: (timeForm: TimeSlotForm) =>
-        scheduleFunc({ type: 'time', ...timeForm }),
-      scheduleSlots: (randomForm: RandomSlotForm) =>
-        scheduleFunc({ type: 'random', ...randomForm }),
+      scheduleTimeSlots: scheduleFunc,
+      scheduleSlots: scheduleFunc,
     }),
     [scheduleFunc],
   );

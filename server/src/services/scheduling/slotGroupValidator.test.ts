@@ -80,7 +80,36 @@ describe('validateSlotGroups', () => {
     expect(result.errors[0]).toContain('content');
   });
 
-  test('accepts mixed linkMode group with at least one continue slot', () => {
+  test('accepts mixed linkMode group for time slots with at least one continue slot', () => {
+    const result = validateSlotGroups(
+      [
+        {
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+          id: '1',
+          iterationGroup: validGroupId,
+          linkMode: 'continue',
+        },
+        {
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+          id: '2',
+          iterationGroup: validGroupId,
+          linkMode: 'rerun',
+        },
+      ],
+      { scheduleType: 'time' },
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  test('accepts all-rerun group (legacy behavior)', () => {
     const result = validateSlotGroups([
       {
         type: 'show',
@@ -90,7 +119,7 @@ describe('validateSlotGroups', () => {
         seasonFilter: [],
         id: '1',
         iterationGroup: validGroupId,
-        linkMode: 'continue',
+        linkMode: 'rerun',
       },
       {
         type: 'show',
@@ -106,31 +135,64 @@ describe('validateSlotGroups', () => {
     expect(result.valid).toBe(true);
   });
 
+  test('rejects mixed linkMode group for random slots', () => {
+    const result = validateSlotGroups(
+      [
+        {
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+          id: '1',
+          iterationGroup: validGroupId,
+          linkMode: 'continue',
+        },
+        {
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+          id: '2',
+          iterationGroup: validGroupId,
+          linkMode: 'rerun',
+        },
+      ],
+      { scheduleType: 'random' },
+    );
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain('Random slot');
+  });
+
   test('rejects mixed linkMode group with no continue slot', () => {
-    const result = validateSlotGroups([
-      {
-        type: 'show',
-        showId: 'show1',
-        order: 'next',
-        direction: 'asc',
-        seasonFilter: [],
-        id: '1',
-        iterationGroup: validGroupId,
-        linkMode: 'rerun',
-      },
-      {
-        type: 'show',
-        showId: 'show1',
-        order: 'next',
-        direction: 'asc',
-        seasonFilter: [],
-        id: '2',
-        iterationGroup: validGroupId,
-        linkMode: 'rerun',
-      },
-    ]);
-    // All-rerun is still valid (legacy behavior)
-    expect(result.valid).toBe(true);
+    const result = validateSlotGroups(
+      [
+        {
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+          id: '1',
+          iterationGroup: validGroupId,
+          linkMode: 'rerun',
+        },
+        {
+          type: 'movie',
+          order: 'next',
+          direction: 'asc',
+          id: '2',
+          iterationGroup: validGroupId,
+          linkMode: 'rerun',
+        },
+      ],
+      { scheduleType: 'time' },
+    );
+    // Size is 1 (both rerun), so mixed check doesn't trigger.
+    // But content keys mismatch (show vs movie).
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain('content');
   });
 
   test('strips linkMode when iterationGroup is absent', () => {
