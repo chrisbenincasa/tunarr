@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "11c0c7ae-4449-4d42-8243-1d68565688fc",
-  "prevId": "63234c90-1be6-4af9-985c-db1eb9bb694c",
+  "id": "120222f5-ff41-44f9-acf0-2dda0a834712",
+  "prevId": "11c0c7ae-4449-4d42-8243-1d68565688fc",
   "tables": {
     "artwork": {
       "name": "artwork",
@@ -3435,6 +3435,22 @@
             "group_id"
           ],
           "isUnique": false
+        },
+        "studio_program_unique_idx": {
+          "name": "studio_program_unique_idx",
+          "columns": [
+            "studio_id",
+            "program_id"
+          ],
+          "isUnique": true
+        },
+        "studio_grouping_unique_idx": {
+          "name": "studio_grouping_unique_idx",
+          "columns": [
+            "studio_id",
+            "group_id"
+          ],
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -3707,6 +3723,14 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'media'"
         }
       },
       "indexes": {
@@ -3728,7 +3752,8 @@
           "name": "tag_program_id_unique_idx",
           "columns": [
             "tag_id",
-            "program_id"
+            "program_id",
+            "source"
           ],
           "isUnique": true
         },
@@ -3736,7 +3761,8 @@
           "name": "tag_grouping_id_unique_idx",
           "columns": [
             "tag_id",
-            "grouping_id"
+            "grouping_id",
+            "source"
           ],
           "isUnique": true
         }
