@@ -108,7 +108,6 @@ export class ChildProcessWrapper extends ITypedEventEmitter {
       if (!this.wasAborted && code !== 0) {
         const bufferedBytes = bufferedOut.getLastN().toString('utf-8');
         this.logger.error(bufferedBytes);
-        console.error(bufferedBytes);
       }
 
       if (!this.wasAborted && this.opts.restartOnFailure) {

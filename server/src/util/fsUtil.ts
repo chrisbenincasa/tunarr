@@ -16,21 +16,6 @@ export async function fileExists(path: string) {
   }
 }
 
-export async function copyDirectoryContents(src: string, dest: string) {
-  await fs.mkdir(dest, { recursive: true });
-  const files = await fs.readdir(src);
-  for (const file of files) {
-    const srcPath = path.join(src, file);
-    const destPath = path.join(dest, file);
-    const stat = await fs.stat(srcPath);
-    if (stat.isDirectory()) {
-      await copyDirectoryContents(srcPath, destPath);
-    } else {
-      await fs.copyFile(srcPath, destPath);
-    }
-  }
-}
-
 export async function* streamFileBackwards(
   filePath: string,
   chunkSize: number = 65536,
@@ -78,25 +63,6 @@ export async function* streamFileBackwards(
     }
   } finally {
     await fileHandle.close();
-  }
-}
-
-export async function walkDirectory(dirPath: string) {
-  try {
-    const items = await fs.readdir(dirPath, { withFileTypes: true });
-
-    for (const item of items) {
-      const itemPath = path.join(dirPath, item.name);
-
-      if (item.isDirectory()) {
-        await walkDirectory(itemPath); // Recursively call for subdirectories
-      } else if (item.isFile()) {
-        console.log(`File found: ${itemPath}`);
-        // Perform operations on the file
-      }
-    }
-  } catch (err) {
-    console.error(`Error walking directory ${dirPath}:`, err);
   }
 }
 

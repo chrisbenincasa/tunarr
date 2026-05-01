@@ -83,7 +83,9 @@ export abstract class Session<
     );
     this.connectionTracker.on('cleanup', () => {
       this.stop()
-        .catch(console.error)
+        .catch((e) => {
+          this.logger.error(e, 'Error while stopping session');
+        })
         .finally(() => this.emit('cleanup'));
     });
   }

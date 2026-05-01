@@ -7,26 +7,31 @@ import type { Maybe, PagedResult } from '@/types/util.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import { untag } from '@tunarr/types';
-import {
-  and,
-  asc,
-  count,
-  countDistinct,
-  eq,
-} from 'drizzle-orm';
-import type { SelectedFields, SQLiteSelectBuilder } from 'drizzle-orm/sqlite-core';
+import { and, asc, count, countDistinct, eq } from 'drizzle-orm';
+import type {
+  SelectedFields,
+  SQLiteSelectBuilder,
+} from 'drizzle-orm/sqlite-core';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import { chunk, isEmpty, isUndefined, orderBy, sum, uniq } from 'lodash-es';
+import type { MarkRequired } from 'ts-essentials';
+import {
+  createManyRelationAgg,
+  mapRawJsonRelationResult,
+} from '../../util/drizzleUtil.ts';
+import type { PageParams } from '../interfaces/IChannelDB.ts';
+import type { ProgramGroupingChildCounts } from '../interfaces/IProgramDB.ts';
+import { selectProgramsBuilder } from '../programQueryHelpers.ts';
 import { Artwork } from '../schema/Artwork.ts';
 import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
 import { Program, ProgramType } from '../schema/Program.ts';
+import { ProgramExternalId } from '../schema/ProgramExternalId.ts';
 import {
   ProgramGrouping,
   ProgramGroupingType,
   type ProgramGroupingTypes,
 } from '../schema/ProgramGrouping.ts';
-import { ProgramExternalId } from '../schema/ProgramExternalId.ts';
 import { ProgramGroupingExternalId } from '../schema/ProgramGroupingExternalId.ts';
 import type { MediaSourceId, RemoteSourceType } from '../schema/base.ts';
 import type { DB } from '../schema/db.ts';
@@ -38,16 +43,6 @@ import type {
   TvSeasonOrm,
 } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
-import type { MarkRequired } from 'ts-essentials';
-import {
-  createManyRelationAgg,
-  mapRawJsonRelationResult,
-} from '../../util/drizzleUtil.ts';
-import { selectProgramsBuilder } from '../programQueryHelpers.ts';
-import type { PageParams } from '../interfaces/IChannelDB.ts';
-import type {
-  ProgramGroupingChildCounts,
-} from '../interfaces/IProgramDB.ts';
 
 @injectable()
 export class ProgramGroupingRepository {
@@ -446,8 +441,6 @@ export class ProgramGroupingRepository {
         withRelations.artwork = mapRawJsonRelationResult(artwork, Artwork);
         return withRelations;
       });
-
-      console.log(programs);
 
       return {
         total: sum((await cq).map(({ count }) => count)),

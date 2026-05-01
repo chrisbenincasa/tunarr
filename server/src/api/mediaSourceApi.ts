@@ -756,7 +756,12 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         try {
           GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
             .runNow(true)
-            .catch(console.error);
+            .catch((e) => {
+              logger.error(
+                e,
+                'Error running UpdateXmlTvTask after deleting media source',
+              );
+            });
         } catch (e) {
           logger.error(e, 'Unable to update guide after lineup update %O');
         }

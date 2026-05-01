@@ -77,7 +77,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       const dbChannel = await req.serverCtx.channelDB.getChannel(
         req.query.channelId,
       );
-      console.log(req.query, dbChannel);
       if (!dbChannel) {
         return res.status(404).send('Channel not found');
       }
@@ -414,7 +413,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       const library = mediaSource.libraries.find(
         (lib) => lib.uuid === req.params.libraryId,
       );
-      console.log(mediaSource.libraries);
       if (!library) {
         return res.status(404).send('Library not found');
       }

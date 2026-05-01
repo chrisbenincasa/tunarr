@@ -878,7 +878,11 @@ export class TVGuideService {
           };
         }
       } else if (currentProgram.startTimeMs > nextOffsetTime) {
-        console.error('does this hit?');
+        this.logger.warn(
+          'Something went wrong with lineup calculation. Current program start time (%d) exceeds the calculated next offset (%d)',
+          currentProgram.startTimeMs,
+          nextOffsetTime,
+        );
       }
 
       nextOffsetTime += currentProgram.lineupItem.durationMs;
