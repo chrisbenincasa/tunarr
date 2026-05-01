@@ -139,6 +139,10 @@ export class RecordingProgramIterator<
   get periodBuffer(): readonly ProgramT[] {
     return this.#periodBuffer;
   }
+
+  get hasBufferedContent(): boolean {
+    return this.#periodBuffer.length > 0;
+  }
 }
 
 /**
@@ -196,6 +200,87 @@ export class ReplayProgramIterator<
   resetPeriod(): void {
     this.#replayCursor = 0;
     this.#overflowed = false;
+  }
+}
+
+/**
+ * Manages the firing lifecycle for rerun groups in random slot schedules.
+ *
+ * For mixed groups (continue + rerun slots):
+ *   - Continue slots always record: `beginFiring()` resets the buffer and returns
+ *     `true` so the caller swaps in the recorder.
+ *   - Rerun slots always replay: `beginFiring()` resets the replay cursor and
+ *     returns `false`.
+ *
+ * For all-rerun groups (no continue slots):
+ *   - The first slot to fire after a reset records (buffer empty → `true`).
+ *   - Subsequent slots replay.
+ *   - After every distinct slot has fired once, the buffer resets for the next round.
+ */
+export class RerunGroupState {
+  #recorder: RecordingProgramIterator;
+  #slotReplayers = new Map<string, ReplayProgramIterator>();
+  #firedSlotIds = new Set<string>();
+  #groupSize: number;
+  #continueSlotIds: Set<string>;
+
+  constructor(
+    recorder: RecordingProgramIterator,
+    groupSize: number,
+    continueSlotIds: Set<string> = new Set(),
+  ) {
+    this.#recorder = recorder;
+    this.#groupSize = groupSize;
+    this.#continueSlotIds = continueSlotIds;
+  }
+
+  get recorder(): RecordingProgramIterator {
+    return this.#recorder;
+  }
+
+  addReplayer(slotId: string, replayer: ReplayProgramIterator): void {
+    this.#slotReplayers.set(slotId, replayer);
+  }
+
+  /**
+   * Called before a slot fires.
+   * @returns `true` when the slot should use the recorder (record new content),
+   *          `false` when the slot should use its replayer.
+   */
+  beginFiring(slotId: string): boolean {
+    // In mixed groups, continue slots always reset and record.
+    if (this.#continueSlotIds.has(slotId)) {
+      this.#resetAll();
+      return true;
+    }
+
+    // Buffer is empty → this firing needs to record (all-rerun first-fire).
+    if (!this.#recorder.hasBufferedContent) {
+      return true;
+    }
+
+    // Replay mode: reset this slot's cursor so it replays from the start.
+    this.#slotReplayers.get(slotId)?.resetPeriod();
+    return false;
+  }
+
+  /** Called after a slot finishes firing. */
+  completeFiring(slotId: string): void {
+    // For all-rerun groups, reset after every distinct slot has fired once.
+    if (this.#continueSlotIds.size === 0) {
+      this.#firedSlotIds.add(slotId);
+      if (this.#firedSlotIds.size >= this.#groupSize) {
+        this.#resetAll();
+      }
+    }
+  }
+
+  #resetAll(): void {
+    this.#recorder.resetPeriod();
+    for (const replayer of this.#slotReplayers.values()) {
+      replayer.resetPeriod();
+    }
+    this.#firedSlotIds.clear();
   }
 }
 

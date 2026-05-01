@@ -1,6 +1,7 @@
 import type { CondensedChannelProgram, FillerProgram } from '@tunarr/types';
 import {
   slotHasFiller,
+  slotIsLinkable,
   type BaseSlot,
   type MidRollConfig,
   type SlotFillerTypes,
@@ -25,6 +26,8 @@ export abstract class SlotImpl<
     fallback: [],
     mid: [],
   };
+
+  private iteratorOverride: ProgramIterator<ProgramT> | null = null;
 
   constructor(
     protected slot: SlotType,
@@ -54,11 +57,19 @@ export abstract class SlotImpl<
   }
 
   getNextProgram(state: IterationState): ProgramT | null {
-    return this.iterator.current(state);
+    return (this.iteratorOverride ?? this.iterator).current(state);
   }
 
   advanceIterator(): void {
-    return this.iterator.next();
+    return (this.iteratorOverride ?? this.iterator).next();
+  }
+
+  overrideIterator(it: ProgramIterator<ProgramT>): void {
+    this.iteratorOverride = it;
+  }
+
+  restoreIterator(): void {
+    this.iteratorOverride = null;
   }
 
   getFillerOfType(
@@ -98,6 +109,13 @@ export abstract class SlotImpl<
   get midRollConfig(): MidRollConfig | undefined {
     if (slotHasFiller(this.slot)) {
       return this.slot.midRoll;
+    }
+    return undefined;
+  }
+
+  get id(): string | undefined {
+    if (slotIsLinkable(this.slot)) {
+      return this.slot.id;
     }
     return undefined;
   }
