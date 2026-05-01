@@ -52,10 +52,13 @@ export const ProgramGroupingExternalId = sqliteTable(
     ),
     uniqueIndex('unique_program_grouping_multiple_external_id_media_source')
       .on(table.groupUuid, table.sourceType, table.mediaSourceId)
-      .where(sql`\`media_source_id is not null\``),
+      .where(sql`${table.mediaSourceId} is not null`),
+    // media_source_id is NULL for every row this index covers, and SQLite
+    // treats NULLs as distinct in a unique index, so including the column
+    // would stop the constraint from ever firing.
     uniqueIndex('unique_program_grouping_single_external_id_media_source')
-      .on(table.groupUuid, table.sourceType, table.mediaSourceId)
-      .where(sql`\`media_source_id is null\``),
+      .on(table.groupUuid, table.sourceType)
+      .where(sql`${table.mediaSourceId} is null`),
   ],
 );
 
