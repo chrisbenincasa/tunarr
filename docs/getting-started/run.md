@@ -33,6 +33,69 @@ services:
       - /path/to/tunarr/data:/config/tunarr
 ```
 
+### Running as a Non-Root User
+
+The Tunarr Docker image includes a built-in `tunarr` user (UID/GID `1000:1000`). By default, the container starts as `root` and the entrypoint script automatically drops privileges to this user before launching Tunarr. This means Tunarr itself never runs as `root`.
+
+#### Matching host file ownership with `PUID` / `PGID`
+
+If the data directory on your host is owned by a user other than UID `1000`, set the `PUID` and `PGID` environment variables to match. The entrypoint script will adjust the container user's UID/GID and fix ownership of the config directory at startup.
+
+```
+docker run \
+    -v "$(pwd)"/tunarr:/config/tunarr \
+    -e PUID=1001 \
+    -e PGID=1001 \
+    -e "TZ=America/New_York" \
+    -p 8000:8000 \
+    chrisbenincasa/tunarr
+```
+
+Or in `docker compose`:
+
+```yaml title="docker-compose.yml"
+services:
+  tunarr:
+    image: chrisbenincasa/tunarr:latest
+    environment:
+      - PUID=1001
+      - PGID=1001
+      - TZ=America/New_York
+    volumes:
+      - /path/to/tunarr/data:/config/tunarr
+    # ...
+```
+
+!!! tip
+    To find the UID and GID of the user that owns your data directory, run `ls -nd /path/to/tunarr/data` and use the third and fourth columns.
+
+#### Hardware acceleration (`/dev/dri`)
+
+When you mount `/dev/dri` for VA-API or QSV hardware transcoding, the entrypoint script automatically detects the device group ownership and adds the Tunarr user to the appropriate groups. No extra configuration is needed — just mount the device as usual:
+
+```
+docker run \
+    --device /dev/dri:/dev/dri \
+    -v "$(pwd)"/tunarr:/config/tunarr \
+    -e "TZ=America/New_York" \
+    -p 8000:8000 \
+    chrisbenincasa/tunarr
+```
+
+#### Upgrading from older versions
+
+Previous versions of Tunarr ran as `root` inside the container, so your data directory may be owned by `root` (UID `0`). The entrypoint script handles this automatically — it adjusts ownership at startup. No manual `chown` is required.
+
+If you prefer to fix ownership yourself ahead of time:
+
+```bash
+sudo chown -R 1000:1000 /path/to/tunarr/data
+```
+
+#### HDHR auto-discovery note
+
+SSDP (used for HDHR auto-discovery) requires binding to privileged port 1900. When running as a non-root user, this bind will fail gracefully — Tunarr logs a warning and continues normally. All functionality except automatic HDHR device discovery is unaffected. Clients can still connect to Tunarr by entering the address manually.
+
 ### Docker Desktop
 
 If using Docker Desktop, before running the Tunarr container, you have to use the GUI to configure some of the options mentioned above. This can be done by clicking on the "Optional settings" button. This will show the UI below, where, at the very least, you should configure a volume bind mount (so that your configurations don't get deleted if the container restarts / Tunarr is upgraded). Set the "Container path" to `/config/tunarr` and the Host path to the path on your system where you want to save Tunarr data. Additionally, expose the port of your choice to access Tunarr, by setting "Host port" to the port of your choice.
