@@ -17,7 +17,7 @@ rm /var/lib/dpkg/info/libc-bin.*
 apt-get clean
 apt-get update --fix-missing
 apt-get install libc-bin
-apt-get install -y ca-certificates curl gnupg unzip wget musl-dev
+apt-get install -y ca-certificates curl gnupg unzip wget musl-dev gosu
 ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
 EOF
 
@@ -39,8 +39,6 @@ RUN pnpm --version
 RUN ln -s /usr/local/bin/ffmpeg /usr/bin/ffmpeg
 RUN ln -s /usr/local/bin/ffprobe /usr/bin/ffprobe
 RUN curl -sfS https://dotenvx.sh | sh
-ENTRYPOINT [ "dotenvx", "run", "--", "/tunarr/tunarr" ]
-CMD [ "server" ]
 
 # Add Tunarr sources
 FROM ffmpeg-base AS sources
@@ -109,8 +107,13 @@ RUN pnpm turbo make-bin -- --target ${exec_target} --no-include-version
 
 ### Full stack ###
 FROM ffmpeg-base AS full-stack
-WORKDIR /tunarr
 ARG exec_target=linux-x64
+# Create a non-root user/group for running Tunarr.
+# The entrypoint script will adjust UID/GID at runtime via PUID/PGID env vars.
+RUN groupadd -g 1000 tunarr && \
+    useradd -u 1000 -g tunarr -s /bin/bash -d /config tunarr
+RUN mkdir -p /config && chown tunarr:tunarr /config
+WORKDIR /tunarr
 COPY --from=build-full-stack /tunarr/.env /tunarr/.env
 COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
 # Create a symlink to the executable in /tunarr. This simplifies things for the
@@ -119,3 +122,9 @@ COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
 RUN mkdir /tunarr/bin
 RUN ln -s /tunarr/server/bin/meilisearch-${exec_target} /tunarr/bin/meilisearch
 RUN ln -s /tunarr/server/bin/tunarr-${exec_target} /tunarr/tunarr
+RUN chown -R tunarr:tunarr /tunarr
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+ENV PKG_NATIVE_CACHE_PATH=/tmp/pkg-native
+ENTRYPOINT [ "/docker-entrypoint.sh", "dotenvx", "run", "--", "/tunarr/tunarr" ]
+CMD [ "server" ]
