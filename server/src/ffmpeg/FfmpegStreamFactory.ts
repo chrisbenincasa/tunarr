@@ -22,11 +22,11 @@ import type { Duration } from 'dayjs/plugin/duration.js';
 import { isUndefined } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
-import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import {
   isCommercialLineupItem,
   isProgramLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
+import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { CelEvaluationService } from '../services/CelEvaluationService.ts';
 import type { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import type { StreamSelectionProfileResolver } from '../services/StreamSelectionProfileResolver.ts';

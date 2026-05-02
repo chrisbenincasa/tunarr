@@ -1866,7 +1866,7 @@ async function getAvailablePort(): Promise<number> {
   });
 }
 
-export function encodeCaseSensitiveId(id: string): SingleCaseString {
+function encodeCaseSensitiveId(id: string): SingleCaseString {
   return tag(base32.encode(id));
 }
 

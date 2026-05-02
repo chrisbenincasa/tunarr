@@ -101,22 +101,3 @@ export abstract class SimpleTask<ResultT = void> extends Task2<
 
   readonly schema = emptyRequestSchema;
 }
-
-export function AnonymousTask<OutType = unknown>(
-  id: string,
-  runnable: () => Promise<OutType>,
-): SimpleTask<OutType> {
-  class AnonymousTaskImpl extends SimpleTask<OutType> {
-    @InjectLogger() declare protected readonly logger: Logger;
-    public ID = id;
-
-    get taskName() {
-      return `AnonymousTest_` + id;
-    }
-
-    protected async runInternal() {
-      return runnable();
-    }
-  }
-  return new AnonymousTaskImpl();
-}

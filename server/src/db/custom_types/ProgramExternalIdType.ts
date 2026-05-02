@@ -17,7 +17,7 @@ export function programExternalIdTypeFromExternalIdType(
   return programExternalIdTypeFromString(str)!;
 }
 
-export function programExternalIdTypeFromString(
+function programExternalIdTypeFromString(
   str: string,
 ): ProgramExternalIdType | undefined {
   for (const key of enumKeys(ProgramExternalIdType)) {

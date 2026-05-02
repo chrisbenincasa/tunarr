@@ -16,7 +16,7 @@ import {
  * is used.
  */
 
-export abstract class ProgramOrdereredIterator<
+abstract class ProgramOrdereredIterator<
   ProgramT extends CondensedChannelProgram,
 > extends IndexBasedProgramIterator<ProgramT> {
   constructor(

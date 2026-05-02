@@ -16,7 +16,7 @@ import type {
 import { isObject } from 'lodash-es';
 import { mapToObj } from './index.ts';
 
-export function jsonObject<T extends SelectedFields>(shape: T) {
+function jsonObject<T extends SelectedFields>(shape: T) {
   const chunks: SQL[] = [];
 
   Object.entries(shape).forEach(([key, value]) => {
@@ -34,7 +34,7 @@ export function jsonObject<T extends SelectedFields>(shape: T) {
   )}),  ${sql`json_object()`})`;
 }
 
-export function jsonAggObject<T extends SelectedFields>(shape: T) {
+function jsonAggObject<T extends SelectedFields>(shape: T) {
   return sql<SelectResultFields<T>[]>`coalesce(json_group_array(${jsonObject(
     shape,
   )}), ${sql`json_array()`})`.mapWith(

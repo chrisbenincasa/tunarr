@@ -12,7 +12,7 @@ const BaseLineupItemSchema = z.object({
   durationMs: z.number().positive(), // Add a max
 });
 
-export const ContentLineupItemSchema = z
+const ContentLineupItemSchema = z
   .object({
     type: z.literal('content'),
     id: z.string().min(1),
@@ -30,7 +30,7 @@ export const ContentLineupItemSchema = z
 // This item has to be hydrated from the DB
 export type ContentItem = z.infer<typeof ContentLineupItemSchema>;
 
-export const OfflineLineupItemSchema = z
+const OfflineLineupItemSchema = z
   .object({
     type: z.literal('offline'),
     fillerConfig: OfflineFillerConfigSchema.optional(),
@@ -39,7 +39,7 @@ export const OfflineLineupItemSchema = z
 
 export type OfflineItem = z.infer<typeof OfflineLineupItemSchema>;
 
-export const RedirectLineupItemSchema = z
+const RedirectLineupItemSchema = z
   .object({
     type: z.literal('redirect'),
     channel: z.uuid(),
@@ -47,7 +47,7 @@ export const RedirectLineupItemSchema = z
   .merge(BaseLineupItemSchema);
 export type RedirectItem = z.infer<typeof RedirectLineupItemSchema>;
 
-export const LineupItemSchema = z.discriminatedUnion('type', [
+const LineupItemSchema = z.discriminatedUnion('type', [
   ContentLineupItemSchema,
   OfflineLineupItemSchema,
   RedirectLineupItemSchema,
@@ -74,7 +74,7 @@ const PendingProgramSchema = ContentLineupItemSchema.extend({
 
 export type PendingProgram = z.infer<typeof PendingProgramSchema>;
 
-export const OnDemandChannelConfigSchema = z.object({
+const OnDemandChannelConfigSchema = z.object({
   state: z
     .union([z.literal('paused'), z.literal('playing')])
     .default('paused')

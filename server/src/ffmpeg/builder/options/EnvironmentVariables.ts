@@ -1,9 +1,7 @@
 import type { EnvironmentVariablePipelineStep } from '@/ffmpeg/builder/types/PipelineStep.js';
 import type { Dictionary } from 'ts-essentials';
 
-export abstract class EnvironmentVariable
-  implements EnvironmentVariablePipelineStep
-{
+abstract class EnvironmentVariable implements EnvironmentVariablePipelineStep {
   readonly type = 'environment';
 
   options(): Dictionary<string> {

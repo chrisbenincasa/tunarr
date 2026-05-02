@@ -206,7 +206,7 @@ export function isVideoPipelineContext(
   return !isUndefined(context.videoStream);
 }
 
-export function isAudioPipelineContext(
+function isAudioPipelineContext(
   context: PipelineBuilderContext,
 ): context is PipelineBuilderContextWithAudio {
   return (

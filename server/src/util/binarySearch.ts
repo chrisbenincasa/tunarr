@@ -1,38 +1,38 @@
-import { inRange, sortBy } from 'lodash-es';
+import { sortBy } from 'lodash-es';
 
-type Comparator = (
-  current: number,
-  target: number,
-  range: { low: number; high: number },
-) => number;
+// type Comparator = (
+//   current: number,
+//   target: number,
+//   range: { low: number; high: number },
+// ) => number;
 
 // Returns the index of the array where comparator matches
-export function binarySearch(
-  seq: readonly number[],
-  target: number,
-  comparator: Comparator,
-  low: number = 0,
-  high: number = seq.length - 1,
-): number | null {
-  if (!inRange(low, 0, seq.length - 1) || !inRange(high, 0, seq.length)) {
-    return null;
-  }
+// function binarySearch(
+//   seq: readonly number[],
+//   target: number,
+//   comparator: Comparator,
+//   low: number = 0,
+//   high: number = seq.length - 1,
+// ): number | null {
+//   if (!inRange(low, 0, seq.length - 1) || !inRange(high, 0, seq.length)) {
+//     return null;
+//   }
 
-  let mid: number, cmp: number;
-  while (low <= high) {
-    mid = low + ((high - low) >>> 1);
-    cmp = comparator(seq[mid]!, target, { low, high });
-    if (cmp < 0) {
-      low = mid + 1;
-    } else if (cmp > 0) {
-      high = mid - 1;
-    } else {
-      return mid;
-    }
-  }
+//   let mid: number, cmp: number;
+//   while (low <= high) {
+//     mid = low + ((high - low) >>> 1);
+//     cmp = comparator(seq[mid]!, target, { low, high });
+//     if (cmp < 0) {
+//       low = mid + 1;
+//     } else if (cmp > 0) {
+//       high = mid - 1;
+//     } else {
+//       return mid;
+//     }
+//   }
 
-  return low;
-}
+//   return low;
+// }
 
 export function binarySearchRange(
   seq: readonly number[],

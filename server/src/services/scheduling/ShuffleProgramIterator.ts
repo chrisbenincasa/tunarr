@@ -11,7 +11,7 @@ import {
   type SlotSchedulerProgram,
 } from './slotSchedulerUtil.ts';
 
-export abstract class ShuffleProgramIterator<
+abstract class ShuffleProgramIterator<
   ProgramT extends CondensedChannelProgram,
 > extends IndexBasedProgramIterator<ProgramT> {
   constructor(

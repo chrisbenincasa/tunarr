@@ -9,7 +9,7 @@ const BaseFfprobeMediaStreamSchema = z.object({
   tags: z.record(z.string(), z.string()).optional(),
 });
 
-export const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
+const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('video'),
   codec_name: z.string(),
   width: z.number(),
@@ -42,7 +42,7 @@ export const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
 
 export type FfprobeVideoStream = z.infer<typeof FfprobeVideoStreamSchema>;
 
-export const FfprobeAudioStreamSchema = BaseFfprobeMediaStreamSchema.extend({
+const FfprobeAudioStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('audio'),
   codec_name: z.string(),
   sample_fmt: z.string().optional(),
@@ -60,7 +60,7 @@ export const FfprobeAudioStreamSchema = BaseFfprobeMediaStreamSchema.extend({
 
 export type FfprobeAudioStream = z.infer<typeof FfprobeAudioStreamSchema>;
 
-export const FfprobeSubtitleStreamSchema = BaseFfprobeMediaStreamSchema.extend({
+const FfprobeSubtitleStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('subtitle'),
   codec_name: z.string(),
   disposition: z
@@ -88,13 +88,12 @@ export const FfprobeSubtitleStreamSchema = BaseFfprobeMediaStreamSchema.extend({
     .optional(),
 });
 
-export const FfprobeAttachmentStreamSchema =
-  BaseFfprobeMediaStreamSchema.extend({
-    codec_type: z.literal('attachment'),
-    codec_name: z.string().optional(),
-  });
+const FfprobeAttachmentStreamSchema = BaseFfprobeMediaStreamSchema.extend({
+  codec_type: z.literal('attachment'),
+  codec_name: z.string().optional(),
+});
 
-export const FfprobeBinDataStreamSchema = z.object({
+const FfprobeBinDataStreamSchema = z.object({
   codec_type: z.literal('bin_data').or(z.literal('data')),
 });
 
@@ -113,7 +112,7 @@ function parsePossibleFractionToFloat(s: string) {
   return parseIntOrNull(s);
 }
 
-export const FfprobeMediaStreamSchema = z.discriminatedUnion('codec_type', [
+const FfprobeMediaStreamSchema = z.discriminatedUnion('codec_type', [
   FfprobeVideoStreamSchema,
   FfprobeAudioStreamSchema,
   FfprobeSubtitleStreamSchema,
@@ -121,7 +120,7 @@ export const FfprobeMediaStreamSchema = z.discriminatedUnion('codec_type', [
   FfprobeBinDataStreamSchema,
 ]);
 
-export const FfprobeMediaFormatSchema = z.object({
+const FfprobeMediaFormatSchema = z.object({
   filename: z.string().optional(),
   nb_streams: z.number(),
   format_name: z.string(),
@@ -134,7 +133,7 @@ export const FfprobeMediaFormatSchema = z.object({
   tags: z.record(z.string(), z.string()).optional(),
 });
 
-export const FfprobeChapter = z.object({
+const FfprobeChapter = z.object({
   id: z.number(),
   time_base: z.string(),
   start: z.number(),

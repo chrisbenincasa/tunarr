@@ -27,9 +27,3 @@ export function isProgramGroupingDocument(
 ): doc is ProgramGroupingSearchDocument {
   return !isTerminalProgramDocument(doc);
 }
-
-export function isShowProgramSearchDocument(
-  doc: ProgramSearchDocument,
-): doc is ProgramGroupingSearchDocument<'show'> {
-  return doc.type === 'show';
-}

@@ -65,22 +65,10 @@ export function isGlobalOption(
   return step.type === 'global';
 }
 
-export function isInputOption(
-  step: PipelineStep,
-): step is InputOptionPipelineStep {
-  return step.type === 'input';
-}
-
 export function isOutputOption(
   step: PipelineStep,
 ): step is OutputOptionPipelineStep {
   return step.type === 'output';
-}
-
-export function isEnvironmentVariableOption(
-  step: PipelineStep,
-): step is EnvironmentVariablePipelineStep {
-  return step.type === 'environment';
 }
 
 export function isFilterOption(

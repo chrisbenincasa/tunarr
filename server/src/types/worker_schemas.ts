@@ -9,16 +9,16 @@ import {
   ProgramsTimeSlotScheduleRequest,
 } from '../services/scheduling/TimeSlotSchedulerService.ts';
 
-export const BaseWorkerRequest = z.object({
+const BaseWorkerRequest = z.object({
   requestId: z.uuid(),
 });
 
-export const WorkerRestartRequest = BaseWorkerRequest.extend({
+const WorkerRestartRequest = BaseWorkerRequest.extend({
   type: z.literal('restart'),
   code: z.number().optional(),
 });
 
-export const WorkerStatusRequest = BaseWorkerRequest.extend({
+const WorkerStatusRequest = BaseWorkerRequest.extend({
   type: z.literal('status'),
 });
 
@@ -56,10 +56,6 @@ export const WorkerRequest = z.discriminatedUnion('type', [
 
 export type WorkerRequest = z.infer<typeof WorkerRequest>;
 
-export const WorkerStartedEvent = z.object({
-  type: 'started',
-});
-
 export const WorkerEvent = z.object({
   type: z.literal('event'),
   eventType: z.enum(['started']),
@@ -68,7 +64,7 @@ export const WorkerEvent = z.object({
 
 export type WorkerEvent = z.infer<typeof WorkerEvent>;
 
-export const WorkerErrorReply = z.object({
+const WorkerErrorReply = z.object({
   type: z.literal('error'),
   message: z.string(),
   requestId: z.string(),
@@ -76,7 +72,7 @@ export const WorkerErrorReply = z.object({
 
 export type WorkerErrorReply = z.infer<typeof WorkerErrorReply>;
 
-export const WorkerStatusReply = z.object({
+const WorkerStatusReply = z.object({
   type: z.literal('status'),
   status: z.enum(['healthy']),
 });
@@ -90,7 +86,7 @@ export type WorkerTimeSlotScheduleReply = z.infer<
   typeof WorkerTimeSlotScheduleReply
 >;
 
-export const WorkerSlotScheduleReply = z.object({
+const WorkerSlotScheduleReply = z.object({
   type: z.literal('schedule-slots'),
   result: SlotScheduleResult,
 });

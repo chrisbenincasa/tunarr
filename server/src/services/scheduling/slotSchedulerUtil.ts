@@ -549,69 +549,6 @@ export function getFillerIteratorsForSlot(
   return out;
 }
 
-export function createSlotFillerIterators(
-  slot: BaseSlot,
-  programBySlotType: ProgramMapping,
-  random: Random,
-): Record<string, ProgramIterator<FillerProgram>> {
-  if (!slotHasFiller(slot)) {
-    return {};
-  }
-  if (!slot.filler) {
-    return {};
-  }
-
-  const slotFiller = uniqBy(slot.filler, ({ fillerListId }) => fillerListId);
-
-  const iteratorsByListId: Record<string, ProgramIterator<FillerProgram>> = {};
-
-  for (const fillerDef of slotFiller) {
-    const fakeSlot = match(fillerDef.fillerOrder)
-      .returnType<FillerProgrammingSlot>()
-      .with('uniform', () => ({
-        id: v4(),
-        type: 'filler',
-        order: 'uniform',
-        decayFactor: 0.5,
-        recoveryFactor: 0.05,
-        durationWeighting: 'linear',
-        fillerListId: fillerDef.fillerListId,
-      }))
-      .with(P.union('shuffle_prefer_long', 'shuffle_prefer_short'), (order) => {
-        return {
-          id: v4(),
-          type: 'filler',
-          fillerListId: fillerDef.fillerListId,
-          order,
-          decayFactor: 0.5,
-          durationWeighting: 'linear',
-          recoveryFactor: 0.05,
-        } satisfies FillerProgrammingSlot;
-      })
-      .exhaustive();
-
-    const slotId = `filler.${fillerDef.fillerListId}` satisfies SlotId;
-    const programs = programBySlotType.filler[slotId] ?? [];
-    if (!isNonEmptyArray(programs)) {
-      throw new Error('Cannot schedule an empty filler list slot.');
-    }
-
-    const iterator =
-      fakeSlot.order === 'uniform'
-        ? new ProgramShuffleIteratorImpl(programs, random, (program) => ({
-            type: 'filler',
-            duration: program.duration,
-            fillerListId: fillerDef.fillerListId,
-            id: program.uuid,
-            persisted: true,
-          }))
-        : new WeightedFillerProgramIterator(programs, fakeSlot, random);
-
-    iteratorsByListId[fillerDef.fillerListId] = iterator;
-  }
-  return iteratorsByListId;
-}
-
 function getContentProgramIterator(
   programBySlotType: ProgramMapping,
   contentSlotId: ContentSlotId,

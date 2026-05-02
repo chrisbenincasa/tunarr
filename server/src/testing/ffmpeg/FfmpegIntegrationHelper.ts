@@ -59,10 +59,7 @@ export async function createTempWorkdir(): Promise<{
   };
 }
 
-export function generateTestMediaFile(
-  ffmpegPath: string,
-  outputPath: string,
-): void {
+function generateTestMediaFile(ffmpegPath: string, outputPath: string): void {
   const result = spawnSync(
     ffmpegPath,
     [

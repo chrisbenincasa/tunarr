@@ -37,7 +37,7 @@ export async function processSqlMigrationFile(
   );
 }
 
-export function processSqlMigrationString<OutType>(
+function processSqlMigrationString<OutType>(
   queryString: string,
   processor: (singleStatement: string) => OutType,
   statementBreakpoint: string = '--> statement-breakpoint',

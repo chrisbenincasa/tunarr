@@ -237,7 +237,7 @@ type SyntheticVideoStreamFields = Omit<
   DataProps<SyntheticVideoStream>,
   'inputKind'
 >;
-export class SyntheticVideoStream extends VideoStream {
+class SyntheticVideoStream extends VideoStream {
   filterDefinition: string;
   readonly inputKind: VideoInputKind = 'filter' as const;
 

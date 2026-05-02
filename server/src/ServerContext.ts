@@ -118,13 +118,3 @@ export const getServerContext = () => {
   if (isUndefined(ctx)) throw new Error('No current server context!!');
   return ctx;
 };
-
-export const withServerContext = <T>(f: (ctx: ServerContext) => T) => {
-  return f(getServerContext());
-};
-
-export const withServerContextAsync = async <T>(
-  f: (ctx: ServerContext) => Promise<T>,
-) => {
-  return await f(getServerContext());
-};
