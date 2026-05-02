@@ -171,7 +171,7 @@ export class RootLoggerWrapper extends BaseLoggerWrapper {
   }
 }
 
-export class LoggerWrapper extends BaseLoggerWrapper {
+class LoggerWrapper extends BaseLoggerWrapper {
   constructor(wrappedLogger: Logger) {
     super(wrappedLogger);
     const className = this.className;

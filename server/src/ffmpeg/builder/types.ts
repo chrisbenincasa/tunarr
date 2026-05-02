@@ -11,7 +11,7 @@ export const StreamKinds = [
 
 export type StreamKind = TupleToUnion<typeof StreamKinds>;
 
-export const FrameDataLocations = ['unknown', 'hardware', 'software'] as const;
+const FrameDataLocations = ['unknown', 'hardware', 'software'] as const;
 
 export const FrameDataLocation: Record<
   Capitalize<FrameDataLocation>,

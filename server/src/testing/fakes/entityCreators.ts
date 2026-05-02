@@ -36,7 +36,7 @@ export function createChannelOrm(overrides?: Partial<ChannelOrm>): ChannelOrm {
   } satisfies ChannelOrm;
 }
 
-export function createFakeMultiExternalId(): MinimalProgramExternalId {
+function createFakeMultiExternalId(): MinimalProgramExternalId {
   const typ = faker.helpers.arrayElement(MultiExternalIdType);
   return {
     sourceType: typ,

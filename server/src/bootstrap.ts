@@ -27,7 +27,7 @@ import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
  * subdirectories
  * @returns True if an existing database directory was found
  */
-export async function initDbDirectories(opts: GlobalOptions) {
+async function initDbDirectories(opts: GlobalOptions) {
   // Early init, have to use the non-settings-based root Logger
   for (const subpaths of [
     [ChannelLineupsFolderName],

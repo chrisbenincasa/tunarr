@@ -4,9 +4,8 @@
 
 import type { OfflineFillerConfig } from '@tunarr/types/schemas';
 import type { MarkRequired, StrictOmit } from 'ts-essentials';
-import type { EmbyT, JellyfinT, LocalT } from '../../types/internal.ts';
 import type { MarkNotNilable } from '../../types/util.ts';
-import { MediaSourceType } from '../schema/base.js';
+import type { MediaSourceType } from '../schema/base.js';
 import type {
   ProgramWithRelationsOrm,
   SpecificProgramSourceOrmType,
@@ -50,42 +49,6 @@ export function isContentBackedLineupItem(
     isCommercialLineupItem(item) ||
     isProgramLineupItem(item) ||
     item.type === 'fallback'
-  );
-}
-
-export function isPlexBackedLineupItem(
-  item: StreamLineupItem,
-): item is PlexBackedStreamLineupItem {
-  return (
-    isContentBackedLineupItem(item) &&
-    item.program.sourceType === MediaSourceType.Plex
-  );
-}
-
-export function isJellyfinBackedLineupItem(
-  item: StreamLineupItem,
-): item is SpecificSourceContentBackedStreamLineupItem<JellyfinT> {
-  return (
-    isContentBackedLineupItem(item) &&
-    item.program.sourceType === MediaSourceType.Jellyfin
-  );
-}
-
-export function isEmnyBackedLineupItem(
-  item: StreamLineupItem,
-): item is SpecificSourceContentBackedStreamLineupItem<EmbyT> {
-  return (
-    isContentBackedLineupItem(item) &&
-    item.program.sourceType === MediaSourceType.Emby
-  );
-}
-
-export function isLocalBackedLineupItem(
-  item: StreamLineupItem,
-): item is SpecificSourceContentBackedStreamLineupItem<LocalT> {
-  return (
-    isContentBackedLineupItem(item) &&
-    item.program.sourceType === MediaSourceType.Local
   );
 }
 

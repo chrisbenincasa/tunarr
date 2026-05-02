@@ -1,4 +1,3 @@
-import type { Func } from '@/types/func.js';
 import type { Maybe, Nilable, Try } from '@/types/util.js';
 import type { TupleToUnion } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -26,7 +25,6 @@ import {
   trim,
   zipWith,
 } from 'lodash-es';
-import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { format, inspect } from 'node:util';
 import { isPromise } from 'node:util/types';
@@ -82,33 +80,6 @@ export function groupByUniqAndMap<
   return out;
 }
 
-// This will fail if any mapping function fails
-export function groupByUniqPropAndMapAsync<
-  T,
-  K extends KeysOfType<T>,
-  Key extends IsStringOrNumberValue<T, K>,
-  Value,
->(
-  data: T[],
-  member: K | ((item: T) => K),
-  mapper: (val: T) => Promise<Value>,
-  opts?: mapAsyncSeq2Opts,
-): Promise<Record<Key, Value>> {
-  const keyFunc = (t: T) => t[isFunction(member) ? member(t) : member] as Key;
-  return mapReduceAsyncSeq(
-    data,
-    (t) => mapper(t).then((v) => [keyFunc(t), v] as const),
-    (acc, [key, value]) => {
-      return {
-        ...acc,
-        [key]: value,
-      };
-    },
-    {} as Record<Key, Value>,
-    opts,
-  );
-}
-
 export function groupByUniq<T, Key extends string | number | symbol>(
   data: T[] | ReadonlyArray<T>,
   func: (item: T) => Key,
@@ -139,25 +110,6 @@ export function groupByTyped<T, Key extends string | number | symbol>(
     out[k].push(t);
   }
   return out;
-}
-
-export function groupByAndMapAsync<
-  T,
-  Key extends string | number | symbol,
-  Value,
->(
-  data: T[] | null | undefined,
-  func: (val: T) => Key,
-  mapper: (val: T) => Promise<Value>,
-  opts?: mapAsyncSeq2Opts,
-) {
-  return mapReduceAsyncSeq(
-    data,
-    (t) => mapper(t).then((v) => [func(t), v] as const),
-    (acc, [key, value]) => ({ ...acc, [key]: value }),
-    {} as Record<Key, Value>,
-    opts,
-  );
 }
 
 type mapAsyncSeq2Opts = {
@@ -268,35 +220,6 @@ export function timeoutPromise<T>(
   ]);
 }
 
-type NativeFuncOrApply<In, Out> = ((input: In) => Out) | Func<In, Out>;
-
-export async function asyncFlow<T>(
-  ops: NativeFuncOrApply<T, Promise<T>>[],
-  initial: T,
-): Promise<T> {
-  let res: T = initial;
-  for (const op of ops) {
-    res = await (isFunction(op) ? op(res) : op.apply(res));
-  }
-  return res;
-}
-
-export function time<T>(
-  key: string,
-  f: () => T | PromiseLike<T>,
-): T | PromiseLike<T> {
-  console.time(key);
-  const retOrPromise = f();
-  if (isPromise(retOrPromise)) {
-    return (retOrPromise as Promise<T>).finally(() => {
-      console.timeEnd(key);
-    });
-  } else {
-    console.timeEnd(key);
-    return retOrPromise;
-  }
-}
-
 function deepCopyArray<T>(value: T[] | undefined): T[] | undefined {
   if (isUndefined(value)) {
     return value;
@@ -336,19 +259,6 @@ export function deepCopy<T>(value: T): T {
 
 export function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error;
-}
-
-export async function createDirectoryIfNotExists(
-  dirPath: string,
-): Promise<void> {
-  try {
-    await fs.mkdir(dirPath, { recursive: true });
-  } catch (err) {
-    if (isNodeError(err) && err.code !== 'EEXIST') {
-      // Throw an error if it's not because the directory already exists
-      throw err;
-    }
-  }
 }
 
 export function attemptSync<T>(f: () => T): Try<T> {
@@ -524,19 +434,6 @@ export function caughtErrorToError(e: unknown): Error {
   } else {
     return new Error(inspect(e));
   }
-}
-
-export function inTuple<Arr extends readonly string[], S extends string>(
-  arr: Arr,
-  typ: S,
-): boolean {
-  for (const value of arr) {
-    if (value === typ) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 export function unzip<T, U>(tups: [T, U][]): [T[], U[]] {

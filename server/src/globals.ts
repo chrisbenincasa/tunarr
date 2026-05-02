@@ -58,7 +58,7 @@ export const globalOptions = () => {
   return _globalOptions;
 };
 
-export const setServerOptionsUnchecked = (runtimeOptions: ServerArgsType) => {
+const setServerOptionsUnchecked = (runtimeOptions: ServerArgsType) => {
   setGlobalOptions(runtimeOptions);
   _serverOptions = {
     ...globalOptions(),

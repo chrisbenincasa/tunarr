@@ -13,7 +13,7 @@ import { ColorFormat } from '../format/ColorFormat.ts';
 type FrameStateFields = DataProps<FrameState>;
 
 // Some fields are always required...
-export const DefaultFrameState: Omit<
+const DefaultFrameState: Omit<
   FrameStateFields,
   'scaledSize' | 'paddedSize' | 'isAnamorphic'
 > = {

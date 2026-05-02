@@ -107,7 +107,7 @@ export class FilterStreamSource implements IStreamSource {
   constructor(public path: string) {}
 }
 
-export class OfflineStreamSource implements IStreamSource {
+class OfflineStreamSource implements IStreamSource {
   private static INSTANCE: OfflineStreamSource;
 
   readonly type = 'offline' as const;
@@ -120,7 +120,7 @@ export class OfflineStreamSource implements IStreamSource {
   }
 }
 
-export class ErrorStreamSource implements IStreamSource {
+class ErrorStreamSource implements IStreamSource {
   readonly type = 'error' as const;
   readonly path = '';
 

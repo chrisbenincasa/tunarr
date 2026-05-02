@@ -6,7 +6,7 @@ type SQLExpression<T = unknown> =
   | SQL.Aliased<T>
   | AnyColumn<{ data: T }>;
 
-export class SQLCaseWhen<T = never> {
+class SQLCaseWhen<T = never> {
   cases: SQL<T>;
   constructor(init?: SQL<T> | SQLCaseWhen<T>) {
     // Clone the initial cases to enable re-use.

@@ -21,9 +21,8 @@ export interface ProgramIterator<
   reset(): void;
 }
 
-export abstract class BaseProgramIterator<
-  ProgramT extends CondensedChannelProgram,
-> implements ProgramIterator<ProgramT>
+abstract class BaseProgramIterator<ProgramT extends CondensedChannelProgram>
+  implements ProgramIterator<ProgramT>
 {
   protected mintCache = new Map<string, ProgramT>();
 

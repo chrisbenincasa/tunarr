@@ -1,5 +1,3 @@
-import type { Maybe } from '@/types/util.js';
-import { isEmpty } from 'lodash-es';
 import { isWindows } from './index.ts';
 
 /**
@@ -18,17 +16,4 @@ export function sanitizeForExec(executable: string): string {
   }
 
   return cleaned.trim().replace(/\s+/g, ' ');
-}
-
-export function trimToUndefined(s: Maybe<string>): Maybe<string> {
-  if (!s) {
-    return;
-  }
-
-  const trim = s.trim();
-  if (isEmpty(trim)) {
-    return;
-  }
-
-  return s;
 }

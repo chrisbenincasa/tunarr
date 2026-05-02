@@ -36,13 +36,6 @@ export type MpegDashOptions = {
   fragType: 'auto' | 'every_frame' | 'duration' | 'pframes';
 };
 
-export const defaultMpegDashOptions: DeepRequired<MpegDashOptions> = {
-  segmentDuration: 2,
-  windowSize: 3,
-  segmentType: 'auto',
-  fragType: 'auto',
-};
-
 export const VideoFormats = {
   Hevc: 'hevc',
   H264: 'h264',

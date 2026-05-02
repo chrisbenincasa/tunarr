@@ -16,12 +16,3 @@ export type StreamFetchRequest<Typ extends MediaSourceType = MediaSourceType> =
 export interface StreamDetailsFetcher<RequestType> {
   getStream(request: RequestType): Promise<Result<ProgramStreamResult>>;
 }
-
-export abstract class ExternalStreamDetailsFetcher<
-  Typ extends MediaSourceType = MediaSourceType,
-> implements StreamDetailsFetcher<StreamFetchRequest<Typ>>
-{
-  abstract getStream(
-    request: StreamFetchRequest<Typ>,
-  ): Promise<Result<ProgramStreamResult>>;
-}

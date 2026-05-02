@@ -21,13 +21,6 @@ export const PixelFormats = {
   CUDA: 'cuda',
 } as const;
 
-export const ValidHardwarePixelFormats = {
-  // TODO: Should we support others?
-  NV12: 'nv12',
-  P010LE: 'p010le',
-  P016LE: 'p016',
-} as const;
-
 export type ValidPixelFormatName =
   (typeof PixelFormats)[keyof typeof PixelFormats];
 
@@ -51,7 +44,7 @@ export interface PixelFormat extends Equatable<PixelFormat> {
   isUnknown(): boolean;
 }
 
-export abstract class BasePixelFormat implements PixelFormat {
+abstract class BasePixelFormat implements PixelFormat {
   abstract name: ValidPixelFormatName;
   abstract bitDepth: number;
 
@@ -154,7 +147,7 @@ export class PixelFormatYuv420P10Le extends SoftwarePixelFormat {
   }
 }
 
-export class PixelFormatYuv444P16Le extends SoftwarePixelFormat {
+class PixelFormatYuv444P16Le extends SoftwarePixelFormat {
   readonly name = PixelFormats.YUV444P16LE;
   readonly bitDepth: number = 10;
 }

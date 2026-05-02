@@ -1,0 +1,31 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "tags": [
+    "-lintignore"
+  ],
+  "workspaces": {
+    "server": {
+      "entry": [
+        "index.{js,ts,tsx}",
+        "src/index.{js,ts,tsx}",
+        "src/migration/db/*.ts"
+      ],
+      "project": "src/**/*.ts",
+      "ignore": [
+        "src/testing/ffmpeg/fixtures/**/*"
+      ]
+    },
+    "shared": {
+      "project": "src/**/*.ts"
+    },
+    "types": {
+      "project": "src/**/*.ts"
+    },
+    "web": {
+      "project": "src/**/*.ts",
+      "ignore": [
+        "src/generated/**/*"
+      ]
+    }
+  }
+}

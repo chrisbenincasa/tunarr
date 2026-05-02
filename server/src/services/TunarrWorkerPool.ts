@@ -35,7 +35,7 @@ interface PooledWorker {
   ready: boolean;
 }
 
-export class Future<T> implements Promise<T> {
+class Future<T> implements Promise<T> {
   #promise: Promise<T>;
   #resolve!: (v: T | PromiseLike<T>) => void;
   #reject!: (reason?: unknown) => void;

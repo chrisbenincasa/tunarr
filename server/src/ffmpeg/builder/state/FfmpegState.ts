@@ -21,7 +21,7 @@ export type AudioCodecOverride = {
   codec: string;
 };
 
-export const VaapiTonemapType = ['vaapi', 'opencl'] as const;
+const VaapiTonemapType = ['vaapi', 'opencl'] as const;
 export type VaapiTonemapType = TupleToUnion<typeof VaapiTonemapType>;
 
 export type VaapiPipelineOptions = {
@@ -56,17 +56,6 @@ export const DefaultPipelineOptions: PipelineOptions = {
   vaapiPipelineOptions: {
     tonemapPreference: 'opencl',
   },
-};
-
-export const DefaultFfmpegState: Partial<DataProps<FfmpegState>> = {
-  threadCount: null,
-  start: null,
-  duration: null,
-  decoderHwAccelMode: 'none',
-  encoderHwAccelMode: 'none',
-  softwareScalingAlgorithm: 'fast_bilinear',
-  softwareDeinterlaceFilter: 'yadif=1',
-  vaapiDevice: null,
 };
 
 type FfmpegStateFields = MarkRequired<
