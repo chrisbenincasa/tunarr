@@ -9,6 +9,7 @@ import {
   TruthyQueryParam,
 } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from '@/util/env.js';
 import {
   groupByUniq,
   groupByUniqAndMap,
@@ -17,7 +18,6 @@ import {
   isHttpUrl,
   isNonEmptyString,
 } from '@/util/index.js';
-import { getBooleanEnvVar, TUNARR_ENV_VARS } from '@/util/env.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import type { Episode, MusicAlbum, MusicTrack, Season } from '@tunarr/types';
@@ -66,6 +66,7 @@ import { ForceScanCommand } from '../commands/ForceScanCommand.ts';
 import { GetProgramGroupingById } from '../commands/GetProgramGroupingById.ts';
 import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
+import { BackfillPlexClientIdentifierCommand } from '../commands/media_source/BackfillPlexClientIdentifier.ts';
 import { SearchProgramsCommand } from '../commands/SearchProgramsCommand.ts';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { EmbyApiClient } from '../external/emby/EmbyApiClient.ts';
@@ -457,15 +458,12 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             if (proxyRes.headers instanceof AxiosHeaders) {
               headers = {
                 ...proxyRes.headers,
-             };
+              };
             } else {
               headers = { ...omitBy(proxyRes.headers, isNull) };
             }
 
-            return res
-              .status(200)
-              .headers(headers)
-              .send(proxyRes.data);
+            return res.status(200).headers(headers).send(proxyRes.data);
           } catch (e) {
             if (isAxiosError(e) && e.response?.status === 404) {
               return res.status(404).send();
@@ -712,10 +710,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               headers = { ...omitBy(proxyRes.headers, isNull) };
             }
 
-            return res
-              .status(200)
-              .headers(headers)
-              .send(proxyRes.data);
+            return res.status(200).headers(headers).send(proxyRes.data);
           } catch (e) {
             if (isAxiosError(e) && e.response?.status === 404) {
               logger.error(
@@ -908,7 +903,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         response: {
           200: z.object({ url: z.string() }),
           302: z.void(),
-          404: z.void(),
+          404: z.string(),
           405: z.void(),
         },
       },
@@ -918,7 +913,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         req.params.id,
       );
       if (isNil(program)) {
-        return res.status(404).send();
+        return res.status(404).send(`Program ${req.params.id} not found.`);
       }
 
       const mediaSources = await req.serverCtx.mediaSourceDB.getAll();
@@ -928,7 +923,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       );
 
       if (!externalId) {
-        return res.status(404).send();
+        return res
+          .status(404)
+          .send(`Could not find viable external ID for program`);
       }
 
       const server = find(
@@ -944,12 +941,31 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
       switch (externalId.sourceType) {
         case 'plex': {
-          if (isNil(server.clientIdentifier)) {
-            return res.status(404).send();
+          let clientIdentifier = server.clientIdentifier;
+          if (!isNonEmptyString(clientIdentifier)) {
+            const backfillResult = await container
+              .get(BackfillPlexClientIdentifierCommand)
+              .run({ mediaSourceId: server.uuid });
+            if (backfillResult.isFailure()) {
+              logger.warn(
+                backfillResult.error,
+                'Error while trying to backfill client identifier for Plex server',
+              );
+            } else {
+              clientIdentifier = backfillResult.get() ?? null;
+            }
+          }
+
+          if (!isNonEmptyString(clientIdentifier)) {
+            return res
+              .status(404)
+              .send(
+                `Plex media source ${server.uuid} is missing a server identifier`,
+              );
           }
 
           const url = `${server.uri}/web/index.html#!/server/${
-            server.clientIdentifier
+            clientIdentifier
           }/details?key=${encodeURIComponent(
             `/library/metadata/${program.externalKey}`,
           )}&X-Plex-Token=${server.accessToken}`;
@@ -998,7 +1014,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const result = await req.serverCtx.programDB.lookupByExternalIds(
-        new Set([[sourceType as RemoteSourceType, tag(rawServerId), id]]),
+        new Set([[sourceType, tag(rawServerId), id]]),
       );
       const program = first(values(result));
 

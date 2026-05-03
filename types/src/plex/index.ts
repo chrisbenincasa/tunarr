@@ -945,18 +945,18 @@ export const PlexConnectionSchema = z.object({
 export type PlexConnection = Alias<z.infer<typeof PlexConnectionSchema>>;
 
 export const PlexResourceSchema = z.object({
-  accessToken: z.string(),
+  accessToken: z.string().nullish(),
   clientIdentifier: z.string(),
   connections: z.array(PlexConnectionSchema),
   createdAt: z.string(),
   device: z.string(),
-  dnsRebindingProtection: z.boolean(),
+  dnsRebindingProtection: z.boolean().nullish(),
   home: z.boolean(),
   httpsRequired: z.boolean(),
   lastSeenAt: z.string(),
   name: z.string(),
   owned: z.boolean(),
-  ownerId: z.string().nullable(),
+  ownerId: z.string().nullish(),
   platform: z.string(),
   platformVersion: z.string(),
   presence: z.boolean(),

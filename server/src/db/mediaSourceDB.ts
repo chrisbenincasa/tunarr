@@ -43,6 +43,7 @@ import {
   PlexMediaSource,
 } from './schema/derivedTypes.js';
 import { DrizzleDBAccess } from './schema/index.ts';
+import { MediaSource } from './schema/MediaSource.ts';
 import {
   MediaSourceLibrary,
   MediaSourceLibraryUpdate,
@@ -316,6 +317,18 @@ export class MediaSourceDB {
     }
   }
 
+  async setClientIdentifier(
+    mediaSourceId: MediaSourceId,
+    clientIdentifier: string,
+  ) {
+    return await this.drizzleDB
+      .update(MediaSource)
+      .set({
+        clientIdentifier,
+      })
+      .where(eq(MediaSource.uuid, mediaSourceId));
+  }
+
   async setMediaSourceUserInfo(
     mediaSourceId: MediaSourceId,
     info: MediaSourceUserInfo,
@@ -358,7 +371,6 @@ export class MediaSourceDB {
       const newServer = await tx
         .insertInto('mediaSource')
         .values({
-          // ...server,
           uuid: tag<MediaSourceId>(v4()),
           name,
           uri: server.type === 'local' ? '' : trimEnd(server.uri, '/'),
@@ -382,6 +394,8 @@ export class MediaSourceDB {
                 : null,
           accessToken: server.type === 'local' ? '' : server.accessToken,
           mediaType: server.type === 'local' ? server.mediaType : null,
+          clientIdentifier:
+            server.type === 'plex' ? server.clientIdentifier : null,
         })
         .returning('uuid')
         .executeTakeFirstOrThrow();
@@ -485,7 +499,7 @@ export class MediaSourceDB {
   }
 }
 
-export type MediaSourceLibrariesUpdate = {
+type MediaSourceLibrariesUpdate = {
   addedLibraries: NewMediaSourceLibrary[];
   updatedLibraries: MarkRequired<MediaSourceLibraryUpdate, 'uuid'>[];
   deletedLibraries: string[];

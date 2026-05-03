@@ -65,6 +65,7 @@ import {
   PlexMusicTrackMediaContainerResponseSchema,
   PlexPlaylistMediaContainerResponseSchema,
   type PlexResource,
+  PlexResourcesResponseSchema,
   PlexTagResultSchema,
   PlexTvSeasonMediaContainerResponseSchema,
   PlexTvShowMediaContainerResponseSchema,
@@ -671,6 +672,12 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     });
   }
 
+  getResources() {
+    return this.doTypeCheckedGet('/resources', PlexResourcesResponseSchema, {
+      baseURL: 'https://plex.tv/api/v2',
+    });
+  }
+
   private getChildCount(key: string) {
     return this.doTypeCheckedGet(key, PlexContainerStatsSchema, {
       params: {
@@ -1055,8 +1062,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       throw err;
     }
   }
-
-  async getResources() {}
 
   async refreshGuide(_dvrs?: PlexDvr[]) {
     const dvrs = !isUndefined(_dvrs) ? _dvrs : await this.getDvrs();

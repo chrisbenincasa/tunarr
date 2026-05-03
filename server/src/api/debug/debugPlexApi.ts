@@ -4,6 +4,7 @@ import { PlexStreamDetails } from '@/stream/plex/PlexStreamDetails.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { tag } from '@tunarr/types';
 import { z } from 'zod/v4';
+import { BackfillPlexClientIdentifierCommand } from '../../commands/media_source/BackfillPlexClientIdentifier.ts';
 
 export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -16,7 +17,7 @@ export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
         tags: ['Debug'],
         querystring: z.object({
           key: z.string(),
-          mediaSource: z.string(),
+          mediaSource: z.uuid(),
         }),
       },
     },
@@ -55,6 +56,38 @@ export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
       });
 
       return res.send(streamDetails);
+    },
+  );
+
+  fastify.get(
+    '/plex/resources',
+    {
+      schema: {
+        tags: ['Debug'],
+        querystring: z.object({
+          mediaSource: z.uuid(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const mediaSource = await req.serverCtx.mediaSourceDB.findByType(
+        'plex',
+        tag(req.query.mediaSource),
+      );
+      if (!mediaSource) {
+        return res.status(400).send('No media source');
+      }
+
+      const client =
+        await req.serverCtx.mediaSourceApiFactory.getPlexApiClientForMediaSource(
+          mediaSource,
+        );
+
+      await container
+        .get(BackfillPlexClientIdentifierCommand)
+        .run({ mediaSourceId: tag(req.query.mediaSource) });
+
+      return res.send(await client.getResources());
     },
   );
 };

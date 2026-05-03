@@ -1,8 +1,9 @@
+import { isNonEmptyString } from '@tunarr/shared/util';
 import type {
   PlexPinsResponse,
   PlexResourcesResponse,
 } from '@tunarr/types/plex';
-import { compact, isEmpty, isError, isString, partition } from 'lodash-es';
+import { compact, isError, isString, partition } from 'lodash-es';
 import { postApiMediaSourcesForeignstatus } from '../generated/sdk.gen.ts';
 import { AsyncInterval } from './AsyncInterval.ts';
 import { sequentialPromises } from './util.ts';
@@ -120,7 +121,7 @@ export const checkNewPlexServers = async (servers: PlexResourcesResponse) => {
     );
 
     for (const connection of [...localConnections, ...remoteConnections]) {
-      if (isEmpty(server.accessToken)) {
+      if (!isNonEmptyString(server.accessToken)) {
         console.warn(
           `Server at URL ${connection.uri} did not return an access token`,
         );

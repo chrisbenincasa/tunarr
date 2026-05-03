@@ -19,12 +19,15 @@ import NodeCache from 'node-cache';
 import { createHash } from 'node:crypto';
 import type stream from 'node:stream';
 import { z } from 'zod/v4';
+import { BackfillPlexClientIdentifierCommand } from '../commands/media_source/BackfillPlexClientIdentifier.ts';
+import { container } from '../container.ts';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from '../db/custom_types/ProgramSourceType.ts';
 import type { MediaSourceId } from '../db/schema/base.js';
 import { getServerContext } from '../ServerContext.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 
 const externalIdSchema = z
   .string()
@@ -81,6 +84,7 @@ const ExternalUrlCache = new NodeCache({
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
+  const logger = LoggerFactory.child({ className: 'MetadataApi' });
   fastify.get(
     '/metadata/external',
     {
@@ -215,12 +219,38 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       const server = await getServerContext().mediaSourceDB.getById(
         query.id.externalSourceId,
       );
-      if (!server || isNil(server.clientIdentifier)) {
-        return res.status(404).send();
+
+      if (!server) {
+        return res
+          .status(404)
+          .send(`Plex server with ID ${query.id.externalSourceId} not found`);
+      }
+
+      let clientIdentifier = server.clientIdentifier;
+      if (!isNonEmptyString(server.clientIdentifier)) {
+        const backfillResult = await container
+          .get(BackfillPlexClientIdentifierCommand)
+          .run({ mediaSourceId: query.id.externalSourceId });
+        if (backfillResult.isFailure()) {
+          logger.warn(
+            backfillResult.error,
+            'Error while trying to backfill client identifier for Plex server',
+          );
+        } else {
+          clientIdentifier = backfillResult.get() ?? null;
+        }
+
+        if (!isNonEmptyString(clientIdentifier)) {
+          return res
+            .status(404)
+            .send(
+              `No client identifier string found for Plex server ${query.id.externalSourceId}`,
+            );
+        }
       }
 
       return `${server.uri}/web/index.html#!/server/${
-        server.clientIdentifier
+        clientIdentifier ?? ''
       }/details?key=${encodeURIComponent(
         `/library/metadata/${query.id.externalItemId}`,
       )}&X-Plex-Token=${server.accessToken}`;
