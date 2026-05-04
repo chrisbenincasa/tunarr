@@ -45,7 +45,7 @@ import { Result } from '../../types/result.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { isDefined, wait } from '../../util/index.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
-import { parseReleaseDate } from '../../util/programs.ts';
+import { parseReleaseDate, titleToSortTitle } from '../../util/programs.ts';
 import { Canonicalizer } from '../Canonicalizer.ts';
 import { ImageCache } from '../ImageCache.ts';
 import { FallbackMetadataService } from '../local/FallbackMetadataService.ts';
@@ -726,8 +726,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       sourceType: 'local',
       identifiers: [],
       title: tvShowNfo.title ?? '',
-      // sortTitle: tvShowNfo.sortTitle ?? tvShowNfo.title ?? '',
-      sortTitle: tvShowNfo.title, // TODO: derive
+      sortTitle: titleToSortTitle(tvShowNfo.title),
       tags: [],
       type: 'show',
       genres: tvShowNfo.genre ? tvShowNfo.genre.map((name) => ({ name })) : [],
@@ -766,7 +765,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
         originalTitle: null,
         releaseDate: null,
         releaseDateString: null,
-        sortTitle: title, // TODO:
+        sortTitle: title,
         sourceType: 'local',
         summary: null,
         title,
@@ -810,7 +809,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
           originalTitle: episode.title,
           releaseDate: releaseDate?.valueOf() ?? null,
           releaseDateString: releaseDate?.format() ?? null,
-          sortTitle: '', // TODO
+          sortTitle: titleToSortTitle(episode.title),
           sourceType: 'local',
           summary: episode.plot ?? null,
           tags: [],
