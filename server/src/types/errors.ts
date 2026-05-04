@@ -56,8 +56,28 @@ export abstract class TypedError extends WrappedError {
   }
 }
 
-export abstract class NotFoundError extends TypedError {
-  readonly httpCode: number = 404;
+abstract class TypedHttpError<
+  StatusT extends number = number,
+> extends TypedError {
+  readonly _!: StatusT;
+  readonly httpCode: StatusT;
+
+  constructor(httpCode: StatusT, message?: string, options?: ErrorOptions) {
+    super(message, options);
+    this.httpCode = httpCode;
+  }
+}
+
+export abstract class BadRequestError extends TypedHttpError<400> {
+  constructor(...params: ConstructorParameters<ErrorConstructor>) {
+    super(400, ...params);
+  }
+}
+
+abstract class NotFoundError extends TypedHttpError<404> {
+  constructor(message?: string, options?: ErrorOptions) {
+    super(404, message, options);
+  }
 }
 
 export class GenericNotFoundError extends NotFoundError {

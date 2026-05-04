@@ -7,7 +7,9 @@ import type { ChannelStreamMode } from '@tunarr/types';
 import { ContainerModule } from 'inversify';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { ChannelOrm } from '../db/schema/Channel.ts';
+import { CelEvaluationService } from '../services/CelEvaluationService.ts';
 import { FeatureFlagService } from '../services/FeatureFlagService.ts';
+import { StreamSelectionProfileResolver } from '../services/StreamSelectionProfileResolver.ts';
 import type { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
 
@@ -32,6 +34,8 @@ const FFmpegModule = new ContainerModule(({ bind }) => {
           ctx.get<PipelineBuilderFactory>(KEYS.PipelineBuilderFactory),
           ctx.get<IChannelDB>(KEYS.ChannelDB),
           featureFlagService,
+          ctx.get(StreamSelectionProfileResolver),
+          ctx.get(CelEvaluationService),
         );
       };
     })

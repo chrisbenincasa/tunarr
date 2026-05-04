@@ -8,27 +8,36 @@ import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
 import type {
   AudioRenditionInfo,
-  AudioStreamDetails,
   StreamRenditions,
   SubtitleRenditionInfo,
 } from '@/stream/types.js';
 import { FileStreamSource, HttpStreamSource } from '@/stream/types.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.js';
-import type { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamModes } from '@tunarr/types';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import { isUndefined } from 'lodash-es';
-import type { DeepReadonly, NonEmptyArray } from 'ts-essentials';
+import type { DeepReadonly } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
+import {
+  isCommercialLineupItem,
+  isProgramLineupItem,
+} from '../db/derived_types/StreamLineup.ts';
+import type { CelEvaluationService } from '../services/CelEvaluationService.ts';
+import type { FeatureFlagService } from '../services/FeatureFlagService.ts';
+import type { StreamSelectionProfileResolver } from '../services/StreamSelectionProfileResolver.ts';
 import { isImageBasedSubtitle } from '../stream/util.ts';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
+import {
+  buildCelContext,
+  evaluateStreamSelectionProfile,
+} from './StreamSelectionEvaluator.ts';
 import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
 import {
   AudioStream,
@@ -96,6 +105,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
     private pipelineBuilderFactory: PipelineBuilderFactory,
     private channelDB: IChannelDB,
     private featureFlagService: FeatureFlagService,
+    private streamSelectionResolver: StreamSelectionProfileResolver,
+    private celService: CelEvaluationService,
   ) {
     super();
   }
@@ -326,8 +337,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     // re-encoding. Incompatible audio codecs get per-stream overrides.
     // Subtitles are still processed as WebVTT sidecar when available.
     const isPassthrough =
-      isRemux ||
-      outputFormat.type === OutputFormatTypes.HlsDirectV2;
+      isRemux || outputFormat.type === OutputFormatTypes.HlsDirectV2;
     const playbackParams = isPassthrough
       ? null
       : new FfmpegPlaybackParamsCalculator(
@@ -417,24 +427,51 @@ export class FfmpegStreamFactory extends IFFMPEG {
     let subtitleRendition: SubtitleRenditionInfo | undefined;
 
     if (!isPassthrough) {
+      const audioState = AudioState.create({
+        audioEncoder: playbackParams!.audioFormat,
+        audioChannels: playbackParams!.audioChannels,
+        audioBitrate: playbackParams!.audioBitrate,
+        audioBufferSize: playbackParams!.audioBufferSize,
+        audioSampleRate: playbackParams!.audioSampleRate,
+        audioVolume: this.transcodeConfig.audioVolumePercent,
+        audioDuration:
+          streamMode === ChannelStreamModes.HlsDirect
+            ? null
+            : duration.asMilliseconds(),
+        loudnormConfig: this.transcodeConfig.audioLoudnormConfig,
+      });
+
+      // Stream selection via profiles (handles both audio and subtitles)
       if (isDefined(streamDetails.audioDetails)) {
-        const audioStream = this.findBestAudioStream(
+        const selectionCtx = {
+          channelId: this.channel.uuid,
+          programId: lineupItem.program.uuid,
+          fillerListId: isCommercialLineupItem(lineupItem)
+            ? lineupItem.fillerListId
+            : undefined,
+          customShowId: isProgramLineupItem(lineupItem)
+            ? lineupItem.customShowId
+            : undefined,
+        };
+
+        const profile =
+          await this.streamSelectionResolver.resolve(selectionCtx);
+        const celContext = buildCelContext(
           streamDetails.audioDetails,
+          streamDetails.subtitleDetails,
+          { name: this.channel.name, number: this.channel.number },
+          { title: lineupItem.program.title, type: lineupItem.program.type },
         );
 
-        const audioState = AudioState.create({
-          audioEncoder: playbackParams!.audioFormat,
-          audioChannels: playbackParams!.audioChannels,
-          audioBitrate: playbackParams!.audioBitrate,
-          audioBufferSize: playbackParams!.audioBufferSize,
-          audioSampleRate: playbackParams!.audioSampleRate,
-          audioVolume: this.transcodeConfig.audioVolumePercent,
-          audioDuration:
-            streamMode === ChannelStreamModes.HlsDirect
-              ? null
-              : duration.asMilliseconds(),
-          loudnormConfig: this.transcodeConfig.audioLoudnormConfig,
-        });
+        const { audioStream, subtitleStream } =
+          await evaluateStreamSelectionProfile(
+            profile,
+            streamDetails.audioDetails,
+            streamDetails.subtitleDetails,
+            this.celService,
+            celContext,
+            lineupItem,
+          );
 
         audioInput = new AudioInputSource(
           streamSource,
@@ -447,17 +484,47 @@ export class FfmpegStreamFactory extends IFFMPEG {
           ],
           audioState,
         );
+
+        if (subtitleStream) {
+          this.logger.trace('Using subtitle stream: %O', subtitleStream);
+
+          const source = match(subtitleStream.path)
+            .with(
+              P.string.startsWith('http'),
+              (path) => new HttpStreamSource(path),
+            )
+            .with(P.string, (path) => new FileStreamSource(path))
+            .otherwise(() => streamSource);
+
+          const stream = match(subtitleStream.type)
+            .with(
+              'embedded',
+              () =>
+                new EmbeddedSubtitleStream(
+                  subtitleStream.codec,
+                  subtitleStream.index ?? 0,
+                  SubtitleMethods.Burn,
+                ),
+            )
+            .with(
+              'external',
+              () =>
+                new ExternalSubtitleStream(
+                  subtitleStream.codec,
+                  SubtitleMethods.Burn,
+                ),
+            )
+            .otherwise(() => null);
+
+          if (stream) {
+            subtitleSource = new SubtitlesInputSource(
+              source,
+              [stream],
+              SubtitleMethods.Burn,
+            );
+          }
+        }
       } else {
-        const audioState = AudioState.create({
-          audioEncoder: playbackParams!.audioFormat,
-          audioChannels: playbackParams!.audioChannels,
-          audioBitrate: playbackParams!.audioBitrate,
-          audioBufferSize: playbackParams!.audioBufferSize,
-          audioSampleRate: playbackParams!.audioSampleRate,
-          audioVolume: this.transcodeConfig.audioVolumePercent,
-          audioDuration: duration.asMilliseconds(),
-          normalizeLoudness: false,
-        });
         audioInput = new NullAudioInputSource({
           ...audioState,
           audioDuration: duration.asMilliseconds(),
@@ -465,7 +532,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
       }
 
       if (watermark?.enabled) {
-        const watermarkUrl = watermark.url ?? makeLocalUrl('/images/tunarr.png');
+        const watermarkUrl =
+          watermark.url ?? makeLocalUrl('/images/tunarr.png');
         watermarkSource = new WatermarkInputSource(
           new HttpStreamSource(watermarkUrl),
           StillImageStream.create({
@@ -478,82 +546,91 @@ export class FfmpegStreamFactory extends IFFMPEG {
           { ...watermark, url: watermarkUrl },
         );
       }
-    }
+    } else {
+      // Passthrough: subtitle processing via sidecar. In copy-all mode, only
+      // sidecar (Convert) is available since we're not re-encoding video for
+      // burn-in.
+      if (
+        isDefined(streamDetails.subtitleDetails) &&
+        this.channel.subtitlesEnabled
+      ) {
+        const sidecarEnabled = this.featureFlagService.get(
+          'webvttSidecarEnabled',
+        );
 
-    // Subtitle processing runs for all modes. In copy-all mode, only sidecar
-    // (Convert) is available since we're not re-encoding video for burn-in.
-    if (
-      isDefined(streamDetails.subtitleDetails) &&
-      this.channel.subtitlesEnabled
-    ) {
-      const sidecarEnabled =
-        this.featureFlagService.get('webvttSidecarEnabled');
+        const subtitlePreferences =
+          await this.channelDB.getChannelSubtitlePreferences(this.channel.uuid);
 
-      const subtitlePreferences =
-        await this.channelDB.getChannelSubtitlePreferences(this.channel.uuid);
+        const pickedSubtitleStream = await SubtitleStreamPicker.pickSubtitles(
+          subtitlePreferences,
+          lineupItem,
+          streamDetails.subtitleDetails,
+          // In copy-all mode, always prefer text-based subs for sidecar
+          // since burn-in is not available.
+          { preferTextBased: isPassthrough || sidecarEnabled },
+        );
 
-      const pickedSubtitleStream = await SubtitleStreamPicker.pickSubtitles(
-        subtitlePreferences,
-        lineupItem,
-        streamDetails.subtitleDetails,
-        // In copy-all mode, always prefer text-based subs for sidecar
-        // since burn-in is not available.
-        { preferTextBased: isPassthrough || sidecarEnabled },
-      );
+        if (pickedSubtitleStream) {
+          this.logger.trace('Using subtitle stream: %O', pickedSubtitleStream);
 
-      if (pickedSubtitleStream) {
-        this.logger.trace('Using subtitle stream: %O', pickedSubtitleStream);
+          // In copy-all mode, force Convert (sidecar) since burn-in is
+          // not possible without re-encoding. For image-based subtitles
+          // that can't be converted to WebVTT, skip them entirely.
+          const canUseSidecar = !isImageBasedSubtitle(
+            pickedSubtitleStream.codec,
+          );
+          const useSidecar = isPassthrough || (sidecarEnabled && canUseSidecar);
+          const method = useSidecar
+            ? SubtitleMethods.Convert
+            : SubtitleMethods.Burn;
 
-        // In copy-all mode, force Convert (sidecar) since burn-in is
-        // not possible without re-encoding. For image-based subtitles
-        // that can't be converted to WebVTT, skip them entirely.
-        const canUseSidecar =
-          !isImageBasedSubtitle(pickedSubtitleStream.codec);
-        const useSidecar =
-          isPassthrough || (sidecarEnabled && canUseSidecar);
-        const method = useSidecar
-          ? SubtitleMethods.Convert
-          : SubtitleMethods.Burn;
+          // Skip image-based subtitles in copy-all mode since they can't
+          // be burned in or converted to WebVTT.
+          if (!isPassthrough || canUseSidecar) {
+            const source = match(pickedSubtitleStream.path)
+              .with(
+                P.string.startsWith('http'),
+                (path) => new HttpStreamSource(path),
+              )
+              .with(P.string, (path) => new FileStreamSource(path))
+              .otherwise(() => streamSource);
 
-        // Skip image-based subtitles in copy-all mode since they can't
-        // be burned in or converted to WebVTT.
-        if (!isPassthrough || canUseSidecar) {
-          const source = match(pickedSubtitleStream.path)
-            .with(
-              P.string.startsWith('http'),
-              (path) => new HttpStreamSource(path),
-            )
-            .with(P.string, (path) => new FileStreamSource(path))
-            .otherwise(() => streamSource);
+            const stream = match(pickedSubtitleStream.type)
+              .with(
+                'embedded',
+                () =>
+                  new EmbeddedSubtitleStream(
+                    pickedSubtitleStream.codec,
+                    pickedSubtitleStream.index ?? 0,
+                    method,
+                  ),
+              )
+              .with(
+                'external',
+                () =>
+                  new ExternalSubtitleStream(
+                    pickedSubtitleStream.codec,
+                    method,
+                  ),
+              )
+              .otherwise(() => null);
 
-          const stream = match(pickedSubtitleStream.type)
-            .with(
-              'embedded',
-              () =>
-                new EmbeddedSubtitleStream(
-                  pickedSubtitleStream.codec,
-                  pickedSubtitleStream.index ?? 0,
-                  method,
-                ),
-            )
-            .with(
-              'external',
-              () =>
-                new ExternalSubtitleStream(pickedSubtitleStream.codec, method),
-            )
-            .otherwise(() => null);
+            if (stream) {
+              subtitleSource = new SubtitlesInputSource(
+                source,
+                [stream],
+                method,
+              );
 
-          if (stream) {
-            subtitleSource = new SubtitlesInputSource(source, [stream], method);
-
-            if (useSidecar) {
-              subtitleRendition = {
-                language: pickedSubtitleStream.languageCodeISO6392 ?? 'und',
-                languageName: pickedSubtitleStream.language,
-                default: pickedSubtitleStream.default,
-                forced: pickedSubtitleStream.forced,
-                title: pickedSubtitleStream.title,
-              };
+              if (useSidecar) {
+                subtitleRendition = {
+                  language: pickedSubtitleStream.languageCodeISO6392 ?? 'und',
+                  languageName: pickedSubtitleStream.language,
+                  default: pickedSubtitleStream.default,
+                  forced: pickedSubtitleStream.forced,
+                  title: pickedSubtitleStream.title,
+                };
+              }
             }
           }
         }
@@ -663,7 +740,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
           ? 90000
           : playbackParams!.videoTrackTimeScale,
         realtime,
-        videoFormat: isPassthrough ? VideoFormats.Copy : playbackParams!.videoFormat,
+        videoFormat: isPassthrough
+          ? VideoFormats.Copy
+          : playbackParams!.videoFormat,
         videoProfile: null,
         deinterlace: isPassthrough ? false : playbackParams!.deinterlace,
         infiniteLoop: lineupItem.infiniteLoop,
@@ -961,30 +1040,5 @@ export class FfmpegStreamFactory extends IFFMPEG {
     return this.transcodeConfig.vaapiDriver !== 'system'
       ? this.transcodeConfig.vaapiDriver
       : null;
-  }
-
-  private findBestAudioStream(
-    audioDetails: NonEmptyArray<AudioStreamDetails>,
-  ): AudioStreamDetails {
-    // First try to find a stream matching our language preferences in order
-    for (const pref of this.ffmpegSettings.languagePreferences.preferences) {
-      const matchingStream = audioDetails.find((stream) => {
-        return (
-          stream.languageCodeISO6392?.toLowerCase() === pref.iso6392 ||
-          stream.languageCodeISO6391 === pref.iso6391 ||
-          stream.language?.toLowerCase() === pref.displayName.toLowerCase()
-        );
-      });
-      if (matchingStream) {
-        return matchingStream;
-      }
-    }
-
-    // If no language match, fallback to default/selected stream
-    const fallbackStream =
-      audioDetails.find((stream) => stream.selected) ??
-      audioDetails.find((stream) => stream.default) ??
-      audioDetails[0];
-    return fallbackStream;
   }
 }

@@ -146,6 +146,7 @@ export type FallbackStreamLineupItem = BaseContentBackedStreamLineupItem & {
 
 export type ProgramStreamLineupItem = BaseContentBackedStreamLineupItem & {
   type: 'program';
+  customShowId?: string;
 };
 
 export type RedirectStreamLineupItem = BaseStreamLineupItem & {

@@ -265,6 +265,7 @@ export const AllProgramFields = [
   'program.state',
   'program.tagline',
   'program.plot',
+  'program.streamSelectionProfileId',
 ] as const;
 
 type ProgramUpsertFields = StrictExclude<

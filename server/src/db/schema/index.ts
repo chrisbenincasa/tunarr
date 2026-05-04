@@ -90,6 +90,7 @@ import {
   TagRelations,
   TagRelationSchema,
 } from './Tag.ts';
+import { StreamSelectionProfile } from './StreamSelectionProfile.ts';
 import { TranscodeConfig } from './TranscodeConfig.ts';
 
 // export { Program } from './Program.ts';
@@ -162,6 +163,7 @@ export const schema = {
   tagJoin: TagRelations,
   tagJoinRelations: TagRelationSchema,
   transcodeConfigs: TranscodeConfig,
+  streamSelectionProfiles: StreamSelectionProfile,
 };
 
 export type DrizzleDBAccess = BetterSQLite3Database<typeof schema>;

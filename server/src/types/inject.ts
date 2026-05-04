@@ -97,6 +97,10 @@ const KEYS = {
   ProgramSearchRepository: Symbol.for('ProgramSearchRepository'),
   ProgramStateRepository: Symbol.for('ProgramStateRepository'),
 
+  // Stream Selection
+  CelEvaluationService: Symbol.for('CelEvaluationService'),
+  StreamSelectionProfileResolver: Symbol.for('StreamSelectionProfileResolver'),
+
   // ChannelDB repositories
   BasicChannelRepository: Symbol.for('BasicChannelRepository'),
   ChannelProgramRepository: Symbol.for('ChannelProgramRepository'),

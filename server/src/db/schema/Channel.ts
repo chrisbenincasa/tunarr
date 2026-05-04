@@ -20,6 +20,7 @@ import { ChannelFillerShow } from './ChannelFillerShow.ts';
 import { ChannelPrograms } from './ChannelPrograms.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
 import { ProgramPlayHistory } from './ProgramPlayHistory.ts';
+import { StreamSelectionProfile } from './StreamSelectionProfile.ts';
 import { TranscodeConfig } from './TranscodeConfig.ts';
 
 export const Channel = sqliteTable(
@@ -46,6 +47,10 @@ export const Channel = sqliteTable(
     transcodeConfigId: text().notNull(),
     watermark: text({ mode: 'json' }).$type<ChannelWatermark>(),
     subtitlesEnabled: integer({ mode: 'boolean' }).default(false),
+    streamSelectionProfileId: text().references(
+      () => StreamSelectionProfile.uuid,
+      { onDelete: 'set null' },
+    ),
   },
   (table) => [
     uniqueIndex('channel_number_unique').on(table.number),

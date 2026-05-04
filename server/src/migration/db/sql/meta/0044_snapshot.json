@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "11c0c7ae-4449-4d42-8243-1d68565688fc",
-  "prevId": "63234c90-1be6-4af9-985c-db1eb9bb694c",
+  "id": "7fc76602-2332-46b5-aab6-c41eacbdad68",
+  "prevId": "11c0c7ae-4449-4d42-8243-1d68565688fc",
   "tables": {
     "artwork": {
       "name": "artwork",
@@ -330,6 +330,13 @@
           "notNull": false,
           "autoincrement": false,
           "default": false
+        },
+        "stream_selection_profile_id": {
+          "name": "stream_selection_profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -341,7 +348,21 @@
           "isUnique": true
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "channel_stream_selection_profile_id_stream_selection_profiles_uuid_fk": {
+          "name": "channel_stream_selection_profile_id_stream_selection_profiles_uuid_fk",
+          "tableFrom": "channel",
+          "tableTo": "stream_selection_profiles",
+          "columnsFrom": [
+            "stream_selection_profile_id"
+          ],
+          "columnsTo": [
+            "uuid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {
@@ -1051,10 +1072,31 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "stream_selection_profile_id": {
+          "name": "stream_selection_profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "filler_show_stream_selection_profile_id_stream_selection_profiles_uuid_fk": {
+          "name": "filler_show_stream_selection_profile_id_stream_selection_profiles_uuid_fk",
+          "tableFrom": "filler_show",
+          "tableTo": "stream_selection_profiles",
+          "columnsFrom": [
+            "stream_selection_profile_id"
+          ],
+          "columnsTo": [
+            "uuid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -1922,6 +1964,13 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'ok'"
+        },
+        "stream_selection_profile_id": {
+          "name": "stream_selection_profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -2103,6 +2152,19 @@
             "uuid"
           ],
           "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "program_stream_selection_profile_id_stream_selection_profiles_uuid_fk": {
+          "name": "program_stream_selection_profile_id_stream_selection_profiles_uuid_fk",
+          "tableFrom": "program",
+          "tableTo": "stream_selection_profiles",
+          "columnsFrom": [
+            "stream_selection_profile_id"
+          ],
+          "columnsTo": [
+            "uuid"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -3365,6 +3427,51 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "stream_selection_profiles": {
+      "name": "stream_selection_profiles",
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rules": {
+          "name": "rules",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "studio": {
       "name": "studio",
       "columns": {
@@ -3707,6 +3814,14 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'media'"
         }
       },
       "indexes": {
@@ -3728,7 +3843,8 @@
           "name": "tag_program_id_unique_idx",
           "columns": [
             "tag_id",
-            "program_id"
+            "program_id",
+            "source"
           ],
           "isUnique": true
         },
@@ -3736,7 +3852,8 @@
           "name": "tag_grouping_id_unique_idx",
           "columns": [
             "tag_id",
-            "grouping_id"
+            "grouping_id",
+            "source"
           ],
           "isUnique": true
         }
