@@ -16,7 +16,7 @@ export class Libx264Encoder extends VideoEncoder {
   options(): string[] {
     const opts = [...super.options()];
     if (isNonEmptyString(this.videoPreset)) {
-      opts.push('-profile:v', this.videoPreset);
+      opts.push('-preset:v', this.videoPreset);
     }
     if (isNonEmptyString(this.videoProfile)) {
       opts.push('-profile:v', this.videoProfile);

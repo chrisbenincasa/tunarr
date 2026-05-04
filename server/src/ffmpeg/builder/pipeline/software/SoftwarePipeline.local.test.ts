@@ -10,7 +10,11 @@ import {
   ffmpegTest,
   Fixtures,
 } from '../../../../testing/ffmpeg/FfmpegTestFixtures.ts';
-import { AudioFormats, FileOutputLocation } from '../../constants.ts';
+import {
+  AudioFormats,
+  FileOutputLocation,
+  VideoPresets,
+} from '../../constants.ts';
 import { PixelFormatYuv420P } from '../../format/PixelFormat.ts';
 import { AudioInputSource } from '../../input/AudioInputSource.ts';
 import { VideoInputSource } from '../../input/VideoInputSource.ts';
@@ -23,7 +27,6 @@ import {
 import { FrameState } from '../../state/FrameState.ts';
 import { FrameSize } from '../../types.ts';
 import { SoftwarePipelineBuilder } from './SoftwarePipelineBuilder.ts';
-
 
 describe.skipIf(!binaries)('SoftwarePipelineBuilder integration', () => {
   let workdir: string;
@@ -67,151 +70,265 @@ describe.skipIf(!binaries)('SoftwarePipelineBuilder integration', () => {
     );
   }
 
-  ffmpegTest('basic h264 software transcode', async ({
-    binaryCapabilities,
-    ffmpegVersion,
-  }) => {
-    const video = makeVideoInput(
-      Fixtures.video720p,
-      FrameSize.withDimensions(1280, 720),
-    );
-    const audio = makeAudioInput(Fixtures.video720p);
+  ffmpegTest(
+    'basic h264 software transcode',
+    async ({ binaryCapabilities, ffmpegVersion }) => {
+      const video = makeVideoInput(
+        Fixtures.video720p,
+        FrameSize.withDimensions(1280, 720),
+      );
+      const audio = makeAudioInput(Fixtures.video720p);
 
-    const builder = new SoftwarePipelineBuilder(
-      video,
-      audio,
-      null,
-      null,
-      null,
-      binaryCapabilities,
-    );
+      const builder = new SoftwarePipelineBuilder(
+        video,
+        audio,
+        null,
+        null,
+        null,
+        binaryCapabilities,
+      );
 
-    const frameState = new FrameState({
-      isAnamorphic: false,
-      scaledSize: FrameSize.withDimensions(1280, 720),
-      paddedSize: FrameSize.withDimensions(1280, 720),
-    });
+      const frameState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.withDimensions(1280, 720),
+        paddedSize: FrameSize.withDimensions(1280, 720),
+      });
 
-    const outputPath = path.join(workdir, 'output_transcode.ts');
-    const pipeline = builder.build(
-      FfmpegState.create({
-        version: ffmpegVersion,
-        outputLocation: FileOutputLocation(outputPath, true),
-      }),
-      frameState,
-      DefaultPipelineOptions,
-    );
+      const outputPath = path.join(workdir, 'output_transcode.ts');
+      const pipeline = builder.build(
+        FfmpegState.create({
+          version: ffmpegVersion,
+          outputLocation: FileOutputLocation(outputPath, true),
+        }),
+        frameState,
+        DefaultPipelineOptions,
+      );
 
-    const { exitCode, stderr } = runFfmpegWithPipeline(
-      binaries!.ffmpeg,
-      pipeline.getCommandArgs(),
-    );
+      const { exitCode, stderr } = runFfmpegWithPipeline(
+        binaries!.ffmpeg,
+        pipeline.getCommandArgs(),
+      );
 
-    expect(
-      exitCode,
-      `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
-    ).toBe(0);
+      expect(
+        exitCode,
+        `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
+      ).toBe(0);
 
-    const probe = probeFile(binaries!.ffprobe, outputPath);
-    expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
-  });
+      const probe = probeFile(binaries!.ffprobe, outputPath);
+      expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+    },
+  );
 
-  ffmpegTest('scale from 1080p to 720p', async ({
-    binaryCapabilities,
-    ffmpegVersion,
-  }) => {
-    const video = makeVideoInput(
-      Fixtures.video1080p,
-      FrameSize.withDimensions(1920, 1080),
-    );
-    const audio = makeAudioInput(Fixtures.video1080p);
+  ffmpegTest(
+    'scale from 1080p to 720p',
+    async ({ binaryCapabilities, ffmpegVersion }) => {
+      const video = makeVideoInput(
+        Fixtures.video1080p,
+        FrameSize.withDimensions(1920, 1080),
+      );
+      const audio = makeAudioInput(Fixtures.video1080p);
 
-    const builder = new SoftwarePipelineBuilder(
-      video,
-      audio,
-      null,
-      null,
-      null,
-      binaryCapabilities,
-    );
+      const builder = new SoftwarePipelineBuilder(
+        video,
+        audio,
+        null,
+        null,
+        null,
+        binaryCapabilities,
+      );
 
-    const frameState = new FrameState({
-      isAnamorphic: false,
-      scaledSize: FrameSize.withDimensions(1280, 720),
-      paddedSize: FrameSize.withDimensions(1280, 720),
-    });
+      const frameState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.withDimensions(1280, 720),
+        paddedSize: FrameSize.withDimensions(1280, 720),
+      });
 
-    const outputPath = path.join(workdir, 'output_scale.ts');
-    const pipeline = builder.build(
-      FfmpegState.create({
-        version: ffmpegVersion,
-        outputLocation: FileOutputLocation(outputPath, true),
-      }),
-      frameState,
-      DefaultPipelineOptions,
-    );
+      const outputPath = path.join(workdir, 'output_scale.ts');
+      const pipeline = builder.build(
+        FfmpegState.create({
+          version: ffmpegVersion,
+          outputLocation: FileOutputLocation(outputPath, true),
+        }),
+        frameState,
+        DefaultPipelineOptions,
+      );
 
-    const { exitCode, stderr } = runFfmpegWithPipeline(
-      binaries!.ffmpeg,
-      pipeline.getCommandArgs(),
-    );
+      const { exitCode, stderr } = runFfmpegWithPipeline(
+        binaries!.ffmpeg,
+        pipeline.getCommandArgs(),
+      );
 
-    expect(
-      exitCode,
-      `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
-    ).toBe(0);
+      expect(
+        exitCode,
+        `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
+      ).toBe(0);
 
-    const probe = probeFile(binaries!.ffprobe, outputPath);
-    expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
-  });
+      const probe = probeFile(binaries!.ffprobe, outputPath);
+      expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+    },
+  );
 
-  ffmpegTest('copy mode (no transcode)', async ({
-    binaryCapabilities,
-    ffmpegVersion,
-  }) => {
-    const video = makeVideoInput(
-      Fixtures.video720p,
-      FrameSize.withDimensions(1280, 720),
-    );
-    const audio = makeAudioInput(Fixtures.video720p);
+  ffmpegTest(
+    'h264 software transcode includes -preset:v veryfast',
+    async ({ binaryCapabilities, ffmpegVersion }) => {
+      const video = makeVideoInput(
+        Fixtures.video720p,
+        FrameSize.withDimensions(1280, 720),
+      );
+      const audio = makeAudioInput(Fixtures.video720p);
 
-    const builder = new SoftwarePipelineBuilder(
-      video,
-      audio,
-      null,
-      null,
-      null,
-      binaryCapabilities,
-    );
+      const builder = new SoftwarePipelineBuilder(
+        video,
+        audio,
+        null,
+        null,
+        null,
+        binaryCapabilities,
+      );
 
-    const frameState = new FrameState({
-      isAnamorphic: false,
-      scaledSize: FrameSize.withDimensions(1280, 720),
-      paddedSize: FrameSize.withDimensions(1280, 720),
-      videoFormat: 'copy',
-    });
+      const frameState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.withDimensions(1280, 720),
+        paddedSize: FrameSize.withDimensions(1280, 720),
+        videoPreset: VideoPresets.VeryFast,
+      });
 
-    const outputPath = path.join(workdir, 'output_copy.ts');
-    const pipeline = builder.build(
-      FfmpegState.create({
-        version: ffmpegVersion,
-        outputLocation: FileOutputLocation(outputPath, true),
-      }),
-      frameState,
-      DefaultPipelineOptions,
-    );
+      const outputPath = path.join(workdir, 'output_preset.ts');
+      const pipeline = builder.build(
+        FfmpegState.create({
+          version: ffmpegVersion,
+          outputLocation: FileOutputLocation(outputPath, true),
+        }),
+        frameState,
+        DefaultPipelineOptions,
+      );
 
-    const { exitCode, stderr } = runFfmpegWithPipeline(
-      binaries!.ffmpeg,
-      pipeline.getCommandArgs(),
-    );
+      const args = pipeline.getCommandArgs();
+      const presetIdx = args.indexOf('-preset:v');
 
-    expect(
-      exitCode,
-      `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
-    ).toBe(0);
+      expect(presetIdx).toBeGreaterThan(-1);
+      expect(args[presetIdx + 1]).toBe('veryfast');
 
-    const probe = probeFile(binaries!.ffprobe, outputPath);
-    expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
-  });
+      const { exitCode, stderr } = runFfmpegWithPipeline(
+        binaries!.ffmpeg,
+        args,
+      );
+
+      expect(
+        exitCode,
+        `Pipeline command failed: ${args.join(' ')}\n${stderr}`,
+      ).toBe(0);
+
+      const probe = probeFile(binaries!.ffprobe, outputPath);
+      expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+      expect(
+        probe.streams.some(
+          (s) => s.codec_type === 'video' && s.codec_name === 'h264',
+        ),
+      ).toBe(true);
+    },
+  );
+
+  ffmpegTest(
+    'h264 transcode without preset does not include -preset:v',
+    async ({ binaryCapabilities, ffmpegVersion }) => {
+      const video = makeVideoInput(
+        Fixtures.video720p,
+        FrameSize.withDimensions(1280, 720),
+      );
+      const audio = makeAudioInput(Fixtures.video720p);
+
+      const builder = new SoftwarePipelineBuilder(
+        video,
+        audio,
+        null,
+        null,
+        null,
+        binaryCapabilities,
+      );
+
+      const frameState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.withDimensions(1280, 720),
+        paddedSize: FrameSize.withDimensions(1280, 720),
+        // No videoPreset
+      });
+
+      const outputPath = path.join(workdir, 'output_no_preset.ts');
+      const pipeline = builder.build(
+        FfmpegState.create({
+          version: ffmpegVersion,
+          outputLocation: FileOutputLocation(outputPath, true),
+        }),
+        frameState,
+        DefaultPipelineOptions,
+      );
+
+      const args = pipeline.getCommandArgs();
+      expect(args).not.toContain('-preset:v');
+
+      const { exitCode, stderr } = runFfmpegWithPipeline(
+        binaries!.ffmpeg,
+        args,
+      );
+
+      expect(
+        exitCode,
+        `Pipeline command failed: ${args.join(' ')}\n${stderr}`,
+      ).toBe(0);
+
+      const probe = probeFile(binaries!.ffprobe, outputPath);
+      expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+    },
+  );
+
+  ffmpegTest(
+    'copy mode (no transcode)',
+    async ({ binaryCapabilities, ffmpegVersion }) => {
+      const video = makeVideoInput(
+        Fixtures.video720p,
+        FrameSize.withDimensions(1280, 720),
+      );
+      const audio = makeAudioInput(Fixtures.video720p);
+
+      const builder = new SoftwarePipelineBuilder(
+        video,
+        audio,
+        null,
+        null,
+        null,
+        binaryCapabilities,
+      );
+
+      const frameState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.withDimensions(1280, 720),
+        paddedSize: FrameSize.withDimensions(1280, 720),
+        videoFormat: 'copy',
+      });
+
+      const outputPath = path.join(workdir, 'output_copy.ts');
+      const pipeline = builder.build(
+        FfmpegState.create({
+          version: ffmpegVersion,
+          outputLocation: FileOutputLocation(outputPath, true),
+        }),
+        frameState,
+        DefaultPipelineOptions,
+      );
+
+      const { exitCode, stderr } = runFfmpegWithPipeline(
+        binaries!.ffmpeg,
+        pipeline.getCommandArgs(),
+      );
+
+      expect(
+        exitCode,
+        `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
+      ).toBe(0);
+
+      const probe = probeFile(binaries!.ffprobe, outputPath);
+      expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+    },
+  );
 });

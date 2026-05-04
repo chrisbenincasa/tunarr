@@ -8,7 +8,15 @@ import type { StreamDetails, VideoStreamDetails } from '@/stream/types.js';
 import { gcd } from '@/util/index.js';
 import type { Resolution } from '@tunarr/types';
 import { ChannelStreamModes } from '@tunarr/types';
-import type { OutputFormat, VideoFormat } from './builder/constants.ts';
+import { match, P } from 'ts-pattern';
+import type {
+  VideoPreset} from './builder/constants.ts';
+import {
+  VideoFormats,
+  VideoPresets,
+  type OutputFormat,
+  type VideoFormat,
+} from './builder/constants.ts';
 import type { PixelFormat } from './builder/format/PixelFormat.ts';
 import { PixelFormatYuv420P } from './builder/format/PixelFormat.ts';
 import { FrameSize } from './builder/types.ts';
@@ -62,6 +70,17 @@ export class FfmpegPlaybackParamsCalculator {
           params.scaledSize = FrameSize.fromResolution(scaledSize).ensureEven();
         }
       }
+
+      params.videoPreset = match([
+        this.transcodeConfig.hardwareAccelerationMode,
+        this.transcodeConfig.videoFormat,
+        videoStream.bitDepth,
+      ])
+        .with(
+          ['none', P.union(VideoFormats.H264, VideoFormats.Hevc), P._],
+          () => VideoPresets.VeryFast,
+        )
+        .otherwise(() => undefined);
 
       const sizeAfterScaling =
         params.scaledSize ??
@@ -151,6 +170,8 @@ export type FfmpegPlaybackParams = {
   videoFormat: VideoFormat;
   videoBitrate?: number;
   videoBufferSize?: number;
+  videoProfile?: string;
+  videoPreset?: VideoPreset;
   pixelFormat?: PixelFormat;
   deinterlace?: boolean;
 
