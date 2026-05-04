@@ -28,6 +28,7 @@ import { ProgramGrouping } from './ProgramGrouping.ts';
 import { ProgramPlayHistory } from './ProgramPlayHistory.ts';
 import { ProgramSubtitles } from './ProgramSubtitles.ts';
 import { ProgramVersion } from './ProgramVersion.ts';
+import { StreamSelectionProfile } from './StreamSelectionProfile.ts';
 import { StudioEntity } from './Studio.ts';
 import { TagRelations } from './Tag.ts';
 
@@ -95,6 +96,10 @@ export const Program = sqliteTable(
     type: text({ enum: ProgramTypes }).notNull(),
     year: integer(),
     state: text({ enum: ProgramStates }).notNull().default('ok'),
+    streamSelectionProfileId: text().references(
+      () => StreamSelectionProfile.uuid,
+      { onDelete: 'set null' },
+    ),
   },
   (table) => [
     index('program_season_uuid_index').on(table.seasonUuid),

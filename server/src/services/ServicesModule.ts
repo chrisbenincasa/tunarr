@@ -9,6 +9,7 @@ import type { MediaLibraryType } from '../db/schema/MediaSource.ts';
 import { KEYS } from '../types/inject.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 import type { Canonicalizer } from './Canonicalizer.ts';
+import { CelEvaluationService } from './CelEvaluationService.ts';
 import { CustomShowSyncService } from './CustomShowSyncService.ts';
 import { EmbyItemCanonicalizer } from './EmbyItemCanonicalizer.ts';
 import { FeatureFlagService } from './FeatureFlagService.ts';
@@ -53,6 +54,7 @@ import { PlexMediaSourceMovieScanner } from './scanner/PlexMediaSourceMovieScann
 import { PlexMediaSourceMusicScanner } from './scanner/PlexMediaSourceMusicScanner.ts';
 import { PlexMediaSourceOtherVideoScanner } from './scanner/PlexMediaSourceOtherVideoScanner.ts';
 import { PlexMediaSourceTvShowScanner } from './scanner/PlexMediaSourceTvShowScanner.ts';
+import { StreamSelectionProfileResolver } from './StreamSelectionProfileResolver.ts';
 
 export const ServicesModule = new ContainerModule(({ bind }) => {
   bind<Canonicalizer<PlexMedia>>(KEYS.PlexCanonicalizer)
@@ -209,5 +211,8 @@ export const ServicesModule = new ContainerModule(({ bind }) => {
 
   bind(MediaSourceProgressService).toSelf().inSingletonScope();
   bind(MediaSourceScanCoordinator).toSelf().inSingletonScope();
+
+  bind(CelEvaluationService).toSelf().inSingletonScope();
+  bind(StreamSelectionProfileResolver).toSelf().inSingletonScope();
   bind(FeatureFlagService).toSelf().inSingletonScope();
 });
