@@ -36,4 +36,26 @@ export class LanguageService {
 
     return;
   }
+
+  /**
+   * Normalize any language identifier (ISO 639-1, 639-2/B, 639-2/T, or
+   * English name) to its ISO 639-2/T (Alpha-3 T) code.
+   *
+   * Returns undefined when the input cannot be resolved.
+   */
+  static normalizeToAlpha3T(input: string): string | undefined {
+    // Try as ISO code first (2-letter, 3-letter B/T)
+    const fromCode = this.getAlpha3TCode(input);
+    if (fromCode !== undefined) {
+      return fromCode;
+    }
+
+    // Try as English language name (e.g., "Japanese" → "jpn")
+    const fromName = languages.getAlpha3TCode(input, 'en');
+    if (fromName) {
+      return fromName;
+    }
+
+    return undefined;
+  }
 }

@@ -154,6 +154,171 @@ describe('CelEvaluationService', () => {
     });
   });
 
+  describe('custom functions', () => {
+    describe('hasAudioLang', () => {
+      it('matches ISO 639-2/T code directly', () => {
+        const ctx = makeContext();
+        expect(service.evaluate('hasAudioLang("eng")', ctx)).toBe(true);
+        expect(service.evaluate('hasAudioLang("jpn")', ctx)).toBe(true);
+        expect(service.evaluate('hasAudioLang("fra")', ctx)).toBe(false);
+      });
+
+      it('matches ISO 639-1 code via normalization', () => {
+        const ctx = makeContext();
+        expect(service.evaluate('hasAudioLang("en")', ctx)).toBe(true);
+        expect(service.evaluate('hasAudioLang("ja")', ctx)).toBe(true);
+        expect(service.evaluate('hasAudioLang("fr")', ctx)).toBe(false);
+      });
+
+      it('matches English language name', () => {
+        const ctx = makeContext();
+        expect(service.evaluate('hasAudioLang("English")', ctx)).toBe(true);
+        expect(service.evaluate('hasAudioLang("Japanese")', ctx)).toBe(true);
+        expect(service.evaluate('hasAudioLang("French")', ctx)).toBe(false);
+      });
+
+      it('falls back to case-insensitive match for unknown inputs', () => {
+        const ctx = makeContext({
+          audio: {
+            streams: [
+              {
+                index: 0,
+                language: 'und',
+                codec: 'aac',
+                channels: 2,
+                title: '',
+                default: true,
+                selected: true,
+              },
+            ],
+            languages: ['und'],
+          },
+        });
+        expect(service.evaluate('hasAudioLang("und")', ctx)).toBe(true);
+        expect(service.evaluate('hasAudioLang("UND")', ctx)).toBe(true);
+      });
+    });
+
+    describe('hasSubtitleLang', () => {
+      it('matches subtitle languages with normalization', () => {
+        const ctx = makeContext();
+        expect(service.evaluate('hasSubtitleLang("eng")', ctx)).toBe(true);
+        expect(service.evaluate('hasSubtitleLang("en")', ctx)).toBe(true);
+        expect(service.evaluate('hasSubtitleLang("English")', ctx)).toBe(true);
+        expect(service.evaluate('hasSubtitleLang("jpn")', ctx)).toBe(false);
+      });
+    });
+
+    describe('hasLang', () => {
+      it('matches audio or subtitle languages', () => {
+        const ctx = makeContext();
+        // "eng" is in both audio and subtitle
+        expect(service.evaluate('hasLang("eng")', ctx)).toBe(true);
+        // "jpn" is only in audio
+        expect(service.evaluate('hasLang("jpn")', ctx)).toBe(true);
+        // "fra" is in neither
+        expect(service.evaluate('hasLang("fra")', ctx)).toBe(false);
+      });
+
+      it('matches when only subtitles have the language', () => {
+        const ctx = makeContext({
+          audio: {
+            streams: [
+              {
+                index: 0,
+                language: 'jpn',
+                codec: 'aac',
+                channels: 2,
+                title: '',
+                default: true,
+                selected: true,
+              },
+            ],
+            languages: ['jpn'],
+          },
+        });
+        // "eng" only exists in subtitle.languages
+        expect(service.evaluate('hasLang("eng")', ctx)).toBe(true);
+      });
+    });
+
+    describe('isMultiLanguage', () => {
+      it('returns true when audio has multiple languages', () => {
+        const ctx = makeContext();
+        expect(service.evaluate('isMultiLanguage()', ctx)).toBe(true);
+      });
+
+      it('returns false when audio has one language', () => {
+        const ctx = makeContext({
+          audio: {
+            streams: [
+              {
+                index: 0,
+                language: 'eng',
+                codec: 'aac',
+                channels: 6,
+                title: 'Surround',
+                default: true,
+                selected: true,
+              },
+              {
+                index: 1,
+                language: 'eng',
+                codec: 'aac',
+                channels: 2,
+                title: 'Stereo',
+                default: false,
+                selected: false,
+              },
+            ],
+            languages: ['eng'],
+          },
+        });
+        expect(service.evaluate('isMultiLanguage()', ctx)).toBe(false);
+      });
+
+      it('returns false when audio has no languages', () => {
+        const ctx = makeContext({
+          audio: { streams: [], languages: [] },
+        });
+        expect(service.evaluate('isMultiLanguage()', ctx)).toBe(false);
+      });
+
+      it('deduplicates equivalent codes', () => {
+        // "eng" and "en" should normalize to the same code
+        const ctx = makeContext({
+          audio: {
+            streams: [],
+            languages: ['eng', 'en'],
+          },
+        });
+        expect(service.evaluate('isMultiLanguage()', ctx)).toBe(false);
+      });
+    });
+
+    describe('composability', () => {
+      it('combines custom functions with standard CEL operators', () => {
+        const ctx = makeContext();
+        expect(
+          service.evaluate('isMultiLanguage() && hasAudioLang("jpn")', ctx),
+        ).toBe(true);
+        expect(
+          service.evaluate('isMultiLanguage() && hasAudioLang("fra")', ctx),
+        ).toBe(false);
+      });
+
+      it('combines custom functions with context fields', () => {
+        const ctx = makeContext();
+        expect(
+          service.evaluate(
+            'hasAudioLang("jpn") && program.type == "movie"',
+            ctx,
+          ),
+        ).toBe(true);
+      });
+    });
+  });
+
   describe('validate', () => {
     it('returns undefined for valid expressions', () => {
       expect(service.validate('true')).toBeUndefined();
