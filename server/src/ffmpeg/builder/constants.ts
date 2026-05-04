@@ -62,6 +62,12 @@ export const VideoFormats = {
 
 export type VideoFormat = (typeof VideoFormats)[keyof typeof VideoFormats];
 
+export const VideoPresets = {
+  VeryFast: 'veryfast',
+};
+
+export type VideoPreset = (typeof VideoPresets)[keyof typeof VideoPresets];
+
 export const AudioFormats = {
   Aac: 'aac',
   Ac3: 'ac3',
