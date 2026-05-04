@@ -63,6 +63,10 @@ export class ExternalSubtitleDownloader {
     const ext = subtitleCodecToExt(details.codec);
 
     if (!outPath || !ext) {
+      this.logger.warn(
+        'Was not able to calculate output path or extension for subtitle codec: %s',
+        details.codec,
+      );
       return;
     }
 
@@ -92,7 +96,11 @@ export class ExternalSubtitleDownloader {
         await fs.writeFile(fullPath, subtitlesRes.get());
         return fullPath;
       } catch (e) {
-        this.logger.warn(e);
+        this.logger.warn(
+          e,
+          'Error writing subtitle output file to %s',
+          fullPath,
+        );
         return;
       }
     }
