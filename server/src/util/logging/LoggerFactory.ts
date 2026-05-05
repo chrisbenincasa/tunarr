@@ -303,6 +303,7 @@ class LoggerFactoryImpl {
           destinationOpts: {
             mkdir: true,
             append: true,
+            sync: isTest,
           },
         });
         streams.push({
@@ -318,6 +319,7 @@ class LoggerFactoryImpl {
             ),
             mkdir: true,
             append: true,
+            sync: isTest,
           }),
           level: logLevel,
         });
