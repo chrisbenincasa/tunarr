@@ -68,7 +68,10 @@ import { IFFMPEG } from './ffmpegBase.ts';
 import type { FfmpegInfo } from './ffmpegInfo.ts';
 
 export class FfmpegStreamFactory extends IFFMPEG {
-  private logger = LoggerFactory.child({ className: FfmpegStreamFactory.name });
+  private logger = LoggerFactory.child({
+    className: FfmpegStreamFactory.name,
+    category: 'streaming',
+  });
 
   constructor(
     private ffmpegSettings: ReadableFfmpegSettings,
@@ -489,6 +492,17 @@ export class FfmpegStreamFactory extends IFFMPEG {
           );
         }
       }
+    } else if (!this.channel.subtitlesEnabled) {
+      this.logger.trace(
+        'Channel %s (number = %d) does not have subtitles enabled. Skipping subtitles.',
+        this.channel.uuid,
+        this.channel.number,
+      );
+    } else if (!streamDetails.subtitleDetails) {
+      this.logger.debug(
+        'Program %s has no subtitle streams to choose from.',
+        lineupItem.program.uuid,
+      );
     }
 
     const builder = await this.pipelineBuilderFactory(this.transcodeConfig)
