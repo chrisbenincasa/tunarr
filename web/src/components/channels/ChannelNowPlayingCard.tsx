@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { createExternalId } from '@tunarr/shared';
+import { isNonEmptyString } from '@tunarr/shared/util';
+import type { MediaArtwork} from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
 import { capitalize, isUndefined } from 'lodash-es';
@@ -105,7 +107,29 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
     }
 
     if (program.externalSourceType === 'local') {
-      return `${backendUri}/api/programs/${program?.grandparent?.id}/artwork/fanart`;
+      // Temporary workaround, real fix on "dev"
+      const [id, artworkType, fallbackTypes] = match(program)
+        .returnType<[string, MediaArtwork['type'], MediaArtwork['type'][]]>()
+        // We don't have enough type info to know here.
+        .with(
+          { subtype: 'episode', grandparent: { id: P.when(isNonEmptyString) } },
+          (show) => [show.grandparent.id, 'fanart', ['poster']],
+        )
+        .with({ subtype: 'episode' }, (ep) => [ep.id!, 'thumbnail', []])
+        .with(
+          { subtype: 'track', grandparent: { id: P.when(isNonEmptyString) } },
+          (show) => [show.grandparent.id, 'banner', ['fanart', 'poster']],
+        )
+        .with({ subtype: 'movie' }, (movie) => [
+          movie.id!,
+          'banner',
+          ['fanart', 'poster'],
+        ])
+        .otherwise((other) => [other.id!, 'fanart', ['poster']]);
+      const fallbackParts =
+        fallbackTypes.length === 0 ? '' : `${fallbackTypes.join(',')}`;
+
+      return `${backendUri}/api/programs/${id}/artwork/${artworkType}?fallbackArtworkTypes=${fallbackParts}`;
     }
 
     const id =

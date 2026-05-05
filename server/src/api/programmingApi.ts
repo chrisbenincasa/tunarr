@@ -16,6 +16,7 @@ import {
   ifDefined,
   inConstArr,
   isHttpUrl,
+  isNonEmptyArray,
   isNonEmptyString,
 } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -44,6 +45,7 @@ import {
   head,
   isNil,
   isNull,
+  isUndefined,
   map,
   omitBy,
   trimStart,
@@ -383,6 +385,18 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           // TODO: use API schema
           artworkType: z.enum(ArtworkTypes),
         }),
+        querystring: z.object({
+          fallbackArtworkTypes: z
+            .array(z.enum(ArtworkTypes))
+            .optional()
+            .or(
+              z
+                .string()
+                .optional()
+                .transform((s) => s?.split(','))
+                .pipe(z.array(z.enum(ArtworkTypes)).optional()),
+            ),
+        }),
         response: {
           200: z.any(),
           404: z.void(),
@@ -404,9 +418,25 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }
       }
 
-      const art = program.artwork?.find(
+      if (isUndefined(program.artwork)) {
+        return res.status(404).send();
+      }
+
+      let art = program.artwork.find(
         (art) => art.artworkType === req.params.artworkType,
       );
+
+      if (!art && isNonEmptyArray(req.query.fallbackArtworkTypes)) {
+        for (const fallbackType of req.query.fallbackArtworkTypes) {
+          const fallback = program.artwork.find(
+            (art) => art.artworkType === fallbackType,
+          );
+          if (fallback) {
+            art = fallback;
+            break;
+          }
+        }
+      }
 
       if (!art) {
         return res.status(404).send();

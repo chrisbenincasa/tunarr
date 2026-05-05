@@ -268,6 +268,7 @@ export type SeasonInput = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -298,6 +299,7 @@ export type SeasonInput = {
                 chapterType?: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     }>;
@@ -411,6 +413,7 @@ export type EpisodeInput = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -441,6 +444,7 @@ export type EpisodeInput = {
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 };
@@ -685,6 +689,7 @@ export type MusicAlbumInput = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -715,6 +720,7 @@ export type MusicAlbumInput = {
                 chapterType?: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     }>;
@@ -837,6 +843,7 @@ export type MusicTrackInput = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -867,6 +874,7 @@ export type MusicTrackInput = {
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 };
@@ -1215,6 +1223,7 @@ export type Season = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -1245,6 +1254,7 @@ export type Season = {
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     }>;
@@ -1358,6 +1368,7 @@ export type Episode = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -1388,6 +1399,7 @@ export type Episode = {
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 };
@@ -1632,6 +1644,7 @@ export type MusicAlbum = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -1662,6 +1675,7 @@ export type MusicAlbum = {
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     }>;
@@ -1784,6 +1798,7 @@ export type MusicTrack = {
             colorPrimaries?: string | null;
             channels?: number | null;
             sdh?: boolean | null;
+            externalKey?: string | null;
             languageCodeISO6392?: string | null;
             selected?: boolean | null;
             default?: boolean | null;
@@ -1814,6 +1829,7 @@ export type MusicTrack = {
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        externalKey?: string | null;
     };
     duration: number;
 };
@@ -2779,6 +2795,7 @@ export type GetApiChannelsByIdProgramsResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -2809,6 +2826,7 @@ export type GetApiChannelsByIdProgramsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | Episode | MusicTrack | {
@@ -2918,6 +2936,7 @@ export type GetApiChannelsByIdProgramsResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -2948,6 +2967,7 @@ export type GetApiChannelsByIdProgramsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | {
@@ -3057,6 +3077,7 @@ export type GetApiChannelsByIdProgramsResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -3087,6 +3108,7 @@ export type GetApiChannelsByIdProgramsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         }>;
@@ -10968,6 +10990,7 @@ export type PostApiProgramsSearchResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -10998,6 +11021,7 @@ export type PostApiProgramsSearchResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | Episode | MusicTrack | {
@@ -11107,6 +11131,7 @@ export type PostApiProgramsSearchResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -11137,6 +11162,7 @@ export type PostApiProgramsSearchResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | {
@@ -11246,6 +11272,7 @@ export type PostApiProgramsSearchResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -11276,6 +11303,7 @@ export type PostApiProgramsSearchResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         }) | (Show | Season | MusicArtist | MusicAlbum)) | ({
@@ -11690,6 +11718,7 @@ export type GetApiProgramsByIdResponses = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -11720,6 +11749,7 @@ export type GetApiProgramsByIdResponses = {
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     } | Episode | MusicTrack | {
@@ -11829,6 +11859,7 @@ export type GetApiProgramsByIdResponses = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -11859,6 +11890,7 @@ export type GetApiProgramsByIdResponses = {
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     } | {
@@ -11968,6 +12000,7 @@ export type GetApiProgramsByIdResponses = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -11998,6 +12031,7 @@ export type GetApiProgramsByIdResponses = {
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     };
@@ -12040,7 +12074,9 @@ export type GetApiProgramsByIdArtworkByArtworkTypeData = {
         id: string;
         artworkType: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
     };
-    query?: never;
+    query?: {
+        fallbackArtworkTypes?: Array<'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape'>;
+    };
     url: '/api/programs/{id}/artwork/{artworkType}';
 };
 
@@ -12162,12 +12198,14 @@ export type GetApiProgramsByIdExternalLinkErrors = {
     /**
      * Default Response
      */
-    404: unknown;
+    404: string;
     /**
      * Default Response
      */
     405: unknown;
 };
+
+export type GetApiProgramsByIdExternalLinkError = GetApiProgramsByIdExternalLinkErrors[keyof GetApiProgramsByIdExternalLinkErrors];
 
 export type GetApiProgramsByIdExternalLinkResponses = {
     /**
@@ -12496,6 +12534,7 @@ export type BatchGetProgramsByExternalIdsResponses = {
                     colorPrimaries?: string | unknown;
                     channels?: number | unknown;
                     sdh?: boolean | unknown;
+                    externalKey?: string | unknown;
                     languageCodeISO6392?: string | unknown;
                     selected?: boolean | unknown;
                     default?: boolean | unknown;
@@ -12526,6 +12565,7 @@ export type BatchGetProgramsByExternalIdsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | unknown;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | unknown;
+                externalKey?: string | unknown;
             };
             duration: number;
         } | Episode | MusicTrack | {
@@ -12635,6 +12675,7 @@ export type BatchGetProgramsByExternalIdsResponses = {
                     colorPrimaries?: string | unknown;
                     channels?: number | unknown;
                     sdh?: boolean | unknown;
+                    externalKey?: string | unknown;
                     languageCodeISO6392?: string | unknown;
                     selected?: boolean | unknown;
                     default?: boolean | unknown;
@@ -12665,6 +12706,7 @@ export type BatchGetProgramsByExternalIdsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | unknown;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | unknown;
+                externalKey?: string | unknown;
             };
             duration: number;
         } | {
@@ -12774,6 +12816,7 @@ export type BatchGetProgramsByExternalIdsResponses = {
                     colorPrimaries?: string | unknown;
                     channels?: number | unknown;
                     sdh?: boolean | unknown;
+                    externalKey?: string | unknown;
                     languageCodeISO6392?: string | unknown;
                     selected?: boolean | unknown;
                     default?: boolean | unknown;
@@ -12804,6 +12847,7 @@ export type BatchGetProgramsByExternalIdsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | unknown;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | unknown;
+                externalKey?: string | unknown;
             };
             duration: number;
         };
@@ -12893,781 +12937,6 @@ export type PostApiProgramsByIdScanResponses = {
      * Default Response
      */
     202: unknown;
-};
-
-export type GetApiDebugJellyfinLibrariesData = {
-    body?: never;
-    path?: never;
-    query: {
-        userId?: string;
-        uri: string;
-        apiKey: string;
-    };
-    url: '/api/debug/jellyfin/libraries';
-};
-
-export type GetApiDebugJellyfinLibrariesResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugJellyfinLibraryItemsData = {
-    body?: never;
-    path?: never;
-    query: {
-        uri: string;
-        parentId?: string | null;
-        offset?: number;
-        limit?: number;
-        apiKey: string;
-    };
-    url: '/api/debug/jellyfin/library/items';
-};
-
-export type GetApiDebugJellyfinLibraryItemsResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugJellyfinMatchProgramByIdData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/debug/jellyfin/match_program/{id}';
-};
-
-export type GetApiDebugJellyfinMatchProgramByIdResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugJellyfinByLibraryIdEnumerateData = {
-    body?: never;
-    path: {
-        libraryId: string;
-    };
-    query?: never;
-    url: '/api/debug/jellyfin/{libraryId}/enumerate';
-};
-
-export type GetApiDebugJellyfinByLibraryIdEnumerateResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugStreamsOfflineData = {
-    body?: never;
-    path?: never;
-    query?: {
-        duration?: number;
-    };
-    url: '/api/debug/streams/offline';
-};
-
-export type GetApiDebugStreamsOfflineResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugStreamsErrorData = {
-    body?: never;
-    path?: never;
-    query?: {
-        channelId?: string | number;
-    };
-    url: '/api/debug/streams/error';
-};
-
-export type GetApiDebugStreamsErrorResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugStreamsRandomData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/streams/random';
-};
-
-export type GetApiDebugStreamsRandomResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugStreamsProgramsByIdData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: {
-        start?: 'random' | number;
-    };
-    url: '/api/debug/streams/programs/{id}';
-};
-
-export type GetApiDebugStreamsProgramsByIdResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugFfmpegProbeData = {
-    body?: never;
-    path?: never;
-    query: {
-        path: string;
-    };
-    url: '/api/debug/ffmpeg/probe';
-};
-
-export type GetApiDebugFfmpegProbeResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugFfmpegCapabilitiesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/ffmpeg/capabilities';
-};
-
-export type GetApiDebugFfmpegCapabilitiesResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugPlexStreamDetailsData = {
-    body?: never;
-    path?: never;
-    query: {
-        key: string;
-        mediaSource: string;
-    };
-    url: '/api/debug/plex/stream_details';
-};
-
-export type GetApiDebugPlexStreamDetailsResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugHeapData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/heap';
-};
-
-export type GetApiDebugHeapResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugHelpersPlayingAtData = {
-    body?: never;
-    path?: never;
-    query: {
-        channelId: number | string;
-        ts?: number;
-    };
-    url: '/api/debug/helpers/playing_at';
-};
-
-export type GetApiDebugHelpersPlayingAtResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugHelpersCreateGuideData = {
-    body?: never;
-    path?: never;
-    query: {
-        channelId: string;
-        live: boolean;
-        startTime?: number;
-        endTime?: number;
-    };
-    url: '/api/debug/helpers/create_guide';
-};
-
-export type GetApiDebugHelpersCreateGuideResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugHelpersChannelsByIdBuildGuideData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query: {
-        from: number;
-        to: number;
-    };
-    url: '/api/debug/helpers/channels/{id}/build_guide';
-};
-
-export type GetApiDebugHelpersChannelsByIdBuildGuideResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugHelpersBuildGuideData = {
-    body?: never;
-    path?: never;
-    query?: {
-        from?: unknown;
-        to?: unknown;
-        includePrograms?: boolean;
-    };
-    url: '/api/debug/helpers/build_guide';
-};
-
-export type GetApiDebugHelpersBuildGuideResponses = {
-    /**
-     * Default Response
-     */
-    200: Array<{
-        icon?: {
-            path: string;
-            width: number;
-            duration: number;
-            position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-        };
-        name: string;
-        number: number;
-        id: string;
-        programs: Array<{
-            type: 'content';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            id: string;
-            subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
-            summary?: string;
-            date?: string;
-            year?: number;
-            rating?: string;
-            serverFileKey?: string;
-            serverFilePath?: string;
-            title: string;
-            showId?: string;
-            seasonId?: string;
-            seasonNumber?: number;
-            episodeNumber?: number;
-            albumId?: string;
-            artistId?: string;
-            index?: number;
-            parent?: {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'season';
-            } | {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'album';
-            };
-            grandparent?: {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'show';
-                seasons?: Array<{
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                }>;
-            } | {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'artist';
-                albums?: Array<{
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                }>;
-            };
-            externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalSourceName: string;
-            externalSourceId: string;
-            libraryId?: string;
-            externalKey: string;
-            uniqueId: string;
-            externalIds: Array<{
-                type: 'single';
-                source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                id: string;
-            } | {
-                type: 'multi';
-                source: 'plex' | 'jellyfin' | 'emby';
-                sourceId: string;
-                id: string;
-            }>;
-            canonicalId?: string;
-            start: number;
-            stop: number;
-            isPaused: boolean;
-            timeRemaining?: number;
-        } | {
-            type: 'custom';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            id: string;
-            customShowId: string;
-            index: number;
-            program?: {
-                type: 'content';
-                persisted: boolean;
-                duration: number;
-                icon?: string;
-                id?: string;
-                subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
-                summary?: string;
-                date?: string;
-                year?: number;
-                rating?: string;
-                serverFileKey?: string;
-                serverFilePath?: string;
-                title: string;
-                showId?: string;
-                seasonId?: string;
-                seasonNumber?: number;
-                episodeNumber?: number;
-                albumId?: string;
-                artistId?: string;
-                index?: number;
-                parent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'season';
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'album';
-                };
-                grandparent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'show';
-                    seasons?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'artist';
-                    albums?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                };
-                externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                externalSourceName: string;
-                externalSourceId: string;
-                libraryId?: string;
-                externalKey: string;
-                uniqueId: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                canonicalId?: string;
-            };
-            start: number;
-            stop: number;
-            isPaused: boolean;
-            timeRemaining?: number;
-        } | {
-            type: 'redirect';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            channel: string;
-            channelNumber: number;
-            channelName: string;
-            start: number;
-            stop: number;
-            isPaused: boolean;
-            timeRemaining?: number;
-        } | {
-            type: 'flex';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            start: number;
-            stop: number;
-            isPaused: boolean;
-            timeRemaining?: number;
-            title: string;
-        }>;
-    }>;
-};
-
-export type GetApiDebugHelpersBuildGuideResponse = GetApiDebugHelpersBuildGuideResponses[keyof GetApiDebugHelpersBuildGuideResponses];
-
-export type GetApiDebugHelpersRandomFillerData = {
-    body?: never;
-    path?: never;
-    query: {
-        channelId: string;
-        live: boolean;
-        startTime?: number;
-        endTime?: number;
-        maxDuration: number;
-    };
-    url: '/api/debug/helpers/random_filler';
-};
-
-export type GetApiDebugHelpersRandomFillerResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugDbBackupData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/db/backup';
-};
-
-export type GetApiDebugDbBackupResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type PostApiDebugPlexByProgramIdUpdateExternalIdsData = {
-    body?: never;
-    path: {
-        programId: string;
-    };
-    query?: never;
-    url: '/api/debug/plex/{programId}/update_external_ids';
-};
-
-export type PostApiDebugPlexByProgramIdUpdateExternalIdsResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugChannelsReloadAllLineupsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/channels/reload_all_lineups';
-};
-
-export type GetApiDebugChannelsReloadAllLineupsResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugSubprocessStatusData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/subprocess/status';
-};
-
-export type GetApiDebugSubprocessStatusResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugSubprocessRestartData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/subprocess/restart';
-};
-
-export type GetApiDebugSubprocessRestartResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdScanData = {
-    body?: never;
-    path: {
-        mediaSourceId: string;
-    };
-    query?: {
-        pathFilter?: string;
-    };
-    url: '/api/debug/media_sources/{mediaSourceId}/scan';
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdScanResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanData = {
-    body?: never;
-    path: {
-        mediaSourceId: string;
-        libraryId: string;
-    };
-    query?: {
-        pathFilter?: string;
-    };
-    url: '/api/debug/media_sources/{mediaSourceId}/libraries/{libraryId}/scan';
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdScanCollectionsData = {
-    body?: never;
-    path: {
-        mediaSourceId: string;
-    };
-    query?: {
-        pathFilter?: string;
-    };
-    url: '/api/debug/media_sources/{mediaSourceId}/scan-collections';
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdScanCollectionsResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
 };
 
 export type GetApiMediaSourcesData = {
@@ -16668,6 +15937,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -16698,6 +15968,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | Episode | Season | Show | MusicTrack | MusicAlbum | MusicArtist | {
@@ -16807,6 +16078,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -16837,6 +16109,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | {
@@ -16946,6 +16219,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -16976,6 +16250,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         }>;
@@ -17347,6 +16622,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -17377,6 +16653,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     } | Episode | MusicTrack | {
@@ -17486,6 +16763,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -17516,6 +16794,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     } | {
@@ -17625,6 +16904,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
                 colorPrimaries?: string | null;
                 channels?: number | null;
                 sdh?: boolean | null;
+                externalKey?: string | null;
                 languageCodeISO6392?: string | null;
                 selected?: boolean | null;
                 default?: boolean | null;
@@ -17655,6 +16935,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            externalKey?: string | null;
         };
         duration: number;
     }) | (Show | Season | MusicArtist | MusicAlbum)) | ({
@@ -18325,6 +17606,7 @@ export type GetJellyfinLibraryItemsResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -18355,6 +17637,7 @@ export type GetJellyfinLibraryItemsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | Episode | MusicTrack | {
@@ -18464,6 +17747,7 @@ export type GetJellyfinLibraryItemsResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -18494,6 +17778,7 @@ export type GetJellyfinLibraryItemsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | {
@@ -18603,6 +17888,7 @@ export type GetJellyfinLibraryItemsResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -18633,6 +17919,7 @@ export type GetJellyfinLibraryItemsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         }) | (Show | Season | MusicArtist | MusicAlbum)) | ({
@@ -18984,6 +18271,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -19014,6 +18302,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | Episode | MusicTrack | {
@@ -19123,6 +18412,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -19153,6 +18443,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | {
@@ -19262,6 +18553,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -19292,6 +18584,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         }) | (Show | Season | MusicArtist | MusicAlbum)) | ({
@@ -19509,6 +18802,7 @@ export type GetApiTrashResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -19539,6 +18833,7 @@ export type GetApiTrashResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | Episode | MusicTrack | {
@@ -19648,6 +18943,7 @@ export type GetApiTrashResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -19678,6 +18974,7 @@ export type GetApiTrashResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         } | {
@@ -19787,6 +19084,7 @@ export type GetApiTrashResponses = {
                     colorPrimaries?: string | null;
                     channels?: number | null;
                     sdh?: boolean | null;
+                    externalKey?: string | null;
                     languageCodeISO6392?: string | null;
                     selected?: boolean | null;
                     default?: boolean | null;
@@ -19817,6 +19115,7 @@ export type GetApiTrashResponses = {
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                externalKey?: string | null;
             };
             duration: number;
         }) | (Show | Season | MusicArtist | MusicAlbum)) | ({
