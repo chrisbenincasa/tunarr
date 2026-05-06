@@ -30,7 +30,7 @@ import type {
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import type { Maybe } from '../../types/util.ts';
-import type { Logger } from '../../util/logging/LoggerFactory.ts';
+
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
@@ -71,7 +71,6 @@ export abstract class MediaSourceMusicArtistScanner<
   readonly type = 'tracks' as const;
 
   constructor(
-    logger: Logger,
     mediaSourceDB: MediaSourceDB,
     protected programDB: IProgramDB,
     protected programGroupingMinter: ProgramGroupingMinter,
@@ -81,7 +80,7 @@ export abstract class MediaSourceMusicArtistScanner<
     private getProgramGroupingByIdCommand: GetProgramGroupingById,
     protected externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
-    super(logger, mediaSourceDB, externalSubtitleDownloader);
+    super(mediaSourceDB, externalSubtitleDownloader);
   }
 
   protected async scanInternal(

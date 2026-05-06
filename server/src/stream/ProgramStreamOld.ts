@@ -5,23 +5,23 @@ import type { TranscodeSessionResult } from '@/ffmpeg/ffmpegBase.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { resolveIconUrl } from '@/util/iconUtil.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import type { Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
 import events from 'node:events';
 import { PassThrough } from 'node:stream';
-import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.js';
+import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
 import type { StreamOptions } from '../ffmpeg/ffmpegBase.ts';
 import {
   attempt,
   isDefined,
   isNonEmptyString,
   isSuccess,
-} from '../util/index.js';
-import type { PlayerContext } from './PlayerStreamContext.js';
+} from '../util/index.ts';
+import type { PlayerContext } from './PlayerStreamContext.ts';
 import type { StreamRenditions } from './types.ts';
 
 type ProgramStreamEvents = {
@@ -34,7 +34,7 @@ type ProgramStreamEvents = {
  * Base class implementing the functionality of managing an output stream
  * for a given program. This class is essentially a lineup item + transcode session
  */
-export abstract class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
+export abstract class ProgramStreamOld extends events.EventEmitter<ProgramStreamEvents> {
   protected logger = LoggerFactory.child({ className: this.constructor.name });
   private outStream?: PassThrough;
   private hadError: boolean = false;

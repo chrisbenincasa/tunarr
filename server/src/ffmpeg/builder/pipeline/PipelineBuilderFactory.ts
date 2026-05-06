@@ -28,14 +28,14 @@ export type PipelineBuilderFactory = (
   transcodeConfig: TranscodeConfigOrm,
 ) => PipelineBuilderFactory$Builder;
 
-export const FfmpegPipelineBuilderModule = new ContainerModule((bind) => {
-  bindFactoryFunc<PipelineBuilderFactory>(
+export const FfmpegPipelineBuilderModule = new ContainerModule(({ bind }) => {
+  bindFactoryFunc<PipelineBuilderFactory$Builder, [TranscodeConfigOrm]>(
     bind,
     KEYS.PipelineBuilderFactory,
     (ctx) => {
-      const settingsDB = ctx.container.get<ISettingsDB>(KEYS.SettingsDB);
-      const ffmpegInfo = ctx.container.get(FfmpegInfo);
-      const featureFlagService = ctx.container.get(FeatureFlagService);
+      const settingsDB = ctx.get<ISettingsDB>(KEYS.SettingsDB);
+      const ffmpegInfo = ctx.get(FfmpegInfo);
+      const featureFlagService = ctx.get(FeatureFlagService);
       return (config) =>
         new PipelineBuilderFactory$Builder(
           settingsDB.ffmpegSettings(),

@@ -18,7 +18,6 @@ import {
   createChannelOrm,
   createFakeProgram,
 } from '../testing/fakes/entityCreators.ts';
-import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import {
   calculateStreamDuration,
   StreamProgramCalculator,
@@ -101,7 +100,6 @@ describe('StreamProgramCalculator', () => {
     );
 
     const calc = new StreamProgramCalculator(
-      LoggerFactory.root,
       instance(fillerDB),
       instance(channelDB),
       instance(programDB),
@@ -214,7 +212,6 @@ describe('StreamProgramCalculator', () => {
     );
 
     const calc = new StreamProgramCalculator(
-      LoggerFactory.root,
       instance(fillerDB),
       instance(channelDB),
       instance(programDB),
@@ -329,7 +326,6 @@ describe('StreamProgramCalculator', () => {
     );
 
     const calc = new StreamProgramCalculator(
-      LoggerFactory.root,
       instance(fillerDB),
       instance(channelDB),
       instance(programDB),
@@ -441,7 +437,6 @@ describe('StreamProgramCalculator', () => {
     );
 
     const calc = new StreamProgramCalculator(
-      LoggerFactory.root,
       instance(fillerDB),
       instance(channelDB),
       instance(programDB),
@@ -546,7 +541,6 @@ describe('StreamProgramCalculator', () => {
       ).thenReturn(Promise.resolve(true));
 
       const calc = new StreamProgramCalculator(
-        LoggerFactory.root,
         instance(fillerDB),
         instance(channelDB),
         instance(programDB),

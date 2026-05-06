@@ -5,6 +5,7 @@ import { JSONPath } from 'jsonpath-plus';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { KEYS } from '../../types/inject.ts';
 import type { JsonObject } from '../../types/schemas.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 
 export const uuidRegex =
@@ -12,11 +13,12 @@ export const uuidRegex =
 
 @injectable()
 export class SlotShowIdMigration extends ChannelLineupMigration<1, 2> {
+  @InjectLogger() private declare readonly logger: Logger;
+
   readonly from = 1;
   readonly to = 2;
 
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
   ) {
     super();

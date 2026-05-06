@@ -4,6 +4,7 @@ import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
@@ -72,8 +73,9 @@ export type CurrentLineupItemResult = {
 
 @injectable()
 export class StreamProgramCalculator {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.FillerListDB) private fillerDB: IFillerListDB,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,

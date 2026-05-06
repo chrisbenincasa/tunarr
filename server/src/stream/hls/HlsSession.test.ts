@@ -1,12 +1,12 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import type { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
-import type { ProgramStream } from '@/stream/ProgramStream.js';
-import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
-import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import type { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
+import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
+import type { ProgramStreamOld } from '@/stream/ProgramStreamOld.ts';
+import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
 import tmp from 'tmp';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { HlsSession } from './HlsSession.js';
 
 vi.mock('@/util/logging/LoggerFactory.js', () => ({
@@ -51,10 +51,10 @@ function makeSession(transcodeDirectory: string): HlsSession {
     {} as StreamProgramCalculator,
     {} as ISettingsDB,
     {} as OnDemandChannelService,
-    (() => ({}) as unknown as ProgramStream) as (
+    (() => ({}) as unknown as ProgramStreamOld) as (
       ctx: PlayerContext,
       fmt: OutputFormat,
-    ) => ProgramStream,
+    ) => ProgramStreamOld,
   );
 }
 describe('HlsSession', () => {

@@ -1,21 +1,15 @@
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
-import type { interfaces } from 'inversify';
 import { isDate, isFunction, isString } from 'lodash-es';
 import type { RecurrenceRule } from 'node-schedule';
 import schedule from 'node-schedule';
 import type z from 'zod';
 import { TypedError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
-import type { Task, Task2, TaskConstructor } from './Task.js';
+import type { Task2, TaskConstructor } from './Task.js';
 
 type ScheduleRule = RecurrenceRule | Date | string | number;
-
-export type TaskFactoryFn<OutType, Args extends unknown[] = []> = () => Task<
-  Args,
-  OutType
->;
 
 export type Task2FactoryFn<
   InputT extends z.ZodType,
@@ -34,7 +28,7 @@ export class ScheduledTask<TaskInputSchemaT extends z.ZodType, OutputT> {
   protected logger: Logger;
   protected scheduledJob: schedule.Job;
 
-  private factory: interfaces.AutoFactory<Task2<TaskInputSchemaT, OutputT>>;
+  private factory: () => Task2<TaskInputSchemaT, OutputT>;
   public readonly schedule: ScheduleRule;
 
   public running: boolean = false;
@@ -45,7 +39,7 @@ export class ScheduledTask<TaskInputSchemaT extends z.ZodType, OutputT> {
   constructor(
     jobConstructor: TaskConstructor<TaskInputSchemaT, OutputT> | string,
     scheduleRule: ScheduleRule,
-    taskFactory: interfaces.AutoFactory<Task2<TaskInputSchemaT, OutputT>>,
+    taskFactory: () => Task2<TaskInputSchemaT, OutputT>,
     public readonly presetArgs:
       | z.infer<TaskInputSchemaT>
       | (() => z.infer<TaskInputSchemaT>),

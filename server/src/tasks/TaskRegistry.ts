@@ -1,8 +1,8 @@
-import type { interfaces } from 'inversify';
+import type { ServiceIdentifier } from 'inversify';
 import type { MarkOptional, StrictOmit } from 'ts-essentials';
 import type { ZodUndefined } from 'zod';
 import z from 'zod';
-import type { Task2 } from './Task.ts';
+import type { Task2, TaskConstructor } from './Task.ts';
 
 class TaskRegistryImpl {
   private static REGISTRY = new Map<string, TaskDefintion<z.ZodType>>();
@@ -29,12 +29,15 @@ class TaskRegistryImpl {
 
 export const TaskRegistry = new TaskRegistryImpl();
 
-type TaskDefintion<T extends z.ZodType> = {
+type TaskDefintion<
+  T extends z.ZodType,
+  TaskType extends Task2<T, unknown> = Task2<T, unknown>,
+> = {
   name: string;
   description?: string;
   schema: T;
   hidden?: boolean;
-  injectKey: interfaces.ServiceIdentifier;
+  injectKey: ServiceIdentifier<TaskType | (() => TaskType)>;
 };
 
 type ProvidedTaskDefinition<Schema extends z.ZodType> = MarkOptional<
@@ -46,17 +49,21 @@ type SimpleTaskDefinition = Partial<
   StrictOmit<TaskDefintion<z.ZodUndefined>, 'schema'>
 >;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExtractTaskType<Constructor extends TaskConstructor<any, unknown>> =
+  Constructor extends TaskConstructor<any, unknown, infer OutT> ? OutT : never;
+
 export function taskDef<Schema extends z.ZodType, OutTypeT>(
   def: ProvidedTaskDefinition<Schema>,
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return function <T extends { new (...args: any[]): Task2<Schema, OutTypeT> }>(
+  return function <T extends TaskConstructor<Schema, OutTypeT>>(
     constructor: T,
   ) {
     def.name ??= constructor.name;
     def.injectKey ??= constructor;
     Reflect.set(constructor, 'tunarr:task_def', def);
-    TaskRegistry.register(def as TaskDefintion<Schema>);
+    TaskRegistry.register(def as TaskDefintion<Schema, ExtractTaskType<T>>);
   };
 }
 

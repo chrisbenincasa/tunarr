@@ -6,6 +6,7 @@ import { isMainThread } from 'node:worker_threads';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { KEYS } from '../types/inject.ts';
 import { groupByUniq } from '../util/index.ts';
+import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from './MeilisearchService.ts';
 import { IStartupTask } from './startup/IStartupTask.ts';
@@ -15,8 +16,9 @@ export class StartupService {
   #hasRun = false;
   #taskPromisesById: Record<string, Promise<void>> = {};
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.WorkerPool)
     private workerPool: IWorkerPool,
     @multiInject(KEYS.StartupTask) private startupTasks: IStartupTask[],

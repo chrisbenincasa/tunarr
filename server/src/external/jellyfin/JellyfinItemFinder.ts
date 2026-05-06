@@ -9,14 +9,10 @@ import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurations
 import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { groupByUniq, isDefined, isNonEmptyString, run } from '@/util/index.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
-import {
-  inject,
-  injectable,
-  interfaces,
-  LazyServiceIdentifier,
-} from 'inversify';
+import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { find, isUndefined, some } from 'lodash-es';
 import { match } from 'ts-pattern';
 import {
@@ -29,16 +25,17 @@ import { JellyfinGetItemsQuery } from './JellyfinApiClient.ts';
 
 @injectable()
 export class JellyfinItemFinder {
+  @InjectLogger() declare private readonly logger: Logger;
+
   constructor(
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(new LazyServiceIdentifier(() => MediaSourceApiFactory))
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(KEYS.ProgramDaoMinterFactory)
-    private programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
+    private programMinterFactory: () => ProgramDaoMinter,
     @inject(autoFactoryKey(ReconcileProgramDurationsTask))
-    private reconcileDurationTaskFactory: interfaces.AutoFactory<ReconcileProgramDurationsTask>,
+    private reconcileDurationTaskFactory: () => ReconcileProgramDurationsTask,
   ) {}
 
   async findForProgramAndUpdate(programId: string) {

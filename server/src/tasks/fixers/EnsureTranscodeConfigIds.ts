@@ -1,6 +1,7 @@
 import { defaultTranscodeConfigLegacy } from '@/db/schema/TranscodeConfig.js';
 import Fixer from '@/tasks/fixers/fixer.js';
 import { KEYS } from '@/types/inject.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
@@ -9,8 +10,9 @@ import { DB } from '../../db/schema/db.ts';
 
 @injectable()
 export class EnsureTranscodeConfigIds extends Fixer {
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) protected logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
   ) {
     super();

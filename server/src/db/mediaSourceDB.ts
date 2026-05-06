@@ -9,7 +9,7 @@ import type {
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { and, eq, inArray } from 'drizzle-orm';
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import {
   chunk,
@@ -60,7 +60,7 @@ export class MediaSourceDB {
     private mediaSourceApiFactory: () => MediaSourceApiFactory,
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.MediaSourceLibraryRefresher)
-    private mediaSourceLibraryRefresher: interfaces.AutoFactory<MediaSourceLibraryRefresher>,
+    private mediaSourceLibraryRefresher: () => MediaSourceLibraryRefresher,
     @inject(KEYS.DrizzleDB)
     private drizzleDB: DrizzleDBAccess,
   ) {}
@@ -471,7 +471,7 @@ export class MediaSourceDB {
   }
 }
 
-export type MediaSourceLibrariesUpdate = {
+type MediaSourceLibrariesUpdate = {
   addedLibraries: NewMediaSourceLibrary[];
   updatedLibraries: MarkRequired<MediaSourceLibraryUpdate, 'uuid'>[];
   deletedLibraries: string[];

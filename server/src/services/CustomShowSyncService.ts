@@ -2,6 +2,7 @@ import { CustomShowDB } from '@/db/CustomShowDB.js';
 import type { MediaSourceId } from '@/db/schema/base.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { KEYS } from '@/types/inject.js';
+import { InjectLogger } from '@/util/inject.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { ApiProgramMinter } from '@tunarr/shared';
@@ -12,8 +13,9 @@ import { PlexHierarchyTraversal } from './PlexItemEnumerator.ts';
 
 @injectable()
 export class CustomShowSyncService {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(CustomShowDB) private customShowDB: CustomShowDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,

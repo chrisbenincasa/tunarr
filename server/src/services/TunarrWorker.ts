@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import PQueue from 'p-queue';
 import { parentPort } from 'worker_threads';
-import { KEYS } from '../types/inject.ts';
+
 import { Result } from '../types/result.ts';
 import {
   WorkerReply,
@@ -12,6 +12,7 @@ import {
   WorkerTimeSlotScheduleReply,
   type WorkerEvent,
 } from '../types/worker_schemas.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { SlotSchedulerService } from './scheduling/RandomSlotSchedulerService.ts';
 import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.ts';
@@ -20,8 +21,9 @@ import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.
 export class TunarrWorker {
   #queue: PQueue;
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(TimeSlotSchedulerService)
     private timeSlotSchedulerService: TimeSlotSchedulerService,
     @inject(SlotSchedulerService)

@@ -1,7 +1,7 @@
 import { fileExists } from '@/util/fsUtil.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { sanitizeForExec } from '@/util/strings.js';
-import { inject, injectable } from 'inversify';
+import { injectable } from 'inversify';
 import { isEmpty } from 'lodash-es';
 import type {
   ChildProcessByStdio,
@@ -13,9 +13,10 @@ import events from 'node:events';
 import { Readable } from 'node:stream';
 import PQueue from 'p-queue';
 import { TypedEventEmitter } from '../types/eventEmitter.ts';
-import { KEYS } from '../types/inject.ts';
+
 import { LastNBytesStream } from './LastNBytesStream.ts';
-import { Logger, LoggerFactory } from './logging/LoggerFactory.ts';
+import { InjectLogger } from './inject.ts';
+import type { Logger } from './logging/LoggerFactory.ts';
 
 type SpawnOpts = {
   name: string;
@@ -133,12 +134,7 @@ export type GetStdoutOptions = {
 export class ChildProcessHelper {
   private execQueue = new PQueue({ concurrency: 3 });
 
-  constructor(
-    @inject(KEYS.Logger)
-    private logger: Logger = LoggerFactory.child({
-      className: ChildProcessHelper.name,
-    }),
-  ) {}
+  @InjectLogger() private declare readonly logger: Logger;
 
   getStdout(
     executable: string,

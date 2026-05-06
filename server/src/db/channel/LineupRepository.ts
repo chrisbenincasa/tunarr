@@ -21,7 +21,7 @@ import {
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { CondensedFillerProgram } from '@tunarr/types/schemas';
 import { and, eq, inArray, notInArray } from 'drizzle-orm';
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import {
   chunk,
@@ -142,14 +142,14 @@ export class LineupRepository {
     className: this.constructor.name,
   });
 
-  private timer = new Timer(this.logger, 'trace');
+  private timer = new Timer('trace');
 
   constructor(
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
     @inject(FileSystemService) private fileSystemService: FileSystemService,
     @inject(KEYS.WorkerPoolFactory)
-    private workerPoolProvider: interfaces.AutoFactory<IWorkerPool>,
+    private workerPoolProvider: () => IWorkerPool,
     @inject(MaterializeLineupCommand)
     private materializeLineupCommand: MaterializeLineupCommand,
     @inject(MaterializeProgramsCommand)

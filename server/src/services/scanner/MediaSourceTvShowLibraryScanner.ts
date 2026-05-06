@@ -23,7 +23,7 @@ import type {
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import type { Maybe } from '../../types/util.ts';
-import type { Logger } from '../../util/logging/LoggerFactory.ts';
+
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext } from './MediaSourceScanner.ts';
@@ -54,7 +54,6 @@ export abstract class MediaSourceTvShowLibraryScanner<
   readonly type = 'shows' as const;
 
   constructor(
-    logger: Logger,
     mediaSourceDB: MediaSourceDB,
     protected programDB: IProgramDB,
     protected programGroupingMinter: ProgramGroupingMinter,
@@ -64,7 +63,7 @@ export abstract class MediaSourceTvShowLibraryScanner<
     private getProgramGroupingByIdCommand: GetProgramGroupingById,
     protected externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
-    super(logger, mediaSourceDB, externalSubtitleDownloader);
+    super(mediaSourceDB, externalSubtitleDownloader);
   }
 
   protected async scanInternal(

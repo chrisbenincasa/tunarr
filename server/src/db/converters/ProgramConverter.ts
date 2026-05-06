@@ -1,5 +1,6 @@
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString, nullToUndefined } from '@/util/index.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import {
@@ -56,8 +57,9 @@ import type {
  */
 @injectable()
 export class ProgramConverter {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
   ) {}
 

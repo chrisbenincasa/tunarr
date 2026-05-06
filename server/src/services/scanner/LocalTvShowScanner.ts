@@ -44,6 +44,7 @@ import { HasMediaSourceInfo, SeasonWithShow } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { isDefined, wait } from '../../util/index.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { parseReleaseDate } from '../../util/programs.ts';
 import { Canonicalizer } from '../Canonicalizer.ts';
@@ -71,8 +72,9 @@ export class LocalTvShowScanner extends FileSystemScanner {
   private tvShowNfoParser = new TvShowNfoParser();
   private tvEpisodeNfoParser = new TvEpisodeNfoParser();
 
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(KEYS.LocalFolderCanonicalizer)
     private canonicalizer: Canonicalizer<FolderAndContents>,
     @inject(LocalMediaDB) localMediaDB: LocalMediaDB,
@@ -95,7 +97,6 @@ export class LocalTvShowScanner extends FileSystemScanner {
     private fallbackMetadataService: FallbackMetadataService,
   ) {
     super(
-      logger,
       ffprobeStreamDetails,
       imageCache,
       localMediaDB,

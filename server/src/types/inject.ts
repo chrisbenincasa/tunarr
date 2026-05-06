@@ -1,14 +1,9 @@
-import type {
-  GetChildLoggerArgs,
-  Logger,
-} from '@/util/logging/LoggerFactory.js';
 import { isString } from 'lodash-es';
 
 const KEYS = {
   GlobalOptions: Symbol.for('GlobalOptions'),
   ServerOptions: Symbol.for('ServerOptions'),
 
-  Logger: Symbol.for('Logger'),
   LoggerFactory: Symbol.for('LoggerFactory'),
   RootLogger: Symbol.for('RootLogger'),
   Timer: Symbol.for('Timer'),
@@ -123,7 +118,5 @@ export function autoFactoryKey(s: string): symbol;
 export function autoFactoryKey(s: Constructor | string): symbol {
   return Symbol.for(`AutoFactory<${isString(s) ? s : s.name}>`);
 }
-
-export type LoggerFactory = (args: GetChildLoggerArgs) => Logger;
 
 export { KEYS };

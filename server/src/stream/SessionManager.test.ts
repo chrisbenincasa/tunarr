@@ -78,7 +78,7 @@ class StubHlsSession extends BaseHlsSession<HlsSessionOptions> {
 // Mock logger
 // ---------------------------------------------------------------------------
 
-const noopLogger: Logger = {
+const noopLogger = {
   debug: vi.fn(),
   error: vi.fn(),
   info: vi.fn(),
@@ -130,7 +130,6 @@ function makeSessionManager(
 
   // Construct SessionManager directly, bypassing Inversify
   const manager = new (SessionManager as any)(
-    noopLogger,
     channelDB,
     onDemandService,
     hlsFactory,
@@ -139,6 +138,10 @@ function makeSessionManager(
     eventService,
     settingsDB,
   ) as SessionManager;
+
+  // Override the @InjectLogger() property with a noop mock so
+  // tests don't require an initialized LoggerFactory.
+  (manager as any).logger = noopLogger;
 
   return manager;
 }

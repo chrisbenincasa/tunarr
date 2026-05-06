@@ -25,6 +25,7 @@ import { Result } from '../../types/result.js';
 import { Maybe } from '../../types/util.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { caughtErrorToError, isDefined } from '../../util/index.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { titleToSortTitle } from '../../util/programs.ts';
 import { Canonicalizer } from '../Canonicalizer.ts';
@@ -46,8 +47,9 @@ export class LocalMovieScanner extends FileSystemScanner {
   #pathsComplete: number = 0;
   #pathCount: number = 0;
 
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(KEYS.LocalFolderCanonicalizer)
     localFolderCanonicalizer: Canonicalizer<FolderAndContents>,
     @inject(LocalMediaDB) localMediaDB: LocalMediaDB,
@@ -68,7 +70,6 @@ export class LocalMovieScanner extends FileSystemScanner {
     private fallbackMetadataService: FallbackMetadataService,
   ) {
     super(
-      logger,
       ffprobeStreamDetails,
       imageCache,
       localMediaDB,

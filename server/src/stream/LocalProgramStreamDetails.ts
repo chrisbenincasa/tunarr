@@ -2,15 +2,11 @@ import { nullToUndefined } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { groupBy, head, isEmpty, mapValues, orderBy } from 'lodash-es';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { KEYS } from '../../types/inject.ts';
-import { Result } from '../../types/result.ts';
-import { isNonEmptyArray } from '../../util/index.ts';
-import {
-  ExternalStreamDetailsFetcher,
-  StreamFetchRequest,
-} from '../ExternalStreamDetailsFetcher.ts';
-import { extractIsAnamorphic } from '../jellyfin/JellyfinStreamDetails.ts';
+import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import { KEYS } from '../types/inject.ts';
+import { Result } from '../types/result.ts';
+import { isNonEmptyArray } from '../util/index.ts';
+import { StreamFetchRequest } from './ExternalStreamDetailsFetcher.ts';
 import {
   AudioStreamDetails,
   ProgramStreamResult,
@@ -18,17 +14,16 @@ import {
   StreamSource,
   SubtitleStreamDetails,
   VideoStreamDetails,
-} from '../types.ts';
+} from './types.ts';
+import { extractIsAnamorphic } from './util.ts';
 
 @injectable()
-export class LocalProgramStreamDetails extends ExternalStreamDetailsFetcher<'local'> {
-  constructor(@inject(KEYS.ProgramDB) private programDB: IProgramDB) {
-    super();
-  }
+export class ProgramStreamDetailsFetcher {
+  constructor(@inject(KEYS.ProgramDB) private programDB: IProgramDB) {}
 
   async getStream({
     lineupItem,
-  }: StreamFetchRequest<'local'>): Promise<Result<ProgramStreamResult>> {
+  }: StreamFetchRequest): Promise<Result<ProgramStreamResult>> {
     const program = await this.programDB.getProgramById(lineupItem.uuid);
 
     if (!program) {

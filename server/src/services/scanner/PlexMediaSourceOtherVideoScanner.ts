@@ -1,5 +1,5 @@
 import { MediaSourceType } from '@/db/schema/base.js';
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
@@ -13,6 +13,7 @@ import { KEYS } from '../../types/inject.ts';
 import type { PlexT } from '../../types/internal.ts';
 import type { PlexOtherVideo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { MediaSourceOtherVideoScanner } from './MediaSourceOtherVideoScanner.ts';
@@ -29,8 +30,9 @@ export class PlexMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
   readonly type = 'other_videos';
   readonly mediaSourceType = MediaSourceType.Plex;
 
+  @InjectLogger() declare protected readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(MediaSourceDB) mediaSourceDB: MediaSourceDB,
     @inject(KEYS.ProgramDB) programDB: IProgramDB,
     @inject(MeilisearchService) searchService: MeilisearchService,
@@ -39,12 +41,11 @@ export class PlexMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
     @inject(MediaSourceProgressService)
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(KEYS.ProgramDaoMinterFactory)
-    programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
+    programMinterFactory: () => ProgramDaoMinter,
     @inject(ExternalSubtitleDownloader)
     externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
-      logger,
       mediaSourceDB,
       programDB,
       searchService,

@@ -1,5 +1,6 @@
 import { KEYS } from '@/types/inject.js';
 import type { MarkNonNullable, Maybe } from '@/types/util.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 
 import { inArray } from 'drizzle-orm';
@@ -47,8 +48,9 @@ import { ProgramMetadataRepository } from './ProgramMetadataRepository.ts';
 
 @injectable()
 export class ProgramUpsertRepository {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
     @inject(KEYS.ProgramExternalIdRepository)
     private externalIdRepo: ProgramExternalIdRepository,

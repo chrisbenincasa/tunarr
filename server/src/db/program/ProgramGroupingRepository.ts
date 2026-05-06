@@ -4,6 +4,7 @@ import type {
 } from '@/db/interfaces/IProgramDB.js';
 import { KEYS } from '@/types/inject.js';
 import type { Maybe, PagedResult } from '@/types/util.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import { untag } from '@tunarr/types';
@@ -44,8 +45,9 @@ import type { DrizzleDBAccess } from '../schema/index.ts';
 
 @injectable()
 export class ProgramGroupingRepository {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
   ) {}

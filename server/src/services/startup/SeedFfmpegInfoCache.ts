@@ -3,6 +3,7 @@ import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { FfmpegInfo } from '../../ffmpeg/ffmpegInfo.ts';
 import { KEYS } from '../../types/inject.ts';
 import { fileExists } from '../../util/fsUtil.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { SimpleStartupTask } from './IStartupTask.ts';
 
@@ -11,8 +12,9 @@ export class SeedFfmpegInfoCache extends SimpleStartupTask {
   id = SeedFfmpegInfoCache.name;
   dependencies: string[] = [];
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(FfmpegInfo) private ffmpegInfo: FfmpegInfo,
   ) {

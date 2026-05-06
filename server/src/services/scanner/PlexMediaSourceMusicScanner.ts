@@ -4,7 +4,7 @@ import {
   GetSubtitlesRequest,
   ScanContext,
 } from '@/services/scanner/MediaSourceScanner.js';
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
@@ -12,12 +12,13 @@ import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { QueryResult } from '../../external/BaseApiClient.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 import { PlexT } from '../../types/internal.ts';
 import { PlexAlbum, PlexArtist, PlexTrack } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { MediaSourceMusicArtistScanner } from './MediaSourceMusicArtistScanner.ts';
@@ -34,14 +35,15 @@ export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
 > {
   readonly mediaSourceType = 'plex';
 
+  @InjectLogger() declare protected readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(MediaSourceDB) mediaSourceDB: MediaSourceDB,
     @inject(KEYS.ProgramDB) programDB: IProgramDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(KEYS.ProgramDaoMinterFactory)
-    programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
+    programMinterFactory: () => ProgramDaoMinter,
     @inject(ProgramGroupingMinter)
     programGroupingMinter: ProgramGroupingMinter,
     @inject(MeilisearchService) searchService: MeilisearchService,
@@ -53,7 +55,6 @@ export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
     externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
-      logger,
       mediaSourceDB,
       programDB,
       programGroupingMinter,

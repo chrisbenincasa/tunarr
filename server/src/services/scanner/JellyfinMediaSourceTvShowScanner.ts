@@ -5,19 +5,20 @@ import {
   GetSubtitlesRequest,
   ScanContext,
 } from '@/services/scanner/MediaSourceScanner.js';
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { isNil } from 'lodash-es';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { QueryResult } from '../../external/BaseApiClient.ts';
+import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 
 import { ProgramGrouping } from '@tunarr/types';
 import { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import {
   JellyfinEpisode,
   JellyfinSeason,
@@ -25,7 +26,7 @@ import {
   SeasonWithShow,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { JellyfinScanUtil } from './JellyfinScanUtil.ts';
@@ -42,14 +43,15 @@ export class JellyfinMediaSourceTvShowScanner extends MediaSourceTvShowLibrarySc
 > {
   readonly mediaSourceType = MediaSourceType.Jellyfin;
 
+  @InjectLogger() declare protected readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(MediaSourceDB) mediaSourceDB: MediaSourceDB,
     @inject(KEYS.ProgramDB) programDB: IProgramDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(KEYS.ProgramDaoMinterFactory)
-    programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
+    programMinterFactory: () => ProgramDaoMinter,
     @inject(MediaSourceProgressService)
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(ProgramGroupingMinter)
@@ -61,7 +63,6 @@ export class JellyfinMediaSourceTvShowScanner extends MediaSourceTvShowLibrarySc
     externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
-      logger,
       mediaSourceDB,
       programDB,
       programGroupingMinter,

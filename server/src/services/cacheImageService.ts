@@ -1,4 +1,5 @@
 import type { CachedImage } from '@/db/schema/CachedImage.js';
+import { InjectLogger } from '@/util/inject.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
 import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import { FastifyReply } from 'fastify';
@@ -22,8 +23,9 @@ export class CacheImageService {
   private cacheService!: FileCacheService;
   private imageCacheFolder: string;
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
   ) {
     this.cacheService = new FileCacheService();

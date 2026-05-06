@@ -2,6 +2,7 @@ import { isContentItem } from '@/db/derived_types/Lineup.js';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString } from '@/util/index.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { flushEventLoop } from '@tunarr/shared/util';
 import { Tag } from '@tunarr/types';
@@ -65,13 +66,14 @@ export class ReconcileProgramDurationsTask extends Task2<
 
   // Optionally provide the channel ID that was updated on the triggering
   // operation, since theoretically we don't have to check it.
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
-    @inject(KEYS.Logger) logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
     // private request?: ReconcileProgramDurationsTaskRequest,
   ) {
-    super(logger);
+    super();
     this.logger.setBindings({ task: this.ID });
   }
 

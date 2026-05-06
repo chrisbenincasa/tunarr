@@ -4,9 +4,10 @@ import path from 'path';
 import { MediaSourceId, MediaSourceType } from '../db/schema/base.ts';
 import { QueryResult } from '../external/BaseApiClient.ts';
 import { FileSystemService } from '../services/FileSystemService.ts';
-import { KEYS } from '../types/inject.ts';
+
 import { Maybe } from '../types/util.ts';
 import { fileExists } from '../util/fsUtil.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import {
   getSubtitleCacheFilePath,
@@ -30,8 +31,9 @@ type ExternalItem = {
 
 @injectable()
 export class ExternalSubtitleDownloader {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(FileSystemService) private fileSystemService: FileSystemService,
   ) {}
 

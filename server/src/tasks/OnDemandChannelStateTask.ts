@@ -1,11 +1,12 @@
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { SessionManager } from '@/stream/SessionManager.js';
-import { KEYS } from '@/types/inject.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { every, values } from 'lodash-es';
+import { KEYS } from '../types/inject.ts';
 import { SimpleTask } from './Task.ts';
 import { simpleTaskDef } from './TaskRegistry.ts';
 
@@ -23,14 +24,15 @@ export class OnDemandChannelStateTask extends SimpleTask {
 
   public ID = OnDemandChannelStateTask.ID;
 
+  @InjectLogger() declare protected readonly logger: Logger;
+
   constructor(
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(OnDemandChannelService)
     private onDemandService: OnDemandChannelService,
     @inject(SessionManager) private sessionManager: SessionManager,
-    @inject(KEYS.Logger) logger: Logger,
   ) {
-    super(logger);
+    super();
   }
 
   protected async runInternal(): Promise<void> {

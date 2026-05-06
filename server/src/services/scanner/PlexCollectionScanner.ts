@@ -32,6 +32,7 @@ import type { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.ts';
 import { groupByTyped, groupByUniq } from '../../util/index.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import {
   MeilisearchService,
@@ -59,8 +60,9 @@ type SearchUpdate = {
 
 @injectable()
 export class PlexCollectionScanner extends ExternalCollectionScanner<PlexApiClient> {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,

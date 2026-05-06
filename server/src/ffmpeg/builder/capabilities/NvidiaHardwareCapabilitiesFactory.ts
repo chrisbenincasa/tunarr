@@ -8,11 +8,11 @@ import { NvidiaHardwareCapabilities } from '@/ffmpeg/builder/capabilities/Nvidia
 import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { inject, injectable } from 'inversify';
+import { injectable } from 'inversify';
 import { drop, isEmpty, map, nth, reject, split, trim } from 'lodash-es';
 import NodeCache from 'node-cache';
-import { KEYS } from '../../../types/inject.ts';
 import { Result } from '../../../types/result.ts';
 
 const NvidiaGpuArchPattern = /SM\s+(\d+\.\d+)/;
@@ -91,12 +91,7 @@ export class NvidiaHardwareCapabilitiesFactory
 
 @injectable()
 export class NvidiaGpuDetectionHelper {
-  constructor(
-    @inject(KEYS.Logger)
-    private logger: Logger = LoggerFactory.child({
-      className: NvidiaGpuDetectionHelper.name,
-    }),
-  ) {}
+  @InjectLogger() private declare readonly logger: Logger;
 
   async getGpuFromFfmpeg(
     ffmpegExecutablePath: string,

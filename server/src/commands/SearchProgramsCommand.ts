@@ -14,6 +14,7 @@ import {
 import { KEYS } from '../types/inject.ts';
 import { Path } from '../types/path.ts';
 import { groupByUniq } from '../util/index.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import {
   isProgramGroupingDocument,
@@ -21,9 +22,10 @@ import {
 } from '../util/search.ts';
 
 export class SearchProgramsCommand {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
     @inject(MeilisearchService) private searchService: MeilisearchService,
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
   ) {}

@@ -8,6 +8,7 @@ import { TVGuideService } from '@/services/TvGuideService.js';
 import { KEYS } from '@/types/inject.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { isNonEmptyString, mapAsyncSeq } from '@/util/index.js';
+import { InjectLogger } from '@/util/inject.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
@@ -38,8 +39,9 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
   public ID = UpdateXmlTvTask.ID;
   schema = UpdateXmlTvTaskRequest;
 
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(TVGuideService) private guideService: TVGuideService,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
@@ -48,7 +50,7 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
     @inject(EventService) private eventService: EventService,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
   ) {
-    super(logger);
+    super();
     this.logger.setBindings({ task: UpdateXmlTvTask.ID });
   }
 

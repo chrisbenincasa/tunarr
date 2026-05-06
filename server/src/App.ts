@@ -3,13 +3,15 @@ import { GlobalOptions } from './globals.ts';
 import { Server } from './Server.ts';
 import { StartupService } from './services/StartupService.ts';
 import { KEYS } from './types/inject.ts';
+import { InjectLogger } from './util/inject.ts';
 import { Logger } from './util/logging/LoggerFactory.ts';
 import { getTunarrVersion } from './util/version.ts';
 
 @injectable()
 export class App {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
     @inject(StartupService) private startupService: StartupService,
     @inject(Server) private server: Server,

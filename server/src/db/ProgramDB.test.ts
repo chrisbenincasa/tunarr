@@ -10,7 +10,6 @@ import { v4 } from 'uuid';
 import { test as baseTest } from 'vitest';
 import { bootstrapTunarr } from '../bootstrap.ts';
 import { setGlobalOptions } from '../globals.ts';
-import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { DBAccess } from './DBAccess.ts';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
 import { ProgramDB } from './ProgramDB.ts';
@@ -100,11 +99,9 @@ const test = baseTest.extend<Fixture>({
   },
   programDb: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
-    const logger = LoggerFactory.child({ className: 'ProgramDB' });
 
     const metadataRepo = new ProgramMetadataRepository(dbAccess.drizzle!);
     const externalIdRepo = new ProgramExternalIdRepository(
-      logger,
       dbAccess.db!,
       dbAccess.drizzle!,
     );
@@ -114,14 +111,13 @@ const test = baseTest.extend<Fixture>({
       metadataRepo,
     );
     const upsertRepo = new ProgramUpsertRepository(
-      logger,
       dbAccess.drizzle!,
       externalIdRepo,
       metadataRepo,
     );
     const programDb = new ProgramDB(
       new BasicProgramRepository(dbAccess.db!, dbAccess.drizzle!),
-      new ProgramGroupingRepository(logger, dbAccess.db!, dbAccess.drizzle!),
+      new ProgramGroupingRepository(dbAccess.db!, dbAccess.drizzle!),
       externalIdRepo,
       upsertRepo,
       metadataRepo,

@@ -1,4 +1,5 @@
 import { KEYS } from '@/types/inject.js';
+import { InjectLogger } from '@/util/inject.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { createExternalId } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
@@ -41,8 +42,9 @@ import type { DrizzleDBAccess } from '../schema/index.ts';
 
 @injectable()
 export class ProgramExternalIdRepository {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
   ) {}

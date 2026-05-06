@@ -2,14 +2,13 @@ import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { GetLastPtsDurationTask } from '@/ffmpeg/GetLastPtsDuration.js';
-import type { HlsOptions, OutputFormat } from '@/ffmpeg/builder/constants.js';
+import type { HlsOptions } from '@/ffmpeg/builder/constants.js';
 import {
   HlsDirectOutputFormat,
   HlsOutputFormat,
 } from '@/ffmpeg/builder/constants.js';
 import type { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
-import type { ProgramStream } from '@/stream/ProgramStream.js';
 import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
 import type { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
 import type {
@@ -23,11 +22,11 @@ import { wait } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import type { interfaces } from 'inversify';
 import { filter, isEmpty, last, maxBy, sortBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
+import { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
 import { BaseHlsSession } from './BaseHlsSession.js';
 import { HlsMasterPlaylistMutator } from './HlsMasterPlaylistMutator.js';
@@ -68,10 +67,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     private programCalculator: StreamProgramCalculator,
     private settingsDB: ISettingsDB,
     private onDemandService: OnDemandChannelService,
-    private programStreamFactory: interfaces.SimpleFactory<
-      ProgramStream,
-      [PlayerContext, OutputFormat]
-    >,
+    private programStreamFactory: ProgramStreamFactory,
   ) {
     super(channel, options);
   }
@@ -244,13 +240,15 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         result.lineupItem,
         result.channelContext,
         result.sourceChannel,
-        false,
-        realtime,
         this.channel.transcodeConfig,
-        this.sessionType,
+        {
+          audioOnly: false,
+          realtime,
+          streamMode: this.sessionType,
+        },
       );
 
-      let programStream = this.getProgramStream(context);
+      let programStream = this.getProgramStream(context, ptsOffset);
 
       programStream.on('error', () => {
         this.state = 'error';
@@ -260,10 +258,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         this.emit('error', this.error);
       });
 
-      let transcodeSessionResult = await programStream.setup({
-        ptsOffset,
-        isFirstTranscode: this.#isFirstTranscode,
-      });
+      let transcodeSessionResult = await programStream.setup();
 
       if (transcodeSessionResult.isFailure()) {
         this.logger.error(
@@ -281,6 +276,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
             this.channel.transcodeConfig,
             this.sessionType,
           ),
+          ptsOffset,
         );
 
         transcodeSessionResult = await programStream.setup();
@@ -340,7 +336,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     };
   }
 
-  private getProgramStream(context: PlayerContext) {
+  private getProgramStream(context: PlayerContext, ptsOffset: Maybe<number>) {
     const hlsOptions = this.getHlsOptions();
 
     const outputFormat =
@@ -348,7 +344,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         ? HlsDirectOutputFormat(hlsOptions)
         : HlsOutputFormat(hlsOptions);
 
-    return this.programStreamFactory(context, outputFormat);
+    return this.programStreamFactory(context, outputFormat, {
+      ptsOffset,
+      isFirstTranscode: this.#isFirstTranscode,
+    });
   }
 
   private async getPtsOffset() {

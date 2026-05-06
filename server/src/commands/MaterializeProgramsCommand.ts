@@ -5,14 +5,16 @@ import { match } from 'ts-pattern';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
-import { KEYS } from '../types/inject.ts';
+
 import { groupByUniq } from '../util/index.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
 export class MaterializeProgramsCommand {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {}
 

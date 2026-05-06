@@ -26,6 +26,7 @@ import { Result } from '../../types/result.ts';
 import { Maybe } from '../../types/util.ts';
 import { changeFileExtension, fileExists } from '../../util/fsUtil.ts';
 import { isDefined, wait } from '../../util/index.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { titleToSortTitle } from '../../util/programs.ts';
 import { Canonicalizer } from '../Canonicalizer.ts';
@@ -46,8 +47,9 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
   private nfoParser = new MusicVideoNfoParser();
 
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(KEYS.LocalFolderCanonicalizer)
     canonicalizer: Canonicalizer<FolderAndContents>,
     @inject(LocalMediaDB) localMediaDB: LocalMediaDB,
@@ -68,7 +70,6 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
     private fallbackMetadataService: FallbackMetadataService,
   ) {
     super(
-      logger,
       ffprobeStreamDetails,
       imageCache,
       localMediaDB,

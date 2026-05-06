@@ -56,20 +56,7 @@ function makeChannelWithLineup(overrides?: Partial<ChannelOrm>) {
   return { channel, lineup: makeEmptyLineup() };
 }
 
-function makeMockLogger() {
-  return {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    trace: vi.fn(),
-    fatal: vi.fn(),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    child: vi.fn().mockReturnThis() as any,
-    setBindings: vi.fn(),
-    isLevelEnabled: vi.fn().mockReturnValue(false),
-  };
-}
+
 
 describe('TVGuideService', () => {
   describe('buildAllChannels', () => {
@@ -94,8 +81,6 @@ describe('TVGuideService', () => {
 
       const service = new TVGuideService(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        makeMockLogger() as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { write: mockWrite } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { push: vi.fn() } as any,
@@ -111,6 +96,8 @@ describe('TVGuideService', () => {
         {} as any, // Kysely<DB> (not used in this path)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any, // OnDemandChannelService (not used in this path)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any, // MaterializeProgramsCommand (not used in this path)
       );
 
       const guideDuration = dayjs.duration({ hours: 4 });
@@ -148,8 +135,6 @@ describe('TVGuideService', () => {
 
     function makeService() {
       return new TVGuideService(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        makeMockLogger() as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { write: vi.fn().mockResolvedValue(undefined) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -399,8 +384,6 @@ describe('TVGuideService', () => {
       const mockWrite = vi.fn().mockResolvedValue(undefined);
 
       const service = new TVGuideService(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        makeMockLogger() as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { write: mockWrite } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

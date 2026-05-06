@@ -8,6 +8,7 @@ import {
 } from '@/util/ChildProcessHelper.js';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
+import { InjectLogger } from '@/util/inject.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import { inject, injectable } from 'inversify';
@@ -73,10 +74,11 @@ export class FfmpegInfo {
 
   private childProcessHelper = new ChildProcessHelper();
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
     @inject(KEYS.FFmpegPath) private ffmpegPath: string,
     @inject(KEYS.FFprobePath) private ffprobePath: string,
-    @inject(KEYS.Logger) private logger: Logger,
   ) {}
 
   async seed() {
