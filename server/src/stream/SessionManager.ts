@@ -42,6 +42,7 @@ import { StreamConnectionDetails } from '@tunarr/types/api';
 import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
+import { InjectLogger } from '../util/inject.ts';
 import { Dictionary } from 'ts-essentials';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { EventService } from '../services/EventService.ts';
@@ -52,11 +53,12 @@ export type SessionKey = `${string}_${SessionType}`;
 
 @injectable()
 export class SessionManager {
+  @InjectLogger() private declare readonly logger: Logger;
+
   #sessionLocker = new MutexMap();
   #sessions: Record<SessionKey, Session> = {};
 
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(OnDemandChannelService)
     private onDemandChannelService: OnDemandChannelService,

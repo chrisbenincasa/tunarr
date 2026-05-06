@@ -6,6 +6,7 @@ import { KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { isNodeError, isNonEmptyString } from '../../util/index.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import {
   HealthCheck,
@@ -17,8 +18,9 @@ import {
 export class FfmpegTranscodeDirectoryHealthCheck implements HealthCheck {
   readonly id: string = 'FfmpegTranscodeDirectory';
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
   ) {}
 

@@ -8,7 +8,6 @@ import { ContainerModule } from 'inversify';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { ChannelOrm } from '../db/schema/Channel.ts';
 import { FeatureFlagService } from '../services/FeatureFlagService.ts';
-import { bindFactoryFunc } from '../util/inject.ts';
 import type { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
 
@@ -18,32 +17,35 @@ export type FFmpegFactory = (
   streamMode: ChannelStreamMode,
 ) => IFFMPEG;
 
-const FFmpegModule = new ContainerModule((bind) => {
-  bindFactoryFunc<FFmpegFactory>(bind, KEYS.FFmpegFactory, (ctx) => {
-    const settingsDB = ctx.container.get<ISettingsDB>(KEYS.SettingsDB);
-    const featureFlagService = ctx.container.get(FeatureFlagService);
-    return (transcodeConfig, channel) => {
-      return new FfmpegStreamFactory(
-        settingsDB.ffmpegSettings(),
-        transcodeConfig,
-        channel,
-        ctx.container.get(FfmpegInfo),
-        settingsDB,
-        ctx.container.get<PipelineBuilderFactory>(KEYS.PipelineBuilderFactory),
-        ctx.container.get<IChannelDB>(KEYS.ChannelDB),
-        featureFlagService,
-      );
-    };
-  }).whenTargetNamed(FfmpegStreamFactory.name);
+const FFmpegModule = new ContainerModule(({ bind }) => {
+  bind<FFmpegFactory>(KEYS.FFmpegFactory)
+    .toFactory((ctx) => {
+      const settingsDB = ctx.get<ISettingsDB>(KEYS.SettingsDB);
+      const featureFlagService = ctx.get(FeatureFlagService);
+      return (transcodeConfig, channel) => {
+        return new FfmpegStreamFactory(
+          settingsDB.ffmpegSettings(),
+          transcodeConfig,
+          channel,
+          ctx.get(FfmpegInfo),
+          settingsDB,
+          ctx.get<PipelineBuilderFactory>(KEYS.PipelineBuilderFactory),
+          ctx.get<IChannelDB>(KEYS.ChannelDB),
+          featureFlagService,
+        );
+      };
+    })
+    .whenNamed(FfmpegStreamFactory.name);
 
-  bindFactoryFunc<FFmpegFactory>(bind, KEYS.FFmpegFactory, (ctx) => {
-    return (transcodeConfig, channel, streamMode) => {
-      return ctx.container.getNamed<FFmpegFactory>(
-        KEYS.FFmpegFactory,
-        FfmpegStreamFactory.name,
-      )(transcodeConfig, channel, streamMode);
-    };
-  }).whenTargetIsDefault();
+  bind<FFmpegFactory>(KEYS.FFmpegFactory)
+    .toFactory((ctx) => {
+      return (transcodeConfig, channel, streamMode) => {
+        return ctx.get<FFmpegFactory>(KEYS.FFmpegFactory, {
+          name: FfmpegStreamFactory.name,
+        })(transcodeConfig, channel, streamMode);
+      };
+    })
+    .whenDefault();
 
   bind(FfmpegInfo).toSelf().inSingletonScope();
 });

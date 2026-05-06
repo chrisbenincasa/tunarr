@@ -6,7 +6,6 @@ import { ProgramType } from '@/db/schema/Program.js';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
-import type { OfflineStreamFactoryType } from '@/stream/StreamModule.js';
 import { KEYS } from '@/types/inject.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from '@/util/dayjs.js';
@@ -49,10 +48,9 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       if (!channel)
         throw new Error('This debug endpoint requires at least one channel');
 
-      const stream = container.getNamed<OfflineStreamFactoryType>(
+      const stream = container.get<ProgramStreamFactory>(
         KEYS.ProgramStreamFactory,
-        'offline',
-      )(false)(
+      )(
         new PlayerContext(
           {
             ...createOfflineStreamLineupItem(req.query.duration, +dayjs()),
@@ -60,10 +58,12 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           },
           channel,
           channel,
-          false,
-          true,
           channel.transcodeConfig,
-          'mpegts',
+          {
+            audioOnly: false,
+            realtime: true,
+            streamMode: 'mpegts',
+          },
         ),
         MpegTsOutputFormat,
       );
@@ -105,10 +105,9 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       if (!channel)
         throw new ChannelNotFoundError(req.query.channelId ?? 'unknown');
 
-      const stream = container.getNamed<OfflineStreamFactoryType>(
+      const stream = container.get<ProgramStreamFactory>(
         KEYS.ProgramStreamFactory,
-        'offline',
-      )(true)(
+      )(
         PlayerContext.error(
           30_000,
           '',
@@ -265,15 +264,16 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       lineupItem,
       channel,
       channel,
-      false,
-      true,
       transcodeConfig,
-      'mpegts',
+      {
+        audioOnly: false,
+        realtime: true,
+        streamMode: 'mpegts',
+      },
     );
 
-    const stream = container.getNamed<ProgramStreamFactory>(
+    const stream = container.get<ProgramStreamFactory>(
       KEYS.ProgramStreamFactory,
-      program.sourceType,
     )(ctx, MpegTsOutputFormat);
 
     const out = new PassThrough();

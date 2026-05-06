@@ -9,12 +9,14 @@ import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { KEYS } from '../types/inject.ts';
 import { groupByUniq } from '../util/index.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
 export class MaterializeProgramGroupings {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {}

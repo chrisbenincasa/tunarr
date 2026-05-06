@@ -4,7 +4,7 @@ import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { ChannelLineupMigrator } from '@/migration/lineups/ChannelLineupMigrator.js';
 import { FixerRunner } from '@/tasks/fixers/FixerRunner.js';
 import { KEYS } from '@/types/inject.js';
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import { isUndefined } from 'lodash-es';
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -71,10 +71,10 @@ export class ServerContext {
   public readonly mediaSourceApiFactory!: MediaSourceApiFactory;
 
   @inject(KEYS.DatabaseFactory)
-  public readonly databaseFactory!: interfaces.AutoFactory<Kysely<DB>>;
+  public readonly databaseFactory!: () => Kysely<DB>;
 
   @inject(KEYS.DrizzleDatabaseFactory)
-  public readonly drizzleFactory!: interfaces.AutoFactory<DrizzleDBAccess>;
+  public readonly drizzleFactory!: () => DrizzleDBAccess;
 
   @inject(KEYS.WorkerPool)
   public readonly workerPool!: IWorkerPool;

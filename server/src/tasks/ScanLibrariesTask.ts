@@ -2,7 +2,7 @@ import type { Tag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { MediaSourceScanCoordinator } from '../services/scanner/MediaSourceScanCoordinator.ts';
-import { KEYS } from '../types/inject.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import type { TaskMetadata } from './Task.ts';
 import { SimpleTask } from './Task.ts';
@@ -20,13 +20,14 @@ export class ScanLibrariesTask extends SimpleTask {
     TaskMetadata
   >;
 
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(MediaSourceScanCoordinator)
     private coordinator: MediaSourceScanCoordinator,
   ) {
-    super(logger);
+    super();
   }
 
   protected async runInternal(): Promise<void> {

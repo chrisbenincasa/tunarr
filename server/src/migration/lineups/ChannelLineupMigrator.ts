@@ -2,9 +2,10 @@ import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { RandomSlotDurationSpecMigration } from '@/migration/lineups/RandomSlotDurationSpecMigration.js';
 import { KEYS } from '@/types/inject.js';
 import { Json } from '@/types/schemas.js';
+import { InjectLogger } from '@/util/inject.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable, ServiceIdentifier } from 'inversify';
 import { findIndex, isArray, isNumber, isString } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -17,7 +18,7 @@ import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 import { SlotProgrammingMigration } from './SlotProgrammingMigration.ts';
 import { SlotShowIdMigration } from './SlotShowIdMigration.ts';
 
-const MigrationSteps: interfaces.ServiceIdentifier<
+const MigrationSteps: ServiceIdentifier<
   ChannelLineupMigration<number, number>
 >[] = [
   SlotShowIdMigration,
@@ -32,8 +33,9 @@ const MigrationSteps: interfaces.ServiceIdentifier<
 export class ChannelLineupMigrator extends JsonFileMigrator<
   ChannelLineupMigration<number, number>
 > {
+  @InjectLogger() declare private readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(FileSystemService) private fileSystemService: FileSystemService,
   ) {

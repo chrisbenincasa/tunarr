@@ -10,7 +10,7 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
-import { KEYS } from '../types/inject.ts';
+
 import {
   WorkerMessage,
   WorkerRequest,
@@ -18,6 +18,7 @@ import {
 } from '../types/worker_schemas.ts';
 import { getNumericEnvVar, WORKER_POOL_SIZE_ENV_VAR } from '../util/env.ts';
 import { timeoutPromise } from '../util/index.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { TunarrSubprocessService } from './TunarrSubprocessService.ts';
 
@@ -128,8 +129,9 @@ export class TunarrWorkerPool implements IWorkerPool {
   #outstandingByIndex = new Map<number, string[]>();
   #startPromises: Promise<boolean>[] = [];
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(TunarrSubprocessService)
     private subprocessService: TunarrSubprocessService,
   ) {}

@@ -4,14 +4,14 @@ import { BackupTask } from '@/tasks/BackupTask.js';
 import { OneOffTask } from '@/tasks/OneOffTask.js';
 import type { UnknownScheduledTask } from '@/tasks/ScheduledTask.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
-import type { Task, Task2, TaskId, TaskOutputType } from '@/tasks/Task.js';
+import type { Task2, TaskId, TaskOutputType } from '@/tasks/Task.js';
 import type { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { scheduleRuleToCronString } from '@/util/schedulingUtil.js';
 import type { BackupSettings } from '@tunarr/types/schemas';
 import dayjs, { type Dayjs } from 'dayjs';
-import type { interfaces } from 'inversify';
-import { filter, forEach, isString } from 'lodash-es';
+import type { ServiceIdentifier } from 'inversify';
+import { filter, forEach } from 'lodash-es';
 import PQueue from 'p-queue';
 import type { DeepReadonly } from 'ts-essentials';
 import { v4 } from 'uuid';
@@ -33,15 +33,11 @@ class Scheduler {
     id: string,
   ): Maybe<ScheduledTask<z.ZodUnknown, OutType>[]>;
   getScheduledJobs<OutType = void>(
-    id: Task<[], OutType> | string,
+    id: TaskId | string,
   ): Maybe<ScheduledTask<z.ZodUnknown, OutType>[]> {
-    if (isString(id)) {
-      return this.#scheduledJobsById[id] as Maybe<
-        ScheduledTask<z.ZodUnknown, OutType>[]
-      >;
-    } else {
-      return this.getScheduledJobs(id.ID);
-    }
+    return this.#scheduledJobsById[id] as Maybe<
+      ScheduledTask<z.ZodUnknown, OutType>[]
+    >;
   }
 
   // Used for jobs where we know:
@@ -95,7 +91,7 @@ class Scheduler {
   }
 
   scheduleOneOffTask<InputTypeT extends z.ZodType = z.ZodUnknown>(
-    name: interfaces.ServiceIdentifier,
+    name: ServiceIdentifier<() => Task2<InputTypeT, unknown>>,
     when: Dayjs | Date | number,
     args: z.infer<InputTypeT>,
     taskInstance?: Task2<InputTypeT, unknown>,
@@ -104,10 +100,10 @@ class Scheduler {
     if (taskInstance) {
       task = taskInstance;
     } else {
-      const taskFactory =
-        container.tryGet<interfaces.AutoFactory<Task2<InputTypeT, unknown>>>(
-          name,
-        );
+      const taskFactory = container.get<() => Task2<InputTypeT, unknown>>(
+        name,
+        { optional: true },
+      );
       if (!taskFactory) {
         this.logger.error(
           'Unable to schedule unknown task: %s',

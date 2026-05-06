@@ -1,7 +1,7 @@
 import type { Tag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { CustomShowSyncService } from '../services/CustomShowSyncService.ts';
-import { KEYS } from '../types/inject.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import type { TaskMetadata } from './Task.ts';
 import { SimpleTask } from './Task.ts';
@@ -19,12 +19,13 @@ export class SyncCustomShowsTask extends SimpleTask {
     TaskMetadata
   >;
 
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(CustomShowSyncService)
     private syncService: CustomShowSyncService,
   ) {
-    super(logger);
+    super();
   }
 
   protected async runInternal(): Promise<void> {

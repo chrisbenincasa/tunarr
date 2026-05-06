@@ -4,18 +4,19 @@ import {
   GetSubtitlesRequest,
   ScanContext,
 } from '@/services/scanner/MediaSourceScanner.js';
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
 import { QueryResult } from '../../external/BaseApiClient.ts';
 import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
+import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { KEYS } from '../../types/inject.ts';
 import { EmbyT } from '../../types/internal.ts';
 import { EmbyMovie } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { EmbyScanUtil } from './EmbyScanUtil.ts';
@@ -30,14 +31,15 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
 > {
   readonly mediaSourceType = 'emby';
 
+  @InjectLogger() declare protected readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(MediaSourceDB) mediaSourceDB: MediaSourceDB,
     @inject(KEYS.ProgramDB) programDB: IProgramDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(KEYS.ProgramDaoMinterFactory)
-    programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
+    programMinterFactory: () => ProgramDaoMinter,
     @inject(MediaSourceProgressService)
     mediaSourceProgressService: MediaSourceProgressService,
     @inject(MeilisearchService) searchService: MeilisearchService,
@@ -46,7 +48,6 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
     externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(
-      logger,
       mediaSourceDB,
       programDB,
       mediaSourceProgressService,

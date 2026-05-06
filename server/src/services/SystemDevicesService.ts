@@ -1,10 +1,10 @@
 import { Mutex } from 'async-mutex';
-import { inject, injectable } from 'inversify';
+import { injectable } from 'inversify';
 import { first, isEmpty, negate, trim } from 'lodash-es';
 import NodeCache from 'node-cache';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { KEYS } from '../types/inject.ts';
+
 import { Result } from '../types/result.ts';
 import { Maybe } from '../types/util.ts';
 import { cacheGetOrSet } from '../util/cache.ts';
@@ -12,6 +12,7 @@ import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
 import { isDocker } from '../util/containerUtil.ts';
 import { fileExists } from '../util/fsUtil.ts';
 import { isLinux, isMac, isNonEmptyString, isWindows } from '../util/index.ts';
+import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
@@ -23,7 +24,7 @@ export class SystemDevicesService {
     stdTTL: 0,
   });
 
-  constructor(@inject(KEYS.Logger) private logger: Logger) {}
+  @InjectLogger() private declare readonly logger: Logger;
 
   getDevices(): Maybe<string[]> {
     return SystemDevicesService.CACHE.get(SystemDevicesService.DEVICES_KEY);

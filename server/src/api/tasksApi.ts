@@ -4,7 +4,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import type { interfaces } from 'inversify';
+import { ServiceIdentifier } from 'inversify';
 import { isFunction } from 'lodash-es';
 import { z } from 'zod/v4';
 import { container } from '../container.ts';
@@ -105,9 +105,11 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         logger.error(parsed.error, z.prettifyError(parsed.error));
         return res.status(400).send();
       }
-      let task = container.get<
-        GenericTask | interfaces.SimpleFactory<GenericTask>
-      >(taskDef.injectKey);
+      let task = container.get<GenericTask | (() => GenericTask)>(
+        taskDef.injectKey as ServiceIdentifier<
+          GenericTask | (() => GenericTask)
+        >,
+      );
       if (isFunction(task)) {
         task = task();
       }

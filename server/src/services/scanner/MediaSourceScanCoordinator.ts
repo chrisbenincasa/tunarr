@@ -1,12 +1,13 @@
 import { MediaSourceId } from '@tunarr/shared';
 import { E_ALREADY_LOCKED, tryAcquire } from 'async-mutex';
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable } from 'inversify';
 import PQueue from 'p-queue';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { MediaSourceType } from '../../db/schema/base.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.ts';
 import { Maybe } from '../../types/util.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { EntityMutex } from '../EntityMutex.ts';
 import { GenericExternalCollectionScanner } from './ExternalCollectionScanner.ts';
@@ -19,8 +20,9 @@ export class MediaSourceScanCoordinator {
   private static queue: PQueue = new PQueue({ concurrency: 1 });
   private static signalById: Map<string, AbortController> = new Map();
 
+  @InjectLogger() declare private readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(EntityMutex) private entityMutex: EntityMutex,
     @inject(KEYS.MediaSourceLibraryScanner)
@@ -30,10 +32,9 @@ export class MediaSourceScanCoordinator {
     @inject(MediaSourceProgressService)
     private progressService: MediaSourceProgressService,
     @inject(KEYS.ExternalCollectionScannerFactory)
-    private collectionScannerFactory: interfaces.SimpleFactory<
-      Maybe<GenericExternalCollectionScanner>,
-      [MediaSourceType]
-    >,
+    private collectionScannerFactory: (
+      sourceType: MediaSourceType,
+    ) => Maybe<GenericExternalCollectionScanner>,
   ) {}
 
   async addLocal({

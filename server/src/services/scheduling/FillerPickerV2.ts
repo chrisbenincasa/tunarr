@@ -8,8 +8,9 @@ import {
   FiveMinutesMillis,
   OneDayMillis,
 } from '../../ffmpeg/builder/constants.ts';
-import { KEYS } from '../../types/inject.ts';
+
 import { Maybe } from '../../types/util.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { loggingDef } from '../../util/logging/loggingDef.ts';
 import { random } from '../../util/random.ts';
@@ -27,11 +28,11 @@ import {
   category: 'scheduling',
 })
 export class FillerPickerV2 implements IFillerPicker {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
     @inject(ProgramPlayHistoryDB)
     private programPlayHistoryDB: ProgramPlayHistoryDB,
-    @inject(KEYS.Logger)
-    private logger: Logger,
   ) {}
 
   async pickFiller(

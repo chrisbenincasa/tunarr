@@ -9,7 +9,7 @@ import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.t
 import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import type { HasMediaSourceInfo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import type { Logger } from '../../util/logging/LoggerFactory.ts';
+
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext } from './MediaSourceScanner.ts';
@@ -29,7 +29,6 @@ export abstract class MediaSourceMusicVideoScanner<
   MusicVideoTypeT extends MusicVideo,
 > extends MediaSourceScanner<'music_videos', MediaSourceTypeT, ApiClientTypeT> {
   constructor(
-    logger: Logger,
     mediaSourceDB: MediaSourceDB,
     protected programDB: IProgramDB,
     private searchService: MeilisearchService,
@@ -37,7 +36,7 @@ export abstract class MediaSourceMusicVideoScanner<
     protected programMinter: ProgramDaoMinter,
     externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
-    super(logger, mediaSourceDB, externalSubtitleDownloader);
+    super(mediaSourceDB, externalSubtitleDownloader);
   }
 
   protected async scanInternal(

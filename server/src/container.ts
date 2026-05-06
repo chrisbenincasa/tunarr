@@ -1,6 +1,6 @@
 import { ServerContext } from '@/ServerContext.js';
 import { dbContainer } from '@/db/DBModule.js';
-import type { SettingsDB, SettingsFile } from '@/db/SettingsDB.js';
+import type { SettingsFile } from '@/db/SettingsDB.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { FFmpegModule } from '@/ffmpeg/FFmpegModule.js';
 import {
@@ -19,13 +19,11 @@ import { TasksModule } from '@/tasks/TasksModule.js';
 import { FixerModule } from '@/tasks/fixers/FixerModule.js';
 import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import type { Maybe } from '@/types/util.js';
-import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { search } from '@tunarr/shared/util';
-import type { interfaces } from 'inversify';
+import type { Factory } from 'inversify';
 import { Container, ContainerModule } from 'inversify';
-import { isMainThread } from 'node:worker_threads';
 import type { DeepPartial } from 'ts-essentials';
 import { App } from './App.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
@@ -56,11 +54,10 @@ import { FixerRunner } from './tasks/fixers/FixerRunner.ts';
 import { ChildProcessHelper } from './util/ChildProcessHelper.ts';
 import { Timer } from './util/Timer.ts';
 import { getBooleanEnvVar, USE_WORKER_POOL_ENV_VAR } from './util/env.ts';
-import type { LoggingDefinition } from './util/logging/loggingDef.ts';
 
-const container = new Container({ autoBindInjectable: true });
+const container = new Container({ autobind: true });
 
-const RootModule = new ContainerModule((bind) => {
+const RootModule = new ContainerModule(({ bind }) => {
   bind<GlobalOptions>(KEYS.GlobalOptions).toDynamicValue(() => globalOptions());
   bind<ServerOptions>(KEYS.ServerOptions).toDynamicValue(() => serverOptions());
 
@@ -68,51 +65,35 @@ const RootModule = new ContainerModule((bind) => {
 
   bind(SettingsDBFactory).toSelf().inSingletonScope();
 
-  bind<interfaces.Factory<ISettingsDB>>('Factory<ISettingsDB>').toFactory<
-    SettingsDB,
-    [string | undefined, DeepPartial<SettingsFile> | undefined]
-  >((context) => {
-    const inst = context.container.get(SettingsDBFactory);
-    return (dbPath, initialSettings) => inst.get(dbPath, initialSettings);
+  bind<Factory<ISettingsDB>>('Factory<ISettingsDB>').toFactory((context) => {
+    const inst = context.get(SettingsDBFactory);
+    return (dbPath: string, initialSettings: DeepPartial<SettingsFile>) =>
+      inst.get(dbPath, initialSettings);
   });
 
   bind<ISettingsDB>(KEYS.SettingsDB).toDynamicValue((ctx) => {
-    return ctx.container.get<() => ISettingsDB>('Factory<ISettingsDB>')();
+    return ctx.get<() => ISettingsDB>('Factory<ISettingsDB>')();
   });
   bind<string>(KEYS.FFmpegPath).toDynamicValue(
     (ctx) =>
-      ctx.container.get<ISettingsDB>(KEYS.SettingsDB).ffmpegSettings()
+      ctx.get<ISettingsDB>(KEYS.SettingsDB).ffmpegSettings()
         .ffmpegExecutablePath,
   );
   bind<string>(KEYS.FFprobePath).toDynamicValue(
     (ctx) =>
-      ctx.container.get<ISettingsDB>(KEYS.SettingsDB).ffmpegSettings()
+      ctx.get<ISettingsDB>(KEYS.SettingsDB).ffmpegSettings()
         .ffprobeExecutablePath,
   );
 
   bind<typeof LoggerFactory>(KEYS.LoggerFactory).toConstantValue(LoggerFactory);
 
-  bind<Logger>(KEYS.Logger).toDynamicValue((ctx) => {
-    const impl =
-      ctx.currentRequest.parentRequest?.bindings?.[0]?.implementationType;
-    const loggingDef = impl
-      ? (Reflect.get(impl, 'tunarr:log_def') as LoggingDefinition)
-      : null;
-    return LoggerFactory.child({
-      className: impl ? (Reflect.get(impl, 'name') as string) : 'Unknown',
-      worker: isMainThread ? undefined : true,
-      category: loggingDef?.category,
-    });
-  });
-
   bind(ServerContext).toSelf().inSingletonScope();
 
   bind<MutexMap>(KEYS.MutexMap).toDynamicValue(() => new MutexMap());
 
-  bind<interfaces.Factory<MutexMap>>('Factory<MutexMax>').toFactory<
-    MutexMap,
-    [Maybe<number>]
-  >(() => (timeout?: number) => new MutexMap(timeout));
+  bind<Factory<MutexMap, [Maybe<number>]>>('Factory<MutexMax>').toFactory(
+    () => (timeout?: number) => new MutexMap(timeout),
+  );
 
   container.bind(MediaSourceApiFactory).toSelf().inSingletonScope();
 
@@ -125,19 +106,21 @@ const RootModule = new ContainerModule((bind) => {
   bind(M3uService).toSelf().inSingletonScope();
 
   container
-    .bind<interfaces.Factory<MediaSourceApiFactory>>(KEYS.MediaSourceApiFactory)
+    .bind<Factory<MediaSourceApiFactory>>(KEYS.MediaSourceApiFactory)
     .toFactory(
-      (ctx) => () =>
-        ctx.container.get<MediaSourceApiFactory>(MediaSourceApiFactory),
+      (ctx) => () => ctx.get<MediaSourceApiFactory>(MediaSourceApiFactory),
     );
 
   bind(FixerRunner).toSelf().inSingletonScope();
   bind(StartupService).toSelf().inSingletonScope();
   container
     .bind<
-      interfaces.Factory<MediaSourceLibraryRefresher>
+      Factory<MediaSourceLibraryRefresher>
     >(KEYS.MediaSourceLibraryRefresher)
-    .toAutoFactory(MediaSourceLibraryRefresher);
+    .toFactory(
+      (ctx) => () =>
+        ctx.get<MediaSourceLibraryRefresher>(MediaSourceLibraryRefresher),
+    );
 
   bind(TVGuideService).toSelf().inSingletonScope();
   bind(EventService).toSelf().inSingletonScope();
@@ -145,9 +128,11 @@ const RootModule = new ContainerModule((bind) => {
   bind(SystemDevicesService).toSelf().inSingletonScope();
   bind(FileSystemService).toSelf().inSingletonScope();
   bind(TunarrWorkerPool).toSelf().inSingletonScope();
-  bind<interfaces.AutoFactory<TimeSlotSchedulerService>>(
+  bind<Factory<TimeSlotSchedulerService>>(
     KEYS.TimeSlotSchedulerServiceFactory,
-  ).toAutoFactory(TimeSlotSchedulerService);
+  ).toFactory(
+    (ctx) => () => ctx.get<TimeSlotSchedulerService>(TimeSlotSchedulerService),
+  );
 
   bind(KEYS.StartupTask).to(SeedSystemDevicesStartupTask).inSingletonScope();
   bind(KEYS.StartupTask).to(ClearM3uCacheStartupTask).inSingletonScope();
@@ -166,9 +151,9 @@ const RootModule = new ContainerModule((bind) => {
     bind(KEYS.WorkerPool).to(NoopWorkerPool).inSingletonScope();
   }
 
-  bind<interfaces.AutoFactory<IWorkerPool>>(
-    KEYS.WorkerPoolFactory,
-  ).toAutoFactory(KEYS.WorkerPool);
+  bind<Factory<IWorkerPool>>(KEYS.WorkerPoolFactory).toFactory(
+    (ctx) => () => ctx.get(KEYS.WorkerPool),
+  );
   bind(EntityMutex).toSelf().inSingletonScope();
   bind(MeilisearchService).toSelf().inSingletonScope();
   bind(KEYS.SearchService).toService(MeilisearchService);
@@ -178,7 +163,9 @@ const RootModule = new ContainerModule((bind) => {
   bind(App).toSelf().inSingletonScope();
 
   bind(search.SearchParser).to(search.SearchParser);
-  bind(autoFactoryKey(SearchParser)).toAutoFactory(SearchParser);
+  bind<Factory<SearchParser>>(autoFactoryKey(SearchParser)).toFactory(
+    (ctx) => () => ctx.get<SearchParser>(SearchParser),
+  );
 });
 
 container.load(RootModule);

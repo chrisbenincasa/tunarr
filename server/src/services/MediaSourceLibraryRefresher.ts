@@ -13,15 +13,17 @@ import { MediaSourceId } from '../db/schema/base.js';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import type { MediaLibraryType } from '../db/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
-import { KEYS } from '../types/inject.ts';
+
 import { Maybe } from '../types/util.ts';
 import { groupByUniq, isDefined } from '../util/index.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
 export class MediaSourceLibraryRefresher {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,

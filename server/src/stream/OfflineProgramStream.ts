@@ -9,12 +9,12 @@ import { isError, isUndefined } from 'lodash-es';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
 import type { StreamOptions } from '../ffmpeg/ffmpegBase.ts';
 import type { PlayerContext } from './PlayerStreamContext.ts';
-import { ProgramStream } from './ProgramStream.ts';
+import { ProgramStreamOld } from './ProgramStreamOld.ts';
 
 /**
  * Player for flex, error, and other misc non-content streams.
  */
-export class OfflineProgramStream extends ProgramStream {
+export class OfflineProgramStream extends ProgramStreamOld {
   protected logger = LoggerFactory.child({
     caller: import.meta,
     className: this.constructor.name,

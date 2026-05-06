@@ -12,13 +12,14 @@ import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { ChannelStreamMode } from '@tunarr/types';
-import type { StreamEncoding } from '../ffmpeg/ffmpegBase.ts';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { isNil, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
+import type { StreamEncoding } from '../ffmpeg/ffmpegBase.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { type Logger } from '../util/logging/LoggerFactory.ts';
 import { PlayerContext } from './PlayerStreamContext.ts';
-import { ProgramStream } from './ProgramStream.js';
+import { ProgramStream } from './ProgramStream2.ts';
 import {
   StreamProgramCalculator,
   StreamProgramCalculatorError,
@@ -53,13 +54,15 @@ type StartVideoStreamRequest = {
  */
 @injectable()
 export class VideoStream {
+  @InjectLogger() declare private readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(StreamProgramCalculator)
     private calculator: StreamProgramCalculator,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(KEYS.ProgramStreamFactory)
+    @named('new')
     private programStreamFactory: ProgramStreamFactory,
     @inject(SessionManager) private sessionManager: SessionManager,
   ) {}
@@ -136,11 +139,13 @@ export class VideoStream {
             result.lineupItem,
             result.channelContext,
             result.sourceChannel,
-            audioOnly,
-            true,
             channel.transcodeConfig,
-            streamMode,
-            encoding ?? { mode: 'transcode' },
+            {
+              audioOnly,
+              realtime: true,
+              streamMode,
+              encodingMode: encoding ?? { mode: 'transcode' },
+            },
           );
 
           let outputFormat: OutputFormat = MpegTsOutputFormat;

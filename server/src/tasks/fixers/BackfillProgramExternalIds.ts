@@ -8,6 +8,7 @@ import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { asyncPool } from '@/util/asyncPool.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { tag } from '@tunarr/types';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
@@ -41,8 +42,9 @@ import Fixer from './fixer.ts';
 @injectable()
 export class BackfillProgramExternalIds extends Fixer {
   private timer: Timer;
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) protected logger: Logger,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(KEYS.Database) private db: Kysely<DB>,
@@ -50,7 +52,7 @@ export class BackfillProgramExternalIds extends Fixer {
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {
     super();
-    this.timer = new Timer(this.logger);
+    this.timer = new Timer();
   }
 
   canRunInBackground: boolean = true;

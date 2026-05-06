@@ -17,6 +17,7 @@ import {
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import { Maybe } from '../types/util.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
 import { SmartCollection } from './schema/SmartCollection.ts';
@@ -30,8 +31,9 @@ export class SmartCollectionsDB {
   });
   private mu: Mutex = new Mutex();
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.DrizzleDB) private db: DrizzleDBAccess,
     @inject(search.SearchParser) private searchParser: search.SearchParser,
     @inject(MeilisearchService) private searchService: MeilisearchService,

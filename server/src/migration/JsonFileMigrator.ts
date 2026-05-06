@@ -1,4 +1,4 @@
-import type { interfaces } from 'inversify';
+import type { ServiceIdentifier } from 'inversify';
 import { sortBy } from 'lodash-es';
 import assert from 'node:assert';
 import { container } from '../container.ts';
@@ -13,7 +13,7 @@ export interface MigrationStep {
 export abstract class JsonFileMigrator<StepClass extends MigrationStep> {
   protected pipeline: StepClass[];
 
-  constructor(migrationStepKeys: interfaces.ServiceIdentifier<StepClass>[]) {
+  constructor(migrationStepKeys: ServiceIdentifier<StepClass>[]) {
     const allSteps = sortBy(
       migrationStepKeys.map((step) => container.get(step)),
       ({ from }) => from,

@@ -67,7 +67,7 @@ import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { EmbyApiClient } from '../external/emby/EmbyApiClient.ts';
 import { globalOptions } from '../globals.ts';
 import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
-import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
+import { ProgramStreamDetailsFetcher } from '../stream/LocalProgramStreamDetails.ts';
 import { TypedError } from '../types/errors.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Maybe } from '../types/util.ts';
@@ -527,9 +527,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       const ffprobe = container.get<FfprobeStreamDetails>(FfprobeStreamDetails);
 
       const result = await container
-        .get<ExternalStreamDetailsFetcherFactory>(
-          ExternalStreamDetailsFetcherFactory,
-        )
+        .get<ProgramStreamDetailsFetcher>(ProgramStreamDetailsFetcher)
         .getStream({
           lineupItem: { ...program, mediaSourceId },
           server,

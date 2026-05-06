@@ -15,7 +15,7 @@ import { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { HttpReconnectOptions } from '../ffmpeg/builder/options/input/HttpReconnectOptions.ts';
 import { GlobalOptions } from '../globals.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
-import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
+import { ProgramStreamDetailsFetcher } from '../stream/LocalProgramStreamDetails.ts';
 import { isImageBasedSubtitle } from '../stream/util.ts';
 import { KEYS } from '../types/inject.ts';
 import { OpenDateTimeRange } from '../types/OpenDateTimeRange.ts';
@@ -27,6 +27,7 @@ import {
 } from '../util/constants.ts';
 import { fileExists } from '../util/fsUtil.ts';
 import { isDefined } from '../util/index.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { getSubtitleCacheFilePath } from '../util/subtitles.ts';
 import { Task2 } from './Task.ts';
@@ -84,19 +85,19 @@ export class SubtitleExtractorTask extends Task2<
 
   schema = SubtitleExtractorTaskRequest;
 
+  @InjectLogger() declare protected readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) logger: Logger,
     @inject(TVGuideService) private guideService: TVGuideService,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
-    @inject(ExternalStreamDetailsFetcherFactory)
-    private streamDetailsFetcher: ExternalStreamDetailsFetcherFactory,
+    @inject(ProgramStreamDetailsFetcher)
+    private streamDetailsFetcher: ProgramStreamDetailsFetcher,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
-    // private request: SubtitleExtractorTaskRequest,
   ) {
-    super(logger);
+    super();
   }
 
   protected async runInternal(

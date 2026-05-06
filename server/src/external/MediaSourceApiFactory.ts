@@ -14,6 +14,7 @@ import { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import { cacheGetOrSet } from '../util/cache.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { type ApiClientOptions } from './BaseApiClient.js';
 import { EmbyApiClient } from './emby/EmbyApiClient.ts';
@@ -38,8 +39,9 @@ export class MediaSourceApiFactory {
 
   #requestCacheEnabled: boolean | Record<string, boolean> = false;
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(new LazyServiceIdentifier(() => MediaSourceDB))
     private mediaSourceDB: MediaSourceDB,
     @inject(KEYS.SettingsDB) private settings: ISettingsDB,

@@ -1,4 +1,5 @@
 import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
+import { InjectLogger } from '@/util/inject.js';
 import { seq } from '@tunarr/shared/util';
 import type { MediaItem, MediaStream } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -64,8 +65,9 @@ export abstract class FileSystemScanner {
   protected state: RunState = 'starting';
   private mediaSourceId: Maybe<string>;
 
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
-    protected logger: Logger,
     protected ffprobeStreamDetails: FfprobeStreamDetails,
     protected imageCache: ImageCache,
     protected localMediaDB: LocalMediaDB,

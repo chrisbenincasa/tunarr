@@ -3,12 +3,13 @@ import { StrictOmit } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { z } from 'zod/v4';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
-import { KEYS } from '../types/inject.ts';
+
 import {
   WorkerRequest,
   WorkerRequestToResponse,
 } from '../types/worker_schemas.ts';
 import { USE_WORKER_POOL_ENV_VAR } from '../util/env.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { SlotSchedulerService } from './scheduling/RandomSlotSchedulerService.ts';
 import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.ts';
@@ -20,8 +21,9 @@ type OutTypes = typeof WorkerRequestToResponse;
  */
 @injectable()
 export class NoopWorkerPool implements IWorkerPool {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(TimeSlotSchedulerService)
     private timeSlotSchedulerService: TimeSlotSchedulerService,
     @inject(SlotSchedulerService)

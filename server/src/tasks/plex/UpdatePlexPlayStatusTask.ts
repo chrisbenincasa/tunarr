@@ -2,7 +2,6 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
 import { Task2 } from '@/tasks/Task.js';
 import { run } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
@@ -157,11 +156,7 @@ class UpdatePlexPlayStatusTask extends Task2<
     private mediaSourceApiFactory: MediaSourceApiFactory,
     private plexServer: MediaSourceWithRelations,
   ) {
-    super(
-      LoggerFactory.child({
-        className: UpdatePlexPlayStatusScheduledTask.name,
-      }),
-    );
+    super();
   }
 
   protected async runInternal(

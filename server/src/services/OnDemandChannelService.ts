@@ -1,6 +1,7 @@
 import { OnDemandChannelConfig } from '@/db/derived_types/Lineup.js';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import dayjs from 'dayjs';
@@ -12,8 +13,9 @@ import { GlobalScheduler } from './Scheduler.ts';
 export class OnDemandChannelService {
   #locks: MutexMap;
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.MutexMap) mutexMap: MutexMap,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
   ) {

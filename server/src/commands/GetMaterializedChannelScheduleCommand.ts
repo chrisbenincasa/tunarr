@@ -17,9 +17,10 @@ import { match } from 'ts-pattern';
 import { ormChannelToApiChannel } from '../db/converters/channelConverters.ts';
 import { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { ServerContext } from '../ServerContext.ts';
-import { KEYS } from '../types/inject.ts';
+
 import { Maybe } from '../types/util.ts';
 import { groupByUniq } from '../util/index.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { MaterializeProgramGroupings } from './MaterializeProgramGroupings.ts';
 
@@ -29,11 +30,12 @@ type GetMaterializedChannelScheduleRequest = {
 
 @injectable()
 export class GetMaterializedChannelScheduleCommand {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
     @inject(ServerContext) private serverContext: ServerContext,
     @inject(MaterializeProgramGroupings)
     private materializeProgramGroupings: MaterializeProgramGroupings,
-    @inject(KEYS.Logger) private logger: Logger,
   ) {}
 
   async execute(

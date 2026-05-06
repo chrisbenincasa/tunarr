@@ -18,6 +18,7 @@ import { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
 import { SmartCollectionsDB } from '../../db/SmartCollectionsDB.ts';
 import { KEYS } from '../../types/inject.ts';
 import { zipWithIndex } from '../../util/index.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import {
   isProgramGroupingDocument,
@@ -33,8 +34,9 @@ import { TimeSlotScheduleServiceRequest } from './TimeSlotSchedulerService.ts';
 
 @injectable()
 export class SlotSchedulerHelper {
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(CustomShowDB) private customShowDB: CustomShowDB,
     @inject(FillerDB) private fillerDB: FillerDB,
     @inject(KEYS.ProgramDB) private programDB: ProgramDB,

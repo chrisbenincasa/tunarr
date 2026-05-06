@@ -82,6 +82,7 @@ import {
 } from '../util/env.ts';
 import { fileExists } from '../util/fsUtil.ts';
 import { isNonEmptyString, isWindows, wait } from '../util/index.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { FileSystemService } from './FileSystemService.ts';
 import { ISearchService } from './ISearchService.ts';
@@ -393,8 +394,9 @@ export class MeilisearchService implements ISearchService {
   private port?: number;
   #client?: MeiliSearch;
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.ServerOptions) private serverOptions: ServerOptions,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(ChildProcessHelper) private childProcessHelper: ChildProcessHelper,

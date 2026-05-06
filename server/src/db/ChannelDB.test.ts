@@ -372,8 +372,8 @@ describe('ChannelDB', () => {
           duration: 30000,
           type: 'movie',
           sourceType: 'plex',
-          externalKey: faker.string.alphanumeric(),
-          externalSourceId: faker.string.alphanumeric(),
+          externalKey: faker.string.alphanumeric({ length: 16 }),
+          externalSourceId: faker.string.alphanumeric({ length: 16 }),
           title: `Test Movie ${i}`,
           year: 2020 + i,
         });

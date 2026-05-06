@@ -14,6 +14,7 @@ import { Maybe } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
 import { devAssert } from '@/util/debug.js';
+import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { resolveIconUrl } from '@/util/iconUtil.js';
@@ -149,8 +150,9 @@ export class TVGuideService {
   private accumulateTable: Record<string, number[]> = {};
   private channelsById?: Record<string, ChannelWithLineup>;
 
+  @InjectLogger() private declare readonly logger: Logger;
+
   constructor(
-    @inject(KEYS.Logger) private logger: Logger,
     @inject(XmlTvWriter) xmltv: XmlTvWriter,
     @inject(EventService) eventService: EventService,
     @inject(KEYS.ChannelDB) private channelDB: ChannelDB,
@@ -163,7 +165,7 @@ export class TVGuideService {
     @inject(MaterializeProgramsCommand)
     private materializeProgramsCommand: MaterializeProgramsCommand,
   ) {
-    this.timer = new Timer(this.logger);
+    this.timer = new Timer();
     this.cachedGuide = {};
     this.lastUpdateTime = {};
     this.lastEndTime = {};

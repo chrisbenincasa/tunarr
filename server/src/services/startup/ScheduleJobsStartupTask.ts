@@ -1,4 +1,4 @@
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { filter, flatten, forEach, values } from 'lodash-es';
 import { container } from '../../container.ts';
 import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
@@ -11,6 +11,7 @@ import { SubtitleExtractorTask } from '../../tasks/SubtitleExtractorTask.ts';
 import { SyncCustomShowsTask } from '../../tasks/SyncCustomShowsTask.ts';
 import { UpdateXmlTvTask } from '../../tasks/UpdateXmlTvTask.ts';
 import { autoFactoryKey, KEYS } from '../../types/inject.ts';
+import { InjectLogger } from '../../util/inject.ts';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import {
   GlobalScheduler,
@@ -26,10 +27,9 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
   id = ScheduleJobsStartupTask.name;
   dependencies = [ChannelLineupMigratorStartupTask.name];
 
-  constructor(
-    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
-    @inject(KEYS.Logger) private logger: Logger,
-  ) {
+  @InjectLogger() declare private readonly logger: Logger;
+
+  constructor(@inject(KEYS.SettingsDB) private settingsDB: ISettingsDB) {
     super();
   }
 
@@ -41,9 +41,7 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
       new ScheduledTask(
         UpdateXmlTvTask,
         hoursCrontab(xmlTvSettings.refreshHours),
-        container.get<interfaces.AutoFactory<UpdateXmlTvTask>>(
-          KEYS.UpdateXmlTvTaskFactory,
-        ),
+        container.get<() => UpdateXmlTvTask>(KEYS.UpdateXmlTvTaskFactory),
         {},
       ),
     );
@@ -53,9 +51,7 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
       new ScheduledTask(
         CleanupSessionsTask,
         minutesCrontab(1),
-        container.get<interfaces.AutoFactory<CleanupSessionsTask>>(
-          CleanupSessionsTask.KEY,
-        ),
+        container.get<() => CleanupSessionsTask>(CleanupSessionsTask.KEY),
         undefined,
       ),
     );
@@ -65,7 +61,7 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
       new ScheduledTask(
         OnDemandChannelStateTask,
         minutesCrontab(1),
-        container.get<interfaces.AutoFactory<OnDemandChannelStateTask>>(
+        container.get<() => OnDemandChannelStateTask>(
           OnDemandChannelStateTask.KEY,
         ),
         undefined,
@@ -78,7 +74,7 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
       new ScheduledTask(
         SubtitleExtractorTask,
         hoursCrontab(1),
-        container.get<interfaces.AutoFactory<SubtitleExtractorTask>>(
+        container.get<() => SubtitleExtractorTask>(
           autoFactoryKey(SubtitleExtractorTask),
         ),
         {},
@@ -108,9 +104,7 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
         hoursCrontab(
           this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
         ),
-        container.get<interfaces.AutoFactory<ScanLibrariesTask>>(
-          ScanLibrariesTask.KEY,
-        ),
+        container.get<() => ScanLibrariesTask>(ScanLibrariesTask.KEY),
         undefined,
       ),
     );
@@ -122,9 +116,7 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
         hoursCrontab(
           this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
         ),
-        container.get<interfaces.AutoFactory<SyncCustomShowsTask>>(
-          SyncCustomShowsTask.KEY,
-        ),
+        container.get<() => SyncCustomShowsTask>(SyncCustomShowsTask.KEY),
         undefined,
       ),
     );

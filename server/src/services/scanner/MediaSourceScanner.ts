@@ -1,4 +1,5 @@
 import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
+import { InjectLogger } from '@/util/inject.js';
 import dayjs from 'dayjs';
 import { isEmpty } from 'lodash-es';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
@@ -73,8 +74,9 @@ export abstract class MediaSourceScanner<
   abstract readonly type: MediaLibraryTypeT;
   abstract readonly mediaSourceType: MediaSourceTypeT;
 
+  @InjectLogger() protected declare readonly logger: Logger;
+
   constructor(
-    protected logger: Logger,
     protected mediaSourceDB: MediaSourceDB,
     protected externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {

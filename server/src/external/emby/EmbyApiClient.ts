@@ -58,7 +58,7 @@ import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import type { ProgramType } from '../../db/schema/Program.ts';
 import type { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import type { Canonicalizer } from '../../services/Canonicalizer.ts';
-import { extractIsAnamorphic } from '../../stream/jellyfin/JellyfinStreamDetails.ts';
+import { extractIsAnamorphic } from '../../stream/util.ts';
 import {
   isEmbyType,
   type EmbyEpisode as ApiEmbyEpisode,
