@@ -473,7 +473,16 @@ export class Server {
 
     const hdhrSettings = this.serverContext.settings.hdhrSettings();
     if (hdhrSettings.autoDiscoveryEnabled) {
-      await this.serverContext.hdhrService.ssdp.start();
+      try {
+        await this.serverContext.hdhrService.ssdp.start();
+      } catch (e) {
+        this.logger.warn(
+          e,
+          'Failed to start SSDP server for HDHR auto-discovery. ' +
+            'This is expected when running as a non-root user since SSDP binds to privileged port 1900. ' +
+            'HDHR auto-discovery will be unavailable, but all other functionality is unaffected.',
+        );
+      }
     }
 
     this.serverContext.eventService.push({

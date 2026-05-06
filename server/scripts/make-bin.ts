@@ -217,6 +217,7 @@ for (const arch of args.target) {
         '--no-bytecode',
         '--signature', // for macos arm64
         '--debug',
+        '--sea',
         '-o',
         `dist/bin/${execName}`,
       ];
