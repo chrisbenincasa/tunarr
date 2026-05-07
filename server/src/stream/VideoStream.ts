@@ -19,7 +19,7 @@ import type { StreamEncoding } from '../ffmpeg/ffmpegBase.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { type Logger } from '../util/logging/LoggerFactory.ts';
 import { PlayerContext } from './PlayerStreamContext.ts';
-import { ProgramStream } from './ProgramStream2.ts';
+import { ProgramStream } from './ProgramStream.ts';
 import {
   StreamProgramCalculator,
   StreamProgramCalculatorError,

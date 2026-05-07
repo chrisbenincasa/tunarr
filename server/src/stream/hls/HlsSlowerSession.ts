@@ -15,7 +15,7 @@ import {
 } from '../../ffmpeg/builder/constants.ts';
 import type { GetPlayerContextRequest } from '../PlayerStreamContext.ts';
 import { PlayerContext } from '../PlayerStreamContext.ts';
-import type { ProgramStream } from '../ProgramStream2.ts';
+import type { ProgramStream } from '../ProgramStream.ts';
 import type { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.ts';
 import { BaseHlsSession } from './BaseHlsSession.ts';

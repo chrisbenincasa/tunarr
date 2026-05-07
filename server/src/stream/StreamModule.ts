@@ -19,8 +19,8 @@ import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
 import { FillerPickerV2 } from '../services/scheduling/FillerPickerV2.ts';
 import { bindAssistedFactory } from '../util/assistedInject.ts';
 import { bindAutoFactory } from '../util/inject.ts';
-import { ProgramStreamDetailsFetcher } from './LocalProgramStreamDetails.ts';
-import { ProgramStream } from './ProgramStream2.ts';
+import { ProgramStream } from './ProgramStream.ts';
+import { ProgramStreamDetailsFetcher } from './ProgramStreamDetailsFetcher.ts';
 import type { ProgramStreamFactory } from './ProgramStreamFactory.ts';
 
 const configure = ({ bind }: ContainerModuleLoadOptions) => {

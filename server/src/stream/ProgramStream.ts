@@ -20,7 +20,7 @@ import {
   OfflineStreamLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.js';
+import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
 import type { StreamOptions } from '../ffmpeg/ffmpegBase.ts';
 import { KEYS } from '../types/inject.ts';
 import { assisted, injected } from '../util/assistedInject.ts';
@@ -29,10 +29,10 @@ import {
   isDefined,
   isNonEmptyString,
   isSuccess,
-} from '../util/index.js';
+} from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { ProgramStreamDetailsFetcher } from './LocalProgramStreamDetails.ts';
-import type { PlayerContext } from './PlayerStreamContext.js';
+import type { PlayerContext } from './PlayerStreamContext.ts';
+import { ProgramStreamDetailsFetcher } from './ProgramStreamDetailsFetcher.ts';
 import type { StreamRenditions } from './types.ts';
 
 type ProgramStreamEvents = {
