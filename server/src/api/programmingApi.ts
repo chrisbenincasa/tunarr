@@ -67,7 +67,7 @@ import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { EmbyApiClient } from '../external/emby/EmbyApiClient.ts';
 import { globalOptions } from '../globals.ts';
 import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
-import { ProgramStreamDetailsFetcher } from '../stream/LocalProgramStreamDetails.ts';
+import { ProgramStreamDetailsFetcher } from '../stream/ProgramStreamDetailsFetcher.ts';
 import { TypedError } from '../types/errors.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Maybe } from '../types/util.ts';

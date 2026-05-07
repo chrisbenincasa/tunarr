@@ -394,7 +394,7 @@ export class MediaSourceDB {
                 }) satisfies typeof MediaSourceLibrary.$inferInsert,
             ),
           )
-          .all();
+          .run();
       }
 
       return newServer;

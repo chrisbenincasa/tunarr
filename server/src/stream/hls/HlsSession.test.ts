@@ -3,10 +3,10 @@ import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js'
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import type { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
-import type { ProgramStreamOld } from '@/stream/ProgramStreamOld.ts';
 import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
 import tmp from 'tmp';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { ProgramStream } from '../ProgramStream.ts';
 import { HlsSession } from './HlsSession.js';
 
 vi.mock('@/util/logging/LoggerFactory.js', () => ({
@@ -51,10 +51,10 @@ function makeSession(transcodeDirectory: string): HlsSession {
     {} as StreamProgramCalculator,
     {} as ISettingsDB,
     {} as OnDemandChannelService,
-    (() => ({}) as unknown as ProgramStreamOld) as (
+    (() => ({}) as unknown as ProgramStream) as (
       ctx: PlayerContext,
       fmt: OutputFormat,
-    ) => ProgramStreamOld,
+    ) => ProgramStream,
   );
 }
 describe('HlsSession', () => {
