@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
 import events from 'node:events';
 import { PassThrough } from 'node:stream';
+import type { ChannelTranscodingSettings } from '../db/schema/base.ts';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.js';
 import type { StreamOptions } from '../ffmpeg/ffmpegBase.ts';
 import {
@@ -203,6 +204,30 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
         enabled: true,
         url: icon,
       };
+    }
+
+    return;
+  }
+
+  protected getNowPlayingOverlay():
+    | NonNullable<ChannelTranscodingSettings['nowPlayingOverlay']>
+    | undefined {
+    const channel = this.context.targetChannel;
+
+    if (this.context.transcodeConfig.disableChannelOverlay) {
+      return;
+    }
+
+    if (
+      this.context.lineupItem.type === 'commercial' &&
+      this.context.targetChannel.disableFillerOverlay
+    ) {
+      return;
+    }
+
+    const overlay = channel.transcoding?.nowPlayingOverlay;
+    if (overlay?.enabled) {
+      return overlay;
     }
 
     return;

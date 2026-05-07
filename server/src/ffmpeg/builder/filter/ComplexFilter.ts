@@ -63,6 +63,7 @@ export class ComplexFilter implements FilterOptionPipelineStep {
     let audioFilterComplex = '';
     let watermarkFilterComplex = '';
     let watermarkOverlayFilterComplex = '';
+    let nowPlayingOverlayFilterComplex = '';
     let subtitleFilterComplex = '';
     let subtitleOverlayFilterComplex = '';
 
@@ -151,6 +152,15 @@ export class ComplexFilter implements FilterOptionPipelineStep {
       watermarkOverlayFilterComplex += videoLabel;
     }
 
+    if (this.filterChain.nowPlayingOverlayFilterSteps.length > 0) {
+      const filterString = collectAndJoinSteps(
+        this.filterChain.nowPlayingOverlayFilterSteps,
+      );
+      nowPlayingOverlayFilterComplex += `${formatLabel(videoLabel)}${filterString}`;
+      videoLabel = '[vtxt]';
+      nowPlayingOverlayFilterComplex += videoLabel;
+    }
+
     ifDefined(this.audioInputSource, (audioInput) => {
       const audioInputIndex = distinctPaths.indexOf(audioInput.path);
       if (audioInputIndex === -1) {
@@ -188,6 +198,7 @@ export class ComplexFilter implements FilterOptionPipelineStep {
       watermarkFilterComplex,
       subtitleOverlayFilterComplex,
       watermarkOverlayFilterComplex,
+      nowPlayingOverlayFilterComplex,
       pixelFormatFilterComplex,
     ];
     const filterComplex = filter(allFilters, isNonEmptyString).join(';');

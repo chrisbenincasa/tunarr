@@ -205,6 +205,19 @@ export class FakeChannelDB implements IChannelDB {
       targetResolution?: { widthPx: number; heightPx: number } | undefined;
       videoBitrate?: number | undefined;
       videoBufferSize?: number | undefined;
+      nowPlayingOverlay?:
+        | {
+            enabled: boolean;
+            position?: 'bottom-left' | 'bottom-right' | undefined;
+            showForSeconds?: number | undefined;
+            showAtEndForSeconds?: number | undefined;
+            startPaddingSeconds?: number | undefined;
+            endPaddingSeconds?: number | undefined;
+            comingUpNextForSeconds?: number | undefined;
+            comingUpNextOffsetSeconds?: number | undefined;
+            fadeDurationSeconds?: number | undefined;
+          }
+        | undefined;
     } | null;
     transcodeConfigId: string;
     watermark: {

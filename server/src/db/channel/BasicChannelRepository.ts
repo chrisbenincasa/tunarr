@@ -24,6 +24,7 @@ import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { isDefined, isNonEmptyString } from '../../util/index.ts';
 import { ChannelAndLineup } from '../interfaces/IChannelDB.ts';
+import type { ChannelTranscodingSettings } from '../schema/base.ts';
 import {
   Channel,
   ChannelOrm,
@@ -59,11 +60,23 @@ function sanitizeChannelWatermark(
   };
 }
 
-function updateRequestToChannel(updateReq: SaveableChannel): ChannelUpdate {
+function updateRequestToChannel(
+  updateReq: SaveableChannel,
+  existingTranscoding?: ChannelTranscodingSettings | null,
+): ChannelUpdate {
   const sanitizedWatermark = sanitizeChannelWatermark(updateReq.watermark);
+
+  let transcoding: string | undefined;
+  if (isDefined(updateReq.transcoding?.nowPlayingOverlay)) {
+    transcoding = JSON.stringify({
+      ...(existingTranscoding ?? {}),
+      nowPlayingOverlay: updateReq.transcoding.nowPlayingOverlay,
+    });
+  }
 
   return {
     number: updateReq.number,
+    transcoding,
     watermark: sanitizedWatermark
       ? JSON.stringify(sanitizedWatermark)
       : undefined,
@@ -86,12 +99,16 @@ function updateRequestToChannel(updateReq: SaveableChannel): ChannelUpdate {
 
 function createRequestToChannel(saveReq: SaveableChannel): NewChannel {
   const now = +dayjs();
+  const transcoding = isDefined(saveReq.transcoding)
+    ? JSON.stringify(saveReq.transcoding)
+    : null;
 
   return {
     uuid: v4(),
     createdAt: now,
     updatedAt: now,
     number: saveReq.number,
+    transcoding,
     watermark: saveReq.watermark ? JSON.stringify(saveReq.watermark) : null,
     icon: JSON.stringify(saveReq.icon),
     guideMinimumDuration: saveReq.guideMinimumDuration,
@@ -274,7 +291,7 @@ export class BasicChannelRepository {
       throw new ChannelNotFoundError(id);
     }
 
-    const update = updateRequestToChannel(updateReq);
+    const update = updateRequestToChannel(updateReq, channel.transcoding);
 
     if (
       isNonEmptyString(updateReq.watermark?.url) &&
@@ -426,10 +443,10 @@ export class BasicChannelRepository {
           number: maxId + 1,
           icon: JSON.stringify(channel.icon),
           offline: JSON.stringify(channel.offline),
+          transcoding: null,
           watermark: JSON.stringify(channel.watermark),
           createdAt: now,
           updatedAt: now,
-          transcoding: null,
         })
         .returningAll()
         .executeTakeFirstOrThrow();

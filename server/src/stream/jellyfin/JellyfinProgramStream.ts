@@ -130,6 +130,7 @@ export class JellyfinProgramStream extends ProgramStream {
         startTime: start,
         duration: dayjs.duration(lineupItem.streamDuration),
         watermark,
+        nowPlayingOverlay: this.getNowPlayingOverlay(),
         realtime: this.context.realtime,
         extraInputHeaders: {},
         outputFormat: this.outputFormat,

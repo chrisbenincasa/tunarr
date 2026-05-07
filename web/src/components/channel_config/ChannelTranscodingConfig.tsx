@@ -82,13 +82,30 @@ export default function ChannelTranscodingConfig() {
     subtitlesEnabled,
     fadePeriod,
     streamMode,
+    nowPlayingOverlayEnabled,
+    showAtEndForSeconds,
+    endPaddingSeconds,
+    comingUpNextForSeconds,
+    comingUpNextOffsetSeconds,
   ] = watch([
     'watermark',
     'transcodeConfigId',
     'subtitlesEnabled',
     'watermark.fadeConfig.0.periodMins',
     'streamMode',
+    'transcoding.nowPlayingOverlay.enabled',
+    'transcoding.nowPlayingOverlay.showAtEndForSeconds',
+    'transcoding.nowPlayingOverlay.endPaddingSeconds',
+    'transcoding.nowPlayingOverlay.comingUpNextForSeconds',
+    'transcoding.nowPlayingOverlay.comingUpNextOffsetSeconds',
   ]);
+
+  const comingUpNextWouldOverlap =
+    (comingUpNextForSeconds ?? 0) > 0 &&
+    (comingUpNextOffsetSeconds ?? 0) <=
+      (showAtEndForSeconds ?? 0) +
+        (endPaddingSeconds ?? 0) +
+        (comingUpNextForSeconds ?? 0);
 
   const transcodeConfig = useMemo(
     () => find(transcodeConfigs.data, (conf) => conf.id === transcodeConfigId)!,
@@ -513,6 +530,149 @@ export default function ChannelTranscodingConfig() {
                 </Grid>
               </Stack>
             )}
+        </Box>
+        <Box>
+          <Typography variant="h5">Now Playing Overlay</Typography>
+          <FormControl fullWidth>
+            <FormControlLabel
+              control={
+                <CheckboxFormController
+                  control={control}
+                  name="transcoding.nowPlayingOverlay.enabled"
+                  disabled={
+                    streamMode === 'hls_direct' ||
+                    streamMode === 'hls_direct_v2'
+                  }
+                />
+              }
+              label="Enable Now Playing Overlay"
+            />
+            <FormHelperText>
+              Displays a lower-third overlay with the current program's
+              title, artist, album, and year.
+            </FormHelperText>
+          </FormControl>
+          <Collapse in={nowPlayingOverlayEnabled}>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <NumericFormControllerText
+                  control={control}
+                  name="transcoding.nowPlayingOverlay.fadeDurationSeconds"
+                  float
+                  rules={{ min: 0, max: 5 }}
+                  TextFieldProps={{
+                    label: 'Fade Duration (seconds). Set to 0 to disable.',
+                    fullWidth: true,
+                    helperText:
+                    'Fade in/out duration for text. Set to 0 to disable.',
+                  }}
+                />
+              </Grid>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <Divider sx={{ my: 2 }} />
+            </Grid>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <NumericFormControllerText
+                  control={control}
+                  name="transcoding.nowPlayingOverlay.showForSeconds"
+                  rules={{ min: 1, max: 60 }}
+                  TextFieldProps={{
+                    label: 'Show at Start (seconds)',
+                    fullWidth: true,
+                    helperText:
+                      'How long the overlay is visible at the start of each program.',
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <NumericFormControllerText
+                  control={control}
+                  name="transcoding.nowPlayingOverlay.startPaddingSeconds"
+                  float
+                  rules={{ min: 0, max: 30 }}
+                  TextFieldProps={{
+                    label: 'Start Padding (seconds)',
+                    fullWidth: true,
+                    helperText:
+                      'Delay before the opening overlay appears.',
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <Divider sx={{ my: 2 }} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <NumericFormControllerText
+                  control={control}
+                  name="transcoding.nowPlayingOverlay.showAtEndForSeconds"
+                  rules={{ min: 0, max: 60 }}
+                  TextFieldProps={{
+                    label: 'Show at End (seconds)',
+                    fullWidth: true,
+                    helperText:
+                      'How long the overlay reappears before the program ends. Set to 0 to disable.',
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <NumericFormControllerText
+                  control={control}
+                  name="transcoding.nowPlayingOverlay.endPaddingSeconds"
+                  float
+                  rules={{ min: 0, max: 30 }}
+                  TextFieldProps={{
+                    label: 'End Padding (seconds)',
+                    fullWidth: true,
+                    helperText:
+                      'Gap between closing overlay and program end.',
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="subtitle2" sx={{ mt: 1 }}>
+                  Coming Up Next
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <NumericFormControllerText
+                  control={control}
+                  name="transcoding.nowPlayingOverlay.comingUpNextForSeconds"
+                  rules={{ min: 0, max: 60 }}
+                  TextFieldProps={{
+                    label: 'Duration (seconds)',
+                    fullWidth: true,
+                    helperText:
+                      'How long the "coming up next" card is shown. Set to 0 to disable.',
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <NumericFormControllerText
+                  control={control}
+                  name="transcoding.nowPlayingOverlay.comingUpNextOffsetSeconds"
+                  rules={{ min: 0, max: 120 }}
+                  TextFieldProps={{
+                    label: 'Offset from End (seconds)',
+                    fullWidth: true,
+                    helperText:
+                      'How far from the end of the program the card starts.',
+                  }}
+                />
+              </Grid>
+              {comingUpNextWouldOverlap && (
+                <Grid size={{ xs: 12 }}>
+                  <FormHelperText error>
+                    The "coming up next" card will overlap with the closing
+                    overlay. Increase the offset or reduce the end card /
+                    padding durations.
+                  </FormHelperText>
+                </Grid>
+              )}
+            </Grid>
+          </Collapse>
         </Box>
       </Stack>
     )

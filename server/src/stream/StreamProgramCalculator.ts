@@ -9,7 +9,7 @@ import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { first, inRange, isEmpty, isNil, isNull, sumBy } from 'lodash-es';
-import { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
+import { isContentItem, Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
 import {
   CommercialStreamLineupItem,
   createOfflineStreamLineupItem,
@@ -97,11 +97,11 @@ export class StreamProgramCalculator {
       );
     }
 
-    const lineup = await this.channelDB.loadLineup(channel.uuid);
+    let activeLineup = await this.channelDB.loadLineup(channel.uuid);
 
     // Fix channel lineups if necessary
     if (channel.duration <= 0) {
-      const actualDuration = sumBy(lineup.items, (item) => item.durationMs);
+      const actualDuration = sumBy(activeLineup.items, (item) => item.durationMs);
       await this.channelDB.updateChannelDuration(channel.uuid, actualDuration);
       channel.duration = actualDuration;
     }
@@ -114,7 +114,7 @@ export class StreamProgramCalculator {
     let currentProgram = await this.getCurrentProgramAndTimeElapsed(
       startTime,
       channel,
-      lineup,
+      activeLineup,
     );
     // We cannot exceed this amount of time, since that is what was scheduled
     // on the channel.
@@ -152,11 +152,12 @@ export class StreamProgramCalculator {
       }
 
       channelContext = newChannelAndLineup.channel;
+      activeLineup = newChannelAndLineup.lineup;
 
       currentProgram = await this.getCurrentProgramAndTimeElapsed(
         req.startTime,
         channelContext,
-        newChannelAndLineup.lineup,
+        activeLineup,
       );
 
       const timeLeft =
@@ -180,7 +181,7 @@ export class StreamProgramCalculator {
 
       if (
         currentProgram.program.type === 'offline' &&
-        lineup.items.length === 1 &&
+        activeLineup.items.length === 1 &&
         currentProgram.programIndex !== -1
       ) {
         //there's only one program and it's offline. So really, the channel is
@@ -278,6 +279,69 @@ export class StreamProgramCalculator {
         programBeginMs: req.startTime,
         streamDuration,
       };
+    }
+
+    // Populate next program metadata for "coming up next" overlay.
+    // This is a lightweight DB lookup (one program by ID) and only
+    // runs when the next lineup item is a content item.
+    const shouldLoadNextProgramMetadata =
+      isNowPlayingOverlayEnabled(channelContext) &&
+      (channelContext.transcoding?.nowPlayingOverlay?.comingUpNextForSeconds ??
+        0) > 0;
+
+    this.logger.debug(
+      {
+        channelId: channelContext.uuid,
+        overlayEnabled: isNowPlayingOverlayEnabled(channelContext),
+        comingUpNextForSeconds:
+          channelContext.transcoding?.nowPlayingOverlay?.comingUpNextForSeconds ??
+          0,
+        shouldLoadNextProgramMetadata,
+      },
+      'Evaluated coming up next metadata load',
+    );
+
+    if (
+      shouldLoadNextProgramMetadata &&
+      lineupItem &&
+      currentProgram.programIndex >= 0 &&
+      activeLineup.items.length > 0
+    ) {
+      const nextIndex =
+        (currentProgram.programIndex + 1) % activeLineup.items.length;
+      const nextItem = activeLineup.items[nextIndex];
+      if (nextItem && isContentItem(nextItem)) {
+        try {
+          const nextProgram = await this.programDB.getProgramById(
+            nextItem.id,
+          );
+          if (nextProgram) {
+            lineupItem.nextProgramMetadata = {
+              title: nextProgram.title ?? undefined,
+              artist: nextProgram.artistName ?? undefined,
+              album: nextProgram.albumName ?? undefined,
+              year:
+                nextProgram.year != null
+                  ? String(nextProgram.year)
+                  : undefined,
+              filePath: nextProgram.filePath ?? undefined,
+            };
+            this.logger.debug(
+              {
+                channelId: channelContext.uuid,
+                nextProgramId: nextItem.id,
+                nextProgramMetadata: lineupItem.nextProgramMetadata,
+              },
+              'Loaded next program metadata for now playing overlay',
+            );
+          }
+        } catch (err) {
+          this.logger.debug(
+            err,
+            'Failed to load next program metadata for overlay',
+          );
+        }
+      }
     }
 
     return Result.success({
@@ -554,6 +618,10 @@ export class StreamProgramCalculator {
       streamDuration,
     };
   }
+}
+
+function isNowPlayingOverlayEnabled(channel: ChannelOrm): boolean {
+  return channel.transcoding?.nowPlayingOverlay?.enabled ?? false;
 }
 
 export function calculateStreamDuration(

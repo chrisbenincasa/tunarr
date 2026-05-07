@@ -53,6 +53,26 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
       soundtrack:
         channel.offline.soundtrack ?? DefaultChannel.offline.soundtrack ?? '',
     },
+    transcoding: {
+      nowPlayingOverlay: {
+        enabled:
+          channel.transcoding?.nowPlayingOverlay?.enabled ?? false,
+        showForSeconds:
+          channel.transcoding?.nowPlayingOverlay?.showForSeconds ?? 8,
+        showAtEndForSeconds:
+          channel.transcoding?.nowPlayingOverlay?.showAtEndForSeconds ?? 0,
+        startPaddingSeconds:
+          channel.transcoding?.nowPlayingOverlay?.startPaddingSeconds ?? 0,
+        endPaddingSeconds:
+          channel.transcoding?.nowPlayingOverlay?.endPaddingSeconds ?? 0,
+        comingUpNextForSeconds:
+          channel.transcoding?.nowPlayingOverlay?.comingUpNextForSeconds ?? 0,
+        comingUpNextOffsetSeconds:
+          channel.transcoding?.nowPlayingOverlay?.comingUpNextOffsetSeconds ?? 30,
+        fadeDurationSeconds:
+          channel.transcoding?.nowPlayingOverlay?.fadeDurationSeconds ?? 0.5,
+      },
+    },
     watermark: {
       ...(channel.watermark ?? {}),
       enabled: channel.watermark?.enabled ?? false,
@@ -106,6 +126,7 @@ const EditChannelTabsProps: EditChannelTabProps[] = [
     description: 'Streaming',
     fields: [
       'watermark',
+      'transcoding',
       'streamMode',
       'subtitlesEnabled',
       'subtitlePreferences',
@@ -182,6 +203,10 @@ export function EditChannelForm({
             priority: idx,
           }));
 
+    const shouldPersistNowPlayingOverlay =
+      !!channel.transcoding?.nowPlayingOverlay ||
+      !!data.transcoding?.nowPlayingOverlay?.enabled;
+
     const dataTransform = {
       ...data,
       // Transform this to milliseconds before we send it over
@@ -199,6 +224,9 @@ export function EditChannelForm({
             enabled: !!data.watermark.enabled,
             fadeConfig: isEmpty(fadeConfigs) ? undefined : fadeConfigs,
           }
+        : undefined,
+      transcoding: shouldPersistNowPlayingOverlay
+        ? data.transcoding
         : undefined,
       subtitlePreferences: preferences as NonEmptyArray<SubtitlePreference>,
     } satisfies SaveableChannel;

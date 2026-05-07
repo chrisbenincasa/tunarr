@@ -577,6 +577,233 @@ describe('StreamProgramCalculator', () => {
     },
   );
 
+  baseTest(
+    'does not load next program metadata when coming up next is disabled',
+    async () => {
+      const fillerDB = mock<IFillerListDB>();
+      const channelDB = mock<IChannelDB>();
+      const programDB = mock<IProgramDB>();
+      const fillerPicker = mock<IFillerPicker>();
+      const playHistoryDB = mock<ProgramPlayHistoryDB>();
+
+      const startTime = dayjs(new Date(2025, 8, 17, 8));
+      const channelId = faker.string.uuid();
+      const programId1 = faker.string.uuid();
+      const programId2 = faker.string.uuid();
+
+      const lineup: LineupItem[] = [
+        {
+          type: 'content',
+          durationMs: +dayjs.duration({ minutes: 22 }),
+          id: programId1,
+        },
+        {
+          type: 'content',
+          durationMs: +dayjs.duration({ minutes: 22 }),
+          id: programId2,
+        },
+      ];
+
+      when(programDB.getProgramById(programId1)).thenReturn(
+        Promise.resolve(
+          createFakeProgram({
+            uuid: programId1,
+            duration: lineup[0].durationMs,
+            mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+          }),
+        ),
+      );
+
+      const channel = createChannelOrm({
+        uuid: channelId,
+        number: 1,
+        startTime: +startTime.subtract(1, 'hour'),
+        duration: sumBy(lineup, ({ durationMs }) => durationMs),
+        transcoding: {
+          nowPlayingOverlay: {
+            enabled: true,
+            showForSeconds: 8,
+            comingUpNextForSeconds: 0,
+          },
+        },
+      });
+
+      when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
+      when(channelDB.loadLineup(channelId)).thenReturn(
+        Promise.resolve({
+          version: 1,
+          items: lineup,
+          startTimeOffsets: calculateStartTimeOffsets(lineup),
+          lastUpdated: now(),
+        }),
+      );
+      when(
+        playHistoryDB.isProgramCurrentlyPlaying(
+          anything(),
+          anything(),
+          anything(),
+        ),
+      ).thenReturn(Promise.resolve(false));
+      when(playHistoryDB.create(anything())).thenReturn(
+        Promise.resolve(undefined),
+      );
+
+      const calc = new StreamProgramCalculator(
+        LoggerFactory.root,
+        instance(fillerDB),
+        instance(channelDB),
+        instance(programDB),
+        instance(fillerPicker),
+        instance(playHistoryDB),
+      );
+
+      await calc.getCurrentLineupItem({
+        allowSkip: false,
+        channelId: 1,
+        startTime: +startTime,
+      });
+
+      verify(programDB.getProgramById(programId2)).never();
+    },
+  );
+
+  baseTest(
+    'uses redirected lineup when resolving coming up next metadata',
+    async () => {
+      const fillerDB = mock<IFillerListDB>();
+      const channelDB = mock<IChannelDB>();
+      const programDB = mock<IProgramDB>();
+      const fillerPicker = mock<IFillerPicker>();
+      const playHistoryDB = mock<ProgramPlayHistoryDB>();
+
+      const startTime = dayjs(new Date(2025, 8, 17, 8));
+      const sourceChannelId = faker.string.uuid();
+      const targetChannelId = faker.string.uuid();
+      const targetProgram1 = faker.string.uuid();
+      const targetProgram2 = faker.string.uuid();
+
+      const sourceLineupItems: LineupItem[] = [
+        {
+          type: 'redirect',
+          durationMs: +dayjs.duration({ minutes: 44 }),
+          channel: targetChannelId,
+        },
+      ];
+      const targetLineupItems: LineupItem[] = [
+        {
+          type: 'content',
+          durationMs: +dayjs.duration({ minutes: 22 }),
+          id: targetProgram1,
+        },
+        {
+          type: 'content',
+          durationMs: +dayjs.duration({ minutes: 22 }),
+          id: targetProgram2,
+        },
+      ];
+
+      const sourceChannel = createChannelOrm({
+        uuid: sourceChannelId,
+        number: 1,
+        startTime: +startTime.subtract(1, 'hour'),
+        duration: sumBy(sourceLineupItems, ({ durationMs }) => durationMs),
+      });
+      const targetChannel = createChannelOrm({
+        uuid: targetChannelId,
+        number: 2,
+        startTime: +startTime.subtract(1, 'hour'),
+        duration: sumBy(targetLineupItems, ({ durationMs }) => durationMs),
+        transcoding: {
+          nowPlayingOverlay: {
+            enabled: true,
+            showForSeconds: 8,
+            comingUpNextForSeconds: 6,
+          },
+        },
+      });
+
+      when(channelDB.getChannelOrm(1)).thenReturn(
+        Promise.resolve(sourceChannel),
+      );
+      when(channelDB.loadLineup(sourceChannelId)).thenReturn(
+        Promise.resolve({
+          version: 1,
+          items: sourceLineupItems,
+          startTimeOffsets: calculateStartTimeOffsets(sourceLineupItems),
+          lastUpdated: now(),
+        }),
+      );
+      when(channelDB.loadChannelAndLineupOrm(targetChannelId)).thenReturn(
+        Promise.resolve({
+          channel: targetChannel,
+          lineup: {
+            version: 1,
+            items: targetLineupItems,
+            startTimeOffsets: calculateStartTimeOffsets(targetLineupItems),
+            lastUpdated: now(),
+          },
+        }),
+      );
+
+      when(programDB.getProgramById(targetProgram1)).thenReturn(
+        Promise.resolve(
+          createFakeProgram({
+            uuid: targetProgram1,
+            title: 'Current Redirected Song',
+            duration: targetLineupItems[0].durationMs,
+            mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+          }),
+        ),
+      );
+      when(programDB.getProgramById(targetProgram2)).thenReturn(
+        Promise.resolve(
+          createFakeProgram({
+            uuid: targetProgram2,
+            title: 'Next Redirected Song',
+            artistName: 'Next Artist',
+            duration: targetLineupItems[1].durationMs,
+            mediaSourceId: tag<MediaSourceId>('mediasource-456'),
+          }),
+        ),
+      );
+
+      when(
+        playHistoryDB.isProgramCurrentlyPlaying(
+          anything(),
+          anything(),
+          anything(),
+        ),
+      ).thenReturn(Promise.resolve(false));
+      when(playHistoryDB.create(anything())).thenReturn(
+        Promise.resolve(undefined),
+      );
+
+      const calc = new StreamProgramCalculator(
+        LoggerFactory.root,
+        instance(fillerDB),
+        instance(channelDB),
+        instance(programDB),
+        instance(fillerPicker),
+        instance(playHistoryDB),
+      );
+
+      const out = (
+        await calc.getCurrentLineupItem({
+          allowSkip: false,
+          channelId: 1,
+          startTime: +startTime,
+        })
+      ).get();
+
+      expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
+        nextProgramMetadata: {
+          title: 'Next Redirected Song',
+          artist: 'Next Artist',
+        },
+      });
+    },
+  );
+
   describe('calculateStreamDuration', () => {
     test('first channel cycle', () => {
       const lineupItems: LineupItem[] = [

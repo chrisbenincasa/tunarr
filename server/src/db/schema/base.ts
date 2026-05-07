@@ -69,6 +69,19 @@ export const ChannelTranscodingSettingsSchema = z.object({
   targetResolution: ResolutionSchema.optional().catch(undefined),
   videoBitrate: z.number().nonnegative().optional().catch(undefined),
   videoBufferSize: z.number().nonnegative().optional().catch(undefined),
+  nowPlayingOverlay: z
+    .object({
+      enabled: z.boolean().default(false).catch(false),
+      showForSeconds: z.number().positive().default(8).catch(8),
+      showAtEndForSeconds: z.number().nonnegative().default(0).catch(0),
+      startPaddingSeconds: z.number().nonnegative().default(0).catch(0),
+      endPaddingSeconds: z.number().nonnegative().default(0).catch(0),
+      comingUpNextForSeconds: z.number().nonnegative().default(0).catch(0),
+      comingUpNextOffsetSeconds: z.number().nonnegative().default(30).catch(30),
+      fadeDurationSeconds: z.number().nonnegative().default(0.5).catch(0.5),
+    })
+    .optional()
+    .catch(undefined),
 });
 
 export type ChannelTranscodingSettings = z.infer<

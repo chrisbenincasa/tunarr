@@ -73,6 +73,7 @@ nav:
           - EPG: configure/channels/epg.md
           - Transcoding: configure/channels/transcoding.md
           - Watermarks: configure/channels/watermarks.md
+          - Now Playing Overlay: configure/channels/now-playing-overlay.md
           - Programming: configure/channels/programming.md
       - Library:
           - configure/library/index.md
