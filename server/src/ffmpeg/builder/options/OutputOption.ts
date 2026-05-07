@@ -15,7 +15,7 @@ export abstract class OutputOption implements OutputOptionPipelineStep {
   abstract options(): string[];
 }
 
-abstract class ConstantOutputOption extends OutputOption {
+export abstract class ConstantOutputOption extends OutputOption {
   constructor(private _options: string[]) {
     super();
   }
