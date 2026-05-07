@@ -1,11 +1,14 @@
 import { AudioFormats } from '../constants.ts';
-import { makeConstantOutputOption } from './OutputOption.ts';
+import {
+  type ConstantOutputOption,
+  makeConstantOutputOption,
+} from './OutputOption.ts';
 
 export const AudioChannelsOutputOption = (
   audioFormat: string,
   sourceChannels: number,
   desiredChannels: number,
-) => {
+): ConstantOutputOption => {
   const opts: string[] = [];
   if (
     sourceChannels !== desiredChannels ||
@@ -17,7 +20,9 @@ export const AudioChannelsOutputOption = (
   return makeConstantOutputOption(opts);
 };
 
-export const AudioBitrateOutputOption = (bitrate: number) =>
+export const AudioBitrateOutputOption = (
+  bitrate: number,
+): ConstantOutputOption =>
   makeConstantOutputOption([
     '-b:a',
     `${bitrate}k`,
@@ -25,8 +30,11 @@ export const AudioBitrateOutputOption = (bitrate: number) =>
     `${bitrate}k`,
   ]);
 
-export const AudioBufferSizeOutputOption = (bufSize: number) =>
+export const AudioBufferSizeOutputOption = (
+  bufSize: number,
+): ConstantOutputOption =>
   makeConstantOutputOption(['-bufsize:a', `${bufSize}k`]);
 
-export const AudioSampleRateOutputOption = (rate: number) =>
-  makeConstantOutputOption(['-ar', `${rate}k`]);
+export const AudioSampleRateOutputOption = (
+  rate: number,
+): ConstantOutputOption => makeConstantOutputOption(['-ar', `${rate}k`]);
