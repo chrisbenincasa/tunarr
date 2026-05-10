@@ -52,10 +52,10 @@ export const ProgramGroupingExternalId = sqliteTable(
     ),
     uniqueIndex('unique_program_grouping_multiple_external_id_media_source')
       .on(table.groupUuid, table.sourceType, table.mediaSourceId)
-      .where(sql`\`media_source_id is not null\``),
+      .where(sql`${table.mediaSourceId} is not null`),
     uniqueIndex('unique_program_grouping_single_external_id_media_source')
       .on(table.groupUuid, table.sourceType, table.mediaSourceId)
-      .where(sql`\`media_source_id is null\``),
+      .where(sql`${table.mediaSourceId} is null`),
   ],
 );
 
