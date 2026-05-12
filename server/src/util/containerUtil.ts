@@ -66,7 +66,12 @@ export function isDocker() {
 }
 
 export function isPodman() {
-  return process.env['CONTAINER'] === 'podman';
+  return (
+    process.env['CONTAINER'] === 'podman' ||
+    process.env['container'] === 'podman' ||
+    existsSync('/run/.containerenv') ||
+    existsSync('/var/run/.containerenv')
+  );
 }
 
 export function isOtherwiseContainerized() {
