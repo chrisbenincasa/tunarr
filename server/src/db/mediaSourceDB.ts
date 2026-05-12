@@ -31,13 +31,7 @@ import {
   MediaSourceType,
 } from './schema/base.js';
 import { DB } from './schema/db.ts';
-import {
-  EmbyMediaSource,
-  JellyfinMediaSource,
-  LocalMediaSource,
-  MediaSourceWithRelations,
-  PlexMediaSource,
-} from './schema/derivedTypes.js';
+import { MediaSourceWithRelations } from './schema/derivedTypes.js';
 import { DrizzleDBAccess } from './schema/index.ts';
 import { MediaSource } from './schema/MediaSource.ts';
 import {
@@ -106,22 +100,6 @@ export class MediaSourceDB {
     });
   }
 
-  async findByType(
-    type: typeof MediaSourceType.Plex,
-    nameOrId: MediaSourceId,
-  ): Promise<PlexMediaSource | undefined>;
-  async findByType(
-    type: typeof MediaSourceType.Jellyfin,
-    nameOrId: MediaSourceId,
-  ): Promise<JellyfinMediaSource | undefined>;
-  async findByType(
-    type: typeof MediaSourceType.Emby,
-    nameOrId: MediaSourceId,
-  ): Promise<EmbyMediaSource | undefined>;
-  async findByType(
-    type: typeof MediaSourceType.Local,
-    nameOrId: MediaSourceId,
-  ): Promise<LocalMediaSource | undefined>;
   async findByType(
     type: MediaSourceType,
     nameOrId: MediaSourceId,

@@ -1,5 +1,5 @@
 import { Trans } from '@lingui/react/macro';
-import { Info, Refresh } from '@mui/icons-material';
+import { Info, Refresh, Troubleshoot } from '@mui/icons-material';
 import type { PopoverProps } from '@mui/material';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
@@ -10,9 +10,10 @@ import { merge } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import type { DeepRequired } from 'ts-essentials';
 import { useScanNow } from '../../hooks/useScanNow.ts';
+import { MenuItemLink } from '../base/RouterButtonLink.tsx';
 import ProgramDetailsDialog from './ProgramDetailsDialog.tsx';
 
-const Options = ['scan', 'details'] as const;
+const Options = ['scan', 'details', 'troubleshoot'] as const;
 type Options = TupleToUnion<typeof Options>;
 type OptionVisibility = {
   [K in Options]?: boolean;
@@ -21,6 +22,7 @@ type OptionVisibility = {
 const DefaultOptionVisibility: DeepRequired<OptionVisibility> = {
   scan: true,
   details: true,
+  troubleshoot: false,
 };
 
 type Props = {
@@ -47,17 +49,24 @@ export const ProgramOperationsMenu = ({
     triggerScan(programId);
 
     onClose();
-  }, [programId, triggerScan]);
+  }, [onClose, programId, triggerScan]);
 
   const availableOptions = useMemo(
-    () => merge(DefaultOptionVisibility, options),
-    [options],
+    (): DeepRequired<OptionVisibility> =>
+      merge(
+        DefaultOptionVisibility,
+        {
+          troubleshoot: isTerminalItemType(programType),
+        } satisfies Partial<OptionVisibility>,
+        options,
+      ),
+    [options, programType],
   );
 
   const openDialog = useCallback(() => {
     setDialogOpen(true);
     onClose();
-  }, []);
+  }, [onClose, setDialogOpen]);
 
   return (
     <>
@@ -72,7 +81,9 @@ export const ProgramOperationsMenu = ({
             <ListItemIcon>
               <Info fontSize="small" />
             </ListItemIcon>
-            <ListItemText><Trans>View Full Details</Trans></ListItemText>
+            <ListItemText>
+              <Trans>View Full Details</Trans>
+            </ListItemText>
           </MenuItem>
         )}
         {availableOptions.scan && (
@@ -84,6 +95,14 @@ export const ProgramOperationsMenu = ({
               <Trans>Scan {prettifySnakeCaseString(programType)}</Trans>
             </ListItemText>
           </MenuItem>
+        )}
+        {availableOptions.troubleshoot && (
+          <MenuItemLink to={'/system/troubleshoot'} search={{ programId }}>
+            <ListItemIcon>
+              <Troubleshoot fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Troubleshoot</ListItemText>
+          </MenuItemLink>
         )}
       </Menu>
       <ProgramDetailsDialog

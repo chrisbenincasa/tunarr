@@ -415,6 +415,7 @@ export const ProgramSearchRequest = z.object({
   libraryId: z.string().optional(), // Limit search to a specific library
   page: z.number().optional(),
   limit: z.number().optional(),
+  expandParents: z.boolean().optional(),
 });
 
 export const ProgramSearchResponse = z.object({

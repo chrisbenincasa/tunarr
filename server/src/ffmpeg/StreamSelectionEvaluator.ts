@@ -1,20 +1,21 @@
 import type {
-  StreamSelectionProfile,
   AudioAction,
+  StreamSelectionProfile,
   SubtitleAction,
 } from '@tunarr/types/schemas';
 import type { NonEmptyArray } from 'ts-essentials';
-import type {
-  AudioStreamDetails,
-  SubtitleStreamDetails,
-} from '../stream/types.ts';
 import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import type {
   CelEvaluationService,
   StreamSelectionCelContext,
 } from '../services/CelEvaluationService.ts';
-import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
+import type {
+  AudioStreamDetails,
+  SubtitleStreamDetails,
+} from '../stream/types.ts';
+import { isDefined } from '../util/index.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
+import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
 
 const logger = LoggerFactory.child({ className: 'StreamSelectionEvaluator' });
 
@@ -35,7 +36,7 @@ export function buildCelContext(
         .map(
           (s) => s.languageCodeISO6392 ?? s.languageCodeISO6391 ?? s.language,
         )
-        .filter((l): l is string => !!l),
+        .filter(isDefined),
     ),
   ];
 
@@ -45,7 +46,7 @@ export function buildCelContext(
         .map(
           (s) => s.languageCodeISO6392 ?? s.languageCodeISO6391 ?? s.language,
         )
-        .filter((l): l is string => !!l),
+        .filter(isDefined),
     ),
   ];
 
@@ -116,7 +117,7 @@ export async function evaluateStreamSelectionProfile(
   };
 }
 
-function resolveAudioAction(
+export function resolveAudioAction(
   action: AudioAction,
   audioStreams: NonEmptyArray<AudioStreamDetails>,
 ): AudioStreamDetails {
@@ -146,11 +147,7 @@ function resolveAudioAction(
         }
       }
       // Fallback to default behavior
-      return (
-        audioStreams.find((s) => s.selected) ??
-        audioStreams.find((s) => s.default) ??
-        audioStreams[0]
-      );
+      return selectDefautlAudioStream(audioStreams);
     }
 
     case 'by_title': {
@@ -158,22 +155,22 @@ function resolveAudioAction(
       const match = audioStreams.find((s) =>
         s.title?.toLowerCase().includes(titleLower),
       );
-      return (
-        match ??
-        audioStreams.find((s) => s.selected) ??
-        audioStreams.find((s) => s.default) ??
-        audioStreams[0]
-      );
+      return match ?? selectDefautlAudioStream(audioStreams);
     }
 
-    case 'default': {
-      return (
-        audioStreams.find((s) => s.selected) ??
-        audioStreams.find((s) => s.default) ??
-        audioStreams[0]
-      );
-    }
+    case 'default':
+      return selectDefautlAudioStream(audioStreams);
   }
+}
+
+function selectDefautlAudioStream(
+  audioStreams: NonEmptyArray<AudioStreamDetails>,
+) {
+  return (
+    audioStreams.find((s) => s.selected) ??
+    audioStreams.find((s) => s.default) ??
+    audioStreams[0]
+  );
 }
 
 async function resolveSubtitleAction(
@@ -198,7 +195,20 @@ async function resolveSubtitleAction(
           lineupItem,
           defaultStream,
         );
-      return extracted ?? defaultStream;
+      if (extracted) {
+        return extracted;
+      }
+
+      if (
+        defaultStream &&
+        (defaultStream.type === 'external' ||
+          (defaultStream.type === 'embedded' &&
+            isImageBasedSubtitle(defaultStream.codec)))
+      ) {
+        return defaultStream;
+      }
+
+      return null;
     }
 
     case 'by_language': {

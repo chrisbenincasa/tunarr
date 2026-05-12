@@ -15,7 +15,7 @@ import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import type { ContainerModuleLoadOptions, Factory } from 'inversify';
 import { ContainerModule } from 'inversify';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
-import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
+import type { FFmpegAssistedFactory } from '../ffmpeg/FFmpegModule.ts';
 import { FillerPickerV2 } from '../services/scheduling/FillerPickerV2.ts';
 import { bindAssistedFactory } from '../util/assistedInject.ts';
 import { bindAutoFactory } from '../util/inject.ts';
@@ -52,7 +52,7 @@ const configure = ({ bind }: ContainerModuleLoadOptions) => {
         options,
         ctx.get(StreamProgramCalculator),
         ctx.get<ProgramStreamFactory>(KEYS.ProgramStreamFactory),
-        ctx.get<FFmpegFactory>(KEYS.FFmpegFactory),
+        ctx.get<FFmpegAssistedFactory>(KEYS.FFmpegFactory),
       );
     };
   });
@@ -78,7 +78,7 @@ const configure = ({ bind }: ContainerModuleLoadOptions) => {
   bind<Factory<ConcatStream, Parameters<ConcatStreamFactory>>>(
     KEYS.ConcatStreamFactory,
   ).toFactory((ctx) => {
-    const ffmpegFactory = ctx.get<FFmpegFactory>(KEYS.FFmpegFactory);
+    const ffmpegFactory = ctx.get<FFmpegAssistedFactory>(KEYS.FFmpegFactory);
     return (channel, streamMode) => {
       return new ConcatStream(channel, streamMode, ffmpegFactory);
     };

@@ -20,7 +20,7 @@ import {
   OfflineStreamLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
+import type { FFmpegAssistedFactory } from '../ffmpeg/FFmpegModule.ts';
 import type { StreamOptions } from '../ffmpeg/ffmpegBase.ts';
 import { KEYS } from '../types/inject.ts';
 import { assisted, injected } from '../util/assistedInject.ts';
@@ -56,7 +56,8 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
   constructor(
     @injected(KEYS.SettingsDB) protected settingsDB: ISettingsDB,
     @injected(CacheImageService) private cacheImageService: CacheImageService,
-    @injected(KEYS.FFmpegFactory) protected ffmpegFactory: FFmpegFactory,
+    @injected(KEYS.FFmpegFactory)
+    protected ffmpegFactory: FFmpegAssistedFactory,
     @injected(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @injected(ProgramStreamDetailsFetcher)
     private programStreamDetails: ProgramStreamDetailsFetcher,
@@ -125,7 +126,6 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
     const ffmpeg = this.ffmpegFactory(
       this.context.transcodeConfig,
       this.context.sourceChannel,
-      this.context.streamMode,
     );
 
     // TODO: check if this was killed before actually starting.
@@ -167,7 +167,6 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
     const ffmpeg = this.ffmpegFactory(
       this.context.transcodeConfig,
       this.context.targetChannel,
-      this.context.streamMode,
     );
 
     let duration = dayjs.duration(lineupItem.streamDuration);
@@ -204,7 +203,6 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
     const ffmpeg = this.ffmpegFactory(
       this.context.transcodeConfig,
       this.context.targetChannel,
-      this.context.streamMode,
     );
 
     let duration = dayjs.duration(lineupItem.streamDuration);
@@ -279,9 +277,11 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
         this.hadError = true;
         const failedStream = this._transcodeSession;
         failedStream?.kill();
-        this.tryReplaceWithErrorStream(this.outStream).catch((e) => {
-          this.logger.error(e, 'Error while setting up ');
-        });
+        if (!this.opts?.disableErrorStream) {
+          this.tryReplaceWithErrorStream(this.outStream).catch((e) => {
+            this.logger.error(e, 'Error while setting up ');
+          });
+        }
       }
     });
   }
@@ -312,7 +312,6 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
     const ffmpeg = this.ffmpegFactory(
       context.transcodeConfig,
       context.sourceChannel,
-      context.streamMode,
     );
 
     const duration = dayjs.duration(

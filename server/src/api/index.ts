@@ -41,6 +41,7 @@ import { systemApiRouter } from './systemApi.js';
 import { tasksApiRouter } from './tasksApi.js';
 import { trashApi } from './trashApi.ts';
 import { streamSelectionRouter } from './streamSelectionApi.ts';
+import { troubleshootApiRouter } from './troubleshootApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
 
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
@@ -82,6 +83,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(embyApiRouter)
     .register(settingsApi)
     .register(streamSelectionRouter)
+    .register(troubleshootApiRouter)
     .register(trashApi)
     .register(container.get(SmartCollectionsApiController).mount)
     .register(container.get(CreditsApiController).mount)

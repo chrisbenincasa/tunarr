@@ -678,6 +678,8 @@ export type SeasonInput = {
         state: 'ok' | 'missing';
         episodeNumber: number;
         summary: string | null;
+        seasonId?: string | null;
+        showId?: string | null;
         mediaSourceId: string;
         libraryId: string;
         canonicalId: string;
@@ -822,6 +824,8 @@ export type EpisodeInput = {
     state: 'ok' | 'missing';
     episodeNumber: number;
     summary: string | null;
+    seasonId?: string | null;
+    showId?: string | null;
     season?: SeasonInput;
     show?: ShowInput;
     mediaSourceId: string;
@@ -1104,6 +1108,8 @@ export type MusicAlbumInput = {
         }>;
         state: 'ok' | 'missing';
         trackNumber: number;
+        albumId?: string | null;
+        artistId?: string | null;
         mediaSourceId: string;
         libraryId: string;
         canonicalId: string;
@@ -1257,6 +1263,8 @@ export type MusicTrackInput = {
     }>;
     state: 'ok' | 'missing';
     trackNumber: number;
+    albumId?: string | null;
+    artistId?: string | null;
     album?: MusicAlbumInput;
     artist?: MusicArtistInput;
     mediaSourceId: string;
@@ -2080,6 +2088,8 @@ export type Season = {
         state: 'ok' | 'missing';
         episodeNumber: number;
         summary: string | null;
+        seasonId?: string | null;
+        showId?: string | null;
         mediaSourceId: string;
         libraryId: string;
         canonicalId: string;
@@ -2224,6 +2234,8 @@ export type Episode = {
     state: 'ok' | 'missing';
     episodeNumber: number;
     summary: string | null;
+    seasonId?: string | null;
+    showId?: string | null;
     season?: Season;
     show?: Show;
     mediaSourceId: string;
@@ -2506,6 +2518,8 @@ export type MusicAlbum = {
         }>;
         state: 'ok' | 'missing';
         trackNumber: number;
+        albumId?: string | null;
+        artistId?: string | null;
         mediaSourceId: string;
         libraryId: string;
         canonicalId: string;
@@ -2659,6 +2673,8 @@ export type MusicTrack = {
     }>;
     state: 'ok' | 'missing';
     trackNumber: number;
+    albumId?: string | null;
+    artistId?: string | null;
     album?: MusicAlbum;
     artist?: MusicArtist;
     mediaSourceId: string;
@@ -3749,6 +3765,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3788,6 +3805,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3831,6 +3849,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3872,6 +3891,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3911,6 +3931,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3951,6 +3972,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -3996,6 +4018,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4072,6 +4095,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4129,6 +4153,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4166,6 +4191,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4304,6 +4330,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4343,6 +4370,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4386,6 +4414,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4427,6 +4456,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4466,6 +4496,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4512,6 +4543,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4557,6 +4589,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4633,6 +4666,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4690,6 +4724,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4727,6 +4762,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4882,6 +4918,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4921,6 +4958,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -4964,6 +5002,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5005,6 +5044,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5044,6 +5084,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5084,6 +5125,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5129,6 +5171,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5205,6 +5248,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5262,6 +5306,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5299,6 +5344,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5801,6 +5847,7 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5840,6 +5887,7 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5883,6 +5931,7 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5924,6 +5973,7 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -5963,6 +6013,7 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6090,6 +6141,7 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6135,6 +6187,7 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6211,6 +6264,7 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6268,6 +6322,7 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6305,6 +6360,7 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6467,6 +6523,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6506,6 +6563,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6667,6 +6725,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6713,6 +6772,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6762,6 +6822,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6810,6 +6871,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -6855,6 +6917,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -7047,6 +7110,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -7115,6 +7179,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -7158,6 +7223,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
+                rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
                     fillerListId: string;
@@ -7925,6 +7991,7 @@ export type PostApiProgramsSearchData = {
         libraryId?: string;
         page?: number;
         limit?: number;
+        expandParents?: boolean;
     };
     path?: never;
     query?: never;
@@ -8568,23 +8635,6 @@ export type GetApiDebugFfmpegCapabilitiesData = {
 };
 
 export type GetApiDebugFfmpegCapabilitiesResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugPlexStreamDetailsData = {
-    body?: never;
-    path?: never;
-    query: {
-        key: string;
-        mediaSource: string;
-    };
-    url: '/api/debug/plex/stream_details';
-};
-
-export type GetApiDebugPlexStreamDetailsResponses = {
     /**
      * Default Response
      */
@@ -12979,6 +13029,601 @@ export type PutApiSettingsMediaSourceResponses = {
 };
 
 export type PutApiSettingsMediaSourceResponse = PutApiSettingsMediaSourceResponses[keyof PutApiSettingsMediaSourceResponses];
+
+export type GetApiStreamSelectionProfilesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/stream-selection-profiles';
+};
+
+export type GetApiStreamSelectionProfilesResponses = {
+    /**
+     * Default Response
+     */
+    200: Array<{
+        uuid: string;
+        name: string;
+        rules: Array<{
+            label?: string;
+            condition: string;
+            audioAction: {
+                type: 'by_language';
+                languages: Array<string>;
+                preferChannels?: 'most' | 'least';
+            } | {
+                type: 'by_title';
+                titleContains: string;
+            } | {
+                type: 'default';
+            };
+            subtitleAction: {
+                type: 'disable';
+            } | {
+                type: 'by_language';
+                languages: Array<string>;
+                filterType: 'none' | 'forced' | 'default' | 'any';
+                allowImageBased: boolean;
+                allowExternal: boolean;
+            } | {
+                type: 'default';
+            };
+        }>;
+        usedByChannels: number;
+        usedByFillers: number;
+        usedByPrograms: number;
+    }>;
+};
+
+export type GetApiStreamSelectionProfilesResponse = GetApiStreamSelectionProfilesResponses[keyof GetApiStreamSelectionProfilesResponses];
+
+export type PostApiStreamSelectionProfilesData = {
+    body: {
+        name: string;
+        rules: Array<{
+            label?: string;
+            condition: string;
+            audioAction: {
+                type: 'by_language';
+                languages: Array<string>;
+                preferChannels?: 'most' | 'least';
+            } | {
+                type: 'by_title';
+                titleContains: string;
+            } | {
+                type: 'default';
+            };
+            subtitleAction: {
+                type: 'disable';
+            } | {
+                type: 'by_language';
+                languages: Array<string>;
+                filterType?: 'none' | 'forced' | 'default' | 'any';
+                allowImageBased?: boolean;
+                allowExternal?: boolean;
+            } | {
+                type: 'default';
+            };
+        }>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/stream-selection-profiles';
+};
+
+export type PostApiStreamSelectionProfilesResponses = {
+    /**
+     * Default Response
+     */
+    201: {
+        uuid: string;
+        name: string;
+        rules: Array<{
+            label?: string;
+            condition: string;
+            audioAction: {
+                type: 'by_language';
+                languages: Array<string>;
+                preferChannels?: 'most' | 'least';
+            } | {
+                type: 'by_title';
+                titleContains: string;
+            } | {
+                type: 'default';
+            };
+            subtitleAction: {
+                type: 'disable';
+            } | {
+                type: 'by_language';
+                languages: Array<string>;
+                filterType: 'none' | 'forced' | 'default' | 'any';
+                allowImageBased: boolean;
+                allowExternal: boolean;
+            } | {
+                type: 'default';
+            };
+        }>;
+    };
+};
+
+export type PostApiStreamSelectionProfilesResponse = PostApiStreamSelectionProfilesResponses[keyof PostApiStreamSelectionProfilesResponses];
+
+export type DeleteApiStreamSelectionProfilesByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/stream-selection-profiles/{id}';
+};
+
+export type DeleteApiStreamSelectionProfilesByIdErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type DeleteApiStreamSelectionProfilesByIdResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
+
+export type GetApiStreamSelectionProfilesByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/stream-selection-profiles/{id}';
+};
+
+export type GetApiStreamSelectionProfilesByIdErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type GetApiStreamSelectionProfilesByIdResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        uuid: string;
+        name: string;
+        rules: Array<{
+            label?: string;
+            condition: string;
+            audioAction: {
+                type: 'by_language';
+                languages: Array<string>;
+                preferChannels?: 'most' | 'least';
+            } | {
+                type: 'by_title';
+                titleContains: string;
+            } | {
+                type: 'default';
+            };
+            subtitleAction: {
+                type: 'disable';
+            } | {
+                type: 'by_language';
+                languages: Array<string>;
+                filterType: 'none' | 'forced' | 'default' | 'any';
+                allowImageBased: boolean;
+                allowExternal: boolean;
+            } | {
+                type: 'default';
+            };
+        }>;
+    };
+};
+
+export type GetApiStreamSelectionProfilesByIdResponse = GetApiStreamSelectionProfilesByIdResponses[keyof GetApiStreamSelectionProfilesByIdResponses];
+
+export type PutApiStreamSelectionProfilesByIdData = {
+    body: {
+        name: string;
+        rules: Array<{
+            label?: string;
+            condition: string;
+            audioAction: {
+                type: 'by_language';
+                languages: Array<string>;
+                preferChannels?: 'most' | 'least';
+            } | {
+                type: 'by_title';
+                titleContains: string;
+            } | {
+                type: 'default';
+            };
+            subtitleAction: {
+                type: 'disable';
+            } | {
+                type: 'by_language';
+                languages: Array<string>;
+                filterType?: 'none' | 'forced' | 'default' | 'any';
+                allowImageBased?: boolean;
+                allowExternal?: boolean;
+            } | {
+                type: 'default';
+            };
+        }>;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/stream-selection-profiles/{id}';
+};
+
+export type PutApiStreamSelectionProfilesByIdErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type PutApiStreamSelectionProfilesByIdResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        uuid: string;
+        name: string;
+        rules: Array<{
+            label?: string;
+            condition: string;
+            audioAction: {
+                type: 'by_language';
+                languages: Array<string>;
+                preferChannels?: 'most' | 'least';
+            } | {
+                type: 'by_title';
+                titleContains: string;
+            } | {
+                type: 'default';
+            };
+            subtitleAction: {
+                type: 'disable';
+            } | {
+                type: 'by_language';
+                languages: Array<string>;
+                filterType: 'none' | 'forced' | 'default' | 'any';
+                allowImageBased: boolean;
+                allowExternal: boolean;
+            } | {
+                type: 'default';
+            };
+        }>;
+    };
+};
+
+export type PutApiStreamSelectionProfilesByIdResponse = PutApiStreamSelectionProfilesByIdResponses[keyof PutApiStreamSelectionProfilesByIdResponses];
+
+export type PostApiStreamSelectionProfilesValidateExpressionData = {
+    body: {
+        expression: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/stream-selection-profiles/validate-expression';
+};
+
+export type PostApiStreamSelectionProfilesValidateExpressionErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        valid: false;
+        error?: string;
+    };
+};
+
+export type PostApiStreamSelectionProfilesValidateExpressionError = PostApiStreamSelectionProfilesValidateExpressionErrors[keyof PostApiStreamSelectionProfilesValidateExpressionErrors];
+
+export type PostApiStreamSelectionProfilesValidateExpressionResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        valid: true;
+    };
+};
+
+export type PostApiStreamSelectionProfilesValidateExpressionResponse = PostApiStreamSelectionProfilesValidateExpressionResponses[keyof PostApiStreamSelectionProfilesValidateExpressionResponses];
+
+export type PostApiTroubleshootData = {
+    body: {
+        programId: string;
+        channelId: string;
+        transcodeConfigId?: string;
+        testDurationSeconds?: number;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/troubleshoot';
+};
+
+export type PostApiTroubleshootResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        systemInfo: {
+            tunarrVersion: string;
+            ffmpegVersion: string;
+            nodeVersion: string;
+            platform: string;
+            arch: string;
+            availableHwAccels: Array<string>;
+        };
+        mediaInfo?: {
+            title: string;
+            type: string;
+            duration: number;
+            sourceType?: string;
+            streamSourceType?: string;
+            streamSourcePath?: string;
+            videoStreams: Array<{
+                index: number;
+                codec: string;
+                profile?: string;
+                width: number;
+                height: number;
+                framerate?: string;
+                pixelFormat?: string;
+                bitDepth?: number;
+                colorRange?: string;
+                colorSpace?: string;
+                colorTransfer?: string;
+                colorPrimaries?: string;
+                sampleAspectRatio?: string;
+                displayAspectRatio?: string;
+                bitrate?: number;
+            }>;
+            audioStreams: Array<{
+                index: number;
+                codec: string;
+                language?: string;
+                channels?: number;
+                title?: string;
+                default?: boolean;
+                selected?: boolean;
+                forced?: boolean;
+                bitrate?: number;
+            }>;
+            subtitleStreams: Array<{
+                index: number;
+                codec: string;
+                language?: string;
+                title?: string;
+                type?: 'embedded' | 'external';
+                default?: boolean;
+                forced?: boolean;
+                sdh?: boolean;
+            }>;
+        };
+        transcodeConfig?: {
+            id: string;
+            name: string;
+            threadCount: number;
+            hardwareAccelerationMode: 'none' | 'cuda' | 'vaapi' | 'qsv' | 'videotoolbox';
+            vaapiDriver: 'system' | 'ihd' | 'i965' | 'radeonsi' | 'nouveau';
+            vaapiDevice: string | null;
+            resolution: {
+                widthPx: number;
+                heightPx: number;
+            };
+            videoFormat: 'h264' | 'hevc' | 'mpeg2video';
+            videoProfile: string | null;
+            videoPreset: string | null;
+            videoBitDepth: (8 | 10) | null;
+            videoBitRate: number;
+            videoBufferSize: number;
+            audioChannels: number;
+            audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+            audioBitRate: number;
+            audioBufferSize: number;
+            audioSampleRate: number;
+            audioVolumePercent: number;
+            audioLoudnormConfig: {
+                /**
+                 * integrated loudness target
+                 */
+                i: number;
+                /**
+                 * loudness range target
+                 */
+                lra: number;
+                /**
+                 * maximum true peak
+                 */
+                tp: number;
+                /**
+                 * offset gain to add before peak limiter
+                 */
+                offsetGain?: number;
+            } | null;
+            normalizeFrameRate: boolean;
+            deinterlaceVideo: boolean;
+            disableChannelOverlay: boolean;
+            errorScreen: 'static' | 'pic' | 'blank' | 'testsrc' | 'text' | 'kill';
+            errorScreenAudio: 'silent' | 'sine' | 'whitenoise';
+            isDefault: boolean;
+            disableHardwareDecoder: boolean;
+            disableHardwareEncoding: boolean;
+            disableHardwareFilters: boolean;
+        };
+        channelConfig?: {
+            disableFillerOverlay: boolean;
+            duration: number;
+            fallback?: Array<{
+                artistName?: string;
+                albumName?: string;
+                channel?: string;
+                customOrder?: number;
+                customShowId?: string;
+                customShowName?: string;
+                date?: string;
+                duration: number;
+                episode?: number;
+                episodeIcon?: string;
+                file?: string;
+                id: string;
+                icon?: string;
+                key?: string;
+                plexFile?: string;
+                rating?: string;
+                externalKey?: string;
+                season?: number;
+                seasonIcon?: string;
+                serverKey?: string;
+                showIcon?: string;
+                showTitle?: string;
+                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                summary?: string;
+                title?: string;
+                type: 'movie' | 'episode' | 'track' | 'redirect' | 'custom' | 'flex';
+                year?: number;
+            }>;
+            fillerCollections?: Array<{
+                id: string;
+                weight: number;
+                cooldownSeconds: number;
+            }>;
+            fillerRepeatCooldown?: number;
+            groupTitle: string;
+            guideFlexTitle?: string;
+            guideMinimumDuration: number;
+            icon: {
+                path: string;
+                width: number;
+                duration: number;
+                position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                useDefaultIconFallback?: boolean;
+            };
+            id: string;
+            name: string;
+            number: number;
+            offline: {
+                picture?: string;
+                soundtrack?: string;
+                mode: 'pic' | 'clip';
+            };
+            startTime: number;
+            stealth: boolean;
+            transcoding?: {
+                targetResolution?: {
+                    widthPx: number;
+                    heightPx: number;
+                };
+                videoBitrate?: number;
+                videoBufferSize?: number;
+            };
+            watermark?: {
+                url?: string;
+                enabled: boolean;
+                position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                width: number;
+                verticalMargin: number;
+                horizontalMargin: number;
+                duration: number;
+                fixedSize?: boolean;
+                animated?: boolean;
+                opacity: number;
+                fadeConfig?: Array<{
+                    programType?: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
+                    periodMins: number;
+                    leadingEdge?: boolean;
+                }>;
+            };
+            onDemand: {
+                enabled: boolean;
+            };
+            programCount: number;
+            streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+            transcodeConfigId: string;
+            sessions?: Array<{
+                type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+                state: string;
+                numConnections: number;
+                connections: Array<{
+                    ip: string;
+                    userAgent?: string;
+                    lastHeartbeat?: number;
+                }>;
+            }>;
+            subtitlesEnabled: boolean;
+            subtitlePreferences?: Array<{
+                langugeCode: string;
+                priority: number;
+                allowImageBased: boolean;
+                allowExternal: boolean;
+                filter: 'none' | 'forced' | 'default' | 'any';
+            }>;
+        };
+        streamSelection?: {
+            profileName?: string;
+            profileSource?: string;
+            rules: Array<{
+                label?: string;
+                condition: string;
+                matched: boolean;
+                audioAction?: string;
+                subtitleAction?: string;
+            }>;
+            selectedAudioStream?: {
+                index: number;
+                codec: string;
+                language?: string;
+                channels?: number;
+                title?: string;
+                default?: boolean;
+                selected?: boolean;
+                forced?: boolean;
+                bitrate?: number;
+            };
+            selectedSubtitleStream?: {
+                index: number;
+                codec: string;
+                language?: string;
+                title?: string;
+                type?: 'embedded' | 'external';
+                default?: boolean;
+                forced?: boolean;
+                sdh?: boolean;
+            } | null;
+            subtitleReason?: string;
+        };
+        pipeline?: {
+            hardwareAccelMode: string;
+            builderType: string;
+            pipelineSteps: Array<string>;
+            ffmpegArgs: Array<string>;
+            ffmpegArgsString: string;
+            environmentVariables: {
+                [key: string]: string;
+            };
+        };
+        testTranscode?: {
+            exitCode: number | null;
+            signal: string | null;
+            success: boolean;
+            stderrOutput: string;
+            durationProcessed?: string;
+            hlsSessionId?: string;
+        };
+        ffmpegLog?: string;
+        errors: Array<string>;
+        timestamp: string;
+    };
+};
+
+export type PostApiTroubleshootResponse = PostApiTroubleshootResponses[keyof PostApiTroubleshootResponses];
 
 export type DeleteApiTrashData = {
     body?: never;

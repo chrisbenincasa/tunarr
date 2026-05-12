@@ -122,4 +122,7 @@ export type StreamOptions = {
    * pipeline falls back to inferring from ptsOffset (legacy behaviour).
    */
   isFirstTranscode?: boolean;
+  /** When true, FFmpeg writes `#EXT-X-ENDLIST` on exit (for finite HLS streams). */
+  emitEndList?: boolean;
+  disableErrorStream?: boolean;
 };

@@ -1,12 +1,13 @@
+import type { HlsConfig } from 'hls.js';
 import Hls from 'hls.js';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useState } from 'react';
 
 const hlsSupported = Hls.isSupported();
 
-export const useHls = () => {
-  const hlsRef = useRef<Hls | null>(null);
+export const useHls = (userConfig?: Partial<HlsConfig>) => {
+  const [hls, setHls] = useState<Hls | null>(null);
 
-  const refreshHls = () => {
+  const refreshHls = useCallback(() => {
     if (!hlsSupported) {
       return;
     }
@@ -27,7 +28,8 @@ export const useHls = () => {
           'http://localhost:5173',
         );
       },
-      debug: true, //import.meta.env.DEV,
+      debug: import.meta.env.DEV,
+      ...(userConfig ?? {}),
     });
 
     newHls.on(Hls.Events.MANIFEST_PARSED, function (_, data) {
@@ -44,23 +46,18 @@ export const useHls = () => {
       console.debug('video and hls.js are now bound together !');
     });
 
-    hlsRef.current = newHls;
-  };
+    setHls(newHls);
+    return newHls;
+  }, [userConfig]);
 
   const resetHls = useCallback(() => {
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-    }
-    hlsRef.current = null;
-    refreshHls();
-  }, []);
-
-  useEffect(() => {
-    refreshHls();
-  }, []);
+    hls?.destroy();
+    setHls(null);
+    return refreshHls();
+  }, [hls, refreshHls]);
 
   return {
-    hls: hlsRef.current,
+    hls,
     resetHls,
   };
 };

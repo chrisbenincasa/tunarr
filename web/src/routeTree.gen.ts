@@ -19,6 +19,7 @@ import { Route as SystemIndexRouteImport } from './routes/system/index';
 import { Route as Media_sourcesIndexRouteImport } from './routes/media_sources_/index';
 import { Route as LibraryIndexRouteImport } from './routes/library/index';
 import { Route as ChannelsIndexRouteImport } from './routes/channels_/index';
+import { Route as SystemTroubleshootRouteImport } from './routes/system/troubleshoot';
 import { Route as SystemTasksRouteImport } from './routes/system/tasks';
 import { Route as SystemLogsRouteImport } from './routes/system/logs';
 import { Route as SystemDebugRouteImport } from './routes/system/debug';
@@ -111,6 +112,11 @@ const ChannelsIndexRoute = ChannelsIndexRouteImport.update({
   id: '/channels_/',
   path: '/channels/',
   getParentRoute: () => rootRouteImport,
+} as any);
+const SystemTroubleshootRoute = SystemTroubleshootRouteImport.update({
+  id: '/troubleshoot',
+  path: '/troubleshoot',
+  getParentRoute: () => SystemRoute,
 } as any);
 const SystemTasksRoute = SystemTasksRouteImport.update({
   id: '/tasks',
@@ -365,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/system/debug': typeof SystemDebugRoute;
   '/system/logs': typeof SystemLogsRoute;
   '/system/tasks': typeof SystemTasksRoute;
+  '/system/troubleshoot': typeof SystemTroubleshootRoute;
   '/channels': typeof ChannelsIndexRoute;
   '/library': typeof LibraryIndexRoute;
   '/media_sources': typeof Media_sourcesIndexRoute;
@@ -417,6 +424,7 @@ export interface FileRoutesByTo {
   '/system/debug': typeof SystemDebugRoute;
   '/system/logs': typeof SystemLogsRoute;
   '/system/tasks': typeof SystemTasksRoute;
+  '/system/troubleshoot': typeof SystemTroubleshootRoute;
   '/channels': typeof ChannelsIndexRoute;
   '/library': typeof LibraryIndexRoute;
   '/media_sources': typeof Media_sourcesIndexRoute;
@@ -470,6 +478,7 @@ export interface FileRoutesById {
   '/system/debug': typeof SystemDebugRoute;
   '/system/logs': typeof SystemLogsRoute;
   '/system/tasks': typeof SystemTasksRoute;
+  '/system/troubleshoot': typeof SystemTroubleshootRoute;
   '/channels_/': typeof ChannelsIndexRoute;
   '/library/': typeof LibraryIndexRoute;
   '/media_sources_/': typeof Media_sourcesIndexRoute;
@@ -526,6 +535,7 @@ export interface FileRouteTypes {
     | '/system/debug'
     | '/system/logs'
     | '/system/tasks'
+    | '/system/troubleshoot'
     | '/channels'
     | '/library'
     | '/media_sources'
@@ -578,6 +588,7 @@ export interface FileRouteTypes {
     | '/system/debug'
     | '/system/logs'
     | '/system/tasks'
+    | '/system/troubleshoot'
     | '/channels'
     | '/library'
     | '/media_sources'
@@ -630,6 +641,7 @@ export interface FileRouteTypes {
     | '/system/debug'
     | '/system/logs'
     | '/system/tasks'
+    | '/system/troubleshoot'
     | '/channels_/'
     | '/library/'
     | '/media_sources_/'
@@ -761,6 +773,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/channels';
       preLoaderRoute: typeof ChannelsIndexRouteImport;
       parentRoute: typeof rootRouteImport;
+    };
+    '/system/troubleshoot': {
+      id: '/system/troubleshoot';
+      path: '/troubleshoot';
+      fullPath: '/system/troubleshoot';
+      preLoaderRoute: typeof SystemTroubleshootRouteImport;
+      parentRoute: typeof SystemRoute;
     };
     '/system/tasks': {
       id: '/system/tasks';
@@ -1091,6 +1110,7 @@ interface SystemRouteChildren {
   SystemDebugRoute: typeof SystemDebugRoute;
   SystemLogsRoute: typeof SystemLogsRoute;
   SystemTasksRoute: typeof SystemTasksRoute;
+  SystemTroubleshootRoute: typeof SystemTroubleshootRoute;
   SystemIndexRoute: typeof SystemIndexRoute;
 }
 
@@ -1098,6 +1118,7 @@ const SystemRouteChildren: SystemRouteChildren = {
   SystemDebugRoute: SystemDebugRoute,
   SystemLogsRoute: SystemLogsRoute,
   SystemTasksRoute: SystemTasksRoute,
+  SystemTroubleshootRoute: SystemTroubleshootRoute,
   SystemIndexRoute: SystemIndexRoute,
 };
 

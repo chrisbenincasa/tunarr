@@ -1,7 +1,8 @@
 import { nullToUndefined } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { groupBy, head, isEmpty, mapValues, orderBy, trimEnd } from 'lodash-es';
+import { groupBy, head, isEmpty, mapValues, orderBy } from 'lodash-es';
+import path from 'node:path';
 import { match } from 'ts-pattern';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
@@ -216,7 +217,6 @@ export class ProgramStreamDetailsFetcher {
     }
 
     if (isNonEmptyString(serverPath)) {
-      serverPath = serverPath.startsWith('/') ? serverPath : `/${serverPath}`;
       this.logger.debug(
         'Did not find %s file on disk relative to Tunarr. Using network path: %s',
         server.type,
@@ -228,7 +228,7 @@ export class ProgramStreamDetailsFetcher {
           { type: 'plex' },
           (server) =>
             new HttpStreamSource(
-              `${trimEnd(server.uri, '/')}${serverPath}?X-Plex-Token=${
+              `${path.join(server.uri, serverPath)}?X-Plex-Token=${
                 server.accessToken
               }`,
             ),
@@ -237,7 +237,7 @@ export class ProgramStreamDetailsFetcher {
           { type: 'jellyfin' },
           (server) =>
             new HttpStreamSource(
-              `${trimEnd(server.uri, '/')}/Videos/${serverPath}/stream?static=true`,
+              `${path.join(server.uri, 'Videos', serverPath, 'stream')}?static=true`,
               {
                 'X-Emby-Token': server.accessToken,
               },
@@ -247,7 +247,7 @@ export class ProgramStreamDetailsFetcher {
           { type: 'emby' },
           (server) =>
             new HttpStreamSource(
-              `${trimEnd(server.uri, '/')}/Videos/${serverPath}/stream?X-Emby-Token=${
+              `${path.join(server.uri, 'Videos', serverPath, 'stream')}?X-Emby-Token=${
                 server.accessToken
               }&static=true`,
             ),

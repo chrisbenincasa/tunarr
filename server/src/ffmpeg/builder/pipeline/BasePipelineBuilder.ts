@@ -915,6 +915,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
               isFirst,
               this.ffmpegState.encoderHwAccelMode ===
                 HardwareAccelerationMode.Qsv,
+              this.ffmpegState.emitEndList,
             ),
           );
           if (this.subtitleInputSource?.method === SubtitleMethods.Convert) {
@@ -953,6 +954,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
               this.ffmpegState.hlsSegmentTemplate,
               this.ffmpegState.hlsBaseStreamUrl,
               isFirst,
+              this.ffmpegState.emitEndList,
             ),
           );
           if (this.subtitleInputSource?.method === SubtitleMethods.Convert) {

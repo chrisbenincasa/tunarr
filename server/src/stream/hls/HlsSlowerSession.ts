@@ -6,7 +6,7 @@ import { makeFfmpegPlaylistUrl } from '@/util/serverUtil.js';
 import dayjs from 'dayjs';
 import { basename } from 'node:path';
 import type { DeepRequired, StrictOmit } from 'ts-essentials';
-import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
+import type { FFmpegAssistedFactory } from '../../ffmpeg/FFmpegModule.ts';
 import type { HlsOptions } from '../../ffmpeg/builder/constants.ts';
 import {
   defaultHlsOptions,
@@ -37,7 +37,7 @@ export class HlsSlowerSession extends BaseHlsSession {
     options: BaseHlsSessionOptions,
     programCalculator: StreamProgramCalculator,
     private programStreamFactory: ProgramStreamFactory,
-    private ffmpegFactory: FFmpegFactory,
+    private ffmpegFactory: FFmpegAssistedFactory,
   ) {
     super(channel, options);
     this.#programCalculator = programCalculator;
@@ -159,7 +159,6 @@ export class HlsSlowerSession extends BaseHlsSession {
     const ffmpeg = this.ffmpegFactory(
       this.channel.transcodeConfig,
       this.channel,
-      this.sessionType,
     );
 
     this.#concatSession = await ffmpeg.createConcatSession(streamUrl, {

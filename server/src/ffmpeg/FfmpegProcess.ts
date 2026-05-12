@@ -43,7 +43,7 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
     private ffmpegName: string,
     private ffmpegArgs: string[],
     private logDirectory: string,
-    private environmentVariables: NodeJS.ProcessEnv = {},
+    public readonly environmentVariables: NodeJS.ProcessEnv = {},
   ) {
     super();
   }

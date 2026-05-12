@@ -392,23 +392,3 @@ export type MediaSourceWithRelations = MediaSourceOrm & {
   paths: LocalMediaSourcePathOrm[];
   replacePaths: MediaSourceLibraryReplacePath[];
 };
-
-export type SpecificMediaSourceType<
-  Typ extends MediaSourceType,
-  MediaSourceT extends MediaSourceOrm = MediaSourceWithRelations,
-> = StrictOmit<MediaSourceT, 'type'> & {
-  type: Typ;
-};
-
-export type PlexMediaSource = SpecificMediaSourceType<
-  typeof MediaSourceType.Plex
->;
-export type JellyfinMediaSource = SpecificMediaSourceType<
-  typeof MediaSourceType.Jellyfin
->;
-export type EmbyMediaSource = SpecificMediaSourceType<
-  typeof MediaSourceType.Emby
->;
-export type LocalMediaSource = SpecificMediaSourceType<
-  typeof MediaSourceType.Local
->;

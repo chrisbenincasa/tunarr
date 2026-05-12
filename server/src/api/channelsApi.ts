@@ -2,10 +2,13 @@ import {
   dbChannelToApiChannel,
   ormChannelToApiChannel,
 } from '@/db/converters/channelConverters.js';
+import { globalOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
+import { validateSlotGroups } from '@/services/scheduling/slotGroupValidator.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { deleteIfLocalAndCleared } from '@/util/iconUtil.js';
 import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '@/util/perf.js';
@@ -37,9 +40,6 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import { globalOptions } from '@/globals.js';
-import { validateSlotGroups } from '@/services/scheduling/slotGroupValidator.js';
-import { deleteIfLocalAndCleared } from '@/util/iconUtil.js';
 import {
   head,
   isEmpty,
@@ -590,9 +590,19 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       const fallback = await req.serverCtx.channelDB.getChannelFallbackPrograms(
         req.params.id,
       );
-      if (fallback) {
+      if (fallback && fallback.mediaSourceId && fallback.libraryId) {
+        const mediaSource = await req.serverCtx.mediaSourceDB.getById(
+          fallback.mediaSourceId,
+        );
+        const library = mediaSource?.libraries.find(
+          (lib) => lib.uuid === fallback.libraryId,
+        );
         const converted =
-          req.serverCtx.programConverter.programOrmToContentProgram(fallback);
+          req.serverCtx.programConverter.programOrmToContentProgram(
+            fallback,
+            mediaSource,
+            library,
+          );
         if (converted) {
           return res.send(converted);
         }

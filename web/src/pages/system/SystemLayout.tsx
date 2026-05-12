@@ -32,6 +32,11 @@ export const SystemLayout = ({ currentTab }: Props) => {
             <RouterTabLink label={t`Debug`} value="/debug" to="/system/debug" />
             <RouterTabLink label={t`Logs`} value="/logs" to="/system/logs" />
             <RouterTabLink label={t`Tasks`} value="/tasks" to="/system/tasks" />
+            <RouterTabLink
+              label={t`Troubleshoot`}
+              value="/troubleshoot"
+              to="/system/troubleshoot"
+            />
           </Tabs>
         </Box>
         <Box sx={{ py: [1, 3] }}>
