@@ -16,6 +16,7 @@ type Props<ProgramT extends ProgramOrFolder> = {
   onQueryChange: (value: string) => void;
   label?: string;
   disabled?: boolean;
+  renderOptionTitle?: (opt: ProgramT) => string;
 };
 
 type AutocompleteOpt<ProgramT extends ProgramOrFolder> =
@@ -31,6 +32,7 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
   onQueryChange,
   label,
   disabled,
+  renderOptionTitle = (program) => program.title,
 }: Props<ProgramT>) => {
   const { t } = useLingui();
   const defaultLabel = t`Program`;
@@ -85,7 +87,7 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
     <Autocomplete
       options={options}
       getOptionLabel={(value) =>
-        value.type === 'sentinel' ? t`Loading...` : value.title
+        value.type === 'sentinel' ? t`Loading...` : renderOptionTitle(value)
       }
       value={value}
       isOptionEqualToValue={optionEqualToValue}
@@ -98,7 +100,7 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
             </ListItem>
           );
         }
-        return <ListItem {...optProps}>{opt.title}</ListItem>;
+        return <ListItem {...optProps}>{renderOptionTitle(opt)}</ListItem>;
       }}
       onChange={(_, value) => {
         if (value && value.type !== 'sentinel') {

@@ -12,7 +12,7 @@ import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { ChannelStreamMode } from '@tunarr/types';
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { isNil, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
 import type { StreamEncoding } from '../ffmpeg/ffmpegBase.ts';
@@ -62,7 +62,6 @@ export class VideoStream {
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(KEYS.ProgramStreamFactory)
-    @named('new')
     private programStreamFactory: ProgramStreamFactory,
     @inject(SessionManager) private sessionManager: SessionManager,
   ) {}

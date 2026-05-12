@@ -1,5 +1,5 @@
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import type { FFmpegFactory } from '@/ffmpeg/FFmpegModule.js';
+import type { FFmpegAssistedFactory } from '@/ffmpeg/FFmpegModule.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { ConcatStreamModeToChildMode } from '@/ffmpeg/ffmpegBase.js';
@@ -14,14 +14,13 @@ export class ConcatStream {
   constructor(
     private channel: ChannelOrmWithTranscodeConfig,
     private streamMode: ChannelConcatStreamMode,
-    private ffmpegFactory: FFmpegFactory,
+    private ffmpegFactory: FFmpegAssistedFactory,
   ) {}
 
   async createSession(): Promise<FfmpegTranscodeSession> {
     const ffmpeg = this.ffmpegFactory(
       this.channel.transcodeConfig,
       this.channel,
-      ConcatStreamModeToChildMode[this.streamMode],
     );
 
     switch (this.streamMode) {

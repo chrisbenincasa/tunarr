@@ -11,6 +11,7 @@ export const useProgramInfiniteSearch = (
     ...postApiProgramsSearchInfiniteOptions({
       body: {
         query: searchRequest,
+        expandParents: true,
       },
     }),
     getNextPageParam: (last) => {

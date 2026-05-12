@@ -14,30 +14,25 @@ import type {
 import { FileStreamSource, HttpStreamSource } from '@/stream/types.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamModes } from '@tunarr/types';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
+import { injectable } from 'inversify';
 import { isUndefined } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
-import {
-  isCommercialLineupItem,
-  isProgramLineupItem,
-} from '../db/derived_types/StreamLineup.ts';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
-import type { CelEvaluationService } from '../services/CelEvaluationService.ts';
-import type { FeatureFlagService } from '../services/FeatureFlagService.ts';
-import type { StreamSelectionProfileResolver } from '../services/StreamSelectionProfileResolver.ts';
+import { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import { isImageBasedSubtitle } from '../stream/util.ts';
+import { KEYS } from '../types/inject.ts';
+import { assisted, injected } from '../util/assistedInject.ts';
+import { InjectLogger } from '../util/inject.ts';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
-import {
-  buildCelContext,
-  evaluateStreamSelectionProfile,
-} from './StreamSelectionEvaluator.ts';
+import { StreamSelector } from './StreamSelector.ts';
 import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
 import {
   AudioStream,
@@ -91,24 +86,28 @@ import type {
   TranscodeSessionResult,
 } from './ffmpegBase.ts';
 import { IFFMPEG } from './ffmpegBase.ts';
-import type { FfmpegInfo } from './ffmpegInfo.ts';
+import { FfmpegInfo } from './ffmpegInfo.ts';
 
+@injectable()
 export class FfmpegStreamFactory extends IFFMPEG {
-  private logger = LoggerFactory.child({ className: FfmpegStreamFactory.name });
+  @InjectLogger() declare private readonly logger: Logger;
+
+  private readonly ffmpegSettings: ReadableFfmpegSettings;
 
   constructor(
-    private ffmpegSettings: ReadableFfmpegSettings,
-    private transcodeConfig: TranscodeConfigOrm,
-    private channel: ChannelOrm,
-    private ffmpegInfo: FfmpegInfo,
-    private settingsDB: ISettingsDB,
+    @injected(FfmpegInfo) private ffmpegInfo: FfmpegInfo,
+    @injected(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @injected(KEYS.PipelineBuilderFactory)
     private pipelineBuilderFactory: PipelineBuilderFactory,
-    private channelDB: IChannelDB,
+    @injected(KEYS.ChannelDB) private channelDB: IChannelDB,
+    @injected(FeatureFlagService)
     private featureFlagService: FeatureFlagService,
-    private streamSelectionResolver: StreamSelectionProfileResolver,
-    private celService: CelEvaluationService,
+    @injected(StreamSelector) private streamSelector: StreamSelector,
+    @assisted private transcodeConfig: TranscodeConfigOrm,
+    @assisted private channel: ChannelOrm,
   ) {
     super();
+    this.ffmpegSettings = this.settingsDB.ffmpegSettings();
   }
 
   async createConcatSession(
@@ -325,6 +324,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       streamMode,
       encoding,
       isFirstTranscode,
+      emitEndList,
     },
     lineupItem,
   }: StreamSessionCreateArgs): Promise<Maybe<TranscodeSessionResult>> {
@@ -442,36 +442,15 @@ export class FfmpegStreamFactory extends IFFMPEG {
       });
 
       // Stream selection via profiles (handles both audio and subtitles)
+
       if (isDefined(streamDetails.audioDetails)) {
-        const selectionCtx = {
-          channelId: this.channel.uuid,
-          programId: lineupItem.program.uuid,
-          fillerListId: isCommercialLineupItem(lineupItem)
-            ? lineupItem.fillerListId
-            : undefined,
-          customShowId: isProgramLineupItem(lineupItem)
-            ? lineupItem.customShowId
-            : undefined,
-        };
-
-        const profile =
-          await this.streamSelectionResolver.resolve(selectionCtx);
-        const celContext = buildCelContext(
-          streamDetails.audioDetails,
-          streamDetails.subtitleDetails,
-          { name: this.channel.name, number: this.channel.number },
-          { title: lineupItem.program.title, type: lineupItem.program.type },
-        );
-
         const { audioStream, subtitleStream } =
-          await evaluateStreamSelectionProfile(
-            profile,
-            streamDetails.audioDetails,
-            streamDetails.subtitleDetails,
-            this.celService,
-            celContext,
+          await this.streamSelector.selectAudioAndSubtitleStreams({
+            channel: this.channel,
             lineupItem,
-          );
+            audioStreams: streamDetails.audioDetails,
+            subtitleStreams: streamDetails.subtitleDetails ?? [],
+          });
 
         audioInput = new AudioInputSource(
           streamSource,
@@ -709,6 +688,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         duration,
         ptsOffset,
         isFirstTranscode,
+        emitEndList: emitEndList ?? false,
         threadCount: isPassthrough ? 0 : this.transcodeConfig.threadCount,
         copyAllStreams: isPassthrough,
         audioCodecOverrides,

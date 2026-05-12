@@ -1,8 +1,8 @@
 export * from './Channel.js';
-export * from './FeatureFlags.js';
 export * from './Collections.js';
 export * from './CustomShow.js';
 export * from './Event.js';
+export * from './FeatureFlags.js';
 export * from './FfmpegSettings.js';
 export * from './FillerList.js';
 export * from './GuideApi.js';
@@ -17,5 +17,6 @@ export * from './SystemSettings.js';
 export * from './Tasks.js';
 export * from './Theme.js';
 export * from './TranscodeConfig.js';
+export * from './Troubleshooting.js';
 export * from './util.js';
 export * from './XmlTvSettings.js';

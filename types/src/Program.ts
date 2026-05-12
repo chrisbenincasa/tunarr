@@ -260,6 +260,19 @@ export function getParentItem(
   }
 }
 
+export function getGrandparentItem(input: Episode): Show | undefined;
+export function getGrandparentItem(input: MusicTrack): MusicArtist | undefined;
+export function getGrandparentItem(
+  input: Episode | MusicTrack,
+): Show | MusicArtist | undefined {
+  switch (input.type) {
+    case 'episode':
+      return input.show ?? input.season?.show;
+    case 'track':
+      return input.artist ?? input.album?.artist;
+  }
+}
+
 export type PossibleItemTypes =
   | TerminalProgram['type']
   | ProgramGrouping['type']

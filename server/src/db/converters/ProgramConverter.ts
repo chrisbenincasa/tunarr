@@ -44,6 +44,7 @@ import type {
   ChannelOrmWithRelations,
   ChannelWithRelations,
   GeneralizedProgramGroupingWithExternalIds,
+  MediaSourceWithRelations,
   MusicAlbumWithExternalIds,
   MusicArtistWithExternalIds,
   ProgramOrmWithExternalIds,
@@ -51,17 +52,16 @@ import type {
   TvSeasonWithExternalIds,
   TvShowWithExternalIds,
 } from '../schema/derivedTypes.ts';
+import { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
 
 /**
  * Converts DB types to API types
  */
 @injectable()
 export class ProgramConverter {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
-  constructor(
-    @inject(KEYS.Database) private db: Kysely<DB>,
-  ) {}
+  constructor(@inject(KEYS.Database) private db: Kysely<DB>) {}
 
   programDaoToTerminalProgram(
     program: ProgramWithRelationsOrm,
@@ -217,6 +217,8 @@ export class ProgramConverter {
 
   programOrmToContentProgram(
     program: ProgramOrmWithExternalIds,
+    mediaSource?: MediaSourceWithRelations,
+    mediaLibrary?: MediaSourceLibrary,
   ): MarkRequired<ContentProgram, 'id'> | null {
     if (!program.mediaSourceId) {
       return null;
@@ -225,7 +227,10 @@ export class ProgramConverter {
     const convertedProgram = ApiProgramConverters.convertProgram(
       program,
       undefined,
+      mediaSource,
+      mediaLibrary,
     );
+
     if (!convertedProgram) {
       // TODO: log
       return null;

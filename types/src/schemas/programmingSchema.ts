@@ -333,6 +333,8 @@ const BaseEpisode = z.object({
   releaseDate: z.number().nullable(),
   releaseDateString: z.string().nullable(),
   summary: z.string().nullable(),
+  seasonId: z.uuid().nullish(),
+  showId: z.uuid().nullish(),
 });
 
 const BaseEpisodeWithoutJoins = z.object({
@@ -412,6 +414,8 @@ const BaseMusicTrack = z.object({
   ...BaseProgram.shape,
   type: z.literal('track'),
   trackNumber: z.number().nonnegative(),
+  albumId: z.uuid().nullish(),
+  artistId: z.uuid().nullish(),
 });
 
 const BaseMusicTrackWithoutJoins = z.object({

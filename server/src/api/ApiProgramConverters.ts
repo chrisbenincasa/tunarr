@@ -52,6 +52,8 @@ export class ApiProgramConverters {
     searchDoc: Maybe<TerminalProgramSearchDocument>,
     mediaSource?: MediaSourceWithRelations,
     mediaLibrary?: MediaSourceLibrary,
+    parent?: ProgramGroupingOrmWithRelations,
+    grandparent?: ProgramGroupingOrmWithRelations,
   ): Nullable<TerminalProgram> {
     if (!program.canonicalId) {
       this.logger.warn(`Program %s doesn't have a canonicalId!`, program.uuid);
@@ -142,6 +144,27 @@ export class ApiProgramConverters {
       ),
     } satisfies Partial<TerminalProgram>;
 
+    const convertedParent =
+      parent && mediaSource && mediaLibrary
+        ? ApiProgramConverters.convertProgramGrouping(
+            parent,
+            undefined,
+            undefined,
+            mediaSource,
+            mediaLibrary,
+          )
+        : null;
+    const convertedGrandparent =
+      grandparent && mediaSource && mediaLibrary
+        ? ApiProgramConverters.convertProgramGrouping(
+            grandparent,
+            undefined,
+            undefined,
+            mediaSource,
+            mediaLibrary,
+          )
+        : null;
+
     return match(program)
       .with(
         { type: 'episode' },
@@ -152,6 +175,14 @@ export class ApiProgramConverters {
             summary: ep.summary,
             originalTitle: null,
             episodeNumber: ep.episode ?? 0,
+            season:
+              convertedParent?.type === 'season' ? convertedParent : undefined,
+            show:
+              convertedGrandparent?.type === 'show'
+                ? convertedGrandparent
+                : undefined,
+            seasonId: ep.seasonUuid,
+            showId: ep.tvShowUuid,
           }) satisfies Episode,
       )
       .with(
@@ -175,6 +206,14 @@ export class ApiProgramConverters {
             type: 'track',
             originalTitle: null,
             trackNumber: program.episode ?? 0,
+            album:
+              convertedParent?.type === 'album' ? convertedParent : undefined,
+            artist:
+              convertedGrandparent?.type === 'artist'
+                ? convertedGrandparent
+                : undefined,
+            albumId: program.albumUuid,
+            artistId: program.artistUuid,
           }) satisfies MusicTrack,
       )
       .with(

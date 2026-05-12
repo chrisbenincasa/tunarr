@@ -580,6 +580,10 @@ msgstr "Attempt Auto-Fix"
 msgid "Attempts to balance programming groups by either total lineup duration or number of unique programs. For instance, for a channel with many seasons of one show and few seasons of another, balancing will attempt to create an even mix of both shows by inserting repeats of the show with fewer episodes."
 msgstr "Attempts to balance programming groups by either total lineup duration or number of unique programs. For instance, for a channel with many seasons of one show and few seasons of another, balancing will attempt to create an even mix of both shows by inserting repeats of the show with fewer episodes."
 
+#: src/pages/system/TroubleshootPage.tsx:875
+msgid "Audio"
+msgstr "Audio"
+
 #: src/pages/settings/FfmpegSettingsPage.tsx:338
 msgid "Audio & Subtitle Options"
 msgstr "Audio & Subtitle Options"
@@ -587,6 +591,10 @@ msgstr "Audio & Subtitle Options"
 #: src/components/channel_config/ChannelTranscodingConfig.tsx:200
 msgid "Audio & Subtitles"
 msgstr "Audio & Subtitles"
+
+#: src/pages/system/TroubleshootPage.tsx:754
+msgid "Audio Action"
+msgstr "Audio Action"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:102
 msgid "Audio Bitrate"
@@ -621,6 +629,10 @@ msgstr "Audio Options"
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:161
 msgid "Audio Sample Rate"
 msgstr "Audio Sample Rate"
+
+#: src/pages/system/TroubleshootPage.tsx:622
+msgid "Audio Streams"
+msgstr "Audio Streams"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:195
 msgid "Audio Volume"
@@ -687,6 +699,10 @@ msgstr "Balance..."
 msgid "Basic button group"
 msgstr "Basic button group"
 
+#: src/pages/system/TroubleshootPage.tsx:580
+msgid "Bit Depth"
+msgstr "Bit Depth"
+
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:113
 msgid "Bitrate cannot be changed when copying input audio"
 msgstr "Bitrate cannot be changed when copying input audio"
@@ -727,6 +743,10 @@ msgstr "Buffer size cannot be changed when copying input audio"
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx:226
 msgid "Buffer size effects how frequently ffmpeg reconsiders the output bitrate. <0>Read more</0>"
 msgstr "Buffer size effects how frequently ffmpeg reconsiders the output bitrate. <0>Read more</0>"
+
+#: src/pages/system/TroubleshootPage.tsx:912
+msgid "Builder"
+msgstr "Builder"
 
 #: src/components/settings/general/BackupForm.tsx:78
 msgid "By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups"
@@ -812,6 +832,8 @@ msgstr "Change the verbosity of specific categories of logs. Useful if debugging
 
 #: src/components/programming_controls/AddRedirectModal.tsx:133
 #: src/components/programming_controls/AddRedirectModal.tsx:135
+#: src/pages/system/TroubleshootPage.tsx:291
+#: src/pages/system/TroubleshootPage.tsx:295
 msgid "Channel"
 msgstr "Channel"
 
@@ -864,6 +886,7 @@ msgstr "Channel Transcode Config"
 #: src/hooks/useNavItems.tsx:63
 #: src/hooks/useRouteName.ts:38
 #: src/pages/channels/ChannelsPage.tsx:566
+#: src/pages/system/TroubleshootPage.tsx:636
 msgid "Channels"
 msgstr "Channels"
 
@@ -909,9 +932,19 @@ msgstr "Click to preview the items in this Custom Show. Note that only the whole
 msgid "Close"
 msgstr "Close"
 
+#: src/pages/system/TroubleshootPage.tsx:568
+#: src/pages/system/TroubleshootPage.tsx:630
+#: src/pages/system/TroubleshootPage.tsx:677
+msgid "Codec"
+msgstr "Codec"
+
 #: src/components/channel_config/plex/PlexProgrammingSelector.tsx:141
 #~ msgid "Collections"
 #~ msgstr "Collections"
+
+#: src/pages/system/TroubleshootPage.tsx:583
+msgid "Color"
+msgstr "Color"
 
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:158
 msgid "Commit"
@@ -925,6 +958,10 @@ msgstr "Completely randomizes the order of programs."
 #: src/pages/system/SystemLogsPage.tsx:137
 msgid "Component"
 msgstr "Component"
+
+#: src/pages/system/TroubleshootPage.tsx:751
+msgid "Condition"
+msgstr "Condition"
 
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:278
 msgid "Config"
@@ -1026,9 +1063,17 @@ msgstr "Copy"
 msgid "Copy Channel ID"
 msgstr "Copy Channel ID"
 
+#: src/pages/system/TroubleshootPage.tsx:403
+msgid "Copy Full Report"
+msgstr "Copy Full Report"
+
 #: src/components/channels/ChannelOptionsMenu.tsx:151
 msgid "Copy M3U URL"
 msgstr "Copy M3U URL"
+
+#: src/pages/system/TroubleshootPage.tsx:108
+msgid "Copy to clipboard"
+msgstr "Copy to clipboard"
 
 #: src/components/ProgramStreamDetails.tsx:32
 #: src/components/RawProgramDetails.tsx:27
@@ -1135,6 +1180,11 @@ msgstr "Days to Precalculate"
 #: src/pages/system/SystemLayout.tsx:32
 msgid "Debug"
 msgstr "Debug"
+
+#: src/pages/system/TroubleshootPage.tsx:642
+#: src/pages/system/TroubleshootPage.tsx:686
+msgid "Default"
+msgstr "Default"
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:99
 msgid "Default Config"
@@ -1297,7 +1347,7 @@ msgstr "Do not group programs at all. Normal shuffle."
 msgid "Documentation"
 msgstr "Documentation"
 
-#: src/components/MediaSourceLibraryTable.tsx:448
+#: src/components/MediaSourceLibraryTable.tsx:466
 msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
 msgstr "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
 
@@ -1309,6 +1359,10 @@ msgstr "Done"
 #: src/pages/system/SystemLogsPage.tsx:171
 msgid "Download all logs"
 msgstr "Download all logs"
+
+#: src/pages/system/TroubleshootPage.tsx:410
+msgid "Download JSON"
+msgstr "Download JSON"
 
 #. placeholder {0}: table.getRowCount()
 #. placeholder {1}: table.getRowCount()
@@ -1332,6 +1386,7 @@ msgstr "Duplicates"
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:403
 #: src/components/slot_scheduler/RandomSlotTable.tsx:233
 #: src/pages/channels/ChannelsPage.tsx:346
+#: src/pages/system/TroubleshootPage.tsx:521
 msgid "Duration"
 msgstr "Duration"
 
@@ -1606,6 +1661,10 @@ msgstr "Error updating channel.<0/>Check browser console for details"
 msgid "Error updating Smart Collection. Check logs for details."
 msgstr "Error updating Smart Collection. Check logs for details."
 
+#: src/pages/system/TroubleshootPage.tsx:100
+msgid "Error while copying to clipboard. Check browser logs for details"
+msgstr "Error while copying to clipboard. Check browser logs for details"
+
 #: src/pages/system/StatusPage.tsx:107
 msgid "Error while running system fixer {fixerId}. Check server logs for details."
 msgstr "Error while running system fixer {fixerId}. Check server logs for details."
@@ -1622,6 +1681,10 @@ msgstr "Error while saving transcode config. See console log for details."
 #: src/pages/settings/TaskSettingsPage.tsx:75
 msgid "Error while scheduling {taskId}. Check server logs for details"
 msgstr "Error while scheduling {taskId}. Check server logs for details"
+
+#: src/pages/system/TroubleshootPage.tsx:418
+msgid "Errors"
+msgstr "Errors"
 
 #: src/pages/settings/FeaturesSettingsPage.tsx:150
 msgid "Escape Hatches"
@@ -1693,6 +1756,10 @@ msgstr "Features"
 msgid "FFMPEG"
 msgstr "FFMPEG"
 
+#: src/pages/system/TroubleshootPage.tsx:938
+msgid "FFmpeg Command"
+msgstr "FFmpeg Command"
+
 #: src/pages/settings/FfmpegSettingsPage.tsx:186
 msgid "FFmpeg Executable Path"
 msgstr "FFmpeg Executable Path"
@@ -1705,6 +1772,10 @@ msgstr "FFMPEG is installed. Detected version {0}"
 #: src/pages/welcome/WelcomePage.tsx:189
 msgid "FFMPEG is not detected."
 msgstr "FFMPEG is not detected."
+
+#: src/pages/system/TroubleshootPage.tsx:988
+msgid "FFmpeg Log"
+msgstr "FFmpeg Log"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx:241
 #: src/pages/settings/FfmpegSettingsPage.tsx:250
@@ -1883,6 +1954,14 @@ msgstr "For more details on manually retrieving a Plex token, see <0>here</0>"
 msgid "Force Scan"
 msgstr "Force Scan"
 
+#: src/pages/system/TroubleshootPage.tsx:689
+msgid "Forced"
+msgstr "Forced"
+
+#: src/pages/system/TroubleshootPage.tsx:574
+msgid "Frame Rate"
+msgstr "Frame Rate"
+
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:480
 msgid "Frequency"
 msgstr "Frequency"
@@ -1987,6 +2066,14 @@ msgstr "How often the XMLTV file is regenerated"
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx:205
 msgid "How often to insert a break"
 msgstr "How often to insert a break"
+
+#: src/pages/system/TroubleshootPage.tsx:885
+msgid "HW Accel"
+msgstr "HW Accel"
+
+#: src/pages/system/TroubleshootPage.tsx:471
+msgid "HW Acceleration"
+msgstr "HW Acceleration"
 
 #: src/pages/channels/ChannelsPage.tsx:314
 msgid "Icon"
@@ -2095,12 +2182,18 @@ msgstr "Keywords"
 msgid "Keywords perform full text search across all (or configured) fields"
 msgstr "Keywords perform full text search across all (or configured) fields"
 
+#: src/pages/system/TroubleshootPage.tsx:748
+msgid "Label"
+msgstr "Label"
+
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx:39
 #: src/components/LanguageAutocomplete.tsx:130
 #: src/components/LanguagePreferencesList.tsx:42
 #: src/components/settings/general/WebSettings.tsx:57
 #: src/components/settings/general/WebSettings.tsx:61
 #: src/components/settings/general/WebSettings.tsx:66
+#: src/pages/system/TroubleshootPage.tsx:633
+#: src/pages/system/TroubleshootPage.tsx:680
 msgid "Language"
 msgstr "Language"
 
@@ -2117,7 +2210,7 @@ msgstr "Last Scanned: {0}"
 msgid "Last Scheduled Execution"
 msgstr "Last Scheduled Execution"
 
-#: src/components/MediaSourceLibraryTable.tsx:283
+#: src/components/MediaSourceLibraryTable.tsx:284
 msgid "Last Synced"
 msgstr "Last Synced"
 
@@ -2213,11 +2306,11 @@ msgstr "Load Stream"
 msgid "Loading"
 msgstr "Loading"
 
-#: src/components/ProgramSearchAutocomplete.tsx:88
+#: src/components/ProgramSearchAutocomplete.tsx:90
 msgid "Loading..."
 msgstr "Loading..."
 
-#: src/components/ProgramSearchAutocomplete.tsx:97
+#: src/components/ProgramSearchAutocomplete.tsx:99
 msgid "Loading…"
 msgstr "Loading…"
 
@@ -2307,6 +2400,10 @@ msgstr "Manually add an access token from your Emby server"
 msgid "Manually add an access token from your Jellyfin server"
 msgstr "Manually add an access token from your Jellyfin server"
 
+#: src/pages/system/TroubleshootPage.tsx:745
+msgid "Match"
+msgstr "Match"
+
 #: src/components/search/SearchGroupNode.tsx:83
 msgid "Match all of"
 msgstr "Match all of"
@@ -2353,6 +2450,10 @@ msgstr "Maximum number of days to precalculate the schedule. Note that the lengt
 msgid "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel.<0/><1>Note: Previewing the schedule in the browser for long lengths of time can cause UI performance issues</1>"
 msgstr "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel.<0/><1>Note: Previewing the schedule in the browser for long lengths of time can cause UI performance issues</1>"
 
+#: src/pages/system/TroubleshootPage.tsx:490
+msgid "Media Info"
+msgstr "Media Info"
+
 #: src/components/channel_config/ProgrammingSelector.tsx:250
 #: src/components/channel_config/ProgrammingSelector.tsx:252
 #: src/components/custom-shows/EditCustomShowForm.tsx:316
@@ -2375,7 +2476,7 @@ msgstr "Media Sources"
 msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 msgstr "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 
-#: src/components/MediaSourceLibraryTable.tsx:276
+#: src/components/MediaSourceLibraryTable.tsx:277
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:255
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:256
 msgid "Media Type"
@@ -2464,7 +2565,7 @@ msgstr "Must use a valid URL, or empty."
 
 #: src/components/custom-shows/EditCustomShowForm.tsx:270
 #: src/components/filler/EditFillerListForm.tsx:137
-#: src/components/MediaSourceLibraryTable.tsx:263
+#: src/components/MediaSourceLibraryTable.tsx:264
 #: src/components/settings/ConnectMediaSources.tsx:44
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx:95
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:93
@@ -2480,6 +2581,7 @@ msgstr "Must use a valid URL, or empty."
 #: src/pages/library/FillerListsPage.tsx:162
 #: src/pages/settings/MediaSourceSettingsPage.tsx:82
 #: src/pages/settings/TaskSettingsPage.tsx:89
+#: src/pages/system/TroubleshootPage.tsx:854
 msgid "Name"
 msgstr "Name"
 
@@ -2589,6 +2691,7 @@ msgid "NodeJS: {0}"
 msgstr "NodeJS: {0}"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx:55
+#: src/pages/system/TroubleshootPage.tsx:814
 msgid "None"
 msgstr "None"
 
@@ -2761,6 +2864,7 @@ msgid "Password"
 msgstr "Password"
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:277
+#: src/pages/system/TroubleshootPage.tsx:543
 msgid "Path"
 msgstr "Path"
 
@@ -2781,9 +2885,25 @@ msgstr "Period"
 msgid "Pick specific programming to remove from the channel."
 msgstr "Pick specific programming to remove from the channel."
 
+#: src/pages/system/TroubleshootPage.tsx:904
+msgid "Pipeline"
+msgstr "Pipeline"
+
+#: src/pages/system/TroubleshootPage.tsx:921
+msgid "Pipeline Steps"
+msgstr "Pipeline Steps"
+
+#: src/pages/system/TroubleshootPage.tsx:577
+msgid "Pixel Format"
+msgstr "Pixel Format"
+
 #: src/components/channel_config/ChannelEpgConfig.tsx:47
 msgid "Placeholder Program Title"
 msgstr "Placeholder Program Title"
+
+#: src/pages/system/TroubleshootPage.tsx:460
+msgid "Platform"
+msgstr "Platform"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx:345
 msgid "Playlist"
@@ -2831,11 +2951,16 @@ msgstr "Priority"
 msgid "Proceed"
 msgstr "Proceed"
 
-#: src/components/ProgramSearchAutocomplete.tsx:36
+#: src/pages/system/TroubleshootPage.tsx:732
+msgid "Profile"
+msgstr "Profile"
+
+#: src/components/ProgramSearchAutocomplete.tsx:38
 #: src/components/slot_scheduler/RandomSlotTable.tsx:259
 #: src/components/slot_scheduler/RedirectProgrammingForm.tsx:46
 #: src/components/slot_scheduler/ShowSlotProgrammingForm.tsx:55
 #: src/components/slot_scheduler/TimeSlotTable.tsx:264
+#: src/pages/system/TroubleshootPage.tsx:497
 msgid "Program"
 msgstr "Program"
 
@@ -2847,6 +2972,10 @@ msgstr "Program Count"
 #: src/components/RawProgramDetails.tsx:30
 msgid "Program JSON"
 msgstr "Program JSON"
+
+#: src/pages/system/TroubleshootPage.tsx:268
+msgid "Program Playback Troubleshooter"
+msgstr "Program Playback Troubleshooter"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx:412
 #: src/components/filler/EditFillerListForm.tsx:152
@@ -3120,6 +3249,7 @@ msgstr "Reset to current date/time"
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:110
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx:190
+#: src/pages/system/TroubleshootPage.tsx:571
 msgid "Resolution"
 msgstr "Resolution"
 
@@ -3174,6 +3304,14 @@ msgstr "Run"
 msgid "Run now"
 msgstr "Run now"
 
+#: src/pages/system/TroubleshootPage.tsx:357
+msgid "Run Troubleshooter"
+msgstr "Run Troubleshooter"
+
+#: src/pages/system/TroubleshootPage.tsx:355
+msgid "Running..."
+msgstr "Running..."
+
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:172
 msgid "Sample rate cannot be changed when copying input audio"
 msgstr "Sample rate cannot be changed when copying input audio"
@@ -3223,7 +3361,7 @@ msgid "Scan"
 msgstr "Scan"
 
 #. placeholder {0}: prettifySnakeCaseString(programType)
-#: src/components/programs/ProgramOperationsMenu.tsx:84
+#: src/components/programs/ProgramOperationsMenu.tsx:95
 msgid "Scan {0}"
 msgstr "Scan {0}"
 
@@ -3248,7 +3386,11 @@ msgstr "Schedule programming using slots assigned a start time and duration."
 msgid "Search"
 msgstr "Search"
 
-#: src/components/ProgramSearchAutocomplete.tsx:92
+#: src/pages/system/TroubleshootPage.tsx:285
+msgid "Search for a program"
+msgstr "Search for a program"
+
+#: src/components/ProgramSearchAutocomplete.tsx:94
 msgid "Search for shows"
 msgstr "Search for shows"
 
@@ -3272,6 +3414,10 @@ msgstr "Search…"
 msgid "Seasons"
 msgstr "Seasons"
 
+#: src/pages/system/TroubleshootPage.tsx:271
+msgid "Select a program and channel to test playback. The troubleshooter will analyze stream selection, build the FFmpeg pipeline, and run a short test transcode."
+msgstr "Select a program and channel to test playback. The troubleshooter will analyze stream selection, build the FFmpeg pipeline, and run a short test transcode."
+
 #: src/components/slot_scheduler/SlotLinkingControl.tsx:257
 msgid "Select a slot to link to"
 msgstr "Select a slot to link to"
@@ -3292,6 +3438,14 @@ msgstr "Select Shows to Remove"
 #: src/components/settings/general/GeneralSettingsForm.tsx:300
 msgid "Select the port the Tunarr server will listen on. This requires a server restart to take effect."
 msgstr "Select the port the Tunarr server will listen on. This requires a server restart to take effect."
+
+#: src/pages/system/TroubleshootPage.tsx:804
+msgid "Selected Audio"
+msgstr "Selected Audio"
+
+#: src/pages/system/TroubleshootPage.tsx:820
+msgid "Selected Subtitle"
+msgstr "Selected Subtitle"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx:297
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:317
@@ -3487,7 +3641,11 @@ msgstr "Sorts the list by TV Show and the episodes in each TV show by their seas
 msgid "Soundtrack"
 msgstr "Soundtrack"
 
-#: src/components/MediaSourceLibraryTable.tsx:255
+#: src/pages/system/TroubleshootPage.tsx:531
+msgid "Source"
+msgstr "Source"
+
+#: src/components/MediaSourceLibraryTable.tsx:256
 msgid "Source Type"
 msgstr "Source Type"
 
@@ -3542,6 +3700,10 @@ msgstr "Stream JSON"
 msgid "Stream Mode"
 msgstr "Stream Mode"
 
+#: src/pages/system/TroubleshootPage.tsx:725
+msgid "Stream Selection"
+msgstr "Stream Selection"
+
 #: src/components/channel_config/EditChannelForm.tsx:248
 msgid "Streaming"
 msgstr "Streaming"
@@ -3554,9 +3716,21 @@ msgstr "Submit"
 msgid "Submitting..."
 msgstr "Submitting..."
 
+#: src/pages/system/TroubleshootPage.tsx:757
+msgid "Subtitle Action"
+msgstr "Subtitle Action"
+
+#: src/pages/system/TroubleshootPage.tsx:669
+msgid "Subtitle Streams"
+msgstr "Subtitle Streams"
+
 #: src/pages/settings/FfmpegSettingsPage.tsx:342
 msgid "Subtitles"
 msgstr "Subtitles"
+
+#: src/pages/system/TroubleshootPage.tsx:94
+msgid "Successfully copied to clipboard!"
+msgstr "Successfully copied to clipboard!"
 
 #: src/pages/library/TrashPage.tsx:39
 msgid "Successfully emptied trash."
@@ -3606,6 +3780,7 @@ msgid "System Health"
 msgstr "System Health"
 
 #: src/pages/system/StatusPage.tsx:220
+#: src/pages/system/TroubleshootPage.tsx:432
 msgid "System Info"
 msgstr "System Info"
 
@@ -3629,6 +3804,18 @@ msgstr "Temporarily caches responses from Plex based by request path. Could pote
 #: src/routes/channels_/test.tsx:5
 msgid "Test"
 msgstr "Test"
+
+#: src/pages/system/TroubleshootPage.tsx:330
+msgid "Test Duration (seconds)"
+msgstr "Test Duration (seconds)"
+
+#: src/pages/system/TroubleshootPage.tsx:381
+msgid "Test Playback"
+msgstr "Test Playback"
+
+#: src/pages/system/TroubleshootPage.tsx:952
+msgid "Test Transcode"
+msgstr "Test Transcode"
 
 #: src/components/channel_config/AddProgrammingButton.tsx:98
 #: src/components/programming_controls/AddRestrictHoursModal.tsx:99
@@ -3796,6 +3983,11 @@ msgstr "Time Slots..."
 msgid "Timestamp"
 msgstr "Timestamp"
 
+#: src/pages/system/TroubleshootPage.tsx:505
+#: src/pages/system/TroubleshootPage.tsx:639
+msgid "Title"
+msgstr "Title"
+
 #: src/components/programming_controls/AddRestrictHoursModal.tsx:120
 msgid "TO"
 msgstr "TO"
@@ -3840,8 +4032,14 @@ msgid "Tracks"
 msgstr "Tracks"
 
 #: src/pages/channels/ChannelsPage.tsx:373
+#: src/pages/system/TroubleshootPage.tsx:844
 msgid "Transcode Config"
 msgstr "Transcode Config"
+
+#: src/pages/system/TroubleshootPage.tsx:308
+#: src/pages/system/TroubleshootPage.tsx:312
+msgid "Transcode Config (optional override)"
+msgstr "Transcode Config (optional override)"
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx:118
 msgid "Transcode Config <0> <1/></0>"
@@ -3864,6 +4062,10 @@ msgstr "Trash"
 #: src/pages/library/TrashPage.tsx:103
 msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
 msgstr "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
+
+#: src/pages/system/SystemLayout.tsx:36
+msgid "Troubleshoot"
+msgstr "Troubleshoot"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx:314
 msgid "Tunarr Backend URL"
@@ -3900,6 +4102,8 @@ msgstr "TV shows are grouped by show"
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:219
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:222
 #: src/pages/settings/MediaSourceSettingsPage.tsx:74
+#: src/pages/system/TroubleshootPage.tsx:513
+#: src/pages/system/TroubleshootPage.tsx:683
 msgid "Type"
 msgstr "Type"
 
@@ -3929,6 +4133,10 @@ msgstr "Update"
 #: src/pages/settings/MediaSourceSettingsPage.tsx:88
 msgid "URL"
 msgstr "URL"
+
+#: src/pages/system/TroubleshootPage.tsx:317
+msgid "Use channel default"
+msgstr "Use channel default"
 
 #: src/pages/settings/XmlTvSettingsPage.tsx:162
 msgid "Use Show Poster"
@@ -3977,6 +4185,10 @@ msgstr "Version: {0}"
 msgid "Version: unknown"
 msgstr "Version: unknown"
 
+#: src/pages/system/TroubleshootPage.tsx:862
+msgid "Video"
+msgstr "Video"
+
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx:201
 msgid "Video Bitrate"
 msgstr "Video Bitrate"
@@ -3994,6 +4206,10 @@ msgstr "Video Format"
 msgid "Video Options"
 msgstr "Video Options"
 
+#: src/pages/system/TroubleshootPage.tsx:560
+msgid "Video Streams"
+msgstr "Video Streams"
+
 #: src/components/channel_config/ChannelFlexConfig.tsx:321
 msgid "Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time.<0/>Each filler can be assigned a cooldown, which restricts how frequently the list will be chosen during flex time."
 msgstr "Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time.<0/>Each filler can be assigned a cooldown, which restricts how frequently the list will be chosen during flex time."
@@ -4003,7 +4219,7 @@ msgid "View Collection"
 msgstr "View Collection"
 
 #: src/components/ProgramMetadataDialogContent.tsx:155
-#: src/components/programs/ProgramOperationsMenu.tsx:75
+#: src/components/programs/ProgramOperationsMenu.tsx:85
 msgid "View Full Details"
 msgstr "View Full Details"
 

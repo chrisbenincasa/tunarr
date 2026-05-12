@@ -2,10 +2,12 @@ import { seq } from '@tunarr/shared/util';
 import { ProgramSearchRequest, ProgramSearchResponse } from '@tunarr/types/api';
 import { inject } from 'inversify';
 import { isEmpty } from 'lodash-es';
+import { match } from 'ts-pattern';
 import z from 'zod';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
+import { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import {
   decodeCaseSensitiveId,
   MeilisearchService,
@@ -13,6 +15,7 @@ import {
 } from '../services/MeilisearchService.ts';
 import { KEYS } from '../types/inject.ts';
 import { Path } from '../types/path.ts';
+import { Maybe } from '../types/util.ts';
 import { groupByUniq } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
@@ -22,7 +25,7 @@ import {
 } from '../util/search.ts';
 
 export class SearchProgramsCommand {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(MeilisearchService) private searchService: MeilisearchService,
@@ -54,13 +57,19 @@ export class SearchProgramsCommand {
       (acc, curr) => {
         const [programs, groupings] = acc;
         if (isProgramGroupingDocument(curr)) {
-          groupings.push(curr.id);
+          groupings.add(curr.id);
         } else {
-          programs.push(curr.id);
+          programs.add(curr.id);
+          if (curr.parent?.id && req.expandParents) {
+            groupings.add(decodeCaseSensitiveId(curr.parent?.id));
+          }
+          if (curr.grandparent?.id && req.expandParents) {
+            groupings.add(decodeCaseSensitiveId(curr.grandparent?.id));
+          }
         }
         return acc;
       },
-      [[], []] as [string[], string[]],
+      [new Set<string>(), new Set<string>()],
     );
 
     const allMediaSources = await this.mediaSourceDB.getAll();
@@ -75,10 +84,10 @@ export class SearchProgramsCommand {
 
     const [programs, groupings, groupingCounts] = await Promise.all([
       this.programDB
-        .getProgramsByIds(programIds)
+        .getProgramsByIds([...programIds.values()])
         .then((res) => groupByUniq(res, (p) => p.uuid)),
-      this.programDB.getProgramGroupings(groupingIds),
-      this.programDB.getProgramGroupingChildCounts(groupingIds),
+      this.programDB.getProgramGroupings([...groupingIds.values()]),
+      this.programDB.getProgramGroupingChildCounts([...groupingIds.values()]),
     ]);
 
     const results = seq.collect(result.results, (searchDoc) => {
@@ -120,11 +129,37 @@ export class SearchProgramsCommand {
         }
       } else if (isTerminalProgramDocument(searchDoc)) {
         if (programs[searchDoc.id]) {
+          const program = programs[searchDoc.id]!;
+          let parent: Maybe<ProgramGroupingOrmWithRelations>;
+          let grandparent: Maybe<ProgramGroupingOrmWithRelations>;
+          if (req.expandParents) {
+            match(program)
+              .with({ type: 'episode' }, (ep) => {
+                if (ep.seasonUuid) {
+                  parent = groupings[ep.seasonUuid];
+                }
+                if (ep.tvShowUuid) {
+                  grandparent = groupings[ep.tvShowUuid];
+                }
+              })
+              .with({ type: 'track' }, (track) => {
+                if (track.albumUuid) {
+                  parent = groupings[track.albumUuid];
+                }
+                if (track.artistUuid) {
+                  grandparent = groupings[track.artistUuid];
+                }
+              })
+              .otherwise(() => void 0);
+          }
+
           return ApiProgramConverters.convertProgram(
-            programs[searchDoc.id]!,
+            program,
             searchDoc,
             mediaSource,
             library,
+            parent,
+            grandparent,
           );
         } else {
           this.logger.debug(

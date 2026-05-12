@@ -1,8 +1,10 @@
-import {
+import type {
   Bind,
   BindWhenOnFluentSyntax,
   Factory,
-  ServiceIdentifier,
+  ServiceIdentifier} from 'inversify';
+import {
+  inject
 } from 'inversify';
 import 'reflect-metadata';
 
@@ -11,7 +13,12 @@ const ASSISTED_META = Symbol('assistedInject:assisted');
 
 // Our own @inject — stores tokens in our own metadata, not inversify's internals
 export function injected(serviceId: ServiceIdentifier<unknown>) {
-  return (target: object, _: string | symbol | undefined, index: number) => {
+  const injectFn = inject(serviceId);
+  return (
+    target: object,
+    propertyKey: string | symbol | undefined,
+    index: number,
+  ) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const map: Map<number, ServiceIdentifier<unknown>> = Reflect.getOwnMetadata(
       INJECT_META,
@@ -19,6 +26,7 @@ export function injected(serviceId: ServiceIdentifier<unknown>) {
     ) ?? new Map();
     map.set(index, serviceId);
     Reflect.defineMetadata(INJECT_META, map, target);
+    injectFn(target, propertyKey, index);
   };
 }
 
@@ -34,22 +42,21 @@ export function assisted(
   Reflect.defineMetadata(ASSISTED_META, set, target);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function bindAssistedFactory<TFactory extends (...args: any[]) => any>(
+export function bindAssistedFactory<
+  TOut,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TFactory extends (...args: any[]) => TOut,
+>(
   bind: Bind,
   factoryId: ServiceIdentifier<TFactory>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Target: new (...args: any[]) => ReturnType<TFactory>,
-): BindWhenOnFluentSyntax<Factory<ReturnType<TFactory>>> {
+  Target: new (...args: any[]) => TOut,
+): BindWhenOnFluentSyntax<Factory<TOut>> {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const injectMap: Map<
     number,
     ServiceIdentifier<unknown>
   > = Reflect.getOwnMetadata(INJECT_META, Target) ?? new Map();
-  // BRITTLE
-  console.log(
-    Reflect.getOwnMetadata('@inversifyjs/core/classMetadataReflectKey', Target),
-  );
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const assistedSet: Set<number> =
     Reflect.getOwnMetadata(ASSISTED_META, Target) || new Set();
@@ -64,8 +71,8 @@ export function bindAssistedFactory<TFactory extends (...args: any[]) => any>(
     }
   }
 
-  return bind<Factory<ReturnType<TFactory>>>(factoryId).toFactory((context) => {
-    return (...assistedArgs: Parameters<TFactory>): ReturnType<TFactory> => {
+  return bind<Factory<TOut>>(factoryId).toFactory((context) => {
+    return (...assistedArgs: Parameters<TFactory>): TOut => {
       const args: unknown[] = [];
       let aIdx = 0;
       for (let i = 0; i < paramCount; i++) {
@@ -75,7 +82,6 @@ export function bindAssistedFactory<TFactory extends (...args: any[]) => any>(
           args.push(assistedArgs[aIdx++]);
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return new Target(...args);
     };
   });

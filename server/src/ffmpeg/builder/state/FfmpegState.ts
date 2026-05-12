@@ -93,6 +93,11 @@ export class FfmpegState {
    * for deciding whether to include `discont_start` in the ffmpeg HLS flags.
    */
   isFirstTranscode?: boolean;
+  /**
+   * When true, FFmpeg will write `#EXT-X-ENDLIST` to the HLS playlist on exit.
+   * Used for finite streams (e.g. troubleshooter) so hls.js stops polling.
+   */
+  emitEndList: boolean = false;
   tonemapHdr: boolean = false;
 
   /**

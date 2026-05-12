@@ -39,7 +39,6 @@ export function InjectLogger(): PropertyDecorator {
       get(this: Record<string | symbol, unknown>) {
         if (!this[cacheKey]) {
           if (!LoggerFactory.isInitialized) {
-            console.log('not initialized returning');
             return LoggerFactory.root;
           }
           const loggingDef = Reflect.get(this.constructor, 'tunarr:log_def') as

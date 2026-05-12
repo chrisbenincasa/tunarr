@@ -20,7 +20,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
 import type { ScanProgress } from '@tunarr/types/api';
@@ -244,6 +244,7 @@ const TableName = 'MediaSourceLibraryTable';
 export const MediaSourceLibraryTable = () => {
   const { t } = useLingui();
   const dayjs = useDayjs();
+  const navigate = useNavigate();
   const { data: mediaSources } = useMediaSources();
   const tableSettings = useStoreBackedTableSettings(TableName);
   const theme = useTheme();
@@ -307,7 +308,7 @@ export const MediaSourceLibraryTable = () => {
         },
       },
     ];
-  }, [dayjs]);
+  }, [dayjs, t]);
 
   const data = useMemo(() => {
     const remoteLibraries = mediaSources
@@ -423,6 +424,23 @@ export const MediaSourceLibraryTable = () => {
         library={original}
       />
     ),
+    muiTableBodyRowProps: ({ row }) => ({
+      onClick: () => {
+        navigate({
+          to:
+            row.original.type === 'local'
+              ? '/media_sources/$mediaSourceId'
+              : '/media_sources/$mediaSourceId/libraries/$libraryId',
+          params: {
+            mediaSourceId: row.original.mediaSource.id,
+            libraryId: row.original.id,
+          },
+        }).catch(console.error);
+      },
+      sx: {
+        cursor: 'pointer',
+      },
+    }),
     positionActionsColumn: 'last',
     ...tableSettings,
     state: {

@@ -1,5 +1,9 @@
-import type { ButtonProps, IconButtonProps } from '@mui/material';
-import { Button, IconButton } from '@mui/material';
+import type {
+  ButtonProps,
+  IconButtonProps,
+  MenuItemProps,
+} from '@mui/material';
+import { Button, IconButton, MenuItem } from '@mui/material';
 import type { LinkComponent } from '@tanstack/react-router';
 import { createLink } from '@tanstack/react-router';
 import React from 'react';
@@ -35,3 +39,17 @@ const CreatedIconButtonLinkComponent = createLink(MUIIconButtonLinkComponent);
 export const RouterIconButtonLink: LinkComponent<
   typeof MUIIconButtonLinkComponent
 > = (props) => <CreatedIconButtonLinkComponent {...props} />;
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface MUIMenuItemProps extends MenuItemProps<'a'> {}
+
+const MenuItemLinkComponent = React.forwardRef<
+  HTMLAnchorElement,
+  MUIMenuItemProps
+>((props, ref) => <MenuItem ref={ref} component="a" {...props} />);
+
+const CreatedMenuItemLinkComponent = createLink(MenuItemLinkComponent);
+
+export const MenuItemLink: LinkComponent<typeof MenuItemLinkComponent> = (
+  props,
+) => <CreatedMenuItemLinkComponent {...props} />;
