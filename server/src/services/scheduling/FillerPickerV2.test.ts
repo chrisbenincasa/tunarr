@@ -140,6 +140,7 @@ describe('FillerPickerV2', () => {
       expect(mockPlayHistoryDB.getFillerHistory).toHaveBeenCalledTimes(1);
       expect(mockPlayHistoryDB.getFillerHistory).toHaveBeenCalledWith(
         mockChannel.uuid,
+        expect.anything(),
       );
     });
 
@@ -543,18 +544,18 @@ describe('FillerPickerV2', () => {
       const filler = createFiller();
       filler.fillerContent = [program1, program2];
 
-      // random.bool returning true selects the list (phase 1), then the
-      // first eligible program from the shuffled list (phase 2).
+      // random.bool returning true selects the list (phase 1), then in
+      // phase 2 reservoir sampling replaces the pick on each iteration,
+      // so the last eligible program wins when bool always returns true.
       vi.mocked(random.bool).mockReturnValue(true);
 
       const result = await picker.pickFiller(mockChannel, [filler], 60000);
 
-      // Should pick the first program (shuffle is mocked as identity)
       expect(result.filler).not.toBeNull();
-      expect(result.filler?.uuid).toBe(program1.uuid);
+      expect(result.filler?.uuid).toBe(program2.uuid);
     });
 
-    it('normalizes time since played to max of FiveMinutesMillis', async () => {
+    it('normalizes time since played to max of cooldown * 1.2', async () => {
       const now = Date.now();
       const program1 = createProgram();
       const program2 = createProgram();
@@ -584,8 +585,8 @@ describe('FillerPickerV2', () => {
 
       await picker.pickFiller(mockChannel, [filler], 60000, now);
 
-      // Weights for programs should be similar since timeSince is capped
-      // (difference would only be from duration normalization if durations differ)
+      // Both programs are past the cooldown, so timeSince is capped at
+      // fillerRepeatCooldownMs * 1.2. Weights differ only by duration.
     });
   });
 

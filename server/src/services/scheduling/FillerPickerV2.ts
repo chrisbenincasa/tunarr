@@ -3,12 +3,13 @@ import { inject, injectable } from 'inversify';
 import { groupBy, isEmpty, maxBy, sumBy } from 'lodash-es';
 import { ProgramPlayHistoryDB } from '../../db/ProgramPlayHistoryDB.ts';
 import { ChannelOrm } from '../../db/schema/Channel.ts';
-import { ChannelFillerShowWithContent } from '../../db/schema/derivedTypes.ts';
 import {
-  FiveMinutesMillis,
-  OneDayMillis,
-} from '../../ffmpeg/builder/constants.ts';
+  ChannelFillerShowWithContent,
+  ProgramWithRelations,
+} from '../../db/schema/derivedTypes.ts';
+import { OneDayMillis } from '../../ffmpeg/builder/constants.ts';
 import { KEYS } from '../../types/inject.ts';
+import { OpenDateTimeRange } from '../../types/OpenDateTimeRange.ts';
 import { Maybe } from '../../types/util.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { loggingDef } from '../../util/logging/loggingDef.ts';
@@ -37,7 +38,7 @@ export class FillerPickerV2 implements IFillerPicker {
     channel: ChannelOrm,
     fillers: ChannelFillerShowWithContent[],
     maxDuration: number,
-    now = +dayjs(),
+    now: number = +dayjs(),
   ): Promise<FillerPickResult> {
     if (isEmpty(fillers)) {
       return Promise.resolve(EmptyFillerPickResult);
@@ -47,7 +48,11 @@ export class FillerPickerV2 implements IFillerPicker {
       channel.fillerRepeatCooldown ?? DefaultFillerCooldownMillis;
 
     const channelHistoryForFiller =
-      await this.programPlayHistoryDB.getFillerHistory(channel.uuid);
+      await this.programPlayHistoryDB.getFillerHistory(
+        channel.uuid,
+        OpenDateTimeRange.create(dayjs(now).subtract(2, 'days'), undefined) ??
+          undefined,
+      );
 
     const fillerPlayHistoryById = groupBy(
       channelHistoryForFiller,
@@ -163,6 +168,7 @@ export class FillerPickerV2 implements IFillerPicker {
     const fillerHistory = fillerPlayHistoryById[pickedFiller.fillerShow.uuid];
     const shuffledPrograms = random.shuffle([...pickedFiller.fillerContent]);
     let programTotalWeight = 0;
+    let pickedProgram: Maybe<ProgramWithRelations>;
 
     for (const program of shuffledPrograms) {
       if (program.duration > maxDuration) {
@@ -204,20 +210,27 @@ export class FillerPickerV2 implements IFillerPicker {
       }
 
       const normalizedSince = normalizeSince(
-        timeSincePlayed >= FiveMinutesMillis
-          ? FiveMinutesMillis
-          : timeSincePlayed,
+        // Cap input at the cooldown to treat all programs past the
+        // cooldown with equal staleness. Apply a slight factor
+        // increase to that to spread evenness a bit more among the
+        // other programs too.
+        Math.min(timeSincePlayed, fillerRepeatCooldownMs * 1.2),
       );
       const normalizedDuration = normalizeDuration(program.duration);
       const programWeight = normalizedSince + normalizedDuration;
       programTotalWeight += programWeight;
       if (this.weightedPick('program', programWeight, programTotalWeight)) {
-        return {
-          filler: program,
-          fillerListId: pickedFiller.fillerShowUuid,
-          minimumWait: 0,
-        };
+        pickedProgram = program;
       }
+      // Continue iterating — reservoir sampling requires seeing all candidates.
+    }
+
+    if (pickedProgram) {
+      return {
+        filler: pickedProgram,
+        fillerListId: pickedFiller.fillerShowUuid,
+        minimumWait: 0,
+      };
     }
 
     return {
@@ -237,11 +250,11 @@ export class FillerPickerV2 implements IFillerPicker {
 // Moving old DTV normalizer functions here. Slightly changing them to make them
 // more readable and less verbose
 function normalizeDuration(durationMs: number) {
-  let durationSeconds = durationMs / (60 * 1000);
-  if (durationSeconds >= 3.0) {
-    durationSeconds = 3.0 + Math.log(durationSeconds);
+  let durationMins = durationMs / (60 * 1000);
+  if (durationMins >= 3.0) {
+    durationMins = 3.0 + Math.log(durationMins);
   }
-  const y = 10000 * (Math.ceil(durationSeconds * 1000) + 1);
+  const y = 10000 * (Math.ceil(durationMins * 1000) + 1);
   return Math.ceil(y / 1000000) + 1;
 }
 
