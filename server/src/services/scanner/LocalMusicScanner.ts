@@ -1,11 +1,11 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import {
-    Genre,
-    MusicAlbumMetadata,
-    MusicArtist,
-    MusicArtistMetadata,
-    MusicTrackMetadata,
-    MusicTrackWithHierarchy,
+  Genre,
+  MusicAlbumMetadata,
+  MusicArtist,
+  MusicArtistMetadata,
+  MusicTrackMetadata,
+  MusicTrackWithHierarchy,
 } from '@tunarr/types';
 import glob from 'fast-glob';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
@@ -20,8 +20,8 @@ import { v4 } from 'uuid';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import {
-    IProgramDB,
-    ProgramCanonicalIdLookupResult,
+  IProgramDB,
+  ProgramCanonicalIdLookupResult,
 } from '../../db/interfaces/IProgramDB.ts';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
@@ -715,30 +715,18 @@ export class LocalMusicScanner extends FileSystemScanner {
   }
 
   private artistNfoToMetadata(artistNfo: MusicArtistNfo): MusicArtistMetadata {
-    // const releaseDate = artistNfo.formed
-    //   ? Result.attempt(() => dayjs(artistNfo.formed, 'YYYY-MM-DD')).orNull()
-    //   : null;
     return {
       uuid: v4(),
       summary: artistNfo.biography ?? null,
       plot: null,
-      // plot: artistNfo.plot ?? null,
       tagline: null,
-      // tagline: artistNfo.tagline ?? null,
       sourceType: 'local',
       identifiers: [],
       title: artistNfo.name ?? '',
-      // sortTitle: tvShowNfo.sortTitle ?? tvShowNfo.title ?? '',
       sortTitle: titleToSortTitle(artistNfo.name ?? ''),
       tags: [],
       type: 'artist',
       genres: artistNfo.genre ? artistNfo.genre.map((name) => ({ name })) : [],
-      // actors: mapNfoActors(artistNfo.actor),
-      // studios: [],
-      // rating: artistNfo.mpaa ?? null,
-      // releaseDate: releaseDate ? +releaseDate : null,
-      // releaseDateString: releaseDate?.format() ?? null,
-      // year: releaseDate?.year() ?? null,
       childCount: undefined,
       grandchildCount: undefined,
       artwork: [], // Added later
@@ -805,23 +793,14 @@ export class LocalMusicScanner extends FileSystemScanner {
       uuid: v4(),
       summary: null,
       plot: null,
-      // plot: artistNfo.plot ?? null,
       tagline: null,
-      // tagline: artistNfo.tagline ?? null,
       sourceType: 'local',
       identifiers: [],
       title: albumNfo.title ?? '',
-      // sortTitle: tvShowNfo.sortTitle ?? tvShowNfo.title ?? '',
       sortTitle: titleToSortTitle(albumNfo.title ?? ''),
       tags: [],
       type: 'album',
       genres: albumNfo.genre ? albumNfo.genre.map((name) => ({ name })) : [],
-      // actors: mapNfoActors(artistNfo.actor),
-      // studios: [],
-      // rating: artistNfo.mpaa ?? null,
-      // releaseDate: releaseDate ? +releaseDate : null,
-      // releaseDateString: releaseDate?.format() ?? null,
-      // year: releaseDate?.year() ?? null,
       childCount: undefined,
       grandchildCount: undefined,
       artwork: [], // Added later

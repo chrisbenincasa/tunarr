@@ -124,7 +124,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
       },
       onError(_req, _res, err, done) {
-        console.error(err);
+        logger.error(err);
         done();
       },
     },

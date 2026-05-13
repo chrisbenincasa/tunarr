@@ -1,5 +1,6 @@
 import { checkNewPlexServers, plexLoginFlow } from '@/helpers/plexLogin.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import { isEmpty } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback } from 'react';
@@ -39,21 +40,23 @@ export const usePlexLogin = () => {
           });
         }
 
-        connections.forEach(({ server, connection }) =>
-          addPlexServerMutation.mutate({
-            body: {
-              name: server.name,
-              uri: connection.uri,
-              accessToken: server.accessToken,
-              clientIdentifier: server.clientIdentifier,
-              // These will be backfilled later, they require use of a different API
-              userId: null,
-              username: null,
-              type: 'plex',
-              pathReplacements: [],
-            },
-          }),
-        );
+        connections.forEach(({ server, connection }) => {
+          if (isNonEmptyString(server.accessToken)) {
+            addPlexServerMutation.mutate({
+              body: {
+                name: server.name,
+                uri: connection.uri,
+                accessToken: server.accessToken,
+                clientIdentifier: server.clientIdentifier,
+                // These will be backfilled later, they require use of a different API
+                userId: null,
+                username: null,
+                type: 'plex',
+                pathReplacements: [],
+              },
+            });
+          }
+        });
       })
       .catch(console.error);
   }, [addPlexServerMutation, snackbar]);

@@ -15,6 +15,7 @@ import {
   ifDefined,
   inConstArr,
   isHttpUrl,
+  isNonEmptyArray,
   isNonEmptyString,
 } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -41,6 +42,7 @@ import {
   first,
   head,
   isNil,
+  isUndefined,
   map,
   trimStart,
   values,
@@ -62,6 +64,7 @@ import { ForceScanCommand } from '../commands/ForceScanCommand.ts';
 import { GetProgramGroupingById } from '../commands/GetProgramGroupingById.ts';
 import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
+import { BackfillPlexClientIdentifierCommand } from '../commands/media_source/BackfillPlexClientIdentifier.ts';
 import { SearchProgramsCommand } from '../commands/SearchProgramsCommand.ts';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { EmbyApiClient } from '../external/emby/EmbyApiClient.ts';
@@ -399,6 +402,18 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           // TODO: use API schema
           artworkType: z.enum(ArtworkTypes),
         }),
+        querystring: z.object({
+          fallbackArtworkTypes: z
+            .array(z.enum(ArtworkTypes))
+            .optional()
+            .or(
+              z
+                .string()
+                .optional()
+                .transform((s) => s?.split(','))
+                .pipe(z.array(z.enum(ArtworkTypes)).optional()),
+            ),
+        }),
         response: {
           200: z.any(),
           404: z.void(),
@@ -420,9 +435,25 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }
       }
 
-      const art = program.artwork?.find(
+      if (isUndefined(program.artwork)) {
+        return res.status(404).send();
+      }
+
+      let art = program.artwork.find(
         (art) => art.artworkType === req.params.artworkType,
       );
+
+      if (!art && isNonEmptyArray(req.query.fallbackArtworkTypes)) {
+        for (const fallbackType of req.query.fallbackArtworkTypes) {
+          const fallback = program.artwork.find(
+            (art) => art.artworkType === fallbackType,
+          );
+          if (fallback) {
+            art = fallback;
+            break;
+          }
+        }
+      }
 
       if (!art) {
         return res.status(404).send();
@@ -905,7 +936,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         response: {
           200: z.object({ url: z.string() }),
           302: z.void(),
-          404: z.void(),
+          404: z.string(),
           405: z.void(),
         },
       },
@@ -915,7 +946,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         req.params.id,
       );
       if (isNil(program)) {
-        return res.status(404).send();
+        return res.status(404).send(`Program ${req.params.id} not found.`);
       }
 
       const mediaSources = await req.serverCtx.mediaSourceDB.getAll();
@@ -925,7 +956,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       );
 
       if (!externalId) {
-        return res.status(404).send();
+        return res
+          .status(404)
+          .send(`Could not find viable external ID for program`);
       }
 
       const server = find(
@@ -941,12 +974,31 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
       switch (externalId.sourceType) {
         case 'plex': {
-          if (isNil(server.clientIdentifier)) {
-            return res.status(404).send();
+          let clientIdentifier = server.clientIdentifier;
+          if (!isNonEmptyString(clientIdentifier)) {
+            const backfillResult = await container
+              .get(BackfillPlexClientIdentifierCommand)
+              .run({ mediaSourceId: server.uuid });
+            if (backfillResult.isFailure()) {
+              logger.warn(
+                backfillResult.error,
+                'Error while trying to backfill client identifier for Plex server',
+              );
+            } else {
+              clientIdentifier = backfillResult.get() ?? null;
+            }
+          }
+
+          if (!isNonEmptyString(clientIdentifier)) {
+            return res
+              .status(404)
+              .send(
+                `Plex media source ${server.uuid} is missing a server identifier`,
+              );
           }
 
           const url = `${server.uri}/web/index.html#!/server/${
-            server.clientIdentifier
+            clientIdentifier
           }/details?key=${encodeURIComponent(
             `/library/metadata/${program.externalKey}`,
           )}&X-Plex-Token=${server.accessToken}`;

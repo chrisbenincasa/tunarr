@@ -3093,7 +3093,9 @@ export type CreateChannelV2Errors = {
     /**
      * Default Response
      */
-    400: string;
+    400: {
+        error: string;
+    };
     /**
      * Default Response
      */
@@ -3451,12 +3453,22 @@ export type PutApiChannelsByIdErrors = {
     /**
      * Default Response
      */
-    404: unknown;
+    400: {
+        error: string;
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
     /**
      * Default Response
      */
     500: unknown;
 };
+
+export type PutApiChannelsByIdError = PutApiChannelsByIdErrors[keyof PutApiChannelsByIdErrors];
 
 export type PutApiChannelsByIdResponses = {
     /**
@@ -8197,7 +8209,9 @@ export type GetApiProgramsByIdArtworkByArtworkTypeData = {
         id: string;
         artworkType: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
     };
-    query?: never;
+    query?: {
+        fallbackArtworkTypes?: Array<'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape'> | string;
+    };
     url: '/api/programs/{id}/artwork/{artworkType}';
 };
 
@@ -8319,12 +8333,14 @@ export type GetApiProgramsByIdExternalLinkErrors = {
     /**
      * Default Response
      */
-    404: unknown;
+    404: string;
     /**
      * Default Response
      */
     405: unknown;
 };
+
+export type GetApiProgramsByIdExternalLinkError = GetApiProgramsByIdExternalLinkErrors[keyof GetApiProgramsByIdExternalLinkErrors];
 
 export type GetApiProgramsByIdExternalLinkResponses = {
     /**
@@ -8475,477 +8491,6 @@ export type PostApiProgramsByIdScanResponses = {
      * Default Response
      */
     202: unknown;
-};
-
-export type GetApiDebugJellyfinLibrariesData = {
-    body?: never;
-    path?: never;
-    query: {
-        userId?: string;
-        uri: string;
-        apiKey: string;
-    };
-    url: '/api/debug/jellyfin/libraries';
-};
-
-export type GetApiDebugJellyfinLibrariesResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugJellyfinLibraryItemsData = {
-    body?: never;
-    path?: never;
-    query: {
-        uri: string;
-        parentId?: string | null;
-        offset?: number;
-        limit?: number;
-        apiKey: string;
-    };
-    url: '/api/debug/jellyfin/library/items';
-};
-
-export type GetApiDebugJellyfinLibraryItemsResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugJellyfinMatchProgramByIdData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/debug/jellyfin/match_program/{id}';
-};
-
-export type GetApiDebugJellyfinMatchProgramByIdResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugJellyfinByLibraryIdEnumerateData = {
-    body?: never;
-    path: {
-        libraryId: string;
-    };
-    query?: never;
-    url: '/api/debug/jellyfin/{libraryId}/enumerate';
-};
-
-export type GetApiDebugJellyfinByLibraryIdEnumerateResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugStreamsOfflineData = {
-    body?: never;
-    path?: never;
-    query?: {
-        duration?: number;
-    };
-    url: '/api/debug/streams/offline';
-};
-
-export type GetApiDebugStreamsOfflineResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugStreamsErrorData = {
-    body?: never;
-    path?: never;
-    query?: {
-        channelId?: string | number;
-    };
-    url: '/api/debug/streams/error';
-};
-
-export type GetApiDebugStreamsErrorResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugStreamsRandomData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/streams/random';
-};
-
-export type GetApiDebugStreamsRandomResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugStreamsProgramsByIdData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: {
-        start?: 'random' | number;
-    };
-    url: '/api/debug/streams/programs/{id}';
-};
-
-export type GetApiDebugStreamsProgramsByIdResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugFfmpegProbeData = {
-    body?: never;
-    path?: never;
-    query: {
-        path: string;
-    };
-    url: '/api/debug/ffmpeg/probe';
-};
-
-export type GetApiDebugFfmpegProbeResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugFfmpegCapabilitiesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/ffmpeg/capabilities';
-};
-
-export type GetApiDebugFfmpegCapabilitiesResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugHeapData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/heap';
-};
-
-export type GetApiDebugHeapResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugLogData = {
-    body?: never;
-    path?: never;
-    query?: {
-        level?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
-        log?: string;
-    };
-    url: '/api/debug/log';
-};
-
-export type GetApiDebugLogResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugHelpersPlayingAtData = {
-    body?: never;
-    path?: never;
-    query: {
-        channelId: number | string;
-        ts?: number;
-    };
-    url: '/api/debug/helpers/playing_at';
-};
-
-export type GetApiDebugHelpersPlayingAtResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugHelpersCreateGuideData = {
-    body?: never;
-    path?: never;
-    query: {
-        channelId: string;
-        live: boolean;
-        startTime?: number;
-        endTime?: number;
-    };
-    url: '/api/debug/helpers/create_guide';
-};
-
-export type GetApiDebugHelpersCreateGuideResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugHelpersChannelsByIdBuildGuideData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query: {
-        from: number;
-        to: number;
-    };
-    url: '/api/debug/helpers/channels/{id}/build_guide';
-};
-
-export type GetApiDebugHelpersChannelsByIdBuildGuideResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugHelpersBuildGuideData = {
-    body?: never;
-    path?: never;
-    query?: {
-        from?: unknown;
-        to?: unknown;
-        includePrograms?: boolean;
-    };
-    url: '/api/debug/helpers/build_guide';
-};
-
-export type GetApiDebugHelpersBuildGuideResponses = {
-    /**
-     * Default Response
-     */
-    200: Array<{
-        icon?: {
-            path: string;
-            width: number;
-            duration: number;
-            position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-            useDefaultIconFallback?: boolean;
-        };
-        name: string;
-        number: number;
-        id: string;
-        programs: Array<{
-            type: 'content';
-            duration: number;
-            icon?: string;
-            id: string;
-            startOffsetMs?: number;
-            program: TerminalProgram;
-            start: number;
-            stop: number;
-            isPaused: boolean;
-            timeRemaining?: number;
-        } | {
-            type: 'custom';
-            duration: number;
-            icon?: string;
-            id: string;
-            customShowId: string;
-            index: number;
-            program?: {
-                type: 'content';
-                duration: number;
-                icon?: string;
-                id: string;
-                startOffsetMs?: number;
-                program: TerminalProgram;
-            };
-            start: number;
-            stop: number;
-            isPaused: boolean;
-            timeRemaining?: number;
-        } | {
-            type: 'redirect';
-            duration: number;
-            icon?: string;
-            channel: string;
-            channelNumber: number;
-            channelName: string;
-            start: number;
-            stop: number;
-            isPaused: boolean;
-            timeRemaining?: number;
-        } | {
-            type: 'flex';
-            duration: number;
-            icon?: string;
-            fillerConfig?: {
-                fillerListIds?: Array<string>;
-                fillerRepeatCooldownMs?: number;
-                fillerListCooldownOverrides?: {
-                    [key: string]: number;
-                };
-                origin?: 'flex' | 'midroll';
-            };
-            start: number;
-            stop: number;
-            isPaused: boolean;
-            timeRemaining?: number;
-            title: string;
-        }>;
-    }>;
-};
-
-export type GetApiDebugHelpersBuildGuideResponse = GetApiDebugHelpersBuildGuideResponses[keyof GetApiDebugHelpersBuildGuideResponses];
-
-export type GetApiDebugHelpersRandomFillerData = {
-    body?: never;
-    path?: never;
-    query: {
-        channelId: string;
-        live: boolean;
-        startTime?: number;
-        endTime?: number;
-        maxDuration: number;
-    };
-    url: '/api/debug/helpers/random_filler';
-};
-
-export type GetApiDebugHelpersRandomFillerResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugDbBackupData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/db/backup';
-};
-
-export type GetApiDebugDbBackupResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugChannelsReloadAllLineupsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/channels/reload_all_lineups';
-};
-
-export type GetApiDebugChannelsReloadAllLineupsResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugSubprocessStatusData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/subprocess/status';
-};
-
-export type GetApiDebugSubprocessStatusResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugSubprocessRestartData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/debug/subprocess/restart';
-};
-
-export type GetApiDebugSubprocessRestartResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdScanData = {
-    body?: never;
-    path: {
-        mediaSourceId: string;
-    };
-    query?: {
-        pathFilter?: string;
-    };
-    url: '/api/debug/media_sources/{mediaSourceId}/scan';
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdScanResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanData = {
-    body?: never;
-    path: {
-        mediaSourceId: string;
-        libraryId: string;
-    };
-    query?: {
-        pathFilter?: string;
-    };
-    url: '/api/debug/media_sources/{mediaSourceId}/libraries/{libraryId}/scan';
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdScanCollectionsData = {
-    body?: never;
-    path: {
-        mediaSourceId: string;
-    };
-    query?: {
-        pathFilter?: string;
-    };
-    url: '/api/debug/media_sources/{mediaSourceId}/scan-collections';
-};
-
-export type GetApiDebugMediaSourcesByMediaSourceIdScanCollectionsResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
 };
 
 export type GetApiMediaSourcesData = {

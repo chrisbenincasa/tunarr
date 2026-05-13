@@ -466,12 +466,9 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
     return {
       identifiers,
       originalTitle: nfo.originaltitle ?? null,
-      // rating: nfo.mpaa ?? null,
-      // summary: null,
       releaseDate: releaseDate ? +releaseDate : null,
       releaseDateString: releaseDate?.format() ?? null,
       sourceType: 'local',
-      // tagline: nfo.tagline ?? null,
       title: nfo.title,
       sortTitle: titleToSortTitle(nfo.title),
       uuid: v4(),

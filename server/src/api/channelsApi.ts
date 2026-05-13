@@ -213,7 +213,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         body: CreateChannelRequestSchema,
         response: {
           201: ChannelSchema,
-          400: z.string(),
+          400: z.object({ error: z.string() }),
           500: z.object({}),
         },
       },
@@ -227,11 +227,20 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             req.serverCtx.channelDB.copyChannel(body.channelId),
           );
           break;
-        case 'new':
+        case 'new': {
+          const transcodeConfig = await req.serverCtx.transcodeConfigDB.getById(
+            body.channel.transcodeConfigId,
+          );
+          if (!transcodeConfig) {
+            return res.status(400).send({
+              error: `Transcode config with ID ${body.channel.transcodeConfigId} not found`,
+            });
+          }
           insertResult = await Result.attemptAsync(() =>
             req.serverCtx.channelDB.saveChannel(body.channel),
           );
           break;
+        }
       }
 
       if (insertResult.isFailure()) {
@@ -265,7 +274,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         params: z.object({ id: z.string() }),
         response: {
           200: ChannelSchema,
-          404: z.void(),
+          400: z.object({ error: z.string() }),
+          404: z.object({ error: z.string() }),
           500: z.void(),
         },
       },
@@ -274,64 +284,73 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       try {
         const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
 
-        if (!isNil(channel)) {
-          const channelUpdate = {
-            ...req.body,
-          };
-
-          // If icon is being cleared and the old icon was a local upload, delete it from disk
-          try {
-            await deleteIfLocalAndCleared(
-              channel.icon?.path ?? '',
-              req.body.icon?.path ?? '',
-              globalOptions().databaseDirectory,
-            );
-          } catch (e) {
-            logger.warn(e, 'Could not delete old channel icon file from disk');
-          }
-
-          const updatedChannel = await req.serverCtx.channelDB.updateChannel(
-            channel.uuid,
-            channelUpdate,
-          );
-          const subtitlePreferences =
-            await req.serverCtx.channelDB.getChannelSubtitlePreferences(
-              channel.uuid,
-            );
-
-          const needsGuideRegen =
-            channel.guideMinimumDuration !==
-              updatedChannel.channel.guideMinimumDuration ||
-            channel.startTime !== updatedChannel.channel.startTime ||
-            isDefined(req.body.onDemand);
-
-          if (needsGuideRegen) {
-            await container
-              .get<RegenerateChannelLineupCommand>(
-                RegenerateChannelLineupCommand,
-              )
-              .execute({ channelId: channel.uuid });
-          } else {
-            await req.serverCtx.guideService.updateCachedChannel(channel.uuid);
-          }
-
-          await req.serverCtx.m3uService.regenerateCache();
-
-          const apiChannel = omit(
-            dbChannelToApiChannel({
-              ...updatedChannel,
-              channel: {
-                ...updatedChannel.channel,
-                subtitlePreferences,
-              },
-            }),
-            'programs',
-          );
-
-          return res.send(apiChannel);
-        } else {
-          return res.status(404).send();
+        if (isNil(channel)) {
+          return res
+            .status(404)
+            .send({ error: `Channel with ID ${req.params.id} not found.` });
         }
+
+        const transcodeConfig = await req.serverCtx.transcodeConfigDB.getById(
+          req.body.transcodeConfigId,
+        );
+        if (!transcodeConfig) {
+          return res.status(400).send({
+            error: `Transcode config with ID ${req.body.transcodeConfigId} not found`,
+          });
+        }
+
+        const channelUpdate = {
+          ...req.body,
+        };
+
+        // If icon is being cleared and the old icon was a local upload, delete it from disk
+        try {
+          await deleteIfLocalAndCleared(
+            channel.icon?.path ?? '',
+            req.body.icon?.path ?? '',
+            globalOptions().databaseDirectory,
+          );
+        } catch (e) {
+          logger.warn(e, 'Could not delete old channel icon file from disk');
+        }
+
+        const updatedChannel = await req.serverCtx.channelDB.updateChannel(
+          channel.uuid,
+          channelUpdate,
+        );
+        const subtitlePreferences =
+          await req.serverCtx.channelDB.getChannelSubtitlePreferences(
+            channel.uuid,
+          );
+
+        const needsGuideRegen =
+          channel.guideMinimumDuration !==
+            updatedChannel.channel.guideMinimumDuration ||
+          channel.startTime !== updatedChannel.channel.startTime ||
+          isDefined(req.body.onDemand);
+
+        if (needsGuideRegen) {
+          await container
+            .get<RegenerateChannelLineupCommand>(RegenerateChannelLineupCommand)
+            .execute({ channelId: channel.uuid });
+        } else {
+          await req.serverCtx.guideService.updateCachedChannel(channel.uuid);
+        }
+
+        await req.serverCtx.m3uService.regenerateCache();
+
+        const apiChannel = omit(
+          dbChannelToApiChannel({
+            ...updatedChannel,
+            channel: {
+              ...updatedChannel.channel,
+              subtitlePreferences,
+            },
+          }),
+          'programs',
+        );
+
+        return res.send(apiChannel);
       } catch (err) {
         logger.error(err, req.routeOptions.config.url);
         return res.status(500).send();

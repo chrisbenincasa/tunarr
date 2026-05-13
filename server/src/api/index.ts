@@ -16,7 +16,8 @@ import path from 'node:path';
 import { z } from 'zod/v4';
 import { container } from '../container.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
-import { isNonEmptyString, run } from '../util/index.js';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
+import { isDev, isNonEmptyString, run } from '../util/index.js';
 import { channelsApi } from './channelsApi.js';
 import { nativePlaybackApi } from './nativePlaybackApi.js';
 import { CreditsApiController } from './creditsApi.ts';
@@ -68,7 +69,6 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(customShowsApiV2)
     .register(fillerListsApi)
     .register(programmingApi)
-    .register(debugApi)
     .register(metadataApiRouter)
     .register(mediaSourceRouter)
     .register(ffmpegSettingsRouter)
@@ -88,6 +88,10 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(container.get(SmartCollectionsApiController).mount)
     .register(container.get(CreditsApiController).mount)
     .register(container.get(ProgramGroupingApiController).mount);
+
+  if (isDev || getBooleanEnvVar(TUNARR_ENV_VARS.MOUNT_DEBUG_ENDPOINTS, false)) {
+    await fastify.register(debugApi);
+  }
 
   fastify.get(
     '/version',

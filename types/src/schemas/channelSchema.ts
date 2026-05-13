@@ -145,7 +145,7 @@ export const ChannelSchema = z.object({
   }),
   programCount: z.number(),
   streamMode: ChannelStreamModeSchema,
-  transcodeConfigId: z.string(),
+  transcodeConfigId: z.uuid(),
   sessions: z.array(ChannelSessionSchema).optional(),
   subtitlesEnabled: z.boolean(),
   subtitlePreferences: z.array(SubtitlePreference).nonempty().optional(),

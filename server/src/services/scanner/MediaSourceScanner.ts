@@ -1,5 +1,6 @@
 import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
 import { InjectLogger } from '@/util/inject.js';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import { isEmpty } from 'lodash-es';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
@@ -14,6 +15,7 @@ import type {
 } from '../../db/schema/MediaSource.ts';
 import type { QueryResult } from '../../external/BaseApiClient.ts';
 import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
+import { Result } from '../../types/result.ts';
 import { devAssert } from '../../util/debug.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 
@@ -74,7 +76,7 @@ export abstract class MediaSourceScanner<
   abstract readonly type: MediaLibraryTypeT;
   abstract readonly mediaSourceType: MediaSourceTypeT;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     protected mediaSourceDB: MediaSourceDB,
@@ -167,8 +169,8 @@ export abstract class MediaSourceScanner<
         continue;
       }
 
-      const fullPath =
-        await this.externalSubtitleDownloader.downloadSubtitlesIfNecessary(
+      const fullPathResult = await Result.attemptAsync(() =>
+        this.externalSubtitleDownloader.downloadSubtitlesIfNecessary(
           {
             externalKey: program.externalKey,
             externalSourceId: program.mediaSourceId,
@@ -183,17 +185,28 @@ export abstract class MediaSourceScanner<
               externalItemId: program.externalKey,
               streamIndex: stream.streamIndex ?? 0,
             }),
-        );
+        ),
+      );
 
-      if (fullPath) {
-        stream.path = fullPath;
-        // return details;
+      if (fullPathResult.isFailure()) {
+        this.logger.warn(
+          fullPathResult.error,
+          'Error while locating / downloading external subtitles for item: %j',
+          program,
+        );
+        return;
       }
 
-      this.logger.warn(
-        'Skipping external subtitles at index %d because download failed. Please check logs and file an issue for assistance.',
-        stream.streamIndex ?? -1,
-      );
+      const fullPath = fullPathResult.get();
+
+      if (isNonEmptyString(fullPath)) {
+        this.logger.debug(
+          'Overwriting subtitle stream path to local cached path: original = %s, local cache = %s',
+          stream.path ?? '',
+          fullPath,
+        );
+        stream.path = fullPath;
+      }
 
       return;
     }

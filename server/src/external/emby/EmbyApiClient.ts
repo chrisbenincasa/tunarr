@@ -102,14 +102,14 @@ import { MediaSourceApiClient } from '../MediaSourceApiClient.ts';
 const RequiredLibraryFields = [
   'Path',
   'Genres',
-  // 'Tags',
+  'Tags',
   'DateCreated',
   'Etag',
   'Overview',
   'Taglines',
   'Studios',
   'People',
-  // 'OfficialRating',
+  'OfficialRating',
   'ProviderIds',
   'Chapters',
   'PremiereDate',
@@ -433,6 +433,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     extraParams: EmbyGetItemsQuery = {},
     sortBy: NonEmptyArray<EmbyItemSortBy> = ['SortName', 'ProductionYear'],
   ) {
+    console.log('getting items', libraryId, itemTypes);
     return (
       await this.getRawItems(
         userId,
@@ -1197,7 +1198,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       rating: movie.OfficialRating ?? null,
       sourceType: 'emby',
       tagline: find(movie.Taglines, isNonEmptyString) ?? null,
-      tags: movie.Tags?.filter(isNonEmptyString) ?? [],
+      tags: (movie.Tags?.filter(isNonEmptyString) ?? []).concat(
+        movie.TagItems?.map((item) => item.Name).filter(isNonEmptyString) ?? [],
+      ),
       summary: null,
       type: 'movie',
       mediaItem,
@@ -1373,7 +1376,10 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       rating: series.OfficialRating ?? null,
       sourceType: 'emby',
       tagline: find(series.Taglines, isNonEmptyString) ?? null,
-      tags: series.Tags?.filter(isNonEmptyString) ?? [],
+      tags: (series.Tags?.filter(isNonEmptyString) ?? []).concat(
+        series.TagItems?.map((item) => item.Name).filter(isNonEmptyString) ??
+          [],
+      ),
       summary: null,
       type: 'show',
       // mediaItem,
@@ -1420,7 +1426,10 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       // rating: season.OfficialRating ?? null,
       sourceType: 'emby',
       tagline: find(season.Taglines, isNonEmptyString) ?? null,
-      tags: season.Tags?.filter(isNonEmptyString) ?? [],
+      tags: (season.Tags?.filter(isNonEmptyString) ?? []).concat(
+        season.TagItems?.map((item) => item.Name).filter(isNonEmptyString) ??
+          [],
+      ),
       summary: null,
       type: 'season',
       // mediaItem,
@@ -1530,7 +1539,10 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       // rating: episode.OfficialRating ?? null,
       sourceType: 'emby',
       // tagline: find(episode.Taglines, isNonEmptyString) ?? null,
-      tags: episode.Tags?.filter(isNonEmptyString) ?? [],
+      tags: (episode.Tags?.filter(isNonEmptyString) ?? []).concat(
+        episode.TagItems?.map((item) => item.Name).filter(isNonEmptyString) ??
+          [],
+      ),
       summary: episode.Overview ?? null,
       type: 'episode',
       mediaItem,
@@ -1681,7 +1693,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       actors: [],
       directors: [],
       genres: [],
-      tags: track.Tags?.filter(isNonEmptyString) ?? [],
+      tags: (track.Tags?.filter(isNonEmptyString) ?? []).concat(
+        track.TagItems?.map((item) => item.Name).filter(isNonEmptyString) ?? [],
+      ),
       year: track.ProductionYear ?? parsedReleaseDate?.year() ?? null,
       releaseDate: parsedReleaseDate?.valueOf() ?? null,
       releaseDateString: parsedReleaseDate?.format() ?? null,
@@ -1766,7 +1780,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       // rating: video.OfficialRating ?? null,
       sourceType: 'emby',
       // tagline: find(video.Taglines, isNonEmptyString) ?? null,
-      tags: video.Tags?.filter(isNonEmptyString) ?? [],
+      tags: (video.Tags?.filter(isNonEmptyString) ?? []).concat(
+        video.TagItems?.map((item) => item.Name).filter(isNonEmptyString) ?? [],
+      ),
       // summary: null,
       type: 'music_video',
       mediaItem,
@@ -1836,7 +1852,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       // rating: video.OfficialRating ?? null,
       sourceType: 'emby',
       // tagline: find(video.Taglines, isNonEmptyString) ?? null,
-      tags: video.Tags?.filter(isNonEmptyString) ?? [],
+      tags: (video.Tags?.filter(isNonEmptyString) ?? []).concat(
+        video.TagItems?.map((item) => item.Name).filter(isNonEmptyString) ?? [],
+      ),
       // summary: null,
       type: 'other_video',
       mediaItem,

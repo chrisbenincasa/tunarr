@@ -287,6 +287,18 @@ export class MediaSourceDB {
     }
   }
 
+  async setClientIdentifier(
+    mediaSourceId: MediaSourceId,
+    clientIdentifier: string,
+  ) {
+    return await this.drizzleDB
+      .update(MediaSource)
+      .set({
+        clientIdentifier,
+      })
+      .where(eq(MediaSource.uuid, mediaSourceId));
+  }
+
   async setMediaSourceUserInfo(
     mediaSourceId: MediaSourceId,
     info: MediaSourceUserInfo,
@@ -352,6 +364,8 @@ export class MediaSourceDB {
                 : null,
           accessToken: server.type === 'local' ? '' : server.accessToken,
           mediaType: server.type === 'local' ? server.mediaType : null,
+          clientIdentifier:
+            server.type === 'plex' ? server.clientIdentifier : null,
         } satisfies typeof MediaSource.$inferInsert)
         .returning({ uuid: MediaSource.uuid })
         .get();

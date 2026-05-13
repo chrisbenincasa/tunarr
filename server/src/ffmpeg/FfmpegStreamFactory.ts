@@ -29,6 +29,7 @@ import { isImageBasedSubtitle } from '../stream/util.ts';
 import { KEYS } from '../types/inject.ts';
 import { assisted, injected } from '../util/assistedInject.ts';
 import { InjectLogger } from '../util/inject.ts';
+import { loggingDef } from '../util/logging/loggingDef.ts';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
@@ -89,6 +90,7 @@ import { IFFMPEG } from './ffmpegBase.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
 
 @injectable()
+@loggingDef({ category: 'streaming' })
 export class FfmpegStreamFactory extends IFFMPEG {
   @InjectLogger() declare private readonly logger: Logger;
 
@@ -651,6 +653,17 @@ export class FfmpegStreamFactory extends IFFMPEG {
           });
         }
       }
+    } else if (!this.channel.subtitlesEnabled) {
+      this.logger.trace(
+        'Channel %s (number = %d) does not have subtitles enabled. Skipping subtitles.',
+        this.channel.uuid,
+        this.channel.number,
+      );
+    } else if (!streamDetails.subtitleDetails) {
+      this.logger.debug(
+        'Program %s has no subtitle streams to choose from.',
+        lineupItem.program.uuid,
+      );
     }
 
     const effectiveHwAccel = isPassthrough

@@ -45,7 +45,7 @@ import type { DrizzleDBAccess } from '../schema/index.ts';
 
 @injectable()
 export class ProgramGroupingRepository {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.Database) private db: Kysely<DB>,
@@ -416,8 +416,6 @@ export class ProgramGroupingRepository {
         withRelations.artwork = mapRawJsonRelationResult(artwork, Artwork);
         return withRelations;
       });
-
-      console.log(programs);
 
       return {
         total: sum((await cq).map(({ count }) => count)),

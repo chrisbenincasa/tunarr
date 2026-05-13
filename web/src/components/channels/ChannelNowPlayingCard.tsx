@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { ZoomIn } from '@mui/icons-material';
 import {
   Box,
@@ -13,9 +14,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Trans } from '@lingui/react/macro';
 import { useQueryClient } from '@tanstack/react-query';
 import { createExternalId } from '@tunarr/shared';
+import type { MediaArtwork } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
 import { capitalize, isNil } from 'lodash-es';
@@ -117,7 +118,38 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
     }
 
     if (program.program.sourceType === 'local') {
-      return `${backendUri}/api/programs/${extractProgramGrandparent(program.program)?.uuid}/artwork/fanart`;
+      // Temporary workaround, real fix on "dev"
+      const [id, artworkType, fallbackTypes] = match([
+        program.program,
+        extractProgramGrandparent(program.program),
+      ])
+        .returnType<[string, MediaArtwork['type'], MediaArtwork['type'][]]>()
+        // We don't have enough type info to know here.
+        .with([{ type: 'episode' }, P.nonNullable], ([_, show]) => [
+          show.uuid,
+          'fanart',
+          ['poster'],
+        ])
+        .with([{ type: 'episode' }, P._], ([ep, _]) => [
+          ep.uuid,
+          'thumbnail',
+          [],
+        ])
+        .with([{ type: 'track' }, P.nonNullable], ([_, artist]) => [
+          artist.uuid,
+          'banner',
+          ['fanart', 'poster'],
+        ])
+        .with([{ type: 'movie' }, P._], ([movie, _]) => [
+          movie.uuid,
+          'banner',
+          ['fanart', 'poster'],
+        ])
+        .otherwise(([other, _]) => [other.uuid, 'fanart', ['poster']]);
+      const fallbackParts =
+        fallbackTypes.length === 0 ? '' : `${fallbackTypes.join(',')}`;
+
+      return `${backendUri}/api/programs/${id}/artwork/${artworkType}?fallbackArtworkTypes=${fallbackParts}`;
     }
 
     const id =

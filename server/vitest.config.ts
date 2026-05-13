@@ -32,6 +32,9 @@ export default defineConfig({
     },
     silent: true,
     reporters: ['dot'],
+    env: {
+      NODE_ENV: 'test',
+    },
   },
   define: {
     'import.meta.vitest': false,
