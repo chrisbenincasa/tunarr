@@ -23,7 +23,6 @@ import { injectable } from 'inversify';
 import { isUndefined } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
-import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import { isImageBasedSubtitle } from '../stream/util.ts';
 import { KEYS } from '../types/inject.ts';
@@ -34,7 +33,6 @@ import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator
 import { FfmpegProcess } from './FfmpegProcess.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
 import { StreamSelector } from './StreamSelector.ts';
-import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
 import {
   AudioStream,
   EmbeddedSubtitleStream,
@@ -101,7 +99,6 @@ export class FfmpegStreamFactory extends IFFMPEG {
     @injected(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @injected(KEYS.PipelineBuilderFactory)
     private pipelineBuilderFactory: PipelineBuilderFactory,
-    @injected(KEYS.ChannelDB) private channelDB: IChannelDB,
     @injected(FeatureFlagService)
     private featureFlagService: FeatureFlagService,
     @injected(StreamSelector) private streamSelector: StreamSelector,
@@ -452,6 +449,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
             lineupItem,
             audioStreams: streamDetails.audioDetails,
             subtitleStreams: streamDetails.subtitleDetails ?? [],
+            hints: { preferTextBased: true },
           });
 
         audioInput = new AudioInputSource(
@@ -532,24 +530,21 @@ export class FfmpegStreamFactory extends IFFMPEG {
       // sidecar (Convert) is available since we're not re-encoding video for
       // burn-in.
       if (
-        isDefined(streamDetails.subtitleDetails) &&
-        this.channel.subtitlesEnabled
+        isDefined(streamDetails.audioDetails) &&
+        isDefined(streamDetails.subtitleDetails)
       ) {
         const sidecarEnabled = this.featureFlagService.get(
           'webvttSidecarEnabled',
         );
 
-        const subtitlePreferences =
-          await this.channelDB.getChannelSubtitlePreferences(this.channel.uuid);
-
-        const pickedSubtitleStream = await SubtitleStreamPicker.pickSubtitles(
-          subtitlePreferences,
-          lineupItem,
-          streamDetails.subtitleDetails,
-          // In copy-all mode, always prefer text-based subs for sidecar
-          // since burn-in is not available.
-          { preferTextBased: isPassthrough || sidecarEnabled },
-        );
+        const { subtitleStream: pickedSubtitleStream } =
+          await this.streamSelector.selectAudioAndSubtitleStreams({
+            channel: this.channel,
+            lineupItem,
+            audioStreams: streamDetails.audioDetails,
+            subtitleStreams: streamDetails.subtitleDetails,
+            hints: sidecarEnabled ? { preferTextBased: true } : undefined,
+          });
 
         if (pickedSubtitleStream) {
           this.logger.trace('Using subtitle stream: %O', pickedSubtitleStream);
@@ -653,17 +648,6 @@ export class FfmpegStreamFactory extends IFFMPEG {
           });
         }
       }
-    } else if (!this.channel.subtitlesEnabled) {
-      this.logger.trace(
-        'Channel %s (number = %d) does not have subtitles enabled. Skipping subtitles.',
-        this.channel.uuid,
-        this.channel.number,
-      );
-    } else if (!streamDetails.subtitleDetails) {
-      this.logger.debug(
-        'Program %s has no subtitle streams to choose from.',
-        lineupItem.program.uuid,
-      );
     }
 
     const effectiveHwAccel = isPassthrough
