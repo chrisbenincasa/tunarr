@@ -4,7 +4,7 @@ import { AddCircle, ContentCopy, Delete, Edit } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import type { TranscodeConfig } from '@tunarr/types';
 import { isNull } from 'lodash-es';
 import { useMemo, useState } from 'react';
@@ -47,6 +47,7 @@ export const TranscodeConfigsTable = () => {
   const queryClient = useQueryClient();
   const transcodeConfigs = useTranscodeConfigs();
   const tableSettings = useStoreBackedTableSettings('TranscodeConfigs');
+  const navigate = useNavigate({ from: '/' });
 
   const [confirmDeleteTranscodeConfig, setConfirmDeleteTranscodeConfig] =
     useState<TranscodeConfig | null>(null);
@@ -97,6 +98,15 @@ export const TranscodeConfigsTable = () => {
             // visibility is keyed by that id.
             id: t`Resolution`,
             header: t`Resolution`,
+            sortFn: (rowA, rowB) => {
+              const totalA =
+                rowA.original.resolution.widthPx *
+                rowA.original.resolution.heightPx;
+              const totalB =
+                rowB.original.resolution.widthPx *
+                rowB.original.resolution.heightPx;
+              return totalA - totalB;
+            },
           },
         ),
         columnHelper.accessor('hardwareAccelerationMode', {
@@ -152,6 +162,14 @@ export const TranscodeConfigsTable = () => {
       <DataTable
         table={table}
         aria-label={t`Transcoding Configs`}
+        getRowProps={(row) => ({
+          onClick: () => {
+            navigate({
+              to: '/profiles/transcode/$configId',
+              params: { configId: row.original.id },
+            }).catch(console.error);
+          },
+        })}
         toolbarActions={
           <Button
             variant="contained"

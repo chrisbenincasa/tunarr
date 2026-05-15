@@ -10,6 +10,7 @@ import {
   Home,
   Settings,
   SettingsRemote,
+  Tune,
   Tv,
   VideoLibrary,
 } from '@mui/icons-material';
@@ -90,6 +91,24 @@ export const useShellNav = (): ShellNav => {
               to: '/library/smart_collections',
             },
             { id: 'trash', label: t`Trash`, to: '/library/trash' },
+          ],
+        },
+        {
+          id: 'profiles',
+          label: t`Profiles`,
+          to: '/profiles/transcode',
+          icon: <Tune />,
+          pages: [
+            {
+              id: 'transcode-configs',
+              label: t`Transcode Configs`,
+              to: '/profiles/transcode',
+            },
+            {
+              id: 'stream-selection',
+              label: t`Stream Selection`,
+              to: '/profiles/stream-selection',
+            },
           ],
         },
         {
