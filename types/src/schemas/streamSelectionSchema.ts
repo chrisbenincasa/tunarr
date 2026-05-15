@@ -36,10 +36,12 @@ export const SubtitleActionByLanguageSchema = z.object({
   filterType: SubtitleFilterSchema.default('any'),
   allowImageBased: z.boolean().default(true),
   allowExternal: z.boolean().default(true),
+  preferTextBased: z.boolean().default(false),
 });
 
 export const SubtitleActionDefaultSchema = z.object({
   type: z.literal('default'),
+  preferTextBased: z.boolean().default(false),
 });
 
 export const SubtitleActionSchema = z.discriminatedUnion('type', [
