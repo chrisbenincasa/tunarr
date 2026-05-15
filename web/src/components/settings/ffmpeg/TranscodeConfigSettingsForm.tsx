@@ -1,6 +1,5 @@
 import { useAppForm } from '@/hooks/form.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { Check, VisibilityOff } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -13,15 +12,13 @@ import {
   Link as MuiLink,
   Stack,
   TextField,
-  ToggleButton,
   Typography,
 } from '@mui/material';
 import type { TranscodeConfig } from '@tunarr/types';
 import type { TranscodeConfigSchema } from '@tunarr/types/schemas';
 import type z from 'zod';
 import useStore from '../../../store/index.ts';
-import { setShowAdvancedSettings } from '../../../store/settings/actions.ts';
-import Breadcrumbs from '../../Breadcrumbs.tsx';
+import UnsavedNavigationAlert from '../UnsavedNavigationAlert.tsx';
 import { TranscodeConfigAdvancedOptions } from './TranscodeConfigAdvancedOptions.tsx';
 import { TranscodeConfigAudioSettingsForm } from './TranscodeConfigAudioSettingsForm.tsx';
 import { TranscodeConfigErrorOptions } from './TranscodeConfigErrorOptions.tsx';
@@ -62,31 +59,8 @@ export const TranscodeConfigSettingsForm = ({
         transcodeConfigForm.handleSubmit().catch(console.error);
       }}
     >
-      <Breadcrumbs />
       <transcodeConfigForm.AppForm>
         <Stack spacing={2} divider={<Divider />}>
-          <Stack direction={'row'}>
-            <Typography variant="h4">
-              <Trans>Edit Transcode Config: "{initialConfig.name}"</Trans>
-            </Typography>
-            <ToggleButton
-              value={showAdvancedSettings}
-              selected={showAdvancedSettings}
-              onChange={() => setShowAdvancedSettings(!showAdvancedSettings)}
-              sx={{ ml: 'auto' }}
-            >
-              {showAdvancedSettings ? (
-                <VisibilityOff sx={{ mr: 0.5 }} />
-              ) : (
-                <Check sx={{ mr: 0.5 }} />
-              )}{' '}
-              {showAdvancedSettings ? (
-                <Trans>Hide Advanced</Trans>
-              ) : (
-                <Trans>Show Advanced</Trans>
-              )}
-            </ToggleButton>
-          </Stack>
           <Box>
             <Typography variant="h5" sx={{ mb: 2 }}>
               <Trans>General</Trans>
@@ -99,31 +73,6 @@ export const TranscodeConfigSettingsForm = ({
                     <field.BasicTextInput fullWidth label={t`Name`} />
                   )}
                 />
-                {/* <Controller
-                  control={control}
-                  name="name"
-                  rules={{
-                    required: true,
-                    minLength: 1,
-                  }}
-                  render={({ field, fieldState: { error } }) => (
-                    <TextField
-                      fullWidth
-                      label="Name"
-                      error={!!error}
-                      helperText={
-                        isNonEmptyString(error?.message)
-                          ? error.message
-                          : error?.type === 'required'
-                            ? 'Name is required'
-                            : error?.type === 'minLength'
-                              ? 'Name is required'
-                              : null
-                      }
-                      {...field}
-                    />
-                  )}
-                /> */}
               </Grid>
               <Grid size={{ sm: 12, md: 6 }}>
                 <transcodeConfigForm.Field
@@ -153,30 +102,6 @@ export const TranscodeConfigSettingsForm = ({
                     />
                   )}
                 />
-                {/* <NumericFormControllerText
-                  control={control}
-                  name="threadCount"
-                  prettyFieldName="Threads"
-                  TextFieldProps={{
-                    label: 'Threads',
-                    fullWidth: true,
-                    helperText: (
-                      <>
-                        Sets the number of threads used to decode the input
-                        stream. Set to 0 to let ffmpeg automatically decide how
-                        many threads to use. Read more about this option{' '}
-                        <MuiLink
-                          target="_blank"
-                          href="https://ffmpeg.org/ffmpeg-codecs.html#:~:text=threads%20integer%20(decoding/encoding%2Cvideo)"
-                        >
-                          here
-                        </MuiLink>
-                        . <strong>Note: </strong> this option is overridden to 1
-                        when using hardware accelearation for stability reasons.
-                      </>
-                    ),
-                  }}
-                /> */}
               </Grid>
               <Grid size={12}>
                 <FormControl fullWidth>
@@ -195,11 +120,6 @@ export const TranscodeConfigSettingsForm = ({
                           />
                         )}
                       />
-
-                      // <CheckboxFormController
-                      //   control={control}
-                      //   name="disableChannelOverlay"
-                      // />
                     }
                     label={t`Disable Watermarks`}
                   />
@@ -278,15 +198,16 @@ export const TranscodeConfigSettingsForm = ({
                   ) : null}
                   <Button
                     variant="contained"
-                    disabled={!canSubmit}
+                    disabled={isPristine || !canSubmit}
                     type="submit"
                   >
                     {isSubmitting ? (
-                      <Trans>Submitting...</Trans>
+                      <Trans>Saving...</Trans>
                     ) : (
-                      <Trans>Submit</Trans>
+                      <Trans>Save</Trans>
                     )}
                   </Button>
+                  <UnsavedNavigationAlert isDirty={!isPristine} />
                 </>
               )}
             />

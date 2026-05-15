@@ -103,6 +103,16 @@ msgstr "{0, plural, other {个节目}}"
 msgid "{0, plural, one {Selected Item} other {Selected Items}}"
 msgstr "{0, plural, other {个已选项}}"
 
+#. placeholder {0}: original.usedByChannels
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "{0} channel(s)"
+msgstr ""
+
+#. placeholder {0}: original.usedByFillers
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "{0} filler(s)"
+msgstr ""
+
 #. placeholder {0}: prettifySnakeCaseString(programType)
 #: src/components/programs/ProgramDetailsDialog.tsx
 msgid "{0} Info"
@@ -124,6 +134,11 @@ msgstr "{0} 个（共 {1} 个）{2} 超出了此时段的长度（{3}）。"
 #: src/components/programs/MediaDetailCard.tsx
 msgid "{0} Poster"
 msgstr "{0} 海报"
+
+#. placeholder {0}: original.usedByPrograms
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "{0} program(s)"
+msgstr ""
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "{block} Hours"
@@ -361,6 +376,10 @@ msgstr "添加广告时段"
 msgid "Add Channel Redirect"
 msgstr "添加频道跳转"
 
+#: src/components/profiles/condition/ConditionGroupEditor.tsx
+msgid "Add condition"
+msgstr ""
+
 #: src/components/search/SearchGroupNode.tsx
 msgid "Add field"
 msgstr "添加字段"
@@ -377,6 +396,7 @@ msgstr "添加弹性时间"
 msgid "Add Flex Time"
 msgstr "添加弹性时间"
 
+#: src/components/profiles/condition/ConditionGroupEditor.tsx
 #: src/components/search/SearchGroupNode.tsx
 msgid "Add group"
 msgstr "添加分组"
@@ -413,6 +433,10 @@ msgstr "向自定义剧集添加节目"
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Add Redirect"
 msgstr "添加跳转"
+
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Add Rule"
+msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Add Selected Media"
@@ -491,10 +515,18 @@ msgstr "每个节目之后"
 msgid "Albums"
 msgstr "专辑"
 
+#: src/components/profiles/condition/ConditionGroupEditor.tsx
+msgid "ALL"
+msgstr ""
+
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
 msgstr "所有使用此配置的频道都将恢复为默认配置。如果这是最后一个配置，系统会自动创建一个新的默认配置。"
+
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "All channels, fillers, and programs using this profile will have their stream selection reset to defaults."
+msgstr ""
 
 #: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
 #~ msgid "All Genres"
@@ -516,9 +548,17 @@ msgstr "一切就绪！"
 msgid "Allow External"
 msgstr "允许外部"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Allow external subtitles"
+msgstr ""
+
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
 msgid "Allow Image Based"
 msgstr "允许图片字幕"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Allow image-based subtitles"
+msgstr ""
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #~ msgid "Allows programs to play a bit late if the previous program took longer than usual. If a program is too late, Flex is scheduled instead."
@@ -545,6 +585,10 @@ msgstr "将节目按块交替排列。你可以设置每个块中每种类型的
 msgid "Alternates TV shows in blocks of episodes. You can pick the number of episodes per show in each block and if the order of shows in each block should be randomized. Movies are moved to the bottom."
 msgstr "将剧集按集数分块交替排列。你可以设置每部剧在每个块中的集数，以及是否随机排列块的顺序。电影会被移到末尾。"
 
+#: src/components/profiles/condition/types.ts
+msgid "Always match"
+msgstr ""
+
 #: src/components/search/DateSearchValueNode.tsx
 msgid "Amount"
 msgstr "数量"
@@ -553,6 +597,14 @@ msgstr "数量"
 #: src/components/guide/TvGuide.tsx
 msgid "An error occurred: {0}"
 msgstr "发生错误：{0}"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Any"
+msgstr ""
+
+#: src/components/profiles/condition/ConditionGroupEditor.tsx
+msgid "ANY"
+msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Apply to Program Types (empty = all)"
@@ -580,6 +632,11 @@ msgstr "升序"
 msgid "Ascending"
 msgstr "升序"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "At least one language is required"
+msgstr ""
+
 #: src/pages/system/StatusPage.tsx
 msgid "Attempt Auto-Fix"
 msgstr "尝试自动修复"
@@ -588,6 +645,7 @@ msgstr "尝试自动修复"
 msgid "Attempts to balance programming groups by either total lineup duration or number of unique programs. For instance, for a channel with many seasons of one show and few seasons of another, balancing will attempt to create an even mix of both shows by inserting repeats of the show with fewer episodes."
 msgstr "尝试按总时长或节目数量均衡各节目组。例如，某频道中一部剧有很多季而另一部只有几季，均衡功能会通过重复插入集数较少的剧集，使两部剧的播出比例趋于均匀。"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Audio"
 msgstr "音频"
@@ -612,6 +670,10 @@ msgstr "音频码率"
 msgid "Audio Buffer Size"
 msgstr "音频缓冲区大小"
 
+#: src/components/profiles/condition/types.ts
+msgid "Audio channel count"
+msgstr ""
+
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Channels"
 msgstr "音频声道"
@@ -620,6 +682,10 @@ msgstr "音频声道"
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Audio Format"
 msgstr "音频格式"
+
+#: src/components/profiles/condition/types.ts
+msgid "Audio language"
+msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Audio Language Preferences"
@@ -637,6 +703,15 @@ msgstr "音频选项"
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Sample Rate"
 msgstr "音频采样率"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Audio Selection"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Audio Strategy"
+msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Audio Streams"
@@ -704,9 +779,9 @@ msgstr "节目均衡"
 msgid "Balance..."
 msgstr "均衡…"
 
-#: src/components/channel_config/plex/PlexProgrammingFilterToolbar.tsx
-#~ msgid "Basic"
-#~ msgstr "Basic"
+#: src/components/profiles/condition/ConditionEditor.tsx
+msgid "Basic"
+msgstr "Basic"
 
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Basic button group"
@@ -768,6 +843,18 @@ msgstr "默认保存在服务器的运行目录中；若在 Docker 中运行，�
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "By default, time slots are time of the day-based, you can change it to time of the day + day of the week. That means scheduling 7x the number of time slots. If you change from daily to weekly, the current schedule will be repeated 7 times. If you change from weekly to daily, many of the slots will be deleted."
 msgstr "默认情况下，时段按「每日时刻」编排，你可以改为「每日时刻 + 星期」，这意味着时段数量将变为 7 倍。若从「每日」改为「每周」，当前排期会被复制 7 份；若从「每周」改为「每日」，许多时段将被删除。"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "By Language"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "By Title"
+msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Caching"
@@ -839,6 +926,18 @@ msgstr "演员与职员"
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Category Log Levels"
 msgstr "分类日志级别"
+
+#: src/components/profiles/condition/ConditionEditor.tsx
+msgid "CEL"
+msgstr ""
+
+#: src/components/profiles/condition/ConditionEditor.tsx
+msgid "CEL Expression"
+msgstr ""
+
+#: src/components/profiles/condition/ConditionEditor.tsx
+msgid "CEL expression. Use \"true\" to always match."
+msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Change the verbosity of specific categories of logs. Useful if debugging a specific feature."
@@ -973,9 +1072,15 @@ msgstr "完全随机化节目顺序。"
 msgid "Component"
 msgstr "组件"
 
+#: src/components/profiles/condition/ConditionEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Condition"
 msgstr "条件"
+
+#: src/components/profiles/condition/ConditionEditor.tsx
+#: src/components/profiles/condition/ConditionEditor.tsx
+msgid "Condition is required"
+msgstr ""
 
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Config"
@@ -993,6 +1098,7 @@ msgstr "全局配置首选音频语言。"
 msgid "Configure subtitle preferences. Preferences are evaluated in order of priority. The first matching subtitle stream on a program will be used."
 msgstr "配置字幕偏好。偏好按优先级顺序评估，将使用节目中第一条匹配的字幕流。"
 
+#: src/pages/profiles/TranscodeConfigsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Configure transcoding settings for Tunarr's streams. Each channel is assigned one transcode configuration."
 msgstr "配置 Tunarr 流的转码设置。每个频道可指定一个转码配置。"
@@ -1114,6 +1220,10 @@ msgstr "创建"
 msgid "Create a Channel"
 msgstr "创建频道"
 
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Create Profile"
+msgstr ""
+
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "Create Rerun Block"
 msgstr "创建重播块"
@@ -1207,19 +1317,31 @@ msgstr "预计算天数"
 msgid "Debug"
 msgstr "调试"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Default"
 msgstr "默认"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Default (first stream)"
+msgstr ""
+
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Default Config"
 msgstr "默认配置"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Default only"
+msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/DeleteConfirmationDialog.tsx
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/pages/channels/ChannelsPage.tsx
@@ -1263,6 +1385,11 @@ msgstr "删除媒体源「{0}」？"
 #: src/components/settings/media_source/MediaSourceDeleteDialog.tsx
 #~ msgid "Delete Media Source?"
 #~ msgstr "Delete Media Source?"
+
+#. placeholder {0}: confirmDelete?.name ?? ''
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "Delete Profile \"{0}\"?"
+msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
@@ -1321,6 +1448,10 @@ msgstr "详情"
 msgid "Did not receive an accessToken or userId from Jellyfin server."
 msgstr "未从 Jellyfin 服务器获取到 accessToken 或 userId。"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Disable"
+msgstr ""
+
 #: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
 msgid "Disable Hardware Decoding"
 msgstr "禁用硬件解码"
@@ -1341,6 +1472,7 @@ msgstr "禁用图片缩放"
 msgid "Disable Watermarks"
 msgstr "禁用水印"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/system/StatusPage.tsx
@@ -1376,6 +1508,10 @@ msgstr "不对节目做任何分组，普通随机。"
 #: src/components/TopBar.tsx
 msgid "Documentation"
 msgstr "文档"
+
+#: src/components/profiles/condition/types.ts
+msgid "does not include"
+msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
@@ -1441,6 +1577,7 @@ msgstr "动态"
 msgid "Eager"
 msgstr "即时"
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
@@ -1488,14 +1625,18 @@ msgstr "编辑媒体源"
 msgid "Edit Slot"
 msgstr "编辑时段"
 
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Edit Stream Selection Profile"
+msgstr ""
+
+#: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 msgid "Edit Transcode Config"
 msgstr "编辑转码配置"
 
-#. placeholder {0}: initialConfig.name
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
-msgid "Edit Transcode Config: \"{0}\""
-msgstr "编辑转码配置：「{0}」"
+#~ msgid "Edit Transcode Config: \"{0}\""
+#~ msgstr "编辑转码配置：「{0}」"
 
 #. placeholder {0}: server.name
 #. placeholder {0}: source.name
@@ -1652,6 +1793,10 @@ msgstr "电子节目单"
 msgid "EPG (Hours)"
 msgstr "节目单时长（小时）"
 
+#: src/components/profiles/condition/types.ts
+msgid "Episode"
+msgstr ""
+
 #: src/components/programs/Episodes.tsx
 #: src/pages/library/TrashPage.tsx
 msgid "Episodes"
@@ -1792,6 +1937,10 @@ msgstr "保存功能开关失败。"
 msgid "Failed to update Media Source settings. Please check server and browser logs for details."
 msgstr "更新媒体源设置失败，详情请查看服务器和浏览器日志。"
 
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Failed to validate expression"
+msgstr ""
+
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Fallback"
 msgstr "兜底"
@@ -1877,6 +2026,8 @@ msgstr "FFprobe 可执行文件路径"
 msgid "FFprobe version 6.0+ recommended. Check your current version in the sidebar"
 msgstr "建议使用 FFprobe 6.0 及以上版本，可在侧边栏查看当前版本"
 
+#: src/components/profiles/condition/ConditionClauseEditor.tsx
+#: src/components/profiles/condition/ConditionClauseEditor.tsx
 #: src/components/search/SearchGroupNode.tsx
 #: src/components/search/SearchGroupNode.tsx
 #: src/components/search/SearchValueNode.tsx
@@ -1956,6 +2107,8 @@ msgid "Filler Options"
 msgstr "垫片选项"
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/search/PointAndClickSearchBuilder.tsx
 #: src/components/search/SearchFilterBuilder.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
@@ -2014,6 +2167,10 @@ msgstr "强制扫描"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Forced"
 msgstr "强制字幕"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Forced only"
+msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Frame Rate"
@@ -2091,7 +2248,7 @@ msgstr "头部"
 msgid "Healthy?"
 msgstr "是否正常？"
 
-#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+#: src/pages/profiles/TranscodeConfigPage.tsx
 msgid "Hide Advanced"
 msgstr "隐藏高级选项"
 
@@ -2189,6 +2346,10 @@ msgstr "图片链接"
 msgid "Include Seasons"
 msgstr "包含季"
 
+#: src/components/profiles/condition/types.ts
+msgid "includes"
+msgstr ""
+
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 #~ msgid "Increasing \"Max Lateness\" for the schedule."
 #~ msgstr "增大排期的「最大延迟时间」。"
@@ -2226,9 +2387,21 @@ msgstr "安装 FFmpeg"
 msgid "Interval (minutes)"
 msgstr "间隔（分钟）"
 
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Invalid expression"
+msgstr ""
+
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Inverse linear decay, heavier weighting."
 msgstr "反线性衰减，权重更大。"
+
+#: src/components/profiles/condition/types.ts
+msgid "is"
+msgstr ""
+
+#: src/components/profiles/condition/types.ts
+msgid "is not"
+msgstr ""
 
 #: src/components/channel_config/MediaGridItem.tsx
 msgid "Item was not present during the last scan"
@@ -2251,6 +2424,7 @@ msgstr "关键词"
 msgid "Keywords perform full text search across all (or configured) fields"
 msgstr "关键词会在所有（或已配置的）字段中进行全文检索"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Label"
 msgstr "标签"
@@ -2265,6 +2439,10 @@ msgstr "标签"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Language"
 msgstr "语言"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Languages"
+msgstr ""
 
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Last run"
@@ -2291,6 +2469,10 @@ msgstr "上次同步于 {0}"
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Lazy"
 msgstr "延迟"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Least channels (e.g. stereo)"
+msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Leave blank to use the channel's icon."
@@ -2469,6 +2651,7 @@ msgstr "手动添加来自 Emby 服务器的访问令牌"
 msgid "Manually add an access token from your Jellyfin server"
 msgstr "手动添加来自 Jellyfin 服务器的访问令牌"
 
+#: src/components/profiles/condition/ConditionGroupEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Match"
 msgstr "匹配"
@@ -2480,6 +2663,10 @@ msgstr "匹配以下全部"
 #: src/components/search/SearchGroupNode.tsx
 msgid "Match any of"
 msgstr "匹配以下任一"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Match audio streams whose title contains this text (case-insensitive)"
+msgstr ""
 
 #: src/components/settings/general/BackupForm.tsx
 #: src/components/settings/general/BackupForm.tsx
@@ -2597,7 +2784,20 @@ msgstr "修改节目编排"
 msgid "Month"
 msgstr "月"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Most channels (e.g. 7.1 surround)"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Move down"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Move up"
+msgstr ""
+
 #: src/components/channel_config/SelectedProgrammingList.tsx
+#: src/components/profiles/condition/types.ts
 #: src/hooks/slot_scheduler/useSlotName.ts
 msgid "Movie"
 msgstr "电影"
@@ -2632,6 +2832,10 @@ msgstr "电影统一归为一组"
 msgid "Music tracks are grouped by artist"
 msgstr "音乐曲目按艺术家分组"
 
+#: src/components/profiles/condition/types.ts
+msgid "Music Video"
+msgstr ""
+
 #: src/components/channels/ChannelPrograms.tsx
 #: src/pages/library/TrashPage.tsx
 msgid "Music Videos"
@@ -2648,6 +2852,7 @@ msgstr "必须填写有效的 URL，或留空。"
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
 #: src/components/MediaSourceLibraryTable.tsx
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
@@ -2682,6 +2887,7 @@ msgstr "至少需要一个路径"
 msgid "never"
 msgstr "从未"
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
@@ -2721,6 +2927,14 @@ msgstr "新建媒体源"
 msgid "New Plex Server"
 msgstr "新建 Plex 服务器"
 
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "New Profile"
+msgstr ""
+
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "New Stream Selection Profile"
+msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Next"
 msgstr "下一步"
@@ -2738,6 +2952,10 @@ msgstr "下次计划执行"
 msgid "No active sessions"
 msgstr "暂无活动会话"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "No condition"
+msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "No media sources connected."
 msgstr "未连接任何媒体源。"
@@ -2745,6 +2963,10 @@ msgstr "未连接任何媒体源。"
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "No Media Sources detected."
 msgstr "未检测到媒体源。"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "No preference"
+msgstr ""
 
 #: src/components/channel_config/ChannelLineupList.tsx
 msgid "No programming added yet"
@@ -2777,6 +2999,10 @@ msgstr "Node.js：{0}"
 msgid "None"
 msgstr "无"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "None (no filter)"
+msgstr ""
+
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "None:"
 msgstr "无："
@@ -2794,6 +3020,10 @@ msgstr "不是有效的数字"
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Not a valid URL"
 msgstr "不是有效的 URL"
+
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "Not assigned"
+msgstr ""
 
 #: src/routes/__root.tsx
 msgid "Not found!"
@@ -2819,6 +3049,10 @@ msgstr "复制份数"
 #: src/pages/system/SystemDebugPage.tsx
 msgid "Nvidia Capabilities"
 msgstr "Nvidia 支持能力"
+
+#: src/components/profiles/condition/ConditionGroupEditor.tsx
+msgid "of the following"
+msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "On-Demand"
@@ -2855,6 +3089,10 @@ msgstr "在 {0} 中打开"
 msgid "Operator"
 msgstr "运算符"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Optional friendly name for this rule"
+msgstr ""
+
 #: src/components/channels/ChannelOptionsButton.tsx
 msgid "Options"
 msgstr "选项"
@@ -2879,6 +3117,10 @@ msgstr "时段内节目的排列顺序"
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Organize"
 msgstr "整理"
+
+#: src/components/profiles/condition/types.ts
+msgid "Other Video"
+msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
 #: src/pages/library/TrashPage.tsx
@@ -3029,6 +3271,19 @@ msgstr "后"
 msgid "Pre"
 msgstr "前"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Prefer Channel Count"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Preferred languages in priority order. Type a code to add custom."
+msgstr ""
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Preferred subtitle languages"
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotPresetButton.tsx
 msgid "Presets"
 msgstr "预设"
@@ -3044,6 +3299,26 @@ msgstr "继续"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Profile"
 msgstr "配置文件"
+
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Profile created"
+msgstr ""
+
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Profile Name"
+msgstr ""
+
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Profile name is required"
+msgstr ""
+
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Profile saved"
+msgstr ""
+
+#: src/hooks/useNavItems.tsx
+msgid "Profiles"
+msgstr ""
 
 #: src/components/ProgramSearchAutocomplete.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
@@ -3066,6 +3341,10 @@ msgstr "节目 JSON"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Program Playback Troubleshooter"
 msgstr "节目播放排查工具"
+
+#: src/components/profiles/condition/types.ts
+msgid "Program type"
+msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
@@ -3239,9 +3518,17 @@ msgstr "全部移除"
 msgid "Remove All {movieCount} {movieCount, plural, one {Movie} other {Movies}}"
 msgstr "移除全部 {movieCount} {movieCount, plural, other {部电影}}"
 
+#: src/components/profiles/condition/ConditionClauseEditor.tsx
+msgid "Remove condition"
+msgstr ""
+
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #~ msgid "Remove custom icon"
 #~ msgstr "Remove custom icon"
+
+#: src/components/profiles/condition/ConditionGroupEditor.tsx
+msgid "Remove group"
+msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Remove icon"
@@ -3250,6 +3537,10 @@ msgstr "移除图标"
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Remove Programming"
 msgstr "移除节目"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Remove rule"
+msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Remove..."
@@ -3312,6 +3603,7 @@ msgstr "重置"
 
 #: src/components/channel_config/ChannelEditActions.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
 #: src/pages/settings/FeaturesSettingsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/settings/HdhrSettingsPage.tsx
@@ -3386,6 +3678,20 @@ msgstr "按固定的时间计划轮转日志文件，不受文件大小影响。
 msgid "Root"
 msgstr "根"
 
+#. placeholder {0}: index + 1
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Rule {0}"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Rules"
+msgstr ""
+
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Rules are evaluated in order. The first rule whose condition matches determines the audio and subtitle streams for playback."
+msgstr ""
+
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Run"
 msgstr "运行"
@@ -3418,6 +3724,7 @@ msgstr "复制输入音频时无法修改采样率"
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 #: src/components/programming_controls/AdjustWeightsModal.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 #: src/components/settings/general/GeneralSettingsForm.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
@@ -3426,6 +3733,7 @@ msgstr "复制输入音频时无法修改采样率"
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 #: src/pages/channels/RandomSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
 #: src/pages/settings/FeaturesSettingsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/settings/HdhrSettingsPage.tsx
@@ -3445,6 +3753,10 @@ msgstr "另存为智能合集"
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Save Smart Collection"
 msgstr "保存智能合集"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Saving..."
+msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Scan"
@@ -3596,7 +3908,7 @@ msgstr "设置已保存！"
 msgid "Show"
 msgstr "剧集"
 
-#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+#: src/pages/profiles/TranscodeConfigPage.tsx
 msgid "Show Advanced"
 msgstr "显示高级选项"
 
@@ -3790,25 +4102,52 @@ msgstr "流 JSON"
 msgid "Stream Mode"
 msgstr "流模式"
 
+#: src/hooks/useNavItems.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Stream Selection"
 msgstr "流选择"
+
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+#: src/pages/profiles/StreamSelectionProfilesPage.tsx
+msgid "Stream Selection Profiles"
+msgstr ""
+
+#: src/pages/profiles/StreamSelectionProfilesPage.tsx
+msgid "Stream selection profiles control which audio and subtitle streams are selected during transcoding. Assign profiles to channels, filler lists, or individual programs."
+msgstr ""
 
 #: src/components/channel_config/EditChannelForm.tsx
 msgid "Streaming"
 msgstr "播放中"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
-msgid "Submit"
-msgstr "提交"
+#~ msgid "Submit"
+#~ msgstr "提交"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
-msgid "Submitting..."
-msgstr "提交中…"
+#~ msgid "Submitting..."
+#~ msgstr "提交中…"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Subs"
+msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Subtitle Action"
 msgstr "字幕处理方式"
+
+#: src/components/profiles/condition/types.ts
+msgid "Subtitle language"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Subtitle Selection"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Subtitle Strategy"
+msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Subtitle Streams"
@@ -4007,6 +4346,10 @@ msgstr "此自定义剧集已与外部播放列表同步，内容会自动更新
 msgid "This custom show was deleted. Choose another show."
 msgstr ""
 
+#: src/components/profiles/condition/ConditionEditor.tsx
+msgid "This expression can't be represented in Basic mode. Edit it in CEL mode or simplify it first."
+msgstr ""
+
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
 msgstr "此功能目前为实验性，请谨慎使用。如遇到问题，可尝试关闭缓存。"
@@ -4107,6 +4450,14 @@ msgstr "时间戳"
 msgid "Title"
 msgstr "标题"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Title Contains"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Title filter is required"
+msgstr ""
+
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "TO"
 msgstr "至"
@@ -4145,6 +4496,10 @@ msgstr "命中总数：{0}"
 msgid "Total Runtime"
 msgstr "总时长"
 
+#: src/components/profiles/condition/types.ts
+msgid "Track"
+msgstr ""
+
 #: src/components/programs/Tracks.tsx
 #: src/pages/library/TrashPage.tsx
 msgid "Tracks"
@@ -4164,6 +4519,12 @@ msgstr "转码配置（可选覆盖）"
 msgid "Transcode Config <0> <1/></0>"
 msgstr "转码配置 <0> <1/></0>"
 
+#: src/hooks/useNavItems.tsx
+#: src/hooks/useRouteName.ts
+msgid "Transcode Configs"
+msgstr ""
+
+#: src/pages/profiles/TranscodeConfigsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Transcoding Configs"
 msgstr "转码配置"
@@ -4291,6 +4652,10 @@ msgstr "使用剧集海报"
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Use these settings to override global ffmpeg settings for this channel."
 msgstr "使用这些设置覆盖该频道的全局 ffmpeg 设置。"
+
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "Used By"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -4447,6 +4812,14 @@ msgstr "启用时，Tunarr 会立即生成一份初始备份"
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "When file paths on the remote server differ from the paths Tunarr can see, use Path Replacements to instruct Tunarr how to stream media from disk."
 msgstr "当远程服务器上的文件路径与 Tunarr 可见的路径不一致时，可使用路径替换来告诉 Tunarr 如何从磁盘读取媒体。"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Which audio track(s) to select when the condition holds"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "Which subtitle track(s) to select when the condition holds"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
 msgid "Will force use of a software decoder despite hardware acceleration settings."

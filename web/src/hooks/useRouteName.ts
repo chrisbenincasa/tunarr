@@ -143,6 +143,14 @@ const useNamedRoutes = () => {
         name: t`Edit Transcode Config`,
       },
       {
+        matcher: /^\/profiles\/transcode$/g,
+        name: t`Transcode Configs`,
+      },
+      {
+        matcher: entityPageMatcher('profiles/transcode', ''),
+        name: t`Edit Transcode Config`,
+      },
+      {
         matcher: entityPageMatcher('library', ''),
         name: t`Search`,
       },
