@@ -13,6 +13,7 @@ import type { StreamSelectionCelContext } from '../services/CelEvaluationService
 import {
   buildCelContext,
   evaluateStreamSelectionProfile,
+  evaluateSubtitleSelection,
   resolveAudioAction,
 } from './StreamSelectionEvaluator.ts';
 
@@ -793,9 +794,13 @@ describe('evaluateStreamSelectionProfile', () => {
       expect(result.subtitleStream!.index).toBe(3);
     });
 
-    it('returns null when no default subtitle exists', async () => {
+    it('falls back to the first candidate when nothing is flagged default', async () => {
+      // Parity with the legacy SubtitleStreamPicker, which used
+      // `defaultStream ?? orderedStreams[0]`. External subs often carry no
+      // default flag, and dropping them entirely loses subtitles.
       const subs: SubtitleStreamDetails[] = [
-        makeSubtitleStream({ index: 2, default: false }),
+        makeSubtitleStream({ index: 2, default: false, type: 'external' }),
+        makeSubtitleStream({ index: 3, default: false, type: 'external' }),
       ];
       const profile = makeProfile([
         makeRule({ subtitleAction: { type: 'default' } }),
@@ -811,7 +816,7 @@ describe('evaluateStreamSelectionProfile', () => {
         lineupItem,
       );
 
-      expect(result.subtitleStream).toBeNull();
+      expect(result.subtitleStream?.index).toBe(2);
     });
 
     it('returns null when subtitles are undefined', async () => {
@@ -1338,6 +1343,455 @@ describe('evaluateStreamSelectionProfile', () => {
       expect(result.subtitleStream).toBeNull();
     });
   });
+
+  describe('preferTextBased', () => {
+    it('without preferTextBased, by_language picks first matching stream regardless of codec type', async () => {
+      // Image-based sub appears first in stream order, text-based second.
+      // Without preferTextBased, the image-based sub should be picked
+      // because it comes first and allowImageBased is true.
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'eng',
+          codec: 'hdmv_pgs_subtitle',
+          type: 'embedded',
+        }),
+        makeSubtitleStream({
+          index: 3,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+            // preferTextBased not set (defaults to false)
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream).not.toBeNull();
+      // Image-based sub is first and should be selected
+      expect(result.subtitleStream!.index).toBe(2);
+      expect(result.subtitleStream!.codec).toBe('hdmv_pgs_subtitle');
+    });
+
+    it('without preferTextBased, embedded text sub goes through extraction', async () => {
+      // The mock adds path: '/fake/path.vtt' via getSubtitleDetailsWithExtractedPath.
+      // Without preferTextBased, embedded text subs must go through that extraction
+      // step, so the returned stream should have the mock's path property.
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+            // preferTextBased not set (defaults to false)
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream).not.toBeNull();
+      // Extraction mock adds path — confirms the extraction path was taken
+      expect((result.subtitleStream as Record<string, unknown>)['path']).toBe(
+        '/fake/path.vtt',
+      );
+    });
+
+    it('without preferTextBased, default embedded text sub goes through extraction', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          default: true,
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: { type: 'default' },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream).not.toBeNull();
+      expect((result.subtitleStream as Record<string, unknown>)['path']).toBe(
+        '/fake/path.vtt',
+      );
+    });
+
+    it('by_language with action preferTextBased selects text-based sub over image-based', async () => {
+      // Image-based sub appears first in stream order, text-based second.
+      // With preferTextBased, text-based should be selected.
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'eng',
+          codec: 'hdmv_pgs_subtitle',
+          type: 'embedded',
+        }),
+        makeSubtitleStream({
+          index: 3,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+            preferTextBased: true,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream).not.toBeNull();
+      expect(result.subtitleStream!.index).toBe(3);
+      expect(result.subtitleStream!.codec).toBe('srt');
+    });
+
+    it('by_language with runtime hint preferTextBased selects text-based sub over image-based', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'eng',
+          codec: 'hdmv_pgs_subtitle',
+          type: 'embedded',
+        }),
+        makeSubtitleStream({
+          index: 3,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+        { preferTextBased: true },
+      );
+
+      expect(result.subtitleStream).not.toBeNull();
+      expect(result.subtitleStream!.index).toBe(3);
+      expect(result.subtitleStream!.codec).toBe('srt');
+    });
+
+    it('by_language with action preferTextBased still extracts embedded text subs', async () => {
+      // A profile may only express a sorting preference. Skipping extraction is
+      // a caller capability, so without the hint the stream must come back with
+      // a real path — the transcode path burns from that file and would
+      // otherwise be handed the video as a subtitle source.
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+            preferTextBased: true,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream).not.toBeNull();
+      expect(result.subtitleStream!.index).toBe(2);
+      expect((result.subtitleStream as Record<string, unknown>)['path']).toBe(
+        '/fake/path.vtt',
+      );
+    });
+
+    it('by_language with the runtime hint returns embedded text subs unextracted', async () => {
+      // The hint means the caller can mux the embedded stream straight from the
+      // container, so extraction is skipped and no path is set.
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+            preferTextBased: false,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+        { preferTextBased: true },
+      );
+
+      expect(result.subtitleStream!.index).toBe(2);
+      expect(
+        (result.subtitleStream as Record<string, unknown>)['path'],
+      ).toBeUndefined();
+    });
+
+    it('default with action preferTextBased still extracts embedded text subs', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          default: true,
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'default',
+            preferTextBased: true,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream!.index).toBe(2);
+      expect((result.subtitleStream as Record<string, unknown>)['path']).toBe(
+        '/fake/path.vtt',
+      );
+    });
+
+    it('default with the runtime hint returns embedded text subs unextracted', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          default: true,
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'default',
+            preferTextBased: false,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+        { preferTextBased: true },
+      );
+
+      expect(result.subtitleStream!.index).toBe(2);
+      expect(
+        (result.subtitleStream as Record<string, unknown>)['path'],
+      ).toBeUndefined();
+    });
+
+    it('runtime hint overrides action preferTextBased=false', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'eng',
+          codec: 'hdmv_pgs_subtitle',
+          type: 'embedded',
+        }),
+        makeSubtitleStream({
+          index: 3,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      // Action has preferTextBased: false (default)
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+            preferTextBased: false,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      // Runtime hint overrides to true
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+        { preferTextBased: true },
+      );
+
+      expect(result.subtitleStream).not.toBeNull();
+      expect(result.subtitleStream!.index).toBe(3);
+      expect(result.subtitleStream!.codec).toBe('srt');
+    });
+
+    it('default with preferTextBased sorts text-based before image-based for default selection', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          default: true,
+          codec: 'hdmv_pgs_subtitle',
+          type: 'embedded',
+        }),
+        makeSubtitleStream({
+          index: 3,
+          default: true,
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'default',
+            preferTextBased: true,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      // Text-based default should be found first due to sorting
+      expect(result.subtitleStream).not.toBeNull();
+      expect(result.subtitleStream!.index).toBe(3);
+      expect(result.subtitleStream!.codec).toBe('srt');
+    });
+  });
 });
 
 // ── ISO 639-2 bibliographic vs terminological codes ─────────────────────────
@@ -1680,5 +2134,207 @@ describe('ISO 639-2 B/T language code matching', () => {
 
       expect(result.subtitleStream).toBeNull();
     });
+  });
+});
+
+// ── evaluateSubtitleSelection ───────────────────────────────────────────────
+
+describe('evaluateSubtitleSelection', () => {
+  const audioStreams: NonEmptyArray<AudioStreamDetails> = [
+    makeAudioStream({ index: 0, languageCodeISO6392: 'eng' }),
+  ];
+
+  const subtitleStreams: SubtitleStreamDetails[] = [
+    makeSubtitleStream({
+      index: 2,
+      languageCodeISO6392: 'eng',
+      type: 'external',
+    }),
+    makeSubtitleStream({
+      index: 3,
+      languageCodeISO6392: 'jpn',
+      language: 'Japanese',
+      languageCodeISO6391: 'ja',
+      type: 'external',
+    }),
+  ];
+
+  const celContext: StreamSelectionCelContext = buildCelContext(
+    audioStreams,
+    subtitleStreams,
+    { name: 'Test', number: 1 },
+    { title: 'Test Movie', type: 'movie' },
+  );
+
+  const lineupItem = makeLineupItem();
+
+  it('resolves the subtitle action of the first matching rule', async () => {
+    const profile = makeProfile([
+      makeRule({
+        condition: 'false',
+        subtitleAction: {
+          type: 'by_language',
+          languages: ['eng'],
+          filterType: 'any',
+          allowImageBased: true,
+          allowExternal: true,
+          preferTextBased: false,
+        },
+      }),
+      makeRule({
+        condition: 'true',
+        subtitleAction: {
+          type: 'by_language',
+          languages: ['jpn'],
+          filterType: 'any',
+          allowImageBased: true,
+          allowExternal: true,
+          preferTextBased: false,
+        },
+      }),
+    ]);
+    const celService = makeCelService((expr) => expr === 'true');
+
+    const result = await evaluateSubtitleSelection(
+      profile,
+      subtitleStreams,
+      celService,
+      celContext,
+      lineupItem,
+    );
+
+    expect(result?.index).toBe(3);
+  });
+
+  it('returns null when no rule matches', async () => {
+    const profile = makeProfile([
+      makeRule({
+        condition: 'false',
+        subtitleAction: {
+          type: 'by_language',
+          languages: ['eng'],
+          filterType: 'any',
+          allowImageBased: true,
+          allowExternal: true,
+          preferTextBased: false,
+        },
+      }),
+    ]);
+    const celService = makeCelService(false);
+
+    const result = await evaluateSubtitleSelection(
+      profile,
+      subtitleStreams,
+      celService,
+      celContext,
+      lineupItem,
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null for a disable action', async () => {
+    const profile = makeProfile([
+      makeRule({ subtitleAction: { type: 'disable' } }),
+    ]);
+
+    const result = await evaluateSubtitleSelection(
+      profile,
+      subtitleStreams,
+      makeCelService(true),
+      celContext,
+      lineupItem,
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it('falls back to the first candidate when nothing is flagged default', async () => {
+    const profile = makeProfile([
+      makeRule({
+        subtitleAction: { type: 'default', preferTextBased: false },
+      }),
+    ]);
+
+    const result = await evaluateSubtitleSelection(
+      profile,
+      subtitleStreams,
+      makeCelService(true),
+      celContext,
+      lineupItem,
+    );
+
+    expect(result?.index).toBe(2);
+  });
+
+  it('skips extraction for embedded text subs when the caller hints it can', async () => {
+    const embedded: SubtitleStreamDetails[] = [
+      makeSubtitleStream({
+        index: 2,
+        languageCodeISO6392: 'eng',
+        codec: 'srt',
+        type: 'embedded',
+      }),
+    ];
+    const profile = makeProfile([
+      makeRule({
+        subtitleAction: { type: 'default', preferTextBased: false },
+      }),
+    ]);
+
+    const result = await evaluateSubtitleSelection(
+      profile,
+      embedded,
+      makeCelService(true),
+      celContext,
+      lineupItem,
+      { preferTextBased: true },
+    );
+
+    expect((result as Record<string, unknown>)['path']).toBeUndefined();
+  });
+
+  it('extracts embedded text subs when the caller gives no hint', async () => {
+    const embedded: SubtitleStreamDetails[] = [
+      makeSubtitleStream({
+        index: 2,
+        languageCodeISO6392: 'eng',
+        codec: 'srt',
+        type: 'embedded',
+      }),
+    ];
+    const profile = makeProfile([
+      makeRule({
+        subtitleAction: { type: 'default', preferTextBased: true },
+      }),
+    ]);
+
+    const result = await evaluateSubtitleSelection(
+      profile,
+      embedded,
+      makeCelService(true),
+      celContext,
+      lineupItem,
+    );
+
+    expect((result as Record<string, unknown>)['path']).toBe('/fake/path.vtt');
+  });
+
+  it('returns null when there are no subtitle streams', async () => {
+    const profile = makeProfile([
+      makeRule({
+        subtitleAction: { type: 'default', preferTextBased: false },
+      }),
+    ]);
+
+    const result = await evaluateSubtitleSelection(
+      profile,
+      undefined,
+      makeCelService(true),
+      celContext,
+      lineupItem,
+    );
+
+    expect(result).toBeNull();
   });
 });
