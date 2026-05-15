@@ -3,6 +3,7 @@ import { t } from '@lingui/core/macro';
 import {
   Computer,
   Delete,
+  Headphones,
   Home,
   Preview,
   Psychology,
@@ -10,8 +11,10 @@ import {
   SettingsRemote,
   Storage as StorageIcon,
   Theaters,
+  Tune,
   Tv,
   VideoLibrary,
+  VideoSettings,
 } from '@mui/icons-material';
 import type { BadgeProps } from '@mui/material';
 import { useRouterState } from '@tanstack/react-router';
@@ -64,7 +67,11 @@ export const useNavItems = () => {
         path: '/channels',
         icon: <SettingsRemote />,
       },
-      // { name: 'Watch', path: '/watch', hidden: true, icon: <LiveTv /> },
+      {
+        name: t`Sources`,
+        path: '/media_sources',
+        icon: <StorageIcon />,
+      },
       {
         name: t`Library`,
         path: '/library',
@@ -93,9 +100,21 @@ export const useNavItems = () => {
         ],
       },
       {
-        name: t`Sources`,
-        path: '/media_sources',
-        icon: <StorageIcon />,
+        name: t`Profiles`,
+        path: '/profiles/transcode',
+        icon: <Tune />,
+        children: [
+          {
+            name: t`Transcode Configs`,
+            path: '/profiles/transcode',
+            icon: <VideoSettings />,
+          },
+          {
+            name: t`Stream Selection`,
+            path: '/profiles/stream-selection',
+            icon: <Headphones />,
+          },
+        ],
       },
       {
         name: t`System`,
