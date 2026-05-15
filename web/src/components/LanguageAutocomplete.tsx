@@ -1,5 +1,5 @@
-import { useLingui } from '@lingui/react/macro';
 import languages from '@cospired/i18n-iso-languages/index';
+import { useLingui } from '@lingui/react/macro';
 import type {
   AutocompleteChangeReason,
   AutocompleteProps,
@@ -7,13 +7,13 @@ import type {
 } from '@mui/material';
 import { Autocomplete, TextField } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import { entries, isUndefined, map, reject, sortBy } from 'lodash-es';
+import { entries, isUndefined, reject, sortBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import type { FieldError } from 'react-hook-form';
 import { isNonEmptyString } from '../helpers/util.ts';
 
 type Props = {
-  values: LanguagePreferenceValue[];
+  values: string[]; // iso6392
   onSelect: (
     v: LanguagePreferenceValue,
     allValues: LanguagePreferenceValue[],
@@ -51,10 +51,6 @@ export const LanguageAutocomplete = ({
   ...rest
 }: Props) => {
   const { t } = useLingui();
-  const selectedCodes = useMemo(
-    () => map(values, (pref) => pref.iso6392),
-    [values],
-  );
 
   const languageOptions = useMemo(
     () =>
@@ -103,16 +99,19 @@ export const LanguageAutocomplete = ({
     if (allowMultiple) {
       return languageOptions;
     }
-    return reject(languageOptions, ({ iso6392 }) =>
-      selectedCodes.includes(iso6392),
-    );
-  }, [allowMultiple, languageOptions, selectedCodes]);
+    return reject(languageOptions, ({ iso6392 }) => values.includes(iso6392));
+  }, [allowMultiple, languageOptions, values]);
+
+  const formValues = useMemo(() => {
+    const selected = new Set(values);
+    return opts.filter((opt) => selected.has(opt.iso6392));
+  }, [opts, values]);
 
   return (
     <Autocomplete
       multiple
       {...rest}
-      value={values}
+      value={formValues}
       onChange={(_, newValue, reason, details) => {
         if (details) {
           handleChange(details.option, reason, newValue);

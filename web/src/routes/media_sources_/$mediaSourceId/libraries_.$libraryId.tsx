@@ -30,12 +30,18 @@ function MediaSourceBrowserPage() {
     <Box>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" sx={{ display: 'inline-flex', width: '100%' }}>
-          <span><Trans>Media Source: "{library.mediaSource.name}"</Trans></span>
+          <span>
+            <Trans>Media Source: "{library.mediaSource.name}"</Trans>
+          </span>
           <ProgramViewToggleButton sx={{ ml: { sm: undefined, md: 'auto' } }} />
         </Typography>
-        <Typography variant="subtitle1"><Trans>Library: {library.name}</Trans></Typography>
         <Typography variant="subtitle1">
-          <Trans>Search is currently scoped to this Media Source Library.</Trans>
+          <Trans>Library: {library.name}</Trans>
+        </Typography>
+        <Typography variant="subtitle1">
+          <Trans>
+            Search is currently scoped to this Media Source Library.
+          </Trans>
         </Typography>
       </Box>
       <Stack gap={2}>

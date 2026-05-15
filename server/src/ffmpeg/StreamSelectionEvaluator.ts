@@ -153,7 +153,7 @@ export function resolveAudioAction(
         }
       }
       // Fallback to default behavior
-      return selectDefautlAudioStream(audioStreams);
+      return selectDefaultAudioStream(audioStreams);
     }
 
     case 'by_title': {
@@ -161,15 +161,15 @@ export function resolveAudioAction(
       const match = audioStreams.find((s) =>
         s.title?.toLowerCase().includes(titleLower),
       );
-      return match ?? selectDefautlAudioStream(audioStreams);
+      return match ?? selectDefaultAudioStream(audioStreams);
     }
 
     case 'default':
-      return selectDefautlAudioStream(audioStreams);
+      return selectDefaultAudioStream(audioStreams);
   }
 }
 
-function selectDefautlAudioStream(
+function selectDefaultAudioStream(
   audioStreams: NonEmptyArray<AudioStreamDetails>,
 ) {
   return (
