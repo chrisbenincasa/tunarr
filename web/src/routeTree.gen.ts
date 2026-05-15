@@ -30,6 +30,8 @@ import { Route as SettingsHdhrRouteImport } from './routes/settings/hdhr';
 import { Route as SettingsGeneralRouteImport } from './routes/settings/general';
 import { Route as SettingsFfmpegRouteImport } from './routes/settings/ffmpeg';
 import { Route as SettingsFeaturesRouteImport } from './routes/settings/features';
+import { Route as ProfilesTranscodeRouteImport } from './routes/profiles/transcode';
+import { Route as ProfilesStreamSelectionRouteImport } from './routes/profiles/stream-selection';
 import { Route as LibraryFillersRouteImport } from './routes/library/fillers';
 import { Route as LibraryCustomShowsRouteImport } from './routes/library/custom-shows';
 import { Route as ChannelsTestRouteImport } from './routes/channels_/test';
@@ -41,6 +43,9 @@ import { Route as LibrarySmart_collectionsIndexRouteImport } from './routes/libr
 import { Route as ChannelsChannelIdIndexRouteImport } from './routes/channels_/$channelId/index';
 import { Route as SettingsFfmpegNewRouteImport } from './routes/settings/ffmpeg_/new';
 import { Route as SettingsFfmpegConfigIdRouteImport } from './routes/settings/ffmpeg_/$configId';
+import { Route as ProfilesTranscodeConfigIdRouteImport } from './routes/profiles/transcode_/$configId';
+import { Route as ProfilesStreamSelectionNewRouteImport } from './routes/profiles/stream-selection_/new';
+import { Route as ProfilesStreamSelectionProfileIdRouteImport } from './routes/profiles/stream-selection_/$profileId';
 import { Route as MediaProgramTypeProgramIdRouteImport } from './routes/media_/$programType.$programId';
 import { Route as LibrarySmart_collectionsIdRouteImport } from './routes/library/smart_collections/$id';
 import { Route as ChannelsChannelIdWatchRouteImport } from './routes/channels_/$channelId/watch';
@@ -168,6 +173,16 @@ const SettingsFeaturesRoute = SettingsFeaturesRouteImport.update({
   path: '/features',
   getParentRoute: () => SettingsRoute,
 } as any);
+const ProfilesTranscodeRoute = ProfilesTranscodeRouteImport.update({
+  id: '/profiles/transcode',
+  path: '/profiles/transcode',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ProfilesStreamSelectionRoute = ProfilesStreamSelectionRouteImport.update({
+  id: '/profiles/stream-selection',
+  path: '/profiles/stream-selection',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const LibraryFillersRoute = LibraryFillersRouteImport.update({
   id: '/library/fillers',
   path: '/library/fillers',
@@ -225,6 +240,24 @@ const SettingsFfmpegConfigIdRoute = SettingsFfmpegConfigIdRouteImport.update({
   path: '/ffmpeg/$configId',
   getParentRoute: () => SettingsRoute,
 } as any);
+const ProfilesTranscodeConfigIdRoute =
+  ProfilesTranscodeConfigIdRouteImport.update({
+    id: '/profiles/transcode_/$configId',
+    path: '/profiles/transcode/$configId',
+    getParentRoute: () => rootRouteImport,
+  } as any);
+const ProfilesStreamSelectionNewRoute =
+  ProfilesStreamSelectionNewRouteImport.update({
+    id: '/profiles/stream-selection_/new',
+    path: '/profiles/stream-selection/new',
+    getParentRoute: () => rootRouteImport,
+  } as any);
+const ProfilesStreamSelectionProfileIdRoute =
+  ProfilesStreamSelectionProfileIdRouteImport.update({
+    id: '/profiles/stream-selection_/$profileId',
+    path: '/profiles/stream-selection/$profileId',
+    getParentRoute: () => rootRouteImport,
+  } as any);
 const MediaProgramTypeProgramIdRoute =
   MediaProgramTypeProgramIdRouteImport.update({
     id: '/media_/$programType/$programId',
@@ -361,6 +394,8 @@ export interface FileRoutesByFullPath {
   '/channels/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
   '/library/fillers': typeof LibraryFillersRoute;
+  '/profiles/stream-selection': typeof ProfilesStreamSelectionRoute;
+  '/profiles/transcode': typeof ProfilesTranscodeRoute;
   '/settings/features': typeof SettingsFeaturesRoute;
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
@@ -383,6 +418,9 @@ export interface FileRoutesByFullPath {
   '/channels/$channelId/watch': typeof ChannelsChannelIdWatchRoute;
   '/library/smart_collections/$id': typeof LibrarySmart_collectionsIdRoute;
   '/media/$programType/$programId': typeof MediaProgramTypeProgramIdRoute;
+  '/profiles/stream-selection/$profileId': typeof ProfilesStreamSelectionProfileIdRoute;
+  '/profiles/stream-selection/new': typeof ProfilesStreamSelectionNewRoute;
+  '/profiles/transcode/$configId': typeof ProfilesTranscodeConfigIdRoute;
   '/settings/ffmpeg/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg/new': typeof SettingsFfmpegNewRoute;
   '/channels/$channelId/': typeof ChannelsChannelIdIndexRoute;
@@ -414,6 +452,8 @@ export interface FileRoutesByTo {
   '/channels/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
   '/library/fillers': typeof LibraryFillersRoute;
+  '/profiles/stream-selection': typeof ProfilesStreamSelectionRoute;
+  '/profiles/transcode': typeof ProfilesTranscodeRoute;
   '/settings/features': typeof SettingsFeaturesRoute;
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
@@ -434,6 +474,9 @@ export interface FileRoutesByTo {
   '/channels/$channelId/watch': typeof ChannelsChannelIdWatchRoute;
   '/library/smart_collections/$id': typeof LibrarySmart_collectionsIdRoute;
   '/media/$programType/$programId': typeof MediaProgramTypeProgramIdRoute;
+  '/profiles/stream-selection/$profileId': typeof ProfilesStreamSelectionProfileIdRoute;
+  '/profiles/stream-selection/new': typeof ProfilesStreamSelectionNewRoute;
+  '/profiles/transcode/$configId': typeof ProfilesTranscodeConfigIdRoute;
   '/settings/ffmpeg/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg/new': typeof SettingsFfmpegNewRoute;
   '/channels/$channelId': typeof ChannelsChannelIdIndexRoute;
@@ -468,6 +511,8 @@ export interface FileRoutesById {
   '/channels_/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
   '/library/fillers': typeof LibraryFillersRoute;
+  '/profiles/stream-selection': typeof ProfilesStreamSelectionRoute;
+  '/profiles/transcode': typeof ProfilesTranscodeRoute;
   '/settings/features': typeof SettingsFeaturesRoute;
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
@@ -490,6 +535,9 @@ export interface FileRoutesById {
   '/channels_/$channelId/watch': typeof ChannelsChannelIdWatchRoute;
   '/library/smart_collections/$id': typeof LibrarySmart_collectionsIdRoute;
   '/media_/$programType/$programId': typeof MediaProgramTypeProgramIdRoute;
+  '/profiles/stream-selection_/$profileId': typeof ProfilesStreamSelectionProfileIdRoute;
+  '/profiles/stream-selection_/new': typeof ProfilesStreamSelectionNewRoute;
+  '/profiles/transcode_/$configId': typeof ProfilesTranscodeConfigIdRoute;
   '/settings/ffmpeg_/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg_/new': typeof SettingsFfmpegNewRoute;
   '/channels_/$channelId/': typeof ChannelsChannelIdIndexRoute;
@@ -525,6 +573,8 @@ export interface FileRouteTypes {
     | '/channels/test'
     | '/library/custom-shows'
     | '/library/fillers'
+    | '/profiles/stream-selection'
+    | '/profiles/transcode'
     | '/settings/features'
     | '/settings/ffmpeg'
     | '/settings/general'
@@ -547,6 +597,9 @@ export interface FileRouteTypes {
     | '/channels/$channelId/watch'
     | '/library/smart_collections/$id'
     | '/media/$programType/$programId'
+    | '/profiles/stream-selection/$profileId'
+    | '/profiles/stream-selection/new'
+    | '/profiles/transcode/$configId'
     | '/settings/ffmpeg/$configId'
     | '/settings/ffmpeg/new'
     | '/channels/$channelId/'
@@ -578,6 +631,8 @@ export interface FileRouteTypes {
     | '/channels/test'
     | '/library/custom-shows'
     | '/library/fillers'
+    | '/profiles/stream-selection'
+    | '/profiles/transcode'
     | '/settings/features'
     | '/settings/ffmpeg'
     | '/settings/general'
@@ -598,6 +653,9 @@ export interface FileRouteTypes {
     | '/channels/$channelId/watch'
     | '/library/smart_collections/$id'
     | '/media/$programType/$programId'
+    | '/profiles/stream-selection/$profileId'
+    | '/profiles/stream-selection/new'
+    | '/profiles/transcode/$configId'
     | '/settings/ffmpeg/$configId'
     | '/settings/ffmpeg/new'
     | '/channels/$channelId'
@@ -631,6 +689,8 @@ export interface FileRouteTypes {
     | '/channels_/test'
     | '/library/custom-shows'
     | '/library/fillers'
+    | '/profiles/stream-selection'
+    | '/profiles/transcode'
     | '/settings/features'
     | '/settings/ffmpeg'
     | '/settings/general'
@@ -653,6 +713,9 @@ export interface FileRouteTypes {
     | '/channels_/$channelId/watch'
     | '/library/smart_collections/$id'
     | '/media_/$programType/$programId'
+    | '/profiles/stream-selection_/$profileId'
+    | '/profiles/stream-selection_/new'
+    | '/profiles/transcode_/$configId'
     | '/settings/ffmpeg_/$configId'
     | '/settings/ffmpeg_/new'
     | '/channels_/$channelId/'
@@ -687,6 +750,8 @@ export interface RootRouteChildren {
   ChannelsTestRoute: typeof ChannelsTestRoute;
   LibraryCustomShowsRoute: typeof LibraryCustomShowsRoute;
   LibraryFillersRoute: typeof LibraryFillersRoute;
+  ProfilesStreamSelectionRoute: typeof ProfilesStreamSelectionRoute;
+  ProfilesTranscodeRoute: typeof ProfilesTranscodeRoute;
   ChannelsIndexRoute: typeof ChannelsIndexRoute;
   LibraryIndexRoute: typeof LibraryIndexRoute;
   Media_sourcesIndexRoute: typeof Media_sourcesIndexRoute;
@@ -696,6 +761,9 @@ export interface RootRouteChildren {
   LibraryFillersNewRouteRoute: typeof LibraryFillersNewRouteRouteWithChildren;
   LibrarySmart_collectionsIdRoute: typeof LibrarySmart_collectionsIdRoute;
   MediaProgramTypeProgramIdRoute: typeof MediaProgramTypeProgramIdRoute;
+  ProfilesStreamSelectionProfileIdRoute: typeof ProfilesStreamSelectionProfileIdRoute;
+  ProfilesStreamSelectionNewRoute: typeof ProfilesStreamSelectionNewRoute;
+  ProfilesTranscodeConfigIdRoute: typeof ProfilesTranscodeConfigIdRoute;
   LibrarySmart_collectionsIndexRoute: typeof LibrarySmart_collectionsIndexRoute;
   LibraryTrashIndexRoute: typeof LibraryTrashIndexRoute;
   Media_sourcesMediaSourceIdIndexRoute: typeof Media_sourcesMediaSourceIdIndexRoute;
@@ -851,6 +919,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsFeaturesRouteImport;
       parentRoute: typeof SettingsRoute;
     };
+    '/profiles/transcode': {
+      id: '/profiles/transcode';
+      path: '/profiles/transcode';
+      fullPath: '/profiles/transcode';
+      preLoaderRoute: typeof ProfilesTranscodeRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/profiles/stream-selection': {
+      id: '/profiles/stream-selection';
+      path: '/profiles/stream-selection';
+      fullPath: '/profiles/stream-selection';
+      preLoaderRoute: typeof ProfilesStreamSelectionRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/library/fillers': {
       id: '/library/fillers';
       path: '/library/fillers';
@@ -927,6 +1009,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/ffmpeg/$configId';
       preLoaderRoute: typeof SettingsFfmpegConfigIdRouteImport;
       parentRoute: typeof SettingsRoute;
+    };
+    '/profiles/transcode_/$configId': {
+      id: '/profiles/transcode_/$configId';
+      path: '/profiles/transcode/$configId';
+      fullPath: '/profiles/transcode/$configId';
+      preLoaderRoute: typeof ProfilesTranscodeConfigIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/profiles/stream-selection_/new': {
+      id: '/profiles/stream-selection_/new';
+      path: '/profiles/stream-selection/new';
+      fullPath: '/profiles/stream-selection/new';
+      preLoaderRoute: typeof ProfilesStreamSelectionNewRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/profiles/stream-selection_/$profileId': {
+      id: '/profiles/stream-selection_/$profileId';
+      path: '/profiles/stream-selection/$profileId';
+      fullPath: '/profiles/stream-selection/$profileId';
+      preLoaderRoute: typeof ProfilesStreamSelectionProfileIdRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
     '/media_/$programType/$programId': {
       id: '/media_/$programType/$programId';
@@ -1233,6 +1336,8 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelsTestRoute: ChannelsTestRoute,
   LibraryCustomShowsRoute: LibraryCustomShowsRoute,
   LibraryFillersRoute: LibraryFillersRoute,
+  ProfilesStreamSelectionRoute: ProfilesStreamSelectionRoute,
+  ProfilesTranscodeRoute: ProfilesTranscodeRoute,
   ChannelsIndexRoute: ChannelsIndexRoute,
   LibraryIndexRoute: LibraryIndexRoute,
   Media_sourcesIndexRoute: Media_sourcesIndexRoute,
@@ -1244,6 +1349,9 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryFillersNewRouteRoute: LibraryFillersNewRouteRouteWithChildren,
   LibrarySmart_collectionsIdRoute: LibrarySmart_collectionsIdRoute,
   MediaProgramTypeProgramIdRoute: MediaProgramTypeProgramIdRoute,
+  ProfilesStreamSelectionProfileIdRoute: ProfilesStreamSelectionProfileIdRoute,
+  ProfilesStreamSelectionNewRoute: ProfilesStreamSelectionNewRoute,
+  ProfilesTranscodeConfigIdRoute: ProfilesTranscodeConfigIdRoute,
   LibrarySmart_collectionsIndexRoute: LibrarySmart_collectionsIndexRoute,
   LibraryTrashIndexRoute: LibraryTrashIndexRoute,
   Media_sourcesMediaSourceIdIndexRoute: Media_sourcesMediaSourceIdIndexRoute,

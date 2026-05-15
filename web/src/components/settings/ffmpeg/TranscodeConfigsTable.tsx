@@ -4,7 +4,7 @@ import { AddCircle, ContentCopy, Delete, Edit } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Button, IconButton, Stack, Tooltip } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import type { TranscodeConfig } from '@tunarr/types';
 import type { SupportedHardwareAccels } from '@tunarr/types/schemas';
 import { isNull } from 'lodash-es';
@@ -28,6 +28,7 @@ export const TranscodeConfigsTable = () => {
   const queryClient = useQueryClient();
   const transcodeConfigs = useTranscodeConfigs();
   const tableSettings = useStoreBackedTableSettings('TranscodeConfigs');
+  const navigate = useNavigate({ from: '/' });
 
   const [confirmDeleteTranscodeConfig, setConfirmDeleteTranscodeConfig] =
     useState<TranscodeConfig | null>(null);
@@ -111,6 +112,15 @@ export const TranscodeConfigsTable = () => {
         accessorFn(originalRow) {
           return `${originalRow.resolution.widthPx}x${originalRow.resolution.heightPx}`;
         },
+        sortingFn(rowA, rowB) {
+          const totalA =
+            rowA.original.resolution.widthPx *
+            rowA.original.resolution.heightPx;
+          const totalB =
+            rowB.original.resolution.widthPx *
+            rowB.original.resolution.heightPx;
+          return totalA > totalB ? 1 : totalA < totalB ? -1 : 0;
+        },
       },
       {
         header: t`Hardware Accel.`,
@@ -155,6 +165,18 @@ export const TranscodeConfigsTable = () => {
         visibleInShowHideMenu: false,
       },
     },
+    muiTableBodyRowProps: ({ row }) => ({
+      sx: {
+        cursor: 'pointer',
+      },
+      onClick: (ev) => {
+        ev.stopPropagation();
+        navigate({
+          to: '/profiles/transcode/$configId',
+          params: { configId: row.original.id },
+        }).catch(console.error);
+      },
+    }),
     renderTopToolbarCustomActions() {
       return (
         <Stack direction="row" alignItems="center" gap={2} useFlexGap>
