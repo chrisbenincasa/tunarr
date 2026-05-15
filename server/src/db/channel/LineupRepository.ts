@@ -197,6 +197,12 @@ export class LineupRepository {
     );
   }
 
+  // Bypasses Low
+  async saveChannelLineupDirect(channelId: string, lineup: Lineup) {
+    const outPath = this.fileSystemService.getChannelLineupPath(channelId);
+    await fs.writeFile(outPath, JSON.stringify(lineup));
+  }
+
   async markLineupFileForDeletion(
     channelId: string,
     isDelete: boolean = true,
@@ -278,38 +284,7 @@ export class LineupRepository {
   ): Promise<Lineup> {
     const db = await this.getFileDb(channelId);
     await db.update((data) => {
-      if (isDefined(newLineup.items)) {
-        data.items = newLineup.items;
-        data.startTimeOffsets =
-          newLineup.startTimeOffsets ??
-          calculateStartTimeOffsets(newLineup.items);
-      }
-
-      if (isDefined(newLineup.schedule)) {
-        if (newLineup.schedule === null) {
-          data.schedule = undefined;
-        } else {
-          data.schedule = newLineup.schedule;
-        }
-      }
-
-      if (isDefined(newLineup.pendingPrograms)) {
-        data.pendingPrograms =
-          newLineup.pendingPrograms === null
-            ? undefined
-            : newLineup.pendingPrograms;
-      }
-
-      if (isDefined(newLineup.onDemandConfig)) {
-        data.onDemandConfig =
-          newLineup.onDemandConfig === null
-            ? undefined
-            : newLineup.onDemandConfig;
-      }
-
-      data.version = newLineup?.version ?? data.version;
-
-      data.lastUpdated = dayjs().valueOf();
+      LineupRepository.applyUpdateLineupRequest(newLineup, data);
     });
 
     if (isDefined(newLineup.items)) {
@@ -317,6 +292,44 @@ export class LineupRepository {
       await this.updateChannelDuration(channelId, newDur);
     }
     return db.data;
+  }
+
+  static applyUpdateLineupRequest(
+    newLineup: UpdateChannelLineupRequest,
+    data: Lineup,
+  ) {
+    if (isDefined(newLineup.items)) {
+      data.items = newLineup.items;
+      data.startTimeOffsets =
+        newLineup.startTimeOffsets ??
+        calculateStartTimeOffsets(newLineup.items);
+    }
+
+    if (isDefined(newLineup.schedule)) {
+      if (newLineup.schedule === null) {
+        data.schedule = undefined;
+      } else {
+        data.schedule = newLineup.schedule;
+      }
+    }
+
+    if (isDefined(newLineup.pendingPrograms)) {
+      data.pendingPrograms =
+        newLineup.pendingPrograms === null
+          ? undefined
+          : newLineup.pendingPrograms;
+    }
+
+    if (isDefined(newLineup.onDemandConfig)) {
+      data.onDemandConfig =
+        newLineup.onDemandConfig === null
+          ? undefined
+          : newLineup.onDemandConfig;
+    }
+
+    data.version = newLineup?.version ?? data.version;
+
+    data.lastUpdated = dayjs().valueOf();
   }
 
   private updateChannelDuration(id: string, newDur: number): Promise<number> {

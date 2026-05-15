@@ -230,8 +230,13 @@ export type BaseSlotWithFiller = Extract<
   { type: 'movie' | 'show' | 'custom-show' | 'smart-collection' }
 >;
 
-export function slotIsLinkable(slot: BaseSlot): slot is LinkableBaseSlot {
-  switch (slot.type) {
+export function slotIsLinkable(
+  slotType: BaseSlot['type'],
+): slotType is LinkableBaseSlot['type'];
+export function slotIsLinkable(slot: BaseSlot): slot is LinkableBaseSlot;
+export function slotIsLinkable(slot: BaseSlot | BaseSlot['type']): boolean {
+  const type = typeof slot === 'string' ? slot : slot.type;
+  switch (type) {
     case 'custom-show':
     case 'movie':
     case 'show':
