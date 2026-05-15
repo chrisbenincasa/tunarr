@@ -168,23 +168,30 @@ export class StreamSelectionProfileResolver {
           }
         : { type: 'default' as const };
 
-    // Build subtitle action from channel subtitle preferences
-    const subtitlePrefs =
-      await this.channelDB.getChannelSubtitlePreferences(channelId);
+    // Check if the channel has subtitles enabled
+    const channel = await this.channelDB.getChannel(channelId);
 
     let subtitleAction: StreamSelectionRule['subtitleAction'];
-    if (subtitlePrefs.length > 0) {
-      const sorted = orderBy(subtitlePrefs, 'priority', 'asc');
-      const topPref = sorted[0]!;
-      subtitleAction = {
-        type: 'by_language' as const,
-        languages: sorted.map((p) => p.languageCode),
-        filterType: topPref.filterType ?? 'any',
-        allowImageBased: Boolean(topPref.allowImageBased ?? true),
-        allowExternal: Boolean(topPref.allowExternal ?? true),
-      };
+    if (!channel?.subtitlesEnabled) {
+      subtitleAction = { type: 'disable' as const };
     } else {
-      subtitleAction = { type: 'default' as const };
+      // Build subtitle action from channel subtitle preferences
+      const subtitlePrefs =
+        await this.channelDB.getChannelSubtitlePreferences(channelId);
+
+      if (subtitlePrefs.length > 0) {
+        const sorted = orderBy(subtitlePrefs, 'priority', 'asc');
+        const topPref = sorted[0]!;
+        subtitleAction = {
+          type: 'by_language' as const,
+          languages: sorted.map((p) => p.languageCode),
+          filterType: topPref.filterType ?? 'any',
+          allowImageBased: Boolean(topPref.allowImageBased ?? true),
+          allowExternal: Boolean(topPref.allowExternal ?? true),
+        };
+      } else {
+        subtitleAction = { type: 'default' as const };
+      }
     }
 
     rules.push({

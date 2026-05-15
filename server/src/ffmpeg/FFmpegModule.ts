@@ -5,6 +5,7 @@ import { ContainerModule } from 'inversify';
 import type { ChannelOrm } from '../db/schema/Channel.ts';
 import { bindAssistedFactory } from '../util/assistedInject.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
+import { StreamSelector } from './StreamSelector.ts';
 
 export type FFmpegAssistedFactory = (
   transcodeConfig: TranscodeConfigOrm,
@@ -19,6 +20,7 @@ const FFmpegModule = new ContainerModule(({ bind }) => {
   );
 
   bind(FfmpegInfo).toSelf().inSingletonScope();
+  bind(StreamSelector).toSelf().inSingletonScope();
 });
 
 export { FFmpegModule };
