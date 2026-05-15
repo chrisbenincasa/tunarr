@@ -17,6 +17,8 @@ import { inject, injectable } from 'inversify';
 import { compact, escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
 import { match } from 'ts-pattern';
+import { type ArtworkType } from '../db/schema/Artwork.ts';
+import { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
 import { MaterializedGuideItem } from '../types/guide.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
 
@@ -243,53 +245,86 @@ export class XmlTvWriter {
 
       const useShowPoster =
         this.settingsDB.xmlTvSettings().useShowPoster ?? false;
-
-      let url: string;
-      if (
-        useShowPoster &&
-        program.type === 'episode' &&
-        program.show?.artwork?.some((art) => art.artworkType === 'poster')
-      ) {
-        const showId = program.show?.uuid ?? program.tvShowUuid;
-        url = `{{host}}/api/programs/${showId}/artwork/poster`;
-      } else if (
-        program.type === 'episode' &&
-        program.artwork?.some(
-          (art) =>
-            art.artworkType === 'poster' || art.artworkType === 'thumbnail',
-        )
-      ) {
-        const art = program.artwork.find(
-          (art) =>
-            art.artworkType === 'poster' || art.artworkType === 'thumbnail',
-        );
-        url = `{{host}}/api/programs/${program.uuid}/artwork/${art?.artworkType}`;
-      } else if (
-        program.type === 'track' &&
-        program.album?.artwork?.some((art) => art.artworkType === 'poster')
-      ) {
-        url = `{{host}}/api/programs/${program.album?.uuid ?? program.albumUuid}/artwork/poster`;
-      } else if (program.artwork?.some((art) => art.artworkType === 'poster')) {
-        url = `{{host}}/api/programs/${program.uuid}/artwork/poster`;
-      } else {
-        // TODO: Remove this case when we consolidate all API endppoints for posters / thumbs
-        const query: string[] = [];
-        if (program.type === 'episode' && useShowPoster) {
-          query.push(`useShowPoster=${useShowPoster}`);
-        }
-        let idToUse = program.uuid;
-        if (program.type === 'track' && isNonEmptyString(program.album?.uuid)) {
-          idToUse = program.album.uuid;
-        }
-
-        url = `{{host}}/api/programs/${idToUse}/thumb?${query.join('&amp;')}`;
-      }
+      const url = XmlTvWriter.resolveArtworkUrl(program, {
+        useShowPoster,
+      });
 
       partial.image = [{ _value: url, size: 3 }];
       partial.icon = [{ src: url }];
     }
 
     return partial;
+  }
+
+  static resolveArtworkUrl(
+    program: ProgramWithRelationsOrm,
+    opts: { useShowPoster: boolean },
+  ): string {
+    type ArtworkCandidate = {
+      id: string | null | undefined;
+      artwork: { artworkType: ArtworkType | null }[] | undefined;
+      types: ArtworkType[];
+    };
+
+    const candidates: ArtworkCandidate[] = [];
+
+    if (program.type === 'episode') {
+      if (opts.useShowPoster) {
+        candidates.push({
+          id: program.show?.uuid ?? program.tvShowUuid,
+          artwork: program.show?.artwork ?? undefined,
+          types: ['poster'],
+        });
+      }
+      candidates.push({
+        id: program.uuid,
+        artwork: program.artwork,
+        types: ['poster', 'thumbnail'],
+      });
+    }
+
+    if (program.type === 'track') {
+      candidates.push({
+        id: program.album?.uuid ?? program.albumUuid,
+        artwork: program.album?.artwork ?? undefined,
+        types: ['poster'],
+      });
+    }
+
+    // Generic fallback: program's own poster
+    candidates.push({
+      id: program.uuid,
+      artwork: program.artwork,
+      types: ['poster'],
+    });
+
+    for (const candidate of candidates) {
+      if (!candidate.id) continue;
+      const art = candidate.artwork?.find(
+        (a) => a.artworkType && candidate.types.includes(a.artworkType),
+      );
+      if (art?.artworkType) {
+        return `{{host}}/api/programs/${candidate.id}/artwork/${art.artworkType}`;
+      }
+    }
+
+    // Fallback to /thumb for programs with no stored artwork
+    const query: string[] = [];
+    if (program.type === 'episode' && opts.useShowPoster) {
+      query.push(`useShowPoster=${opts.useShowPoster}`);
+    }
+
+    let idToUse = program.uuid;
+    if (program.type === 'track' && isNonEmptyString(program.album?.uuid)) {
+      idToUse = program.album.uuid;
+    }
+
+    let queryPart = '';
+    if (query.length > 0) {
+      queryPart = `?${query.join('&amp;')}`;
+    }
+
+    return `{{host}}/api/programs/${idToUse}/thumb${queryPart}`;
   }
 
   isWriting() {

@@ -44,7 +44,7 @@ export const useGetArtworkUrl = () => {
           // TODO: Just return the right URLs in the artwork item itself!
           const url = new URL(`/api/metadata/external`, actualBackendUri);
           url.searchParams.append('asset', 'image');
-          url.searchParams.append('imageType', 'poster');
+          url.searchParams.append('imageType', type);
           url.searchParams.append(
             'cache',
             import.meta.env.PROD ? 'true' : 'false',

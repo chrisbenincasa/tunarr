@@ -1,8 +1,9 @@
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, gte, lt, lte } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { v4 } from 'uuid';
+import { OpenDateTimeRange } from '../types/OpenDateTimeRange.ts';
 import {
   NewProgramPlayHistoryDrizzle,
   ProgramPlayHistory,
@@ -152,10 +153,23 @@ export class ProgramPlayHistoryDB {
     });
   }
 
-  async getFillerHistory(channelId: string) {
+  async getFillerHistory(
+    channelId: string,
+    range?: OpenDateTimeRange,
+    inclusive = true,
+  ) {
     return await this.drizzle.query.programPlayHistory.findMany({
       where: (fields, { isNotNull, and }) =>
-        and(eq(fields.channelUuid, channelId), isNotNull(fields.fillerListId)),
+        and(
+          eq(fields.channelUuid, channelId),
+          isNotNull(fields.fillerListId),
+          range?.from
+            ? (inclusive ? gte : gt)(fields.playedAt, range.from.toDate())
+            : undefined,
+          range?.to
+            ? (inclusive ? lte : lt)(fields.playedAt, range.to.toDate())
+            : undefined,
+        ),
       orderBy: (fields, { desc }) => desc(fields.playedAt),
     });
   }

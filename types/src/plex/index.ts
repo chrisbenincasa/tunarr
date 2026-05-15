@@ -956,7 +956,7 @@ export const PlexResourceSchema = z.object({
   lastSeenAt: z.string(),
   name: z.string(),
   owned: z.boolean(),
-  ownerId: z.string().nullish(),
+  ownerId: z.string().or(z.number()).nullish().catch(undefined),
   platform: z.string(),
   platformVersion: z.string(),
   presence: z.boolean(),
