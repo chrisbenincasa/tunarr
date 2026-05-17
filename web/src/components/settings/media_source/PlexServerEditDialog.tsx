@@ -100,15 +100,23 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
 
   const updatePlexServerMutation = useMutation({
     mutationFn: async (newOrUpdatedServer: PlexServerSettingsForm) => {
+      const accessToken = newOrUpdatedServer.accessToken;
+      if (!isNonEmptyString(accessToken)) {
+        return;
+      }
       if (isNonEmptyString(newOrUpdatedServer.id)) {
         await putApiMediaSourcesById({
-          body: { ...newOrUpdatedServer, id: newOrUpdatedServer.id },
+          body: {
+            ...newOrUpdatedServer,
+            id: newOrUpdatedServer.id,
+            accessToken,
+          },
           path: { id: newOrUpdatedServer.id },
         });
         return { id: newOrUpdatedServer.id };
       } else {
         return postApiMediaSources({
-          body: newOrUpdatedServer,
+          body: { ...newOrUpdatedServer, accessToken },
         });
       }
     },

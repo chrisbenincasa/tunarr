@@ -911,7 +911,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             uri: source.uri,
             type: source.type,
             name: source.name,
-            accessToken: source.accessToken,
+            accessToken: undefined, // Do not expose access token in API response
             clientIdentifier: nullToUndefined(source.clientIdentifier),
             sendGuideUpdates: source.sendGuideUpdates ?? false,
             libraries: (source.libraries ?? []).map((library) => ({

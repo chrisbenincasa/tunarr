@@ -134,6 +134,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                   id: data.id,
                   userId: null,
                   username: null,
+                  accessToken,
                 },
               })
             : createMediaSourceMut.mutate({
@@ -141,6 +142,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                   ...data,
                   userId: null,
                   username: null,
+                  accessToken,
                 },
               }),
         showErrorSnack,

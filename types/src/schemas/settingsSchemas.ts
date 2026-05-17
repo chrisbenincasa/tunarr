@@ -151,7 +151,7 @@ const BaseMediaSourceSettingsSchema = z.object({
   id: z.string(),
   name: z.string(),
   uri: z.string(),
-  accessToken: z.string(),
+  accessToken: z.string().optional(),
   userId: z.string().nullable(),
   username: z.string().nullable(),
   libraries: z.array(BaseMediaSourceLibrarySchema),
