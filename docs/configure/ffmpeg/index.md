@@ -47,6 +47,15 @@ Then, in Tunarr, you would set your transcode path to `/transcode`.
 
 If content in your channels have embedded, text-based subtitles, this option enables Tunarr to extract subtitles from media files in order to subsequently burn the subtitles. Extract embedded text-based subtitles is currently a requirement for using said subtitle streams. Each hour Tunarr will scan the guide for upcoming media, find which items have embedded text-based subtitles, and then run extraction. This can be a resource-intensive process, so in general, sidecar text-based subtitles are preferable.
 
+### Sidecar Subtitles
+
+Tunarr supports sidecar subtitle files (`.srt`, `.vtt`, etc.) placed alongside your media files. When scanning local libraries, Tunarr automatically discovers external subtitle files and associates them with the corresponding media. For Plex, Jellyfin, and Emby sources, external subtitles reported by the media server are downloaded during scanning.
+
+When using the **HLS Direct** stream mode, sidecar text-based subtitles are served as WebVTT tracks in the HLS master playlist. Clients that support HLS subtitle renditions (most modern players) will display them as selectable subtitle options.
+
+!!! note
+    Sidecar subtitle support is currently experimental. To enable it, go to **Settings > Features** and turn on the sidecar subtitles option.
+
 ### Language Preference
 
 Currently, language preferences can only be configured globally. Use this setting to set an ordered list of preferred audio languages. The first matching audio language stream for a given piece of content will be chosen.

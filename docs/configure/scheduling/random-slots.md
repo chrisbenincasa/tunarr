@@ -56,6 +56,15 @@ Determines how flex is added to a slot to fill in leftover time, either due to b
 
 Currently, Tunarr can only statically precalculate a schedule. This option determines how far into the future the schedule will be calculated before saving the lineup for playback.
 
+## Season Exclusion
+
+When creating a Show slot, you can filter which seasons are included or excluded from scheduling. After selecting a show, two autocomplete fields appear:
+
+- **Include Seasons** -- Only schedule episodes from the selected seasons. Leave empty to include all seasons.
+- **Exclude Seasons** -- Exclude episodes from the selected seasons. This is useful for skipping a particular season (e.g. a weak first season) without having to enumerate every other season in the include list.
+
+Include and exclude are mutually exclusive per-season: a season cannot appear in both lists. When a slot is linked to a group, season filters are shared across all linked slots.
+
 ## Slot Linking
 
 By default, each slot is isolated and maintains its own position in its program list. If you have multiple slots for the same show, they will independently iterate through episodes, which can result in duplicates.

@@ -18,6 +18,12 @@ The System section covers Tunarr's core infrastructure settings including backup
 
     Configure log levels, log file rotation, and learn how to access logs for troubleshooting.
 
+-   **[Troubleshooting](../../misc/troubleshooting.md)**
+
+    ---
+
+    Diagnose streaming issues for individual programs by analyzing the full transcoding pipeline.
+
 </div>
 
 ## Quick Links
