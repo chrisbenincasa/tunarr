@@ -149,8 +149,6 @@ export default function FfmpegSettingsPage() {
 
   const deleteTranscodeConfig = useMutation({
     ...deleteApiTranscodeConfigsByIdMutation(),
-    // mutationFn: (id: string) =>
-    //   apiClient.deleteTranscodeConfig(undefined, { params: { id } }),
   });
 
   const updateFfmpegSettings: SubmitHandler<
@@ -221,17 +219,23 @@ export default function FfmpegSettingsPage() {
                   handleFfmpegLogChange(e.target.value)
                 }
               >
-                <MenuItem value="disable"><Trans>Disabled</Trans></MenuItem>
-                <MenuItem value="console"><Trans>Console</Trans></MenuItem>
-                <MenuItem value="file"><Trans>File</Trans></MenuItem>
+                <MenuItem value="disable">
+                  <Trans>Disabled</Trans>
+                </MenuItem>
+                <MenuItem value="console">
+                  <Trans>Console</Trans>
+                </MenuItem>
+                <MenuItem value="file">
+                  <Trans>File</Trans>
+                </MenuItem>
               </Select>
 
               <FormHelperText>
                 <Trans>
                   Enable ffmpeg logging to different sinks. Outputting to a file
                   will create a new log file for every spawned ffmpeg process in
-                  the Tunarr log directory. These files are automatically cleaned
-                  up by a background process.
+                  the Tunarr log directory. These files are automatically
+                  cleaned up by a background process.
                 </Trans>
               </FormHelperText>
             </FormControl>
@@ -297,8 +301,8 @@ export default function FfmpegSettingsPage() {
           />
           <FormHelperText>
             <Trans>
-              Channels configured to use the HLS Direct stream mode will output in
-              the selected container format.
+              Channels configured to use the HLS Direct stream mode will output
+              in the selected container format.
             </Trans>
           </FormHelperText>
         </FormControl>
@@ -318,9 +322,10 @@ export default function FfmpegSettingsPage() {
                       directory (but not intermediate directories) if it doesn't
                       exist.
                       <br />
-                      Changing this field will only affect new sessions. Existing
-                      sessions will continue writing to the previous setting, but
-                      will clean out segments when the segment ends.
+                      Changing this field will only affect new sessions.
+                      Existing sessions will continue writing to the previous
+                      setting, but will clean out segments when the segment
+                      ends.
                       <br />
                       When unset, Tunarr will write segments to its current
                       working directory.
@@ -339,7 +344,9 @@ export default function FfmpegSettingsPage() {
       </Typography>
       <Stack spacing={3} sx={{ mb: 2 }}>
         <Box>
-          <Typography variant="h6"><Trans>Subtitles</Trans></Typography>
+          <Typography variant="h6">
+            <Trans>Subtitles</Trans>
+          </Typography>
           <FormControl fullWidth>
             <Controller
               control={control}
@@ -355,8 +362,8 @@ export default function FfmpegSettingsPage() {
             <FormHelperText>
               <Trans>
                 Enabling embedded subtitle extaction will periodically scan your
-                upcoming programming for embedded text-based subtitle streams and
-                extract them to a local cache. This is necessary in order to
+                upcoming programming for embedded text-based subtitle streams
+                and extract them to a local cache. This is necessary in order to
                 enable subtitle burning for text-based subtitles which are not
                 external streams.
               </Trans>

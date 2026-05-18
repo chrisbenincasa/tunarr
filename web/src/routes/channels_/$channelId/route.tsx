@@ -1,9 +1,9 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router';
-import { setCurrentEntityType } from '../../../store/channelEditor/actions.ts';
+import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/channels_/$channelId')({
-  loader() {
-    setCurrentEntityType('channel');
-  },
-  component: Outlet,
+  component: RouteComponent,
 });
+
+function RouteComponent() {
+  return <div>Hello "/channels_/$channelId"!</div>;
+}
