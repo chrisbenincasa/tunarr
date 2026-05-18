@@ -285,7 +285,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoBufferSize: playbackParams.videoBufferSize,
         videoTrackTimescale: playbackParams.videoTrackTimeScale,
         videoFormat: playbackParams.videoFormat,
-        // videoPreset: playbackParams.video
+        videoPreset: playbackParams.videoPreset ?? null,
       }),
       DefaultPipelineOptions,
     );
@@ -736,6 +736,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoFormat: isPassthrough
           ? VideoFormats.Copy
           : playbackParams!.videoFormat,
+        videoPreset: playbackParams!.videoPreset ?? null,
         videoProfile: null,
         deinterlace: isPassthrough ? false : playbackParams!.deinterlace,
         infiniteLoop: lineupItem.infiniteLoop,
@@ -894,6 +895,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoTrackTimescale: playbackParams.videoTrackTimeScale,
         realtime,
         videoFormat: playbackParams.videoFormat,
+        videoPreset: playbackParams.videoPreset ?? null,
         videoProfile: null, // TODO:
         deinterlace: false,
       }),
@@ -1002,6 +1004,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoTrackTimescale: playbackParams.videoTrackTimeScale,
         realtime,
         videoFormat: playbackParams.videoFormat,
+        videoPreset: playbackParams.videoPreset ?? null,
         videoProfile: null, // TODO:
         deinterlace: false,
       }),

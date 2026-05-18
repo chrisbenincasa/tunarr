@@ -112,15 +112,23 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
 
   const updateSourceMutation = useMutation({
     mutationFn: async (newOrUpdatedServer: EmbyServerSettingsForm) => {
+      const at = newOrUpdatedServer.accessToken;
+      if (!isNonEmptyString(at)) {
+        return;
+      }
       if (isNonEmptyString(newOrUpdatedServer.id)) {
         await putApiMediaSourcesById({
-          body: { ...newOrUpdatedServer, id: newOrUpdatedServer.id },
+          body: {
+            ...newOrUpdatedServer,
+            id: newOrUpdatedServer.id,
+            accessToken: at,
+          },
           path: { id: newOrUpdatedServer.id },
         });
         return { id: newOrUpdatedServer.id };
       } else {
         return postApiMediaSources({
-          body: newOrUpdatedServer,
+          body: { ...newOrUpdatedServer, accessToken: at },
         });
       }
     },

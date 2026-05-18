@@ -33,7 +33,7 @@ export const useMediaSourceBackendStatus = (
   const unknownServerStatusResult = useQuery({
     ...postApiMediaSourcesForeignstatusOptions({
       body: {
-        accessToken,
+        accessToken: accessToken ?? '',
         type,
         uri,
       },

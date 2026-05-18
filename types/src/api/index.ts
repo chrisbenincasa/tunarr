@@ -176,9 +176,17 @@ export const UpdateMediaSourceRequestSchema = z.discriminatedUnion('type', [
   PlexServerSettingsSchema.partial({
     sendGuideUpdates: true,
     clientIdentifier: true,
-  }).omit({ libraries: true }),
-  JellyfinServerSettingsSchema.omit({ libraries: true }),
-  EmbyServerSettingsSchema.omit({ libraries: true }),
+  })
+    .omit({ libraries: true })
+    .required({
+      accessToken: true,
+    }),
+  JellyfinServerSettingsSchema.omit({ libraries: true }).required({
+    accessToken: true,
+  }),
+  EmbyServerSettingsSchema.omit({ libraries: true }).required({
+    accessToken: true,
+  }),
   LocalMediaSourceSchema.omit({ libraries: true }),
 ]);
 
@@ -201,9 +209,15 @@ export const InsertMediaSourceRequestSchema = z.discriminatedUnion('type', [
     sendGuideUpdates: true,
     index: true,
     clientIdentifier: true,
-  }).omit({ id: true, libraries: true }),
-  JellyfinServerSettingsSchema.omit({ id: true, libraries: true }),
-  EmbyServerSettingsSchema.omit({ id: true, libraries: true }),
+  })
+    .omit({ id: true, libraries: true })
+    .required({ accessToken: true }),
+  JellyfinServerSettingsSchema.omit({ id: true, libraries: true }).required({
+    accessToken: true,
+  }),
+  EmbyServerSettingsSchema.omit({ id: true, libraries: true }).required({
+    accessToken: true,
+  }),
   LocalMediaSourceSchema.omit({ id: true, libraries: true }),
 ]);
 
