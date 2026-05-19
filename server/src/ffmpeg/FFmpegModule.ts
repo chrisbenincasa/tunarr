@@ -18,7 +18,7 @@ const FFmpegModule = new ContainerModule(({ bind }) => {
     FfmpegStreamFactory,
   );
 
-  bind(FfmpegInfo).toSelf().inSingletonScope();
+  bind(FfmpegInfo).toSelf();
 });
 
 export { FFmpegModule };

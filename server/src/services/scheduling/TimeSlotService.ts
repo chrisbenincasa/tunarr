@@ -244,8 +244,15 @@ export async function scheduleTimeSlots(
       continue;
     }
 
+    // Push the redirect program for the length of the whole slot
+    // and then continue. There will be no filler or padding,
+    // it really isn't necessary.
     if (program.type === 'redirect') {
       program = { ...program, duration: slotDuration };
+      channelPrograms.push(program);
+      currSlot.advanceIterator();
+      timeCursor = timeCursor.add(program.duration);
+      continue;
     }
 
     // Program longer than we have left? Add it and move on...
