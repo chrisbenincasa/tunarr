@@ -24,6 +24,7 @@ import {
 } from 'lodash-es';
 import { useCallback, useMemo, useState } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
+import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { usePolymorphicSlotFormContext } from '../../hooks/slot_scheduler/usePolymorphicSlotFormContext.ts';
 import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
@@ -78,6 +79,48 @@ function getSlotOrderingValue(slot: CommonSlotViewModel) {
   return 0;
 }
 
+function linkableSlotsAreEqual(
+  left: LinkableSlotViewModel,
+  right: LinkableSlotViewModel,
+) {
+  return match([left, right])
+    .with(
+      [{ type: 'custom-show' }, { type: 'custom-show' }],
+      ([l, r]) => l.customShow?.name === r.customShow?.name,
+    )
+    .with(
+      [{ type: 'show' }, { type: 'show' }],
+      ([l, r]) => l.show?.title === r.show?.title,
+    )
+    .with(
+      [{ type: 'filler' }, { type: 'filler' }],
+      ([l, r]) => l.fillerList?.name === r.fillerList?.name,
+    )
+    .with(
+      [{ type: 'smart-collection' }, { type: 'smart-collection' }],
+      ([l, r]) => l.smartCollection?.name === r.smartCollection?.name,
+    )
+    .with([{ type: 'movie' }, { type: 'movie' }], () => true)
+    .otherwise(() => false);
+}
+
+function slotHasId(slot: LinkableSlotViewModel) {
+  return match(slot)
+    .with({ type: 'show' }, (show) =>
+      isNonEmptyString(show.show?.uuid ?? show.showId),
+    )
+    .with({ type: 'smart-collection' }, (sm) =>
+      isNonEmptyString(sm.smartCollectionId ?? sm.smartCollection?.uuid),
+    )
+    .with({ type: 'custom-show' }, (cs) =>
+      isNonEmptyString(cs.customShowId ?? cs.customShow?.id),
+    )
+    .with({ type: 'filler' }, (f) =>
+      isNonEmptyString(f.fillerListId ?? f.fillerList?.id),
+    )
+    .with({ type: 'movie' }, () => true);
+}
+
 export function SlotLinkingControl({
   allSlots,
   onLinkSourceSlot,
@@ -95,7 +138,8 @@ export function SlotLinkingControl({
   const linkableSlots = useMemo(() => {
     const allLinkable = allSlots
       .filter(slotIsLinkable)
-      .filter((s) => s.id !== currentSlotId);
+      .filter((s) => s.id !== currentSlotId)
+      .filter(slotHasId);
     // Show all unlinked slots, but only one representative per linked group (earliest)
     const [linked, unlinked] = partition(allLinkable, (slot) =>
       isNonEmptyString(slot.iterationGroup),
@@ -106,8 +150,6 @@ export function SlotLinkingControl({
     );
     return unlinked.concat(compact(values(groupedSlots)));
   }, [allSlots, currentSlotId]);
-
-  console.log(linkableSlots, allSlots);
 
   const groupPeers = useMemo(
     () =>
@@ -248,6 +290,8 @@ export function SlotLinkingControl({
           getOptionLabel={(slot) =>
             `${getSlotName(slot) ?? prettifySnakeCaseString(slot.type)} (${getSlotIdentifier(slot)})`
           }
+          getOptionKey={(slot) => slot.id}
+          isOptionEqualToValue={linkableSlotsAreEqual}
           onChange={(_, slot) => {
             if (slot) handleLink(slot);
           }}
