@@ -42,7 +42,7 @@ const FFmpegModule = new ContainerModule((bind) => {
     };
   }).whenTargetIsDefault();
 
-  bind(FfmpegInfo).toSelf().inSingletonScope();
+  bind(FfmpegInfo).toSelf();
 });
 
 export { FFmpegModule };
