@@ -59,10 +59,11 @@ const useSlotIdentifier = () => {
       if (type === 'time') {
         const values = context.getValues();
         const timeslot = slot as TimeSlotViewModel;
+        const fmt = values.period === 'week' ? 'ddd LT' : 'LT';
         return dayjs()
           .startOf(values.period)
           .add(timeslot.startTime)
-          .format('LT');
+          .format(fmt);
       }
       return '';
     },
