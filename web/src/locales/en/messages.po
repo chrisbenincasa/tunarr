@@ -298,16 +298,16 @@ msgstr "A-Z (desc)"
 msgid "about "
 msgstr "about "
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:354
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:390
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:431
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:447
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:380
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:422
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:454
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:470
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:257
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:273
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:362
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:398
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:439
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:455
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:382
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:424
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:456
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:472
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:265
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:281
 msgid "Access Token"
 msgstr "Access Token"
 
@@ -315,10 +315,10 @@ msgstr "Access Token"
 #: src/components/settings/AddPlexServer.tsx:14
 #: src/components/settings/media_source/AddMediaSourceButton.tsx:83
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx:34
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:491
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:514
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:499
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:516
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:338
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:352
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:360
 #: src/hooks/useRouteName.ts:83
 msgid "Add"
 msgstr "Add"
@@ -650,7 +650,7 @@ msgstr "Auto Deinterlace Video"
 msgid "Auto uses the time convention for the selected language."
 msgstr "Auto uses the time convention for the selected language."
 
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:336
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:344
 msgid "Auto-Update Guide"
 msgstr "Auto-Update Guide"
 
@@ -786,10 +786,10 @@ msgstr "Calculating Slots..."
 #: src/components/programming_controls/BalanceProgrammingModal.tsx:68
 #: src/components/programming_controls/RemoveShowsModal.tsx:429
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx:76
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:478
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:501
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:486
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:503
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:330
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:345
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:353
 #: src/components/settings/UnsavedNavigationAlert.tsx:67
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:512
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:362
@@ -804,9 +804,9 @@ msgstr "Calculating Slots..."
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:272
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:292
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:206
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:280
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:294
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:214
 msgid "Cannot be empty"
 msgstr "Cannot be empty"
 
@@ -1287,7 +1287,7 @@ msgstr "Description"
 msgid "Details"
 msgstr "Details"
 
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:194
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:196
 msgid "Did not receive an accessToken or userId from Jellyfin server."
 msgstr "Did not receive an accessToken or userId from Jellyfin server."
 
@@ -1574,11 +1574,11 @@ msgstr "Ensures programs have a nice-looking start time, it will add Flex time t
 msgid "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
 msgstr "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:334
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:342
 msgid "Enter a name for your Emby Server"
 msgstr "Enter a name for your Emby Server"
 
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:354
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:356
 msgid "Enter a name for your Jellyfin Server"
 msgstr "Enter a name for your Jellyfin Server"
 
@@ -1586,11 +1586,11 @@ msgstr "Enter a name for your Jellyfin Server"
 msgid "Enter a name for your Local Media Source"
 msgstr "Enter a name for your Local Media Source"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:405
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:413
 msgid "Enter your Emby password to generate a new access token."
 msgstr "Enter your Emby password to generate a new access token."
 
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:437
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:439
 msgid "Enter your Jellyfin password to generate a new access token.<0/><1>NOTE:</1> These are never saved to the Tunarr DB. Instead they are sent to Jellyfin to exchange for a session token."
 msgstr "Enter your Jellyfin password to generate a new access token.<0/><1>NOTE:</1> These are never saved to the Tunarr DB. Instead they are sent to Jellyfin to exchange for a session token."
 
@@ -1632,7 +1632,7 @@ msgstr "Error Options"
 msgid "Error querying Plex. Check console log and consider reporting a bug!"
 msgstr "Error querying Plex. Check console log and consider reporting a bug!"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:138
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:146
 msgid "Error saving new Emby server. See browser console and server logs for details"
 msgstr "Error saving new Emby server. See browser console and server logs for details"
 
@@ -1946,7 +1946,7 @@ msgstr "Flex"
 msgid "Flex Style"
 msgstr "Flex Style"
 
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:284
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:292
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
 msgstr "For more details on manually retrieving a Plex token, see <0>here</0>"
 
@@ -2392,11 +2392,11 @@ msgstr "Manage Libraries"
 msgid "Manual"
 msgstr "Manual"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:459
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:467
 msgid "Manually add an access token from your Emby server"
 msgstr "Manually add an access token from your Emby server"
 
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:482
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:484
 msgid "Manually add an access token from your Jellyfin server"
 msgstr "Manually add an access token from your Jellyfin server"
 
@@ -2569,10 +2569,10 @@ msgstr "Must use a valid URL, or empty."
 #: src/components/settings/ConnectMediaSources.tsx:44
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx:95
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:93
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:327
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:347
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:335
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:349
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:238
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:309
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:317
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:162
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:108
 #: src/components/smart_collections/SmartCollectionsTable.tsx:59
@@ -2585,10 +2585,10 @@ msgstr "Must use a valid URL, or empty."
 msgid "Name"
 msgstr "Name"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:322
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:342
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:330
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:344
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:233
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:304
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:312
 msgid "Name can only contain alphanumeric characters, dashes, and underscores"
 msgstr "Name can only contain alphanumeric characters, dashes, and underscores"
 
@@ -2707,9 +2707,9 @@ msgstr "Normalize Frame Rate"
 msgid "Not a valid number"
 msgstr "Not a valid number"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:274
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:294
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:208
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:282
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:296
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:216
 msgid "Not a valid URL"
 msgstr "Not a valid URL"
 
@@ -2777,8 +2777,8 @@ msgstr "Operator"
 msgid "Options"
 msgstr "Options"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:410
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:446
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:418
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:448
 msgid "OR"
 msgstr "OR"
 
@@ -2858,8 +2858,8 @@ msgstr "Pad Times"
 msgid "Passthrough audio unchanged. Other settings will not apply."
 msgstr "Passthrough audio unchanged. Other settings will not apply."
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:374
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:405
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:382
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:407
 msgid "Password"
 msgstr "Password"
 
@@ -3028,9 +3028,9 @@ msgstr "Programs Too Long"
 msgid "Properties"
 msgstr "Properties"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:276
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:296
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:210
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:284
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:298
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:218
 msgid "Protocol must be HTTP or HTTPS"
 msgstr "Protocol must be HTTP or HTTPS"
 
@@ -3447,9 +3447,9 @@ msgstr "Selected Audio"
 msgid "Selected Subtitle"
 msgstr "Selected Subtitle"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:297
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:317
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:231
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:305
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:319
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:239
 msgid "Server is unreachable"
 msgstr "Server is unreachable"
 
@@ -4004,11 +4004,11 @@ msgstr "To use Tunarr, you need to first connect a media source. This will allow
 msgid "Today"
 msgstr "Today"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:382
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:439
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:414
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:462
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:265
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:390
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:447
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:416
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:464
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:273
 msgid "toggle access token visibility"
 msgstr "toggle access token visibility"
 
@@ -4120,16 +4120,16 @@ msgstr "Unlink"
 #~ msgid "Unlink from group"
 #~ msgstr "Unlink from group"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:491
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:514
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:499
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:516
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:338
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:352
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:360
 msgid "Update"
 msgstr "Update"
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:283
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:303
-#: src/components/settings/media_source/PlexServerEditDialog.tsx:217
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:291
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:305
+#: src/components/settings/media_source/PlexServerEditDialog.tsx:225
 #: src/pages/settings/MediaSourceSettingsPage.tsx:88
 msgid "URL"
 msgstr "URL"
@@ -4146,8 +4146,8 @@ msgstr "Use Show Poster"
 msgid "Use these settings to override global ffmpeg settings for this channel."
 msgstr "Use these settings to override global ffmpeg settings for this channel."
 
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx:349
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:374
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx:357
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx:376
 msgid "Username"
 msgstr "Username"
 
