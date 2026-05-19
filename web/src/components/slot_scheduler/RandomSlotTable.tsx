@@ -12,12 +12,12 @@ import { getRandomSlotId } from '@/helpers/slotSchedulerUtil.ts';
 
 import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
-import { plural } from '@lingui/core/macro';
-import { Trans, useLingui } from '@lingui/react/macro';
 import type {
   RandomSlotTableRowType,
   SlotWarning,
 } from '@/model/CommonSlotModels';
+import { plural } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Balance, Warning } from '@mui/icons-material';
 import Delete from '@mui/icons-material/Delete';
 import Edit from '@mui/icons-material/Edit';
@@ -350,7 +350,7 @@ export const RandomSlotTable = () => {
         },
       },
     ];
-  }, [getSlotName, lockWeights, maxWeight, t]);
+  }, [currentSlots, getSlotName, lockWeights, maxWeight, t]);
 
   const onDeleteSlot = useCallback(
     (index: number) => {

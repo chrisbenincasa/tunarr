@@ -26,7 +26,7 @@ export const AddTimeSlotButton = ({
 }: AddTimeSlotButtonProps) => {
   const {
     watch,
-    slotArray: { fields: slots, append },
+    slotArray: { fields: slots },
   } = useTimeSlotFormContext();
   const currentPeriod = watch('period');
 
@@ -125,8 +125,7 @@ export const AddTimeSlotButton = ({
     }
 
     onAdd(newSlot);
-    append(newSlot);
-  }, [relevantSlots, currentPeriod, dayOffset, optionsByType, onAdd, append]);
+  }, [relevantSlots, currentPeriod, dayOffset, optionsByType, onAdd]);
 
   return (
     <Button

@@ -84,6 +84,17 @@ const fillerKindToColor = {
   fallback: pink['A100'],
 };
 
+type CurrentEditingSlot =
+  | {
+      new: true;
+      slot: TimeSlotViewModel;
+    }
+  | {
+      new: false;
+      slot: TimeSlotViewModel;
+      index: number;
+    };
+
 export const TimeSlotTable = () => {
   const { t } = useLingui();
   const providedDjs = useDayjs();
@@ -105,10 +116,8 @@ export const TimeSlotTable = () => {
 
   const detailsBySlotId = useScheduledSlotProgramDetails(slotIds);
 
-  const [currentEditingSlot, setCurrentEditingSlot] = useState<{
-    slot: TimeSlotViewModel;
-    index: number;
-  } | null>(null);
+  const [currentEditingSlot, setCurrentEditingSlot] =
+    useState<CurrentEditingSlot | null>(null);
 
   const [currentSlotWarningsIndex, setCurrentSlotWarningsIndex] = useState<
     number | null
@@ -384,6 +393,7 @@ export const TimeSlotTable = () => {
           <IconButton
             onClick={() =>
               setCurrentEditingSlot({
+                new: false,
                 slot: row.original,
                 index: row.original.originalIndex,
               })
@@ -422,9 +432,7 @@ export const TimeSlotTable = () => {
       return (
         <Stack direction="row" alignItems="center" gap={2} useFlexGap>
           <AddTimeSlotButton
-            onAdd={(slot) =>
-              setCurrentEditingSlot({ slot, index: slotArray.fields.length })
-            }
+            onAdd={(slot) => setCurrentEditingSlot({ new: true, slot })}
             programOptions={programOptions}
             dayOffset={selectedDay}
           />
@@ -474,7 +482,12 @@ export const TimeSlotTable = () => {
         {currentEditingSlot && (
           <EditTimeSlotDialogContent
             slot={currentEditingSlot.slot}
-            index={currentEditingSlot.index}
+            onSave={(slot) =>
+              currentEditingSlot.new
+                ? slotArray.append(slot)
+                : slotArray.update(currentEditingSlot.index, slot)
+            }
+            onCancel={() => {}}
             onClose={() => setCurrentEditingSlot(null)}
           />
         )}

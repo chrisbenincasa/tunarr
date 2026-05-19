@@ -48,13 +48,15 @@ const DaysOfWeekMenuItems = [
 
 type EditTimeSlotDialogContentProps = {
   slot: TimeSlotViewModel;
-  index: number;
-  onClose: () => void;
+  onSave: (slot: TimeSlotViewModel) => void;
+  onCancel: () => void;
+  onClose?: () => void;
 };
 
 export const EditTimeSlotDialogContent = ({
   slot,
-  index,
+  onSave,
+  onCancel,
   onClose,
 }: EditTimeSlotDialogContentProps) => {
   const { t } = useLingui();
@@ -248,17 +250,21 @@ export const EditTimeSlotDialogContent = ({
     [getValues, programOptions],
   );
 
-  const commit = () => {
-    slotArray.update(index, getValues());
-    onClose();
-  };
+  const cancel = useCallback(() => {
+    onCancel();
+    onClose?.();
+  }, [onCancel, onClose]);
+
+  const commit = useCallback(() => {
+    onSave(getValues());
+    onClose?.();
+  }, [onSave, getValues, onClose]);
 
   return (
     <>
       <DialogContent>
         <Box
           sx={{
-            // pt: 2,
             display: 'flex',
             flexDirection: 'column',
             gap: '1rem',
@@ -358,7 +364,7 @@ export const EditTimeSlotDialogContent = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>
+        <Button onClick={() => cancel()}>
           <Trans>Cancel</Trans>
         </Button>
         <Button
