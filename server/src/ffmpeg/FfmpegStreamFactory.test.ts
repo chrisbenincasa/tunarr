@@ -7,12 +7,17 @@ import type {
 import type { ChannelOrm } from '@/db/schema/Channel.ts';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.ts';
 import {
+  AudioFormats,
+  HlsDirectOutputFormat,
   MpegTsOutputFormat,
+  VideoFormats,
   VideoPresets,
+  defaultHlsOptions,
 } from '@/ffmpeg/builder/constants.ts';
 import type { PipelineBuilder } from '@/ffmpeg/builder/pipeline/PipelineBuilder.ts';
 import type { PipelineBuilderFactory } from '@/ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.ts';
 import type { FfmpegInfo, FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.ts';
 import type { StreamSelector } from '@/ffmpeg/StreamSelector.ts';
 import type { FeatureFlagService } from '@/services/FeatureFlagService.ts';
@@ -168,13 +173,16 @@ function makeLineupItem(): ContentBackedStreamLineupItem {
 function createCapturingPipelineBuilderFactory(): {
   factory: PipelineBuilderFactory;
   getCapturedFrameState: () => FrameState | undefined;
+  getCapturedFfmpegState: () => FfmpegState | undefined;
+  getCapturedHwAccel: () => string | undefined;
 } {
   let capturedFrameState: FrameState | undefined;
+  let capturedFfmpegState: FfmpegState | undefined;
+  let capturedHwAccel: string | undefined;
 
   const factory: PipelineBuilderFactory = () => {
     const builderProxy: Record<string, unknown> = {};
     for (const method of [
-      'setHardwareAccelerationMode',
       'setVideoInputSource',
       'setAudioInputSource',
       'setWatermarkInputSource',
@@ -184,8 +192,14 @@ function createCapturingPipelineBuilderFactory(): {
       builderProxy[method] = vi.fn().mockReturnValue(builderProxy);
     }
 
+    builderProxy.setHardwareAccelerationMode = vi.fn((mode: string) => {
+      capturedHwAccel = mode;
+      return builderProxy;
+    });
+
     builderProxy.build = vi.fn().mockResolvedValue({
-      build: (_ffmpegState: unknown, frameState: FrameState) => {
+      build: (ffmpegState: FfmpegState, frameState: FrameState) => {
+        capturedFfmpegState = ffmpegState;
         capturedFrameState = frameState;
         return {
           getCommandArgs: () => [],
@@ -200,7 +214,12 @@ function createCapturingPipelineBuilderFactory(): {
     return builderProxy as ReturnType<PipelineBuilderFactory>;
   };
 
-  return { factory, getCapturedFrameState: () => capturedFrameState };
+  return {
+    factory,
+    getCapturedFrameState: () => capturedFrameState,
+    getCapturedFfmpegState: () => capturedFfmpegState,
+    getCapturedHwAccel: () => capturedHwAccel,
+  };
 }
 
 function makeMockFfmpegInfo(): FfmpegInfo {
@@ -429,6 +448,241 @@ describe('FfmpegStreamFactory', () => {
       expect(frameState).toBeDefined();
       // calculateForErrorStream (used by offline) doesn't set videoPreset
       expect(frameState!.videoPreset).toBeNull();
+    });
+  });
+
+  describe('passthrough mode (HlsDirectV2 / remux)', () => {
+    const hlsDirectV2Format = HlsDirectOutputFormat(defaultHlsOptions);
+
+    function createPassthroughSut(
+      configOverrides: Partial<TranscodeConfigOrm> = {},
+      streamDetails?: StreamDetails,
+    ) {
+      const config = makeTranscodeConfig(configOverrides);
+      const capturing = createCapturingPipelineBuilderFactory();
+
+      const sut = new FfmpegStreamFactory(
+        makeMockFfmpegInfo(),
+        makeMockSettingsDB(makeFfmpegSettings()),
+        capturing.factory,
+        makeMockChannelDB(),
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        config,
+        makeChannel(),
+      );
+
+      return {
+        sut,
+        ...capturing,
+        streamDetails: streamDetails ?? makeStreamDetails(),
+      };
+    }
+
+    test('HlsDirectV2 does not crash (playbackParams is null)', async () => {
+      const { sut, getCapturedFrameState, streamDetails } =
+        createPassthroughSut();
+
+      await sut.createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details: streamDetails,
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: hlsDirectV2Format,
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls',
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      expect(getCapturedFrameState()).toBeDefined();
+    });
+
+    test('remux mode does not crash (playbackParams is null)', async () => {
+      const { sut, getCapturedFrameState, streamDetails } =
+        createPassthroughSut();
+
+      await sut.createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details: streamDetails,
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: MpegTsOutputFormat,
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls',
+          encoding: { mode: 'remux' },
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      expect(getCapturedFrameState()).toBeDefined();
+    });
+
+    test('HlsDirectV2 sets passthrough defaults in FrameState', async () => {
+      const { sut, getCapturedFrameState, streamDetails } =
+        createPassthroughSut();
+
+      await sut.createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details: streamDetails,
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: hlsDirectV2Format,
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls',
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      const frameState = getCapturedFrameState()!;
+      expect(frameState.videoFormat).toBe(VideoFormats.Copy);
+      // videoPreset falls back to DefaultFrameState (null) because lodash
+      // merge skips the undefined value passed in passthrough mode.
+      expect(frameState.videoPreset).toBeNull();
+      expect(frameState.deinterlace).toBe(false);
+      expect(frameState.videoBitrate).toBeNull();
+      expect(frameState.videoBufferSize).toBeNull();
+      expect(frameState.frameRate).toBeNull();
+      expect(frameState.videoTrackTimescale).toBe(90000);
+    });
+
+    test('passthrough forces hardware acceleration to none', async () => {
+      const { sut, getCapturedHwAccel, streamDetails } = createPassthroughSut({
+        hardwareAccelerationMode: 'cuda',
+      });
+
+      await sut.createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details: streamDetails,
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: hlsDirectV2Format,
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls',
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      expect(getCapturedHwAccel()).toBe('none');
+    });
+
+    test('passthrough sets copyAllStreams and zeroes threadCount in FfmpegState', async () => {
+      const { sut, getCapturedFfmpegState, streamDetails } =
+        createPassthroughSut({ threadCount: 4 });
+
+      await sut.createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details: streamDetails,
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: hlsDirectV2Format,
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls',
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      const ffmpegState = getCapturedFfmpegState()!;
+      expect(ffmpegState.copyAllStreams).toBe(true);
+      expect(ffmpegState.threadCount).toBe(0);
+      expect(ffmpegState.vaapiDevice).toBeNull();
+      expect(ffmpegState.vaapiDriver).toBeNull();
+      // lodash merge skips undefined, so FfmpegState class defaults are kept.
+      expect(ffmpegState.softwareDeinterlaceFilter).toBe('yadif=1');
+      expect(ffmpegState.softwareScalingAlgorithm).toBe('fast_bilinear');
+    });
+
+    test('passthrough builds audio codec overrides for DTS/TrueHD', async () => {
+      const details = makeStreamDetails();
+      details.audioDetails = [
+        { codec: AudioFormats.Aac, channels: 2, index: 1 },
+        { codec: AudioFormats.Dca, channels: 6, index: 2 },
+        { codec: AudioFormats.TrueHd, channels: 8, index: 3 },
+      ];
+
+      const { sut, getCapturedFfmpegState } = createPassthroughSut({}, details);
+
+      await sut.createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details,
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: hlsDirectV2Format,
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls',
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      const ffmpegState = getCapturedFfmpegState()!;
+      expect(ffmpegState.audioCodecOverrides).toEqual([
+        { outputIndex: 1, codec: AudioFormats.Ac3 },
+        { outputIndex: 2, codec: AudioFormats.Ac3 },
+      ]);
+    });
+
+    test('passthrough uses source video dimensions for FrameState sizes', async () => {
+      const details = makeStreamDetails();
+      details.videoDetails = [
+        {
+          ...details.videoDetails![0],
+          width: 3840,
+          height: 2160,
+        },
+      ];
+
+      const { sut, getCapturedFrameState } = createPassthroughSut(
+        { resolution: { widthPx: 1920, heightPx: 1080 } },
+        details,
+      );
+
+      await sut.createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details,
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: hlsDirectV2Format,
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls',
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      const frameState = getCapturedFrameState()!;
+      // In passthrough, scaled/padded sizes come from the source, not the
+      // transcode config resolution (1920x1080).
+      expect(frameState.scaledSize.width).toBe(3840);
+      expect(frameState.scaledSize.height).toBe(2160);
+      expect(frameState.paddedSize.width).toBe(3840);
+      expect(frameState.paddedSize.height).toBe(2160);
     });
   });
 });

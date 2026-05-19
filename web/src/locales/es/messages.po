@@ -198,7 +198,7 @@ msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx:200
-#: src/components/slot_scheduler/TimeSlotTable.tsx:195
+#: src/components/slot_scheduler/TimeSlotTable.tsx:204
 msgid "{len, plural, one {There is # warning. Click for details.} other {There are # warnings. Click for details.}}"
 msgstr ""
 
@@ -415,7 +415,7 @@ msgid "Add Show"
 msgstr ""
 
 #: src/components/slot_scheduler/AddRandomSlotButton.tsx:142
-#: src/components/slot_scheduler/AddTimeSlotButton.tsx:137
+#: src/components/slot_scheduler/AddTimeSlotButton.tsx:136
 msgid "Add Slot"
 msgstr ""
 
@@ -792,9 +792,9 @@ msgstr ""
 #: src/components/settings/media_source/PlexServerEditDialog.tsx:353
 #: src/components/settings/UnsavedNavigationAlert.tsx:67
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:512
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:362
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:368
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:156
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:263
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:308
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:301
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:189
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:114
@@ -963,7 +963,7 @@ msgstr ""
 msgid "Condition"
 msgstr ""
 
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:278
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:284
 msgid "Config"
 msgstr ""
 
@@ -1015,15 +1015,15 @@ msgstr ""
 msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:189
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:232
 msgid "Continue"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:226
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:269
 msgid "Continue with New Content"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:232
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:275
 msgid "Controls what happens when this slot runs out of replayed content from earlier continue slots."
 msgstr ""
 
@@ -1164,8 +1164,8 @@ msgid "Data Directory:"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx:180
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:287
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:296
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:293
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:302
 msgid "Day"
 msgstr ""
 
@@ -1239,7 +1239,7 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx:427
-#: src/components/slot_scheduler/TimeSlotTable.tsx:395
+#: src/components/slot_scheduler/TimeSlotTable.tsx:405
 msgid "Delete Slot"
 msgstr ""
 
@@ -1347,7 +1347,7 @@ msgstr ""
 msgid "Documentation"
 msgstr ""
 
-#: src/components/MediaSourceLibraryTable.tsx:466
+#: src/components/MediaSourceLibraryTable.tsx:443
 msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
 msgstr ""
 
@@ -1453,8 +1453,8 @@ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx:415
 #: src/components/slot_scheduler/RandomSlotTable.tsx:553
-#: src/components/slot_scheduler/TimeSlotTable.tsx:383
-#: src/components/slot_scheduler/TimeSlotTable.tsx:472
+#: src/components/slot_scheduler/TimeSlotTable.tsx:392
+#: src/components/slot_scheduler/TimeSlotTable.tsx:480
 msgid "Edit Slot"
 msgstr ""
 
@@ -1835,15 +1835,15 @@ msgstr ""
 msgid "File a Bug Report"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:223
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:266
 msgid "Fill with Flex"
 msgstr ""
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:338
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:274
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:280
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:46
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:293
-#: src/components/slot_scheduler/TimeSlotTable.tsx:289
+#: src/components/slot_scheduler/TimeSlotTable.tsx:298
 msgid "Filler"
 msgstr ""
 
@@ -1950,7 +1950,7 @@ msgstr ""
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
 msgstr ""
 
-#: src/components/MediaSourceLibraryTable.tsx:207
+#: src/components/MediaSourceLibraryTable.tsx:184
 msgid "Force Scan"
 msgstr ""
 
@@ -2210,7 +2210,7 @@ msgstr ""
 msgid "Last Scheduled Execution"
 msgstr ""
 
-#: src/components/MediaSourceLibraryTable.tsx:284
+#: src/components/MediaSourceLibraryTable.tsx:261
 msgid "Last Synced"
 msgstr ""
 
@@ -2276,16 +2276,16 @@ msgstr ""
 msgid "Linear"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:178
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:184
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:221
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:227
 msgid "Link Mode"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:278
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:323
 msgid "Link to existing slot"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:204
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:247
 msgid "Linked slots advance episode progression together sequentially."
 msgstr ""
 
@@ -2476,7 +2476,7 @@ msgstr ""
 msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 msgstr ""
 
-#: src/components/MediaSourceLibraryTable.tsx:277
+#: src/components/MediaSourceLibraryTable.tsx:254
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:255
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:256
 msgid "Media Type"
@@ -2487,7 +2487,7 @@ msgid "Message"
 msgstr ""
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:339
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:279
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:285
 msgid "Mid-Roll"
 msgstr ""
 
@@ -2565,7 +2565,7 @@ msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx:270
 #: src/components/filler/EditFillerListForm.tsx:137
-#: src/components/MediaSourceLibraryTable.tsx:264
+#: src/components/MediaSourceLibraryTable.tsx:241
 #: src/components/settings/ConnectMediaSources.tsx:44
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx:95
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:93
@@ -2786,7 +2786,7 @@ msgstr ""
 #: src/components/slot_scheduler/RandomSlotTable.tsx:308
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx:122
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx:124
-#: src/components/slot_scheduler/TimeSlotTable.tsx:276
+#: src/components/slot_scheduler/TimeSlotTable.tsx:285
 msgid "Order"
 msgstr ""
 
@@ -2812,8 +2812,8 @@ msgstr ""
 msgid "Output video at a constant frame rate."
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:212
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:218
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:255
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:261
 msgid "Overflow Behavior"
 msgstr ""
 
@@ -2959,7 +2959,7 @@ msgstr ""
 #: src/components/slot_scheduler/RandomSlotTable.tsx:259
 #: src/components/slot_scheduler/RedirectProgrammingForm.tsx:46
 #: src/components/slot_scheduler/ShowSlotProgrammingForm.tsx:55
-#: src/components/slot_scheduler/TimeSlotTable.tsx:264
+#: src/components/slot_scheduler/TimeSlotTable.tsx:273
 #: src/pages/system/TroubleshootPage.tsx:497
 msgid "Program"
 msgstr ""
@@ -2980,7 +2980,7 @@ msgstr ""
 #: src/components/custom-shows/EditCustomShowForm.tsx:412
 #: src/components/filler/EditFillerListForm.tsx:152
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:337
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:272
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:278
 #: src/hooks/useRouteName.ts:79
 msgid "Programming"
 msgstr ""
@@ -3036,8 +3036,8 @@ msgstr ""
 msgid "QSV Device"
 msgstr ""
 
-#: src/components/MediaSourceLibraryTable.tsx:174
-#: src/components/MediaSourceLibraryTable.tsx:204
+#: src/components/MediaSourceLibraryTable.tsx:151
+#: src/components/MediaSourceLibraryTable.tsx:181
 msgid "Queued"
 msgstr ""
 
@@ -3203,7 +3203,7 @@ msgstr ""
 msgid "Replicate..."
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:192
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:235
 msgid "Rerun"
 msgstr ""
 
@@ -3328,7 +3328,7 @@ msgstr ""
 #: src/components/programming_controls/AdjustWeightsModal.tsx:36
 #: src/components/settings/general/GeneralSettingsForm.tsx:496
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:519
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:369
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:375
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:311
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:196
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:121
@@ -3354,7 +3354,7 @@ msgstr ""
 msgid "Save Smart Collection"
 msgstr ""
 
-#: src/components/MediaSourceLibraryTable.tsx:177
+#: src/components/MediaSourceLibraryTable.tsx:154
 msgid "Scan"
 msgstr ""
 
@@ -3367,8 +3367,8 @@ msgstr ""
 msgid "Scanner"
 msgstr ""
 
-#: src/components/MediaSourceLibraryTable.tsx:176
-#: src/components/MediaSourceLibraryTable.tsx:206
+#: src/components/MediaSourceLibraryTable.tsx:153
+#: src/components/MediaSourceLibraryTable.tsx:183
 msgid "Scanning"
 msgstr ""
 
@@ -3416,7 +3416,7 @@ msgstr ""
 msgid "Select a program and channel to test playback. The troubleshooter will analyze stream selection, build the FFmpeg pipeline, and run a short test transcode."
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:257
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:302
 msgid "Select a slot to link to"
 msgstr ""
 
@@ -3643,7 +3643,7 @@ msgstr ""
 msgid "Source"
 msgstr ""
 
-#: src/components/MediaSourceLibraryTable.tsx:256
+#: src/components/MediaSourceLibraryTable.tsx:233
 msgid "Source Type"
 msgstr ""
 
@@ -3660,8 +3660,8 @@ msgid "Start"
 msgstr ""
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx:112
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:328
-#: src/components/slot_scheduler/TimeSlotTable.tsx:251
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:334
+#: src/components/slot_scheduler/TimeSlotTable.tsx:260
 msgid "Start Time"
 msgstr ""
 
@@ -3865,7 +3865,7 @@ msgid "These settings are stored in your browser and are saved automatically whe
 msgstr ""
 
 #. placeholder {0}: slot.type .split('-') .map((s) => capitalize(s)) .join(' ')
-#: src/components/slot_scheduler/TimeSlotTable.tsx:235
+#: src/components/slot_scheduler/TimeSlotTable.tsx:244
 msgid "This {0} is marked as missing in the database."
 msgstr ""
 
@@ -3918,14 +3918,14 @@ msgstr ""
 msgid "This option is disabled because it would calculate a schedule that is too long."
 msgstr ""
 
-#: src/components/slot_scheduler/TimeSlotTable.tsx:213
-#: src/components/slot_scheduler/TimeSlotTable.tsx:223
+#: src/components/slot_scheduler/TimeSlotTable.tsx:222
+#: src/components/slot_scheduler/TimeSlotTable.tsx:232
 msgid "This show is marked as missing in the database."
 msgstr ""
 
 #. placeholder {0}: groupPeers.length
 #. placeholder {1}: groupPeers.length
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:171
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:214
 msgid "This slot is linked with {0} other {1, plural, one {slot} other {slots}}. Content fields are shared across the group."
 msgstr ""
 
@@ -3937,7 +3937,7 @@ msgstr ""
 #~ msgid "This slot is linked with {0} other slot(s). Content fields are shared across the group."
 #~ msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:199
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:242
 msgid "This slot replays content aired by continue slots earlier in the period."
 msgstr ""
 
@@ -4110,7 +4110,7 @@ msgstr ""
 msgid "Unit"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotLinkingControl.tsx:167
+#: src/components/slot_scheduler/SlotLinkingControl.tsx:210
 msgid "Unlink"
 msgstr ""
 
@@ -4229,8 +4229,8 @@ msgid "View in {0}"
 msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx:151
-msgid "View Library"
-msgstr ""
+#~ msgid "View Library"
+#~ msgstr ""
 
 #: src/hooks/useRouteName.ts:55
 msgid "Watch"
