@@ -1,10 +1,5 @@
 import { Trans, useLingui } from '@lingui/react/macro';
-import {
-  HourglassTop,
-  Radar,
-  Refresh,
-  VideoLibrary,
-} from '@mui/icons-material';
+import { HourglassTop, Radar, Refresh } from '@mui/icons-material';
 import {
   Box,
   Card,
@@ -45,7 +40,6 @@ import { useDayjs } from '../hooks/useDayjs.ts';
 import { useQueryObserver } from '../hooks/useQueryObserver.ts';
 import { useStoreBackedTableSettings } from '../hooks/useTableSettings.ts';
 import type { Nullable } from '../types/util.ts';
-import { RouterIconButtonLink } from './base/RouterButtonLink.tsx';
 import { NetworkIcon } from './util/NetworkIcon.tsx';
 
 type MediaSourceLibraryRow = MediaSourceLibrary & {
@@ -75,7 +69,9 @@ const MediaSourceLibraryTableActionCell = ({
   const queryClient = useQueryClient();
 
   const startRefresh = useCallback(
-    (force: boolean = false) => {
+    (ev: React.MouseEvent, force: boolean = false) => {
+      ev.stopPropagation();
+      ev.preventDefault();
       setIsRefreshing(true);
       refreshLibraryMutation.mutate(
         {
@@ -148,25 +144,6 @@ const MediaSourceLibraryTableActionCell = ({
 
   return (
     <>
-      <Tooltip placement="top" title={t`View Library`}>
-        <Box component="span">
-          {mediaSource.type === 'local' ? (
-            <RouterIconButtonLink
-              to="/media_sources/$mediaSourceId"
-              params={{ mediaSourceId: mediaSource.id }}
-            >
-              <VideoLibrary />
-            </RouterIconButtonLink>
-          ) : (
-            <RouterIconButtonLink
-              to={'/media_sources/$mediaSourceId/libraries/$libraryId'}
-              params={{ mediaSourceId: mediaSource.id, libraryId: library.id }}
-            >
-              <VideoLibrary />
-            </RouterIconButtonLink>
-          )}
-        </Box>
-      </Tooltip>
       <Tooltip
         placement="top"
         title={
@@ -180,7 +157,7 @@ const MediaSourceLibraryTableActionCell = ({
         <span>
           <IconButton
             disabled={library.isLocked}
-            onClick={() => startRefresh()}
+            onClick={(e) => startRefresh(e)}
           >
             {scanStateQuery.data?.state === 'queued' ? (
               <HourglassTop />
@@ -210,7 +187,7 @@ const MediaSourceLibraryTableActionCell = ({
           <span>
             <IconButton
               disabled={library.isLocked}
-              onClick={() => startRefresh(true)}
+              onClick={(e) => startRefresh(e, true)}
             >
               <Radar
                 sx={{
