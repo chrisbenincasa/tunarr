@@ -22,7 +22,11 @@
       "project": "src/**/*.ts"
     },
     "web": {
-      "project": "src/**/*.ts",
+      "project": "src/**/*.{ts,tsx}",
+      "entry": [
+        "index.{js,ts,tsx}",
+        "src/{index,main}.{js,ts,tsx}"
+      ],
       "ignore": [
         "src/generated/**/*"
       ]
