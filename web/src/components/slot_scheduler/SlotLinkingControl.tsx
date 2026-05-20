@@ -48,6 +48,7 @@ type SlotLinkingControlProps = {
     groupId: string,
     linkMode: LinkMode,
   ) => void;
+  onUnlinkFromGroup?: (groupId: string) => void;
 };
 
 const useSlotIdentifier = () => {
@@ -125,6 +126,7 @@ function slotHasId(slot: LinkableSlotViewModel) {
 export function SlotLinkingControl({
   allSlots,
   onLinkSourceSlot,
+  onUnlinkFromGroup,
 }: SlotLinkingControlProps) {
   const { t } = useLingui();
   const getSlotName = useSlotName();
@@ -186,6 +188,9 @@ export function SlotLinkingControl({
   };
 
   const handleUnlink = () => {
+    if (currentGroup) {
+      onUnlinkFromGroup?.(currentGroup);
+    }
     setValue('iterationGroup', undefined, { shouldDirty: true });
     setValue('linkMode', undefined, { shouldDirty: true });
     setValue('rerunOverflow', undefined, { shouldDirty: true });

@@ -62,6 +62,7 @@ export const EditTimeSlotDialogContent = ({
   const { t } = useLingui();
   const {
     getValues: getSlotFormValues,
+    setValue: setSlotFormValue,
     slotArray,
     watch: watchParent,
   } = useTimeSlotFormContext();
@@ -74,19 +75,57 @@ export const EditTimeSlotDialogContent = ({
 
   const handleLinkSourceSlot = useCallback(
     (sourceSlotId: string, groupId: string, linkMode: LinkMode) => {
-      const idx = slotArray.fields.findIndex(
-        (s) => 'id' in s && s.id === sourceSlotId,
+      const slots = getSlotFormValues('slots');
+      const idx = slots.findIndex(
+        (s) => slotIsLinkable(s) && s.id === sourceSlotId,
       );
-      const field = idx !== -1 ? slotArray.fields[idx] : undefined;
-      if (field !== undefined && slotIsLinkable(field)) {
-        slotArray.update(idx, {
-          ...field,
-          iterationGroup: groupId,
-          linkMode,
+      if (idx !== -1) {
+        const field = slots[idx];
+        if (slotIsLinkable(field)) {
+          slotArray.update(idx, {
+            ...field,
+            iterationGroup: groupId,
+            linkMode,
+          });
+        }
+      }
+    },
+    [slotArray, getSlotFormValues],
+  );
+
+  const handleUnlinkFromGroup = useCallback(
+    (groupId: string) => {
+      const currentSlotId = slotIsLinkable(slot) ? slot.id : undefined;
+      const slots = getSlotFormValues('slots');
+      const peersInGroup = slots.filter(
+        (s) =>
+          slotIsLinkable(s) &&
+          s.iterationGroup === groupId &&
+          s.id !== currentSlotId,
+      );
+      if (peersInGroup.length <= 1) {
+        const newSlots = slots.map((s) => {
+          if (
+            slotIsLinkable(s) &&
+            s.iterationGroup === groupId &&
+            s.id !== currentSlotId
+          ) {
+            return {
+              ...s,
+              iterationGroup: undefined,
+              linkMode: undefined,
+              rerunOverflow: undefined,
+            };
+          }
+          return s;
+        });
+        setSlotFormValue('slots', newSlots, {
+          shouldDirty: true,
+          shouldTouch: true,
         });
       }
     },
-    [slotArray],
+    [getSlotFormValues, setSlotFormValue, slot],
   );
 
   const { data: fillerLists } = useFillerLists();
@@ -347,6 +386,7 @@ export const EditTimeSlotDialogContent = ({
                   newSlotForType={newSlotForType}
                   allSlots={linkableSlots}
                   onLinkSourceSlot={handleLinkSourceSlot}
+                  onUnlinkFromGroup={handleUnlinkFromGroup}
                 />
               </Stack>
             </TabPanel>

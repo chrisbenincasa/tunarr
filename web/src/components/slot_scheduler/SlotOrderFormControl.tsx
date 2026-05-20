@@ -19,9 +19,9 @@ import type { CommonSlotViewModel } from '../../model/CommonSlotModels.ts';
 export const SlotOrderFormControl = () => {
   const { t } = useLingui();
   const { control } = useFormContext<CommonSlotViewModel>();
-  const [type, order, iterationGroup] = useWatch({
+  const [type, order] = useWatch({
     control,
-    name: ['type', 'order', 'iterationGroup'],
+    name: ['type', 'order'],
   });
 
   const handleDirectionChange = (
@@ -53,11 +53,7 @@ export const SlotOrderFormControl = () => {
             return (
               <FormControl fullWidth>
                 <InputLabel>{t`Weighting`}</InputLabel>
-                <Select
-                  label={t`Weighting`}
-                  disabled={isNonEmptyString(iterationGroup)}
-                  {...field}
-                >
+                <Select label={t`Weighting`} {...field}>
                   <MenuItem value="linear">
                     <Trans>Linear</Trans>
                   </MenuItem>
@@ -90,7 +86,6 @@ export const SlotOrderFormControl = () => {
               onChange={(_, value) =>
                 handleDirectionChange(value as string | null, field.onChange)
               }
-              disabled={isNonEmptyString(iterationGroup)}
             >
               <ToggleButton value="asc">
                 <Trans>Asc</Trans>
@@ -103,7 +98,7 @@ export const SlotOrderFormControl = () => {
         />
       );
     }
-  }, [type, order, control, t, iterationGroup]);
+  }, [type, order, control, t]);
 
   if (type === 'flex' || type === 'redirect') {
     return null;
@@ -120,11 +115,7 @@ export const SlotOrderFormControl = () => {
           return (
             <FormControl fullWidth>
               <InputLabel>{t`Order`}</InputLabel>
-              <Select
-                label={t`Order`}
-                disabled={isNonEmptyString(iterationGroup)}
-                {...field}
-              >
+              <Select label={t`Order`} disabled={false} {...field}>
                 {map(opts, ({ description, value }) => (
                   <MenuItem key={value} value={value}>
                     {description}

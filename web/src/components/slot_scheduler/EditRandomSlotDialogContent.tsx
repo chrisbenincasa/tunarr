@@ -34,7 +34,10 @@ import { v4 } from 'uuid';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import type { LinkMode } from '../../model/CommonSlotModels.ts';
-import { slotIsLinkable } from '../../model/CommonSlotModels.ts';
+import {
+  copySlotForLinking,
+  slotIsLinkable,
+} from '../../model/CommonSlotModels.ts';
 import type { SlotViewModel } from '../../model/SlotModels.ts';
 import { RouterLink } from '../base/RouterLink.tsx';
 import { TabPanel } from '../TabPanel.tsx';
@@ -86,19 +89,57 @@ export const EditRandomSlotDialogContent = ({
 
   const handleLinkSourceSlot = useCallback(
     (sourceSlotId: string, groupId: string, linkMode: LinkMode) => {
-      const idx = slotArray.fields.findIndex(
-        (s) => 'id' in s && s.id === sourceSlotId,
+      const slots = randomSlotForm.getValues('slots');
+      const idx = slots.findIndex(
+        (s) => slotIsLinkable(s) && s.id === sourceSlotId,
       );
-      const field = idx !== -1 ? slotArray.fields[idx] : undefined;
-      if (field !== undefined && slotIsLinkable(field)) {
-        slotArray.update(idx, {
-          ...field,
-          iterationGroup: groupId,
-          linkMode,
+      if (idx !== -1) {
+        const field = slots[idx];
+        if (slotIsLinkable(field)) {
+          slotArray.update(idx, {
+            ...field,
+            iterationGroup: groupId,
+            linkMode,
+          });
+        }
+      }
+    },
+    [slotArray, randomSlotForm],
+  );
+
+  const handleUnlinkFromGroup = useCallback(
+    (groupId: string) => {
+      const currentSlotId = slotIsLinkable(slot) ? slot.id : undefined;
+      const slots = randomSlotForm.getValues('slots');
+      const peersInGroup = slots.filter(
+        (s) =>
+          slotIsLinkable(s) &&
+          s.iterationGroup === groupId &&
+          s.id !== currentSlotId,
+      );
+      if (peersInGroup.length <= 1) {
+        const newSlots = slots.map((s) => {
+          if (
+            slotIsLinkable(s) &&
+            s.iterationGroup === groupId &&
+            s.id !== currentSlotId
+          ) {
+            return {
+              ...s,
+              iterationGroup: undefined,
+              linkMode: undefined,
+              rerunOverflow: undefined,
+            };
+          }
+          return s;
+        });
+        randomSlotForm.setValue('slots', newSlots, {
+          shouldDirty: true,
+          shouldTouch: true,
         });
       }
     },
-    [slotArray],
+    [randomSlotForm, slot],
   );
 
   const formMethods = useForm<SlotViewModel>({
@@ -193,7 +234,29 @@ export const EditRandomSlotDialogContent = ({
   };
 
   const commit = () => {
-    slotArray.update(index, getValues());
+    const saved = getValues();
+    const linkable = slotIsLinkable(saved) ? saved : undefined;
+    const groupId = linkable?.iterationGroup;
+    const linkedContent =
+      groupId && linkable ? copySlotForLinking(linkable) : undefined;
+
+    if (linkedContent && groupId) {
+      const currentSlots = randomSlotForm.getValues('slots');
+      const newSlots = currentSlots.map((s, i) => {
+        if (i === index) return saved;
+        if (slotIsLinkable(s) && s.iterationGroup === groupId) {
+          return { ...s, ...linkedContent };
+        }
+        return s;
+      });
+      randomSlotForm.setValue('slots', newSlots, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    } else {
+      slotArray.update(index, saved);
+    }
+
     onSave();
   };
 
@@ -451,6 +514,7 @@ export const EditRandomSlotDialogContent = ({
                   newSlotForType={newSlotForType}
                   allSlots={linkableSlots}
                   onLinkSourceSlot={handleLinkSourceSlot}
+                  onUnlinkFromGroup={handleUnlinkFromGroup}
                 />
               </FormProvider>
               {distribution === 'weighted' && (
