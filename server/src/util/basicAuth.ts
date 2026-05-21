@@ -1,40 +1,14 @@
 import crypto from 'node:crypto';
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type {
+  FastifyReply,
+  FastifyRequest,
+  HookHandlerDoneFunction,
+  onRequestHookHandler,
+} from 'fastify';
 
-const PUBLIC_EXACT_PATHS = new Set([
-  '/device.xml',
-  '/discover.json',
-  '/lineup.json',
-  '/lineup_status.json',
-  '/api/xmltv.xml',
-  '/api/channels.m3u',
-  '/favicon.ico',
-  '/favicon.svg',
-]);
-
-const PUBLIC_PREFIXES = [
-  '/stream/',
-  '/images/',
-  '/images/uploads/',
-  '/cache/images/',
-];
-
-function isProgramArtworkPath(path: string) {
-  return /^\/api\/programs\/[^/]+\/artwork\/[^/]+$/.test(path);
-}
-
-function isPublicPath(url: string) {
-  const path = url.split('?')[0] ?? url;
-
-  if (PUBLIC_EXACT_PATHS.has(path)) {
-    return true;
-  }
-
-  if (isProgramArtworkPath(path)) {
-    return true;
-  }
-
-  return PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix));
+interface BasicAuthConfig {
+  username: string;
+  password: string;
 }
 
 function unauthorized(reply: FastifyReply) {
@@ -42,18 +16,15 @@ function unauthorized(reply: FastifyReply) {
   return reply.status(401).send('Authentication required');
 }
 
-function safeEqual(a: string, b: string) {
-  const aBuf = Buffer.from(a);
-  const bBuf = Buffer.from(b);
-
-  if (aBuf.length !== bBuf.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(aBuf, bBuf);
+function hash(value: string) {
+  return crypto.createHash('sha256').update(value).digest();
 }
 
-function validateBasicAuth(
+export function safeEqual(a: string, b: string) {
+  return crypto.timingSafeEqual(hash(a), hash(b));
+}
+
+export function validateBasicAuth(
   authHeader: string | undefined,
   expectedUser: string,
   expectedPass: string,
@@ -80,28 +51,30 @@ function validateBasicAuth(
   }
 }
 
-export async function tunarrBasicAuthHook(
-  request: FastifyRequest,
-  reply: FastifyReply,
-) {
-  const expectedUser = process.env.TUNARR_BASIC_AUTH_USER;
-  const expectedPass = process.env.TUNARR_BASIC_AUTH_PASSWORD;
+export function createTunarrBasicAuthHook(
+  config: BasicAuthConfig,
+): onRequestHookHandler {
+  return (
+    request: FastifyRequest,
+    reply: FastifyReply,
+    done: HookHandlerDoneFunction,
+  ) => {
+    if (request.routeOptions.config?.authRequired === false) {
+      done();
+      return;
+    }
 
-  if (!expectedUser || !expectedPass) {
-    return;
-  }
+    const ok = validateBasicAuth(
+      request.headers.authorization,
+      config.username,
+      config.password,
+    );
 
-  if (isPublicPath(request.url)) {
-    return;
-  }
+    if (!ok) {
+      void unauthorized(reply);
+      return;
+    }
 
-  const ok = validateBasicAuth(
-    request.headers.authorization,
-    expectedUser,
-    expectedPass,
-  );
-
-  if (!ok) {
-    return unauthorized(reply);
-  }
+    done();
+  };
 }
