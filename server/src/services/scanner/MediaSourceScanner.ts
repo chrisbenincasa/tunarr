@@ -194,7 +194,7 @@ export abstract class MediaSourceScanner<
           'Error while locating / downloading external subtitles for item: %j',
           program,
         );
-        return;
+        continue;
       }
 
       const fullPath = fullPathResult.get();
@@ -207,8 +207,6 @@ export abstract class MediaSourceScanner<
         );
         stream.path = fullPath;
       }
-
-      return;
     }
   }
 }

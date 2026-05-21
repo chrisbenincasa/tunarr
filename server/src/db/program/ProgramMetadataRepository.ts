@@ -309,10 +309,8 @@ export class ProgramMetadataRepository {
       );
 
       const newIndexes = incomingIndexes.difference(existingIndexes);
-      const removedIndexes = existingIndexes.difference(newIndexes);
-      const updatedIndexes = incomingIndexes.difference(
-        newIndexes.union(removedIndexes),
-      );
+      const removedIndexes = existingIndexes.difference(incomingIndexes);
+      const updatedIndexes = incomingIndexes.intersection(existingIndexes);
 
       const inserts = incomingEmbedded.filter((s) =>
         newIndexes.has(s.streamIndex!),
@@ -377,12 +375,14 @@ export class ProgramMetadataRepository {
           tx.insert(ProgramSubtitles).values(inserts).run();
         }
         if (removes.length > 0) {
-          tx.delete(ProgramSubtitles).where(
-            inArray(
-              ProgramSubtitles.uuid,
-              removes.map((s) => s.uuid),
-            ),
-          ).run();
+          tx.delete(ProgramSubtitles)
+            .where(
+              inArray(
+                ProgramSubtitles.uuid,
+                removes.map((s) => s.uuid),
+              ),
+            )
+            .run();
         }
 
         if (updates.length > 0) {
@@ -433,11 +433,7 @@ export class ProgramMetadataRepository {
       }
       const inserted: Credit[] = [];
       for (const batch of chunk(credits, 50)) {
-        const batchResult = tx
-          .insert(Credit)
-          .values(batch)
-          .returning()
-          .all();
+        const batchResult = tx.insert(Credit).values(batch).returning().all();
         inserted.push(...batchResult);
       }
       return inserted;
