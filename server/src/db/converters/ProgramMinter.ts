@@ -545,6 +545,8 @@ export class ProgramDaoMinter {
       updatedAt: now,
       canonicalId: video.canonicalId,
       state: 'ok',
+      artistName: video.artistName ?? null,
+      albumName: video.albumName ?? null,
     } satisfies NewMusicVideoProgram;
 
     return {

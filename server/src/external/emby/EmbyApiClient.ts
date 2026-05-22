@@ -1784,6 +1784,8 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         video.TagItems?.map((item) => item.Name).filter(isNonEmptyString) ?? [],
       ),
       // summary: null,
+      artistName: video.Artists?.join(', ') ?? video.AlbumArtist ?? null,
+      albumName: video.Album ?? null,
       type: 'music_video',
       mediaItem,
       identifiers: collectEmbyItemIdentifiers(
