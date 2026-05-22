@@ -45,7 +45,10 @@ export function validateBasicAuth(
     const user = decoded.slice(0, idx);
     const pass = decoded.slice(idx + 1);
 
-    return safeEqual(user, expectedUser) && safeEqual(pass, expectedPass);
+    const userMatches = safeEqual(user, expectedUser);
+    const passMatches = safeEqual(pass, expectedPass);
+
+    return userMatches && passMatches;
   } catch {
     return false;
   }
