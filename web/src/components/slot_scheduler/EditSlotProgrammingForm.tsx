@@ -30,6 +30,7 @@ type EditSlotProgramProps<SlotT extends { type: ProgramOptionType }> = {
     groupId: string,
     linkMode: LinkMode,
   ) => void;
+  onUnlinkFromGroup?: (groupId: string) => void;
 };
 
 export const EditSlotProgrammingForm = <
@@ -38,6 +39,7 @@ export const EditSlotProgrammingForm = <
   newSlotForType,
   allSlots,
   onLinkSourceSlot,
+  onUnlinkFromGroup,
 }: EditSlotProgramProps<SlotT>) => {
   const { t } = useLingui();
   const { reset, control } = useFormContext<CommonSlotViewModel>();
@@ -103,6 +105,7 @@ export const EditSlotProgrammingForm = <
       <SlotLinkingControl
         allSlots={allSlots}
         onLinkSourceSlot={onLinkSourceSlot}
+        onUnlinkFromGroup={onUnlinkFromGroup}
       />
     </>
   );

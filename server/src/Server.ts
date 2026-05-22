@@ -54,7 +54,7 @@ const currentDirectory = dirname(filename(import.meta.url));
 
 @injectable()
 export class Server {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   private app!: ServerType;
 
@@ -564,7 +564,11 @@ export class Server {
     );
     const transcodeDirs = await glob(path.join(`${baseStreamsDir}/*`));
     await Promise.all(
-      transcodeDirs.map((dir) => Result.attemptAsync(() => fs.rmdir(dir))),
+      transcodeDirs.map((dir) =>
+        Result.attemptAsync(() =>
+          fs.rm(dir, { recursive: true, force: true, maxRetries: 2 }),
+        ),
+      ),
     );
 
     if (getBooleanEnvVar(TUNARR_ENV_VARS.USE_WORKER_POOL_ENV_VAR, false)) {

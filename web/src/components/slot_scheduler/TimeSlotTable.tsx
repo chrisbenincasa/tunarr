@@ -43,13 +43,14 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { formatSlotOrder } from '../../helpers/slots.ts';
 import { useTimeSlotFormContext } from '../../hooks/slot_scheduler/useTimeSlotFormContext.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
 import {
+  copySlotForLinking,
   slotIsLinkable,
   type SlotWarning,
   type TimeSlotTableRowType,
@@ -381,6 +382,44 @@ export const TimeSlotTable = () => {
     setValue('slots', newSlots, { shouldDirty: true, shouldTouch: true });
   };
 
+  const handleSaveSlot = useCallback(
+    (slot: TimeSlotViewModel) => {
+      if (!currentEditingSlot) return;
+
+      const currentSlots = getValues('slots');
+      const savedIndex = currentEditingSlot.new
+        ? currentSlots.length
+        : currentEditingSlot.index;
+      const linkable = slotIsLinkable(slot) ? slot : undefined;
+      const groupId = linkable?.iterationGroup;
+      const linkedContent =
+        groupId && linkable ? copySlotForLinking(linkable) : undefined;
+
+      const newSlots = currentSlots.map((s, i) => {
+        if (!currentEditingSlot.new && i === currentEditingSlot.index) {
+          return slot;
+        }
+        if (
+          linkedContent &&
+          groupId &&
+          i !== savedIndex &&
+          slotIsLinkable(s) &&
+          s.iterationGroup === groupId
+        ) {
+          return { ...s, ...linkedContent };
+        }
+        return s;
+      });
+
+      if (currentEditingSlot.new) {
+        newSlots.push(slot);
+      }
+
+      setValue('slots', newSlots, { shouldDirty: true, shouldTouch: true });
+    },
+    [currentEditingSlot, getValues, setValue],
+  );
+
   const renderActionCell = ({
     row,
   }: {
@@ -391,13 +430,15 @@ export const TimeSlotTable = () => {
       <>
         <Tooltip title={t`Edit Slot`} placement="top">
           <IconButton
-            onClick={() =>
+            onClick={() => {
+              const originalSlot =
+                getValues('slots')[row.original.originalIndex];
               setCurrentEditingSlot({
                 new: false,
-                slot: row.original,
+                slot: originalSlot,
                 index: row.original.originalIndex,
-              })
-            }
+              });
+            }}
           >
             <Edit />
           </IconButton>
@@ -482,11 +523,7 @@ export const TimeSlotTable = () => {
         {currentEditingSlot && (
           <EditTimeSlotDialogContent
             slot={currentEditingSlot.slot}
-            onSave={(slot) =>
-              currentEditingSlot.new
-                ? slotArray.append(slot)
-                : slotArray.update(currentEditingSlot.index, slot)
-            }
+            onSave={handleSaveSlot}
             onCancel={() => {}}
             onClose={() => setCurrentEditingSlot(null)}
           />

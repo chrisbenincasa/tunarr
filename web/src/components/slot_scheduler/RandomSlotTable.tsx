@@ -414,12 +414,13 @@ export const RandomSlotTable = () => {
       <>
         <Tooltip title={t`Edit Slot`} placement="top">
           <IconButton
-            onClick={() =>
+            onClick={() => {
+              const originalSlot = getValues('slots')[row.index];
               setCurrentEditingSlot({
-                slot: row.original,
+                slot: originalSlot,
                 index: row.index,
-              })
-            }
+              });
+            }}
           >
             <Edit />
           </IconButton>

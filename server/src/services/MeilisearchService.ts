@@ -394,7 +394,7 @@ export class MeilisearchService implements ISearchService {
   private port?: number;
   #client?: MeiliSearch;
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.ServerOptions) private serverOptions: ServerOptions,
@@ -579,6 +579,7 @@ export class MeilisearchService implements ISearchService {
           args.join(' '),
         );
         this.proc = await this.childProcessHelper.spawn(executablePath, args, {
+          name: 'meilisearch',
           maxAttempts: 3,
           additionalOpts: {
             cwd: this.serverOptions.databaseDirectory,

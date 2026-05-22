@@ -668,7 +668,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     const effectiveHwAccel = isPassthrough
       ? HardwareAccelerationMode.None
-      : playbackParams!.hwAccel;
+      : (playbackParams?.hwAccel ?? 'none');
 
     const builder = await this.pipelineBuilderFactory(this.transcodeConfig)
       .setHardwareAccelerationMode(effectiveHwAccel)
@@ -736,7 +736,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoFormat: isPassthrough
           ? VideoFormats.Copy
           : playbackParams!.videoFormat,
-        videoPreset: playbackParams!.videoPreset ?? null,
+        videoPreset: isPassthrough ? undefined : playbackParams!.videoPreset,
         videoProfile: null,
         deinterlace: isPassthrough ? false : playbackParams!.deinterlace,
         infiniteLoop: lineupItem.infiniteLoop,

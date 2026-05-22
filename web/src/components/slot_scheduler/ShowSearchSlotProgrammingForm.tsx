@@ -1,7 +1,7 @@
 import { useLingui } from '@lingui/react/macro';
 import { Autocomplete, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { createTypeSearchField, isNonEmptyString } from '@tunarr/shared/util';
+import { createTypeSearchField } from '@tunarr/shared/util';
 import { useMemo, useState } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { getApiProgramsByIdChildrenOptions } from '../../generated/@tanstack/react-query.gen.ts';
@@ -14,9 +14,9 @@ export const ShowSearchSlotProgrammingForm = () => {
   const { control, setValue } = useFormContext<CommonShowSlotViewModel>();
   const [searchQuery, setSearchQuery] = useState('');
   const enabled = useMemo(() => searchQuery.length >= 1, [searchQuery]);
-  const [show, seasonFilter, seasonExcludeFilter, iterationGroup] = useWatch({
+  const [show, seasonFilter, seasonExcludeFilter] = useWatch({
     control: control,
-    name: ['show', 'seasonFilter', 'seasonExcludeFilter', 'iterationGroup'],
+    name: ['show', 'seasonFilter', 'seasonExcludeFilter'],
   });
 
   const search = useMemo(
@@ -73,7 +73,6 @@ export const ShowSearchSlotProgrammingForm = () => {
             }}
             onQueryChange={setSearchQuery}
             label={t`Show`}
-            disabled={isNonEmptyString(iterationGroup)}
           />
         )}
       />
@@ -88,11 +87,7 @@ export const ShowSearchSlotProgrammingForm = () => {
                 ? []
                 : allSeasons.filter((opt) => field.value.includes(opt.index))
             }
-            disabled={
-              !show ||
-              showChildrenQuery.isLoading ||
-              isNonEmptyString(iterationGroup)
-            }
+            disabled={!show || showChildrenQuery.isLoading}
             multiple
             getOptionKey={(season) => season.index}
             getOptionLabel={(season) => season.title}
@@ -120,11 +115,7 @@ export const ShowSearchSlotProgrammingForm = () => {
                 ? []
                 : allSeasons.filter((opt) => field.value.includes(opt.index))
             }
-            disabled={
-              !show ||
-              showChildrenQuery.isLoading ||
-              isNonEmptyString(iterationGroup)
-            }
+            disabled={!show || showChildrenQuery.isLoading}
             multiple
             getOptionKey={(season) => season.index}
             getOptionLabel={(season) => season.title}

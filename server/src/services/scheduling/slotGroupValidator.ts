@@ -47,6 +47,21 @@ export function validateSlotGroups<T extends BaseSlot>(
   }
 
   for (const [groupId, slots] of groups) {
+    if (slots.length < 2) {
+      for (const slot of slots) {
+        const idx = sanitizedSlots.indexOf(slot as T);
+        if (idx !== -1) {
+          const {
+            iterationGroup: _,
+            linkMode: __,
+            ...rest
+          } = sanitizedSlots[idx] as LinkableBaseSlot;
+          sanitizedSlots[idx] = rest as T;
+        }
+      }
+      continue;
+    }
+
     const slotOrders = uniqBy(slots, (slot) => slot.order);
     if (slotOrders.length > 1) {
       errors.push(
