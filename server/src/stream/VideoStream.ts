@@ -15,7 +15,7 @@ import { ChannelStreamMode } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { isNil, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
-import type { StreamEncoding } from '../ffmpeg/ffmpegBase.ts';
+import type { StreamEncoding } from '../ffmpeg/types.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { type Logger } from '../util/logging/LoggerFactory.ts';
 import { PlayerContext } from './PlayerStreamContext.ts';
