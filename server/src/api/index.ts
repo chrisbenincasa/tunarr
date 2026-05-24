@@ -238,6 +238,9 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     schema: {
       tags: ['Streaming'],
     },
+    config: {
+      authRequired: false,
+    },
     handler: async (req, res) => {
       try {
         const host = `${req.protocol}://${req.host}`;
@@ -274,6 +277,9 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         hostOverride: z.string().optional(),
       }),
       tags: ['Streaming'],
+    },
+    config: {
+      authRequired: false,
     },
     method: ['HEAD', 'GET'],
     handler: async (req, res) => {

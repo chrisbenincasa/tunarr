@@ -114,6 +114,9 @@ export class CreditsApiController {
             404: z.void(),
           },
         },
+        config: {
+          authRequired: false,
+        },
       },
       async (req, res) => {
         const maybeCredit = await this.db.query.credit.findFirst({
