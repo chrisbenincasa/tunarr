@@ -29,6 +29,13 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     className: 'VideoApi',
   });
 
+  fastify.addHook('onRoute', (routeOpts) => {
+    if (!routeOpts.config) {
+      routeOpts.config = {};
+    }
+    routeOpts.config.authRequired = false;
+  });
+
   fastify.get(
     '/setup',
     {

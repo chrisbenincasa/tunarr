@@ -419,6 +419,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           404: z.void(),
         },
       },
+      config: {
+        authRequired: false,
+      },
     },
     async (req, res) => {
       let program: Maybe<{
