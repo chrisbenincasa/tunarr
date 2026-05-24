@@ -21,8 +21,10 @@ import { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.ts';
 import type { FfmpegInfo, FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.ts';
 import type { StreamSelector } from '@/ffmpeg/StreamSelector.ts';
 import type { FeatureFlagService } from '@/services/FeatureFlagService.ts';
-import type { StreamDetails } from '@/stream/types.ts';
+import type { StreamDetails, SubtitleStreamDetails } from '@/stream/types.ts';
 import { HttpStreamSource } from '@/stream/types.ts';
+import type { SubtitlesInputSource } from '@/ffmpeg/builder/input/SubtitlesInputSource.ts';
+import { SubtitleMethods } from '@/ffmpeg/builder/MediaStream.ts';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { describe, expect, test, vi } from 'vitest';
@@ -175,10 +177,12 @@ function createCapturingPipelineBuilderFactory(): {
   getCapturedFrameState: () => FrameState | undefined;
   getCapturedFfmpegState: () => FfmpegState | undefined;
   getCapturedHwAccel: () => string | undefined;
+  getCapturedSubtitleInput: () => SubtitlesInputSource | null | undefined;
 } {
   let capturedFrameState: FrameState | undefined;
   let capturedFfmpegState: FfmpegState | undefined;
   let capturedHwAccel: string | undefined;
+  let capturedSubtitleInput: SubtitlesInputSource | null | undefined;
 
   const factory: PipelineBuilderFactory = () => {
     const builderProxy: Record<string, unknown> = {};
@@ -186,11 +190,17 @@ function createCapturingPipelineBuilderFactory(): {
       'setVideoInputSource',
       'setAudioInputSource',
       'setWatermarkInputSource',
-      'setSubtitleInputSource',
       'setConcatInputSource',
     ]) {
       builderProxy[method] = vi.fn().mockReturnValue(builderProxy);
     }
+
+    builderProxy.setSubtitleInputSource = vi.fn(
+      (input: SubtitlesInputSource | null) => {
+        capturedSubtitleInput = input;
+        return builderProxy;
+      },
+    );
 
     builderProxy.setHardwareAccelerationMode = vi.fn((mode: string) => {
       capturedHwAccel = mode;
@@ -219,6 +229,7 @@ function createCapturingPipelineBuilderFactory(): {
     getCapturedFrameState: () => capturedFrameState,
     getCapturedFfmpegState: () => capturedFfmpegState,
     getCapturedHwAccel: () => capturedHwAccel,
+    getCapturedSubtitleInput: () => capturedSubtitleInput,
   };
 }
 
@@ -240,22 +251,28 @@ function makeMockSettingsDB(
 }
 
 function makeMockChannelDB(): IChannelDB {
-  return {} as unknown as IChannelDB;
+  return {
+    getChannelSubtitlePreferences: vi.fn().mockResolvedValue([]),
+  } as unknown as IChannelDB;
 }
 
-function makeMockFeatureFlagService(): FeatureFlagService {
+function makeMockFeatureFlagService(
+  flags: Record<string, boolean> = {},
+): FeatureFlagService {
   return {
-    get: vi.fn().mockReturnValue(false),
-    getAll: vi.fn().mockReturnValue({}),
+    get: vi.fn((flag: string) => flags[flag] ?? false),
+    getAll: vi.fn().mockReturnValue(flags),
   } as unknown as FeatureFlagService;
 }
 
-function makeMockStreamSelector(): StreamSelector {
+function makeMockStreamSelector(
+  subtitleStream: SubtitleStreamDetails | null = null,
+): StreamSelector {
   return {
-    selectAudioAndSubtitleStreams: vi.fn().mockResolvedValue({
+    selectAudioAndSubtitleStreams: vi.fn().mockImplementation(async () => ({
       audioStream: { index: 1, codec: 'aac', channels: 2 },
-      subtitleStream: null,
-    }),
+      subtitleStream,
+    })),
   } as unknown as StreamSelector;
 }
 
@@ -683,6 +700,441 @@ describe('FfmpegStreamFactory', () => {
       expect(frameState.scaledSize.height).toBe(2160);
       expect(frameState.paddedSize.width).toBe(3840);
       expect(frameState.paddedSize.height).toBe(2160);
+    });
+  });
+
+  describe('subtitle handling', () => {
+    const textSubtitleStream: SubtitleStreamDetails = {
+      type: 'embedded',
+      codec: 'subrip',
+      index: 2,
+      default: true,
+      forced: false,
+      sdh: false,
+      language: 'English',
+      languageCodeISO6392: 'eng',
+      title: 'English SRT',
+    };
+
+    const imageSubtitleStream: SubtitleStreamDetails = {
+      type: 'embedded',
+      codec: 'hdmv_pgs_subtitle',
+      index: 3,
+      default: false,
+      forced: false,
+      sdh: false,
+      language: 'English',
+      languageCodeISO6392: 'eng',
+      title: 'English PGS',
+    };
+
+    const externalSubtitleStream: SubtitleStreamDetails = {
+      type: 'external',
+      codec: 'subrip',
+      default: false,
+      forced: false,
+      sdh: false,
+      language: 'Spanish',
+      languageCodeISO6392: 'spa',
+      path: 'http://example.com/subs.srt',
+      title: 'Spanish SRT',
+    };
+
+    describe('non-passthrough modes (HLS, mpegts, etc.)', () => {
+      test('uses sidecar (Convert) when webvttSidecarEnabled and text-based subtitle', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
+          makeMockStreamSelector(textSubtitleStream),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        const result = await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details: makeStreamDetails(),
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: { type: 'mpegts' as const },
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).not.toBeNull();
+        expect(subtitleInput!.method).toBe(SubtitleMethods.Convert);
+        expect(result!.renditions.subtitle).toEqual({
+          language: 'eng',
+          languageName: 'English',
+          default: true,
+          forced: false,
+          title: 'English SRT',
+        });
+      });
+
+      test('uses burn-in when webvttSidecarEnabled is false', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService({ webvttSidecarEnabled: false }),
+          makeMockStreamSelector(textSubtitleStream),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        const result = await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details: makeStreamDetails(),
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: { type: 'mpegts' as const },
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).not.toBeNull();
+        expect(subtitleInput!.method).toBe(SubtitleMethods.Burn);
+        expect(result!.renditions.subtitle).toBeUndefined();
+      });
+
+      test('falls back to burn-in for image-based subtitles even when sidecar enabled', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
+          makeMockStreamSelector(imageSubtitleStream),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        const result = await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details: makeStreamDetails(),
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: { type: 'mpegts' as const },
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).not.toBeNull();
+        expect(subtitleInput!.method).toBe(SubtitleMethods.Burn);
+        expect(result!.renditions.subtitle).toBeUndefined();
+      });
+
+      test('skips subtitles when channel.subtitlesEnabled is false', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
+          makeMockStreamSelector(textSubtitleStream),
+          config,
+          makeChannel({ subtitlesEnabled: false }),
+        );
+
+        const result = await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details: makeStreamDetails(),
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: { type: 'mpegts' as const },
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).toBeNull();
+        expect(result!.renditions.subtitle).toBeUndefined();
+      });
+
+      test('skips subtitles when stream selector returns no subtitle', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
+          makeMockStreamSelector(null),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        const result = await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details: makeStreamDetails(),
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: { type: 'mpegts' as const },
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).toBeNull();
+        expect(result!.renditions.subtitle).toBeUndefined();
+      });
+
+      test('handles external subtitle streams with sidecar', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
+          makeMockStreamSelector(externalSubtitleStream),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        const result = await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details: makeStreamDetails(),
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: { type: 'mpegts' as const },
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).not.toBeNull();
+        expect(subtitleInput!.method).toBe(SubtitleMethods.Convert);
+        expect(result!.renditions.subtitle).toEqual({
+          language: 'spa',
+          languageName: 'Spanish',
+          default: false,
+          forced: false,
+          title: 'Spanish SRT',
+        });
+      });
+    });
+
+    describe('passthrough mode (remux / HlsDirectV2)', () => {
+      const hlsDirectV2Format = HlsDirectOutputFormat(defaultHlsOptions);
+
+      test('uses sidecar (Convert) for text-based subtitles', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+        const details = makeStreamDetails();
+        details.subtitleDetails = [textSubtitleStream];
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService(),
+          makeMockStreamSelector(),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        const result = await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details,
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: hlsDirectV2Format,
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).not.toBeNull();
+        expect(subtitleInput!.method).toBe(SubtitleMethods.Convert);
+        expect(result!.renditions.subtitle).toEqual({
+          language: 'eng',
+          languageName: 'English',
+          default: true,
+          forced: false,
+          title: 'English SRT',
+        });
+      });
+
+      test('skips image-based subtitles (cannot sidecar or burn)', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+        const details = makeStreamDetails();
+        details.subtitleDetails = [imageSubtitleStream];
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService(),
+          makeMockStreamSelector(),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        const result = await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details,
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: hlsDirectV2Format,
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).toBeNull();
+        expect(result!.renditions.subtitle).toBeUndefined();
+      });
+
+      test('skips subtitles when channel.subtitlesEnabled is false', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+        const details = makeStreamDetails();
+        details.subtitleDetails = [textSubtitleStream];
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService(),
+          makeMockStreamSelector(),
+          config,
+          makeChannel({ subtitlesEnabled: false }),
+        );
+
+        const result = await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details,
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: hlsDirectV2Format,
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).toBeNull();
+        expect(result!.renditions.subtitle).toBeUndefined();
+      });
+
+      test('skips subtitles when no subtitle details in stream', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+        const details = makeStreamDetails();
+        // No subtitleDetails set
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService(),
+          makeMockStreamSelector(),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        const result = await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details,
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: hlsDirectV2Format,
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).toBeNull();
+        expect(result!.renditions.subtitle).toBeUndefined();
+      });
     });
   });
 });
