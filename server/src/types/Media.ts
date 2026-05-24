@@ -233,6 +233,13 @@ export type JellyfinItem =
   | JellyfinOtherVideo
   | Folder;
 
+export type TerminalJellyfinItem =
+  | JellyfinMovie
+  | JellyfinEpisode
+  | JellyfinMusicTrack
+  | JellyfinMusicVideo
+  | JellyfinOtherVideo;
+
 export type EmbyMovie = Movie & EmbyMixin;
 export type EmbyShow = Show & EmbyMixin;
 export type EmbySeason = Season<EmbyShow> & EmbyMixin;

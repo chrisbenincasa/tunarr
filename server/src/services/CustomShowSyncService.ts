@@ -1,4 +1,7 @@
+import { ProgramDaoMinter } from '@/db/converters/ProgramMinter.js';
 import { CustomShowDB } from '@/db/CustomShowDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import type { MediaSourceId } from '@/db/schema/base.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { KEYS } from '@/types/inject.js';
@@ -9,17 +12,21 @@ import { ApiProgramMinter } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import { isTerminalItemType, tag, type ContentProgram } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
+import { castArray } from 'lodash-es';
 import { PlexHierarchyTraversal } from './PlexItemEnumerator.ts';
 
 @injectable()
 export class CustomShowSyncService {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(CustomShowDB) private customShowDB: CustomShowDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(KEYS.MutexMap) private locks: MutexMap,
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(ProgramDaoMinter) private programMinter: ProgramDaoMinter,
+    @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {}
 
   async syncAll(): Promise<void> {
@@ -76,6 +83,10 @@ export class CustomShowSyncService {
     );
 
     if (programs.length > 0) {
+      await this.ensureProgramsExist(
+        tag<MediaSourceId>(show.syncMediaSourceId),
+        programs,
+      );
       this.customShowDB.upsertCustomShowContent(show.uuid, programs);
     } else {
       this.logger.warn(
@@ -96,6 +107,63 @@ export class CustomShowSyncService {
 
   isShowSyncing(id: string) {
     return this.locks.isLocked(id);
+  }
+
+  /**
+   * Ensures that the programs referenced by the given ContentProgram[]
+   * exist in the program table, upserting them if necessary. Mutates
+   * each ContentProgram's `id` to match the actual DB UUID.
+   */
+  private async ensureProgramsExist(
+    mediaSourceId: MediaSourceId,
+    programs: ContentProgram[],
+  ): Promise<void> {
+    const mediaSource = await this.mediaSourceDB.getById(mediaSourceId);
+    if (!mediaSource) {
+      throw new Error(`Media source ${mediaSourceId} not found`);
+    }
+
+    const librariesById = new Map(
+      mediaSource.libraries.map((lib) => [lib.uuid, lib]),
+    );
+
+    const mintedPrograms = seq.collect(programs, (cp) => {
+      const library = librariesById.get(cp.program.libraryId);
+      if (!library) {
+        this.logger.warn(
+          'Library %s not found for program %s, skipping upsert',
+          cp.program.libraryId,
+          cp.id,
+        );
+        return null;
+      }
+      return this.programMinter.mint(mediaSource, library, cp.program);
+    });
+
+    if (mintedPrograms.length === 0) {
+      return;
+    }
+
+    const upserted = castArray(
+      await this.programDB.upsertPrograms(mintedPrograms),
+    );
+
+    // Build a lookup from (sourceType, mediaSourceId, externalKey) -> actual DB UUID
+    const keyToUuid = new Map(
+      upserted.map((p) => [
+        `${p.sourceType}:${p.mediaSourceId}:${p.externalKey}`,
+        p.uuid,
+      ]),
+    );
+
+    // Update each ContentProgram's id to match the actual DB UUID
+    for (const cp of programs) {
+      const key = `${cp.program.sourceType}:${cp.program.mediaSourceId}:${cp.program.externalId}`;
+      const actualUuid = keyToUuid.get(key);
+      if (actualUuid !== undefined) {
+        cp.id = actualUuid;
+      }
+    }
   }
 
   private async fetchPlaylistPrograms(
