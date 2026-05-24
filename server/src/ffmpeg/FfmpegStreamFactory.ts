@@ -466,8 +466,17 @@ export class FfmpegStreamFactory extends IFFMPEG {
           audioState,
         );
 
-        if (subtitleStream) {
+        if (subtitleStream && this.channel.subtitlesEnabled) {
           this.logger.trace('Using subtitle stream: %O', subtitleStream);
+
+          const sidecarEnabled = this.featureFlagService.get(
+            'webvttSidecarEnabled',
+          );
+          const canUseSidecar = !isImageBasedSubtitle(subtitleStream.codec);
+          const useSidecar = sidecarEnabled && canUseSidecar;
+          const method = useSidecar
+            ? SubtitleMethods.Convert
+            : SubtitleMethods.Burn;
 
           const source = match(subtitleStream.path)
             .with(
@@ -484,25 +493,27 @@ export class FfmpegStreamFactory extends IFFMPEG {
                 new EmbeddedSubtitleStream(
                   subtitleStream.codec,
                   subtitleStream.index ?? 0,
-                  SubtitleMethods.Burn,
+                  method,
                 ),
             )
             .with(
               'external',
-              () =>
-                new ExternalSubtitleStream(
-                  subtitleStream.codec,
-                  SubtitleMethods.Burn,
-                ),
+              () => new ExternalSubtitleStream(subtitleStream.codec, method),
             )
             .otherwise(() => null);
 
           if (stream) {
-            subtitleSource = new SubtitlesInputSource(
-              source,
-              [stream],
-              SubtitleMethods.Burn,
-            );
+            subtitleSource = new SubtitlesInputSource(source, [stream], method);
+
+            if (useSidecar) {
+              subtitleRendition = {
+                language: subtitleStream.languageCodeISO6392 ?? 'und',
+                languageName: subtitleStream.language,
+                default: subtitleStream.default,
+                forced: subtitleStream.forced,
+                title: subtitleStream.title,
+              };
+            }
           }
         }
       } else {
@@ -528,17 +539,13 @@ export class FfmpegStreamFactory extends IFFMPEG {
         );
       }
     } else {
-      // Passthrough: subtitle processing via sidecar. In copy-all mode, only
-      // sidecar (Convert) is available since we're not re-encoding video for
-      // burn-in.
+      // Passthrough: only sidecar (Convert) is available since we're not
+      // re-encoding video for burn-in. Image-based subtitles that can't be
+      // converted to WebVTT are skipped entirely.
       if (
         isDefined(streamDetails.subtitleDetails) &&
         this.channel.subtitlesEnabled
       ) {
-        const sidecarEnabled = this.featureFlagService.get(
-          'webvttSidecarEnabled',
-        );
-
         const subtitlePreferences =
           await this.channelDB.getChannelSubtitlePreferences(this.channel.uuid);
 
@@ -546,28 +553,17 @@ export class FfmpegStreamFactory extends IFFMPEG {
           subtitlePreferences,
           lineupItem,
           streamDetails.subtitleDetails,
-          // In copy-all mode, always prefer text-based subs for sidecar
+          // In passthrough mode, always prefer text-based subs for sidecar
           // since burn-in is not available.
-          { preferTextBased: isPassthrough || sidecarEnabled },
+          { preferTextBased: true },
         );
 
         if (pickedSubtitleStream) {
           this.logger.trace('Using subtitle stream: %O', pickedSubtitleStream);
 
-          // In copy-all mode, force Convert (sidecar) since burn-in is
-          // not possible without re-encoding. For image-based subtitles
-          // that can't be converted to WebVTT, skip them entirely.
-          const canUseSidecar = !isImageBasedSubtitle(
-            pickedSubtitleStream.codec,
-          );
-          const useSidecar = isPassthrough || (sidecarEnabled && canUseSidecar);
-          const method = useSidecar
-            ? SubtitleMethods.Convert
-            : SubtitleMethods.Burn;
-
-          // Skip image-based subtitles in copy-all mode since they can't
-          // be burned in or converted to WebVTT.
-          if (!isPassthrough || canUseSidecar) {
+          // Skip image-based subtitles since they can't be converted to
+          // WebVTT and burn-in is not possible without re-encoding.
+          if (!isImageBasedSubtitle(pickedSubtitleStream.codec)) {
             const source = match(pickedSubtitleStream.path)
               .with(
                 P.string.startsWith('http'),
@@ -583,7 +579,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
                   new EmbeddedSubtitleStream(
                     pickedSubtitleStream.codec,
                     pickedSubtitleStream.index ?? 0,
-                    method,
+                    SubtitleMethods.Convert,
                   ),
               )
               .with(
@@ -591,7 +587,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
                 () =>
                   new ExternalSubtitleStream(
                     pickedSubtitleStream.codec,
-                    method,
+                    SubtitleMethods.Convert,
                   ),
               )
               .otherwise(() => null);
@@ -600,18 +596,16 @@ export class FfmpegStreamFactory extends IFFMPEG {
               subtitleSource = new SubtitlesInputSource(
                 source,
                 [stream],
-                method,
+                SubtitleMethods.Convert,
               );
 
-              if (useSidecar) {
-                subtitleRendition = {
-                  language: pickedSubtitleStream.languageCodeISO6392 ?? 'und',
-                  languageName: pickedSubtitleStream.language,
-                  default: pickedSubtitleStream.default,
-                  forced: pickedSubtitleStream.forced,
-                  title: pickedSubtitleStream.title,
-                };
-              }
+              subtitleRendition = {
+                language: pickedSubtitleStream.languageCodeISO6392 ?? 'und',
+                languageName: pickedSubtitleStream.language,
+                default: pickedSubtitleStream.default,
+                forced: pickedSubtitleStream.forced,
+                title: pickedSubtitleStream.title,
+              };
             }
           }
         }
@@ -653,17 +647,6 @@ export class FfmpegStreamFactory extends IFFMPEG {
           });
         }
       }
-    } else if (!this.channel.subtitlesEnabled) {
-      this.logger.trace(
-        'Channel %s (number = %d) does not have subtitles enabled. Skipping subtitles.',
-        this.channel.uuid,
-        this.channel.number,
-      );
-    } else if (!streamDetails.subtitleDetails) {
-      this.logger.debug(
-        'Program %s has no subtitle streams to choose from.',
-        lineupItem.program.uuid,
-      );
     }
 
     const effectiveHwAccel = isPassthrough
