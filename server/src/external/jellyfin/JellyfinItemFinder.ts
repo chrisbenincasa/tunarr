@@ -11,16 +11,15 @@ import { Maybe } from '@/types/util.js';
 import { groupByUniq, isDefined, isNonEmptyString, run } from '@/util/index.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
-import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { isTerminalItemType, TerminalProgram } from '@tunarr/types';
+import { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
-import { find, isUndefined, some } from 'lodash-es';
+import { find, isUndefined } from 'lodash-es';
 import { match } from 'ts-pattern';
-import {
-  ProgramExternalIdType,
-  programExternalIdTypeFromJellyfinProvider,
-} from '../../db/custom_types/ProgramExternalIdType.ts';
+import { ProgramExternalIdType } from '../../db/custom_types/ProgramExternalIdType.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { MediaSourceId } from '../../db/schema/base.js';
+import { TerminalJellyfinItem } from '../../types/Media.ts';
 import { JellyfinGetItemsQuery } from './JellyfinApiClient.ts';
 
 @injectable()
@@ -58,17 +57,6 @@ export class JellyfinItemFinder {
     );
 
     const minter = this.programMinterFactory();
-    const newExternalId = minter.mintJellyfinExternalIdForApiItem(
-      program.externalSourceId,
-      program.uuid,
-      potentialApiMatch,
-    );
-
-    await this.programDB.replaceProgramExternalId(
-      program.uuid,
-      newExternalId,
-      oldExternalId,
-    );
 
     // Right now just check if the durations are different.
     // otherwise we might blow away details we already have, since
@@ -103,15 +91,23 @@ export class JellyfinItemFinder {
       );
     }
 
-    const updatedProgram = minter.mint(mediaSource, library, {
-      sourceType: 'jellyfin',
-      program: potentialApiMatch,
-    });
+    const updatedProgram = minter.mint(mediaSource, library, potentialApiMatch);
 
-    if (updatedProgram.duration !== program.duration) {
+    const newExternalId = updatedProgram.externalIds.find(
+      (id) => id.sourceType === 'jellyfin',
+    );
+    if (newExternalId) {
+      await this.programDB.replaceProgramExternalId(
+        program.uuid,
+        newExternalId,
+        oldExternalId,
+      );
+    }
+
+    if (updatedProgram.program.duration !== program.duration) {
       await this.programDB.updateProgramDuration(
         program.uuid,
-        updatedProgram.duration,
+        updatedProgram.program.duration,
       );
       const task = this.reconcileDurationTaskFactory();
       GlobalScheduler.runTask(task, {
@@ -132,7 +128,9 @@ export class JellyfinItemFinder {
     return this.findForProgram(program);
   }
 
-  async findForProgram(program: ProgramWithExternalIds) {
+  async findForProgram(
+    program: ProgramWithExternalIds,
+  ): Promise<Maybe<TerminalProgram>> {
     if (program.sourceType !== 'jellyfin') {
       this.logger.warn('Program does not have source type "jellyfin"');
       return;
@@ -172,7 +170,9 @@ export class JellyfinItemFinder {
     // 1. Update the program
     // 2. Update its external IDs
     // 3. Reconcile durations in both the lineup and the guide
-    const getPotentialMatchByType = async (type: ProgramExternalIdType) => {
+    const getPotentialMatchByType = async (
+      type: ProgramExternalIdType,
+    ): Promise<Maybe<TerminalJellyfinItem>> => {
       if (idsBySourceType[type]) {
         const opts: JellyfinGetItemsQuery = {
           nameStartsWithOrGreater: program.title,
@@ -205,7 +205,7 @@ export class JellyfinItemFinder {
           .with(ProgramType.OtherVideo, () => 'Video')
           .exhaustive();
 
-        const queryResult = await jfClient.getRawItems(
+        const queryResult = await jfClient.getItems(
           null,
           [jellyfinItemType],
           [],
@@ -215,14 +215,19 @@ export class JellyfinItemFinder {
 
         return queryResult.either(
           (data) => {
-            return find(data.Items, (match) =>
-              some(
-                match.ProviderIds,
-                (val, key) =>
-                  programExternalIdTypeFromJellyfinProvider(key) === type &&
-                  val === idsBySourceType[type].externalKey,
-              ),
-            );
+            return data.result
+              .filter((item) => {
+                return (
+                  isTerminalItemType(item) && item.sourceType === 'jellyfin'
+                );
+              })
+              .find((item) => {
+                return item.identifiers.some(
+                  (id) =>
+                    id.type === type.valueOf() &&
+                    id.id === idsBySourceType[type].externalKey,
+                );
+              });
           },
           (err) => {
             this.logger.error(err, 'Error while querying items on Jellyfin');
@@ -242,7 +247,7 @@ export class JellyfinItemFinder {
       (p) => p.sourceType,
     );
 
-    let possibleMatch: Maybe<JellyfinItem> = await getPotentialMatchByType(
+    let possibleMatch = await getPotentialMatchByType(
       ProgramExternalIdType.IMDB,
     );
 
