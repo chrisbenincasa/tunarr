@@ -24,7 +24,10 @@ import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { Nilable } from '../../types/util.ts';
 import { isNonEmptyArray, zipWithIndex } from '../../util/index.ts';
-import { type IterationState } from './ProgramIterator.ts';
+import {
+  type IterationState,
+  type RerunGroupState,
+} from './ProgramIterator.ts';
 import { RandomSlotImpl } from './RandomSlotImpl.ts';
 import type {
   PaddedProgram,
@@ -62,6 +65,7 @@ class ScheduleContext {
   #seed: number[];
   #random: Random;
   #engine: MersenneTwister19937;
+  #rerunGroups: Map<string, RerunGroupState>;
 
   constructor(
     schedule: RandomSlotSchedule,
@@ -81,11 +85,13 @@ class ScheduleContext {
       programMap,
       this.#random,
     );
-    const { iterators: slotIterators } = createSlotIterators(
+    const { iterators: slotIterators, rerunGroups } = createSlotIterators(
       schedule.slots,
       programMap,
       this.#random,
+      { scheduleType: 'random' },
     );
+    this.#rerunGroups = rerunGroups;
     this.#startTime = this.#timeCursor = startTime;
     this.#sortedSlots = map(
       orderBy(schedule.slots, (slot, idx) => slot.index ?? idx, 'asc'),
@@ -106,6 +112,10 @@ class ScheduleContext {
 
   get random(): Random {
     return this.#random;
+  }
+
+  getRerunGroup(slotId: string): RerunGroupState | undefined {
+    return this.#rerunGroups.get(slotId);
   }
 
   advanceTime(by: number | Duration) {
@@ -241,10 +251,28 @@ export class RandomSlotScheduler {
         throw new Error('Invalid slot configuration - missing durationSpec');
       }
 
+      // Rerun group lifecycle: swap in the recorder when the slot
+      // needs to record new content (first-fire or continue slot).
+      const slotId = currSlot.id;
+      const rerunGroup =
+        slotId !== undefined ? context.getRerunGroup(slotId) : undefined;
+      let shouldRestoreIterator = false;
+      if (rerunGroup && slotId !== undefined) {
+        const shouldRecord = rerunGroup.beginFiring(slotId);
+        if (shouldRecord) {
+          currSlot.overrideIterator(rerunGroup.recorder);
+          shouldRestoreIterator = true;
+        }
+      }
+
       let paddedPrograms: NonEmptyArray<PaddedProgram>;
       if (currSlot.durationSpec.type === 'fixed') {
         const maybePrograms = this.handleFixedDurationSlot(currSlot, context);
         if (!maybePrograms) {
+          if (shouldRestoreIterator) currSlot.restoreIterator();
+          if (rerunGroup && slotId !== undefined) {
+            rerunGroup.completeFiring(slotId);
+          }
           continue;
         }
 
@@ -252,9 +280,20 @@ export class RandomSlotScheduler {
       } else {
         const maybePrograms = this.handleDynamicDurationSlot(currSlot, context);
         if (!maybePrograms) {
+          if (shouldRestoreIterator) currSlot.restoreIterator();
+          if (rerunGroup && slotId !== undefined) {
+            rerunGroup.completeFiring(slotId);
+          }
           continue;
         }
         paddedPrograms = maybePrograms;
+      }
+
+      if (shouldRestoreIterator) {
+        currSlot.restoreIterator();
+      }
+      if (rerunGroup && slotId !== undefined) {
+        rerunGroup.completeFiring(slotId);
       }
 
       const finalPrograms: PaddedProgram[] = paddedPrograms.flatMap((pp) =>

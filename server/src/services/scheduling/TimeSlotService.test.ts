@@ -485,6 +485,317 @@ describe('createSlotIterators unit', () => {
     // Rerun now sees ep3 from fresh buffer
     expect(itRerun.current(state)?.id).toBe('ep3');
   });
+
+  // -- Random slot rerun tests --
+
+  test('random all-rerun: first firing records, second replays same content', () => {
+    const episodes: SlotSchedulerProgram[] = Array.from(
+      { length: 5 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `ep${i + 1}`,
+          title: `Episode ${i + 1}`,
+          type: 'episode',
+          duration: 30 * 60 * 1000,
+          episode: i + 1,
+          tvShowUuid: 'show1',
+          show: { uuid: 'show1' },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const groupId = randomUUID();
+    const slotA = {
+      id: randomUUID(),
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'rerun' as const,
+    };
+    const slotB = {
+      id: randomUUID(),
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'rerun' as const,
+    };
+
+    const mt = MersenneTwister19937.seed(42);
+    const random = new Random(mt);
+    const programMap = createProgramMap(episodes);
+    const { iterators, rerunGroups } = createSlotIterators(
+      [slotA, slotB],
+      programMap,
+      random,
+      { scheduleType: 'random' },
+    );
+
+    const itA = iterators.get(slotA.id)!;
+    const itB = iterators.get(slotB.id)!;
+    const state = { slotDuration: 60 * 60 * 1000, timeCursor: 0 };
+    const groupState = rerunGroups.get(slotA.id)!;
+
+    // Slot A fires first: buffer is empty, so it records.
+    expect(groupState.beginFiring(slotA.id)).toBe(true);
+    // Use recorder directly (simulating override)
+    const recorder = groupState.recorder;
+    expect(recorder.current(state)?.id).toBe('ep1');
+    recorder.next();
+    groupState.completeFiring(slotA.id);
+
+    // Slot B fires: buffer has content, so it replays.
+    expect(groupState.beginFiring(slotB.id)).toBe(false);
+    expect(itB.current(state)?.id).toBe('ep1');
+    itB.next();
+    groupState.completeFiring(slotB.id);
+
+    // All slots have fired once — buffer should be reset.
+    // Next firing should record again.
+    expect(groupState.beginFiring(slotA.id)).toBe(true);
+    expect(recorder.current(state)?.id).toBe('ep2');
+  });
+
+  test('random all-rerun: buffer persists until all distinct slots fire', () => {
+    const episodes: SlotSchedulerProgram[] = Array.from(
+      { length: 5 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `ep${i + 1}`,
+          title: `Episode ${i + 1}`,
+          type: 'episode',
+          duration: 30 * 60 * 1000,
+          episode: i + 1,
+          tvShowUuid: 'show1',
+          show: { uuid: 'show1' },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const groupId = randomUUID();
+    const slotA = {
+      id: randomUUID(),
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'rerun' as const,
+    };
+    const slotB = {
+      id: randomUUID(),
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'rerun' as const,
+    };
+
+    const mt = MersenneTwister19937.seed(42);
+    const random = new Random(mt);
+    const programMap = createProgramMap(episodes);
+    const { iterators, rerunGroups } = createSlotIterators(
+      [slotA, slotB],
+      programMap,
+      random,
+      { scheduleType: 'random' },
+    );
+
+    const itA = iterators.get(slotA.id)!;
+    const state = { slotDuration: 60 * 60 * 1000, timeCursor: 0 };
+    const groupState = rerunGroups.get(slotA.id)!;
+    const recorder = groupState.recorder;
+
+    // Slot A fires first: records ep1
+    expect(groupState.beginFiring(slotA.id)).toBe(true);
+    recorder.next(); // records ep1
+    groupState.completeFiring(slotA.id);
+
+    // Slot A fires again: buffer has content, replays
+    expect(groupState.beginFiring(slotA.id)).toBe(false);
+    expect(itA.current(state)?.id).toBe('ep1');
+    itA.next();
+    groupState.completeFiring(slotA.id);
+    // firedSlotIds still just {A}, size=1, no reset
+
+    // Slot B fires: replays
+    expect(groupState.beginFiring(slotB.id)).toBe(false);
+    groupState.completeFiring(slotB.id);
+    // firedSlotIds now {A, B}, size=2=groupSize → reset
+
+    // Buffer reset: next firing records fresh content
+    expect(groupState.beginFiring(slotA.id)).toBe(true);
+    expect(recorder.current(state)?.id).toBe('ep2');
+  });
+
+  test('random mixed group: continue records, rerun replays', () => {
+    const episodes: SlotSchedulerProgram[] = Array.from(
+      { length: 5 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `ep${i + 1}`,
+          title: `Episode ${i + 1}`,
+          type: 'episode',
+          duration: 30 * 60 * 1000,
+          episode: i + 1,
+          tvShowUuid: 'show1',
+          show: { uuid: 'show1' },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const groupId = randomUUID();
+    const continueSlot = {
+      id: randomUUID(),
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'continue' as const,
+    };
+    const rerunSlot = {
+      id: randomUUID(),
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'rerun' as const,
+      rerunOverflow: 'flex' as const,
+    };
+
+    const mt = MersenneTwister19937.seed(42);
+    const random = new Random(mt);
+    const programMap = createProgramMap(episodes);
+    const { iterators, rerunGroups } = createSlotIterators(
+      [continueSlot, rerunSlot],
+      programMap,
+      random,
+      { scheduleType: 'random' },
+    );
+
+    const itContinue = iterators.get(continueSlot.id)!;
+    const itRerun = iterators.get(rerunSlot.id)!;
+    const state = { slotDuration: 60 * 60 * 1000, timeCursor: 0 };
+    const groupState = rerunGroups.get(continueSlot.id)!;
+
+    // Continue slot fires: beginFiring resets buffer and returns true (record)
+    expect(groupState.beginFiring(continueSlot.id)).toBe(true);
+    expect(itContinue.current(state)?.id).toBe('ep1');
+    itContinue.next(); // records ep1
+    expect(itContinue.current(state)?.id).toBe('ep2');
+    itContinue.next(); // records ep2
+    groupState.completeFiring(continueSlot.id);
+
+    // Rerun slot fires: replays from buffer
+    expect(groupState.beginFiring(rerunSlot.id)).toBe(false);
+    expect(itRerun.current(state)?.id).toBe('ep1');
+    itRerun.next();
+    expect(itRerun.current(state)?.id).toBe('ep2');
+    itRerun.next();
+    // Buffer exhausted with flex overflow
+    expect(itRerun.current(state)).toBeNull();
+    groupState.completeFiring(rerunSlot.id);
+  });
+
+  test('random mixed group: buffer resets when continue slot re-fires', () => {
+    const episodes: SlotSchedulerProgram[] = Array.from(
+      { length: 5 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `ep${i + 1}`,
+          title: `Episode ${i + 1}`,
+          type: 'episode',
+          duration: 30 * 60 * 1000,
+          episode: i + 1,
+          tvShowUuid: 'show1',
+          show: { uuid: 'show1' },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const groupId = randomUUID();
+    const continueSlot = {
+      id: randomUUID(),
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'continue' as const,
+    };
+    const rerunSlot = {
+      id: randomUUID(),
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      iterationGroup: groupId,
+      linkMode: 'rerun' as const,
+      rerunOverflow: 'flex' as const,
+    };
+
+    const mt = MersenneTwister19937.seed(42);
+    const random = new Random(mt);
+    const programMap = createProgramMap(episodes);
+    const { iterators, rerunGroups } = createSlotIterators(
+      [continueSlot, rerunSlot],
+      programMap,
+      random,
+      { scheduleType: 'random' },
+    );
+
+    const itContinue = iterators.get(continueSlot.id)!;
+    const itRerun = iterators.get(rerunSlot.id)!;
+    const state = { slotDuration: 60 * 60 * 1000, timeCursor: 0 };
+    const groupState = rerunGroups.get(continueSlot.id)!;
+
+    // Round 1: continue records ep1
+    groupState.beginFiring(continueSlot.id);
+    itContinue.next(); // records ep1
+    groupState.completeFiring(continueSlot.id);
+
+    // Round 1: rerun replays ep1
+    groupState.beginFiring(rerunSlot.id);
+    expect(itRerun.current(state)?.id).toBe('ep1');
+    groupState.completeFiring(rerunSlot.id);
+
+    // Round 2: continue fires again — buffer resets, records ep2
+    groupState.beginFiring(continueSlot.id);
+    expect(itContinue.current(state)?.id).toBe('ep2');
+    itContinue.next(); // records ep2
+    groupState.completeFiring(continueSlot.id);
+
+    // Round 2: rerun replays ep2 (not ep1)
+    groupState.beginFiring(rerunSlot.id);
+    expect(itRerun.current(state)?.id).toBe('ep2');
+    groupState.completeFiring(rerunSlot.id);
+  });
 });
 
 describe('TimeSlotService', () => {

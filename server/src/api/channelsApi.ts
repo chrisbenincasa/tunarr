@@ -766,9 +766,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           .send(`Channel ID ${req.params.channelId} not found`);
       }
 
-      const groupValidation = validateSlotGroups(req.body.schedule.slots, {
-        scheduleType: 'time',
-      });
+      const groupValidation = validateSlotGroups(req.body.schedule.slots);
       if (!groupValidation.valid) {
         return res.status(400).send(groupValidation.errors.join('; '));
       }
@@ -830,9 +828,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           .send(`Channel ID ${req.params.channelId} not found`);
       }
 
-      const groupValidation = validateSlotGroups(req.body.schedule.slots, {
-        scheduleType: 'random',
-      });
+      const groupValidation = validateSlotGroups(req.body.schedule.slots);
       if (!groupValidation.valid) {
         return res.status(400).send(groupValidation.errors.join('; '));
       }

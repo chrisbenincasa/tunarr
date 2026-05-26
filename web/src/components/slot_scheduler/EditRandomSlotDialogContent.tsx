@@ -149,17 +149,36 @@ export const EditRandomSlotDialogContent = ({
 
   const { control, getValues, setValue, watch, formState } = formMethods;
   const { isValid, isDirty } = formState;
-  const [durationSpec, programType, fillerValues] = watch([
-    'durationSpec',
-    'type',
-    'filler',
-  ]);
+  const [durationSpec, programType, fillerValues, linkMode, iterationGroup] =
+    watch(['durationSpec', 'type', 'filler', 'linkMode', 'iterationGroup']);
+
+  // Lock duration controls when this slot is a rerun in a linked group.
+  const isRerunLocked = linkMode === 'rerun' && iterationGroup !== undefined;
   const hasMidFiller =
     (fillerValues as { types?: string[] }[] | undefined)?.some((f) =>
       f.types?.includes('mid'),
     ) ?? false;
   const [tab, setTab] = useState(0);
   const { data: fillerLists } = useFillerLists();
+
+  // When a rerun slot is in a linked group, lock its durationSpec to the
+  // continue slot's value so the replay buffer matches exactly.
+  useEffect(() => {
+    if (!isRerunLocked) return;
+
+    const continueSlot = currentSlots.find(
+      (s) =>
+        'iterationGroup' in s &&
+        s.iterationGroup === iterationGroup &&
+        'linkMode' in s &&
+        (s.linkMode === 'continue' || s.linkMode === undefined),
+    );
+    if (continueSlot && 'durationSpec' in continueSlot) {
+      setValue('durationSpec', continueSlot.durationSpec, {
+        shouldDirty: true,
+      });
+    }
+  }, [isRerunLocked, iterationGroup, currentSlots, setValue]);
 
   useEffect(() => {
     if (!hasMidFiller && tab === 2) {
@@ -414,6 +433,7 @@ export const EditRandomSlotDialogContent = ({
                           color="primary"
                           exclusive
                           aria-label="Platform"
+                          disabled={isRerunLocked}
                           {...field}
                           onChange={(_, value) =>
                             handleDurationTypeChange(
@@ -438,7 +458,10 @@ export const EditRandomSlotDialogContent = ({
                     TextFieldProps={{
                       label: t`Program Count`,
                       fullWidth: true,
-                      helperText: '',
+                      disabled: isRerunLocked,
+                      helperText: isRerunLocked
+                        ? t`Locked to linked continue slot's value`
+                        : '',
                     }}
                     rules={{
                       min: durationSpec.type === 'dynamic' ? 1 : undefined,
@@ -458,6 +481,7 @@ export const EditRandomSlotDialogContent = ({
                       return (
                         <TimeField
                           format="H[h] m[m] s[s]"
+                          disabled={isRerunLocked}
                           {...field}
                           value={dayjs().startOf('day').add(field.value)}
                           onChange={(value) =>
@@ -468,10 +492,12 @@ export const EditRandomSlotDialogContent = ({
                             textField: {
                               fullWidth: true,
                               error: !isNil(error),
-                              helperText: betterHumanize(
-                                dayjs.duration(field.value),
-                                { exact: true, style: 'full' },
-                              ),
+                              helperText: isRerunLocked
+                                ? t`Locked to linked continue slot's value`
+                                : betterHumanize(dayjs.duration(field.value), {
+                                    exact: true,
+                                    style: 'full',
+                                  }),
                             },
                           }}
                         />

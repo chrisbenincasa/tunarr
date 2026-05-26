@@ -61,6 +61,7 @@ import {
   getProgramOrderer,
   RecordingProgramIterator,
   ReplayProgramIterator,
+  RerunGroupState,
   RerunProgramIterator,
   slotIteratorKey,
 } from './ProgramIterator.js';
@@ -389,21 +390,31 @@ export function createSlotProgramIterator(
 export type SlotIteratorResult = {
   iterators: Map<string, ProgramIterator>;
   resetPeriodCallbacks: (() => void)[];
+  /** Slot ID → RerunGroupState. Populated only for random slot schedules. */
+  rerunGroups: Map<string, RerunGroupState>;
 };
 
 type GroupClassification = 'all-rerun' | 'all-continue' | 'mixed';
+
+type SlotIteratorOptions = {
+  scheduleType?: 'time' | 'random';
+};
 
 export function createSlotIterators(
   slots: BaseSlot[],
   programBySlotType: ProgramMapping,
   random: Random,
+  options: SlotIteratorOptions = {},
 ): SlotIteratorResult {
   const result = new Map<string, ProgramIterator>();
   const resetPeriodCallbacks: (() => void)[] = [];
 
   // Phase 1: Classify each group by its mix of linkMode values.
   const groupModes = new Map<string, Set<string>>();
-  const rerunGroupMeta = new Map<string, { count: number }>();
+  const groupMeta = new Map<
+    string,
+    { totalCount: number; continueSlotIds: Set<string>; rerunCount: number }
+  >();
 
   for (const slot of slots) {
     if (!slotIsLinkable(slot) || !slot.iterationGroup) continue;
@@ -417,13 +428,16 @@ export function createSlotIterators(
       groupModes.set(group, new Set([mode]));
     }
 
-    if (mode === 'rerun') {
-      const existing = rerunGroupMeta.get(group);
-      if (existing) {
-        existing.count++;
-      } else {
-        rerunGroupMeta.set(group, { count: 1 });
-      }
+    let meta = groupMeta.get(group);
+    if (!meta) {
+      meta = { totalCount: 0, continueSlotIds: new Set(), rerunCount: 0 };
+      groupMeta.set(group, meta);
+    }
+    meta.totalCount++;
+    if (mode === 'continue') {
+      meta.continueSlotIds.add(slot.id);
+    } else {
+      meta.rerunCount++;
     }
   }
 
@@ -442,6 +456,9 @@ export function createSlotIterators(
   // Phase 2: Build iterators per group classification.
   const groupIterators = new Map<string, ProgramIterator>();
   const groupRecorders = new Map<string, RecordingProgramIterator>();
+  // Slot ID → RerunGroupState for random slot schedules.
+  const rerunGroups = new Map<string, RerunGroupState>();
+  const rerunGroupStates = new Map<string, RerunGroupState>();
 
   const getOrCreateRecorder = (
     group: string,
@@ -469,8 +486,32 @@ export function createSlotIterators(
 
       const classification = groupClassification.get(group);
 
-      // Legacy all-rerun: use existing RerunProgramIterator.
       if (classification === 'all-rerun') {
+        // Random schedules: Recording/Replay + RerunGroupState.
+        // Each slot gets a ReplayProgramIterator; the scheduling loop
+        // swaps in the recorder for the first firing of each round.
+        if (options.scheduleType === 'random') {
+          const recorder = getOrCreateRecorder(group, slot);
+          const replay = new ReplayProgramIterator(recorder, 'flex');
+
+          let groupState = rerunGroupStates.get(group);
+          if (!groupState) {
+            const meta = groupMeta.get(group);
+            if (!meta) {
+              throw new Error(`Missing group metadata for group ${group}`);
+            }
+            groupState = new RerunGroupState(recorder, meta.totalCount);
+            rerunGroupStates.set(group, groupState);
+          }
+          groupState.addReplayer(slotId!, replay);
+          if (slotId !== undefined) {
+            rerunGroups.set(slotId, groupState);
+          }
+
+          return replay;
+        }
+
+        // Time schedules: legacy RerunProgramIterator with consumption counter.
         const existing = groupIterators.get(group);
         if (existing) return existing;
 
@@ -479,11 +520,14 @@ export function createSlotIterators(
           programBySlotType,
           random,
         );
-        const meta = rerunGroupMeta.get(group);
+        const meta = groupMeta.get(group);
         if (!meta) {
-          throw new Error(`Missing rerun group metadata for group ${group}`);
+          throw new Error(`Missing group metadata for group ${group}`);
         }
-        const newIterator = new RerunProgramIterator(baseIterator, meta.count);
+        const newIterator = new RerunProgramIterator(
+          baseIterator,
+          meta.rerunCount,
+        );
         groupIterators.set(group, newIterator);
         return newIterator;
       }
@@ -507,6 +551,37 @@ export function createSlotIterators(
       // rerun slots get a ReplayProgramIterator.
       const recorder = getOrCreateRecorder(group, slot);
 
+      // For random schedules, create a RerunGroupState so the scheduling
+      // loop can manage buffer resets per-firing instead of per-period.
+      if (options.scheduleType === 'random') {
+        let groupState = rerunGroupStates.get(group);
+        if (!groupState) {
+          const meta = groupMeta.get(group);
+          if (!meta) {
+            throw new Error(`Missing group metadata for group ${group}`);
+          }
+          groupState = new RerunGroupState(
+            recorder,
+            meta.totalCount,
+            meta.continueSlotIds,
+          );
+          rerunGroupStates.set(group, groupState);
+        }
+        if (slotId !== undefined) {
+          rerunGroups.set(slotId, groupState);
+        }
+
+        if (mode === 'continue') {
+          return recorder;
+        }
+
+        const overflowMode = linkable?.rerunOverflow ?? 'flex';
+        const replay = new ReplayProgramIterator(recorder, overflowMode);
+        groupState.addReplayer(slotId!, replay);
+        return replay;
+      }
+
+      // Time schedules: period-based resets handle buffer clearing.
       if (mode === 'continue') {
         return recorder;
       }
@@ -523,7 +598,7 @@ export function createSlotIterators(
     }
   }
 
-  return { iterators: result, resetPeriodCallbacks };
+  return { iterators: result, resetPeriodCallbacks, rerunGroups };
 }
 
 export function getFillerIteratorsForSlot(
