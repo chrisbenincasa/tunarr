@@ -94,6 +94,13 @@ export class JellyfinMediaSourceMusicScanner extends MediaSourceMusicArtistScann
     return context.apiClient.getMusicTrack(episodeT.externalId);
   }
 
+  protected getFullArtistMetadata(
+    externalId: string,
+    context: ScanContext<JellyfinApiClient>,
+  ): Promise<Result<JellyfinMusicArtist>> {
+    return context.apiClient.getMusicArtist(externalId);
+  }
+
   protected getApiClient(
     mediaSource: MediaSourceWithRelations,
   ): Promise<JellyfinApiClient> {

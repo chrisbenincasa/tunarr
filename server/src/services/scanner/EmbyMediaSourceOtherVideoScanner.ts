@@ -98,6 +98,22 @@ export class EmbyMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
     });
   }
 
+  protected async scanVideoById(
+    context: ScanContext<EmbyApiClient>,
+    externalKey: string,
+  ): Promise<Result<EmbyOtherVideo>> {
+    const convertedItem = await context.apiClient.getVideo(externalKey);
+    return convertedItem.flatMap((item) => {
+      if (!item) {
+        return Result.failure(
+          WrappedError.forMessage(`Could not find Emby item id ${externalKey}`),
+        );
+      }
+
+      return Result.success(item);
+    });
+  }
+
   protected getExternalKey(video: EmbyOtherVideo): string {
     return video.externalId;
   }

@@ -78,19 +78,15 @@ export class EmbyMediaSourceMusicVideoScanner extends MediaSourceMusicVideoScann
     return _.getOrThrow();
   }
 
-  protected async scanVideo(
+  protected async scanVideoById(
     context: ScanContext<EmbyApiClient>,
-    incomingVideo: EmbyMusicVideo,
+    externalKey: string,
   ): Promise<Result<EmbyMusicVideo>> {
-    const convertedItem = await context.apiClient.getMusicVideo(
-      incomingVideo.externalId,
-    );
+    const convertedItem = await context.apiClient.getMusicVideo(externalKey);
     return convertedItem.flatMap((item) => {
       if (!item) {
         return Result.failure(
-          WrappedError.forMessage(
-            `Could not find Emby item id ${incomingVideo.externalId}`,
-          ),
+          WrappedError.forMessage(`Could not find Emby item id ${externalKey}`),
         );
       }
 

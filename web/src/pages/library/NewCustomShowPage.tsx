@@ -6,10 +6,13 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import { condenseCustomShowEditorPrograms } from '../../store/selectors.ts';
 
 export function NewCustomShowPage() {
   const customShow = useSuspendedStore((s) => s.customShowEditor.currentEntity);
-  const customShowPrograms = useStore((s) => s.customShowEditor.programList);
+  const customShowPrograms = useStore((s) =>
+    condenseCustomShowEditorPrograms(s.customShowEditor.programList),
+  );
 
   return (
     <Box>

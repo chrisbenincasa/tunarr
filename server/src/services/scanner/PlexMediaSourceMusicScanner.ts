@@ -94,6 +94,13 @@ export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
     return context.apiClient.getMusicTrack(episodeT.externalId);
   }
 
+  protected getFullArtistMetadata(
+    externalId: string,
+    context: ScanContext<PlexApiClient>,
+  ): Promise<Result<PlexArtist>> {
+    return context.apiClient.getMusicArtist(externalId);
+  }
+
   protected getApiClient(
     mediaSource: MediaSourceWithRelations,
   ): Promise<PlexApiClient> {

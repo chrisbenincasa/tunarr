@@ -1,19 +1,29 @@
-import { ProgramDaoMinter } from '@/db/converters/ProgramMinter.js';
 import { CustomShowDB } from '@/db/CustomShowDB.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
-import type { MediaSourceId } from '@/db/schema/base.js';
+import type { MediaSourceId, RemoteSourceType } from '@/db/schema/base.js';
+import type {
+  MediaLibraryType,
+  RemoteMediaSourceType,
+} from '@/db/schema/MediaSource.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { KEYS } from '@/types/inject.js';
 import { InjectLogger } from '@/util/inject.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
-import { ApiProgramMinter } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
-import { isTerminalItemType, tag, type ContentProgram } from '@tunarr/types';
+import {
+  CondensedContentProgram,
+  isTerminalItemType,
+  tag,
+  type Episode,
+  type MusicTrack,
+  type TerminalProgram,
+} from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { castArray } from 'lodash-es';
+import { groupBy } from 'lodash-es';
 import { PlexHierarchyTraversal } from './PlexItemEnumerator.ts';
+import type { GenericMediaSourceScannerFactory } from './scanner/MediaSourceScanner.ts';
 
 @injectable()
 export class CustomShowSyncService {
@@ -24,8 +34,9 @@ export class CustomShowSyncService {
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(KEYS.MutexMap) private locks: MutexMap,
+    @inject(KEYS.MediaSourceLibraryScanner)
+    private scannerFactory: GenericMediaSourceScannerFactory,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
-    @inject(ProgramDaoMinter) private programMinter: ProgramDaoMinter,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {}
 
@@ -87,7 +98,17 @@ export class CustomShowSyncService {
         tag<MediaSourceId>(show.syncMediaSourceId),
         programs,
       );
-      this.customShowDB.upsertCustomShowContent(show.uuid, programs);
+      await this.customShowDB.upsertCustomShowContent(
+        show.uuid,
+        programs.map(
+          (program) =>
+            ({
+              duration: program.duration,
+              id: program.uuid,
+              type: 'content',
+            }) satisfies CondensedContentProgram,
+        ),
+      );
     } else {
       this.logger.warn(
         'Got 0 items from external playlist (type = %s id = %s)',
@@ -109,14 +130,9 @@ export class CustomShowSyncService {
     return this.locks.isLocked(id);
   }
 
-  /**
-   * Ensures that the programs referenced by the given ContentProgram[]
-   * exist in the program table, upserting them if necessary. Mutates
-   * each ContentProgram's `id` to match the actual DB UUID.
-   */
   private async ensureProgramsExist(
     mediaSourceId: MediaSourceId,
-    programs: ContentProgram[],
+    programs: TerminalProgram[],
   ): Promise<void> {
     const mediaSource = await this.mediaSourceDB.getById(mediaSourceId);
     if (!mediaSource) {
@@ -127,41 +143,129 @@ export class CustomShowSyncService {
       mediaSource.libraries.map((lib) => [lib.uuid, lib]),
     );
 
-    const mintedPrograms = seq.collect(programs, (cp) => {
-      const library = librariesById.get(cp.program.libraryId);
-      if (!library) {
-        this.logger.warn(
-          'Library %s not found for program %s, skipping upsert',
-          cp.program.libraryId,
-          cp.id,
-        );
-        return null;
-      }
-      return this.programMinter.mint(mediaSource, library, cp.program);
-    });
+    const sourceType = mediaSource.type as RemoteMediaSourceType;
 
-    if (mintedPrograms.length === 0) {
-      return;
+    // Group programs by terminal type so we can select the right scanner
+    const programsByType = groupBy(programs, (p) => p.type);
+
+    for (const [type, typePrograms] of Object.entries(programsByType)) {
+      const programType = type as TerminalProgram['type'];
+      const libraryType = terminalTypeToLibraryType(programType);
+      const scanner = this.scannerFactory(sourceType, libraryType);
+
+      switch (programType) {
+        case 'episode': {
+          // scanSingle for shows takes the show's externalId, so group
+          // episodes by their parent show and scan once per show.
+          const byShow = groupBy(
+            typePrograms as Episode[],
+            (ep) => `${ep.libraryId}:${ep.show?.externalId}`,
+          );
+          for (const [, episodes] of Object.entries(byShow)) {
+            const showExternalId = (episodes[0] as Episode).show?.externalId;
+            if (showExternalId === undefined) {
+              this.logger.warn(
+                'Episode %s has no show externalId, skipping',
+                episodes[0]!.externalId,
+              );
+              continue;
+            }
+            const library = librariesById.get(episodes[0]!.libraryId);
+            if (!library) continue;
+            const result = await scanner.scanSingle({
+              library,
+              externalId: showExternalId,
+            });
+            if (result.isFailure()) {
+              this.logger.warn(
+                result.error,
+                'Failed to scan show %s',
+                showExternalId,
+              );
+            }
+          }
+          break;
+        }
+        case 'track': {
+          // scanSingle for music takes the artist's externalId, so group
+          // tracks by their parent artist and scan once per artist.
+          const byArtist = groupBy(
+            typePrograms as MusicTrack[],
+            (t) => `${t.libraryId}:${t.artist?.externalId}`,
+          );
+          for (const [, tracks] of Object.entries(byArtist)) {
+            const artistExternalId = (tracks[0] as MusicTrack).artist
+              ?.externalId;
+            if (artistExternalId === undefined) {
+              this.logger.warn(
+                'Track %s has no artist externalId, skipping',
+                tracks[0]!.externalId,
+              );
+              continue;
+            }
+            const library = librariesById.get(tracks[0]!.libraryId);
+            if (!library) continue;
+            const result = await scanner.scanSingle({
+              library,
+              externalId: artistExternalId,
+            });
+            if (result.isFailure()) {
+              this.logger.warn(
+                result.error,
+                'Failed to scan artist %s',
+                artistExternalId,
+              );
+            }
+          }
+          break;
+        }
+        default: {
+          // movies, other_videos, music_videos — scan each individually
+          for (const program of typePrograms) {
+            const library = librariesById.get(program.libraryId);
+            if (!library) continue;
+            const result = await scanner.scanSingle({
+              library,
+              externalId: program.externalId,
+            });
+            if (result.isFailure()) {
+              this.logger.warn(
+                result.error,
+                'Failed to scan %s %s',
+                programType,
+                program.externalId,
+              );
+            }
+          }
+          break;
+        }
+      }
     }
 
-    const upserted = castArray(
-      await this.programDB.upsertPrograms(mintedPrograms),
+    // After scanning, look up the Tunarr DB UUIDs for all programs
+    const lookupIds = new Set(
+      programs.map(
+        (p) =>
+          [
+            p.sourceType as RemoteSourceType,
+            mediaSourceId,
+            p.externalId,
+          ] as const,
+      ),
     );
-
-    // Build a lookup from (sourceType, mediaSourceId, externalKey) -> actual DB UUID
+    const dbPrograms = await this.programDB.lookupByExternalIds(lookupIds);
     const keyToUuid = new Map(
-      upserted.map((p) => [
-        `${p.sourceType}:${p.mediaSourceId}:${p.externalKey}`,
+      dbPrograms.map((p) => [
+        `${p.sourceType}:${p.externalSourceId}:${p.externalKey}`,
         p.uuid,
       ]),
     );
 
-    // Update each ContentProgram's id to match the actual DB UUID
-    for (const cp of programs) {
-      const key = `${cp.program.sourceType}:${cp.program.mediaSourceId}:${cp.program.externalId}`;
-      const actualUuid = keyToUuid.get(key);
-      if (actualUuid !== undefined) {
-        cp.id = actualUuid;
+    for (const program of programs) {
+      const key = `${program.sourceType}:${program.mediaSourceId}:${program.externalId}`;
+      const dbUuid = keyToUuid.get(key);
+      if (dbUuid !== undefined) {
+        program.uuid = dbUuid;
       }
     }
   }
@@ -170,7 +274,7 @@ export class CustomShowSyncService {
     sourceType: string,
     mediaSourceId: MediaSourceId,
     playlistId: string,
-  ): Promise<ContentProgram[]> {
+  ): Promise<TerminalProgram[]> {
     switch (sourceType) {
       case 'plex':
         return this.fetchPlexPlaylistPrograms(mediaSourceId, playlistId);
@@ -182,7 +286,7 @@ export class CustomShowSyncService {
   private async fetchPlexPlaylistPrograms(
     mediaSourceId: MediaSourceId,
     playlistId: string,
-  ): Promise<ContentProgram[]> {
+  ): Promise<TerminalProgram[]> {
     const client =
       await this.mediaSourceApiFactory.getPlexApiClientById(mediaSourceId);
 
@@ -207,8 +311,23 @@ export class CustomShowSyncService {
       client,
     ).expandAncestors(allPlaylistItems);
 
-    return seq.collect(expandedItems, (item) =>
-      ApiProgramMinter.mintProgram(item),
-    );
+    return expandedItems;
+  }
+}
+
+function terminalTypeToLibraryType(
+  type: TerminalProgram['type'],
+): MediaLibraryType {
+  switch (type) {
+    case 'movie':
+      return 'movies';
+    case 'episode':
+      return 'shows';
+    case 'track':
+      return 'tracks';
+    case 'other_video':
+      return 'other_videos';
+    case 'music_video':
+      return 'music_videos';
   }
 }

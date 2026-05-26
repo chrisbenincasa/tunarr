@@ -8,13 +8,16 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import { condenseCustomShowEditorPrograms } from '../../store/selectors.ts';
 
 type Props = { isNew?: boolean };
 
 export default function EditCustomShowPage({ isNew }: Props) {
   const { showId } = Route.useParams();
   const [{ data: customShow }] = useCustomShowWithProgramming(showId);
-  const customShowPrograms = useStore((s) => s.customShowEditor.programList);
+  const customShowPrograms = useStore((s) =>
+    condenseCustomShowEditorPrograms(s.customShowEditor.programList),
+  );
 
   return !customShow ? (
     <LinearProgress />
