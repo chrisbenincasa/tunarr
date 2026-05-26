@@ -35,11 +35,13 @@ import {
   Settings,
   Task,
 } from 'meilisearch';
+import { exec as execCb } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { isMainThread } from 'node:worker_threads';
 import { MarkRequired, Paths } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
@@ -87,6 +89,8 @@ import { Logger } from '../util/logging/LoggerFactory.ts';
 import { FileSystemService } from './FileSystemService.ts';
 import { ISearchService } from './ISearchService.ts';
 import { SearchParser } from './search/SearchParser.ts';
+
+const exec = promisify(execCb);
 
 type FlattenArrayTypes<T> = {
   [K in keyof T]-?: Exclude<T[K], undefined> extends Array<unknown>
@@ -534,43 +538,10 @@ export class MeilisearchService implements ISearchService {
           await fs.truncate(searchServerLogFile);
         }
 
-        let executablePath: Maybe<string>;
-        // Support the following filenames:
-        // 1. meilisearch-{platform}-{arch}(.exe)?
-        // 2. meilisearch(.exe)?
-        // Then search for these names against these paths:
-        // 1. the env var value
-        // 2. cwd / bin / bin_name (docker, etc)
-        // 3. cwd / bin_name (macOS bundle)
-        const baseNames = [
-          `meilisearch-${os.platform()}-${os.arch()}`,
-          'meilisearch',
-        ];
-        const binaryNames = baseNames.map((n) =>
-          os.platform() === 'win32' ? `${n}.exe` : n,
-        );
-        const envPath = getEnvVar(TUNARR_ENV_VARS.MEILISEARCH_PATH);
-        const testPaths = binaryNames.flatMap((binaryName) => [
-          envPath,
-          isNonEmptyString(envPath) ? path.join(envPath, binaryName) : null,
-          path.join(process.cwd(), 'bin', binaryName),
-          path.join(process.cwd(), binaryName),
-        ]);
-        for (const testPath of testPaths) {
-          if (!testPath) {
-            continue;
-          }
+        const executablePath = await this.binPath();
 
-          if (await fileExists(testPath)) {
-            executablePath = testPath;
-            break;
-          }
-        }
-
-        if (!isNonEmptyString(executablePath)) {
-          throw new Error(
-            `Could not find meilisearch binary at any of the tested paths: ${compact(testPaths).join(', ')}`,
-          );
+        if (!executablePath) {
+          throw new Error(`Could not find meilisearch binary`);
         }
 
         this.logger.trace(
@@ -613,7 +584,7 @@ export class MeilisearchService implements ISearchService {
 
   async getMeilisearchVersion(): Promise<Maybe<string>> {
     const versionPath = path.join(this.dbPath, 'VERSION');
-    return fs
+    const fileResult = await fs
       .readFile(versionPath)
       .then((buf) => {
         const version = buf.toString('utf-8').trim();
@@ -626,8 +597,69 @@ export class MeilisearchService implements ISearchService {
           'Did not find existing Meilisearch VERSION file at %s',
           versionPath,
         );
-        return undefined;
+        return;
       });
+
+    if (fileResult) {
+      return fileResult;
+    }
+
+    const execPath = await this.binPath();
+    if (!execPath) {
+      return;
+    }
+
+    const stdout = (await exec(`${execPath} --version`)).stdout.trim();
+    const extractedVersionMatch = /meilisearch\s*(\d+\.\d+\.\d+).*/.exec(
+      stdout,
+    );
+    if (!extractedVersionMatch) {
+      this.logger.warn(`Could not parse meilisearch version output: ${stdout}`);
+      return;
+    }
+    return extractedVersionMatch[1];
+  }
+
+  private async binPath() {
+    let executablePath: Maybe<string>;
+    // Support the following filenames:
+    // 1. meilisearch-{platform}-{arch}(.exe)?
+    // 2. meilisearch(.exe)?
+    // Then search for these names against these paths:
+    // 1. the env var value
+    // 2. cwd / bin / bin_name (docker, etc)
+    // 3. cwd / bin_name (macOS bundle)
+    const baseNames = [
+      `meilisearch-${os.platform()}-${os.arch()}`,
+      'meilisearch',
+    ];
+    const binaryNames = baseNames.map((n) =>
+      os.platform() === 'win32' ? `${n}.exe` : n,
+    );
+    const envPath = getEnvVar(TUNARR_ENV_VARS.MEILISEARCH_PATH);
+    const testPaths = binaryNames.flatMap((binaryName) => [
+      envPath,
+      isNonEmptyString(envPath) ? path.join(envPath, binaryName) : null,
+      path.join(process.cwd(), 'bin', binaryName),
+      path.join(process.cwd(), binaryName),
+    ]);
+    for (const testPath of testPaths) {
+      if (!testPath) {
+        continue;
+      }
+
+      if (await fileExists(testPath)) {
+        executablePath = testPath;
+        break;
+      }
+    }
+    if (!isNonEmptyString(executablePath)) {
+      this.logger.fatal(
+        `Could not find meilisearch binary at any of the tested paths: ${compact(testPaths).join(', ')}`,
+      );
+    }
+
+    return executablePath;
   }
 
   client() {

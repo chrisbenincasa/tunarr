@@ -72,7 +72,6 @@ async function needsToDownloadNewBinary(targetPath: string) {
   let shouldDownload = !exists;
   if (exists) {
     // check version against package
-    console.log(`${targetPath} --version`);
     const stdout = execSync(`${targetPath} --version`).toString('utf-8').trim();
     const extractedVersionMatch = /meilisearch\s*(\d+\.\d+\.\d+).*/.exec(
       stdout,
