@@ -27,8 +27,8 @@ import { Suspense, useMemo, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import type { DeepRequired } from 'ts-essentials';
 import {
-  getApiProgramGroupingsByIdOptions,
-  getApiProgramsByIdOptions,
+  getProgramGroupingByIdOptions,
+  getProgramByIdOptions,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import type { Nullable } from '../../types/util.ts';
 import { ProgramMetadataDialogContent } from '../ProgramMetadataDialogContent.tsx';
@@ -293,7 +293,7 @@ export default function ProgramDetailsDialog(props: Props) {
   const darkMode = useIsDarkMode();
   const settings = useSettings();
   const query = useQuery({
-    ...getApiProgramsByIdOptions({
+    ...getProgramByIdOptions({
       path: {
         id: programId,
       },
@@ -302,7 +302,7 @@ export default function ProgramDetailsDialog(props: Props) {
   });
 
   const parentQuery = useQuery({
-    ...getApiProgramGroupingsByIdOptions({
+    ...getProgramGroupingByIdOptions({
       path: {
         id: programId,
       },

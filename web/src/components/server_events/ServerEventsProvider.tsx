@@ -5,7 +5,7 @@ import { isEqual, omit, some, values } from 'lodash-es';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 import { v4 } from 'uuid';
-import { getApiVersionQueryKey } from '../../generated/@tanstack/react-query.gen.ts';
+import { getVersionQueryKey } from '../../generated/@tanstack/react-query.gen.ts';
 import { queryClient } from '../../queryClient.ts';
 import type {
   ServerEventListener,
@@ -57,7 +57,7 @@ export function ServerEventsProvider({ children }: Props) {
           if (parsed.data.type === 'lifecycle') {
             queryClient
               .invalidateQueries({
-                queryKey: getApiVersionQueryKey(),
+                queryKey: getVersionQueryKey(),
               })
               .catch(console.error);
           }

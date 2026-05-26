@@ -44,8 +44,10 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     '/jellyfin/login',
     {
       schema: {
-        body: JellyfinLoginRequest,
         operationId: 'jellyfinLogin',
+        summary: 'Authenticate with a Jellyfin server',
+        tags: ['Media Source'],
+        body: JellyfinLoginRequest,
         response: {
           200: z.object({
             accessToken: z.string().optional(),
@@ -73,11 +75,13 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     '/jellyfin/:mediaSourceId/user_libraries',
     {
       schema: {
+        operationId: 'getJellyfinLibraries',
+        summary: 'List Jellyfin libraries',
+        tags: ['Media Library'],
         params: mediaSourceParams,
         response: {
           200: z.array(LibrarySchema),
         },
-        operationId: 'getJellyfinLibraries',
       },
     },
     (req, res) =>
@@ -103,6 +107,9 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     '/jellyfin/:mediaSourceId/libraries/:libraryId/genres',
     {
       schema: {
+        operationId: 'getJellyfinLibraryGenres',
+        summary: 'List genres in a Jellyfin library',
+        tags: ['Media Library'],
         params: mediaSourceParamsSchema.extend({
           libraryId: z.string(),
         }),
@@ -112,7 +119,6 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
         response: {
           200: JellyfinLibraryItemsResponse,
         },
-        operationId: 'getJellyfinLibraryGenres',
       },
     },
     (req, res) =>
@@ -140,6 +146,8 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     {
       schema: {
         operationId: 'getJellyfinLibraryItems',
+        summary: 'List items in a Jellyfin library',
+        tags: ['Media Library'],
         params: mediaSourceParamsSchema.extend({
           libraryId: z.string(),
         }),

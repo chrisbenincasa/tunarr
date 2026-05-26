@@ -6,14 +6,14 @@ import { isNonEmptyString } from '@tunarr/shared/util';
 import type { SearchRequest } from '@tunarr/types/schemas';
 import { LibraryProgramGrid } from '../../../components/library/LibraryProgramGrid.tsx';
 import { SearchInput } from '../../../components/search/SearchInput.tsx';
-import { getApiSmartCollectionsByIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
+import { getSmartCollectionOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 import { programSearchQueryOpts } from '../../../hooks/useProgramSearchQuery.ts';
 import useStore from '../../../store/index.ts';
 
 export const Route = createFileRoute('/library/smart_collections/$id')({
   loader: async ({ context: { queryClient }, params }) => {
     const smartCollection = await queryClient.ensureQueryData(
-      getApiSmartCollectionsByIdOptions({
+      getSmartCollectionOptions({
         path: {
           id: params.id,
         },
@@ -43,7 +43,7 @@ function RouteComponent() {
   const { id } = Route.useParams();
   const { filter, query } = Route.useLoaderData();
   const { data: smartCollection } = useSuspenseQuery(
-    getApiSmartCollectionsByIdOptions({ path: { id } }),
+    getSmartCollectionOptions({ path: { id } }),
   );
   return (
     <Stack gap={2}>

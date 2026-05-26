@@ -23,6 +23,8 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
     '/xmltv-settings',
     {
       schema: {
+        operationId: 'getXmltvSettings',
+        summary: 'Get XMLTV settings',
         tags: ['Settings'],
         response: {
           200: XmlTvSettingsSchema,
@@ -44,6 +46,8 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
     '/xmltv-settings',
     {
       schema: {
+        operationId: 'updateXmltvSettings',
+        summary: 'Update XMLTV settings',
         tags: ['Settings'],
         body: XmlTvSettingsSchema.partial(),
         response: {
@@ -97,6 +101,8 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
     '/xmltv-settings',
     {
       schema: {
+        operationId: 'resetXmltvSettings',
+        summary: 'Reset XMLTV settings to defaults',
         tags: ['Settings'],
         response: {
           200: XmlTvSettingsSchema,

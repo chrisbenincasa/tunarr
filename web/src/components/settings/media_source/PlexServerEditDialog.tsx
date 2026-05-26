@@ -1,8 +1,8 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
 import { isNonEmptyString, isValidUrlWithError, toggle } from '@/helpers/util';
+import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
-import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import {
   CloudDoneOutlined,
   CloudOff,
@@ -37,10 +37,10 @@ import { useEffect, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import type { MarkOptional, StrictOmit } from 'ts-essentials';
 import { useDebounceValue } from 'usehooks-ts';
-import { getApiMediaSourcesQueryKey } from '../../../generated/@tanstack/react-query.gen.ts';
+import { getMediaSourcesQueryKey } from '../../../generated/@tanstack/react-query.gen.ts';
 import {
-  postApiMediaSources,
-  putApiMediaSourcesById,
+  createMediaSource,
+  updateMediaSource,
 } from '../../../generated/sdk.gen.ts';
 import { NetworkIcon } from '../../util/NetworkIcon.tsx';
 import { EditPathReplacementsForm } from './EditPathReplacementsForm.tsx';
@@ -107,7 +107,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
         return;
       }
       if (isNonEmptyString(newOrUpdatedServer.id)) {
-        await putApiMediaSourcesById({
+        await updateMediaSource({
           body: {
             ...newOrUpdatedServer,
             id: newOrUpdatedServer.id,
@@ -117,14 +117,14 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
         });
         return { id: newOrUpdatedServer.id };
       } else {
-        return postApiMediaSources({
+        return createMediaSource({
           body: { ...newOrUpdatedServer, accessToken },
         });
       }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: getApiMediaSourcesQueryKey(),
+        queryKey: getMediaSourcesQueryKey(),
         exact: true,
       });
       handleClose();
@@ -236,7 +236,9 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                       !serverStatus.healthy &&
                       isNonEmptyString(field.value) ? (
                       <>
-                        <span><Trans>Server is unreachable</Trans></span>
+                        <span>
+                          <Trans>Server is unreachable</Trans>
+                        </span>
                         <br />
                       </>
                     ) : null
@@ -262,7 +264,9 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
               }}
               render={({ field, formState: { errors } }) => (
                 <FormControl sx={{ m: 1 }} fullWidth variant="outlined">
-                  <InputLabel htmlFor="access-token"><Trans>Access Token</Trans> </InputLabel>
+                  <InputLabel htmlFor="access-token">
+                    <Trans>Access Token</Trans>{' '}
+                  </InputLabel>
                   <OutlinedInput
                     id="access-token"
                     type={showAccessToken ? 'text' : 'password'}
@@ -289,13 +293,16 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                       </>
                     )}
                     <span>
-                      <Trans>For more details on manually retrieving a Plex token, see{' '}
-                      <Link
-                        href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
-                        target="_blank"
-                      >
-                        here
-                      </Link></Trans>
+                      <Trans>
+                        For more details on manually retrieving a Plex token,
+                        see{' '}
+                        <Link
+                          href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
+                          target="_blank"
+                        >
+                          here
+                        </Link>
+                      </Trans>
                     </span>
                   </FormHelperText>
                 </FormControl>

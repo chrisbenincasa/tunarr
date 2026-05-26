@@ -22,6 +22,9 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/tasks',
     {
       schema: {
+        operationId: 'getTasks',
+        summary: 'List all background tasks',
+        description: 'Returns all registered background tasks with their current status and schedule information.',
         tags: ['System', 'Tasks'],
         response: {
           200: z.array(TaskSchema),
@@ -73,6 +76,9 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/tasks/:id/run',
     {
       schema: {
+        operationId: 'runTask',
+        summary: 'Trigger a background task',
+        description: 'Manually triggers a background task to run. Set background=true (default) to run asynchronously.',
         tags: ['System', 'Tasks'],
         params: z.object({
           id: z.string(),

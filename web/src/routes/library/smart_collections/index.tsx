@@ -3,11 +3,11 @@ import { Trans } from '@lingui/react/macro';
 import { Box, Typography } from '@mui/material';
 import { createFileRoute } from '@tanstack/react-router';
 import { SmartCollectionsTable } from '../../../components/smart_collections/SmartCollectionsTable.tsx';
-import { getApiSmartCollectionsOptions } from '../../../generated/@tanstack/react-query.gen.ts';
+import { getSmartCollectionsOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 
 export const Route = createFileRoute('/library/smart_collections/')({
   loader({ context: { queryClient } }) {
-    return queryClient.ensureQueryData(getApiSmartCollectionsOptions());
+    return queryClient.ensureQueryData(getSmartCollectionsOptions());
   },
   component: RouteComponent,
 });

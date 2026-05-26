@@ -38,7 +38,7 @@ export type SupportedTranscodeAudioOutputFormats = TupleToUnion<
 >;
 
 export const TranscodeConfigSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z
     .string({
       error: (iss) =>

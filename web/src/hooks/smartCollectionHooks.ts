@@ -5,23 +5,23 @@ import {
 } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import {
-  deleteApiSmartCollectionsByIdMutation,
-  getApiSmartCollectionsByIdOptions,
-  getApiSmartCollectionsOptions,
-  postApiSmartCollectionsMutation,
-  putApiSmartCollectionsByIdMutation,
+  deleteSmartCollectionMutation,
+  getSmartCollectionOptions,
+  getSmartCollectionsOptions,
+  createSmartCollectionMutation,
+  updateSmartCollectionMutation,
 } from '../generated/@tanstack/react-query.gen.ts';
 import { invalidateTaggedQueries } from '../helpers/queryUtil.ts';
 
 export const useSmartCollections = () => {
   return useSuspenseQuery({
-    ...getApiSmartCollectionsOptions(),
+    ...getSmartCollectionsOptions(),
   });
 };
 
 export const useSmartCollection = (id: string) => {
   return useSuspenseQuery({
-    ...getApiSmartCollectionsByIdOptions({
+    ...getSmartCollectionOptions({
       path: {
         id,
       },
@@ -37,7 +37,7 @@ export const useCreateSmartCollection = (callbacks?: MutationCallbacks) => {
   const snackbar = useSnackbar();
   const queryClient = useQueryClient();
   return useMutation({
-    ...postApiSmartCollectionsMutation(),
+    ...createSmartCollectionMutation(),
     onSuccess: (vars) => {
       snackbar.enqueueSnackbar({
         variant: 'success',
@@ -65,7 +65,7 @@ export const useUpdateSmartCollection = (opts?: MutationCallbacks) => {
   const snackbar = useSnackbar();
   const queryClient = useQueryClient();
   return useMutation({
-    ...putApiSmartCollectionsByIdMutation(),
+    ...updateSmartCollectionMutation(),
     onSuccess: (vars) => {
       snackbar.enqueueSnackbar({
         variant: 'success',
@@ -94,7 +94,7 @@ export const useDeleteSmartCollection = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    ...deleteApiSmartCollectionsByIdMutation(),
+    ...deleteSmartCollectionMutation(),
     onSuccess: () => {
       snackbar.enqueueSnackbar({
         variant: 'success',

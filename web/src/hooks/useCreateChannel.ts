@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createChannelV2Mutation } from '../generated/@tanstack/react-query.gen.ts';
+import { createChannelMutation } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useCreateChannel = (
-  opts?: ReturnType<typeof createChannelV2Mutation>,
+  opts?: ReturnType<typeof createChannelMutation>,
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    ...createChannelV2Mutation(),
+    ...createChannelMutation(),
     onSuccess: async (...args) => {
       await queryClient.invalidateQueries({
         exact: false,

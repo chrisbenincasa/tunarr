@@ -8,7 +8,7 @@ export const CustomShowProgrammingSchema = z.array(
 export const CustomShowSyncMediaSourceTypeSchema = z.enum(['plex']);
 
 export const CustomShowSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   contentCount: z.number(),
   programs: z.array(CustomProgramSchema).optional(),

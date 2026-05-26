@@ -6,7 +6,7 @@ export const FillerListProgrammingSchema = z.array(
 );
 
 export const FillerListSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   contentCount: z.number(),
   programs: FillerListProgrammingSchema.optional(),

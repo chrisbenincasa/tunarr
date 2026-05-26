@@ -16,10 +16,10 @@ import { type ContentProgramType } from '@tunarr/types/schemas';
 import { sumBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import {
-  getApiChannelsByIdArtists,
-  getApiChannelsByIdPrograms,
-  getApiChannelsByIdShows,
-  getApiProgramsByIdChildren,
+  getChannelArtists,
+  getChannelPrograms,
+  getChannelShows,
+  getProgramChildren,
 } from '../../generated/sdk.gen.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import type { GridItemProps } from '../channel_config/MediaItemGrid.tsx';
@@ -84,7 +84,7 @@ export const ChannelProgramGrid = ({
   const terminalQuery = useInfiniteQuery({
     queryKey: ['channels', channelId, 'programs', programType, 'infinite'],
     queryFn: ({ pageParam }) =>
-      getApiChannelsByIdPrograms({
+      getChannelPrograms({
         path: { id: channelId },
         query: {
           type: programType as ContentProgramType,
@@ -112,12 +112,12 @@ export const ChannelProgramGrid = ({
       pageParam,
     }): Promise<PagedResult<Show[] | MusicArtist[]>> => {
       const prom = await (programType === 'show'
-        ? getApiChannelsByIdShows({
+        ? getChannelShows({
             path: { id: channelId },
             query: { offset: pageParam, limit: 50 },
             throwOnError: true,
           })
-        : getApiChannelsByIdArtists({
+        : getChannelArtists({
             path: { id: channelId },
             query: { offset: pageParam, limit: 50 },
             throwOnError: true,
@@ -147,7 +147,7 @@ export const ChannelProgramGrid = ({
       parentId,
     ],
     queryFn: ({ pageParam }) =>
-      getApiProgramsByIdChildren({
+      getProgramChildren({
         path: { id: parentId ?? '' },
         query: {
           offset: pageParam,

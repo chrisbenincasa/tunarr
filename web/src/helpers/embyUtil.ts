@@ -9,7 +9,7 @@ import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { flattenDeep } from 'lodash-es';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match } from 'ts-pattern';
-import { getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems } from '../generated/sdk.gen.ts';
+import { getEmbyLibraryItems } from '../generated/sdk.gen.ts';
 import type { Nullable } from '../types/util.ts';
 import { JellyfinTerminalTypes } from './jellyfinUtil.ts';
 
@@ -150,7 +150,7 @@ export const enumerateEmbyItem = (
           item.artist = parent;
         }
 
-        return getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems({
+        return getEmbyLibraryItems({
           path: {
             mediaSourceId: serverId,
             libraryId,

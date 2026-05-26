@@ -1,19 +1,19 @@
 import { setShowWelcome } from '@/store/themeEditor/actions';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import {
-  getApiSystemMigrationStateOptions,
-  getApiSystemSettingsOptions,
+  getMigrationStateOptions,
+  getSystemSettingsOptions,
 } from '../generated/@tanstack/react-query.gen.ts';
 import GuidePage from '../pages/guide/GuidePage.tsx';
 
 export const Route = createFileRoute('/')({
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData({
-      ...getApiSystemSettingsOptions(),
+      ...getSystemSettingsOptions(),
     });
 
     const systemState = await context.queryClient.ensureQueryData({
-      ...getApiSystemMigrationStateOptions(),
+      ...getMigrationStateOptions(),
     });
 
     setShowWelcome(!!systemState.isFreshSettings);

@@ -11,14 +11,14 @@ import dayjs from 'dayjs';
 import { useEffect } from 'react';
 import type { StrictOmit } from 'ts-essentials';
 import {
-  getApiChannelsAllLineupsOptions,
-  getApiChannelsByIdLineupOptions,
-  getApiChannelsByIdNowPlayingOptions,
+  getAllChannelLineupsOptions,
+  getChannelLineupOptions,
+  getChannelNowPlayingOptions,
 } from '../generated/@tanstack/react-query.gen.ts';
 
 function lineupQueryOpts(channelId: string, range: { from: Dayjs; to: Dayjs }) {
   return queryOptions({
-    ...getApiChannelsByIdLineupOptions({
+    ...getChannelLineupOptions({
       path: { id: channelId },
       query: {
         from: range.from.toISOString(),
@@ -31,7 +31,7 @@ function lineupQueryOpts(channelId: string, range: { from: Dayjs; to: Dayjs }) {
 }
 
 const allLineupsQueryOpts = (params: { from: Dayjs; to: Dayjs }) => ({
-  ...getApiChannelsAllLineupsOptions({
+  ...getAllChannelLineupsOptions({
     query: {
       from: params.from.toISOString(),
       to: params.to.toISOString(),
@@ -57,7 +57,7 @@ export const useTvGuide = (params: UseTvGuideOpts) => {
 
 export const useChannelNowPlaying = (channelId: string) => {
   return useSuspenseQuery({
-    ...getApiChannelsByIdNowPlayingOptions({ path: { id: channelId } }),
+    ...getChannelNowPlayingOptions({ path: { id: channelId } }),
   });
 };
 
@@ -102,7 +102,7 @@ export const useAllTvGuides = (
   params: { from: Dayjs; to: Dayjs },
   extraOpts: Partial<
     StrictOmit<
-      ReturnType<typeof getApiChannelsAllLineupsOptions>,
+      ReturnType<typeof getAllChannelLineupsOptions>,
       'queryFn' | 'queryKey'
     >
   > = {},

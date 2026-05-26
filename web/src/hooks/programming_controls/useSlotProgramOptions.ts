@@ -7,7 +7,7 @@ import { seq } from '@tunarr/shared/util';
 import { map, reject, some } from 'lodash-es';
 import { useContext, useMemo } from 'react';
 import { SlotProgrammingOptionsContext } from '../../components/slot_scheduler/SlotProgrammingOptionsContext.ts';
-import { postApiProgramsFacetsByFacetNameOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { getProgramFacetsWithFilterOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import { useMediaSources } from '../settingsHooks.ts';
 import { useSmartCollections } from '../smartCollectionHooks.ts';
 import { useChannelsSuspense } from '../useChannels.ts';
@@ -50,7 +50,7 @@ function useSyncedProgrammingOptions() {
 
   // TODO: Handle error
   const facetQuery = useQuery({
-    ...postApiProgramsFacetsByFacetNameOptions({
+    ...getProgramFacetsWithFilterOptions({
       path: { facetName: 'type' },
       body: {},
     }),

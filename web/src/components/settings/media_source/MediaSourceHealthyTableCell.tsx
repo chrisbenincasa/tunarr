@@ -2,7 +2,7 @@ import { CloudDoneOutlined, CloudOff } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import type { MediaSourceSettings } from '@tunarr/types';
 import { isNull, isUndefined } from 'lodash-es';
-import { getApiMediaSourcesByIdStatusOptions } from '../../../generated/@tanstack/react-query.gen.ts';
+import { getMediaSourceStatusOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 import { RotatingLoopIcon } from '../../base/LoadingIcon.tsx';
 
 type Props = {
@@ -15,7 +15,7 @@ export const MediaSourceHealthyTableCell = ({ mediaSource }: Props) => {
     isLoading: backendStatusLoading,
     error: backendStatusError,
   } = useQuery({
-    ...getApiMediaSourcesByIdStatusOptions({ path: { id: mediaSource.id } }),
+    ...getMediaSourceStatusOptions({ path: { id: mediaSource.id } }),
     staleTime: 1000 * 60 * 5,
   });
 

@@ -6,7 +6,7 @@ import {
 import type { Channel } from '@tunarr/types';
 import type { StrictOmit } from 'ts-essentials';
 import {
-  getChannelsByNumberV2Options,
+  getChannelByIdOptions,
   getChannelsOptions,
 } from '../generated/@tanstack/react-query.gen.ts';
 
@@ -27,7 +27,7 @@ export const useChannelsSuspense = (
 
 export const channelQuery = (id: string, enabled: boolean = true) =>
   queryOptions({
-    ...getChannelsByNumberV2Options({ path: { id } }),
+    ...getChannelByIdOptions({ path: { id } }),
     enabled: id.length > 0 && enabled,
     staleTime: 10_000,
   });

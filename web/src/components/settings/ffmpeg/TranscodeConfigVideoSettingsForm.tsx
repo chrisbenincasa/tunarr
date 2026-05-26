@@ -9,7 +9,7 @@ import type {
 } from '@tunarr/types';
 import type { SupportedHardwareAccels } from '@tunarr/types/schemas';
 import { useMemo } from 'react';
-import { getApiFfmpegInfoOptions } from '../../../generated/@tanstack/react-query.gen.ts';
+import { getFfmpegInfoOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 import { TranscodeResolutionOptions } from '../../../helpers/constants.ts';
 import type { DropdownOption } from '../../../helpers/DropdownOption.ts';
 import {
@@ -70,7 +70,7 @@ export const TranscodeConfigVideoSettingsForm = ({
 }: BaseTranscodeConfigProps) => {
   const { t } = useLingui();
   const ffmpegInfo = useSuspenseQuery({
-    ...getApiFfmpegInfoOptions(),
+    ...getFfmpegInfoOptions(),
   });
 
   const formOpts = useBaseTranscodeConfigFormOptions(initialConfig);

@@ -5,8 +5,8 @@ import MediaDetailCard from '@/components/programs/MediaDetailCard.tsx';
 import Seasons from '@/components/programs/Seasons.tsx';
 import Tracks from '@/components/programs/Tracks.tsx';
 import {
-  getApiProgramGroupingsByIdOptions,
-  getApiProgramsByIdOptions,
+  getProgramGroupingByIdOptions,
+  getProgramByIdOptions,
 } from '@/generated/@tanstack/react-query.gen.ts';
 import { Box, Breadcrumbs, Paper } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
@@ -44,7 +44,7 @@ export const ProgramPage = () => {
     | ProgramGrouping['type'];
 
   const query = useQuery({
-    ...getApiProgramsByIdOptions({
+    ...getProgramByIdOptions({
       path: {
         id: programId,
       },
@@ -53,7 +53,7 @@ export const ProgramPage = () => {
   });
 
   const parentQuery = useQuery({
-    ...getApiProgramGroupingsByIdOptions({
+    ...getProgramGroupingByIdOptions({
       path: {
         id: programId,
       },

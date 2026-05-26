@@ -38,6 +38,9 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
     '/plex/:mediaSourceId/search',
     {
       schema: {
+        operationId: 'searchPlexLibrary',
+        summary: 'Search a Plex library',
+        tags: ['Media Library'],
         params: mediaSourceParamsSchema,
         querystring: z.object({
           key: z.string(),
@@ -97,6 +100,9 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
     '/plex/:mediaSourceId/libraries',
     {
       schema: {
+        operationId: 'getPlexLibraries',
+        summary: 'List Plex libraries',
+        tags: ['Media Library'],
         params: mediaSourceParamsSchema,
         response: {
           200: z.array(LibrarySchema),
@@ -129,6 +135,9 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
     '/plex/:mediaSourceId/libraries/:libraryId/collections',
     {
       schema: {
+        operationId: 'getPlexLibraryCollections',
+        summary: 'List collections in a Plex library',
+        tags: ['Media Library'],
         params: mediaSourceParamsSchema.extend({
           libraryId: z.string(),
         }),
@@ -174,6 +183,9 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
     '/plex/:mediaSourceId/libraries/:libraryId/playlists',
     {
       schema: {
+        operationId: 'getPlexLibraryPlaylists',
+        summary: 'List playlists in a Plex library',
+        tags: ['Media Library'],
         params: mediaSourceParamsSchema.extend({
           libraryId: z.string(),
         }),
@@ -216,6 +228,9 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
     '/plex/:mediaSourceId/playlists',
     {
       schema: {
+        operationId: 'getPlexPlaylists',
+        summary: 'List all Plex playlists',
+        tags: ['Media Library'],
         params: mediaSourceParamsSchema,
         querystring: z.object({
           offset: z.coerce.number().nonnegative().optional(),
@@ -256,6 +271,9 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
     '/plex/:mediaSourceId/filters',
     {
       schema: {
+        operationId: 'getPlexLibraryFilters',
+        summary: 'Get available filters for a Plex library',
+        tags: ['Media Library'],
         params: mediaSourceParamsSchema,
         querystring: z.object({
           key: z.string(),
@@ -284,6 +302,9 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
     '/plex/:mediaSourceId/tags',
     {
       schema: {
+        operationId: 'getPlexItemTags',
+        summary: 'Get tags for a Plex item',
+        tags: ['Media Library'],
         params: mediaSourceParamsSchema,
         querystring: z.object({
           libraryKey: z.string(),
@@ -316,6 +337,9 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
     '/plex/:mediaSourceId/items/:itemId/children',
     {
       schema: {
+        operationId: 'getPlexItemChildren',
+        summary: 'Get children of a Plex item',
+        tags: ['Media Library'],
         params: mediaSourceParamsSchema.extend({
           itemId: z.string(),
         }),

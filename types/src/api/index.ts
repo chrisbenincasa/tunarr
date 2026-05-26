@@ -123,12 +123,12 @@ export type UpdateFillerListRequest = z.infer<
 >;
 
 export const BasicIdParamSchema = z.object({
-  id: z.string(),
+  id: z.string().describe('Entity UUID'),
 });
 
 export const BasicPagingSchema = z.object({
-  offset: z.coerce.number().optional(),
-  limit: z.coerce.number().optional(),
+  offset: z.coerce.number().optional().describe('Number of results to skip for pagination.'),
+  limit: z.coerce.number().optional().describe('Maximum number of results to return. Use -1 for no limit.'),
 });
 
 export const ManualProgramLineupSchema = z.object({

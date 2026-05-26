@@ -4,7 +4,7 @@ import type {
   PlexResourcesResponse,
 } from '@tunarr/types/plex';
 import { compact, isError, isString, partition } from 'lodash-es';
-import { postApiMediaSourcesForeignstatus } from '../generated/sdk.gen.ts';
+import { checkForeignMediaSourceStatus } from '../generated/sdk.gen.ts';
 import { AsyncInterval } from './AsyncInterval.ts';
 import { sequentialPromises } from './util.ts';
 
@@ -128,7 +128,7 @@ export const checkNewPlexServers = async (servers: PlexResourcesResponse) => {
         continue;
       }
 
-      const { healthy } = await postApiMediaSourcesForeignstatus({
+      const { healthy } = await checkForeignMediaSourceStatus({
         body: {
           name: server.name,
           accessToken: server.accessToken,

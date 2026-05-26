@@ -5,31 +5,31 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import {
-  getApiSystemSettingsOptions,
-  getApiSystemSettingsQueryKey,
-  getApiSystemStateOptions,
-  putApiSystemSettingsMutation,
+  getSystemSettingsOptions,
+  getSystemSettingsQueryKey,
+  getSystemStateOptions,
+  updateSystemSettingsMutation,
 } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useSystemSettings = () =>
   useQuery({
-    ...getApiSystemSettingsOptions(),
+    ...getSystemSettingsOptions(),
   });
 
 export const useSystemSettingsSuspense = () =>
-  useSuspenseQuery(getApiSystemSettingsOptions());
+  useSuspenseQuery(getSystemSettingsOptions());
 
 export const useUpdateSystemSettings = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    ...putApiSystemSettingsMutation(),
+    ...updateSystemSettingsMutation(),
     onSuccess: (response) =>
-      queryClient.setQueryData(getApiSystemSettingsQueryKey(), response),
+      queryClient.setQueryData(getSystemSettingsQueryKey(), response),
   });
 };
 
 export const useSystemState = () =>
   useSuspenseQuery({
-    ...getApiSystemStateOptions(),
+    ...getSystemStateOptions(),
   });

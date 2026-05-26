@@ -1,41 +1,41 @@
 import { useQueries, useSuspenseQuery } from '@tanstack/react-query';
 import {
-  getApiChannelsByIdTranscodeConfigOptions,
-  getApiFfmpegSettingsOptions,
-  getApiHdhrSettingsOptions,
-  getApiMediaSourcesOptions,
-  getApiPlexSettingsOptions,
-  getApiTranscodeConfigsByIdOptions,
-  getApiTranscodeConfigsOptions,
-  getApiXmltvSettingsOptions,
+  getChannelTranscodeConfigOptions,
+  getFfmpegSettingsOptions,
+  getHdhrSettingsOptions,
+  getMediaSourcesOptions,
+  getPlexStreamSettingsOptions,
+  getTranscodeConfigByIdOptions,
+  getTranscodeConfigsOptions,
+  getXmltvSettingsOptions,
 } from '../generated/@tanstack/react-query.gen.ts';
 import {
-  getApiMediaSources,
-  getApiPlexSettings,
+  getMediaSources,
+  getPlexStreamSettings,
 } from '../generated/sdk.gen.ts';
 
 export const useXmlTvSettings = () =>
-  useSuspenseQuery(getApiXmltvSettingsOptions());
+  useSuspenseQuery(getXmltvSettingsOptions());
 
 export const useFfmpegSettings = () =>
-  useSuspenseQuery(getApiFfmpegSettingsOptions());
+  useSuspenseQuery(getFfmpegSettingsOptions());
 
 export const useMediaSources = () =>
-  useSuspenseQuery(getApiMediaSourcesOptions());
+  useSuspenseQuery(getMediaSourcesOptions());
 
 export const usePlexStreamSettings = () =>
-  useSuspenseQuery(getApiPlexSettingsOptions());
+  useSuspenseQuery(getPlexStreamSettingsOptions());
 
 export const usePlexSettings = () => {
   return useQueries({
     queries: [
       {
         queryKey: ['settings', 'media-sources'],
-        queryFn: () => getApiMediaSources(),
+        queryFn: () => getMediaSources(),
       },
       {
         queryKey: ['settings', 'plex-stream'],
-        queryFn: () => getApiPlexSettings(),
+        queryFn: () => getPlexStreamSettings(),
       },
     ],
     combine: (result) => {
@@ -61,12 +61,12 @@ export const usePlexSettings = () => {
 
 export const useHdhrSettings = () => {
   return useSuspenseQuery({
-    ...getApiHdhrSettingsOptions(),
+    ...getHdhrSettingsOptions(),
   });
 };
 
 export const transcodeConfigsQueryOptions = () =>
-  getApiTranscodeConfigsOptions();
+  getTranscodeConfigsOptions();
 
 export const useTranscodeConfigs = () => {
   return useSuspenseQuery(transcodeConfigsQueryOptions());
@@ -74,10 +74,10 @@ export const useTranscodeConfigs = () => {
 
 export const useTranscodeConfig = (id: string) =>
   useSuspenseQuery({
-    ...getApiTranscodeConfigsByIdOptions({ path: { id } }),
+    ...getTranscodeConfigByIdOptions({ path: { id } }),
   });
 
 export const useChannelTranscodeConfig = (channelId: string) =>
   useSuspenseQuery({
-    ...getApiChannelsByIdTranscodeConfigOptions({ path: { id: channelId } }),
+    ...getChannelTranscodeConfigOptions({ path: { id: channelId } }),
   });

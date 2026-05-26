@@ -15,9 +15,9 @@ import {
 } from 'material-react-table';
 import { useCallback, useMemo, useState } from 'react';
 import {
-  deleteApiTranscodeConfigsByIdMutation,
-  getApiTranscodeConfigsQueryKey,
-  postApiTranscodeConfigsByIdCopyMutation,
+  deleteTranscodeConfigMutation,
+  getTranscodeConfigsQueryKey,
+  copyTranscodeConfigMutation,
 } from '../../../generated/@tanstack/react-query.gen.ts';
 import { invalidateTaggedQueries } from '../../../helpers/queryUtil.ts';
 import { useTranscodeConfigs } from '../../../hooks/settingsHooks.ts';
@@ -33,17 +33,17 @@ export const TranscodeConfigsTable = () => {
     useState<TranscodeConfig | null>(null);
 
   const duplicateConfigMutation = useMutation({
-    ...postApiTranscodeConfigsByIdCopyMutation(),
+    ...copyTranscodeConfigMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
         exact: false,
-        queryKey: getApiTranscodeConfigsQueryKey(),
+        queryKey: getTranscodeConfigsQueryKey(),
       });
     },
   });
 
   const deleteTranscodeConfig = useMutation({
-    ...deleteApiTranscodeConfigsByIdMutation(),
+    ...deleteTranscodeConfigMutation(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         predicate: invalidateTaggedQueries('Settings'),

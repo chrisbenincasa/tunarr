@@ -66,6 +66,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
     '/stream/channels/:id',
     {
       schema: {
+        operationId: 'streamChannel',
+        summary: 'Start streaming a channel',
+        description: 'Redirects to the appropriate stream URL for the channel based on its configured stream mode.',
         tags: ['Streaming'],
         params: z.object({
           id: z.coerce.number().or(z.uuid()),
@@ -111,6 +114,8 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
     '/stream/channels/:id.ts',
     {
       schema: {
+        operationId: 'streamChannelMpegTs',
+        summary: 'Stream a channel as MPEGTS',
         tags: ['Streaming'],
         description:
           'Returns a continuous, direct MPEGTS video stream for the given channel',
@@ -343,6 +348,8 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       disableRequestLogging: 'only-errors',
     },
     schema: {
+      operationId: 'streamChannelM3u8',
+      summary: 'Stream a channel as HLS (m3u8)',
       tags: ['Streaming'],
       description:
         'Returns an m3u8 playlist for the given channel, for use in HLS',

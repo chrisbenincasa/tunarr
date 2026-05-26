@@ -12,6 +12,10 @@ export const trashApi: RouterPluginAsyncCallback = async (fastify) => {
     '/trash',
     {
       schema: {
+        operationId: 'getTrash',
+        summary: 'List trashed (missing) programs',
+        description: 'Returns programs that are in the "missing" state — their source media file or remote item can no longer be found.',
+        tags: ['Programs'],
         querystring: z.object({
           itemTypes: ProgramTypeSchema.array().optional(),
         }),
@@ -65,7 +69,20 @@ export const trashApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.delete('/trash', {}, async (req, res) => {
+  fastify.delete(
+    '/trash',
+    {
+      schema: {
+        operationId: 'emptyTrash',
+        summary: 'Delete all trashed programs',
+        description: 'Permanently removes all programs in the "missing" state from the database.',
+        tags: ['Programs'],
+        response: {
+          200: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
     await Promise.all([
       req.serverCtx.programDB.emptyTrashPrograms(),
       req.serverCtx.searchService.deleteMissing(),

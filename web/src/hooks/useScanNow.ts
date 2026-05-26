@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { isEqual } from 'lodash-es';
 import { useCallback } from 'react';
 import {
-  getApiProgramGroupingsByIdQueryKey,
-  getApiProgramsByIdOptions,
-  postApiProgramsByIdScanMutation,
+  getProgramGroupingByIdQueryKey,
+  getProgramByIdOptions,
+  scanProgramMutation,
 } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useScanNow = () => {
@@ -16,9 +16,9 @@ export const useScanNow = () => {
           return (
             isEqual(
               key,
-              getApiProgramGroupingsByIdQueryKey({ path: { id: programId } }),
+              getProgramGroupingByIdQueryKey({ path: { id: programId } }),
             ) ||
-            isEqual(key, getApiProgramsByIdOptions({ path: { id: programId } }))
+            isEqual(key, getProgramByIdOptions({ path: { id: programId } }))
           );
         },
       });
@@ -27,7 +27,7 @@ export const useScanNow = () => {
   );
 
   const scanMut = useMutation({
-    ...postApiProgramsByIdScanMutation(),
+    ...scanProgramMutation(),
     onSuccess: (_, { path: { id } }) => {
       return clearQueryCache(id);
     },

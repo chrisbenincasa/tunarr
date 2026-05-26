@@ -93,6 +93,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         operationId: 'getChannels',
+        summary: 'List all channels',
+        description: 'Returns all configured Tunarr channels, ordered by channel number.',
         tags: ['Channels'],
         response: {
           200: z.array(ChannelSchema),
@@ -149,7 +151,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id',
     {
       schema: {
-        operationId: 'getChannelsByNumberV2',
+        operationId: 'getChannelById',
+        summary: 'Get a channel by ID',
         tags: ['Channels'],
         params: BasicIdParamSchema,
         response: {
@@ -208,7 +211,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels',
     {
       schema: {
-        operationId: 'createChannelV2',
+        operationId: 'createChannel',
+        summary: 'Create a channel',
+        description: 'Creates a new channel. Use type "new" to create from scratch or type "copy" to duplicate an existing channel.',
         tags: ['Channels'],
         body: CreateChannelRequestSchema,
         response: {
@@ -269,6 +274,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id',
     {
       schema: {
+        operationId: 'updateChannel',
+        summary: 'Update a channel',
         body: SaveableChannelSchema,
         tags: ['Channels'],
         params: z.object({ id: z.string() }),
@@ -362,6 +369,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id',
     {
       schema: {
+        operationId: 'deleteChannel',
+        summary: 'Delete a channel',
         params: z.object({ id: z.string() }),
         tags: ['Channels'],
         response: {
@@ -394,6 +403,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/programs',
     {
       schema: {
+        operationId: 'getChannelPrograms',
+        summary: 'List a channel\'s programs',
+        description: 'Returns a paginated list of programs in the channel\'s programming lineup.',
         params: BasicIdParamSchema,
         querystring: z.object({
           ...PagingParams.shape,
@@ -434,6 +446,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/shows',
     {
       schema: {
+        operationId: 'getChannelShows',
+        summary: 'List TV shows in a channel',
+        tags: ['Channels'],
         params: BasicIdParamSchema,
         querystring: PagingParams,
         response: {
@@ -465,6 +480,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/artists',
     {
       schema: {
+        operationId: 'getChannelArtists',
+        summary: 'List music artists in a channel',
+        tags: ['Channels'],
         params: BasicIdParamSchema,
         querystring: PagingParams,
         response: {
@@ -496,6 +514,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/programming',
     {
       schema: {
+        operationId: 'getChannelProgramming',
+        summary: 'Get a channel\'s condensed programming',
+        description: 'Returns the condensed programming lineup for a channel, including all programs in the current cycle.',
         params: BasicIdParamSchema,
         querystring: BasicPagingSchema,
         tags: ['Channels'],
@@ -534,6 +555,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       bodyLimit: 1024 * 1024 * 100,
       schema: {
+        operationId: 'updateChannelProgramming',
+        summary: 'Update a channel\'s programming',
+        description: 'Replaces or modifies the programming lineup for a channel.',
         params: BasicIdParamSchema,
         tags: ['Channels'],
         body: UpdateChannelProgrammingRequestSchema,
@@ -595,7 +619,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: BasicIdParamSchema,
-        operationId: 'GetChannelFallbacks',
+        operationId: 'getChannelFallbacks',
+        summary: 'Get a channel\'s fallback programs',
         description: "Returns a channel's fallback programs.",
         tags: ['Channels'],
         querystring: ChannelLineupQuery,
@@ -634,6 +659,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/all/lineups',
     {
       schema: {
+        operationId: 'getAllChannelLineups',
+        summary: 'Get lineups for all channels',
+        description: 'Returns guide lineup data for all channels within the given time range.',
         querystring: ChannelLineupQuery,
         tags: ['Channels'],
         response: {
@@ -659,6 +687,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/lineup',
     {
       schema: {
+        operationId: 'getChannelLineup',
+        summary: 'Get a channel\'s lineup',
+        description: 'Returns the guide lineup for a channel within the given time range.',
         params: BasicIdParamSchema,
         tags: ['Channels'],
         querystring: ChannelLineupQuery,
@@ -693,6 +724,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/now_playing',
     {
       schema: {
+        operationId: 'getChannelNowPlaying',
+        summary: 'Get what is currently playing on a channel',
         params: BasicIdParamSchema,
         tags: ['Channels'],
         response: {
@@ -721,6 +754,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/transcode_config',
     {
       schema: {
+        operationId: 'getChannelTranscodeConfig',
+        summary: 'Get the transcode config for a channel',
+        tags: ['Channels', 'Transcode Configs'],
         params: z.object({
           id: z.string(),
         }),
@@ -741,7 +777,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:channelId/schedule-time-slots',
     {
       schema: {
-        tags: ['Channels'],
+        operationId: 'scheduleChannelTimeSlots',
+        summary: 'Preview time-slot scheduling for a channel',
+        description: 'Calculates and returns a preview of time-slot based scheduling without saving. Use the result to update the channel\'s programming.',
+        tags: ['Channels', 'Scheduling'],
         params: z.object({
           channelId: z.string(),
         }),
@@ -805,7 +844,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:channelId/schedule-slots',
     {
       schema: {
-        tags: ['Channels'],
+        operationId: 'scheduleChannelSlots',
+        summary: 'Preview random-slot scheduling for a channel',
+        description: 'Calculates and returns a preview of random-slot based scheduling without saving. Use the result to update the channel\'s programming.',
+        tags: ['Channels', 'Scheduling'],
         params: z.object({
           channelId: z.string(),
         }),
@@ -869,6 +911,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/schedule',
     {
       schema: {
+        operationId: 'getChannelSchedule',
+        summary: 'Get the schedule for a channel',
         tags: ['Channels', 'Scheduling'],
         params: z.object({
           id: z.uuid(),

@@ -6,9 +6,9 @@ import {
 import type { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import {
-  getApiMediaSourcesByMediaSourceIdOptions,
-  postApiMediaSourcesMutation,
-  putApiMediaSourcesByIdMutation,
+  getMediaSourceByIdOptions,
+  createMediaSourceMutation,
+  updateMediaSourceMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 
@@ -19,7 +19,7 @@ type Callbacks = {
 
 export const useMediaSource = (mediaSourceId: string) => {
   return useSuspenseQuery({
-    ...getApiMediaSourcesByMediaSourceIdOptions({
+    ...getMediaSourceByIdOptions({
       path: {
         mediaSourceId,
       },
@@ -31,7 +31,7 @@ export const useUpdateMediaSource = (callbacks?: Callbacks) => {
   const queryClient = useQueryClient();
   const snackbar = useSnackbar();
   return useMutation({
-    ...putApiMediaSourcesByIdMutation(),
+    ...updateMediaSourceMutation(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         predicate: invalidateTaggedQueries('Media Source'),
@@ -54,7 +54,7 @@ export const useCreateMediaSource = (callbacks?: Callbacks) => {
   const queryClient = useQueryClient();
   const snackbar = useSnackbar();
   return useMutation({
-    ...postApiMediaSourcesMutation(),
+    ...createMediaSourceMutation(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         predicate: invalidateTaggedQueries('Media Source'),

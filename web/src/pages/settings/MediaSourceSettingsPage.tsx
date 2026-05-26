@@ -29,8 +29,8 @@ import { LocalMediaEditDialog } from '../../components/settings/media_source/Loc
 import { MediaSourceHealthyTableCell } from '../../components/settings/media_source/MediaSourceHealthyTableCell.tsx';
 import { PlexServerEditDialog } from '../../components/settings/media_source/PlexServerEditDialog.tsx';
 import {
-  deleteApiMediaSourcesByIdMutation,
-  postApiMediaSourcesByIdLibrariesRefreshMutation,
+  deleteMediaSourceMutation,
+  refreshMediaSourceLibrariesMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
@@ -51,7 +51,7 @@ export default function MediaSourceSettingsPage() {
   const queryClient = useQueryClient();
 
   const deleteMediaSourceMut = useMutation({
-    ...deleteApiMediaSourcesByIdMutation(),
+    ...deleteMediaSourceMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
         predicate: invalidateTaggedQueries('Media Source'),
@@ -60,7 +60,7 @@ export default function MediaSourceSettingsPage() {
   });
 
   const refreshLibrariesMutation = useMutation({
-    ...postApiMediaSourcesByIdLibrariesRefreshMutation(),
+    ...refreshMediaSourceLibrariesMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
         predicate: invalidateTaggedQueries('Media Source'),

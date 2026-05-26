@@ -18,9 +18,9 @@ import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  getApiSystemDebugEnvOptions,
-  getApiSystemDebugNvidiaOptions,
-  getApiSystemDebugVaapiOptions,
+  getSystemEnvVarsOptions,
+  getNvidiaDebugInfoOptions,
+  getVaapiDebugInfoOptions,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { useCopyToClipboardSync } from '../../hooks/useCopyToClipboard.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
@@ -32,7 +32,7 @@ export const SystemDebugPage = () => {
   const copyToClipboard = useCopyToClipboardSync();
 
   const envData = useSuspenseQuery({
-    ...getApiSystemDebugEnvOptions(),
+    ...getSystemEnvVarsOptions(),
     staleTime: +dayjs.duration(1, 'hour'),
   });
 
@@ -56,7 +56,7 @@ export const SystemDebugPage = () => {
     isLoading: isLoadingVaapiCapabilities,
     data: vappiCapabilitiesResult,
   } = useQuery({
-    ...getApiSystemDebugVaapiOptions(),
+    ...getVaapiDebugInfoOptions(),
     enabled: checkVaapiEnabled,
   });
 
@@ -64,7 +64,7 @@ export const SystemDebugPage = () => {
     isLoading: isLoadingNvidiaCapabilities,
     data: nvidiaCapabilitiesResult,
   } = useQuery({
-    ...getApiSystemDebugNvidiaOptions(),
+    ...getNvidiaDebugInfoOptions(),
     enabled: checkNvidiaEnabled,
   });
 

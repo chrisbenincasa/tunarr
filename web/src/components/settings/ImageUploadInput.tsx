@@ -9,7 +9,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import { styled } from '@mui/material/styles';
 import type { ChangeEvent } from 'react';
 import React, { useCallback, useRef } from 'react';
-import { postApiUploadImage } from '../../generated/sdk.gen.ts';
+import { uploadImage } from '../../generated/sdk.gen.ts';
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -61,7 +61,7 @@ export function ImageUploadInput({
 
         data.append('file', renamedFile);
 
-        postApiUploadImage({ body: { file: renamedFile }, throwOnError: true })
+        uploadImage({ body: { file: renamedFile }, throwOnError: true })
           .then((response) => {
             onChange(response.data.fileUrl);
           })

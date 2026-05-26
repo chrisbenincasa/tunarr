@@ -6,7 +6,7 @@ import {
 import type { ProgramLike, ProgramOrFolder } from '@tunarr/types';
 import type { ProgramSearchResponse } from '@tunarr/types/api';
 import type { SearchFilter } from '@tunarr/types/schemas';
-import { postApiProgramsSearchOptions } from '../generated/@tanstack/react-query.gen.ts';
+import { searchProgramsOptions } from '../generated/@tanstack/react-query.gen.ts';
 import type { Nullable } from '../types/util.ts';
 
 export function getChildSearchFilter(
@@ -70,7 +70,7 @@ export type ProgramChildSearchQueryOptions = UseQueryOptions<
 
 export const programChildSearchQueryOpts = (item: ProgramLike) =>
   queryOptions({
-    ...postApiProgramsSearchOptions({
+    ...searchProgramsOptions({
       body: {
         libraryId: item.libraryId,
         query: {

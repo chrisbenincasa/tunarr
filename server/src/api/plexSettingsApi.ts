@@ -21,6 +21,8 @@ export const plexSettingsRouter: RouterPluginCallback = (
     '/plex-settings',
     {
       schema: {
+        operationId: 'getPlexStreamSettings',
+        summary: 'Get Plex stream settings',
         tags: ['Settings'],
         response: {
           200: PlexStreamSettingsSchema,
@@ -45,6 +47,8 @@ export const plexSettingsRouter: RouterPluginCallback = (
     '/plex-settings',
     {
       schema: {
+        operationId: 'updatePlexStreamSettings',
+        summary: 'Update Plex stream settings',
         tags: ['Settings'],
         body: PlexStreamSettingsSchema,
         response: {
@@ -88,6 +92,8 @@ export const plexSettingsRouter: RouterPluginCallback = (
     '/plex-settings',
     {
       schema: {
+        operationId: 'resetPlexStreamSettings',
+        summary: 'Reset Plex stream settings to defaults',
         tags: ['Settings'],
         response: {
           200: PlexStreamSettingsSchema,

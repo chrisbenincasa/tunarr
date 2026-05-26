@@ -18,7 +18,7 @@ import type {
 import { groupBy, isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo } from 'react';
 import { match, P } from 'ts-pattern';
-import { postApiProgramsSearch } from '../../generated/sdk.gen.ts';
+import { searchPrograms } from '../../generated/sdk.gen.ts';
 import { useProgramHierarchy } from '../../hooks/channel_config/useProgramHierarchy.ts';
 import { getChildSearchFilter } from '../../hooks/useProgramSearch.ts';
 import useStore from '../../store/index.ts';
@@ -140,7 +140,7 @@ export const LibraryProgramGrid = ({
   const search = useInfiniteQuery({
     queryKey: ['programs', 'search', query, mediaSource?.id, library?.id],
     queryFn: async ({ pageParam }) => {
-      const { data } = await postApiProgramsSearch({
+      const { data } = await searchPrograms({
         body: {
           mediaSourceId: mediaSource?.id,
           libraryId: library?.id,

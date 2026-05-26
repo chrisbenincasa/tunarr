@@ -18,8 +18,8 @@ import { useCallback } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import {
-  postApiFillerLists,
-  putApiFillerListsById,
+  createFillerList,
+  updateFillerList,
 } from '../../generated/sdk.gen.ts';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import useStore from '../../store/index.ts';
@@ -70,12 +70,12 @@ export function EditFillerListForm({
     mutationKey: ['fillers', isNew ? 'new' : fillerList.id],
     mutationFn: async ({ name, programs }: FillerListMutationArgs) => {
       if (isNew) {
-        return postApiFillerLists({
+        return createFillerList({
           body: { name, programs },
           throwOnError: true,
         });
       } else {
-        return putApiFillerListsById({
+        return updateFillerList({
           path: { id: fillerList.id },
           body: { name, programs },
           throwOnError: true,

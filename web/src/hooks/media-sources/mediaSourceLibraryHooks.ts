@@ -8,19 +8,19 @@ import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
 import { useCallback } from 'react';
 import type { StrictOmit } from 'ts-essentials';
 import {
-  getApiMediaLibrariesByLibraryIdOptions,
-  getApiMediaSourcesByIdLibrariesQueryKey,
-  getApiMediaSourcesByMediaSourceIdByLibraryIdStatusOptions,
-  getApiMediaSourcesQueryKey,
-  postApiMediaSourcesByIdLibrariesByLibraryIdScanMutation,
-  putApiMediaSourcesByIdLibrariesByLibraryIdMutation,
+  getMediaLibraryByIdOptions,
+  getMediaSourceLibrariesQueryKey,
+  getMediaSourceScanStatusOptions,
+  getMediaSourcesQueryKey,
+  scanMediaSourceLibraryMutation,
+  updateMediaSourceLibraryMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import type { Options } from '../../generated/client/types.gen.ts';
 import type {
-  GetApiMediaSourcesByIdLibrariesResponses,
-  GetApiMediaSourcesResponses,
-  PostApiMediaSourcesByIdLibrariesByLibraryIdScanData,
-  PutApiMediaSourcesByIdLibrariesByLibraryIdData,
+  GetMediaSourceLibrariesResponses,
+  GetMediaSourcesResponses,
+  ScanMediaSourceLibraryData,
+  UpdateMediaSourceLibraryData,
 } from '../../generated/types.gen.ts';
 import { queryClient } from '../../queryClient.ts';
 import type { Maybe } from '../../types/util.ts';
@@ -35,23 +35,23 @@ const useUpdateQueryCachedLibraries = () => {
         lib: StrictOmit<MediaSourceLibrary, 'mediaSource'>,
       ) => StrictOmit<MediaSourceLibrary, 'mediaSource'>,
     ) => {
-      const librariesQueryKey = getApiMediaSourcesByIdLibrariesQueryKey({
+      const librariesQueryKey = getMediaSourceLibrariesQueryKey({
         path: { id: mediaSourceId },
       });
       await queryClient.cancelQueries({
-        queryKey: getApiMediaSourcesByIdLibrariesQueryKey({
+        queryKey: getMediaSourceLibrariesQueryKey({
           path: { id: mediaSourceId },
         }),
       });
       await queryClient.cancelQueries({
-        queryKey: getApiMediaSourcesQueryKey(),
+        queryKey: getMediaSourcesQueryKey(),
       });
 
       const prevLibraries =
-        queryClient.getQueryData<GetApiMediaSourcesByIdLibrariesResponses[200]>(
+        queryClient.getQueryData<GetMediaSourceLibrariesResponses[200]>(
           librariesQueryKey,
         );
-      queryClient.setQueryData<GetApiMediaSourcesByIdLibrariesResponses[200]>(
+      queryClient.setQueryData<GetMediaSourceLibrariesResponses[200]>(
         librariesQueryKey,
         (prev) => {
           return prev?.map((library) => {
@@ -68,10 +68,10 @@ const useUpdateQueryCachedLibraries = () => {
       );
 
       const prevMediaSources = queryClient.getQueryData<
-        GetApiMediaSourcesResponses[200]
-      >(getApiMediaSourcesQueryKey());
-      queryClient.setQueryData<GetApiMediaSourcesResponses[200]>(
-        getApiMediaSourcesQueryKey(),
+        GetMediaSourcesResponses[200]
+      >(getMediaSourcesQueryKey());
+      queryClient.setQueryData<GetMediaSourcesResponses[200]>(
+        getMediaSourcesQueryKey(),
         (prev) => {
           return prev?.map((source) => {
             if (source.id !== mediaSourceId) {
@@ -102,12 +102,12 @@ const useUpdateQueryCachedLibraries = () => {
       prevMediaSources: Maybe<MediaSourceSettings[]>,
     ) => {
       queryClient.setQueryData(
-        getApiMediaSourcesByIdLibrariesQueryKey({
+        getMediaSourceLibrariesQueryKey({
           path: { id: mediaSourceId },
         }),
         prevLibraries,
       );
-      queryClient.setQueryData(getApiMediaSourcesQueryKey(), prevMediaSources);
+      queryClient.setQueryData(getMediaSourcesQueryKey(), prevMediaSources);
     },
     [queryClient],
   );
@@ -122,9 +122,9 @@ export const useUpdateLibraryMutation = () => {
   const updateQueryCachedLibraries = useUpdateQueryCachedLibraries();
 
   return useMutation({
-    ...putApiMediaSourcesByIdLibrariesByLibraryIdMutation(),
+    ...updateMediaSourceLibraryMutation(),
     onMutate: async (
-      args: Options<PutApiMediaSourcesByIdLibrariesByLibraryIdData>,
+      args: Options<UpdateMediaSourceLibraryData>,
     ) => {
       return updateQueryCachedLibraries.onMutate(
         args.path.id,
@@ -146,12 +146,12 @@ export const useUpdateLibraryMutation = () => {
     onSettled: (_data, _err, args) =>
       Promise.all([
         queryClient.invalidateQueries({
-          queryKey: getApiMediaSourcesByIdLibrariesQueryKey({
+          queryKey: getMediaSourceLibrariesQueryKey({
             path: { id: args.path.id },
           }),
         }),
         queryClient.invalidateQueries({
-          queryKey: getApiMediaSourcesQueryKey(),
+          queryKey: getMediaSourcesQueryKey(),
         }),
       ]),
   });
@@ -164,7 +164,7 @@ export const useLibraryScanState = (
   interval: number = 5000,
 ) => {
   return useQuery({
-    ...getApiMediaSourcesByMediaSourceIdByLibraryIdStatusOptions({
+    ...getMediaSourceScanStatusOptions({
       path: {
         mediaSourceId,
         libraryId,
@@ -180,9 +180,9 @@ export const useScanMediaSourceMutation = () => {
   const updateQueryCachedLibraries = useUpdateQueryCachedLibraries();
 
   return useMutation({
-    ...postApiMediaSourcesByIdLibrariesByLibraryIdScanMutation(),
+    ...scanMediaSourceLibraryMutation(),
     onMutate: async (
-      args: Options<PostApiMediaSourcesByIdLibrariesByLibraryIdScanData>,
+      args: Options<ScanMediaSourceLibraryData>,
     ) => {
       return updateQueryCachedLibraries.onMutate(
         args.path.id,
@@ -204,12 +204,12 @@ export const useScanMediaSourceMutation = () => {
     onSettled: (_data, _err, args) =>
       Promise.all([
         queryClient.invalidateQueries({
-          queryKey: getApiMediaSourcesByIdLibrariesQueryKey({
+          queryKey: getMediaSourceLibrariesQueryKey({
             path: { id: args.path.id },
           }),
         }),
         queryClient.invalidateQueries({
-          queryKey: getApiMediaSourcesQueryKey(),
+          queryKey: getMediaSourcesQueryKey(),
         }),
       ]),
   });
@@ -219,9 +219,9 @@ export const useScanLibraryMutation = () => {
   const updateQueryCachedLibraries = useUpdateQueryCachedLibraries();
 
   return useMutation({
-    ...postApiMediaSourcesByIdLibrariesByLibraryIdScanMutation(),
+    ...scanMediaSourceLibraryMutation(),
     onMutate: async (
-      args: Options<PostApiMediaSourcesByIdLibrariesByLibraryIdScanData>,
+      args: Options<ScanMediaSourceLibraryData>,
     ) => {
       return updateQueryCachedLibraries.onMutate(
         args.path.id,
@@ -243,19 +243,19 @@ export const useScanLibraryMutation = () => {
     onSettled: (_data, _err, args) =>
       Promise.all([
         queryClient.invalidateQueries({
-          queryKey: getApiMediaSourcesByIdLibrariesQueryKey({
+          queryKey: getMediaSourceLibrariesQueryKey({
             path: { id: args.path.id },
           }),
         }),
         queryClient.invalidateQueries({
-          queryKey: getApiMediaSourcesQueryKey(),
+          queryKey: getMediaSourcesQueryKey(),
         }),
       ]),
   });
 };
 
 export const MediaSourceLibraryQueryOpts = (libraryId: string) =>
-  getApiMediaLibrariesByLibraryIdOptions({ path: { libraryId } });
+  getMediaLibraryByIdOptions({ path: { libraryId } });
 
 export const useMediaSourceLibrary = (libraryId: string) => {
   return useSuspenseQuery(MediaSourceLibraryQueryOpts(libraryId));
