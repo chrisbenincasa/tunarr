@@ -115,10 +115,11 @@ export abstract class MediaSourceTvShowLibraryScanner<
         continue;
       }
 
-      const scanSeasonsResult = await this.scanSeasons(
-        showResult.get()!,
-        context,
-      );
+      const showT = showResult.get()!;
+
+      await this.scanExtrasForShow(context, showT, showT.uuid);
+
+      const scanSeasonsResult = await this.scanSeasons(showT, context);
 
       if (scanSeasonsResult.isFailure()) {
         this.logger.warn(scanSeasonsResult.error);
@@ -302,9 +303,17 @@ export abstract class MediaSourceTvShowLibraryScanner<
           continue;
         }
 
+        const persistedSeasonT = persistedSeason.get()!
+
+        await this.scanExtrasForSeason(
+          scanContext,
+          persistedSeasonT,
+          persistedSeasonT.uuid,
+        );
+
         const scanEpisodesResult = await this.scanEpisodes(
           show,
-          persistedSeason.get()!,
+          persistedSeasonT,
           scanContext,
         );
 
@@ -483,6 +492,10 @@ export abstract class MediaSourceTvShowLibraryScanner<
             "Skipping episode key = %s because it hasn't changed",
             externalKey,
           );
+          const existingUuid = existing[externalKey]?.uuid;
+          if (existingUuid !== undefined) {
+            await this.scanExtrasForEpisode(scanContext, fullEpisode, existingUuid);
+          }
           continue;
         }
 
@@ -524,6 +537,14 @@ export abstract class MediaSourceTvShowLibraryScanner<
               createdAt: upsertResult!.createdAt,
             },
           ]);
+
+          if (upsertResult !== undefined) {
+            await this.scanExtrasForEpisode(
+              scanContext,
+              fullEpisode,
+              upsertResult.uuid,
+            );
+          }
         } catch (e) {
           this.logger.warn(
             e,
@@ -553,6 +574,27 @@ export abstract class MediaSourceTvShowLibraryScanner<
       }
     });
   }
+
+   
+  protected async scanExtrasForShow(
+    _context: ScanContext<ApiClientTypeT>,
+    _show: ShowT,
+    _dbShowUuid: string,
+  ): Promise<void> {}
+
+   
+  protected async scanExtrasForSeason(
+    _context: ScanContext<ApiClientTypeT>,
+    _season: SeasonWithShow<SeasonT, ShowT> & HasMediaSourceAndLibraryId,
+    _dbSeasonUuid: string,
+  ): Promise<void> {}
+
+   
+  protected async scanExtrasForEpisode(
+    _context: ScanContext<ApiClientTypeT>,
+    _episode: EpisodeT,
+    _dbEpisodeUuid: string,
+  ): Promise<void> {}
 
   protected abstract getTvShowLibraryContents(
     libraryId: string, // TODO: Full library type?
