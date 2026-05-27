@@ -20,6 +20,7 @@ import type { ProgramExternalIdType } from './custom_types/ProgramExternalIdType
 import type { PageParams } from './interfaces/IChannelDB.js';
 import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
 import { ProgramExternalIdRepository } from './program/ProgramExternalIdRepository.ts';
+import { ProgramExtraRepository } from './program/ProgramExtraRepository.ts';
 import { ProgramGroupingRepository } from './program/ProgramGroupingRepository.ts';
 import { ProgramGroupingUpsertRepository } from './program/ProgramGroupingUpsertRepository.ts';
 import { ProgramMetadataRepository } from './program/ProgramMetadataRepository.ts';
@@ -45,6 +46,7 @@ import type {
 } from './schema/base.js';
 import type {
   MusicAlbumOrm,
+  NewProgramExtraWithRelations,
   NewProgramGroupingWithRelations,
   NewProgramWithRelations,
   ProgramGroupingOrmWithRelations,
@@ -73,6 +75,8 @@ export class ProgramDB implements IProgramDB {
     private readonly searchRepo: ProgramSearchRepository,
     @inject(KEYS.ProgramStateRepository)
     private readonly stateRepo: ProgramStateRepository,
+    @inject(KEYS.ProgramExtraRepository)
+    private readonly extraRepo: ProgramExtraRepository,
   ) {}
 
   getProgramById(
@@ -381,5 +385,9 @@ export class ProgramDB implements IProgramDB {
 
   emptyTrashPrograms(): Promise<void> {
     return this.stateRepo.emptyTrashPrograms();
+  }
+
+  upsertProgramExtras(extras: NewProgramExtraWithRelations[]) {
+    return this.extraRepo.upsertProgramExtras(extras);
   }
 }

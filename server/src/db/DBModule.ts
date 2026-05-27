@@ -14,10 +14,12 @@ import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
 import { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
 import { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts';
 import { LineupRepository } from './channel/LineupRepository.ts';
+import { ProgramExtraMinter } from './converters/ProgramExtraMinter.ts';
 import { ProgramGroupingMinter } from './converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from './converters/ProgramMinter.ts';
 import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
 import { ProgramExternalIdRepository } from './program/ProgramExternalIdRepository.ts';
+import { ProgramExtraRepository } from './program/ProgramExtraRepository.ts';
 import { ProgramGroupingRepository } from './program/ProgramGroupingRepository.ts';
 import { ProgramGroupingUpsertRepository } from './program/ProgramGroupingUpsertRepository.ts';
 import { ProgramMetadataRepository } from './program/ProgramMetadataRepository.ts';
@@ -89,6 +91,10 @@ const DBModule = new ContainerModule(({ bind }) => {
   bind(KEYS.FillerListDB).to(FillerDB).inSingletonScope();
   bind(ProgramPlayHistoryDB).toSelf().inSingletonScope();
 
+  bind(KEYS.ProgramExtraRepository)
+    .to(ProgramExtraRepository)
+    .inSingletonScope();
+  bind(ProgramExtraMinter).toSelf().inSingletonScope();
   bind(ProgramGroupingMinter).toSelf().inSingletonScope();
   bind(ProgramDaoMinter).toSelf();
   bind<Factory<ProgramDaoMinter>>(KEYS.ProgramDaoMinterFactory).toFactory(

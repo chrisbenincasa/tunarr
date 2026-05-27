@@ -330,6 +330,13 @@
       "when": 1782780220054,
       "tag": "0046_melted_captain_flint",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1788034821145,
+      "tag": "0047_abnormal_naoko",
+      "breakpoints": true
     }
   ]
 }
