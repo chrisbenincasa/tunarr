@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { MediaSourceType } from '@/db/schema/base.js';
-import type { Folder } from '@tunarr/types';
+import type { ExtraType } from '@/db/schema/ProgramExtra.js';
+import type { MediaSourceType, RemoteSourceType } from '@/db/schema/base.js';
+import type { Folder, MediaArtwork } from '@tunarr/types';
 import type {
   Episode,
   ExternalIdType,
@@ -172,6 +173,19 @@ export type MediaSourceMusicTrack<
 
 export type MediaSourceOtherVideo = OtherVideo & HasMediaSourceInfo;
 export type MediaSourceMusicVideo = MusicVideo & HasMediaSourceInfo;
+
+export type MediaSourceExtra = HasMediaSourceAndLibraryId & {
+  sourceType: RemoteSourceType;
+  externalId: string;
+  title: string;
+  summary?: string | null;
+  duration: number;
+  extraType: ExtraType;
+  parentExternalId: string;
+  artwork: MediaArtwork[];
+  filePath?: string | null;
+  canonicalId?: string | null;
+};
 
 type PlexMixin = HasMediaSourceInfo & {
   sourceType: typeof MediaSourceType.Plex;
