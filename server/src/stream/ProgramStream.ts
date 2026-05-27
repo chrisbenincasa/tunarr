@@ -23,7 +23,7 @@ import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import type { FFmpegAssistedFactory } from '../ffmpeg/FFmpegModule.ts';
 import type { StreamOptions } from '../ffmpeg/ffmpegBase.ts';
 import { KEYS } from '../types/inject.ts';
-import { assisted, injected } from '../util/assistedInject.ts';
+import { assisted, injected, multiInjected } from '../util/assistedInject.ts';
 import {
   attempt,
   isDefined,
@@ -33,6 +33,7 @@ import {
 import { InjectLogger } from '../util/inject.ts';
 import type { PlayerContext } from './PlayerStreamContext.ts';
 import { ProgramStreamDetailsFetcher } from './ProgramStreamDetailsFetcher.ts';
+import { ProgramStreamPlugin } from './plugins/ProgramStreamPlugin.ts';
 import type { StreamRenditions } from './types.ts';
 
 type ProgramStreamEvents = {
@@ -61,6 +62,8 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
     @injected(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @injected(ProgramStreamDetailsFetcher)
     private programStreamDetails: ProgramStreamDetailsFetcher,
+    @multiInjected(KEYS.ProgramStreamPlugin)
+    private streamPlugins: ProgramStreamPlugin[],
     @assisted public context: PlayerContext,
     @assisted protected outputFormat: OutputFormat,
     @assisted public opts?: Partial<StreamOptions>,
@@ -134,21 +137,22 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
     streamDetails.duration = dayjs.duration(lineupItem.streamDuration);
 
     const start = dayjs.duration(lineupItem.startOffset ?? 0);
+    const resolvedOptions = {
+      startTime: start,
+      duration: dayjs.duration(lineupItem.streamDuration),
+      watermark,
+      realtime: this.context.realtime,
+      outputFormat: this.outputFormat,
+      streamMode: this.context.streamMode,
+      encoding: this.context.encoding,
+      ...(this.opts ?? {}),
+    };
     const sessionResult = await ffmpeg.createStreamSession({
       stream: {
         source: streamSource,
         details: streamDetails,
       },
-      options: {
-        startTime: start,
-        duration: dayjs.duration(lineupItem.streamDuration),
-        watermark,
-        realtime: this.context.realtime,
-        outputFormat: this.outputFormat,
-        streamMode: this.context.streamMode,
-        encoding: this.context.encoding,
-        ...(this.opts ?? {}),
-      },
+      options: resolvedOptions,
       lineupItem,
     });
 
@@ -156,7 +160,22 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
       return Result.forError(new Error('Unable to create ffmpeg process'));
     }
 
-    // TODO: Fire plugins.
+    for (const plugin of this.streamPlugins) {
+      try {
+        await plugin.run({
+          opts: resolvedOptions,
+          outputFormat: this.outputFormat,
+          playerContext: this.context,
+          transcodeSession: sessionResult,
+        });
+      } catch (e) {
+        this.logger.error(
+          e,
+          'Error firing stream plugin %s',
+          plugin.constructor.name,
+        );
+      }
+    }
 
     return Result.success(sessionResult);
   }
