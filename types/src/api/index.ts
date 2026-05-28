@@ -174,18 +174,15 @@ export type UpdateChannelProgrammingRequest = z.infer<
 export const UpdateMediaSourceRequestSchema = z.discriminatedUnion('type', [
   PlexServerSettingsSchema.partial({
     sendGuideUpdates: true,
+    sendPlayStatusUpdates: true,
     clientIdentifier: true,
-  })
-    .omit({ libraries: true })
-    .required({
-      accessToken: true,
-    }),
-  JellyfinServerSettingsSchema.omit({ libraries: true }).required({
-    accessToken: true,
+  }).omit({ libraries: true }),
+  JellyfinServerSettingsSchema.partial({
+    sendPlayStatusUpdates: true,
+  }).omit({
+    libraries: true,
   }),
-  EmbyServerSettingsSchema.omit({ libraries: true }).required({
-    accessToken: true,
-  }),
+  EmbyServerSettingsSchema.omit({ libraries: true }),
   LocalMediaSourceSchema.omit({ libraries: true }),
 ]);
 
