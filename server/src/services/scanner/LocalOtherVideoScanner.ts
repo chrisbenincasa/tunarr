@@ -323,7 +323,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
     await wait();
 
-    const mediaItem = (await this.getMediaItem(fullFilePath)).getOrThrow();
+    const { mediaItem } = (await this.getMediaItem(fullFilePath)).getOrThrow();
 
     if (isNil(mediaItem.duration)) {
       throw new Error(`Could not derive duration for item: ${fullFilePath}`);

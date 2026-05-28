@@ -460,6 +460,8 @@ export const MusicTrackWithHierarchy = z.object({
 export const MusicVideoMetadata = z.object({
   ...BaseProgram.shape,
   type: z.literal('music_video'),
+  artistName: z.string().nullable().optional(),
+  albumName: z.string().nullable().optional(),
 });
 
 export const MusicVideo = z.object({
