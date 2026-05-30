@@ -30,6 +30,7 @@ function makeArtwork(
     programId: null,
     groupingId: null,
     creditId: null,
+    programExtraId: null,
     createdAt: null,
     updatedAt: null,
     ...overrides,

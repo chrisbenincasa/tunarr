@@ -7,6 +7,7 @@ import {
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { Credit } from './Credit.ts';
 import { Program } from './Program.ts';
+import { ProgramExtra } from './ProgramExtra.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
 
 export const ArtworkTypes = [
@@ -49,6 +50,9 @@ export const Artwork = sqliteTable(
       onDelete: 'cascade',
     }),
     creditId: text().references(() => Credit.uuid, { onDelete: 'cascade' }),
+    programExtraId: text().references(() => ProgramExtra.uuid, {
+      onDelete: 'cascade',
+    }),
     createdAt: integer({ mode: 'timestamp_ms' }),
     updatedAt: integer({ mode: 'timestamp_ms' }),
   },
@@ -56,6 +60,7 @@ export const Artwork = sqliteTable(
     index('artwork_program_idx').on(table.programId),
     index('artwork_grouping_idx').on(table.groupingId),
     index('artwork_credit_idx').on(table.creditId),
+    index('artwork_program_extra_idx').on(table.programExtraId),
   ],
 );
 
@@ -71,6 +76,10 @@ export const ArtworkRelations = relations(Artwork, ({ one }) => ({
   credit: one(Credit, {
     fields: [Artwork.creditId],
     references: [Credit.uuid],
+  }),
+  programExtra: one(ProgramExtra, {
+    fields: [Artwork.programExtraId],
+    references: [ProgramExtra.uuid],
   }),
 }));
 
