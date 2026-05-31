@@ -1,12 +1,7 @@
 import { KEYS } from '@/types/inject.js';
-import { isNonEmptyString, parseFloatOrNull } from '@/util/index.js';
-import { createExternalId } from '@tunarr/shared';
-import {
-  ContentProgram,
-  isContentProgram,
-  isCustomProgram,
-  tag,
-} from '@tunarr/types';
+import { parseFloatOrNull } from '@/util/index.js';
+import { seq } from '@tunarr/shared/util';
+import { CondensedContentProgram } from '@tunarr/types';
 import {
   CreateCustomShowRequest,
   UpdateCustomShowRequest,
@@ -15,10 +10,12 @@ import dayjs from 'dayjs';
 import { count, eq, sum } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
-import { chunk, isNil, orderBy, uniqBy } from 'lodash-es';
+import { chunk, isNil } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { MediaSourceId, MediaSourceType } from './schema/base.ts';
+import { InjectLogger } from '../util/inject.ts';
+import { Logger } from '../util/logging/LoggerFactory.ts';
+import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
 import { CustomShow, type NewCustomShow } from './schema/CustomShow.ts';
 import {
   CustomShowContent,
@@ -31,9 +28,13 @@ import { Program } from './schema/Program.ts';
 
 @injectable()
 export class CustomShowDB {
+  @InjectLogger() declare private readonly logger: Logger;
+
   constructor(
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
+    @inject(KEYS.BasicProgramRepository)
+    private basicProgramRepo: BasicProgramRepository,
   ) {}
 
   async getShow(id: string) {
@@ -125,7 +126,7 @@ export class CustomShowDB {
     }
 
     if (updateRequest.programs && updateRequest.programs.length > 0) {
-      this.upsertCustomShowContent(show.uuid, updateRequest.programs);
+      await this.upsertCustomShowContent(show.uuid, updateRequest.programs);
     }
 
     const updates: Partial<NewCustomShow> = {};
@@ -175,7 +176,7 @@ export class CustomShowDB {
     await this.db.insertInto('customShow').values(show).execute();
 
     if (createRequest.programs.length > 0) {
-      this.upsertCustomShowContent(show.uuid, createRequest.programs);
+      await this.upsertCustomShowContent(show.uuid, createRequest.programs);
     }
 
     return show.uuid;
@@ -262,76 +263,42 @@ export class CustomShowDB {
       .execute();
   }
 
-  upsertCustomShowContent(
+  async upsertCustomShowContent(
     customShowId: string,
-    programs: ContentProgram[],
-  ): void {
+    programs: CondensedContentProgram[],
+  ): Promise<void> {
     if (programs.length === 0) {
       return;
     }
-    const newProgramIndexesById = new Map<string, number[]>();
-    for (let i = 0; i < programs.length; i++) {
-      const program = programs[i]!;
-      if (
-        (isCustomProgram(program) || program.program.sourceType === 'local') &&
-        isNonEmptyString(program.id)
-      ) {
-        const existing = newProgramIndexesById.get(program.id) ?? [];
-        existing.push(i);
-        newProgramIndexesById.set(program.id, existing);
-      } else if (
-        isContentProgram(program) &&
-        program.program.sourceType !== 'local'
-      ) {
-        const key = createExternalId(
-          program.program.sourceType,
-          tag(program.program.mediaSourceId),
-          program.program.externalId,
-        );
-        const existing = newProgramIndexesById.get(key) ?? [];
-        existing.push(i);
-        newProgramIndexesById.set(key, existing);
-      }
+
+    const incomingProgramIds = new Set(programs.map((program) => program.id));
+    const existingProgramIds =
+      await this.basicProgramRepo.filterNonExistentProgramIds([
+        ...incomingProgramIds.values(),
+      ]);
+
+    const missingProgramIds = incomingProgramIds.difference(existingProgramIds);
+
+    // log about not found programs
+    if (missingProgramIds.size > 0) {
+      this.logger.warn(
+        'Attempting to save %d program IDs to a custom show that do not exist in the DB. They will be dropped. IDs: %j',
+        missingProgramIds.size,
+        [...missingProgramIds.values()],
+      );
     }
 
-    const allPrograms: {
-      uuid: string;
-      sourceType: MediaSourceType;
-      mediaSourceId: MediaSourceId;
-      externalKey: string;
-    }[] = uniqBy(programs, (p) => p.id).map((p) => ({
-      uuid: p.id,
-      sourceType: p.program.sourceType,
-      mediaSourceId: tag<MediaSourceId>(p.program.mediaSourceId),
-      externalKey: p.program.externalId,
-    }));
+    const allNewCustomContent = seq.collect(programs, (program, index) => {
+      if (!existingProgramIds.has(program.id)) {
+        return;
+      }
 
-    const allNewCustomContent = orderBy(
-      allPrograms.flatMap((program) => {
-        let indexes = newProgramIndexesById.get(program.uuid);
-        if (!indexes && program.sourceType !== 'local') {
-          const externalId = createExternalId(
-            program.sourceType,
-            program.mediaSourceId,
-            program.externalKey,
-          );
-          indexes = newProgramIndexesById.get(externalId);
-        }
-        if (!indexes) {
-          return [];
-        }
-        return indexes.map(
-          (index) =>
-            ({
-              customShowUuid: customShowId,
-              contentUuid: program.uuid,
-              index,
-            }) satisfies NewCustomShowContent,
-        );
-      }),
-      (csc) => csc.index,
-      'asc',
-    );
+      return {
+        customShowUuid: customShowId,
+        contentUuid: program.id,
+        index,
+      } satisfies NewCustomShowContent;
+    });
 
     this.drizzle.transaction((tx) => {
       if (allNewCustomContent.length > 0) {

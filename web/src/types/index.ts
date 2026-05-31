@@ -24,10 +24,9 @@ export type UICondensedChannelProgram<
 export type UICondensedContentProgram = CondensedContentProgram &
   UIIndex &
   Required<MaybeHasStartTimeOffset>;
-export type UICondensedFlexProgram = UICondensedChannelProgram<FlexProgram>;
+type UICondensedFlexProgram = UICondensedChannelProgram<FlexProgram>;
 export type UICondensedCustomProgram = UICondensedChannelProgram<CustomProgram>;
-export type UICondensedRedirectProgram =
-  UICondensedChannelProgram<RedirectProgram>;
+type UICondensedRedirectProgram = UICondensedChannelProgram<RedirectProgram>;
 
 // It sucks that we have to repeat these everywhere...
 export const isUICondensedContentProgram = (

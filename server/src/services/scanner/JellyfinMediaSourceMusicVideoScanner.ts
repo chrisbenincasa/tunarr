@@ -78,25 +78,25 @@ export class JellyfinMediaSourceMusicVideoScanner extends MediaSourceMusicVideoS
     return _.getOrThrow();
   }
 
-  protected async scanVideo(
+  protected async scanVideoById(
     context: ScanContext<JellyfinApiClient>,
-    incomingVideo: JellyfinMusicVideo,
+    externalKey: string,
   ): Promise<Result<JellyfinMusicVideo>> {
     const convertedItem = await context.apiClient.getItem(
-      incomingVideo.externalId,
+      externalKey,
       'MusicVideo',
     );
     return convertedItem.flatMap((item) => {
       if (!item) {
         return Result.failure(
           WrappedError.forMessage(
-            `Could not find Jellyfin item id ${incomingVideo.externalId}`,
+            `Could not find Jellyfin item id ${externalKey}`,
           ),
         );
       } else if (item.type !== 'music_video') {
         return Result.failure(
           WrappedError.forMessage(
-            `Expected item type to be music_video for ID ${incomingVideo.externalId} but got ${item.type}`,
+            `Expected item type to be music_video for ID ${externalKey} but got ${item.type}`,
           ),
         );
       }

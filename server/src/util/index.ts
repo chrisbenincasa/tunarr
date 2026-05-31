@@ -102,12 +102,13 @@ export function groupByFunc<T, Key extends string | number | symbol, Value>(
 export function groupByTyped<T, Key extends string | number | symbol>(
   data: T[],
   grouper: (val: T) => Key,
-): Record<Key, T[]> {
-  const out = {} as Record<Key, T[]>;
+): Map<Key, T[]> {
+  const out = new Map<Key, T[]>();
   for (const t of data) {
     const k = grouper(t);
-    out[k] ??= [];
-    out[k].push(t);
+    const existing = out.get(k) ?? [];
+    existing.push(t);
+    out.set(k, existing);
   }
   return out;
 }

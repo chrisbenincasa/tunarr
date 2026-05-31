@@ -88,6 +88,13 @@ export class PlexMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
     return apiClient.getMovie(incomingMovie.externalId);
   }
 
+  protected async scanMovieById(
+    { apiClient }: ScanContext<PlexApiClient>,
+    externalId: string,
+  ): Promise<Result<PlexMovie>> {
+    return apiClient.getMovie(externalId);
+  }
+
   protected getSubtitles(
     context: ScanContext<PlexApiClient>,
     { key }: GetSubtitlesRequest,

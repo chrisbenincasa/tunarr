@@ -1,4 +1,3 @@
-import { Trans, useLingui } from '@lingui/react/macro';
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { customShowQuery } from '@/hooks/useCustomShows.ts';
 import useStore from '@/store';
@@ -10,7 +9,8 @@ import {
   updateCurrentCustomShow,
 } from '@/store/customShowEditor/actions.ts';
 import { removeCustomShowProgram } from '@/store/entityEditor/util';
-import { type UICustomShowProgram } from '@/types';
+import type { UICondensedContentProgram } from '@/types';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Refresh, Save, Sync, Tv, Undo } from '@mui/icons-material';
 import {
   Alert,
@@ -33,7 +33,12 @@ import { type CustomShow, type Playlist } from '@tunarr/types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useCallback, useEffect } from 'react';
-import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
+import {
+  Controller,
+  type SubmitHandler,
+  useForm,
+  useWatch,
+} from 'react-hook-form';
 import {
   getApiCustomShowsByIdProgramsQueryKey,
   getApiCustomShowsByIdQueryKey,
@@ -61,7 +66,7 @@ type CustomShowForm = {
 
 type Props = {
   customShow: CustomShow;
-  customShowPrograms: UICustomShowProgram[];
+  customShowPrograms: UICondensedContentProgram[];
   isNew: boolean;
 };
 
@@ -89,7 +94,6 @@ export function EditCustomShowsForm({
     reset,
     handleSubmit,
     getValues,
-    watch,
     setValue,
     formState: { isValid, isDirty },
   } = useForm<CustomShowForm>({
@@ -101,10 +105,10 @@ export function EditCustomShowsForm({
     },
   });
 
-  const [syncEnabled, selectedMediaSourceId] = watch([
-    'syncEnabled',
-    'syncMediaSourceId',
-  ]);
+  const [syncEnabled, selectedMediaSourceId] = useWatch({
+    control,
+    name: ['syncEnabled', 'syncMediaSourceId'],
+  });
 
   useEffect(() => {
     reset({
@@ -145,7 +149,7 @@ export function EditCustomShowsForm({
   const saveShowMutation = useMutation({
     mutationKey: ['custom-shows', isNew ? 'new' : customShow.id],
     mutationFn: async (
-      data: CustomShowForm & { programs: UICustomShowProgram[] },
+      data: CustomShowForm & { programs: UICondensedContentProgram[] },
     ) => {
       const body = {
         name: data.name,
@@ -381,7 +385,9 @@ export function EditCustomShowsForm({
                 </Button>
                 {customShow.lastSyncedAt && (
                   <Typography variant="body2" color="text.secondary">
-                    <Trans>Last synced {dayjs(customShow.lastSyncedAt).fromNow()}</Trans>
+                    <Trans>
+                      Last synced {dayjs(customShow.lastSyncedAt).fromNow()}
+                    </Trans>
                   </Typography>
                 )}
               </Stack>
@@ -394,8 +400,10 @@ export function EditCustomShowsForm({
         <Box>
           {isSynced && !isNew && (
             <Alert severity="info" sx={{ mb: 2 }} icon={<Sync />}>
-              <Trans>This custom show is synced with an external playlist. Content is
-              updated automatically and cannot be edited manually.</Trans>
+              <Trans>
+                This custom show is synced with an external playlist. Content is
+                updated automatically and cannot be edited manually.
+              </Trans>
             </Alert>
           )}
 
@@ -416,7 +424,9 @@ export function EditCustomShowsForm({
                 <>
                   <CustomShowSortToolsMenu />
                   {customShowProgrammingChanged && (
-                    <Tooltip title={t`Reset programming to most recently saved state`}>
+                    <Tooltip
+                      title={t`Reset programming to most recently saved state`}
+                    >
                       <Button
                         variant="contained"
                         startIcon={<Undo />}

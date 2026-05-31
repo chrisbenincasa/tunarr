@@ -86,6 +86,13 @@ export class PlexMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
     return context.apiClient.getVideo(incomingVideo.externalId);
   }
 
+  protected scanVideoById(
+    context: ScanContext<PlexApiClient>,
+    externalKey: string,
+  ): Promise<Result<PlexOtherVideo>> {
+    return context.apiClient.getVideo(externalKey);
+  }
+
   protected getExternalKey(video: PlexOtherVideo): string {
     return video.externalId;
   }

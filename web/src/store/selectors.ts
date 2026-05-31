@@ -6,7 +6,11 @@ import {
 import { isNil } from 'lodash-es';
 import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { UIChannelProgramWithOffset } from '../types/index.ts';
+import type {
+  UIChannelProgramWithOffset,
+  UICondensedContentProgram,
+  UIContentProgram,
+} from '../types/index.ts';
 import { type UIIndex } from '../types/index.ts';
 import type { Maybe } from '../types/util.ts';
 import type {
@@ -165,3 +169,21 @@ export const useCurrentEditorState = (): Maybe<
     }
   });
 };
+
+export function condenseCustomShowEditorPrograms(
+  programs: UIContentProgram[],
+): UICondensedContentProgram[] {
+  return programs.map(
+    (program) =>
+      ({
+        duration: program.duration,
+        id: program.id,
+        originalIndex: program.originalIndex,
+        startTimeOffset: program.startTimeOffset ?? 0,
+        type: 'content',
+        uiIndex: program.uiIndex,
+        icon: program.icon,
+        startOffsetMs: program.startOffsetMs,
+      }) satisfies UICondensedContentProgram,
+  );
+}
