@@ -17,6 +17,7 @@ import {
   WorkerRequestToResponse,
 } from '../types/worker_schemas.ts';
 import { getNumericEnvVar, WORKER_POOL_SIZE_ENV_VAR } from '../util/env.ts';
+import { Future } from '../util/future.ts';
 import { timeoutPromise } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
@@ -35,88 +36,6 @@ interface PooledWorker {
   ready: boolean;
 }
 
-class Future<T> implements Promise<T> {
-  #promise: Promise<T>;
-  #resolve!: (v: T | PromiseLike<T>) => void;
-  #reject!: (reason?: unknown) => void;
-  #state: 'pending' | 'fulfilled' | 'rejected' = 'pending';
-  #value: T | undefined;
-  #err: unknown;
-
-  constructor() {
-    this.#promise = new Promise<T>((resolve, reject) => {
-      this.#resolve = resolve;
-      this.#reject = reject;
-    });
-
-    this.#promise.then(
-      (v) => {
-        this.#state = 'fulfilled';
-        this.#value = v;
-      },
-      (err) => {
-        this.#state = 'rejected';
-        this.#err = err;
-      },
-    );
-  }
-
-  [Symbol.toStringTag]!: string;
-
-  resolve(value: T | PromiseLike<T>) {
-    if (this.#state === 'pending') {
-      this.#resolve(value);
-    } else {
-      throw new Error(
-        'Resolving already fulfilled future with state ' + this.#state,
-      );
-    }
-  }
-
-  reject(e: unknown) {
-    if (this.#state === 'pending') {
-      this.#reject(e);
-    } else {
-      throw new Error(
-        'Rejecting already fulfilled future with state ' + this.#state,
-      );
-    }
-  }
-
-  then<TResult1 = T, TResult2 = never>(
-    onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
-  ): Promise<TResult1 | TResult2> {
-    return this.#promise.then(onfulfilled, onrejected);
-  }
-
-  catch<TResult = never>(
-    onrejected?: ((reason: unknown) => TResult | PromiseLike<TResult>) | null,
-  ): Promise<T | TResult> {
-    return this.#promise.catch(onrejected);
-  }
-
-  finally(onfinally?: (() => void) | null): Promise<T> {
-    return this.#promise.finally(onfinally);
-  }
-
-  get promise() {
-    return this.#promise;
-  }
-
-  get state() {
-    return this.#state;
-  }
-
-  get value() {
-    return this.#value;
-  }
-
-  get error() {
-    return this.#err;
-  }
-}
-
 type State = 'pending' | 'started' | 'terminating';
 
 @injectable()
@@ -129,7 +48,7 @@ export class TunarrWorkerPool implements IWorkerPool {
   #outstandingByIndex = new Map<number, string[]>();
   #startPromises: Promise<boolean>[] = [];
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(TunarrSubprocessService)
