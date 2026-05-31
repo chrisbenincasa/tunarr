@@ -92,6 +92,13 @@ export class JellyfinMediaSourceMovieScanner extends MediaSourceMovieLibraryScan
     });
   }
 
+  protected scanMovieById(
+    { apiClient }: ScanContext<JellyfinApiClient>,
+    externalId: string,
+  ): Promise<Result<JellyfinMovie>> {
+    return apiClient.getMovie(externalId);
+  }
+
   protected getLibrarySize(
     libraryKey: string,
     context: ScanContext<JellyfinApiClient>,

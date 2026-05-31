@@ -16,6 +16,7 @@ import {
 } from '../schemas/channelSchema.js';
 import {
   CondensedChannelProgramSchema,
+  CondensedContentProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
 } from '../schemas/lineups.js';
@@ -85,7 +86,7 @@ export const BatchLookupExternalProgrammingSchema = z.object({
 
 export const CreateCustomShowRequestSchema = z.object({
   name: z.string(),
-  programs: z.array(ContentProgramSchema).default([]),
+  programs: z.array(CondensedContentProgramSchema).default([]),
   syncMediaSourceId: z.string().nullable(),
   syncMediaSourceType: z.enum(['plex']).nullable(),
   syncExternalPlaylistId: z.string().nullable(),
@@ -133,8 +134,6 @@ export const BasicPagingSchema = z.object({
 
 export const ManualProgramLineupSchema = z.object({
   type: z.literal('manual'),
-  // programs: z.array(ChannelProgramSchema),
-  // lineup: z.array(UpdateLineupItemSchema), // Array of indexes into the programming array
   lineup: CondensedChannelProgramSchema.array(),
   append: z.boolean().default(false),
 });

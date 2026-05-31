@@ -105,6 +105,30 @@ export class JellyfinMediaSourceOtherVideoScanner extends MediaSourceOtherVideoS
     });
   }
 
+  protected async scanVideoById(
+    context: ScanContext<JellyfinApiClient>,
+    externalKey: string,
+  ): Promise<Result<JellyfinOtherVideo>> {
+    const convertedItem = await context.apiClient.getItem(externalKey, 'Video');
+    return convertedItem.flatMap((item) => {
+      if (!item) {
+        return Result.failure(
+          WrappedError.forMessage(
+            `Could not find Jellyfin item id ${externalKey}`,
+          ),
+        );
+      } else if (item.type !== 'other_video') {
+        return Result.failure(
+          WrappedError.forMessage(
+            `Expected item type to be other_video for ID ${externalKey} but got ${item.type}`,
+          ),
+        );
+      }
+
+      return Result.success(item);
+    });
+  }
+
   protected getExternalKey(video: JellyfinOtherVideo): string {
     return video.externalId;
   }

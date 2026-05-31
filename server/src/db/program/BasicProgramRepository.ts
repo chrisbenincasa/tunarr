@@ -121,4 +121,30 @@ export class BasicProgramRepository {
     }
     return results;
   }
+
+  /**
+   * Given an array of program IDs, return the set of those IDs which exist in
+   * the database.
+   */
+  async filterNonExistentProgramIds(
+    programIds: string[],
+  ): Promise<Set<string>> {
+    const uniqIds = uniq(programIds);
+    if (uniqIds.length === 0) {
+      return new Set();
+    }
+
+    const promises = chunk(programIds, 500).map((programChunk) =>
+      this.drizzleDB.query.program.findMany({
+        where: (fields, { inArray }) => inArray(fields.uuid, programChunk),
+        columns: {
+          uuid: true,
+        },
+      }),
+    );
+
+    const allPrograms = await Promise.all(promises);
+
+    return new Set([...allPrograms.flat().map(({ uuid }) => uuid)]);
+  }
 }

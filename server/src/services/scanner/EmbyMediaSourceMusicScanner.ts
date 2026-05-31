@@ -123,4 +123,11 @@ export class EmbyMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
   ): Promise<QueryResult<string>> {
     return EmbyScanUtil.getSubtitles(context, request);
   }
+
+  protected getFullArtistMetadata(
+    externalId: string,
+    context: ScanContext<EmbyApiClient>,
+  ): Promise<Result<EmbyMusicArtist>> {
+    return context.apiClient.getMusicArtist(externalId);
+  }
 }

@@ -1,7 +1,9 @@
 import { nullToUndefined, seq } from '@tunarr/shared/util';
 import {
+  Episode,
   FindChild,
   MediaStream,
+  MusicTrack as MusicTrackType,
   MusicVideo,
   tag,
   Tag,
@@ -1150,6 +1152,157 @@ export class MeilisearchService implements ISearchService {
         .index<TerminalProgramSearchDocument<'track'>>(ProgramsIndex.name)
         .addDocumentsInBatches(episodeDocuments, 100),
     );
+  }
+
+  async indexTerminalPrograms(
+    programs: (TerminalProgram & HasMediaSourceAndLibraryId)[],
+  ) {
+    if (isEmpty(programs)) return;
+
+    const tasks: Promise<unknown>[] = [];
+
+    const episodes = programs.filter(
+      (p): p is Episode & HasMediaSourceAndLibraryId => p.type === 'episode',
+    );
+    if (episodes.length > 0) {
+      const docs = episodes.map((ep) => {
+        const document = this.convertProgramToSearchDocument(ep);
+        const season = ep.season;
+        const show = season?.show ?? ep.show;
+        if (season) {
+          const seasonEids = (season.identifiers ?? []).map((eid) => ({
+            id: eid.id,
+            source: eid.type,
+            sourceId: eid.sourceId
+              ? encodeCaseSensitiveId(eid.sourceId)
+              : undefined,
+          }));
+          document.parent = {
+            id: encodeCaseSensitiveId(season.uuid),
+            externalIds: seasonEids,
+            type: season.type,
+            externalIdsMerged: seasonEids.map(
+              (eid) =>
+                `${season.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<'season'>,
+            ),
+            title: season.title,
+            year: season.year ?? undefined,
+            genres: season.genres?.map(({ name }) => name) ?? [],
+            studio: season.studios?.map(({ name }) => name) ?? [],
+            tags: season.tags ?? [],
+          };
+        }
+        if (show) {
+          const showEids = (show.identifiers ?? []).map((eid) => ({
+            id: eid.id,
+            source: eid.type,
+            sourceId: eid.sourceId
+              ? encodeCaseSensitiveId(eid.sourceId)
+              : undefined,
+          }));
+          document.grandparent = {
+            id: encodeCaseSensitiveId(show.uuid),
+            type: show.type,
+            externalIds: showEids,
+            externalIdsMerged: showEids.map(
+              (eid) =>
+                `${show.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<'show'>,
+            ),
+            title: show.title,
+            year: show.year ?? undefined,
+            genres: show.genres?.map(({ name }) => name) ?? [],
+            studio: show.studios?.map(({ name }) => name) ?? [],
+            tags: show.tags ?? [],
+            rating: show.rating ?? undefined,
+          };
+        }
+        return document;
+      });
+      tasks.push(
+        ...this.client()
+          .index<TerminalProgramSearchDocument<'episode'>>(ProgramsIndex.name)
+          .addDocumentsInBatches(docs, 100),
+      );
+    }
+
+    const tracks = programs.filter(
+      (p): p is MusicTrackType & HasMediaSourceAndLibraryId =>
+        p.type === 'track',
+    );
+    if (tracks.length > 0) {
+      const docs = tracks.map((track) => {
+        const document = this.convertProgramToSearchDocument(track);
+        const album = track.album;
+        const artist = album?.artist;
+        if (album) {
+          const albumEids = (album.identifiers ?? []).map((eid) => ({
+            id: eid.id,
+            source: eid.type,
+            sourceId: eid.sourceId
+              ? encodeCaseSensitiveId(eid.sourceId)
+              : undefined,
+          }));
+          document.parent = {
+            id: encodeCaseSensitiveId(album.uuid),
+            externalIds: albumEids,
+            type: album.type,
+            externalIdsMerged: albumEids.map(
+              (eid) =>
+                `${album.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<'album'>,
+            ),
+            title: album.title,
+            year: album.year ?? undefined,
+            genres: album.genres?.map(({ name }) => name) ?? [],
+            studio: album.studios?.map(({ name }) => name) ?? [],
+            tags: album.tags ?? [],
+          };
+        }
+        if (artist) {
+          const artistEids = (artist.identifiers ?? []).map((eid) => ({
+            id: eid.id,
+            source: eid.type,
+            sourceId: eid.sourceId
+              ? encodeCaseSensitiveId(eid.sourceId)
+              : undefined,
+          }));
+          document.grandparent = {
+            id: encodeCaseSensitiveId(artist.uuid),
+            type: artist.type,
+            externalIds: artistEids,
+            externalIdsMerged: artistEids.map(
+              (eid) =>
+                `${artist.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<'artist'>,
+            ),
+            title: artist.title,
+            genres: artist.genres?.map(({ name }) => name) ?? [],
+            tags: artist.tags ?? [],
+            studio: [],
+          };
+        }
+        return document;
+      });
+      tasks.push(
+        ...this.client()
+          .index<TerminalProgramSearchDocument<'track'>>(ProgramsIndex.name)
+          .addDocumentsInBatches(docs, 100),
+      );
+    }
+
+    const others = programs.filter(
+      (p) => p.type !== 'episode' && p.type !== 'track',
+    );
+    if (others.length > 0) {
+      tasks.push(
+        ...this.client()
+          .index<ProgramSearchDocument>(ProgramsIndex.name)
+          .addDocumentsInBatches(
+            others.map((p) => this.convertProgramToSearchDocument(p)),
+            100,
+          ),
+      );
+    }
+
+    await Promise.all(tasks);
   }
 
   async search<

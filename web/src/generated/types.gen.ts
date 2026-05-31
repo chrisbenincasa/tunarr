@@ -7418,7 +7418,6 @@ export type CreateCustomShowData = {
             icon?: string;
             id: string;
             startOffsetMs?: number;
-            program: TerminalProgramInput;
         }>;
         syncMediaSourceId: string | null;
         syncMediaSourceType: 'plex' | null;
@@ -7551,7 +7550,6 @@ export type PutApiCustomShowsByIdData = {
             icon?: string;
             id: string;
             startOffsetMs?: number;
-            program: TerminalProgramInput;
         }>;
         syncMediaSourceId?: string | null;
         syncMediaSourceType?: 'plex' | null;

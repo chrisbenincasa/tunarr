@@ -31,10 +31,12 @@ import type {
 import { Result } from '../../types/result.ts';
 import type { Maybe } from '../../types/util.ts';
 
-import type { MeilisearchService } from '../MeilisearchService.ts';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
+import { devAssert } from '../../util/debug.ts';
+import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import type { ScanContext } from './MediaSourceScanner.ts';
+import type { ScanContext, ScanSingleRequest } from './MediaSourceScanner.ts';
 import { MediaSourceScanner } from './MediaSourceScanner.ts';
 
 export type GenericMediaSourceMusicLibraryScanner<
@@ -81,6 +83,68 @@ export abstract class MediaSourceMusicArtistScanner<
     protected externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super(mediaSourceDB, externalSubtitleDownloader);
+  }
+
+  async scanSingle({
+    library,
+    force,
+    externalId,
+  }: ScanSingleRequest): Promise<Result<void>> {
+    const mediaSource = await this.mediaSourceDB.getById(library.mediaSourceId);
+
+    if (!mediaSource) {
+      throw new Error(`Media source ${library.mediaSourceId} not found.`);
+    }
+
+    devAssert(mediaSource.type === this.mediaSourceType);
+
+    this.logger.info(
+      'Scanning %s library for single item (ID = %s, name = %s, item = %s, force = %s)',
+      mediaSource.type,
+      library.uuid,
+      library.name,
+      externalId,
+      force,
+    );
+
+    const client = await this.getApiClient(mediaSource);
+    const ctx: ScanContext<ApiClientTypeT> = {
+      library,
+      mediaSource,
+      force: force ?? false,
+      apiClient: client,
+      scannedEntities: 0,
+      totalEntities: 1,
+    };
+
+    const incomingArtist = await this.getFullArtistMetadata(externalId, ctx);
+
+    if (incomingArtist.isFailure()) {
+      return incomingArtist.recast();
+    }
+
+    const existingShow = await this.programDB.getProgramGroupingByExternalId({
+      sourceType: this.mediaSourceType,
+      externalSourceId: mediaSource.uuid,
+      externalKey: externalId,
+    });
+
+    let lookupResult: Maybe<ProgramGroupingCanonicalIdLookupResult>;
+    if (
+      existingShow?.type === 'show' &&
+      isNonEmptyString(existingShow.libraryId)
+    ) {
+      lookupResult = {
+        canonicalId: existingShow.canonicalId,
+        externalKey: externalId,
+        libraryId: existingShow.libraryId,
+        uuid: existingShow.uuid,
+      };
+    }
+
+    return (await this.scanArtist(incomingArtist.get(), lookupResult, ctx)).map(
+      () => void 0,
+    );
   }
 
   protected async scanInternal(
@@ -550,6 +614,11 @@ export abstract class MediaSourceMusicArtistScanner<
     libraryId: string, // TODO: Full library type?
     context: ScanContext<ApiClientTypeT>,
   ): AsyncIterable<ArtistT>;
+
+  protected abstract getFullArtistMetadata(
+    externalId: string,
+    context: ScanContext<ApiClientTypeT>,
+  ): Promise<Result<ArtistT>>;
 
   protected abstract getAlbums(
     show: ArtistT,

@@ -379,7 +379,7 @@ msgstr "Add Language Preference"
 
 #: src/components/channel_config/AddProgrammingButton.tsx:50
 #: src/components/channel_config/SelectedProgrammingActions.tsx:209
-#: src/components/custom-shows/EditCustomShowForm.tsx:440
+#: src/components/custom-shows/EditCustomShowForm.tsx:450
 #: src/components/filler/EditFillerListForm.tsx:183
 msgid "Add Media"
 msgstr "Add Media"
@@ -398,7 +398,7 @@ msgstr "Add point (%)"
 msgid "Add Programming"
 msgstr "Add Programming"
 
-#: src/components/custom-shows/EditCustomShowForm.tsx:430
+#: src/components/custom-shows/EditCustomShowForm.tsx:440
 msgid "Add programming to custom show"
 msgstr "Add programming to custom show"
 
@@ -2215,7 +2215,7 @@ msgid "Last Synced"
 msgstr "Last Synced"
 
 #. placeholder {0}: dayjs(customShow.lastSyncedAt).fromNow()
-#: src/components/custom-shows/EditCustomShowForm.tsx:384
+#: src/components/custom-shows/EditCustomShowForm.tsx:388
 msgid "Last synced {0}"
 msgstr "Last synced {0}"
 
@@ -2456,7 +2456,7 @@ msgstr "Media Info"
 
 #: src/components/channel_config/ProgrammingSelector.tsx:250
 #: src/components/channel_config/ProgrammingSelector.tsx:252
-#: src/components/custom-shows/EditCustomShowForm.tsx:316
+#: src/components/custom-shows/EditCustomShowForm.tsx:320
 msgid "Media Source"
 msgstr "Media Source"
 
@@ -2563,7 +2563,7 @@ msgstr "Must define at least one language preference"
 msgid "Must use a valid URL, or empty."
 msgstr "Must use a valid URL, or empty."
 
-#: src/components/custom-shows/EditCustomShowForm.tsx:270
+#: src/components/custom-shows/EditCustomShowForm.tsx:274
 #: src/components/filler/EditFillerListForm.tsx:137
 #: src/components/MediaSourceLibraryTable.tsx:241
 #: src/components/settings/ConnectMediaSources.tsx:44
@@ -2614,8 +2614,8 @@ msgstr "New"
 msgid "New Channel"
 msgstr "New Channel"
 
-#: src/pages/library/EditCustomShowPage.tsx:26
-#: src/pages/library/NewCustomShowPage.tsx:19
+#: src/pages/library/EditCustomShowPage.tsx:29
+#: src/pages/library/NewCustomShowPage.tsx:22
 msgid "New Custom Show"
 msgstr "New Custom Show"
 
@@ -2905,7 +2905,7 @@ msgstr "Placeholder Program Title"
 msgid "Platform"
 msgstr "Platform"
 
-#: src/components/custom-shows/EditCustomShowForm.tsx:345
+#: src/components/custom-shows/EditCustomShowForm.tsx:349
 msgid "Playlist"
 msgstr "Playlist"
 
@@ -2977,7 +2977,7 @@ msgstr "Program JSON"
 msgid "Program Playback Troubleshooter"
 msgstr "Program Playback Troubleshooter"
 
-#: src/components/custom-shows/EditCustomShowForm.tsx:412
+#: src/components/custom-shows/EditCustomShowForm.tsx:420
 #: src/components/filler/EditFillerListForm.tsx:152
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:400
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:317
@@ -3215,7 +3215,7 @@ msgid "Rescan Interval (hours)"
 msgstr "Rescan Interval (hours)"
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx:233
-#: src/components/custom-shows/EditCustomShowForm.tsx:425
+#: src/components/custom-shows/EditCustomShowForm.tsx:435
 #: src/components/filler/EditFillerListForm.tsx:172
 msgid "Reset"
 msgstr "Reset"
@@ -3239,7 +3239,7 @@ msgstr "Reset changes made to the channel's lineup"
 msgid "Reset Options"
 msgstr "Reset Options"
 
-#: src/components/custom-shows/EditCustomShowForm.tsx:419
+#: src/components/custom-shows/EditCustomShowForm.tsx:428
 msgid "Reset programming to most recently saved state"
 msgstr "Reset programming to most recently saved state"
 
@@ -3319,7 +3319,7 @@ msgstr "Sample rate cannot be changed when copying input audio"
 #: src/components/channel_config/ChannelEditActions.tsx:98
 #: src/components/channel_config/ChannelEditActions.tsx:118
 #: src/components/channel_config/ChannelProgrammingConfig.tsx:268
-#: src/components/custom-shows/EditCustomShowForm.tsx:456
+#: src/components/custom-shows/EditCustomShowForm.tsx:466
 #: src/components/filler/EditFillerListForm.tsx:199
 #: src/components/programming_controls/AddBreaksModal.tsx:209
 #: src/components/programming_controls/AddFlexModal.tsx:112
@@ -3753,11 +3753,11 @@ msgstr "Successfully scheduled {taskId} (running in background)."
 msgid "Successfully updated Media Source settings."
 msgstr "Successfully updated Media Source settings."
 
-#: src/components/custom-shows/EditCustomShowForm.tsx:380
+#: src/components/custom-shows/EditCustomShowForm.tsx:384
 msgid "Sync Now"
 msgstr "Sync Now"
 
-#: src/components/custom-shows/EditCustomShowForm.tsx:291
+#: src/components/custom-shows/EditCustomShowForm.tsx:295
 msgid "Sync with external playlist"
 msgstr "Sync with external playlist"
 
@@ -3896,7 +3896,7 @@ msgstr "This channel number has already been used"
 msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
 msgstr "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
 
-#: src/components/custom-shows/EditCustomShowForm.tsx:397
+#: src/components/custom-shows/EditCustomShowForm.tsx:403
 msgid "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
 msgstr "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
 

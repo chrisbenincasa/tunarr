@@ -8,6 +8,7 @@ import { test as baseTest, describe, expect, vi } from 'vitest';
 import { bootstrapTunarr } from '../bootstrap.ts';
 import { setGlobalOptionsUnchecked } from '../globals.ts';
 import { CustomShowDB } from './CustomShowDB.ts';
+import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
 import { DBAccess } from './DBAccess.ts';
 import type { MediaSourceId, MediaSourceName } from './schema/base.ts';
 import { CustomShow } from './schema/CustomShow.ts';
@@ -76,9 +77,13 @@ const test = baseTest.extend<Fixture>({
   customShowDb: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
 
+    const kyselyDb = dbAccess.getKyselyDatabase(':memory:')!;
+    const drizzleDb = dbAccess.getConnection(':memory:')!.drizzle!;
+    const basicProgramRepo = new BasicProgramRepository(kyselyDb, drizzleDb);
     const customShowDb = new CustomShowDB(
-      dbAccess.getKyselyDatabase(':memory:')!,
-      dbAccess.getConnection(':memory:')!.drizzle!,
+      kyselyDb,
+      drizzleDb,
+      basicProgramRepo,
     );
 
     await use(customShowDb);
@@ -614,6 +619,5 @@ describe('CustomShowDB', () => {
       expect(content[0]!.contentUuid).toBe(program1.uuid);
       expect(content[1]!.contentUuid).toBe(program2.uuid);
     });
-
   });
 });

@@ -295,7 +295,7 @@ export abstract class ExternalCollectionScanner<
         const currentTags = new Set(doc.tags);
         const updatesByType = groupByTyped(updates, (up) => up.type);
         const [directAdds, directDels] = partition(
-          updatesByType.direct,
+          updatesByType.get('direct') ?? [],
           (up) => up.opType === 'add',
         );
         const newTags = currentTags
@@ -307,15 +307,15 @@ export abstract class ExternalCollectionScanner<
           );
         const partialUpdate: ProgramIndexPartialUpdate = {
           id: doc.id,
-          tags: isEmpty(updatesByType.direct)
+          tags: isEmpty(updatesByType.get('direct') ?? [])
             ? undefined
             : [...newTags.values()],
         };
 
-        if (doc.parent && !isEmpty(updatesByType.parent)) {
+        if (doc.parent && !isEmpty(updatesByType.get('parent') ?? [])) {
           const currentParentTags = new Set(doc.parent.tags);
           const [parentAdds, parentDels] = partition(
-            updatesByType.parent,
+            updatesByType.get('parent') ?? [],
             (up) => up.opType === 'add',
           );
           const newParentTags = currentParentTags
@@ -331,10 +331,13 @@ export abstract class ExternalCollectionScanner<
           };
         }
 
-        if (doc.grandparent && !isEmpty(updatesByType.grandparent)) {
+        if (
+          doc.grandparent &&
+          !isEmpty(updatesByType.get('grandparent') ?? [])
+        ) {
           const currentGrandparentTags = new Set(doc.grandparent.tags);
           const [adds, dels] = partition(
-            updatesByType.grandparent,
+            updatesByType.get('grandparent') ?? [],
             (up) => up.opType === 'add',
           );
           const newGrandparentTags = currentGrandparentTags

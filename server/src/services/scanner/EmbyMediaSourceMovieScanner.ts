@@ -107,4 +107,11 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
   ): Promise<QueryResult<string>> {
     return EmbyScanUtil.getSubtitles(context, request);
   }
+
+  protected scanMovieById(
+    context: ScanContext<EmbyApiClient>,
+    externalId: string,
+  ): Promise<Result<EmbyMovie>> {
+    return context.apiClient.getMovie(externalId);
+  }
 }
