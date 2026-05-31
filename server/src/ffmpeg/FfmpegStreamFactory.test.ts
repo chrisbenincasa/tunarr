@@ -401,7 +401,7 @@ describe('FfmpegStreamFactory', () => {
       expect(frameState!.videoPreset).toBeNull();
     });
 
-    test('createErrorSession wires videoPreset into FrameState', async () => {
+    test('createPlaceholderSession (error) wires videoPreset into FrameState', async () => {
       const config = makeTranscodeConfig({
         hardwareAccelerationMode: 'none',
         videoFormat: 'h264',
@@ -422,13 +422,13 @@ describe('FfmpegStreamFactory', () => {
         makeChannel(),
       );
 
-      await sut.createErrorSession(
-        'Test Error',
-        null,
-        dayjs.duration({ seconds: 10 }),
-        MpegTsOutputFormat,
-        true,
-      );
+      await sut.createPlaceholderSession({
+        kind: 'error',
+        title: 'Test Error',
+        duration: dayjs.duration({ seconds: 10 }),
+        outputFormat: MpegTsOutputFormat,
+        realtime: true,
+      });
 
       const frameState = getCapturedFrameState();
       expect(frameState).toBeDefined();
@@ -436,7 +436,7 @@ describe('FfmpegStreamFactory', () => {
       expect(frameState!.videoPreset).toBeNull();
     });
 
-    test('createOfflineSession wires videoPreset into FrameState', async () => {
+    test('createPlaceholderSession (offline) wires videoPreset into FrameState', async () => {
       const config = makeTranscodeConfig({
         hardwareAccelerationMode: 'none',
         videoFormat: 'h264',
@@ -456,10 +456,11 @@ describe('FfmpegStreamFactory', () => {
         makeChannel(),
       );
 
-      await sut.createOfflineSession(
-        dayjs.duration({ seconds: 10 }),
-        MpegTsOutputFormat,
-      );
+      await sut.createPlaceholderSession({
+        kind: 'offline',
+        duration: dayjs.duration({ seconds: 10 }),
+        outputFormat: MpegTsOutputFormat,
+      });
 
       const frameState = getCapturedFrameState();
       expect(frameState).toBeDefined();
