@@ -1773,7 +1773,7 @@ msgstr "FFMPEG is installed. Detected version {0}"
 msgid "FFMPEG is not detected."
 msgstr "FFMPEG is not detected."
 
-#: src/pages/system/TroubleshootPage.tsx:988
+#: src/pages/system/TroubleshootPage.tsx:1065
 msgid "FFmpeg Log"
 msgstr "FFmpeg Log"
 
@@ -1916,6 +1916,10 @@ msgstr "Filter which subtitle tracks are considered<0/><1>Any: </1> All subtitle
 #: src/pages/welcome/WelcomePage.tsx:250
 msgid "Finish"
 msgstr "Finish"
+
+#: src/pages/system/TroubleshootPage.tsx:992
+msgid "First segment written"
+msgstr "First segment written"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:124
 #: src/components/programming_controls/AddReplicateModal.tsx:97
@@ -2252,7 +2256,7 @@ msgid "Library Clip (not yet implemented)"
 msgstr "Library Clip (not yet implemented)"
 
 #. placeholder {0}: library.name
-#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:36
+#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:39
 msgid "Library: {0}"
 msgstr "Library: {0}"
 
@@ -2462,8 +2466,8 @@ msgstr "Media Source"
 
 #. placeholder {0}: library.mediaSource.name
 #. placeholder {0}: mediaSource.name
-#: src/routes/media_sources_/$mediaSourceId/index.tsx:35
-#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:33
+#: src/routes/media_sources_/$mediaSourceId/index.tsx:36
+#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:34
 msgid "Media Source: \"{0}\""
 msgstr "Media Source: \"{0}\""
 
@@ -2490,6 +2494,10 @@ msgstr "Message"
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:324
 msgid "Mid-Roll"
 msgstr "Mid-Roll"
+
+#: src/pages/system/TroubleshootPage.tsx:982
+msgid "Milestone"
+msgstr "Milestone"
 
 #: src/components/programming_controls/AddBreaksModal.tsx:133
 msgid "Min Duration"
@@ -2908,6 +2916,10 @@ msgstr "Platform"
 #: src/components/custom-shows/EditCustomShowForm.tsx:349
 msgid "Playlist"
 msgstr "Playlist"
+
+#: src/pages/system/TroubleshootPage.tsx:1003
+msgid "Playlist written"
+msgstr "Playlist written"
 
 #: src/components/channel_config/plex/PlexLibrarySelector.tsx:119
 #: src/components/channel_config/plex/PlexProgrammingSelector.tsx:151
@@ -3394,11 +3406,11 @@ msgstr "Search for a program"
 msgid "Search for shows"
 msgstr "Search for shows"
 
-#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:38
+#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:42
 msgid "Search is currently scoped to this Media Source Library."
 msgstr "Search is currently scoped to this Media Source Library."
 
-#: src/routes/media_sources_/$mediaSourceId/index.tsx:39
+#: src/routes/media_sources_/$mediaSourceId/index.tsx:41
 msgid "Search is currently scoped to this Media Source."
 msgstr "Search is currently scoped to this Media Source."
 
@@ -3413,6 +3425,10 @@ msgstr "Search…"
 #: src/components/programs/Seasons.tsx:35
 msgid "Seasons"
 msgstr "Seasons"
+
+#: src/pages/system/TroubleshootPage.tsx:1033
+msgid "Segments produced"
+msgstr "Segments produced"
 
 #: src/pages/system/TroubleshootPage.tsx:271
 msgid "Select a program and channel to test playback. The troubleshooter will analyze stream selection, build the FFmpeg pipeline, and run a short test transcode."
@@ -3671,6 +3687,10 @@ msgstr "Start Time"
 msgid "Started {startedAgo} - {remainingTime}remaining"
 msgstr "Started {startedAgo} - {remainingTime}remaining"
 
+#: src/pages/system/TroubleshootPage.tsx:975
+msgid "Startup Timings"
+msgstr "Startup Timings"
+
 #: src/hooks/useNavItems.tsx:112
 #: src/pages/system/SystemLayout.tsx:31
 msgid "Status"
@@ -3699,6 +3719,10 @@ msgstr "Stream JSON"
 #: src/components/channels/ChannelSummaryQuickStats.tsx:108
 msgid "Stream Mode"
 msgstr "Stream Mode"
+
+#: src/pages/system/TroubleshootPage.tsx:1014
+msgid "Stream ready"
+msgstr "Stream ready"
 
 #: src/pages/system/TroubleshootPage.tsx:725
 msgid "Stream Selection"
@@ -3801,7 +3825,7 @@ msgstr "Tasks"
 msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
 msgstr "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
 
-#: src/routes/channels_/test.tsx:5
+#: src/routes/channels_/test.tsx:7
 msgid "Test"
 msgstr "Test"
 
@@ -3951,6 +3975,10 @@ msgstr "Threads"
 msgid "Thumbnail URL"
 msgstr "Thumbnail URL"
 
+#: src/pages/system/TroubleshootPage.tsx:985
+msgid "Time"
+msgstr "Time"
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx:279
 msgid "Time before first break"
 msgstr "Time before first break"
@@ -4025,6 +4053,10 @@ msgstr "Total hits: {0}"
 #: src/components/channels/ChannelSummaryQuickStats.tsx:88
 msgid "Total Runtime"
 msgstr "Total Runtime"
+
+#: src/pages/system/TroubleshootPage.tsx:1025
+msgid "Total transcode duration"
+msgstr "Total transcode duration"
 
 #: src/components/programs/Tracks.tsx:21
 #: src/pages/library/TrashPage.tsx:129

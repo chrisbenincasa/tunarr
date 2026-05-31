@@ -78,6 +78,14 @@ const PipelineInfoSchema = z.object({
   environmentVariables: z.record(z.string(), z.string()),
 });
 
+const TranscodeTimingsSchema = z.object({
+  ffmpegStartToFirstSegmentMs: z.number().optional(),
+  ffmpegStartToPlaylistMs: z.number().optional(),
+  ffmpegStartToStreamReadyMs: z.number().optional(),
+  totalTranscodeDurationMs: z.number(),
+  segmentsProduced: z.number(),
+});
+
 const TestTranscodeResultSchema = z.object({
   exitCode: z.number().nullable(),
   signal: z.string().nullable(),
@@ -85,6 +93,7 @@ const TestTranscodeResultSchema = z.object({
   stderrOutput: z.string(),
   durationProcessed: z.string().optional(),
   hlsSessionId: z.string().optional(),
+  timings: TranscodeTimingsSchema.optional(),
 });
 
 export const TroubleshootResultSchema = z.object({

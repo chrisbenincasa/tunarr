@@ -473,8 +473,68 @@ export class TroubleshootService {
         ) as Record<string, string>,
       };
 
-      // Stage 6: Run the test transcode using the real session.
+      // Stage 6: Run the test transcode using the real session,
+      // while polling the output directory for artifact timing.
       try {
+        const ffmpegStart = performance.now();
+
+        const timings: {
+          firstSegmentMs?: number;
+          playlistMs?: number;
+          streamReadyMs?: number;
+          segmentsProduced: number;
+        } = { segmentsProduced: 0 };
+
+        const STREAM_READY_SEGMENT_COUNT = 2;
+        let pollingDone = false;
+
+        const pollArtifacts = async () => {
+          while (!pollingDone) {
+            try {
+              const files = await fs.readdir(tempDir);
+              const segments = files.filter(
+                (f) => f.endsWith('.ts') || f.endsWith('.mp4'),
+              );
+              const playlistExists = files.some((f) => f.endsWith('.m3u8'));
+              const elapsed = performance.now() - ffmpegStart;
+
+              if (segments.length > 0 && timings.firstSegmentMs === undefined) {
+                timings.firstSegmentMs = Math.round(elapsed);
+              }
+
+              if (playlistExists && timings.playlistMs === undefined) {
+                timings.playlistMs = Math.round(elapsed);
+              }
+
+              if (
+                segments.length >= STREAM_READY_SEGMENT_COUNT &&
+                playlistExists &&
+                timings.streamReadyMs === undefined
+              ) {
+                timings.streamReadyMs = Math.round(elapsed);
+              }
+
+              timings.segmentsProduced = segments.length;
+            } catch {
+              // Directory may not exist yet on first poll
+            }
+
+            await new Promise((r) => setTimeout(r, 250));
+          }
+
+          // Final count after FFmpeg exits
+          try {
+            const files = await fs.readdir(tempDir);
+            timings.segmentsProduced = files.filter(
+              (f) => f.endsWith('.ts') || f.endsWith('.mp4'),
+            ).length;
+          } catch {
+            // ignore
+          }
+        };
+
+        const pollPromise = pollArtifacts();
+
         const exitResult = await new Promise<{
           code: number | null;
           signal: string | null;
@@ -520,6 +580,13 @@ export class TroubleshootService {
           });
         });
 
+        const totalTranscodeDurationMs = Math.round(
+          performance.now() - ffmpegStart,
+        );
+
+        pollingDone = true;
+        await pollPromise;
+
         // Read the FFmpeg report file if it was written
         let ffmpegLogContent = '';
         try {
@@ -543,6 +610,13 @@ export class TroubleshootService {
           success: exitResult.code === 0,
           stderrOutput: '',
           hlsSessionId: sessionId,
+          timings: {
+            ffmpegStartToFirstSegmentMs: timings.firstSegmentMs,
+            ffmpegStartToPlaylistMs: timings.playlistMs,
+            ffmpegStartToStreamReadyMs: timings.streamReadyMs,
+            totalTranscodeDurationMs,
+            segmentsProduced: timings.segmentsProduced,
+          },
         };
 
         if (ffmpegLogContent) {

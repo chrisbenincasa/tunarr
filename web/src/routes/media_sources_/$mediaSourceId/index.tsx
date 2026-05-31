@@ -9,7 +9,7 @@ import { getApiMediaSourcesByMediaSourceIdOptions } from '../../../generated/@ta
 import { useMediaSource } from '../../../hooks/media-sources/mediaSourceHooks.ts';
 import { setSearchRequest } from '../../../store/programmingSelector/actions.ts';
 
-export const Route = createFileRoute('/media_sources_/$mediaSourceId/')({
+export const Route = createFileRoute('/media_sources/$mediaSourceId/')({
   component: MediaSourceBrowserPage,
   loader: async ({ context, params: { mediaSourceId } }) => {
     await context.queryClient.ensureQueryData(
@@ -32,7 +32,9 @@ function MediaSourceBrowserPage() {
       <Breadcrumbs thisRouteName={mediaSource.name} />
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" sx={{ display: 'inline-flex', width: '100%' }}>
-          <span><Trans>Media Source: "{mediaSource.name}"</Trans></span>
+          <span>
+            <Trans>Media Source: "{mediaSource.name}"</Trans>
+          </span>
           <ProgramViewToggleButton sx={{ ml: { sm: undefined, md: 'auto' } }} />
         </Typography>
         <Typography>
