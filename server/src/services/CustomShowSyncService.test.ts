@@ -212,14 +212,14 @@ describe('CustomShowSyncService', () => {
         {
           uuid: dbUuid1,
           sourceType: 'plex',
-          mediaSourceId: mediaSourceId,
+          externalSourceId: mediaSourceId,
           externalKey: movie1.externalId,
           externalIds: [],
         },
         {
           uuid: dbUuid2,
           sourceType: 'plex',
-          mediaSourceId: mediaSourceId,
+          externalSourceId: mediaSourceId,
           externalKey: movie2.externalId,
           externalIds: [],
         },
@@ -349,7 +349,7 @@ describe('CustomShowSyncService', () => {
         [ep1, ep2, ep3].map((ep) => ({
           uuid: ep.uuid,
           sourceType: 'plex',
-          mediaSourceId: mediaSourceId,
+          externalSourceId: mediaSourceId,
           externalKey: ep.externalId,
           externalIds: [],
         })) as never,
@@ -462,7 +462,7 @@ describe('CustomShowSyncService', () => {
         {
           uuid: dbUuid2,
           sourceType: 'plex',
-          mediaSourceId: mediaSourceId,
+          externalSourceId: mediaSourceId,
           externalKey: movie2.externalId,
           externalIds: [],
         },

@@ -256,7 +256,7 @@ export class CustomShowSyncService {
     const dbPrograms = await this.programDB.lookupByExternalIds(lookupIds);
     const keyToUuid = new Map(
       dbPrograms.map((p) => [
-        `${p.sourceType}:${p.mediaSourceId}:${p.externalKey}`,
+        `${p.sourceType}:${p.externalSourceId}:${p.externalKey}`,
         p.uuid,
       ]),
     );
