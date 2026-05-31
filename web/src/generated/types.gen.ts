@@ -8517,7 +8517,7 @@ export type GetApiMediaSourcesResponses = {
         id: string;
         name: string;
         uri: string;
-        accessToken: string;
+        accessToken?: string;
         userId: string | null;
         username: string | null;
         libraries: Array<{
@@ -8542,7 +8542,7 @@ export type GetApiMediaSourcesResponses = {
         id: string;
         name: string;
         uri: string;
-        accessToken: string;
+        accessToken?: string;
         userId: string | null;
         username: string | null;
         libraries: Array<{
@@ -8564,7 +8564,7 @@ export type GetApiMediaSourcesResponses = {
         id: string;
         name: string;
         uri: string;
-        accessToken: string;
+        accessToken?: string;
         userId: string | null;
         username: string | null;
         libraries: Array<{
@@ -8713,7 +8713,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
         id: string;
         name: string;
         uri: string;
-        accessToken: string;
+        accessToken?: string;
         userId: string | null;
         username: string | null;
         libraries: Array<{
@@ -8738,7 +8738,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
         id: string;
         name: string;
         uri: string;
-        accessToken: string;
+        accessToken?: string;
         userId: string | null;
         username: string | null;
         libraries: Array<{
@@ -8760,7 +8760,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
         id: string;
         name: string;
         uri: string;
-        accessToken: string;
+        accessToken?: string;
         userId: string | null;
         username: string | null;
         libraries: Array<{
@@ -8846,7 +8846,7 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
             id: string;
             name: string;
             uri: string;
-            accessToken: string;
+            accessToken?: string;
             userId: string | null;
             username: string | null;
             pathReplacements: Array<{
@@ -8861,7 +8861,7 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
             id: string;
             name: string;
             uri: string;
-            accessToken: string;
+            accessToken?: string;
             userId: string | null;
             username: string | null;
             pathReplacements: Array<{
@@ -8873,7 +8873,7 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
             id: string;
             name: string;
             uri: string;
-            accessToken: string;
+            accessToken?: string;
             userId: string | null;
             username: string | null;
             pathReplacements: Array<{
@@ -8942,7 +8942,7 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
             id: string;
             name: string;
             uri: string;
-            accessToken: string;
+            accessToken?: string;
             userId: string | null;
             username: string | null;
             pathReplacements: Array<{
@@ -8957,7 +8957,7 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
             id: string;
             name: string;
             uri: string;
-            accessToken: string;
+            accessToken?: string;
             userId: string | null;
             username: string | null;
             pathReplacements: Array<{
@@ -8969,7 +8969,7 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
             id: string;
             name: string;
             uri: string;
-            accessToken: string;
+            accessToken?: string;
             userId: string | null;
             username: string | null;
             pathReplacements: Array<{
@@ -9025,7 +9025,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
             id: string;
             name: string;
             uri: string;
-            accessToken: string;
+            accessToken?: string;
             userId: string | null;
             username: string | null;
             libraries: Array<{
@@ -9050,7 +9050,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
             id: string;
             name: string;
             uri: string;
-            accessToken: string;
+            accessToken?: string;
             userId: string | null;
             username: string | null;
             libraries: Array<{
@@ -9072,7 +9072,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
             id: string;
             name: string;
             uri: string;
-            accessToken: string;
+            accessToken?: string;
             userId: string | null;
             username: string | null;
             libraries: Array<{
@@ -13161,6 +13161,13 @@ export type PostApiTroubleshootResponses = {
             stderrOutput: string;
             durationProcessed?: string;
             hlsSessionId?: string;
+            timings?: {
+                ffmpegStartToFirstSegmentMs?: number;
+                ffmpegStartToPlaylistMs?: number;
+                ffmpegStartToStreamReadyMs?: number;
+                totalTranscodeDurationMs: number;
+                segmentsProduced: number;
+            };
         };
         ffmpegLog?: string;
         errors: Array<string>;
