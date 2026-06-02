@@ -93,6 +93,8 @@ export abstract class MediaSourceMovieLibraryScanner<
       totalEntities: 0,
     } satisfies ScanContext<ApiClientTypeT>;
 
+    this.logger.debug('Scanning single movie with ID = %s', externalId);
+
     const apiMovie = await this.scanMovieById(ctx, externalId);
 
     if (apiMovie.isFailure()) {
