@@ -1288,5 +1288,43 @@ describe('evaluateStreamSelectionProfile', () => {
 
       expect(result.subtitleStream).toBeNull();
     });
+
+    it('returns null when filterType is none', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'eng',
+          type: 'external',
+        }),
+        makeSubtitleStream({
+          index: 3,
+          languageCodeISO6392: 'jpn',
+          type: 'external',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng', 'jpn'],
+            filterType: 'none',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream).toBeNull();
+    });
   });
 });

@@ -212,7 +212,11 @@ async function resolveSubtitleAction(
     }
 
     case 'by_language': {
-      if (!subtitleStreams || subtitleStreams.length === 0) {
+      if (
+        action.filterType === 'none' ||
+        !subtitleStreams ||
+        subtitleStreams.length === 0
+      ) {
         return null;
       }
 
