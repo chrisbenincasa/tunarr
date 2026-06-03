@@ -1,8 +1,15 @@
 import { nullToUndefined } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { groupBy, head, isEmpty, mapValues, orderBy } from 'lodash-es';
-import path from 'node:path';
+import {
+  groupBy,
+  head,
+  isEmpty,
+  mapValues,
+  orderBy,
+  trimEnd,
+  trimStart,
+} from 'lodash-es';
 import { match } from 'ts-pattern';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
@@ -228,7 +235,7 @@ export class ProgramStreamDetailsFetcher {
           { type: 'plex' },
           (server) =>
             new HttpStreamSource(
-              `${path.join(server.uri, serverPath)}?X-Plex-Token=${
+              `${trimEnd(server.uri, '/')}/${trimStart(serverPath, '/')}?X-Plex-Token=${
                 server.accessToken
               }`,
             ),
@@ -237,7 +244,7 @@ export class ProgramStreamDetailsFetcher {
           { type: 'jellyfin' },
           (server) =>
             new HttpStreamSource(
-              `${path.join(server.uri, 'Videos', serverPath, 'stream')}?static=true`,
+              `${trimEnd(server.uri, '/')}/Videos/${trimStart(serverPath, '/')}/stream?static=true`,
               {
                 'X-Emby-Token': server.accessToken,
               },
@@ -247,7 +254,7 @@ export class ProgramStreamDetailsFetcher {
           { type: 'emby' },
           (server) =>
             new HttpStreamSource(
-              `${path.join(server.uri, 'Videos', serverPath, 'stream')}?X-Emby-Token=${
+              `${trimEnd(server.uri, '/')}/Videos/${trimStart(serverPath, '/')}/stream?X-Emby-Token=${
                 server.accessToken
               }&static=true`,
             ),
