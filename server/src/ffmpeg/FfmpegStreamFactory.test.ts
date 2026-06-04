@@ -973,6 +973,74 @@ describe('FfmpegStreamFactory', () => {
           title: 'Spanish SRT',
         });
       });
+
+      test('extracted embedded subtitle uses stream index 0, not the original container index', async () => {
+        // Simulates the bug from issue #1904: an embedded subtitle at index 2
+        // in the source MKV is extracted to a standalone .srt file. The stream
+        // selector returns it with type still set to 'embedded' and the
+        // original container index. The pipeline should treat this as external
+        // (index 0) since the .srt only has one stream, but without the fix it
+        // creates an EmbeddedSubtitleStream with index 2, producing the wrong
+        // ffmpeg map (e.g. -map 2:2 instead of -map 2:0).
+        const extractedEmbeddedStream: SubtitleStreamDetails = {
+          type: 'embedded',
+          codec: 'subrip',
+          index: 2,
+          default: true,
+          forced: false,
+          sdh: false,
+          language: 'English',
+          languageCodeISO6392: 'eng',
+          title: 'English SRT',
+          // Path is a local file, different from the video source — this means
+          // the subtitle has been extracted and is no longer embedded.
+          path: '/tmp/cache/subtitles/ab/cd/abcdef1234.srt',
+        };
+
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockChannelDB(),
+          makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
+          makeMockStreamSelector(extractedEmbeddedStream),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details: makeStreamDetails(),
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: { type: 'mpegts' as const },
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).not.toBeNull();
+        expect(subtitleInput!.method).toBe(SubtitleMethods.Convert);
+        // The subtitle source path should be the extracted file, not the video
+        expect(subtitleInput!.path).toBe(
+          '/tmp/cache/subtitles/ab/cd/abcdef1234.srt',
+        );
+        // Critical: the stream must be treated as external with index 0, since
+        // the standalone .srt only has one stream. Using the original container
+        // index (2) would produce -map 2:2 which matches nothing.
+        const stream = subtitleInput!.streams[0];
+        expect(stream.inputKind).toBe('external');
+        expect(stream.index).toBe(0);
+      });
     });
 
     describe('passthrough mode (remux / HlsDirectV2)', () => {

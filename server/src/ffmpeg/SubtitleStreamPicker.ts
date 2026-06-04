@@ -157,7 +157,7 @@ export class SubtitleStreamPicker {
   static async getSubtitleDetailsWithExtractedPath(
     lineupItem: ContentBackedStreamLineupItem,
     stream: SubtitleStreamDetails,
-  ) {
+  ): Promise<Maybe<SubtitleStreamDetails>> {
     const cacheFolder = this.getCacheFolder();
     const filePath = getSubtitleCacheFilePath(
       {
@@ -189,7 +189,9 @@ export class SubtitleStreamPicker {
 
     return {
       ...stream,
+      type: 'external',
+      index: 0,
       path: fullPath,
-    };
+    } satisfies SubtitleStreamDetails;
   }
 }
