@@ -24,7 +24,7 @@ import dayjs from 'dayjs';
 import type { ProcessInfo } from 'find-process';
 import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
-import { compact, find, isEmpty, isNull, isString, uniq } from 'lodash-es';
+import { compact, find, isEmpty, uniq } from 'lodash-es';
 import {
   DocumentsQuery,
   EnqueuedTask,
@@ -39,7 +39,6 @@ import {
 } from 'meilisearch';
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
-import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { isMainThread } from 'node:worker_threads';
@@ -86,6 +85,7 @@ import { fileExists } from '../util/fsUtil.ts';
 import { isNonEmptyString, isWindows, wait } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
+import { getAvailablePort } from '../util/net.ts';
 import { FileSystemService } from './FileSystemService.ts';
 import { ISearchService } from './ISearchService.ts';
 import { SearchParser } from './search/SearchParser.ts';
@@ -2000,24 +2000,6 @@ export class MeilisearchService implements ISearchService {
   private get dbPath() {
     return path.join(this.serverOptions.databaseDirectory, 'data.ms');
   }
-}
-
-async function getAvailablePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.unref();
-    server.on('error', reject);
-    server.listen(0, () => {
-      const addr = server.address();
-      server.close(() => {
-        if (isString(addr) || isNull(addr)) {
-          reject(new Error('Server was not open on a port'));
-        } else {
-          resolve(addr.port);
-        }
-      });
-    });
-  });
 }
 
 function encodeCaseSensitiveId(id: string): SingleCaseString {

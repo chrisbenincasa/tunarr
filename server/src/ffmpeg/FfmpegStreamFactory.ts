@@ -554,21 +554,19 @@ export class FfmpegStreamFactory {
           .with(P.string, (path) => new FileStreamSource(path))
           .otherwise(() => streamSource);
 
-        const stream = match(subtitleStream.type)
-          .with(
-            'embedded',
-            () =>
-              new EmbeddedSubtitleStream(
-                subtitleStream.codec,
-                subtitleStream.index ?? 0,
-                method,
-              ),
-          )
-          .with(
-            'external',
-            () => new ExternalSubtitleStream(subtitleStream.codec, method),
-          )
-          .otherwise(() => null);
+        // If the subtitle source differs from the video source, the
+        // subtitle lives in a separate file (e.g. an extracted .srt) and
+        // must be treated as external regardless of the declared type.
+        const isExternal =
+          subtitleStream.type === 'external' || source !== streamSource;
+
+        const stream = isExternal
+          ? new ExternalSubtitleStream(subtitleStream.codec, method)
+          : new EmbeddedSubtitleStream(
+              subtitleStream.codec,
+              subtitleStream.index ?? 0,
+              method,
+            );
 
         if (stream) {
           subtitleSource = new SubtitlesInputSource(source, [stream], method);

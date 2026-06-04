@@ -5,6 +5,7 @@ import { container } from '../src/container.ts';
 import { ChannelDB } from '../src/db/ChannelDB.ts';
 import { TranscodeConfigDB } from '../src/db/TranscodeConfigDB.ts';
 import { KEYS } from '../src/types/inject.ts';
+import { getAvailablePort } from '../src/util/net.ts';
 import { initTestApp } from './testServer.js';
 
 let app: FastifyInstance;
@@ -39,7 +40,7 @@ function makeChannelPayload(
 }
 
 beforeAll(async () => {
-  app = await initTestApp(30002);
+  app = await initTestApp(await getAvailablePort());
   const transcodeConfigDB = container.get(TranscodeConfigDB);
   const defaultConfig = await transcodeConfigDB.getDefaultConfig();
   if (!defaultConfig) {
