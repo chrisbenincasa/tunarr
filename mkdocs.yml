@@ -102,7 +102,7 @@ nav:
   - Misc.:
       - FAQ: misc/faq.md
       - Common Issues: misc/common-issues.md
-      #- Troubleshooting: misc/troubleshooting.md
+      - Stream Troubleshooter: misc/troubleshooting.md
   - Development:
       - Contributing: dev/contributing.md
 
