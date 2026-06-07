@@ -13,6 +13,7 @@ import type {
   AudioStreamDetails,
   SubtitleStreamDetails,
 } from '../stream/types.ts';
+import { isImageBasedSubtitle } from '../stream/util.ts';
 import { isDefined } from '../util/index.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
@@ -275,13 +276,3 @@ async function resolveSubtitleAction(
   }
 }
 
-function isImageBasedSubtitle(codec: string): boolean {
-  const imageCodecs = [
-    'hdmv_pgs_subtitle',
-    'pgssub',
-    'dvd_subtitle',
-    'dvdsub',
-    'dvbsub',
-  ];
-  return imageCodecs.includes(codec.toLowerCase());
-}
