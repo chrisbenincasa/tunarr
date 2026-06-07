@@ -128,22 +128,36 @@ export class ProgramStreamDetailsFetcher {
           }) satisfies SubtitleStreamDetails,
       ) ?? [];
 
-    subtitleStreamDetails.push(
-      ...(program.subtitles
-        ?.filter((subtitle) => subtitle.isExtracted)
-        .map(
-          (subtitle) =>
-            ({
-              ...subtitle,
-              index: nullToUndefined(subtitle.streamIndex),
-              type:
-                subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
-              languageCodeISO6392: subtitle.language,
-              sdh: subtitle.sdh,
-              path: nullToUndefined(subtitle.path),
-            }) satisfies SubtitleStreamDetails,
-        ) ?? []),
+    // Only surface extracted/sidecar subtitles that still exist on disk.
+    // The DB flag can outlive the file (cache pruned, db restored on a host
+    // with no cache folder, etc.). Surfacing a stale path makes ffmpeg's
+    // libass filter init fail and the whole stream stalls.
+    const extractedSubtitles = program.subtitles?.filter(
+      (subtitle) => subtitle.isExtracted,
     );
+    if (extractedSubtitles && extractedSubtitles.length > 0) {
+      for (const subtitle of extractedSubtitles) {
+        if (
+          !isNonEmptyString(subtitle.path) ||
+          !(await fileExists(subtitle.path))
+        ) {
+          this.logger.debug(
+            'Skipping extracted subtitle for program %s: file missing on disk (%s)',
+            program.uuid,
+            subtitle.path ?? '<no path>',
+          );
+          continue;
+        }
+        subtitleStreamDetails.push({
+          ...subtitle,
+          index: nullToUndefined(subtitle.streamIndex),
+          type: subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
+          languageCodeISO6392: subtitle.language,
+          sdh: subtitle.sdh,
+          path: subtitle.path,
+        } satisfies SubtitleStreamDetails);
+      }
+    }
 
     const streamDetails: StreamDetails = {
       audioDetails: isNonEmptyArray(audioStreamDetails)
