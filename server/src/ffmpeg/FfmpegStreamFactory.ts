@@ -958,6 +958,7 @@ export class FfmpegStreamFactory {
         videoPreset: playbackParams.videoPreset ?? null,
         videoProfile: null, // TODO:
         deinterlace: false,
+        infiniteLoop: true,
       }),
       DefaultPipelineOptions,
     );
