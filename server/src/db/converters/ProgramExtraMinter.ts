@@ -8,6 +8,7 @@ import type { MediaSourceOrm } from '../schema/MediaSource.ts';
 import type { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
 import type { NewProgramExtra } from '../schema/ProgramExtra.ts';
 import type { NewProgramExtraWithRelations } from '../schema/derivedTypes.ts';
+import { MarkRequired } from 'ts-essentials';
 
 @injectable()
 export class ProgramExtraMinter {
@@ -40,14 +41,18 @@ export class ProgramExtraMinter {
       updatedAt: new Date(now),
     };
 
+    const mintedArtwork = extra.artwork.filter((art) =>
+      art.path !== undefined,
+    ) as MarkRequired<MediaArtwork, 'path'>[];
+
     return {
       extra: newExtra,
-      artwork: extra.artwork.map((art) => this.mintArtwork(art, uuid, now)),
+      artwork: mintedArtwork.map((art) => this.mintArtwork(art, uuid, now)),
     };
   }
 
   private mintArtwork(
-    artwork: MediaArtwork,
+    artwork: MarkRequired<MediaArtwork, 'path'>,
     programExtraId: string,
     now: number,
   ): NewArtwork {
