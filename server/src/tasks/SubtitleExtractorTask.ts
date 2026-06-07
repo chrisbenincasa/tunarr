@@ -320,7 +320,13 @@ export class SubtitleExtractorTask extends Task2<
 
     const copyResults = await Promise.allSettled(
       subtitlesToSave.map(async ({ outPath, tmpPath }) => {
-        return fs.cp(tmpPath, outPath);
+        // Strip stray NUL bytes that some sources (notably mov_text -> ass
+        // and certain Plex muxers) embed inside the extracted text. libass
+        // refuses to parse a file that contains a NUL, which manifests as
+        // missing burn-in subtitles with no obvious ffmpeg-level error.
+        const data = await fs.readFile(tmpPath, 'utf-8');
+        const cleaned = data.includes('\0') ? data.replace(/\0/g, '') : data;
+        await fs.writeFile(outPath, cleaned, 'utf-8');
       }),
     );
 
