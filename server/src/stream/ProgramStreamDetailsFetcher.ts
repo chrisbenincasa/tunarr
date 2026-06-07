@@ -131,7 +131,9 @@ export class ProgramStreamDetailsFetcher {
     // Only surface extracted/sidecar subtitles that still exist on disk.
     // The DB flag can outlive the file (cache pruned, db restored on a host
     // with no cache folder, etc.). Surfacing a stale path makes ffmpeg's
-    // libass filter init fail and the whole stream stalls.
+    // libass filter init fail and the whole stream stalls. When we see the
+    // mismatch, also clear the DB flag so the next SubtitleExtractorTask
+    // run rebuilds the sidecar instead of trusting stale state forever.
     const extractedSubtitles = program.subtitles?.filter(
       (subtitle) => subtitle.isExtracted,
     );
@@ -142,10 +144,12 @@ export class ProgramStreamDetailsFetcher {
           !(await fileExists(subtitle.path))
         ) {
           this.logger.debug(
-            'Skipping extracted subtitle for program %s: file missing on disk (%s)',
+            'Clearing isExtracted flag for program %s subtitle %s: file missing on disk (%s)',
             program.uuid,
+            subtitle.uuid,
             subtitle.path ?? '<no path>',
           );
+          await this.programDB.clearExtractedSubtitle(subtitle.uuid);
           continue;
         }
         subtitleStreamDetails.push({
