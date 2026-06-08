@@ -1773,7 +1773,7 @@ msgstr ""
 msgid "FFMPEG is not detected."
 msgstr ""
 
-#: src/pages/system/TroubleshootPage.tsx:988
+#: src/pages/system/TroubleshootPage.tsx:1065
 msgid "FFmpeg Log"
 msgstr ""
 
@@ -1915,6 +1915,10 @@ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx:250
 msgid "Finish"
+msgstr ""
+
+#: src/pages/system/TroubleshootPage.tsx:992
+msgid "First segment written"
 msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:124
@@ -2252,7 +2256,7 @@ msgid "Library Clip (not yet implemented)"
 msgstr ""
 
 #. placeholder {0}: library.name
-#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:36
+#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:39
 msgid "Library: {0}"
 msgstr ""
 
@@ -2462,8 +2466,8 @@ msgstr ""
 
 #. placeholder {0}: library.mediaSource.name
 #. placeholder {0}: mediaSource.name
-#: src/routes/media_sources_/$mediaSourceId/index.tsx:35
-#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:33
+#: src/routes/media_sources_/$mediaSourceId/index.tsx:36
+#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:34
 msgid "Media Source: \"{0}\""
 msgstr ""
 
@@ -2489,6 +2493,10 @@ msgstr ""
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:402
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:324
 msgid "Mid-Roll"
+msgstr ""
+
+#: src/pages/system/TroubleshootPage.tsx:982
+msgid "Milestone"
 msgstr ""
 
 #: src/components/programming_controls/AddBreaksModal.tsx:133
@@ -2907,6 +2915,10 @@ msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx:349
 msgid "Playlist"
+msgstr ""
+
+#: src/pages/system/TroubleshootPage.tsx:1003
+msgid "Playlist written"
 msgstr ""
 
 #: src/components/channel_config/plex/PlexLibrarySelector.tsx:119
@@ -3392,11 +3404,11 @@ msgstr ""
 msgid "Search for shows"
 msgstr ""
 
-#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:38
+#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx:42
 msgid "Search is currently scoped to this Media Source Library."
 msgstr ""
 
-#: src/routes/media_sources_/$mediaSourceId/index.tsx:39
+#: src/routes/media_sources_/$mediaSourceId/index.tsx:41
 msgid "Search is currently scoped to this Media Source."
 msgstr ""
 
@@ -3410,6 +3422,10 @@ msgstr ""
 
 #: src/components/programs/Seasons.tsx:35
 msgid "Seasons"
+msgstr ""
+
+#: src/pages/system/TroubleshootPage.tsx:1033
+msgid "Segments produced"
 msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx:271
@@ -3669,6 +3685,10 @@ msgstr ""
 msgid "Started {startedAgo} - {remainingTime}remaining"
 msgstr ""
 
+#: src/pages/system/TroubleshootPage.tsx:975
+msgid "Startup Timings"
+msgstr ""
+
 #: src/hooks/useNavItems.tsx:112
 #: src/pages/system/SystemLayout.tsx:31
 msgid "Status"
@@ -3696,6 +3716,10 @@ msgstr ""
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx:108
 msgid "Stream Mode"
+msgstr ""
+
+#: src/pages/system/TroubleshootPage.tsx:1014
+msgid "Stream ready"
 msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx:725
@@ -3799,7 +3823,7 @@ msgstr ""
 msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
 msgstr ""
 
-#: src/routes/channels_/test.tsx:5
+#: src/routes/channels_/test.tsx:7
 msgid "Test"
 msgstr ""
 
@@ -3949,6 +3973,10 @@ msgstr ""
 msgid "Thumbnail URL"
 msgstr ""
 
+#: src/pages/system/TroubleshootPage.tsx:985
+msgid "Time"
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx:279
 msgid "Time before first break"
 msgstr ""
@@ -4022,6 +4050,10 @@ msgstr ""
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx:88
 msgid "Total Runtime"
+msgstr ""
+
+#: src/pages/system/TroubleshootPage.tsx:1025
+msgid "Total transcode duration"
 msgstr ""
 
 #: src/components/programs/Tracks.tsx:21

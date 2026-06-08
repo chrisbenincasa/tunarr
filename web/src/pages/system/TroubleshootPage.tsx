@@ -968,14 +968,91 @@ export const TroubleshootPage = ({ initialProgram }: Props) => {
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                  {result.testTranscode.stderrOutput && (
-                    <Box>
-                      <Typography variant="subtitle2" gutterBottom>
-                        FFmpeg stderr
-                      </Typography>
-                      <CodeBlock text={result.testTranscode.stderrOutput} />
-                    </Box>
-                  )}
+                  <Stack spacing={2}>
+                    {result.testTranscode.timings && (
+                      <Box>
+                        <Typography variant="subtitle2" gutterBottom>
+                          <Trans>Startup Timings</Trans>
+                        </Typography>
+                        <TableContainer component={Paper} variant="outlined">
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>
+                                  <Trans>Milestone</Trans>
+                                </TableCell>
+                                <TableCell align="right">
+                                  <Trans>Time</Trans>
+                                </TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              <TableRow>
+                                <TableCell>
+                                  <Trans>First segment written</Trans>
+                                </TableCell>
+                                <TableCell align="right">
+                                  {result.testTranscode.timings
+                                    .ffmpegStartToFirstSegmentMs !== undefined
+                                    ? `${(result.testTranscode.timings.ffmpegStartToFirstSegmentMs / 1000).toFixed(2)}s`
+                                    : '-'}
+                                </TableCell>
+                              </TableRow>
+                              <TableRow>
+                                <TableCell>
+                                  <Trans>Playlist written</Trans>
+                                </TableCell>
+                                <TableCell align="right">
+                                  {result.testTranscode.timings
+                                    .ffmpegStartToPlaylistMs !== undefined
+                                    ? `${(result.testTranscode.timings.ffmpegStartToPlaylistMs / 1000).toFixed(2)}s`
+                                    : '-'}
+                                </TableCell>
+                              </TableRow>
+                              <TableRow>
+                                <TableCell>
+                                  <Trans>Stream ready</Trans>
+                                </TableCell>
+                                <TableCell align="right">
+                                  {result.testTranscode.timings
+                                    .ffmpegStartToStreamReadyMs !== undefined
+                                    ? `${(result.testTranscode.timings.ffmpegStartToStreamReadyMs / 1000).toFixed(2)}s`
+                                    : '-'}
+                                </TableCell>
+                              </TableRow>
+                              <TableRow>
+                                <TableCell>
+                                  <Trans>Total transcode duration</Trans>
+                                </TableCell>
+                                <TableCell align="right">
+                                  {`${(result.testTranscode.timings.totalTranscodeDurationMs / 1000).toFixed(2)}s`}
+                                </TableCell>
+                              </TableRow>
+                              <TableRow>
+                                <TableCell>
+                                  <Trans>Segments produced</Trans>
+                                </TableCell>
+                                <TableCell align="right">
+                                  {
+                                    result.testTranscode.timings
+                                      .segmentsProduced
+                                  }
+                                </TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+                    )}
+                    {result.testTranscode.stderrOutput && (
+                      <Box>
+                        <Typography variant="subtitle2" gutterBottom>
+                          FFmpeg stderr
+                        </Typography>
+                        <CodeBlock text={result.testTranscode.stderrOutput} />
+                      </Box>
+                    )}
+                  </Stack>
                 </AccordionDetails>
               </Accordion>
             )}

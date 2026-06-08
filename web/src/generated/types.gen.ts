@@ -13159,6 +13159,13 @@ export type PostApiTroubleshootResponses = {
             stderrOutput: string;
             durationProcessed?: string;
             hlsSessionId?: string;
+            timings?: {
+                ffmpegStartToFirstSegmentMs?: number;
+                ffmpegStartToPlaylistMs?: number;
+                ffmpegStartToStreamReadyMs?: number;
+                totalTranscodeDurationMs: number;
+                segmentsProduced: number;
+            };
         };
         ffmpegLog?: string;
         errors: Array<string>;
