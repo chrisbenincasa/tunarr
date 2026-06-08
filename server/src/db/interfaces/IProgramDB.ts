@@ -54,6 +54,8 @@ export interface IProgramDB {
 
   updateProgramDuration(programId: string, duration: number): Promise<void>;
 
+  clearExtractedSubtitle(uuid: string): Promise<void>;
+
   getProgramsByIds(
     ids: string[] | readonly string[],
     batchSize?: number,

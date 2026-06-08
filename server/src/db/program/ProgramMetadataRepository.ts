@@ -410,6 +410,13 @@ export class ProgramMetadataRepository {
     }
   }
 
+  async clearExtractedSubtitle(uuid: string): Promise<void> {
+    await this.drizzleDB
+      .update(ProgramSubtitles)
+      .set({ isExtracted: false, path: null, updatedAt: new Date() })
+      .where(eq(ProgramSubtitles.uuid, uuid));
+  }
+
   upsertCredits(credits: NewCredit[]) {
     if (credits.length === 0) {
       return;
