@@ -1,7 +1,6 @@
-import type { ListItemProps } from '@mui/material';
 import { ListItem, styled } from '@mui/material';
 import Color from 'colorjs.io';
-import React from 'react';
+import type React from 'react';
 import { getTextContrast } from '../../helpers/colors.ts';
 import type { UIChannelProgram } from '../../types/index.ts';
 
@@ -16,17 +15,16 @@ type Props = {
   enableDelete?: boolean;
 };
 
-export const ChannelLineupListItem = styled(
-  (props: ListItemProps & Props) => <ListItem {...props} />,
-  {
-    shouldForwardProp: (prop) =>
-      prop !== 'enableDrag' &&
-      prop !== 'isDragging' &&
-      prop !== 'program' &&
-      prop !== 'backgroundColor' &&
-      prop !== 'relativeDuration',
-  },
-)<Props>(({
+export const ChannelLineupListItem = styled(ListItem, {
+  shouldForwardProp: (prop) =>
+    prop !== 'enableDrag' &&
+    prop !== 'isDragging' &&
+    prop !== 'program' &&
+    prop !== 'backgroundColor' &&
+    prop !== 'relativeDuration' &&
+    prop !== 'indented' &&
+    prop !== 'enableDelete',
+})<Props>(({
   style,
   theme,
   backgroundColor,

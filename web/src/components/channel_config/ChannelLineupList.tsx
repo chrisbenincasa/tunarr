@@ -272,7 +272,6 @@ const ProgramListItem = ({
           </>
         )
       }
-      component="div"
       ref={(node) => drag(drop(node))}
     >
       {enableDrag && isDragging ? (
