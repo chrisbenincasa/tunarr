@@ -48,7 +48,7 @@ jobs:
 
       - name: Release
         id: semantic
-        uses: cycjimmy/semantic-release-action@v6
+        uses: cycjimmy/semantic-release-action@9246c0bd17405b1f20450501f39234912258bc50
         with:
           dry_run: ${{ github.event.inputs.dry_run }}
         env:
