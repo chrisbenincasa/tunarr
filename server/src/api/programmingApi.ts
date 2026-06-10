@@ -852,6 +852,27 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
                 accessToken: mediaSource.accessToken,
               }),
             );
+          case 'local': {
+            let art = program.artwork?.find(
+              (art) => art.artworkType === 'thumbnail',
+            );
+            if (!art) {
+              art = program.artwork?.find(
+                (art) => art.artworkType === 'poster',
+              );
+            }
+            if (!art || !art.cachePath) {
+              return res.status(404).send();
+            }
+            const path = req.serverCtx.imageCache.getImagePath(
+              art.cachePath,
+              art.artworkType,
+            );
+            return res.sendFile(
+              path.replace(globalOptions().databaseDirectory, ''),
+              { contentType: true },
+            );
+          }
           default:
             return res.status(405).send();
         }
