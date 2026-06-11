@@ -570,7 +570,7 @@ function getContentProgramIterator(
     if (slot.seasonExcludeFilter?.length > 0) {
       programs = programs.filter((program) => {
         const season = program.season?.index ?? program.seasonNumber;
-        return !season || !slot.seasonExcludeFilter.includes(season);
+        return season == null || !slot.seasonExcludeFilter.includes(season);
       });
     }
   }
