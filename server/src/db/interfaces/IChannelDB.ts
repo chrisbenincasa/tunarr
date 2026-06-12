@@ -1,4 +1,3 @@
-import type { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.js';
 import type {
   Lineup,
   LineupItem,
@@ -8,8 +7,6 @@ import type { Channel, ChannelOrm } from '@/db/schema/Channel.js';
 import type { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import type {
   ChannelOrmWithRelations,
-  ChannelOrmWithTranscodeConfig,
-  ChannelWithRelations,
   MusicArtistOrm,
   ProgramOrmWithExternalIds,
   ProgramWithRelationsOrm,
@@ -36,7 +33,6 @@ export type ChannelAndLineup<ChannelType = ChannelOrm> = {
   channel: ChannelType;
   lineup: Lineup;
 };
-export type LegacyChannelAndLineup = ChannelAndLineup<Channel>;
 export type ChannelAndRawLineup = { channel: ChannelOrm; lineup: Json };
 
 export interface IChannelDB {
@@ -44,21 +40,21 @@ export interface IChannelDB {
 
   getChannelOrm(
     id: string | number,
-  ): Promise<Maybe<ChannelOrmWithTranscodeConfig>>;
+  ): Promise<
+    Maybe<
+      MarkRequired<ChannelOrmWithRelations, 'transcodeConfig' | 'fillerShows'>
+    >
+  >;
 
-  getChannel(id: string | number): Promise<Maybe<ChannelWithRelations>>;
+  getChannel(id: string | number): Promise<Maybe<ChannelOrmWithRelations>>;
   getChannel(
     id: string | number,
     includeFiller: true,
-  ): Promise<Maybe<MarkRequired<ChannelWithRelations, 'fillerShows'>>>;
+  ): Promise<Maybe<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>>;
   getChannel(
     id: string | number,
     includeFiller: boolean,
-  ): Promise<Maybe<ChannelWithRelations>>;
-
-  getChannelBuilder(
-    id: string | number,
-  ): ChannelQueryBuilder<ChannelWithRelations>;
+  ): Promise<Maybe<ChannelOrmWithRelations>>;
 
   getAllChannels(): Promise<ChannelOrm[]>;
 
@@ -91,7 +87,9 @@ export interface IChannelDB {
 
   saveChannel(
     createReq: SaveableChannel,
-  ): Promise<ChannelAndLineup<ChannelOrm>>;
+  ): Promise<
+    ChannelAndLineup<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>
+  >;
 
   deleteChannel(
     channelId: string,
@@ -101,11 +99,17 @@ export interface IChannelDB {
   updateChannel(
     id: string,
     updateReq: SaveableChannel,
-  ): Promise<ChannelAndLineup>;
+  ): Promise<
+    ChannelAndLineup<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>
+  >;
 
   updateChannelDuration(id: string, duration: number): Promise<number>;
 
-  copyChannel(id: string): Promise<ChannelAndLineup<ChannelOrm>>;
+  copyChannel(
+    id: string,
+  ): Promise<
+    ChannelAndLineup<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>
+  >;
 
   loadLineup(channelId: string, forceRead?: boolean): Promise<Lineup>;
 
@@ -120,10 +124,7 @@ export interface IChannelDB {
    * @param channelId
    * @param programIds
    */
-  replaceChannelPrograms(
-    channelId: string,
-    programIds: string[],
-  ): void;
+  replaceChannelPrograms(channelId: string, programIds: string[]): void;
 
   updateLineup(
     id: string,
@@ -165,7 +166,9 @@ export interface IChannelDB {
 
   loadChannelAndLineupOrm(
     channelId: string,
-  ): Promise<ChannelAndLineup<ChannelOrm> | null>;
+  ): Promise<ChannelAndLineup<
+    MarkRequired<ChannelOrmWithRelations, 'fillerShows'>
+  > | null>;
 
   addPendingPrograms(
     channelId: string,

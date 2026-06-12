@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { putApiChannelsByIdMutation } from '../generated/@tanstack/react-query.gen.ts';
+import { invalidateTaggedQueries } from '../helpers/queryUtil.ts';
 
 export const useUpdateChannel = (
   opts?: ReturnType<typeof putApiChannelsByIdMutation>,
@@ -10,8 +11,7 @@ export const useUpdateChannel = (
     ...putApiChannelsByIdMutation(),
     onSuccess: async (...args) => {
       await queryClient.invalidateQueries({
-        exact: false,
-        queryKey: ['channels'],
+        predicate: invalidateTaggedQueries('Channels'),
       });
 
       updateChannel.reset();

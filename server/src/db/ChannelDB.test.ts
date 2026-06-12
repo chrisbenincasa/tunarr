@@ -21,6 +21,7 @@ import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
 import { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
 import { LineupRepository } from './channel/LineupRepository.ts';
 import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
+import { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts';
 import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
 
 type Fixture = {
@@ -88,10 +89,13 @@ const test = baseTest.extend<Fixture>({
       programConverter,
     );
 
+    const channelReadOpsRepo = new ChannelReadOpsRepository(dbAccess.drizzle!);
+
     const basicChannelRepo = new BasicChannelRepository(
       dbAccess.db!,
       dbAccess.drizzle!,
       mock(CacheImageService),
+      channelReadOpsRepo,
       lineupRepo,
     );
 
@@ -107,6 +111,7 @@ const test = baseTest.extend<Fixture>({
       channelProgramRepo,
       lineupRepo,
       channelConfigRepo,
+      channelReadOpsRepo,
     );
 
     await use(channelDb);

@@ -1,4 +1,3 @@
-import type { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.js';
 import type {
   ChannelAndLineup,
   ChannelAndRawLineup,
@@ -18,6 +17,7 @@ import type { MarkRequired } from 'ts-essentials';
 import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
 import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
 import { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
+import { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts';
 import { LineupRepository } from './channel/LineupRepository.ts';
 import type {
   Lineup,
@@ -31,8 +31,6 @@ import type { ChannelSubtitlePreferences } from './schema/SubtitlePreferences.ts
 import type {
   ChannelOrmWithPrograms,
   ChannelOrmWithRelations,
-  ChannelOrmWithTranscodeConfig,
-  ChannelWithRelations,
   MusicArtistOrm,
   ProgramOrmWithExternalIds,
   ProgramWithRelationsOrm,
@@ -50,59 +48,63 @@ export class ChannelDB implements IChannelDB {
     private readonly lineup: LineupRepository,
     @inject(KEYS.ChannelConfigRepository)
     private readonly channelConfig: ChannelConfigRepository,
+    @inject(KEYS.ChannelReadOpsRepository)
+    private readonly channelReadOps: ChannelReadOpsRepository,
   ) {}
 
   // --- BasicChannelRepository delegation ---
 
   channelExists(channelId: string): Promise<boolean> {
-    return this.basicChannel.channelExists(channelId);
+    return this.channelReadOps.channelExists(channelId);
   }
 
   getChannelOrm(
     id: string | number,
-  ): Promise<Maybe<ChannelOrmWithTranscodeConfig>> {
-    return this.basicChannel.getChannelOrm(id);
+  ): Promise<
+    Maybe<
+      MarkRequired<ChannelOrmWithRelations, 'transcodeConfig' | 'fillerShows'>
+    >
+  > {
+    return this.channelReadOps.getChannelOrm(id);
   }
 
-  getChannel(id: string | number): Promise<Maybe<ChannelWithRelations>>;
+  getChannel(id: string | number): Promise<Maybe<ChannelOrmWithRelations>>;
   getChannel(
     id: string | number,
     includeFiller: true,
-  ): Promise<Maybe<MarkRequired<ChannelWithRelations, 'fillerShows'>>>;
+  ): Promise<Maybe<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>>;
   getChannel(
     id: string | number,
     includeFiller: boolean,
-  ): Promise<Maybe<ChannelWithRelations>>;
+  ): Promise<Maybe<ChannelOrmWithRelations>>;
   getChannel(
     id: string | number,
     includeFiller: boolean = false,
-  ): Promise<Maybe<ChannelWithRelations>> {
+  ): Promise<Maybe<ChannelOrmWithRelations>> {
     if (includeFiller) {
-      return this.basicChannel.getChannel(id, true);
+      return this.channelReadOps.getChannel(id, true);
     }
-    return this.basicChannel.getChannel(id);
-  }
-
-  getChannelBuilder(
-    id: string | number,
-  ): ChannelQueryBuilder<ChannelWithRelations> {
-    return this.basicChannel.getChannelBuilder(id);
+    return this.channelReadOps.getChannel(id);
   }
 
   getAllChannels(): Promise<ChannelOrm[]> {
-    return this.basicChannel.getAllChannels();
+    return this.channelReadOps.getAllChannels();
   }
 
   saveChannel(
     createReq: SaveableChannel,
-  ): Promise<ChannelAndLineup<ChannelOrm>> {
+  ): Promise<
+    ChannelAndLineup<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>
+  > {
     return this.basicChannel.saveChannel(createReq);
   }
 
   updateChannel(
     id: string,
     updateReq: SaveableChannel,
-  ): Promise<ChannelAndLineup> {
+  ): Promise<
+    ChannelAndLineup<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>
+  > {
     return this.basicChannel.updateChannel(id, updateReq);
   }
 
@@ -118,7 +120,11 @@ export class ChannelDB implements IChannelDB {
     return this.basicChannel.syncChannelDuration(id);
   }
 
-  copyChannel(id: string): Promise<ChannelAndLineup<ChannelOrm>> {
+  copyChannel(
+    id: string,
+  ): Promise<
+    ChannelAndLineup<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>
+  > {
     return this.basicChannel.copyChannel(id);
   }
 
@@ -200,7 +206,9 @@ export class ChannelDB implements IChannelDB {
 
   loadChannelAndLineupOrm(
     channelId: string,
-  ): Promise<ChannelAndLineup<ChannelOrm> | null> {
+  ): Promise<ChannelAndLineup<
+    MarkRequired<ChannelOrmWithRelations, 'fillerShows'>
+  > | null> {
     return this.lineup.loadChannelAndLineupOrm(channelId);
   }
 
