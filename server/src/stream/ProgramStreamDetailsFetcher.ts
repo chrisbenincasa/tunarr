@@ -1,4 +1,4 @@
-import { nullToUndefined } from '@tunarr/shared/util';
+import { nullToUndefined, seq } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import {
@@ -128,21 +128,18 @@ export class ProgramStreamDetailsFetcher {
           }) satisfies SubtitleStreamDetails,
       ) ?? [];
 
-    // Only surface extracted/sidecar subtitles that still exist on disk.
-    // The DB flag can outlive the file (cache pruned, db restored on a host
-    // with no cache folder, etc.). Surfacing a stale path makes ffmpeg's
-    // libass filter init fail and the whole stream stalls. When we see the
-    // mismatch, also clear the DB flag so the next SubtitleExtractorTask
-    // run rebuilds the sidecar instead of trusting stale state forever.
-    const extractedSubtitles = program.subtitles?.filter(
-      (subtitle) => subtitle.isExtracted,
-    );
-    if (extractedSubtitles && extractedSubtitles.length > 0) {
-      for (const subtitle of extractedSubtitles) {
-        if (
-          !isNonEmptyString(subtitle.path) ||
-          !(await fileExists(subtitle.path))
-        ) {
+    const usableSubtitles = await Promise.all(
+      (program.subtitles ?? []).map(async (subtitle) => {
+        const pathOnDisk =
+          isNonEmptyString(subtitle.path) &&
+          (await fileExists(subtitle.path));
+        if (subtitle.subtitleType === 'sidecar') {
+          return pathOnDisk ? subtitle : null;
+        }
+        if (!subtitle.isExtracted) {
+          return null;
+        }
+        if (!pathOnDisk) {
           this.logger.debug(
             'Clearing isExtracted flag for program %s subtitle %s: file missing on disk (%s)',
             program.uuid,
@@ -150,18 +147,26 @@ export class ProgramStreamDetailsFetcher {
             subtitle.path ?? '<no path>',
           );
           await this.programDB.clearExtractedSubtitle(subtitle.uuid);
-          continue;
+          return null;
         }
-        subtitleStreamDetails.push({
+        return subtitle;
+      }),
+    );
+
+    subtitleStreamDetails.push(
+      ...seq.collect(usableSubtitles, (subtitle) => {
+        if (!subtitle) return null;
+        return {
           ...subtitle,
           index: nullToUndefined(subtitle.streamIndex),
-          type: subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
+          type:
+            subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
           languageCodeISO6392: subtitle.language,
           sdh: subtitle.sdh,
-          path: subtitle.path,
-        } satisfies SubtitleStreamDetails);
-      }
-    }
+          path: nullToUndefined(subtitle.path),
+        } satisfies SubtitleStreamDetails;
+      }),
+    );
 
     const streamDetails: StreamDetails = {
       audioDetails: isNonEmptyArray(audioStreamDetails)
