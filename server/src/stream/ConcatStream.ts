@@ -2,7 +2,7 @@ import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js'
 import type { FFmpegAssistedFactory } from '@/ffmpeg/FFmpegModule.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
-import { ConcatStreamModeToChildMode } from '@/ffmpeg/ffmpegBase.js';
+import { ConcatStreamModeToChildMode } from '@/ffmpeg/types.js';
 import { makeFfmpegPlaylistUrl, makeLocalUrl } from '@/util/serverUtil.js';
 import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 
@@ -23,36 +23,20 @@ export class ConcatStream {
       this.channel,
     );
 
-    switch (this.streamMode) {
-      // If we're wrapping an HLS stream, direct the concat process to
-      // the m3u8 URL
-      case 'hls_concat':
-      case 'hls_slower_concat':
-      case 'hls_direct_concat':
-      case 'hls_direct_v2_concat': {
-        const childStreamMode = ConcatStreamModeToChildMode[this.streamMode];
-        return ffmpeg.createHlsWrapperSession(
-          makeLocalUrl(`/stream/channels/${this.channel.uuid}.m3u8`, {
-            mode: childStreamMode,
-          }),
-          {
-            outputFormat: MpegTsOutputFormat,
-            mode: this.streamMode,
-          },
-        );
-      }
-      case 'mpegts_concat':
-        return ffmpeg.createConcatSession(
-          makeFfmpegPlaylistUrl({
+    const streamUrl =
+      this.streamMode === 'mpegts_concat'
+        ? makeFfmpegPlaylistUrl({
             channel: this.channel.uuid,
             audioOnly: false, // TODO
             mode: 'mpegts',
-          }),
-          {
-            outputFormat: MpegTsOutputFormat,
-            mode: this.streamMode,
-          },
-        );
-    }
+          })
+        : makeLocalUrl(`/stream/channels/${this.channel.uuid}.m3u8`, {
+            mode: ConcatStreamModeToChildMode[this.streamMode],
+          });
+
+    return ffmpeg.createConcatSession(streamUrl, {
+      outputFormat: MpegTsOutputFormat,
+      mode: this.streamMode,
+    });
   }
 }

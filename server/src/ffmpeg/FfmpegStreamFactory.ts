@@ -8,6 +8,7 @@ import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
 import type {
   AudioRenditionInfo,
+  StreamDetails,
   StreamRenditions,
   SubtitleRenditionInfo,
 } from '@/stream/types.js';
@@ -23,6 +24,7 @@ import { injectable } from 'inversify';
 import { isUndefined } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
+import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import { isImageBasedSubtitle } from '../stream/util.ts';
@@ -30,7 +32,10 @@ import { KEYS } from '../types/inject.ts';
 import { assisted, injected } from '../util/assistedInject.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
-import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
+import {
+  FfmpegPlaybackParamsCalculator,
+  type FfmpegPlaybackParams,
+} from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
 import { StreamSelector } from './StreamSelector.ts';
@@ -68,6 +73,7 @@ import { LavfiVideoInputSource } from './builder/input/LavfiVideoInputSource.ts'
 import { SubtitlesInputSource } from './builder/input/SubtitlesInputSource.ts';
 import { VideoInputSource } from './builder/input/VideoInputSource.ts';
 import { WatermarkInputSource } from './builder/input/WatermarkInputSource.ts';
+import type { Pipeline } from './builder/pipeline/Pipeline.ts';
 import type { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.ts';
 import { AudioState } from './builder/state/AudioState.ts';
 import type {
@@ -83,15 +89,15 @@ import { FrameSize } from './builder/types.ts';
 import type {
   ConcatOptions,
   HlsWrapperOptions,
+  PlaceholderSessionOpts,
   StreamSessionCreateArgs,
   TranscodeSessionResult,
-} from './ffmpegBase.ts';
-import { IFFMPEG } from './ffmpegBase.ts';
+} from './types.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
 
 @injectable()
 @loggingDef({ category: 'streaming' })
-export class FfmpegStreamFactory extends IFFMPEG {
+export class FfmpegStreamFactory {
   @InjectLogger() declare private readonly logger: Logger;
 
   private readonly ffmpegSettings: ReadableFfmpegSettings;
@@ -108,17 +114,87 @@ export class FfmpegStreamFactory extends IFFMPEG {
     @assisted private transcodeConfig: TranscodeConfigOrm,
     @assisted private channel: ChannelOrm,
   ) {
-    super();
     this.ffmpegSettings = this.settingsDB.ffmpegSettings();
+  }
+
+  /**
+   * Wraps a built pipeline in an {@link FfmpegTranscodeSession}. Derives the
+   * session's `endTime` from `duration`: negative durations (infinite concat
+   * sessions) get `dayjs(-1)`, positive ones get `dayjs().add(duration)`.
+   */
+  private wrapInSession(
+    pipeline: Pipeline,
+    label: string,
+    duration: Duration,
+  ): FfmpegTranscodeSession {
+    return new FfmpegTranscodeSession(
+      new FfmpegProcess(
+        this.ffmpegSettings,
+        label,
+        pipeline.getCommandArgs(),
+        this.settingsDB.systemSettings().logging.logsDirectory,
+        pipeline.getCommandEnvironment(),
+      ),
+      duration,
+      duration.asMilliseconds() < 0 ? dayjs(-1) : dayjs().add(duration),
+    );
+  }
+
+  /**
+   * Builds an {@link AudioState} from the given playback parameters and audio
+   * duration, always pulling volume and loudnorm from `this.transcodeConfig`.
+   */
+  private createAudioState(
+    playbackParams: Pick<
+      FfmpegPlaybackParams,
+      | 'audioFormat'
+      | 'audioChannels'
+      | 'audioBitrate'
+      | 'audioBufferSize'
+      | 'audioSampleRate'
+    >,
+    audioDuration: number | null,
+  ): AudioState {
+    return AudioState.create({
+      audioEncoder: playbackParams.audioFormat,
+      audioChannels: playbackParams.audioChannels,
+      audioBitrate: playbackParams.audioBitrate,
+      audioBufferSize: playbackParams.audioBufferSize,
+      audioSampleRate: playbackParams.audioSampleRate,
+      audioVolume: this.transcodeConfig.audioVolumePercent,
+      audioDuration,
+      loudnormConfig: this.transcodeConfig.audioLoudnormConfig,
+    });
+  }
+
+  /**
+   * Creates a placeholder audio input source based on the channel's
+   * `errorScreenAudio` setting (silent / sine / whitenoise).
+   */
+  private createPlaceholderAudioInput(
+    audioState: AudioState,
+  ): NullAudioInputSource {
+    switch (this.transcodeConfig.errorScreenAudio) {
+      case 'silent':
+        return new NullAudioInputSource(audioState);
+      case 'sine':
+        return AudioInputFilterSource.sine(audioState);
+      case 'whitenoise':
+        return AudioInputFilterSource.noise(audioState);
+    }
   }
 
   async createConcatSession(
     streamUrl: string,
     opts: DeepReadonly<ConcatOptions>,
   ): Promise<FfmpegTranscodeSession> {
-    if (opts.mode === 'hls_concat') {
+    if (
+      opts.mode === 'hls_concat' ||
+      opts.mode === 'hls_direct_concat' ||
+      opts.mode === 'hls_direct_v2_concat'
+    ) {
       return this.createHlsWrapperSession(streamUrl, {
-        mode: 'hls_concat',
+        mode: opts.mode,
         outputFormat: opts.outputFormat,
       });
     }
@@ -152,20 +228,14 @@ export class FfmpegStreamFactory extends IFFMPEG {
       ),
     );
 
-    return new FfmpegTranscodeSession(
-      new FfmpegProcess(
-        this.ffmpegSettings,
-        `channel-${this.channel.number}-concat`,
-        pipeline.getCommandArgs(),
-        this.settingsDB.systemSettings().logging.logsDirectory,
-        pipeline.getCommandEnvironment(),
-      ),
+    return this.wrapInSession(
+      pipeline,
+      `channel-${this.channel.number}-concat`,
       dayjs.duration(-1),
-      dayjs(-1),
     );
   }
 
-  async createHlsWrapperSession(
+  private async createHlsWrapperSession(
     streamUrl: string,
     opts: HlsWrapperOptions,
   ): Promise<FfmpegTranscodeSession> {
@@ -192,16 +262,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
       ),
     );
 
-    return new FfmpegTranscodeSession(
-      new FfmpegProcess(
-        this.ffmpegSettings,
-        `channel-${this.channel.number}-concat`,
-        pipeline.getCommandArgs(),
-        this.settingsDB.systemSettings().logging.logsDirectory,
-        pipeline.getCommandEnvironment(),
-      ),
+    return this.wrapInSession(
+      pipeline,
+      `channel-${this.channel.number}-concat`,
       dayjs.duration(-1),
-      dayjs(-1),
     );
   }
 
@@ -240,15 +304,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     const audioInputSource = new AudioInputSource(
       concatInput.source,
       [audioStream],
-      AudioState.create({
-        audioBitrate: playbackParams.audioBitrate,
-        audioBufferSize: playbackParams.audioBufferSize,
-        audioChannels: playbackParams.audioChannels,
-        audioDuration: null,
-        audioEncoder: playbackParams.audioFormat,
-        audioSampleRate: playbackParams.audioSampleRate,
-        audioVolume: this.transcodeConfig.audioVolumePercent,
-      }),
+      this.createAudioState(playbackParams, null),
     );
 
     const pipelineBuilder = await this.pipelineBuilderFactory(
@@ -300,21 +356,14 @@ export class FfmpegStreamFactory extends IFFMPEG {
       audioInput: null,
     });
 
-    return new FfmpegTranscodeSession(
-      new FfmpegProcess(
-        this.ffmpegSettings,
-        'Concat Wrapper v2 FFmpeg',
-        pipeline.getCommandArgs(),
-        this.settingsDB.systemSettings().logging.logsDirectory,
-        pipeline.getCommandEnvironment(),
-      ),
+    return this.wrapInSession(
+      pipeline,
+      'Concat Wrapper v2 FFmpeg',
       dayjs.duration(-1),
-      dayjs(-1),
     );
   }
 
   async createStreamSession({
-    // TODO Fix these dumb params
     stream: { source: streamSource, details: streamDetails },
     options: {
       ptsOffset,
@@ -335,9 +384,6 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     const isRemux = encoding?.mode === 'remux';
-    // Passthrough mode: copy all video/audio streams from the source without
-    // re-encoding. Incompatible audio codecs get per-stream overrides.
-    // Subtitles are still processed as WebVTT sidecar when available.
     const isPassthrough =
       isRemux || outputFormat.type === OutputFormatTypes.HlsDirectV2;
     const playbackParams = isPassthrough
@@ -347,274 +393,56 @@ export class FfmpegStreamFactory extends IFFMPEG {
           streamMode ?? this.channel.streamMode,
         ).calculateForStream(streamDetails);
 
-    let videoStream: VideoStream;
-    let videoInputSource: VideoInputSource;
-    if (streamDetails.videoDetails) {
-      const [videoStreamDetails] = streamDetails.videoDetails;
+    const { videoStream, videoInputSource } = this.buildVideoInput(
+      streamSource,
+      streamDetails,
+    );
 
-      const streamIndex = isUndefined(videoStreamDetails.streamIndex)
-        ? 0
-        : videoStreamDetails.streamIndex;
-
-      let pixelFormat: Maybe<PixelFormat>;
-      if (videoStreamDetails.pixelFormat) {
-        pixelFormat = KnownPixelFormats.forPixelFormat(
-          videoStreamDetails.pixelFormat,
-        );
-      }
-
-      if (isUndefined(pixelFormat)) {
-        switch (videoStreamDetails.bitDepth) {
-          case 8: {
-            pixelFormat = new PixelFormatYuv420P();
-            break;
-          }
-          case 10: {
-            pixelFormat = new PixelFormatYuv420P10Le();
-            break;
-          }
-          default:
-            pixelFormat = PixelFormatUnknown(videoStreamDetails.bitDepth);
-        }
-      }
-
-      videoStream = VideoStream.create({
-        codec: videoStreamDetails.codec ?? 'unknown',
-        profile: videoStreamDetails.profile,
-        index: isNaN(streamIndex) ? 0 : streamIndex,
-        inputKind: 'video',
-        providedSampleAspectRatio: videoStreamDetails.sampleAspectRatio ?? null,
-        displayAspectRatio: videoStreamDetails.displayAspectRatio,
-        pixelFormat,
-        frameSize: FrameSize.create({
-          height: videoStreamDetails.height,
-          width: videoStreamDetails.width,
-        }),
-        frameRate: videoStreamDetails.framerate?.toString(),
-        colorFormat: new ColorFormat({
-          colorRange: videoStreamDetails.colorRange ?? null,
-          colorSpace: videoStreamDetails.colorSpace ?? null,
-          colorTransfer: videoStreamDetails.colorTransfer ?? null,
-          colorPrimaries: videoStreamDetails.colorPrimaries ?? null,
-        }),
-      });
-
-      videoInputSource = new VideoInputSource(streamSource, [videoStream]);
-
-      this.logger.debug('Video stream input: %O', videoStream);
-    } else if (
-      streamDetails.placeholderImage &&
-      (streamDetails.placeholderImage.type === 'file' ||
-        streamDetails.placeholderImage.type === 'http')
-    ) {
-      // This is sort of hacky...
-      videoStream = StillImageStream.create({
-        frameSize: FrameSize.create({ height: 0, width: 0 }),
-        index: 0,
-      });
-      videoInputSource = new VideoInputSource(streamDetails.placeholderImage, [
-        videoStream,
-      ]);
-      videoInputSource.addOption(new InfiniteLoopInputOption());
-    } else {
-      throw new Error('Streams with no video are not currently supported.');
-    }
-
-    // In copy-all mode, audio is handled by `-map 0:a` with per-stream codec
-    // overrides — no AudioInputSource needed. Watermark is also skipped since
-    // we're not re-encoding video.
     let audioInput: Nullable<AudioInputSource> = null;
     let watermarkSource: Nullable<WatermarkInputSource> = null;
     let subtitleSource: Nullable<SubtitlesInputSource> = null;
     let subtitleRendition: SubtitleRenditionInfo | undefined;
 
     if (!isPassthrough) {
-      const audioState = AudioState.create({
-        audioEncoder: playbackParams!.audioFormat,
-        audioChannels: playbackParams!.audioChannels,
-        audioBitrate: playbackParams!.audioBitrate,
-        audioBufferSize: playbackParams!.audioBufferSize,
-        audioSampleRate: playbackParams!.audioSampleRate,
-        audioVolume: this.transcodeConfig.audioVolumePercent,
-        audioDuration:
-          streamMode === ChannelStreamModes.HlsDirect
-            ? null
-            : duration.asMilliseconds(),
-        loudnormConfig: this.transcodeConfig.audioLoudnormConfig,
-      });
+      const audioState = this.createAudioState(
+        playbackParams!,
+        streamMode === ChannelStreamModes.HlsDirect
+          ? null
+          : duration.asMilliseconds(),
+      );
 
-      // Stream selection via profiles (handles both audio and subtitles)
-
-      if (isDefined(streamDetails.audioDetails)) {
-        const { audioStream, subtitleStream } =
-          await this.streamSelector.selectAudioAndSubtitleStreams({
-            channel: this.channel,
-            lineupItem,
-            audioStreams: streamDetails.audioDetails,
-            subtitleStreams: streamDetails.subtitleDetails ?? [],
-          });
-
-        audioInput = new AudioInputSource(
-          streamSource,
-          [
-            AudioStream.create({
-              index: audioStream.index,
-              codec: audioStream.codec ?? 'unknown',
-              channels: audioStream.channels ?? -2,
-            }),
-          ],
-          audioState,
-        );
-
-        if (subtitleStream) {
-          this.logger.trace('Using subtitle stream: %O', subtitleStream);
-
-          const source = match(subtitleStream.path)
-            .with(
-              P.string.startsWith('http'),
-              (path) => new HttpStreamSource(path),
-            )
-            .with(P.string, (path) => new FileStreamSource(path))
-            .otherwise(() => streamSource);
-
-          const stream = match(subtitleStream.type)
-            .with(
-              'embedded',
-              () =>
-                new EmbeddedSubtitleStream(
-                  subtitleStream.codec,
-                  subtitleStream.index ?? 0,
-                  SubtitleMethods.Burn,
-                ),
-            )
-            .with(
-              'external',
-              () =>
-                new ExternalSubtitleStream(
-                  subtitleStream.codec,
-                  SubtitleMethods.Burn,
-                ),
-            )
-            .otherwise(() => null);
-
-          if (stream) {
-            subtitleSource = new SubtitlesInputSource(
-              source,
-              [stream],
-              SubtitleMethods.Burn,
-            );
-          }
-        }
-      } else {
-        audioInput = new NullAudioInputSource({
-          ...audioState,
-          audioDuration: duration.asMilliseconds(),
-        });
-      }
-
-      if (watermark?.enabled) {
-        const watermarkUrl =
-          watermark.url ?? makeLocalUrl('/images/tunarr.png');
-        watermarkSource = new WatermarkInputSource(
-          new HttpStreamSource(watermarkUrl),
-          StillImageStream.create({
-            frameSize: FrameSize.fromResolution({
-              widthPx: watermark.width,
-              heightPx: -1,
-            }),
-            index: 0,
-          }),
-          { ...watermark, url: watermarkUrl },
-        );
-      }
+      const transcodeInputs = await this.buildTranscodeInputs(
+        streamSource,
+        streamDetails,
+        lineupItem,
+        audioState,
+        watermark,
+        duration,
+      );
+      audioInput = transcodeInputs.audioInput;
+      subtitleSource = transcodeInputs.subtitleSource;
+      watermarkSource = transcodeInputs.watermarkSource;
     } else {
-      // Passthrough: subtitle processing via sidecar. In copy-all mode, only
-      // sidecar (Convert) is available since we're not re-encoding video for
-      // burn-in.
-      if (
-        isDefined(streamDetails.subtitleDetails) &&
-        this.channel.subtitlesEnabled
-      ) {
-        const sidecarEnabled = this.featureFlagService.get(
-          'webvttSidecarEnabled',
+      const passthroughSubs = await this.buildPassthroughSubtitles(
+        streamSource,
+        streamDetails,
+        lineupItem,
+        isPassthrough,
+      );
+      subtitleSource = passthroughSubs.subtitleSource;
+      subtitleRendition = passthroughSubs.subtitleRendition;
+
+      if (!this.channel.subtitlesEnabled) {
+        this.logger.trace(
+          'Channel %s (number = %d) does not have subtitles enabled. Skipping subtitles.',
+          this.channel.uuid,
+          this.channel.number,
         );
-
-        const subtitlePreferences =
-          await this.channelDB.getChannelSubtitlePreferences(this.channel.uuid);
-
-        const pickedSubtitleStream = await SubtitleStreamPicker.pickSubtitles(
-          subtitlePreferences,
-          lineupItem,
-          streamDetails.subtitleDetails,
-          // In copy-all mode, always prefer text-based subs for sidecar
-          // since burn-in is not available.
-          { preferTextBased: isPassthrough || sidecarEnabled },
+      } else if (!streamDetails.subtitleDetails) {
+        this.logger.debug(
+          'Program %s has no subtitle streams to choose from.',
+          lineupItem.program.uuid,
         );
-
-        if (pickedSubtitleStream) {
-          this.logger.trace('Using subtitle stream: %O', pickedSubtitleStream);
-
-          // In copy-all mode, force Convert (sidecar) since burn-in is
-          // not possible without re-encoding. For image-based subtitles
-          // that can't be converted to WebVTT, skip them entirely.
-          const canUseSidecar = !isImageBasedSubtitle(
-            pickedSubtitleStream.codec,
-          );
-          const useSidecar = isPassthrough || (sidecarEnabled && canUseSidecar);
-          const method = useSidecar
-            ? SubtitleMethods.Convert
-            : SubtitleMethods.Burn;
-
-          // Skip image-based subtitles in copy-all mode since they can't
-          // be burned in or converted to WebVTT.
-          if (!isPassthrough || canUseSidecar) {
-            const source = match(pickedSubtitleStream.path)
-              .with(
-                P.string.startsWith('http'),
-                (path) => new HttpStreamSource(path),
-              )
-              .with(P.string, (path) => new FileStreamSource(path))
-              .otherwise(() => streamSource);
-
-            const stream = match(pickedSubtitleStream.type)
-              .with(
-                'embedded',
-                () =>
-                  new EmbeddedSubtitleStream(
-                    pickedSubtitleStream.codec,
-                    pickedSubtitleStream.index ?? 0,
-                    method,
-                  ),
-              )
-              .with(
-                'external',
-                () =>
-                  new ExternalSubtitleStream(
-                    pickedSubtitleStream.codec,
-                    method,
-                  ),
-              )
-              .otherwise(() => null);
-
-            if (stream) {
-              subtitleSource = new SubtitlesInputSource(
-                source,
-                [stream],
-                method,
-              );
-
-              if (useSidecar) {
-                subtitleRendition = {
-                  language: pickedSubtitleStream.languageCodeISO6392 ?? 'und',
-                  languageName: pickedSubtitleStream.language,
-                  default: pickedSubtitleStream.default,
-                  forced: pickedSubtitleStream.forced,
-                  title: pickedSubtitleStream.title,
-                };
-              }
-            }
-          }
-        }
       }
     }
 
@@ -639,32 +467,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
       sourceFrameSize ??
       FrameSize.fromResolution(this.transcodeConfig.resolution);
 
-    // Build per-stream audio codec overrides for copy-all mode.
-    // DTS and TrueHD cannot be muxed into MPEG-TS and are unsupported
-    // by AVPlayer on Apple devices — transcode those to AC-3.
-    const audioCodecOverrides: AudioCodecOverride[] = [];
-    if (isPassthrough && streamDetails.audioDetails) {
-      for (let i = 0; i < streamDetails.audioDetails.length; i++) {
-        const codec = streamDetails.audioDetails[i]!.codec;
-        if (codec === AudioFormats.Dca || codec === AudioFormats.TrueHd) {
-          audioCodecOverrides.push({
-            outputIndex: i,
-            codec: AudioFormats.Ac3,
-          });
-        }
-      }
-    } else if (!this.channel.subtitlesEnabled) {
-      this.logger.trace(
-        'Channel %s (number = %d) does not have subtitles enabled. Skipping subtitles.',
-        this.channel.uuid,
-        this.channel.number,
-      );
-    } else if (!streamDetails.subtitleDetails) {
-      this.logger.debug(
-        'Program %s has no subtitle streams to choose from.',
-        lineupItem.program.uuid,
-      );
-    }
+    const audioCodecOverrides = isPassthrough
+      ? this.buildAudioCodecOverrides(streamDetails)
+      : [];
 
     const effectiveHwAccel = isPassthrough
       ? HardwareAccelerationMode.None
@@ -744,49 +549,24 @@ export class FfmpegStreamFactory extends IFFMPEG {
       pipelineOptions,
     );
 
-    const transcodeSession = new FfmpegTranscodeSession(
-      new FfmpegProcess(
-        this.ffmpegSettings,
-        `channel-${this.channel.number}-transcode`,
-        pipeline.getCommandArgs(),
-        this.settingsDB.systemSettings().logging.logsDirectory,
-        pipeline.getCommandEnvironment(),
-      ),
+    const transcodeSession = this.wrapInSession(
+      pipeline,
+      `channel-${this.channel.number}-transcode`,
       duration,
-      dayjs().add(duration),
     );
 
-    // Build audio rendition metadata from the source audio streams.
-    const audioRenditions: AudioRenditionInfo[] = [];
-    if (streamDetails.audioDetails) {
-      for (let i = 0; i < streamDetails.audioDetails.length; i++) {
-        const audio = streamDetails.audioDetails[i]!;
-        audioRenditions.push({
-          language: audio.languageCodeISO6392 ?? audio.language ?? 'und',
-          languageName: audio.language,
-          title: audio.title,
-          channels: audio.channels,
-          default: i === 0 || (audio.default ?? false),
-        });
-      }
-    }
-
-    const renditions: StreamRenditions = {
-      audio: audioRenditions,
-      subtitle: subtitleRendition,
+    return {
+      session: transcodeSession,
+      renditions: this.buildRenditions(streamDetails, subtitleRendition),
     };
-
-    return { session: transcodeSession, renditions };
   }
 
-  async createErrorSession(
-    title: string,
-    subtitle: Maybe<string>,
-    duration: Duration,
-    outputFormat: OutputFormat,
-    realtime: boolean,
-    ptsOffset?: number,
-  ): Promise<Maybe<FfmpegTranscodeSession>> {
+  async createPlaceholderSession(
+    opts: PlaceholderSessionOpts,
+  ): Promise<Maybe<TranscodeSessionResult>> {
+    const { duration, outputFormat, ptsOffset } = opts;
+    const realtime = opts.realtime ?? true;
+
     const calculator = new FfmpegPlaybackParamsCalculator(
       this.transcodeConfig,
       this.channel.streamMode,
@@ -799,73 +579,76 @@ export class FfmpegStreamFactory extends IFFMPEG {
     const frameSize = FrameSize.fromResolution(this.transcodeConfig.resolution);
 
     let scaledSize: Maybe<FrameSize>;
-    let errorInput: VideoInputSource;
-    switch (this.transcodeConfig.errorScreen) {
-      case 'pic': {
-        const stream = StillImageStream.create({
-          index: 0,
-          frameSize: FrameSize.create({ width: 1920, height: 1080 }),
-        });
-        scaledSize = stream.squarePixelFrameSize(
-          FrameSize.fromResolution(this.transcodeConfig.resolution),
-        );
-        errorInput = VideoInputSource.withStream(
-          new HttpStreamSource(
-            makeLocalUrl('/images/generic-error-screen.png'),
-          ),
-          stream,
-        );
-        break;
+    let videoInput: VideoInputSource | LavfiVideoInputSource;
+
+    if (opts.kind === 'error') {
+      switch (this.transcodeConfig.errorScreen) {
+        case 'pic': {
+          const stream = StillImageStream.create({
+            index: 0,
+            frameSize: FrameSize.create({ width: 1920, height: 1080 }),
+          });
+          scaledSize = stream.squarePixelFrameSize(
+            FrameSize.fromResolution(this.transcodeConfig.resolution),
+          );
+          videoInput = VideoInputSource.withStream(
+            new HttpStreamSource(
+              makeLocalUrl('/images/generic-error-screen.png'),
+            ),
+            stream,
+          );
+          break;
+        }
+        case 'blank':
+          throw new Error('');
+        case 'testsrc':
+          videoInput = LavfiVideoInputSource.testSource(frameSize);
+          break;
+        case 'static':
+          videoInput = LavfiVideoInputSource.createStatic();
+          break;
+        case 'text':
+          videoInput = LavfiVideoInputSource.errorText(
+            frameSize,
+            opts.title,
+            opts.subtitle,
+          );
+          break;
+        case 'kill':
+          process.kill(process.pid, 'SIGTERM');
+          return;
       }
-      case 'blank':
-        throw new Error('');
-      case 'testsrc':
-        errorInput = LavfiVideoInputSource.testSource(frameSize);
-        break;
-      case 'static':
-        errorInput = LavfiVideoInputSource.createStatic();
-        break;
-      case 'text':
-        errorInput = LavfiVideoInputSource.errorText(
-          frameSize,
-          title,
-          subtitle,
-        );
-        break;
-      case 'kill':
-        process.kill(process.pid, 'SIGTERM');
-        return;
+    } else {
+      videoInput = VideoInputSource.withStream(
+        new HttpStreamSource(
+          isNonEmptyString(this.channel.offline?.picture)
+            ? this.channel.offline?.picture
+            : makeLocalUrl('/images/generic-offline-screen.png'),
+        ),
+        VideoStream.create({
+          inputKind: 'stillimage',
+          codec: 'unknown',
+          frameSize: FrameSize.create({ width: 1920, height: 1080 }),
+          index: 0,
+          providedSampleAspectRatio: '1:1',
+          displayAspectRatio: '1:1',
+          pixelFormat: PixelFormatUnknown(),
+          colorFormat: ColorFormat.unknown,
+        }),
+      );
     }
 
-    const audioState = AudioState.create({
-      audioEncoder: playbackParams.audioFormat,
-      audioChannels: playbackParams.audioChannels,
-      audioBitrate: playbackParams.audioBitrate,
-      audioBufferSize: playbackParams.audioBufferSize,
-      audioSampleRate: playbackParams.audioSampleRate,
-      audioVolume: this.transcodeConfig.audioVolumePercent,
-      // Check if audio and video are coming from same location
-      audioDuration: duration.asMilliseconds(),
-    });
-
-    let audioInput: NullAudioInputSource;
-    switch (this.transcodeConfig.errorScreenAudio) {
-      case 'silent':
-        audioInput = new NullAudioInputSource(audioState);
-        break;
-      case 'sine':
-        audioInput = AudioInputFilterSource.sine(audioState);
-        break;
-      case 'whitenoise':
-        audioInput = AudioInputFilterSource.noise(audioState);
-        break;
-    }
+    const audioState = this.createAudioState(
+      playbackParams,
+      duration.asMilliseconds(),
+    );
+    const audioInput = this.createPlaceholderAudioInput(audioState);
 
     const builder = await this.pipelineBuilderFactory(this.transcodeConfig)
       .setHardwareAccelerationMode(
         this.transcodeConfig.hardwareAccelerationMode,
       )
-      .setVideoInputSource(errorInput)
+      .setVideoInputSource(videoInput)
       .setAudioInputSource(audioInput)
       .build();
 
@@ -876,8 +659,14 @@ export class FfmpegStreamFactory extends IFFMPEG {
         ptsOffset,
         threadCount: this.transcodeConfig.threadCount,
         outputFormat,
-        softwareDeinterlaceFilter: this.ffmpegSettings.deinterlaceFilter,
-        softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
+        softwareDeinterlaceFilter:
+          opts.kind === 'error'
+            ? this.ffmpegSettings.deinterlaceFilter
+            : undefined,
+        softwareScalingAlgorithm:
+          opts.kind === 'error'
+            ? this.ffmpegSettings.scalingAlgorithm
+            : undefined,
         vaapiDevice: this.getVaapiDevice(),
         vaapiDriver: this.getVaapiDriver(),
         logLevel: this.ffmpegSettings.logLevel,
@@ -896,23 +685,41 @@ export class FfmpegStreamFactory extends IFFMPEG {
         realtime,
         videoFormat: playbackParams.videoFormat,
         videoPreset: playbackParams.videoPreset ?? null,
-        videoProfile: null, // TODO:
+        videoProfile: null,
         deinterlace: false,
       }),
       DefaultPipelineOptions,
     );
 
-    return new FfmpegTranscodeSession(
-      new FfmpegProcess(
-        this.ffmpegSettings,
-        `channel-${this.channel.number}-error`,
-        pipeline.getCommandArgs(),
-        this.settingsDB.systemSettings().logging.logsDirectory,
-        pipeline.getCommandEnvironment(),
-      ),
+    const label =
+      opts.kind === 'error'
+        ? `channel-${this.channel.number}-error`
+        : `channel-${this.channel.number}-transcode`;
+
+    return {
+      session: this.wrapInSession(pipeline, label, duration),
+      renditions: { audio: [] },
+    };
+  }
+
+  async createErrorSession(
+    title: string,
+    subtitle: Maybe<string>,
+    duration: Duration,
+    outputFormat: OutputFormat,
+    realtime: boolean,
+    ptsOffset?: number,
+  ): Promise<Maybe<FfmpegTranscodeSession>> {
+    const result = await this.createPlaceholderSession({
+      kind: 'error',
+      title,
+      subtitle: subtitle ?? undefined,
       duration,
-      dayjs().add(duration),
-    );
+      outputFormat,
+      realtime,
+      ptsOffset,
+    });
+    return result?.session;
   }
 
   async createOfflineSession(
@@ -921,107 +728,321 @@ export class FfmpegStreamFactory extends IFFMPEG {
     ptsOffset: number = 0,
     realtime: boolean = true,
   ): Promise<Maybe<FfmpegTranscodeSession>> {
-    const offlineInput = VideoInputSource.withStream(
-      new HttpStreamSource(
-        isNonEmptyString(this.channel.offline?.picture)
-          ? this.channel.offline?.picture
-          : makeLocalUrl('/images/generic-offline-screen.png'),
-      ),
-      VideoStream.create({
-        inputKind: 'stillimage',
-        codec: 'unknown',
-        frameSize: FrameSize.create({ width: 1920, height: 1080 }),
-        index: 0,
-        providedSampleAspectRatio: '1:1',
-        displayAspectRatio: '1:1',
-        pixelFormat: PixelFormatUnknown(),
-        colorFormat: ColorFormat.unknown,
-      }),
-    );
-
-    const calculator = new FfmpegPlaybackParamsCalculator(
-      this.transcodeConfig,
-      this.channel.streamMode,
-    );
-    const playbackParams = calculator.calculateForErrorStream(
+    const result = await this.createPlaceholderSession({
+      kind: 'offline',
+      duration,
       outputFormat,
-      true,
-    );
-
-    const audioState = AudioState.create({
-      audioEncoder: playbackParams.audioFormat,
-      audioChannels: playbackParams.audioChannels,
-      audioBitrate: playbackParams.audioBitrate,
-      audioBufferSize: playbackParams.audioBufferSize,
-      audioSampleRate: playbackParams.audioSampleRate,
-      audioVolume: this.transcodeConfig.audioVolumePercent,
-      // Check if audio and video are coming from same location
-      audioDuration: duration.asMilliseconds(),
+      ptsOffset,
+      realtime,
     });
+    return result?.session;
+  }
 
-    let audioInput: NullAudioInputSource;
-    switch (this.transcodeConfig.errorScreenAudio) {
-      case 'silent':
-        audioInput = new NullAudioInputSource(audioState);
-        break;
-      case 'sine':
-        audioInput = AudioInputFilterSource.sine(audioState);
-        break;
-      case 'whitenoise':
-        audioInput = AudioInputFilterSource.noise(audioState);
-        break;
+  private buildVideoInput(
+    streamSource: HttpStreamSource | FileStreamSource,
+    streamDetails: StreamDetails,
+  ): { videoStream: VideoStream; videoInputSource: VideoInputSource } {
+    if (streamDetails.videoDetails) {
+      const [videoStreamDetails] = streamDetails.videoDetails;
+
+      const streamIndex = isUndefined(videoStreamDetails.streamIndex)
+        ? 0
+        : videoStreamDetails.streamIndex;
+
+      let pixelFormat: Maybe<PixelFormat>;
+      if (videoStreamDetails.pixelFormat) {
+        pixelFormat = KnownPixelFormats.forPixelFormat(
+          videoStreamDetails.pixelFormat,
+        );
+      }
+
+      if (isUndefined(pixelFormat)) {
+        switch (videoStreamDetails.bitDepth) {
+          case 8: {
+            pixelFormat = new PixelFormatYuv420P();
+            break;
+          }
+          case 10: {
+            pixelFormat = new PixelFormatYuv420P10Le();
+            break;
+          }
+          default:
+            pixelFormat = PixelFormatUnknown(videoStreamDetails.bitDepth);
+        }
+      }
+
+      const videoStream = VideoStream.create({
+        codec: videoStreamDetails.codec ?? 'unknown',
+        profile: videoStreamDetails.profile,
+        index: isNaN(streamIndex) ? 0 : streamIndex,
+        inputKind: 'video',
+        providedSampleAspectRatio: videoStreamDetails.sampleAspectRatio ?? null,
+        displayAspectRatio: videoStreamDetails.displayAspectRatio,
+        pixelFormat,
+        frameSize: FrameSize.create({
+          height: videoStreamDetails.height,
+          width: videoStreamDetails.width,
+        }),
+        frameRate: videoStreamDetails.framerate?.toString(),
+        colorFormat: new ColorFormat({
+          colorRange: videoStreamDetails.colorRange ?? null,
+          colorSpace: videoStreamDetails.colorSpace ?? null,
+          colorTransfer: videoStreamDetails.colorTransfer ?? null,
+          colorPrimaries: videoStreamDetails.colorPrimaries ?? null,
+        }),
+      });
+
+      const videoInputSource = new VideoInputSource(streamSource, [
+        videoStream,
+      ]);
+
+      this.logger.debug('Video stream input: %O', videoStream);
+
+      return { videoStream, videoInputSource };
     }
 
-    const builder = await this.pipelineBuilderFactory(this.transcodeConfig)
-      .setHardwareAccelerationMode(
-        this.transcodeConfig.hardwareAccelerationMode,
+    if (
+      streamDetails.placeholderImage &&
+      (streamDetails.placeholderImage.type === 'file' ||
+        streamDetails.placeholderImage.type === 'http')
+    ) {
+      const videoStream = StillImageStream.create({
+        frameSize: FrameSize.create({ height: 0, width: 0 }),
+        index: 0,
+      });
+      const videoInputSource = new VideoInputSource(
+        streamDetails.placeholderImage,
+        [videoStream],
+      );
+      videoInputSource.addOption(new InfiniteLoopInputOption());
+      return { videoStream, videoInputSource };
+    }
+
+    throw new Error('Streams with no video are not currently supported.');
+  }
+
+  private async buildTranscodeInputs(
+    streamSource: HttpStreamSource | FileStreamSource,
+    streamDetails: StreamDetails,
+    lineupItem: ContentBackedStreamLineupItem,
+    audioState: AudioState,
+    watermark: StreamSessionCreateArgs['options']['watermark'],
+    duration: Duration,
+  ): Promise<{
+    audioInput: Nullable<AudioInputSource>;
+    subtitleSource: Nullable<SubtitlesInputSource>;
+    watermarkSource: Nullable<WatermarkInputSource>;
+  }> {
+    let audioInput: Nullable<AudioInputSource> = null;
+    let subtitleSource: Nullable<SubtitlesInputSource> = null;
+    let watermarkSource: Nullable<WatermarkInputSource> = null;
+
+    if (isDefined(streamDetails.audioDetails)) {
+      const { audioStream, subtitleStream } =
+        await this.streamSelector.selectAudioAndSubtitleStreams({
+          channel: this.channel,
+          lineupItem,
+          audioStreams: streamDetails.audioDetails,
+          subtitleStreams: streamDetails.subtitleDetails ?? [],
+        });
+
+      audioInput = new AudioInputSource(
+        streamSource,
+        [
+          AudioStream.create({
+            index: audioStream.index,
+            codec: audioStream.codec ?? 'unknown',
+            channels: audioStream.channels ?? -2,
+          }),
+        ],
+        audioState,
+      );
+
+      if (subtitleStream) {
+        this.logger.trace('Using subtitle stream: %O', subtitleStream);
+
+        const source = match(subtitleStream.path)
+          .with(
+            P.string.startsWith('http'),
+            (path) => new HttpStreamSource(path),
+          )
+          .with(P.string, (path) => new FileStreamSource(path))
+          .otherwise(() => streamSource);
+
+        const stream = match(subtitleStream.type)
+          .with(
+            'embedded',
+            () =>
+              new EmbeddedSubtitleStream(
+                subtitleStream.codec,
+                subtitleStream.index ?? 0,
+                SubtitleMethods.Burn,
+              ),
+          )
+          .with(
+            'external',
+            () =>
+              new ExternalSubtitleStream(
+                subtitleStream.codec,
+                SubtitleMethods.Burn,
+              ),
+          )
+          .otherwise(() => null);
+
+        if (stream) {
+          subtitleSource = new SubtitlesInputSource(
+            source,
+            [stream],
+            SubtitleMethods.Burn,
+          );
+        }
+      }
+    } else {
+      audioInput = new NullAudioInputSource({
+        ...audioState,
+        audioDuration: duration.asMilliseconds(),
+      });
+    }
+
+    if (watermark?.enabled) {
+      const watermarkUrl = watermark.url ?? makeLocalUrl('/images/tunarr.png');
+      watermarkSource = new WatermarkInputSource(
+        new HttpStreamSource(watermarkUrl),
+        StillImageStream.create({
+          frameSize: FrameSize.fromResolution({
+            widthPx: watermark.width,
+            heightPx: -1,
+          }),
+          index: 0,
+        }),
+        { ...watermark, url: watermarkUrl },
+      );
+    }
+
+    return { audioInput, subtitleSource, watermarkSource };
+  }
+
+  private async buildPassthroughSubtitles(
+    streamSource: HttpStreamSource | FileStreamSource,
+    streamDetails: StreamDetails,
+    lineupItem: ContentBackedStreamLineupItem,
+    isPassthrough: boolean,
+  ): Promise<{
+    subtitleSource: Nullable<SubtitlesInputSource>;
+    subtitleRendition?: SubtitleRenditionInfo;
+  }> {
+    if (
+      isUndefined(streamDetails.subtitleDetails) ||
+      !this.channel.subtitlesEnabled
+    ) {
+      return { subtitleSource: null };
+    }
+
+    const sidecarEnabled = this.featureFlagService.get('webvttSidecarEnabled');
+
+    const subtitlePreferences =
+      await this.channelDB.getChannelSubtitlePreferences(this.channel.uuid);
+
+    const pickedSubtitleStream = await SubtitleStreamPicker.pickSubtitles(
+      subtitlePreferences,
+      lineupItem,
+      streamDetails.subtitleDetails,
+      { preferTextBased: isPassthrough || sidecarEnabled },
+    );
+
+    if (!pickedSubtitleStream) {
+      return { subtitleSource: null };
+    }
+
+    this.logger.trace('Using subtitle stream: %O', pickedSubtitleStream);
+
+    const canUseSidecar = !isImageBasedSubtitle(pickedSubtitleStream.codec);
+    const useSidecar = isPassthrough || (sidecarEnabled && canUseSidecar);
+    const method = useSidecar
+      ? SubtitleMethods.Convert
+      : SubtitleMethods.Burn;
+
+    if (isPassthrough && !canUseSidecar) {
+      return { subtitleSource: null };
+    }
+
+    const source = match(pickedSubtitleStream.path)
+      .with(
+        P.string.startsWith('http'),
+        (path) => new HttpStreamSource(path),
       )
-      .setVideoInputSource(offlineInput)
-      .setAudioInputSource(audioInput)
-      .build();
+      .with(P.string, (path) => new FileStreamSource(path))
+      .otherwise(() => streamSource);
 
-    const pipeline = builder.build(
-      FfmpegState.create({
-        version: await this.ffmpegInfo.getVersion(),
-        duration,
-        ptsOffset,
-        threadCount: this.transcodeConfig.threadCount,
-        outputFormat,
-        // softwareDeinterlaceFilter: this.transcodeConfig.deinterlaceFilter,
-        // softwareScalingAlgorithm: this.transcodeConfig.scalingAlgorithm,
-        vaapiDevice: this.getVaapiDevice(),
-        vaapiDriver: this.getVaapiDriver(),
-        logLevel: this.ffmpegSettings.logLevel,
-      }),
-      new FrameState({
-        isAnamorphic: false,
-        scaledSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
-        paddedSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
-        videoBitrate: playbackParams.videoBitrate,
-        videoBufferSize: playbackParams.videoBufferSize,
-        pixelFormat: new PixelFormatYuv420P(),
-        frameRate: playbackParams.frameRate,
-        videoTrackTimescale: playbackParams.videoTrackTimeScale,
-        realtime,
-        videoFormat: playbackParams.videoFormat,
-        videoPreset: playbackParams.videoPreset ?? null,
-        videoProfile: null, // TODO:
-        deinterlace: false,
-      }),
-      DefaultPipelineOptions,
-    );
+    const stream = match(pickedSubtitleStream.type)
+      .with(
+        'embedded',
+        () =>
+          new EmbeddedSubtitleStream(
+            pickedSubtitleStream.codec,
+            pickedSubtitleStream.index ?? 0,
+            method,
+          ),
+      )
+      .with(
+        'external',
+        () =>
+          new ExternalSubtitleStream(pickedSubtitleStream.codec, method),
+      )
+      .otherwise(() => null);
 
-    return new FfmpegTranscodeSession(
-      new FfmpegProcess(
-        this.ffmpegSettings,
-        `channel-${this.channel.number}-transcode`,
-        pipeline.getCommandArgs(),
-        this.settingsDB.systemSettings().logging.logsDirectory,
-        pipeline.getCommandEnvironment(),
-      ),
-      duration,
-      dayjs().add(duration),
-    );
+    if (!stream) {
+      return { subtitleSource: null };
+    }
+
+    const subtitleSource = new SubtitlesInputSource(source, [stream], method);
+
+    const subtitleRendition = useSidecar
+      ? {
+          language: pickedSubtitleStream.languageCodeISO6392 ?? 'und',
+          languageName: pickedSubtitleStream.language,
+          default: pickedSubtitleStream.default,
+          forced: pickedSubtitleStream.forced,
+          title: pickedSubtitleStream.title,
+        }
+      : undefined;
+
+    return { subtitleSource, subtitleRendition };
+  }
+
+  private buildAudioCodecOverrides(
+    streamDetails: StreamDetails,
+  ): AudioCodecOverride[] {
+    const overrides: AudioCodecOverride[] = [];
+    if (streamDetails.audioDetails) {
+      for (let i = 0; i < streamDetails.audioDetails.length; i++) {
+        const codec = streamDetails.audioDetails[i]!.codec;
+        if (codec === AudioFormats.Dca || codec === AudioFormats.TrueHd) {
+          overrides.push({ outputIndex: i, codec: AudioFormats.Ac3 });
+        }
+      }
+    }
+    return overrides;
+  }
+
+  private buildRenditions(
+    streamDetails: StreamDetails,
+    subtitleRendition?: SubtitleRenditionInfo,
+  ): StreamRenditions {
+    const audioRenditions: AudioRenditionInfo[] = [];
+    if (streamDetails.audioDetails) {
+      for (let i = 0; i < streamDetails.audioDetails.length; i++) {
+        const audio = streamDetails.audioDetails[i]!;
+        audioRenditions.push({
+          language: audio.languageCodeISO6392 ?? audio.language ?? 'und',
+          languageName: audio.language,
+          title: audio.title,
+          channels: audio.channels,
+          default: i === 0 || (audio.default ?? false),
+        });
+      }
+    }
+    return { audio: audioRenditions, subtitle: subtitleRendition };
   }
 
   private getVaapiDevice() {

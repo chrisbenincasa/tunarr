@@ -1,4 +1,3 @@
-import type { Maybe } from '@/types/util.js';
 import type { ChannelStreamMode, Watermark } from '@tunarr/types';
 import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
@@ -34,51 +33,6 @@ export const ConcatStreamModeToChildMode: Record<
   hls_direct_v2_concat: 'hls_direct_v2',
 } as const;
 
-export abstract class IFFMPEG {
-  /**
-   * Creates an ffmpeg concat stream using the ffconcat file returned by the {@link streamUrl}
-   * @param streamUrl URL which returns a text file in ffconcat format
-   */
-  abstract createConcatSession(
-    streamUrl: string,
-    opts: DeepReadonly<ConcatOptions>,
-  ): Promise<FfmpegTranscodeSession>;
-
-  /**
-   * Creates a stream which "wraps" HLS output (e.g. concatenates HLS segments).
-   * The {@link streamUrl} should return an m3u8 playlist.
-   * @param streamUrl
-   * @param opts
-   */
-  abstract createHlsWrapperSession(
-    streamUrl: string,
-    opts: HlsWrapperOptions,
-  ): Promise<FfmpegTranscodeSession>;
-
-  /**
-   * Creates an arbitrary stream session for the input
-   * @param streamSessionOptions
-   */
-  abstract createStreamSession(
-    streamSessionOptions: StreamSessionCreateArgs,
-  ): Promise<Maybe<TranscodeSessionResult>>;
-
-  abstract createErrorSession(
-    title: string,
-    subtitle: Maybe<string>,
-    duration: Duration,
-    outputFormat: OutputFormat,
-    realtime: boolean,
-    ptsOffset?: number,
-  ): Promise<Maybe<FfmpegTranscodeSession>>;
-
-  abstract createOfflineSession(
-    duration: Duration,
-    outputFormat: OutputFormat,
-    ptsOffset?: number,
-    realtime?: boolean,
-  ): Promise<Maybe<FfmpegTranscodeSession>>;
-}
 export type StreamSessionCreateArgs = {
   stream: {
     source: StreamSource;
@@ -87,6 +41,7 @@ export type StreamSessionCreateArgs = {
   options: StreamOptions;
   lineupItem: ContentBackedStreamLineupItem;
 };
+
 export type ConcatOptions = {
   mode: ChannelConcatStreamMode;
   outputFormat: OutputFormat;
@@ -126,3 +81,13 @@ export type StreamOptions = {
   emitEndList?: boolean;
   disableErrorStream?: boolean;
 };
+
+export type PlaceholderSessionOpts = {
+  duration: Duration;
+  outputFormat: OutputFormat;
+  realtime?: boolean;
+  ptsOffset?: number;
+} & (
+  | { kind: 'error'; title: string; subtitle?: string }
+  | { kind: 'offline' }
+);
