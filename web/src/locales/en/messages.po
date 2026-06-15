@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:453
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:461
 msgid " Scheduling Strategy"
 msgstr " Scheduling Strategy"
 
@@ -389,7 +389,7 @@ msgstr "Add Media"
 msgid "Add Padding"
 msgstr "Add Padding"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:229
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:237
 msgid "Add point (%)"
 msgstr "Add point (%)"
 
@@ -546,7 +546,7 @@ msgstr "Amount"
 msgid "An error occurred: {0}"
 msgstr "An error occurred: {0}"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:502
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:510
 msgid "Apply to Program Types (empty = all)"
 msgstr "Apply to Program Types (empty = all)"
 
@@ -720,15 +720,15 @@ msgstr "Block"
 msgid "Block Shuffle"
 msgstr "Block Shuffle"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:309
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:317
 msgid "Break Duration"
 msgstr "Break Duration"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:334
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:342
 msgid "Break Duration (minutes)"
 msgstr "Break Duration (minutes)"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:198
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:206
 msgid "Break Interval (minutes)"
 msgstr "Break Interval (minutes)"
 
@@ -1407,7 +1407,7 @@ msgstr "Duration must be numeric"
 msgid "Dynamic"
 msgstr "Dynamic"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:469
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:477
 msgid "Eager"
 msgstr "Eager"
 
@@ -1860,11 +1860,11 @@ msgstr "Filler Content"
 msgid "Filler cooldown must be a number"
 msgstr "Filler cooldown must be a number"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:478
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:486
 msgid "Filler is picked fresh at stream time like Flex time. The guide shows \"Commercial Break\" placeholders."
 msgstr "Filler is picked fresh at stream time like Flex time. The guide shows \"Commercial Break\" placeholders."
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:477
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:485
 msgid "Filler is resolved at schedule time. The guide shows specific filler titles."
 msgstr "Filler is resolved at schedule time. The guide shows specific filler titles."
 
@@ -1920,7 +1920,7 @@ msgstr "Finish"
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:124
 #: src/components/programming_controls/AddReplicateModal.tsx:97
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:425
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:321
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:329
 msgid "Fixed"
 msgstr "Fixed"
 
@@ -2055,7 +2055,7 @@ msgstr "HLS not supported in this browser!"
 msgid "How frequently libraries should be scanned (starting from midnight)."
 msgstr "How frequently libraries should be scanned (starting from midnight)."
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:343
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:351
 msgid "How long each commercial break lasts"
 msgstr "How long each commercial break lasts"
 
@@ -2063,7 +2063,7 @@ msgstr "How long each commercial break lasts"
 msgid "How often the XMLTV file is regenerated"
 msgstr "How often the XMLTV file is regenerated"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:205
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:213
 msgid "How often to insert a break"
 msgstr "How often to insert a break"
 
@@ -2136,7 +2136,7 @@ msgstr "Increasing the slot duration."
 msgid "Increment"
 msgstr "Increment"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:268
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:276
 msgid "Initial Delay (minutes)"
 msgstr "Initial Delay (minutes)"
 
@@ -2144,7 +2144,7 @@ msgstr "Initial Delay (minutes)"
 msgid "Initial Delay + Interval"
 msgstr "Initial Delay + Interval"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:214
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:222
 msgid "Insert breaks at these percentages of the program duration"
 msgstr "Insert breaks at these percentages of the program duration"
 
@@ -2153,7 +2153,7 @@ msgstr "Insert breaks at these percentages of the program duration"
 msgid "Install FFMPEG"
 msgstr "Install FFMPEG"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:289
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:297
 msgid "Interval (minutes)"
 msgstr "Interval (minutes)"
 
@@ -2219,7 +2219,7 @@ msgstr "Last Synced"
 msgid "Last synced {0}"
 msgstr "Last synced {0}"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:472
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:480
 msgid "Lazy"
 msgstr "Lazy"
 
@@ -2421,7 +2421,7 @@ msgstr "Max Backups"
 msgid "Max Duration"
 msgstr "Max Duration"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:377
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:385
 msgid "Max Duration (minutes)"
 msgstr "Max Duration (minutes)"
 
@@ -2438,7 +2438,7 @@ msgstr "Max Lateness"
 msgid "Max True Peak"
 msgstr "Max True Peak"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:409
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:417
 msgid "Maximum number of breaks per program (0 = unlimited)"
 msgstr "Maximum number of breaks per program (0 = unlimited)"
 
@@ -2495,7 +2495,7 @@ msgstr "Mid-Roll"
 msgid "Min Duration"
 msgstr "Min Duration"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:357
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:365
 msgid "Min Duration (minutes)"
 msgstr "Min Duration (minutes)"
 
@@ -2503,7 +2503,7 @@ msgstr "Min Duration (minutes)"
 msgid "Min. Visible in Guide Duration Program (seconds)"
 msgstr "Min. Visible in Guide Duration Program (seconds)"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:418
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:426
 msgid "Minimum Program Duration (minutes)"
 msgstr "Minimum Program Duration (minutes)"
 
@@ -3062,7 +3062,7 @@ msgstr "Random..."
 msgid "Random…"
 msgstr "Random…"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:324
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:332
 msgid "Range"
 msgstr "Range"
 
@@ -3550,7 +3550,7 @@ msgstr "Shuffle Programming"
 msgid "Shuffle programming in a channel, optionally grouping programs by certain criteria."
 msgstr "Shuffle programming in a channel, optionally grouping programs by certain criteria."
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:427
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:435
 msgid "Skip mid-roll for programs shorter than this"
 msgstr "Skip mid-roll for programs shorter than this"
 
@@ -3788,7 +3788,7 @@ msgstr "System Info"
 msgid "Tail"
 msgstr "Tail"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:436
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:444
 msgid "Tail Buffer (minutes)"
 msgstr "Tail Buffer (minutes)"
 
@@ -3951,11 +3951,11 @@ msgstr "Threads"
 msgid "Thumbnail URL"
 msgstr "Thumbnail URL"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:279
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:287
 msgid "Time before first break"
 msgstr "Time before first break"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:298
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:306
 msgid "Time between subsequent breaks"
 msgstr "Time between subsequent breaks"
 

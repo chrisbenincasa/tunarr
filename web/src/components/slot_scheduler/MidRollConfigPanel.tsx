@@ -170,24 +170,32 @@ export const MidRollConfigPanel = () => {
       <Typography variant="subtitle2">
         <Trans>Break Positioning</Trans>
       </Typography>
-      <FormControl fullWidth>
-        <InputLabel>Break Rule</InputLabel>
-        <Select
-          label="Break Rule"
-          value={breakRuleType ?? 'fixed_interval'}
-          onChange={(e) =>
-            handleBreakRuleTypeChange(
-              e.target.value as MidRollBreakRuleFormFields['type'],
-            )
-          }
-        >
-          {Object.entries(breakRuleLabels).map(([value, label]) => (
-            <MenuItem key={value} value={value}>
-              {i18n.t(label)}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <Controller
+        control={control}
+        name="midRoll.breakRule.type"
+        defaultValue="fixed_interval"
+        render={({ field }) => (
+          <FormControl fullWidth>
+            <InputLabel>Break Rule</InputLabel>
+            <Select
+              label="Break Rule"
+              value={breakRuleType ?? 'fixed_interval'}
+              onChange={(e) => {
+                const newType = e.target
+                  .value as MidRollBreakRuleFormFields['type'];
+                field.onChange(newType);
+                handleBreakRuleTypeChange(newType);
+              }}
+            >
+              {Object.entries(breakRuleLabels).map(([value, label]) => (
+                <MenuItem key={value} value={value}>
+                  {i18n.t(label)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+      />
 
       {breakRuleType === 'fixed_interval' && (
         <Controller
