@@ -51,6 +51,7 @@ import {
   orderBy,
   reduce,
 } from 'lodash-es';
+import type { MarkRequired } from 'ts-essentials';
 import z from 'zod/v4';
 import { GetMaterializedChannelScheduleCommand } from '../commands/GetMaterializedChannelScheduleCommand.ts';
 import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
@@ -60,6 +61,7 @@ import { RegenerateChannelLineupCommand } from '../commands/RegenerateChannelLin
 import { container } from '../container.ts';
 import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import type { ChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
+import type { ChannelOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import type { SessionType } from '../stream/Session.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams } from '../types/schemas.ts';
@@ -183,8 +185,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
               subtitlePreferences: channelSubtitles,
             },
           });
-          // const loadedFillers =
-          //   await channelAndLineup.channel.channelFillers.load();
+
           const channelWithFillers = {
             ...apiChannel,
             fillerCollections: channelFillers.map((cf) => ({
@@ -220,7 +221,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const body: CreateChannelRequest = req.body;
-      let insertResult: Result<ChannelAndLineup>;
+      let insertResult: Result<
+        ChannelAndLineup<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>
+      >;
       switch (body.type) {
         case 'copy':
           insertResult = await Result.attemptAsync(() =>
@@ -249,13 +252,6 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const inserted = insertResult.get();
 
-      // const inserted = await attempt(() =>
-      //   req.serverCtx.channelDB.saveChannel(req.body),
-      // );
-      // if (isError(inserted)) {
-      //   return res.status(500).send(inserted);
-      // }
-
       GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
         .runNow(true)
         .catch((err) => logger.error(err, 'Error regenerating guide'));
@@ -282,7 +278,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+        const channel = await req.serverCtx.channelDB.getChannelOrm(
+          req.params.id,
+        );
 
         if (isNil(channel)) {
           return res
