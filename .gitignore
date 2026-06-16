@@ -48,3 +48,5 @@ web/.tanstack
 *.iws
 *.iml
 *.ipr
+
+.claude/worktrees

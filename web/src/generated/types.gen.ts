@@ -8293,29 +8293,6 @@ export type GetApiProgramsByIdChildrenResponses = {
 
 export type GetApiProgramsByIdChildrenResponse = GetApiProgramsByIdChildrenResponses[keyof GetApiProgramsByIdChildrenResponses];
 
-export type GetApiProgramsByIdThumbData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query: {
-        width?: number;
-        height?: number;
-        upscale?: boolean;
-        method: 'proxy' | 'redirect';
-        useShowPoster?: boolean | 'true' | 'false' | number;
-        type: 'program' | 'grouping';
-    };
-    url: '/api/programs/{id}/thumb';
-};
-
-export type GetApiProgramsByIdThumbResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
 export type GetApiProgramsByIdExternalLinkData = {
     body?: never;
     path: {
