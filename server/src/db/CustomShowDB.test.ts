@@ -3,6 +3,7 @@ import type { ContentProgram } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import tmp from 'tmp-promise';
+import { copyPreMigratedDb } from '../testing/testDbFactory.ts';
 import { v4 } from 'uuid';
 import { test as baseTest, describe, expect, vi } from 'vitest';
 import { bootstrapTunarr } from '../bootstrap.ts';
@@ -47,19 +48,20 @@ type Fixture = {
 const test = baseTest.extend<Fixture>({
   db: async ({}, use) => {
     const dbResult = await tmp.dir({ unsafeCleanup: true });
+    await copyPreMigratedDb(dbResult.path);
     const opts = setGlobalOptionsUnchecked({
       database: dbResult.path,
       log_level: 'debug',
       verbose: 0,
     });
-    await bootstrapTunarr(opts, ':memory:');
+    await bootstrapTunarr(opts);
     await use(dbResult.path);
-    // const dbPath = `${dbResult.path}/db.db`;
-    // await DBAccess.instance.closeConnection(dbPath);
+    const dbPath = `${dbResult.path}/db.db`;
+    await DBAccess.instance.closeConnection(dbPath);
     await dbResult.cleanup();
   },
   mediaSourceId: async ({ db: _ }, use) => {
-    const drizzle = DBAccess.instance.getConnection(':memory:')!.drizzle!;
+    const drizzle = DBAccess.instance.drizzle!;
     const uuid = v4() as MediaSourceId;
     const now = +dayjs();
     await drizzle.insert(MediaSource).values({
@@ -77,8 +79,8 @@ const test = baseTest.extend<Fixture>({
   customShowDb: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
 
-    const kyselyDb = dbAccess.getKyselyDatabase(':memory:')!;
-    const drizzleDb = dbAccess.getConnection(':memory:')!.drizzle!;
+    const kyselyDb = dbAccess.db!;
+    const drizzleDb = dbAccess.drizzle!;
     const basicProgramRepo = new BasicProgramRepository(kyselyDb, drizzleDb);
     const customShowDb = new CustomShowDB(
       kyselyDb,
@@ -89,7 +91,7 @@ const test = baseTest.extend<Fixture>({
     await use(customShowDb);
   },
   drizzle: async ({ db: _ }, use) => {
-    await use(DBAccess.instance.getConnection(':memory:')!.drizzle!);
+    await use(DBAccess.instance.drizzle!);
   },
 });
 

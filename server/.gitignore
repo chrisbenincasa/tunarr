@@ -12,3 +12,4 @@ bin/
 src/generated/**
 !src/generated/env.ts
 emby.ts
+.test-cache/

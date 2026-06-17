@@ -1,7 +1,8 @@
 import tmp from 'tmp-promise';
 import { test as baseTest } from 'vitest';
 import { bootstrapTunarr } from '../bootstrap.ts';
-import { globalOptions, setGlobalOptions } from '../globals.ts';
+import { setGlobalOptions } from '../globals.ts';
+import { copyPreMigratedDb } from '../testing/testDbFactory.ts';
 import { DBAccess } from './DBAccess.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
 import { TagRepo } from './TagRepo.ts';
@@ -15,18 +16,20 @@ type Fixture = {
 const test = baseTest.extend<Fixture>({
   db: async ({}, use) => {
     const dbResult = await tmp.dir({ unsafeCleanup: true });
+    await copyPreMigratedDb(dbResult.path);
     setGlobalOptions({
       database: dbResult.path,
       log_level: 'info',
       verbose: 0,
     });
-    await bootstrapTunarr(globalOptions(), ':memory:');
+    await bootstrapTunarr();
     await use(dbResult.path);
+    const dbPath = `${dbResult.path}/db.db`;
+    await DBAccess.instance.closeConnection(dbPath);
     await dbResult.cleanup();
   },
   drizzle: async ({ db: _ }, use) => {
-    const conn = DBAccess.instance.getConnection(':memory:');
-    await use(conn!.drizzle);
+    await use(DBAccess.instance.drizzle!);
   },
   tagRepo: async ({ drizzle }, use) => {
     await use(new TagRepo(drizzle));
