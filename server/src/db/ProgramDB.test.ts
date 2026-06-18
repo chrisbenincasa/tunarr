@@ -5,6 +5,7 @@ import { sql, SQL } from 'drizzle-orm';
 import { SelectResultFields } from 'drizzle-orm/query-builders/select.types';
 import { SelectedFields } from 'drizzle-orm/sqlite-core';
 import tmp from 'tmp-promise';
+import { copyPreMigratedDb } from '../testing/testDbFactory.ts';
 import { StrictOmit } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { test as baseTest } from 'vitest';
@@ -92,6 +93,7 @@ type Fixture = {
 const test = baseTest.extend<Fixture>({
   db: async ({}, use) => {
     const dbResult = await tmp.dir({ unsafeCleanup: true });
+    await copyPreMigratedDb(dbResult.path);
     setGlobalOptions({
       database: dbResult.path,
       log_level: 'debug',

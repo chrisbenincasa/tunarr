@@ -1,4 +1,5 @@
 import tmp from 'tmp-promise';
+import { copyPreMigratedDb } from '../src/testing/testDbFactory.ts';
 import { bootstrapTunarr } from '../src/bootstrap.ts';
 import { container } from '../src/container.ts';
 import { setServerOptions } from '../src/globals.js';
@@ -9,6 +10,7 @@ export let dbResult: tmp.DirectoryResult;
 
 export async function initTestApp(port: number) {
   dbResult = await tmp.dir({ unsafeCleanup: true });
+  await copyPreMigratedDb(dbResult.path);
   setServerOptions({
     database: dbResult.path,
     force_migration: false,

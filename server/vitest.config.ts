@@ -9,6 +9,7 @@ export default defineConfig({
     },
   },
   test: {
+    globalSetup: ['src/testing/globalTestSetup.ts'],
     globals: true,
     watch: false,
     includeSource: ['src/**/*.test.ts'],
