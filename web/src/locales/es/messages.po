@@ -1279,7 +1279,7 @@ msgstr ""
 msgid "Descending"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:93
+#: src/pages/settings/TaskSettingsPage.tsx:96
 msgid "Description"
 msgstr ""
 
@@ -1678,7 +1678,7 @@ msgstr ""
 msgid "Error while saving transcode config. See console log for details."
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:75
+#: src/pages/settings/TaskSettingsPage.tsx:78
 msgid "Error while scheduling {taskId}. Check server logs for details"
 msgstr ""
 
@@ -2197,7 +2197,7 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:236
+#: src/pages/settings/TaskSettingsPage.tsx:239
 msgid "Last run"
 msgstr ""
 
@@ -2206,7 +2206,7 @@ msgstr ""
 msgid "Last Scanned: {0}"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:101
+#: src/pages/settings/TaskSettingsPage.tsx:104
 msgid "Last Scheduled Execution"
 msgstr ""
 
@@ -2580,7 +2580,7 @@ msgstr ""
 #: src/pages/library/CustomShowsPage.tsx:146
 #: src/pages/library/FillerListsPage.tsx:162
 #: src/pages/settings/MediaSourceSettingsPage.tsx:82
-#: src/pages/settings/TaskSettingsPage.tsx:89
+#: src/pages/settings/TaskSettingsPage.tsx:92
 #: src/pages/system/TroubleshootPage.tsx:854
 msgid "Name"
 msgstr ""
@@ -2643,11 +2643,11 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:246
+#: src/pages/settings/TaskSettingsPage.tsx:249
 msgid "Next run"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:116
+#: src/pages/settings/TaskSettingsPage.tsx:119
 msgid "Next Scheduled Execution"
 msgstr ""
 
@@ -3294,11 +3294,11 @@ msgstr ""
 msgid "Root"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:179
+#: src/pages/settings/TaskSettingsPage.tsx:182
 msgid "Run"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:205
+#: src/pages/settings/TaskSettingsPage.tsx:208
 msgid "Run now"
 msgstr ""
 
@@ -3743,7 +3743,7 @@ msgstr ""
 msgid "Successfully saved config!"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:68
+#: src/pages/settings/TaskSettingsPage.tsx:71
 msgid "Successfully scheduled {taskId} (running in background)."
 msgstr ""
 
@@ -3790,7 +3790,7 @@ msgstr ""
 msgid "Tail Buffer (minutes)"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:267
+#: src/pages/settings/TaskSettingsPage.tsx:271
 #: src/pages/system/SystemLayout.tsx:34
 msgid "Tasks"
 msgstr ""
@@ -4077,7 +4077,7 @@ msgstr ""
 msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:269
+#: src/pages/settings/TaskSettingsPage.tsx:274
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 msgstr ""
 
