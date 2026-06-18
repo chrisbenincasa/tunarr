@@ -9,7 +9,7 @@ import { getApiMediaSourcesByMediaSourceIdOptions } from '../../../generated/@ta
 import { useMediaSource } from '../../../hooks/media-sources/mediaSourceHooks.ts';
 import { setSearchRequest } from '../../../store/programmingSelector/actions.ts';
 
-export const Route = createFileRoute('/media_sources_/$mediaSourceId/')({
+export const Route = createFileRoute('/media_sources/$mediaSourceId/')({
   component: MediaSourceBrowserPage,
   loader: async ({ context, params: { mediaSourceId } }) => {
     await context.queryClient.ensureQueryData(

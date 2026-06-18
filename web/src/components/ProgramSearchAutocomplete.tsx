@@ -95,12 +95,12 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
       renderOption={(optProps, opt) => {
         if (opt.type === 'sentinel') {
           return (
-            <ListItem id="sentinel" ref={ref}>
+            <ListItem key="sentinel" id="sentinel" ref={ref}>
               <Trans>Loading…</Trans>
             </ListItem>
           );
         }
-        return <ListItem {...optProps}>{renderOptionTitle(opt)}</ListItem>;
+        return <ListItem {...optProps} key={opt.uuid}>{renderOptionTitle(opt)}</ListItem>;
       }}
       onChange={(_, value) => {
         if (value && value.type !== 'sentinel') {

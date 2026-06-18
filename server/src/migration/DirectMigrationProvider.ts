@@ -230,6 +230,9 @@ export class DirectMigrationProvider implements MigrationProvider {
         migration1779655043: makeMigrationFromSqlFile(
           './sql/0045_lean_violations.sql',
         ),
+        migration1781807965: makeMigrationFromSqlFile(
+          './sql/0046_milky_starfox.sql',
+        ),
       } satisfies Record<string, TunarrDatabaseMigration>,
       wrapWithTransaction,
     );

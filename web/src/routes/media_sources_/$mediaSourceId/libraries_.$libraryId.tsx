@@ -11,7 +11,7 @@ import {
 import { setSearchRequest } from '../../../store/programmingSelector/actions.ts';
 
 export const Route = createFileRoute(
-  '/media_sources_/$mediaSourceId/libraries_/$libraryId',
+  '/media_sources/$mediaSourceId/libraries/$libraryId',
 )({
   component: MediaSourceBrowserPage,
   loader: async ({ context, params: { libraryId } }) => {

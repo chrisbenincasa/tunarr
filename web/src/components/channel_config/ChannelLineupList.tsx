@@ -1,7 +1,13 @@
 import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts';
 import { useSuspendedStore } from '@/hooks/useSuspendedStore.ts';
 import { deleteProgram } from '@/store/entityEditor/util.ts';
-
+import {
+  Directions,
+  Expand,
+  MusicVideo,
+  PlaylistPlay,
+  VideoCameraBackOutlined,
+} from '@mui/icons-material';
 import { Plural, Trans } from '@lingui/react/macro';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -194,11 +200,16 @@ const ProgramListItem = ({
       {titleFormatter(program)}
     </Box>,
   ];
-  const startTimeDate = !isUndefined(program.startTimeOffset)
-    ? dayjs(channel.startTime + program.startTimeOffset)
-    : undefined;
+  const startTimeDate = program.startTime
+    ? dayjs(program.startTime)
+    : !isUndefined(program.startTimeOffset)
+      ? dayjs(channel.startTime + program.startTimeOffset)
+      : undefined;
 
   const startTime = startTimeDate?.format(smallViewport ? 'L LT' : 'lll');
+  if (!startTime) {
+    console.log('hello', program);
+  }
   if (!smallViewport && showProgramStartTime && startTime) {
     if (startTime) {
       titleParts.push(<Box component="span">{startTime}</Box>);
@@ -206,6 +217,7 @@ const ProgramListItem = ({
   }
 
   const icon = useChannelListItemIcon(program);
+
   const bgColorPicker = useRandomProgramBackgroundColor();
   const backgroundColor =
     program.type === 'flex'

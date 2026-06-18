@@ -1,9 +1,12 @@
 import { getLinguiToDayjsLocale } from '@/helpers/localeLoader.ts';
 import useStore from '@/store';
 import originalDayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import React, { useEffect, useMemo } from 'react';
 import type { ContextType } from './DayjsContext.tsx';
 import { DayjsContext } from './DayjsContext.tsx';
+
+originalDayjs.extend(utc);
 
 type Props = {
   children: React.ReactNode | React.ReactNode[];
@@ -39,7 +42,6 @@ export const DayjsProvider = ({ children }: Props) => {
       },
     } satisfies ContextType;
   }, [effectiveDayjsLocale]);
-
   return (
     <DayjsContext.Provider value={value}>{children}</DayjsContext.Provider>
   );

@@ -1,8 +1,8 @@
 {
+  "id": "14f9bd6f-15d3-4b45-9a44-da9bab4b82b4",
+  "prevId": "ef0c4dbb-346c-457d-86b7-46e6fd61adba",
   "version": "6",
   "dialect": "sqlite",
-  "id": "882cf990-bbce-46d7-91ba-c2227a3f2098",
-  "prevId": "7fc76602-2332-46b5-aab6-c41eacbdad68",
   "tables": {
     "artwork": {
       "name": "artwork",
@@ -112,41 +112,41 @@
         "artwork_program_id_program_uuid_fk": {
           "name": "artwork_program_id_program_uuid_fk",
           "tableFrom": "artwork",
-          "tableTo": "program",
           "columnsFrom": [
             "program_id"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "artwork_grouping_id_program_grouping_uuid_fk": {
           "name": "artwork_grouping_id_program_grouping_uuid_fk",
           "tableFrom": "artwork",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "grouping_id"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "artwork_credit_id_credit_uuid_fk": {
           "name": "artwork_credit_id_credit_uuid_fk",
           "tableFrom": "artwork",
-          "tableTo": "credit",
           "columnsFrom": [
             "credit_id"
           ],
+          "tableTo": "credit",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -331,8 +331,8 @@
           "autoincrement": false,
           "default": false
         },
-        "stream_selection_profile_id": {
-          "name": "stream_selection_profile_id",
+        "infinite_schedule_uuid": {
+          "name": "infinite_schedule_uuid",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -346,23 +346,16 @@
             "number"
           ],
           "isUnique": true
+        },
+        "channel_infinite_schedule_uuid_index": {
+          "name": "channel_infinite_schedule_uuid_index",
+          "columns": [
+            "infinite_schedule_uuid"
+          ],
+          "isUnique": false
         }
       },
-      "foreignKeys": {
-        "channel_stream_selection_profile_id_stream_selection_profiles_uuid_fk": {
-          "name": "channel_stream_selection_profile_id_stream_selection_profiles_uuid_fk",
-          "tableFrom": "channel",
-          "tableTo": "stream_selection_profiles",
-          "columnsFrom": [
-            "stream_selection_profile_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {
@@ -372,8 +365,8 @@
         }
       }
     },
-    "channel_fallback": {
-      "name": "channel_fallback",
+    "channel_custom_show": {
+      "name": "channel_custom_show",
       "columns": {
         "channel_uuid": {
           "name": "channel_uuid",
@@ -392,40 +385,40 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "channel_fallback_channel_uuid_channel_uuid_fk": {
-          "name": "channel_fallback_channel_uuid_channel_uuid_fk",
-          "tableFrom": "channel_fallback",
-          "tableTo": "channel",
+        "channel_custom_show_channel_uuid_channel_uuid_fk": {
+          "name": "channel_custom_show_channel_uuid_channel_uuid_fk",
+          "tableFrom": "channel_custom_show",
           "columnsFrom": [
             "channel_uuid"
           ],
+          "tableTo": "channel",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
-        "channel_fallback_program_uuid_program_uuid_fk": {
-          "name": "channel_fallback_program_uuid_program_uuid_fk",
-          "tableFrom": "channel_fallback",
-          "tableTo": "program",
+        "channel_custom_show_program_uuid_program_uuid_fk": {
+          "name": "channel_custom_show_program_uuid_program_uuid_fk",
+          "tableFrom": "channel_custom_show",
           "columnsFrom": [
             "program_uuid"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
-        "channel_fallback_channel_uuid_program_uuid_pk": {
+        "channel_custom_show_channel_uuid_program_uuid_pk": {
           "columns": [
             "channel_uuid",
             "program_uuid"
           ],
-          "name": "channel_fallback_channel_uuid_program_uuid_pk"
+          "name": "channel_custom_show_channel_uuid_program_uuid_pk"
         }
       },
       "uniqueConstraints": {},
@@ -468,28 +461,28 @@
         "channel_filler_show_channel_uuid_channel_uuid_fk": {
           "name": "channel_filler_show_channel_uuid_channel_uuid_fk",
           "tableFrom": "channel_filler_show",
-          "tableTo": "channel",
           "columnsFrom": [
             "channel_uuid"
           ],
+          "tableTo": "channel",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "channel_filler_show_filler_show_uuid_filler_show_uuid_fk": {
           "name": "channel_filler_show_filler_show_uuid_filler_show_uuid_fk",
           "tableFrom": "channel_filler_show",
-          "tableTo": "filler_show",
           "columnsFrom": [
             "filler_show_uuid"
           ],
+          "tableTo": "filler_show",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -527,28 +520,28 @@
         "channel_programs_channel_uuid_channel_uuid_fk": {
           "name": "channel_programs_channel_uuid_channel_uuid_fk",
           "tableFrom": "channel_programs",
-          "tableTo": "channel",
           "columnsFrom": [
             "channel_uuid"
           ],
+          "tableTo": "channel",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "channel_programs_program_uuid_program_uuid_fk": {
           "name": "channel_programs_program_uuid_program_uuid_fk",
           "tableFrom": "channel_programs",
-          "tableTo": "program",
           "columnsFrom": [
             "program_uuid"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -650,28 +643,28 @@
         "credit_program_id_program_uuid_fk": {
           "name": "credit_program_id_program_uuid_fk",
           "tableFrom": "credit",
-          "tableTo": "program",
           "columnsFrom": [
             "program_id"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "credit_grouping_id_program_grouping_uuid_fk": {
           "name": "credit_grouping_id_program_grouping_uuid_fk",
           "tableFrom": "credit",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "grouping_id"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -708,52 +701,10 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "sync_media_source_id": {
-          "name": "sync_media_source_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "sync_media_source_type": {
-          "name": "sync_media_source_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "sync_external_playlist_id": {
-          "name": "sync_external_playlist_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "last_synced_at": {
-          "name": "last_synced_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "custom_show_sync_media_source_id_media_source_uuid_fk": {
-          "name": "custom_show_sync_media_source_id_media_source_uuid_fk",
-          "tableFrom": "custom_show",
-          "tableTo": "media_source",
-          "columnsFrom": [
-            "sync_media_source_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -788,54 +739,54 @@
         "custom_show_content_content_uuid_program_uuid_fk": {
           "name": "custom_show_content_content_uuid_program_uuid_fk",
           "tableFrom": "custom_show_content",
-          "tableTo": "program",
           "columnsFrom": [
             "content_uuid"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "custom_show_content_custom_show_uuid_custom_show_uuid_fk": {
           "name": "custom_show_content_custom_show_uuid_custom_show_uuid_fk",
           "tableFrom": "custom_show_content",
-          "tableTo": "custom_show",
           "columnsFrom": [
             "custom_show_uuid"
           ],
+          "tableTo": "custom_show",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "custom_show_content_content_uuid_foreign": {
           "name": "custom_show_content_content_uuid_foreign",
           "tableFrom": "custom_show_content",
-          "tableTo": "program",
           "columnsFrom": [
             "content_uuid"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "custom_show_content_custom_show_uuid_foreign": {
           "name": "custom_show_content_custom_show_uuid_foreign",
           "tableFrom": "custom_show_content",
-          "tableTo": "custom_show",
           "columnsFrom": [
             "custom_show_uuid"
           ],
+          "tableTo": "custom_show",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -927,28 +878,28 @@
         "external_collections_media_source_id_media_source_uuid_fk": {
           "name": "external_collections_media_source_id_media_source_uuid_fk",
           "tableFrom": "external_collections",
-          "tableTo": "media_source",
           "columnsFrom": [
             "media_source_id"
           ],
+          "tableTo": "media_source",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "external_collections_library_id_media_source_library_uuid_fk": {
           "name": "external_collections_library_id_media_source_library_uuid_fk",
           "tableFrom": "external_collections",
-          "tableTo": "media_source_library",
           "columnsFrom": [
             "library_id"
           ],
+          "tableTo": "media_source_library",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -993,41 +944,41 @@
         "external_collection_programs_collection_id_external_collections_uuid_fk": {
           "name": "external_collection_programs_collection_id_external_collections_uuid_fk",
           "tableFrom": "external_collection_programs",
-          "tableTo": "external_collections",
           "columnsFrom": [
             "collection_id"
           ],
+          "tableTo": "external_collections",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "external_collection_programs_program_id_program_uuid_fk": {
           "name": "external_collection_programs_program_id_program_uuid_fk",
           "tableFrom": "external_collection_programs",
-          "tableTo": "program",
           "columnsFrom": [
             "program_id"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "external_collection_programs_grouping_id_program_grouping_uuid_fk": {
           "name": "external_collection_programs_grouping_id_program_grouping_uuid_fk",
           "tableFrom": "external_collection_programs",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "grouping_id"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -1072,31 +1023,10 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "stream_selection_profile_id": {
-          "name": "stream_selection_profile_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "filler_show_stream_selection_profile_id_stream_selection_profiles_uuid_fk": {
-          "name": "filler_show_stream_selection_profile_id_stream_selection_profiles_uuid_fk",
-          "tableFrom": "filler_show",
-          "tableTo": "stream_selection_profiles",
-          "columnsFrom": [
-            "stream_selection_profile_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -1131,28 +1061,28 @@
         "filler_show_content_filler_show_uuid_filler_show_uuid_fk": {
           "name": "filler_show_content_filler_show_uuid_filler_show_uuid_fk",
           "tableFrom": "filler_show_content",
-          "tableTo": "filler_show",
           "columnsFrom": [
             "filler_show_uuid"
           ],
+          "tableTo": "filler_show",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "filler_show_content_program_uuid_program_uuid_fk": {
           "name": "filler_show_content_program_uuid_program_uuid_fk",
           "tableFrom": "filler_show_content",
-          "tableTo": "program",
           "columnsFrom": [
             "program_uuid"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -1164,6 +1094,217 @@
           "name": "filler_show_content_filler_show_uuid_program_uuid_pk"
         }
       },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "generated_schedule_item": {
+      "name": "generated_schedule_item",
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "channel_uuid": {
+          "name": "channel_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "schedule_uuid": {
+          "name": "schedule_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "program_uuid": {
+          "name": "program_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "slot_uuid": {
+          "name": "slot_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "item_type": {
+          "name": "item_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "start_time_ms": {
+          "name": "start_time_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "duration_ms": {
+          "name": "duration_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "redirect_channel_uuid": {
+          "name": "redirect_channel_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "filler_list_id": {
+          "name": "filler_list_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "filler_type": {
+          "name": "filler_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sequence_index": {
+          "name": "sequence_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "generated_schedule_item_channel_uuid_index": {
+          "name": "generated_schedule_item_channel_uuid_index",
+          "columns": [
+            "channel_uuid"
+          ],
+          "isUnique": false
+        },
+        "generated_schedule_item_channel_start_time_index": {
+          "name": "generated_schedule_item_channel_start_time_index",
+          "columns": [
+            "channel_uuid",
+            "start_time_ms"
+          ],
+          "isUnique": false
+        },
+        "generated_schedule_item_channel_sequence_index": {
+          "name": "generated_schedule_item_channel_sequence_index",
+          "columns": [
+            "channel_uuid",
+            "sequence_index"
+          ],
+          "isUnique": false
+        },
+        "generated_schedule_item_schedule_uuid_index": {
+          "name": "generated_schedule_item_schedule_uuid_index",
+          "columns": [
+            "schedule_uuid"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "generated_schedule_item_channel_uuid_channel_uuid_fk": {
+          "name": "generated_schedule_item_channel_uuid_channel_uuid_fk",
+          "tableFrom": "generated_schedule_item",
+          "columnsFrom": [
+            "channel_uuid"
+          ],
+          "tableTo": "channel",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "generated_schedule_item_schedule_uuid_infinite_schedule_uuid_fk": {
+          "name": "generated_schedule_item_schedule_uuid_infinite_schedule_uuid_fk",
+          "tableFrom": "generated_schedule_item",
+          "columnsFrom": [
+            "schedule_uuid"
+          ],
+          "tableTo": "infinite_schedule",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "generated_schedule_item_program_uuid_program_uuid_fk": {
+          "name": "generated_schedule_item_program_uuid_program_uuid_fk",
+          "tableFrom": "generated_schedule_item",
+          "columnsFrom": [
+            "program_uuid"
+          ],
+          "tableTo": "program",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "generated_schedule_item_slot_uuid_infinite_schedule_slot_uuid_fk": {
+          "name": "generated_schedule_item_slot_uuid_infinite_schedule_slot_uuid_fk",
+          "tableFrom": "generated_schedule_item",
+          "columnsFrom": [
+            "slot_uuid"
+          ],
+          "tableTo": "infinite_schedule_slot",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "generated_schedule_item_redirect_channel_uuid_channel_uuid_fk": {
+          "name": "generated_schedule_item_redirect_channel_uuid_channel_uuid_fk",
+          "tableFrom": "generated_schedule_item",
+          "columnsFrom": [
+            "redirect_channel_uuid"
+          ],
+          "tableTo": "channel",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "generated_schedule_item_filler_list_id_filler_show_uuid_fk": {
+          "name": "generated_schedule_item_filler_list_id_filler_show_uuid_fk",
+          "tableFrom": "generated_schedule_item",
+          "columnsFrom": [
+            "filler_list_id"
+          ],
+          "tableTo": "filler_show",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -1235,41 +1376,41 @@
         "genre_entity_genre_id_genre_uuid_fk": {
           "name": "genre_entity_genre_id_genre_uuid_fk",
           "tableFrom": "genre_entity",
-          "tableTo": "genre",
           "columnsFrom": [
             "genre_id"
           ],
+          "tableTo": "genre",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "genre_entity_program_id_program_uuid_fk": {
           "name": "genre_entity_program_id_program_uuid_fk",
           "tableFrom": "genre_entity",
-          "tableTo": "program",
           "columnsFrom": [
             "program_id"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "genre_entity_group_id_program_grouping_uuid_fk": {
           "name": "genre_entity_group_id_program_grouping_uuid_fk",
           "tableFrom": "genre_entity",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "group_id"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1304,6 +1445,688 @@
         }
       },
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "infinite_schedule": {
+      "name": "infinite_schedule",
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pad_to_multiple": {
+          "name": "pad_to_multiple",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "flex_preference": {
+          "name": "flex_preference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'end'"
+        },
+        "time_zone_offset": {
+          "name": "time_zone_offset",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "slot_playback_order": {
+          "name": "slot_playback_order",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'ordered'"
+        },
+        "buffer_days": {
+          "name": "buffer_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 7
+        },
+        "buffer_threshold_days": {
+          "name": "buffer_threshold_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 2
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "infinite_schedule_slot": {
+      "name": "infinite_schedule_slot",
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "schedule_uuid": {
+          "name": "schedule_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slot_index": {
+          "name": "slot_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slot_type": {
+          "name": "slot_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "show_id": {
+          "name": "show_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "custom_show_id": {
+          "name": "custom_show_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "filler_list_id": {
+          "name": "filler_list_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "redirect_channel_id": {
+          "name": "redirect_channel_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "smart_collection_id": {
+          "name": "smart_collection_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "slot_config": {
+          "name": "slot_config",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "anchor_time": {
+          "name": "anchor_time",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "anchor_mode": {
+          "name": "anchor_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "anchor_days": {
+          "name": "anchor_days",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "weight": {
+          "name": "weight",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "cooldown_ms": {
+          "name": "cooldown_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "fill_mode": {
+          "name": "fill_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'fill'"
+        },
+        "fill_value": {
+          "name": "fill_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pad_ms": {
+          "name": "pad_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pad_to_multiple": {
+          "name": "pad_to_multiple",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "filler_config": {
+          "name": "filler_config",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "infinite_schedule_slot_schedule_uuid_index": {
+          "name": "infinite_schedule_slot_schedule_uuid_index",
+          "columns": [
+            "schedule_uuid"
+          ],
+          "isUnique": false
+        },
+        "infinite_schedule_slot_show_id_index": {
+          "name": "infinite_schedule_slot_show_id_index",
+          "columns": [
+            "show_id"
+          ],
+          "isUnique": false
+        },
+        "infinite_schedule_slot_custom_show_id_index": {
+          "name": "infinite_schedule_slot_custom_show_id_index",
+          "columns": [
+            "custom_show_id"
+          ],
+          "isUnique": false
+        },
+        "infinite_schedule_slot_filler_list_id_index": {
+          "name": "infinite_schedule_slot_filler_list_id_index",
+          "columns": [
+            "filler_list_id"
+          ],
+          "isUnique": false
+        },
+        "infinite_schedule_slot_redirect_channel_id_index": {
+          "name": "infinite_schedule_slot_redirect_channel_id_index",
+          "columns": [
+            "redirect_channel_id"
+          ],
+          "isUnique": false
+        },
+        "infinite_schedule_slot_smart_collection_id_index": {
+          "name": "infinite_schedule_slot_smart_collection_id_index",
+          "columns": [
+            "smart_collection_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "infinite_schedule_slot_schedule_uuid_infinite_schedule_uuid_fk": {
+          "name": "infinite_schedule_slot_schedule_uuid_infinite_schedule_uuid_fk",
+          "tableFrom": "infinite_schedule_slot",
+          "columnsFrom": [
+            "schedule_uuid"
+          ],
+          "tableTo": "infinite_schedule",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "infinite_schedule_slot_show_id_program_grouping_uuid_fk": {
+          "name": "infinite_schedule_slot_show_id_program_grouping_uuid_fk",
+          "tableFrom": "infinite_schedule_slot",
+          "columnsFrom": [
+            "show_id"
+          ],
+          "tableTo": "program_grouping",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "infinite_schedule_slot_custom_show_id_custom_show_uuid_fk": {
+          "name": "infinite_schedule_slot_custom_show_id_custom_show_uuid_fk",
+          "tableFrom": "infinite_schedule_slot",
+          "columnsFrom": [
+            "custom_show_id"
+          ],
+          "tableTo": "custom_show",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "infinite_schedule_slot_filler_list_id_filler_show_uuid_fk": {
+          "name": "infinite_schedule_slot_filler_list_id_filler_show_uuid_fk",
+          "tableFrom": "infinite_schedule_slot",
+          "columnsFrom": [
+            "filler_list_id"
+          ],
+          "tableTo": "filler_show",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "infinite_schedule_slot_redirect_channel_id_channel_uuid_fk": {
+          "name": "infinite_schedule_slot_redirect_channel_id_channel_uuid_fk",
+          "tableFrom": "infinite_schedule_slot",
+          "columnsFrom": [
+            "redirect_channel_id"
+          ],
+          "tableTo": "channel",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "infinite_schedule_slot_smart_collection_id_smart_collection_uuid_fk": {
+          "name": "infinite_schedule_slot_smart_collection_id_smart_collection_uuid_fk",
+          "tableFrom": "infinite_schedule_slot",
+          "columnsFrom": [
+            "smart_collection_id"
+          ],
+          "tableTo": "smart_collection",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "infinite_schedule_slot_state": {
+      "name": "infinite_schedule_slot_state",
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "channel_uuid": {
+          "name": "channel_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slot_uuid": {
+          "name": "slot_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rng_seed": {
+          "name": "rng_seed",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "rng_use_count": {
+          "name": "rng_use_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "iterator_position": {
+          "name": "iterator_position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "shuffle_order": {
+          "name": "shuffle_order",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "fill_mode_count": {
+          "name": "fill_mode_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "fill_mode_duration_ms": {
+          "name": "fill_mode_duration_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "filler_state": {
+          "name": "filler_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "last_scheduled_at": {
+          "name": "last_scheduled_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "infinite_schedule_slot_state_channel_uuid_index": {
+          "name": "infinite_schedule_slot_state_channel_uuid_index",
+          "columns": [
+            "channel_uuid"
+          ],
+          "isUnique": false
+        },
+        "infinite_schedule_slot_state_slot_uuid_index": {
+          "name": "infinite_schedule_slot_state_slot_uuid_index",
+          "columns": [
+            "slot_uuid"
+          ],
+          "isUnique": false
+        },
+        "infinite_schedule_slot_state_channel_slot_unique": {
+          "name": "infinite_schedule_slot_state_channel_slot_unique",
+          "columns": [
+            "channel_uuid",
+            "slot_uuid"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "infinite_schedule_slot_state_channel_uuid_channel_uuid_fk": {
+          "name": "infinite_schedule_slot_state_channel_uuid_channel_uuid_fk",
+          "tableFrom": "infinite_schedule_slot_state",
+          "columnsFrom": [
+            "channel_uuid"
+          ],
+          "tableTo": "channel",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "infinite_schedule_slot_state_slot_uuid_infinite_schedule_slot_uuid_fk": {
+          "name": "infinite_schedule_slot_state_slot_uuid_infinite_schedule_slot_uuid_fk",
+          "tableFrom": "infinite_schedule_slot_state",
+          "columnsFrom": [
+            "slot_uuid"
+          ],
+          "tableTo": "infinite_schedule_slot",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "infinite_schedule_state": {
+      "name": "infinite_schedule_state",
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "channel_uuid": {
+          "name": "channel_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "schedule_uuid": {
+          "name": "schedule_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_slot_uuid": {
+          "name": "last_slot_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "floating_slot_index": {
+          "name": "floating_slot_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "last_generated_at": {
+          "name": "last_generated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "generation_cursor": {
+          "name": "generation_cursor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "slot_selection_seed": {
+          "name": "slot_selection_seed",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "slot_selection_use_count": {
+          "name": "slot_selection_use_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "infinite_schedule_state_channelUuid_unique": {
+          "name": "infinite_schedule_state_channelUuid_unique",
+          "columns": [
+            "channel_uuid"
+          ],
+          "isUnique": true
+        },
+        "infinite_schedule_state_schedule_uuid_index": {
+          "name": "infinite_schedule_state_schedule_uuid_index",
+          "columns": [
+            "schedule_uuid"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "infinite_schedule_state_channel_uuid_channel_uuid_fk": {
+          "name": "infinite_schedule_state_channel_uuid_channel_uuid_fk",
+          "tableFrom": "infinite_schedule_state",
+          "columnsFrom": [
+            "channel_uuid"
+          ],
+          "tableTo": "channel",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "infinite_schedule_state_schedule_uuid_infinite_schedule_uuid_fk": {
+          "name": "infinite_schedule_state_schedule_uuid_infinite_schedule_uuid_fk",
+          "tableFrom": "infinite_schedule_state",
+          "columnsFrom": [
+            "schedule_uuid"
+          ],
+          "tableTo": "infinite_schedule",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "infinite_schedule_state_last_slot_uuid_infinite_schedule_slot_uuid_fk": {
+          "name": "infinite_schedule_state_last_slot_uuid_infinite_schedule_slot_uuid_fk",
+          "tableFrom": "infinite_schedule_state",
+          "columnsFrom": [
+            "last_slot_uuid"
+          ],
+          "tableTo": "infinite_schedule_slot",
+          "columnsTo": [
+            "uuid"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -1375,15 +2198,15 @@
         "local_media_folder_library_id_media_source_library_uuid_fk": {
           "name": "local_media_folder_library_id_media_source_library_uuid_fk",
           "tableFrom": "local_media_folder",
-          "tableTo": "media_source_library",
           "columnsFrom": [
             "library_id"
           ],
+          "tableTo": "media_source_library",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1427,15 +2250,15 @@
         "local_media_source_path_media_source_id_media_source_uuid_fk": {
           "name": "local_media_source_path_media_source_id_media_source_uuid_fk",
           "tableFrom": "local_media_source_path",
-          "tableTo": "media_source",
           "columnsFrom": [
             "media_source_id"
           ],
+          "tableTo": "media_source",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1504,14 +2327,6 @@
         },
         "send_guide_updates": {
           "name": "send_guide_updates",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": false
-        },
-        "send_play_status_updates": {
-          "name": "send_play_status_updates",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -1624,15 +2439,15 @@
         "media_source_library_media_source_id_media_source_uuid_fk": {
           "name": "media_source_library_media_source_id_media_source_uuid_fk",
           "tableFrom": "media_source_library",
-          "tableTo": "media_source",
           "columnsFrom": [
             "media_source_id"
           ],
+          "tableTo": "media_source",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1681,15 +2496,15 @@
         "media_source_library_replace_path_media_source_id_media_source_uuid_fk": {
           "name": "media_source_library_replace_path_media_source_id_media_source_uuid_fk",
           "tableFrom": "media_source_library_replace_path",
-          "tableTo": "media_source",
           "columnsFrom": [
             "media_source_id"
           ],
+          "tableTo": "media_source",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1972,13 +2787,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'ok'"
-        },
-        "stream_selection_profile_id": {
-          "name": "stream_selection_profile_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {
@@ -2061,119 +2869,106 @@
         "program_album_uuid_program_grouping_uuid_fk": {
           "name": "program_album_uuid_program_grouping_uuid_fk",
           "tableFrom": "program",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "album_uuid"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "program_artist_uuid_program_grouping_uuid_fk": {
           "name": "program_artist_uuid_program_grouping_uuid_fk",
           "tableFrom": "program",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "artist_uuid"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "program_media_source_id_media_source_uuid_fk": {
           "name": "program_media_source_id_media_source_uuid_fk",
           "tableFrom": "program",
-          "tableTo": "media_source",
           "columnsFrom": [
             "media_source_id"
           ],
+          "tableTo": "media_source",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "program_library_id_media_source_library_uuid_fk": {
           "name": "program_library_id_media_source_library_uuid_fk",
           "tableFrom": "program",
-          "tableTo": "media_source_library",
           "columnsFrom": [
             "library_id"
           ],
+          "tableTo": "media_source_library",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "program_local_media_folder_id_local_media_folder_uuid_fk": {
           "name": "program_local_media_folder_id_local_media_folder_uuid_fk",
           "tableFrom": "program",
-          "tableTo": "local_media_folder",
           "columnsFrom": [
             "local_media_folder_id"
           ],
+          "tableTo": "local_media_folder",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "program_local_media_source_path_id_local_media_source_path_uuid_fk": {
           "name": "program_local_media_source_path_id_local_media_source_path_uuid_fk",
           "tableFrom": "program",
-          "tableTo": "local_media_source_path",
           "columnsFrom": [
             "local_media_source_path_id"
           ],
+          "tableTo": "local_media_source_path",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "program_season_uuid_program_grouping_uuid_fk": {
           "name": "program_season_uuid_program_grouping_uuid_fk",
           "tableFrom": "program",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "season_uuid"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "program_tv_show_uuid_program_grouping_uuid_fk": {
           "name": "program_tv_show_uuid_program_grouping_uuid_fk",
           "tableFrom": "program",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "tv_show_uuid"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "program_stream_selection_profile_id_stream_selection_profiles_uuid_fk": {
-          "name": "program_stream_selection_profile_id_stream_selection_profiles_uuid_fk",
-          "tableFrom": "program",
-          "tableTo": "stream_selection_profiles",
-          "columnsFrom": [
-            "stream_selection_profile_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2248,15 +3043,15 @@
         "program_chapter_program_version_id_program_version_uuid_fk": {
           "name": "program_chapter_program_version_id_program_version_uuid_fk",
           "tableFrom": "program_chapter",
-          "tableTo": "program_version",
           "columnsFrom": [
             "program_version_id"
           ],
+          "tableTo": "program_version",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2352,8 +3147,8 @@
             "source_type",
             "external_source_id"
           ],
-          "isUnique": true,
-          "where": "`external_source_id` is not null"
+          "where": "`external_source_id` is not null",
+          "isUnique": true
         },
         "unique_program_single_external_id": {
           "name": "unique_program_single_external_id",
@@ -2361,8 +3156,8 @@
             "program_uuid",
             "source_type"
           ],
-          "isUnique": true,
-          "where": "`external_source_id` is null"
+          "where": "`external_source_id` is null",
+          "isUnique": true
         },
         "unique_program_multiple_external_id_media_source": {
           "name": "unique_program_multiple_external_id_media_source",
@@ -2371,8 +3166,8 @@
             "source_type",
             "media_source_id"
           ],
-          "isUnique": true,
-          "where": "`media_source_id` is not null"
+          "where": "`media_source_id` is not null",
+          "isUnique": true
         },
         "unique_program_single_external_id_media_source": {
           "name": "unique_program_single_external_id_media_source",
@@ -2380,36 +3175,36 @@
             "program_uuid",
             "source_type"
           ],
-          "isUnique": true,
-          "where": "`media_source_id` is null"
+          "where": "`media_source_id` is null",
+          "isUnique": true
         }
       },
       "foreignKeys": {
         "program_external_id_media_source_id_media_source_uuid_fk": {
           "name": "program_external_id_media_source_id_media_source_uuid_fk",
           "tableFrom": "program_external_id",
-          "tableTo": "media_source",
           "columnsFrom": [
             "media_source_id"
           ],
+          "tableTo": "media_source",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "program_external_id_program_uuid_program_uuid_fk": {
           "name": "program_external_id_program_uuid_program_uuid_fk",
           "tableFrom": "program_external_id",
-          "tableTo": "program",
           "columnsFrom": [
             "program_uuid"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2593,54 +3388,54 @@
         "program_grouping_media_source_id_media_source_uuid_fk": {
           "name": "program_grouping_media_source_id_media_source_uuid_fk",
           "tableFrom": "program_grouping",
-          "tableTo": "media_source",
           "columnsFrom": [
             "media_source_id"
           ],
+          "tableTo": "media_source",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "program_grouping_artist_uuid_program_grouping_uuid_fk": {
           "name": "program_grouping_artist_uuid_program_grouping_uuid_fk",
           "tableFrom": "program_grouping",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "artist_uuid"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "program_grouping_show_uuid_program_grouping_uuid_fk": {
           "name": "program_grouping_show_uuid_program_grouping_uuid_fk",
           "tableFrom": "program_grouping",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "show_uuid"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "program_grouping_library_id_media_source_library_uuid_fk": {
           "name": "program_grouping_library_id_media_source_library_uuid_fk",
           "tableFrom": "program_grouping",
-          "tableTo": "media_source_library",
           "columnsFrom": [
             "library_id"
           ],
+          "tableTo": "media_source_library",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2741,8 +3536,8 @@
             "source_type",
             "media_source_id"
           ],
-          "isUnique": true,
-          "where": "`media_source_id is not null`"
+          "where": "`media_source_id is not null`",
+          "isUnique": true
         },
         "unique_program_grouping_single_external_id_media_source": {
           "name": "unique_program_grouping_single_external_id_media_source",
@@ -2751,49 +3546,49 @@
             "source_type",
             "media_source_id"
           ],
-          "isUnique": true,
-          "where": "`media_source_id is null`"
+          "where": "`media_source_id is null`",
+          "isUnique": true
         }
       },
       "foreignKeys": {
         "program_grouping_external_id_media_source_id_media_source_uuid_fk": {
           "name": "program_grouping_external_id_media_source_id_media_source_uuid_fk",
           "tableFrom": "program_grouping_external_id",
-          "tableTo": "media_source",
           "columnsFrom": [
             "media_source_id"
           ],
+          "tableTo": "media_source",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "program_grouping_external_id_group_uuid_program_grouping_uuid_fk": {
           "name": "program_grouping_external_id_group_uuid_program_grouping_uuid_fk",
           "tableFrom": "program_grouping_external_id",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "group_uuid"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
         },
         "program_grouping_external_id_library_id_media_source_library_uuid_fk": {
           "name": "program_grouping_external_id_library_id_media_source_library_uuid_fk",
           "tableFrom": "program_grouping_external_id",
-          "tableTo": "media_source_library",
           "columnsFrom": [
             "library_id"
           ],
+          "tableTo": "media_source_library",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2857,28 +3652,28 @@
         "program_media_file_program_version_id_program_version_uuid_fk": {
           "name": "program_media_file_program_version_id_program_version_uuid_fk",
           "tableFrom": "program_media_file",
-          "tableTo": "program_version",
           "columnsFrom": [
             "program_version_id"
           ],
+          "tableTo": "program_version",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "program_media_file_local_media_folder_id_local_media_folder_uuid_fk": {
           "name": "program_media_file_local_media_folder_id_local_media_folder_uuid_fk",
           "tableFrom": "program_media_file",
-          "tableTo": "local_media_folder",
           "columnsFrom": [
             "local_media_folder_id"
           ],
+          "tableTo": "local_media_folder",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -3023,15 +3818,15 @@
         "program_media_stream_program_version_id_program_version_uuid_fk": {
           "name": "program_media_stream_program_version_id_program_version_uuid_fk",
           "tableFrom": "program_media_stream",
-          "tableTo": "program_version",
           "columnsFrom": [
             "program_version_id"
           ],
+          "tableTo": "program_version",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -3128,41 +3923,41 @@
         "program_play_history_program_uuid_program_uuid_fk": {
           "name": "program_play_history_program_uuid_program_uuid_fk",
           "tableFrom": "program_play_history",
-          "tableTo": "program",
           "columnsFrom": [
             "program_uuid"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "program_play_history_channel_uuid_channel_uuid_fk": {
           "name": "program_play_history_channel_uuid_channel_uuid_fk",
           "tableFrom": "program_play_history",
-          "tableTo": "channel",
           "columnsFrom": [
             "channel_uuid"
           ],
+          "tableTo": "channel",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "program_play_history_filler_list_id_filler_show_uuid_fk": {
           "name": "program_play_history_filler_list_id_filler_show_uuid_fk",
           "tableFrom": "program_play_history",
-          "tableTo": "filler_show",
           "columnsFrom": [
             "filler_list_id"
           ],
+          "tableTo": "filler_show",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3273,15 +4068,15 @@
         "program_subtitles_program_id_program_uuid_fk": {
           "name": "program_subtitles_program_id_program_uuid_fk",
           "tableFrom": "program_subtitles",
-          "tableTo": "program",
           "columnsFrom": [
             "program_id"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -3382,15 +4177,15 @@
         "program_version_program_id_program_uuid_fk": {
           "name": "program_version_program_id_program_uuid_fk",
           "tableFrom": "program_version",
-          "tableTo": "program",
           "columnsFrom": [
             "program_id"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -3424,51 +4219,6 @@
         "keywords": {
           "name": "keywords",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "stream_selection_profiles": {
-      "name": "stream_selection_profiles",
-      "columns": {
-        "uuid": {
-          "name": "uuid",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "rules": {
-          "name": "rules",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -3556,41 +4306,41 @@
         "studio_entity_studio_id_studio_uuid_fk": {
           "name": "studio_entity_studio_id_studio_uuid_fk",
           "tableFrom": "studio_entity",
-          "tableTo": "studio",
           "columnsFrom": [
             "studio_id"
           ],
+          "tableTo": "studio",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "studio_entity_program_id_program_uuid_fk": {
           "name": "studio_entity_program_id_program_uuid_fk",
           "tableFrom": "studio_entity",
-          "tableTo": "program",
           "columnsFrom": [
             "program_id"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "studio_entity_group_id_program_grouping_uuid_fk": {
           "name": "studio_entity_group_id_program_grouping_uuid_fk",
           "tableFrom": "studio_entity",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "group_id"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -3667,15 +4417,15 @@
         "channel_subtitle_preferences_channel_id_channel_uuid_fk": {
           "name": "channel_subtitle_preferences_channel_id_channel_uuid_fk",
           "tableFrom": "channel_subtitle_preferences",
-          "tableTo": "channel",
           "columnsFrom": [
             "channel_id"
           ],
+          "tableTo": "channel",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -3752,15 +4502,15 @@
         "custom_show_subtitle_preferences_custom_show_id_custom_show_uuid_fk": {
           "name": "custom_show_subtitle_preferences_custom_show_id_custom_show_uuid_fk",
           "tableFrom": "custom_show_subtitle_preferences",
-          "tableTo": "custom_show",
           "columnsFrom": [
             "custom_show_id"
           ],
+          "tableTo": "custom_show",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -3822,14 +4572,6 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "source": {
-          "name": "source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'media'"
         }
       },
       "indexes": {
@@ -3851,8 +4593,7 @@
           "name": "tag_program_id_unique_idx",
           "columns": [
             "tag_id",
-            "program_id",
-            "source"
+            "program_id"
           ],
           "isUnique": true
         },
@@ -3860,8 +4601,7 @@
           "name": "tag_grouping_id_unique_idx",
           "columns": [
             "tag_id",
-            "grouping_id",
-            "source"
+            "grouping_id"
           ],
           "isUnique": true
         }
@@ -3870,41 +4610,41 @@
         "tag_relations_tag_id_tags_uuid_fk": {
           "name": "tag_relations_tag_id_tags_uuid_fk",
           "tableFrom": "tag_relations",
-          "tableTo": "tags",
           "columnsFrom": [
             "tag_id"
           ],
+          "tableTo": "tags",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "tag_relations_program_id_program_uuid_fk": {
           "name": "tag_relations_program_id_program_uuid_fk",
           "tableFrom": "tag_relations",
-          "tableTo": "program",
           "columnsFrom": [
             "program_id"
           ],
+          "tableTo": "program",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "tag_relations_grouping_id_program_grouping_uuid_fk": {
           "name": "tag_relations_grouping_id_program_grouping_uuid_fk",
           "tableFrom": "tag_relations",
-          "tableTo": "program_grouping",
           "columnsFrom": [
             "grouping_id"
           ],
+          "tableTo": "program_grouping",
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -4165,9 +4905,9 @@
   "views": {},
   "enums": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
+    "tables": {}
   },
   "internal": {
     "indexes": {}

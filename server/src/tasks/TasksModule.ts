@@ -5,6 +5,7 @@ import {
   ArchiveDatabaseBackup,
   ArchiveDatabaseBackupKey,
 } from '@/db/backup/ArchiveDatabaseBackup.js';
+import { CleanupGeneratedScheduleItemsTask } from '@/tasks/CleanupGeneratedScheduleItemsTask.js';
 import { CleanupSessionsTask } from '@/tasks/CleanupSessionsTask.js';
 import { OnDemandChannelStateTask } from '@/tasks/OnDemandChannelStateTask.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
@@ -21,11 +22,8 @@ import { bindAutoFactory, bindFactoryFunc } from '../util/inject.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { BackupTask } from './BackupTask.ts';
 import { ClearM3uCacheTask } from './ClearM3uCacheTask.ts';
-import type {
-  UpdateJellyfinPlayStatusScheduledTaskFactory} from './jellyfin/UpdateJellyfinPlayStatusTask.ts';
-import {
-  UpdateJellyfinPlayStatusScheduledTask
-} from './jellyfin/UpdateJellyfinPlayStatusTask.ts';
+import type { UpdateJellyfinPlayStatusScheduledTaskFactory } from './jellyfin/UpdateJellyfinPlayStatusTask.ts';
+import { UpdateJellyfinPlayStatusScheduledTask } from './jellyfin/UpdateJellyfinPlayStatusTask.ts';
 import { NoopTask } from './NoopTask.ts';
 import type {
   UpdatePlexPlayStatusScheduledTaskFactory,
@@ -46,6 +44,13 @@ const TasksModule = new ContainerModule(({ bind }) => {
 
   bind(OnDemandChannelStateTask).toSelf();
   bindAutoFactory(bind, OnDemandChannelStateTask.KEY, OnDemandChannelStateTask);
+
+  bind(CleanupGeneratedScheduleItemsTask).toSelf();
+  bindAutoFactory(
+    bind,
+    CleanupGeneratedScheduleItemsTask.KEY,
+    CleanupGeneratedScheduleItemsTask,
+  );
 
   bind(CleanupSessionsTask).toSelf();
   bindAutoFactory(bind, CleanupSessionsTask.KEY, CleanupSessionsTask);
