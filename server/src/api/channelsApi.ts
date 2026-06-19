@@ -59,10 +59,10 @@ import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroup
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { RegenerateChannelLineupCommand } from '../commands/RegenerateChannelLineupCommand.ts';
 import { container } from '../container.ts';
+import { sessionToApiSession } from '../db/converters/sessionConverter.ts';
 import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import type { ChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
 import type { ChannelOrmWithRelations } from '../db/schema/derivedTypes.ts';
-import type { SessionType } from '../stream/Session.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams } from '../types/schemas.ts';
 
@@ -114,23 +114,11 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           const sessions = sessionsByChannel[channelAndLineup.channel.uuid];
           const apiSessions = reduce(
             sessions,
-            (prev, session, sessionType) => {
+            (prev, session) => {
               if (!session) {
                 return prev;
               }
-              prev.push({
-                connections: map(
-                  session.connections(),
-                  (connection, token) => ({
-                    ...connection,
-                    lastHeartbeat: session?.lastHeartbeat(token),
-                  }),
-                ),
-                type: sessionType as SessionType,
-                state: session.state,
-                numConnections: session.numConnections(),
-              } satisfies ChannelSession);
-
+              prev.push(sessionToApiSession(session));
               return prev;
             },
             [] as ChannelSession[],
@@ -166,38 +154,37 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         const channelAndLineup =
           await req.serverCtx.channelDB.loadChannelAndLineupOrm(req.params.id);
 
-        if (!isNil(channelAndLineup)) {
-          // TODO: This is super gnarly and we're doing this sorta custom everywhere.
-          // We need a centralized way to either load ALL of the relevant metadata
-          // for channels OR have the frontend request which fields it needs and we
-          // service that.
-          const [channelFillers, channelSubtitles] = await Promise.all([
-            req.serverCtx.fillerDB.getFillersFromChannel(req.params.id),
-            req.serverCtx.channelDB.getChannelSubtitlePreferences(
-              req.params.id,
-            ),
-          ]);
-
-          const apiChannel = dbChannelToApiChannel({
-            ...channelAndLineup,
-            channel: {
-              ...channelAndLineup.channel,
-              subtitlePreferences: channelSubtitles,
-            },
-          });
-
-          const channelWithFillers = {
-            ...apiChannel,
-            fillerCollections: channelFillers.map((cf) => ({
-              id: cf.fillerShow.uuid,
-              cooldownSeconds: cf.cooldown,
-              weight: cf.weight,
-            })),
-          };
-          return res.send(channelWithFillers);
-        } else {
+        if (isNil(channelAndLineup)) {
           return res.status(404).send();
         }
+
+        const [channelFillers, channelSubtitles] = await Promise.all([
+          req.serverCtx.fillerDB.getFillersFromChannel(req.params.id),
+          req.serverCtx.channelDB.getChannelSubtitlePreferences(req.params.id),
+        ]);
+
+        const sessions = req.serverCtx.sessionManager.getAllSessionsForChannel(
+          channelAndLineup.channel.uuid,
+        );
+
+        const apiChannel = dbChannelToApiChannel({
+          ...channelAndLineup,
+          channel: {
+            ...channelAndLineup.channel,
+            subtitlePreferences: channelSubtitles,
+          },
+        });
+
+        const channelWithFillers = {
+          ...apiChannel,
+          fillerCollections: channelFillers.map((cf) => ({
+            id: cf.fillerShow.uuid,
+            cooldownSeconds: cf.cooldown,
+            weight: cf.weight,
+          })),
+          sessions: sessions.map(sessionToApiSession),
+        };
+        return res.send(channelWithFillers);
       } catch (err) {
         logger.error(err, req.routeOptions.config.url);
         return res.status(500).send();
