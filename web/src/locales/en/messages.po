@@ -1279,7 +1279,7 @@ msgstr "Desc"
 msgid "Descending"
 msgstr "Descending"
 
-#: src/pages/settings/TaskSettingsPage.tsx:93
+#: src/pages/settings/TaskSettingsPage.tsx:96
 msgid "Description"
 msgstr "Description"
 
@@ -1678,7 +1678,7 @@ msgstr "Error while saving settings. Please check console for details."
 msgid "Error while saving transcode config. See console log for details."
 msgstr "Error while saving transcode config. See console log for details."
 
-#: src/pages/settings/TaskSettingsPage.tsx:75
+#: src/pages/settings/TaskSettingsPage.tsx:78
 msgid "Error while scheduling {taskId}. Check server logs for details"
 msgstr "Error while scheduling {taskId}. Check server logs for details"
 
@@ -2197,7 +2197,7 @@ msgstr "Label"
 msgid "Language"
 msgstr "Language"
 
-#: src/pages/settings/TaskSettingsPage.tsx:236
+#: src/pages/settings/TaskSettingsPage.tsx:239
 msgid "Last run"
 msgstr "Last run"
 
@@ -2206,7 +2206,7 @@ msgstr "Last run"
 msgid "Last Scanned: {0}"
 msgstr "Last Scanned: {0}"
 
-#: src/pages/settings/TaskSettingsPage.tsx:101
+#: src/pages/settings/TaskSettingsPage.tsx:104
 msgid "Last Scheduled Execution"
 msgstr "Last Scheduled Execution"
 
@@ -2580,7 +2580,7 @@ msgstr "Must use a valid URL, or empty."
 #: src/pages/library/CustomShowsPage.tsx:146
 #: src/pages/library/FillerListsPage.tsx:162
 #: src/pages/settings/MediaSourceSettingsPage.tsx:82
-#: src/pages/settings/TaskSettingsPage.tsx:89
+#: src/pages/settings/TaskSettingsPage.tsx:92
 #: src/pages/system/TroubleshootPage.tsx:854
 msgid "Name"
 msgstr "Name"
@@ -2643,11 +2643,11 @@ msgstr "New Plex Server"
 msgid "Next"
 msgstr "Next"
 
-#: src/pages/settings/TaskSettingsPage.tsx:246
+#: src/pages/settings/TaskSettingsPage.tsx:249
 msgid "Next run"
 msgstr "Next run"
 
-#: src/pages/settings/TaskSettingsPage.tsx:116
+#: src/pages/settings/TaskSettingsPage.tsx:119
 msgid "Next Scheduled Execution"
 msgstr "Next Scheduled Execution"
 
@@ -3296,11 +3296,11 @@ msgstr "Roll the log file on a fixed schedule, regardless of file size."
 msgid "Root"
 msgstr "Root"
 
-#: src/pages/settings/TaskSettingsPage.tsx:179
+#: src/pages/settings/TaskSettingsPage.tsx:182
 msgid "Run"
 msgstr "Run"
 
-#: src/pages/settings/TaskSettingsPage.tsx:205
+#: src/pages/settings/TaskSettingsPage.tsx:208
 msgid "Run now"
 msgstr "Run now"
 
@@ -3745,7 +3745,7 @@ msgstr "Successfully ran system fixer {fixerId}"
 msgid "Successfully saved config!"
 msgstr "Successfully saved config!"
 
-#: src/pages/settings/TaskSettingsPage.tsx:68
+#: src/pages/settings/TaskSettingsPage.tsx:71
 msgid "Successfully scheduled {taskId} (running in background)."
 msgstr "Successfully scheduled {taskId} (running in background)."
 
@@ -3792,7 +3792,7 @@ msgstr "Tail"
 msgid "Tail Buffer (minutes)"
 msgstr "Tail Buffer (minutes)"
 
-#: src/pages/settings/TaskSettingsPage.tsx:267
+#: src/pages/settings/TaskSettingsPage.tsx:271
 #: src/pages/system/SystemLayout.tsx:34
 msgid "Tasks"
 msgstr "Tasks"
@@ -4079,7 +4079,7 @@ msgstr "Tunarr Backend URL:"
 msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
 msgstr "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
 
-#: src/pages/settings/TaskSettingsPage.tsx:269
+#: src/pages/settings/TaskSettingsPage.tsx:274
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 msgstr "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 

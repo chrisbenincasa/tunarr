@@ -22,7 +22,10 @@ import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import type { Task } from '@tunarr/types';
 import { maxBy, minBy } from 'lodash-es';
 import type { MRT_ColumnDef } from 'material-react-table';
-import { MRT_Table, useMaterialReactTable } from 'material-react-table';
+import {
+  MaterialReactTable,
+  useMaterialReactTable,
+} from 'material-react-table';
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -264,7 +267,9 @@ export default function TaskSettingsPage() {
   return (
     <Stack gap={2}>
       <Box>
-        <Typography variant="h4"><Trans>Tasks</Trans></Typography>
+        <Typography variant="h4">
+          <Trans>Tasks</Trans>
+        </Typography>
         <Typography>
           <Trans>
             Tunarr runs various tasks, sometimes on a schedule, for background
@@ -272,7 +277,7 @@ export default function TaskSettingsPage() {
           </Trans>
         </Typography>
       </Box>
-      {isMobile ? renderMobileList() : <MRT_Table table={table} />}
+      {isMobile ? renderMobileList() : <MaterialReactTable table={table} />}
       {/* <TableContainer>
         <Table>
           <TableHead>
