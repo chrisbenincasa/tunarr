@@ -1,15 +1,17 @@
 import { DefaultFallbackPicturePath } from '@/helpers/constants.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Delete } from '@mui/icons-material';
 import {
+  Box,
   Checkbox,
   Divider,
   FormControl,
   FormControlLabel,
-  Grid,
   IconButton,
   InputLabel,
   MenuItem,
+  Paper,
   Select,
   Skeleton,
   Slider,
@@ -17,7 +19,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import Box from '@mui/material/Box';
 import {
   find,
   isNumber,
@@ -30,7 +31,6 @@ import {
   some,
   sumBy,
 } from 'lodash-es';
-import { Trans, useLingui } from '@lingui/react/macro';
 import { useCallback, useState } from 'react';
 import { Controller, useFieldArray } from 'react-hook-form';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -186,77 +186,93 @@ export function ChannelFlexConfig() {
       </MenuItem>
     ));
 
-    return map(channelFillerLists, (cfl, index) => {
-      const actualList = find(fillerLists, { id: cfl.id });
-      if (isUndefined(actualList)) {
-        return null;
-      }
+    return (
+      <Stack spacing={1.5} sx={{ mb: 2 }}>
+        {map(channelFillerLists, (cfl, index) => {
+          const actualList = find(fillerLists, { id: cfl.id });
+          if (isUndefined(actualList)) {
+            return null;
+          }
 
-      const thisListOpt = (
-        <MenuItem key={cfl.id} value={cfl.id}>
-          {actualList.name}
-        </MenuItem>
-      );
+          const thisListOpt = (
+            <MenuItem key={cfl.id} value={cfl.id}>
+              {actualList.name}
+            </MenuItem>
+          );
 
-      const listOpts = [thisListOpt, ...unclaimedLists];
+          const listOpts = [thisListOpt, ...unclaimedLists];
 
-      return (
-        <Grid container key={cfl.id} sx={{ mb: 2 }} columnSpacing={2}>
-          <Grid size={{ xs: 3 }}>
-            <FormControl key={cfl.id} sx={{ width: '100%' }}>
-              <Select value={cfl.id} disabled={unclaimedLists.length === 0}>
-                {listOpts}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid>
-            <NumericFormController
-              control={control}
-              name={`fillerCollections.${index}.cooldownSeconds`}
-              rules={{ min: 0, max: 525600 }}
-              render={({ field }) => (
-                <TextField label={t`Cooldown (seconds)`} {...field} />
+          return (
+            <Paper key={cfl.id} variant="outlined" sx={{ p: 1.5, px: 2 }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ mb: channelFillerLists.length > 1 ? 1.5 : 0 }}
+              >
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                  <Select
+                    value={cfl.id}
+                    disabled={unclaimedLists.length === 0}
+                    size="small"
+                  >
+                    {listOpts}
+                  </Select>
+                </FormControl>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <NumericFormController
+                    control={control}
+                    name={`fillerCollections.${index}.cooldownSeconds`}
+                    rules={{ min: 0, max: 525600 }}
+                    render={({ field }) => (
+                      <TextField
+                        label={t`Cooldown (s)`}
+                        size="small"
+                        sx={{ width: 120 }}
+                        {...field}
+                      />
+                    )}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={() => removeSelectedFillerList(index)}
+                  >
+                    <Delete fontSize="small" />
+                  </IconButton>
+                </Stack>
+              </Stack>
+              {channelFillerLists.length > 1 && (
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ flexShrink: 0 }}
+                  >
+                    <Trans>Weight</Trans>
+                  </Typography>
+                  <Slider
+                    size="small"
+                    min={0}
+                    max={1000}
+                    value={weights[index] * 10}
+                    onChange={(_, value) => adjustWeights(index, value, 10)}
+                    onChangeCommitted={(_, value) =>
+                      adjustWeights(index, value, 10)
+                    }
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{ flexShrink: 0, minWidth: 48, textAlign: 'right' }}
+                  >
+                    {weights[index]}%
+                  </Typography>
+                </Stack>
               )}
-            />
-          </Grid>
-          {channelFillerLists && channelFillerLists.length > 1 && (
-            <Grid size={{ xs: 5 }}>
-              <FormControl sx={{ width: '100%', mb: 1 }} key={cfl.id}>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 9 }}>
-                    <Slider
-                      min={0}
-                      max={1000}
-                      value={weights[index] * 10}
-                      // Gnarly - we cast onChange to the void so react-form-hook
-                      // doesn't try to do anything. Instead we wait for the onChangeCommited
-                      // event, which fires on onMouseUp, and then handle the change.
-                      onChange={(_, value) => adjustWeights(index, value, 10)}
-                      onChangeCommitted={(_, value) =>
-                        adjustWeights(index, value, 10)
-                      }
-                    />
-                  </Grid>
-                  <Grid>
-                    <TextField
-                      type="number"
-                      label={t`Weight %`}
-                      value={weights[index]}
-                      disabled
-                    />
-                  </Grid>
-                </Grid>
-              </FormControl>
-            </Grid>
-          )}
-          <Grid alignSelf={'center'}>
-            <IconButton onClick={() => removeSelectedFillerList(index)}>
-              <Delete />
-            </IconButton>
-          </Grid>
-        </Grid>
-      );
-    });
+            </Paper>
+          );
+        })}
+      </Stack>
+    );
   };
 
   const renderAddFillerListEditor = () => {
@@ -320,8 +336,8 @@ export function ChannelFlexConfig() {
               <Typography variant="body1" sx={{ mb: 2 }}>
                 <Trans>
                   Videos from the filler list will be randomly picked to play
-                  unless there are cooldown restrictions to place or if no videos
-                  are short enough for the remaining Flex time.
+                  unless there are cooldown restrictions to place or if no
+                  videos are short enough for the remaining Flex time.
                   <br />
                   Each filler can be assigned a cooldown, which restricts how
                   frequently the list will be chosen during flex time.
@@ -407,7 +423,9 @@ export function ChannelFlexConfig() {
                   <FormControl fullWidth sx={{ mb: 1 }}>
                     <InputLabel>{t`Fallback Mode`}</InputLabel>
                     <Select fullWidth label={t`Fallback Mode`} {...field}>
-                      <MenuItem value={'pic'}><Trans>Image</Trans></MenuItem>
+                      <MenuItem value={'pic'}>
+                        <Trans>Image</Trans>
+                      </MenuItem>
                       <MenuItem disabled value={'clip'}>
                         <Trans>Library Clip (not yet implemented)</Trans>
                       </MenuItem>

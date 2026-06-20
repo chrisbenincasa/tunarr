@@ -328,7 +328,7 @@ msgstr "Add"
 msgid "Add {0}"
 msgstr "Add {0}"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:291
+#: src/components/channel_config/ChannelFlexConfig.tsx:307
 msgid "Add a Filler List"
 msgstr "Add a Filler List"
 
@@ -496,7 +496,7 @@ msgstr "All channels assigned to this config will be set to use the default conf
 #~ msgid "All linked slots show the same episode, advancing only after all have played."
 #~ msgstr "All linked slots show the same episode, advancing only after all have played."
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:290
+#: src/components/channel_config/ChannelFlexConfig.tsx:306
 msgid "All lists are used"
 msgstr "All lists are used"
 
@@ -842,7 +842,7 @@ msgstr "Channel"
 msgid "Channel #{0}"
 msgstr "Channel #{0}"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:382
+#: src/components/channel_config/ChannelFlexConfig.tsx:398
 msgid "Channel Fallback"
 msgstr "Channel Fallback"
 
@@ -983,7 +983,7 @@ msgstr "Configure subtitle preferences. Preferences are evaluated in order of pr
 msgid "Configure transcoding settings for Tunarr's streams. Each channel is assigned one transcode configuration."
 msgstr "Configure transcoding settings for Tunarr's streams. Each channel is assigned one transcode configuration."
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:385
+#: src/components/channel_config/ChannelFlexConfig.tsx:401
 msgid "Configure what appears on your channel when there is no suitable filler content available. Using channel fallbacks requires ffmpeg transcoding."
 msgstr "Configure what appears on your channel when there is no suitable filler content available. Using channel fallbacks requires ffmpeg transcoding."
 
@@ -1032,9 +1032,13 @@ msgstr "Controls what happens when this slot runs out of replayed content from e
 msgid "Cooldown"
 msgstr "Cooldown"
 
+#: src/components/channel_config/ChannelFlexConfig.tsx:229
+msgid "Cooldown (s)"
+msgstr "Cooldown (s)"
+
 #: src/components/channel_config/ChannelFlexConfig.tsx:218
-msgid "Cooldown (seconds)"
-msgstr "Cooldown (seconds)"
+#~ msgid "Cooldown (seconds)"
+#~ msgstr "Cooldown (seconds)"
 
 #. placeholder {0}: navItem.name
 #: src/components/TopBar.tsx:136
@@ -1739,8 +1743,8 @@ msgstr "Failed to update Media Source settings. Please check server and browser 
 msgid "Fallback"
 msgstr "Fallback"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:408
-#: src/components/channel_config/ChannelFlexConfig.tsx:409
+#: src/components/channel_config/ChannelFlexConfig.tsx:424
+#: src/components/channel_config/ChannelFlexConfig.tsx:425
 msgid "Fallback Mode"
 msgstr "Fallback Mode"
 
@@ -1852,11 +1856,11 @@ msgstr "Filler"
 msgid "Filler - {0}"
 msgstr "Filler - {0}"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:318
+#: src/components/channel_config/ChannelFlexConfig.tsx:334
 msgid "Filler Content"
 msgstr "Filler Content"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:349
+#: src/components/channel_config/ChannelFlexConfig.tsx:365
 msgid "Filler cooldown must be a number"
 msgstr "Filler cooldown must be a number"
 
@@ -1868,14 +1872,14 @@ msgstr "Filler is picked fresh at stream time like Flex time. The guide shows \"
 msgid "Filler is resolved at schedule time. The guide shows specific filler titles."
 msgstr "Filler is resolved at schedule time. The guide shows specific filler titles."
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:298
-#: src/components/channel_config/ChannelFlexConfig.tsx:301
+#: src/components/channel_config/ChannelFlexConfig.tsx:314
+#: src/components/channel_config/ChannelFlexConfig.tsx:317
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx:131
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:242
 msgid "Filler List"
 msgstr "Filler List"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:345
+#: src/components/channel_config/ChannelFlexConfig.tsx:361
 msgid "Filler List Cooldown (seconds)"
 msgstr "Filler List Cooldown (seconds)"
 
@@ -1894,7 +1898,7 @@ msgstr "Filler Lists"
 msgid "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
 msgstr "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:335
+#: src/components/channel_config/ChannelFlexConfig.tsx:351
 msgid "Filler Options"
 msgstr "Filler Options"
 
@@ -2038,7 +2042,7 @@ msgstr "Healthy?"
 msgid "Hide Advanced"
 msgstr "Hide Advanced"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:374
+#: src/components/channel_config/ChannelFlexConfig.tsx:390
 msgid "Hide watermark during filler"
 msgstr "Hide watermark during filler"
 
@@ -2112,11 +2116,11 @@ msgstr "If you are confident FFMPEG is installed, you may just need to update th
 msgid "If you proceed, all unsaved changes will be lost. Are you sure you want to proceed?"
 msgstr "If you proceed, all unsaved changes will be lost. Are you sure you want to proceed?"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:410
+#: src/components/channel_config/ChannelFlexConfig.tsx:427
 msgid "Image"
 msgstr "Image"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:425
+#: src/components/channel_config/ChannelFlexConfig.tsx:443
 msgid "Image URL"
 msgstr "Image URL"
 
@@ -2165,7 +2169,7 @@ msgstr "Inverse linear decay, heavier weighting."
 msgid "Item was not present during the last scan"
 msgstr "Item was not present during the last scan"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:359
+#: src/components/channel_config/ChannelFlexConfig.tsx:375
 msgid "Items from any filler list will not be chosen more frequently than this cooldown setting."
 msgstr "Items from any filler list will not be chosen more frequently than this cooldown setting."
 
@@ -2247,7 +2251,7 @@ msgstr "Libraries"
 msgid "Library"
 msgstr "Library"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:412
+#: src/components/channel_config/ChannelFlexConfig.tsx:430
 msgid "Library Clip (not yet implemented)"
 msgstr "Library Clip (not yet implemented)"
 
@@ -3637,7 +3641,7 @@ msgstr "Sorts everything by its release date. This will only work correctly if t
 msgid "Sorts the list by TV Show and the episodes in each TV show by their season/episode number. Movies are moved to the bottom of the schedule."
 msgstr "Sorts the list by TV Show and the episodes in each TV show by their season/episode number. Movies are moved to the bottom of the schedule."
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:439
+#: src/components/channel_config/ChannelFlexConfig.tsx:457
 msgid "Soundtrack"
 msgstr "Soundtrack"
 
@@ -4210,7 +4214,7 @@ msgstr "Video Options"
 msgid "Video Streams"
 msgstr "Video Streams"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:321
+#: src/components/channel_config/ChannelFlexConfig.tsx:337
 msgid "Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time.<0/>Each filler can be assigned a cooldown, which restricts how frequently the list will be chosen during flex time."
 msgstr "Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time.<0/>Each filler can be assigned a cooldown, which restricts how frequently the list will be chosen during flex time."
 
@@ -4268,11 +4272,11 @@ msgstr "Week"
 msgid "Weekly"
 msgstr "Weekly"
 
+#: src/components/channel_config/ChannelFlexConfig.tsx:251
 #: src/components/slot_scheduler/RandomSlotTable.tsx:340
 msgid "Weight"
 msgstr "Weight"
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:243
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:544
 msgid "Weight %"
 msgstr "Weight %"
@@ -4338,7 +4342,7 @@ msgstr "You have unsaved changes!"
 msgid "You haven't created any channels yet."
 msgstr "You haven't created any channels yet."
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:270
+#: src/components/channel_config/ChannelFlexConfig.tsx:286
 msgid "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
 msgstr "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
 
