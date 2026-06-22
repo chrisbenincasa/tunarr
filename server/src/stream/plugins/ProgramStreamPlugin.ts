@@ -2,7 +2,7 @@ import type { OutputFormat } from '../../ffmpeg/builder/constants.ts';
 import type {
   StreamOptions,
   TranscodeSessionResult,
-} from '../../ffmpeg/ffmpegBase.ts';
+} from '../../ffmpeg/types.ts';
 import type { Result } from '../../types/result.ts';
 import type { PlayerContext } from '../PlayerStreamContext.ts';
 
