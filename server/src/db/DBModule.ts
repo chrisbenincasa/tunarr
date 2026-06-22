@@ -12,6 +12,7 @@ import { ProgramPlayHistoryDB } from './ProgramPlayHistoryDB.ts';
 import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
 import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
 import { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
+import { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts';
 import { LineupRepository } from './channel/LineupRepository.ts';
 import { ProgramGroupingMinter } from './converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from './converters/ProgramMinter.ts';
@@ -64,6 +65,9 @@ const DBModule = new ContainerModule(({ bind }) => {
     .inSingletonScope();
   bind(KEYS.BasicChannelRepository)
     .to(BasicChannelRepository)
+    .inSingletonScope();
+  bind(KEYS.ChannelReadOpsRepository)
+    .to(ChannelReadOpsRepository)
     .inSingletonScope();
 
   // Main DB facades

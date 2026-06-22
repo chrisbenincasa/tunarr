@@ -96,6 +96,10 @@ export class ProgramDB implements IProgramDB {
     return this.basicProg.updateProgramDuration(programId, duration);
   }
 
+  clearExtractedSubtitle(uuid: string): Promise<void> {
+    return this.metadataRepo.clearExtractedSubtitle(uuid);
+  }
+
   getProgramsByIds(
     ids: string[] | readonly string[],
     batchSize?: number,

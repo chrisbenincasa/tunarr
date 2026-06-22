@@ -1,7 +1,7 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
-import type { TranscodeSessionResult } from '@/ffmpeg/ffmpegBase.js';
+import type { TranscodeSessionResult } from '@/ffmpeg/types.js';
 import { CacheImageService } from '@/services/cacheImageService.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
@@ -21,7 +21,7 @@ import {
 } from '../db/derived_types/StreamLineup.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import type { FFmpegAssistedFactory } from '../ffmpeg/FFmpegModule.ts';
-import type { StreamOptions } from '../ffmpeg/ffmpegBase.ts';
+import type { StreamOptions } from '../ffmpeg/types.ts';
 import { KEYS } from '../types/inject.ts';
 import { assisted, injected, multiInjected } from '../util/assistedInject.ts';
 import {
@@ -199,21 +199,19 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
       duration.asMilliseconds(),
     );
 
-    const sessionResult = await ffmpeg.createOfflineSession(
+    const result = await ffmpeg.createPlaceholderSession({
+      kind: 'offline',
       duration,
-      this.outputFormat,
-      this.opts?.ptsOffset,
-      this.opts?.realtime,
-    );
+      outputFormat: this.outputFormat,
+      ptsOffset: this.opts?.ptsOffset,
+      realtime: this.opts?.realtime,
+    });
 
-    if (isUndefined(sessionResult)) {
+    if (isUndefined(result)) {
       throw new Error('Unable to start ffmpeg transcode session');
     }
 
-    return Result.success({
-      session: sessionResult,
-      renditions: { audio: [] },
-    });
+    return Result.success(result);
   }
 
   private async setupErrorItem(
@@ -235,23 +233,20 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
       duration.asMilliseconds(),
     );
 
-    const sessionResult = await ffmpeg.createErrorSession(
-      'Error',
-      undefined,
+    const result = await ffmpeg.createPlaceholderSession({
+      kind: 'error',
+      title: 'Error',
       duration,
-      this.outputFormat,
-      this.opts?.realtime ?? true,
-      this.opts?.ptsOffset,
-    );
+      outputFormat: this.outputFormat,
+      realtime: this.opts?.realtime,
+      ptsOffset: this.opts?.ptsOffset,
+    });
 
-    if (isUndefined(sessionResult)) {
+    if (isUndefined(result)) {
       throw new Error('Unable to start ffmpeg transcode session');
     }
 
-    return Result.success({
-      session: sessionResult,
-      renditions: { audio: [] },
-    });
+    return Result.success(result);
   }
 
   isInitialized(): boolean {
@@ -308,15 +303,15 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
   private async tryReplaceWithErrorStream(sink?: PassThrough) {
     const out = sink ?? new PassThrough();
     try {
-      const errorSession = await this.getErrorStream(this.context);
+      const errorResult = await this.getErrorStream(this.context);
 
-      if (isUndefined(errorSession)) {
+      if (isUndefined(errorResult)) {
         out.push(null);
         return;
       }
 
-      errorSession.start(out);
-      this.transcodeSession = errorSession;
+      errorResult.session.start(out);
+      this.transcodeSession = errorResult.session;
 
       this.transcodeSession.on('end', () => {
         out.push(null);
@@ -337,13 +332,14 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
       dayjs(this.transcodeSession?.streamEndTime).diff(),
     );
 
-    return ffmpeg.createErrorSession(
-      'Playback Error',
-      'Check server logs for details',
+    return ffmpeg.createPlaceholderSession({
+      kind: 'error',
+      title: 'Playback Error',
+      subtitle: 'Check server logs for details',
       duration,
-      this.outputFormat,
-      true,
-    );
+      outputFormat: this.outputFormat,
+      realtime: true,
+    });
   }
 
   protected async getWatermark(): Promise<Maybe<Watermark>> {

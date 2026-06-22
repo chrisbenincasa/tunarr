@@ -48,18 +48,8 @@ jobs:
 
       - name: Release
         id: semantic
-        uses: chrisbenincasa/semantic-release-action@e0b75dd3b943e75f6bea693cc69caf82c26c0571
+        uses: cycjimmy/semantic-release-action@9246c0bd17405b1f20450501f39234912258bc50
         with:
           dry_run: ${{ github.event.inputs.dry_run }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-
-      - name: Do something when a new release published
-        if: steps.semantic.outputs.new_release_published == 'true'
-        run: |
-          echo ${{ steps.semantic.outputs.new_release_version }}
-          echo ${{ steps.semantic.outputs.new_release_major_version }}
-          echo ${{ steps.semantic.outputs.new_release_minor_version }}
-          echo ${{ steps.semantic.outputs.new_release_patch_version }}
-          echo ${{ steps.semantic.outputs.new_release_prerelease_version }}
-          echo ${{ steps.semantic.outputs.new_release_git_tag }}

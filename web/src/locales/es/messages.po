@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:453
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:461
 msgid " Scheduling Strategy"
 msgstr ""
 
@@ -43,7 +43,7 @@ msgstr ""
 #. placeholder {0}: channel.programCount
 #. placeholder {0}: programList.length
 #. placeholder {0}: value?.programCount ?? 0
-#: src/components/channel_config/ChannelLineupList.tsx:526
+#: src/components/channel_config/ChannelLineupList.tsx:525
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:47
 #: src/pages/channels/ChannelsPage.tsx:492
 msgid "{0, plural, one {# program} other {# programs}}"
@@ -328,7 +328,7 @@ msgstr ""
 msgid "Add {0}"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:291
+#: src/components/channel_config/ChannelFlexConfig.tsx:307
 msgid "Add a Filler List"
 msgstr ""
 
@@ -389,7 +389,7 @@ msgstr ""
 msgid "Add Padding"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:229
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:237
 msgid "Add point (%)"
 msgstr ""
 
@@ -496,7 +496,7 @@ msgstr ""
 #~ msgid "All linked slots show the same episode, advancing only after all have played."
 #~ msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:290
+#: src/components/channel_config/ChannelFlexConfig.tsx:306
 msgid "All lists are used"
 msgstr ""
 
@@ -546,7 +546,7 @@ msgstr ""
 msgid "An error occurred: {0}"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:502
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:510
 msgid "Apply to Program Types (empty = all)"
 msgstr ""
 
@@ -720,15 +720,15 @@ msgstr ""
 msgid "Block Shuffle"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:309
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:317
 msgid "Break Duration"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:334
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:342
 msgid "Break Duration (minutes)"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:198
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:206
 msgid "Break Interval (minutes)"
 msgstr ""
 
@@ -842,7 +842,7 @@ msgstr ""
 msgid "Channel #{0}"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:382
+#: src/components/channel_config/ChannelFlexConfig.tsx:398
 msgid "Channel Fallback"
 msgstr ""
 
@@ -983,7 +983,7 @@ msgstr ""
 msgid "Configure transcoding settings for Tunarr's streams. Each channel is assigned one transcode configuration."
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:385
+#: src/components/channel_config/ChannelFlexConfig.tsx:401
 msgid "Configure what appears on your channel when there is no suitable filler content available. Using channel fallbacks requires ffmpeg transcoding."
 msgstr ""
 
@@ -1032,9 +1032,13 @@ msgstr ""
 msgid "Cooldown"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:218
-msgid "Cooldown (seconds)"
+#: src/components/channel_config/ChannelFlexConfig.tsx:229
+msgid "Cooldown (s)"
 msgstr ""
+
+#: src/components/channel_config/ChannelFlexConfig.tsx:218
+#~ msgid "Cooldown (seconds)"
+#~ msgstr ""
 
 #. placeholder {0}: navItem.name
 #: src/components/TopBar.tsx:136
@@ -1279,7 +1283,7 @@ msgstr ""
 msgid "Descending"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:93
+#: src/pages/settings/TaskSettingsPage.tsx:96
 msgid "Description"
 msgstr ""
 
@@ -1407,7 +1411,7 @@ msgstr ""
 msgid "Dynamic"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:469
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:477
 msgid "Eager"
 msgstr ""
 
@@ -1678,7 +1682,7 @@ msgstr ""
 msgid "Error while saving transcode config. See console log for details."
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:75
+#: src/pages/settings/TaskSettingsPage.tsx:78
 msgid "Error while scheduling {taskId}. Check server logs for details"
 msgstr ""
 
@@ -1739,8 +1743,8 @@ msgstr ""
 msgid "Fallback"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:408
-#: src/components/channel_config/ChannelFlexConfig.tsx:409
+#: src/components/channel_config/ChannelFlexConfig.tsx:424
+#: src/components/channel_config/ChannelFlexConfig.tsx:425
 msgid "Fallback Mode"
 msgstr ""
 
@@ -1852,30 +1856,30 @@ msgstr ""
 msgid "Filler - {0}"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:318
+#: src/components/channel_config/ChannelFlexConfig.tsx:334
 msgid "Filler Content"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:349
+#: src/components/channel_config/ChannelFlexConfig.tsx:365
 msgid "Filler cooldown must be a number"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:478
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:486
 msgid "Filler is picked fresh at stream time like Flex time. The guide shows \"Commercial Break\" placeholders."
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:477
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:485
 msgid "Filler is resolved at schedule time. The guide shows specific filler titles."
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:298
-#: src/components/channel_config/ChannelFlexConfig.tsx:301
+#: src/components/channel_config/ChannelFlexConfig.tsx:314
+#: src/components/channel_config/ChannelFlexConfig.tsx:317
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx:131
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:242
 msgid "Filler List"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:345
+#: src/components/channel_config/ChannelFlexConfig.tsx:361
 msgid "Filler List Cooldown (seconds)"
 msgstr ""
 
@@ -1894,7 +1898,7 @@ msgstr ""
 msgid "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:335
+#: src/components/channel_config/ChannelFlexConfig.tsx:351
 msgid "Filler Options"
 msgstr ""
 
@@ -1920,7 +1924,7 @@ msgstr ""
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:124
 #: src/components/programming_controls/AddReplicateModal.tsx:97
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:425
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:321
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:329
 msgid "Fixed"
 msgstr ""
 
@@ -2038,7 +2042,7 @@ msgstr ""
 msgid "Hide Advanced"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:374
+#: src/components/channel_config/ChannelFlexConfig.tsx:390
 msgid "Hide watermark during filler"
 msgstr ""
 
@@ -2055,7 +2059,7 @@ msgstr ""
 msgid "How frequently libraries should be scanned (starting from midnight)."
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:343
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:351
 msgid "How long each commercial break lasts"
 msgstr ""
 
@@ -2063,7 +2067,7 @@ msgstr ""
 msgid "How often the XMLTV file is regenerated"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:205
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:213
 msgid "How often to insert a break"
 msgstr ""
 
@@ -2112,11 +2116,11 @@ msgstr ""
 msgid "If you proceed, all unsaved changes will be lost. Are you sure you want to proceed?"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:410
+#: src/components/channel_config/ChannelFlexConfig.tsx:427
 msgid "Image"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:425
+#: src/components/channel_config/ChannelFlexConfig.tsx:443
 msgid "Image URL"
 msgstr ""
 
@@ -2136,7 +2140,7 @@ msgstr ""
 msgid "Increment"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:268
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:276
 msgid "Initial Delay (minutes)"
 msgstr ""
 
@@ -2144,7 +2148,7 @@ msgstr ""
 msgid "Initial Delay + Interval"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:214
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:222
 msgid "Insert breaks at these percentages of the program duration"
 msgstr ""
 
@@ -2153,7 +2157,7 @@ msgstr ""
 msgid "Install FFMPEG"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:289
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:297
 msgid "Interval (minutes)"
 msgstr ""
 
@@ -2165,7 +2169,7 @@ msgstr ""
 msgid "Item was not present during the last scan"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:359
+#: src/components/channel_config/ChannelFlexConfig.tsx:375
 msgid "Items from any filler list will not be chosen more frequently than this cooldown setting."
 msgstr ""
 
@@ -2197,7 +2201,7 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:236
+#: src/pages/settings/TaskSettingsPage.tsx:239
 msgid "Last run"
 msgstr ""
 
@@ -2206,7 +2210,7 @@ msgstr ""
 msgid "Last Scanned: {0}"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:101
+#: src/pages/settings/TaskSettingsPage.tsx:104
 msgid "Last Scheduled Execution"
 msgstr ""
 
@@ -2219,7 +2223,7 @@ msgstr ""
 msgid "Last synced {0}"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:472
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:480
 msgid "Lazy"
 msgstr ""
 
@@ -2247,7 +2251,7 @@ msgstr ""
 msgid "Library"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:412
+#: src/components/channel_config/ChannelFlexConfig.tsx:430
 msgid "Library Clip (not yet implemented)"
 msgstr ""
 
@@ -2421,7 +2425,7 @@ msgstr ""
 msgid "Max Duration"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:377
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:385
 msgid "Max Duration (minutes)"
 msgstr ""
 
@@ -2438,7 +2442,7 @@ msgstr ""
 msgid "Max True Peak"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:409
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:417
 msgid "Maximum number of breaks per program (0 = unlimited)"
 msgstr ""
 
@@ -2495,7 +2499,7 @@ msgstr ""
 msgid "Min Duration"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:357
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:365
 msgid "Min Duration (minutes)"
 msgstr ""
 
@@ -2503,7 +2507,7 @@ msgstr ""
 msgid "Min. Visible in Guide Duration Program (seconds)"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:418
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:426
 msgid "Minimum Program Duration (minutes)"
 msgstr ""
 
@@ -2580,7 +2584,7 @@ msgstr ""
 #: src/pages/library/CustomShowsPage.tsx:146
 #: src/pages/library/FillerListsPage.tsx:162
 #: src/pages/settings/MediaSourceSettingsPage.tsx:82
-#: src/pages/settings/TaskSettingsPage.tsx:89
+#: src/pages/settings/TaskSettingsPage.tsx:92
 #: src/pages/system/TroubleshootPage.tsx:854
 msgid "Name"
 msgstr ""
@@ -2643,11 +2647,11 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:246
+#: src/pages/settings/TaskSettingsPage.tsx:249
 msgid "Next run"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:116
+#: src/pages/settings/TaskSettingsPage.tsx:119
 msgid "Next Scheduled Execution"
 msgstr ""
 
@@ -2664,7 +2668,7 @@ msgstr ""
 msgid "No Media Sources detected."
 msgstr ""
 
-#: src/components/channel_config/ChannelLineupList.tsx:500
+#: src/components/channel_config/ChannelLineupList.tsx:499
 msgid "No programming added yet"
 msgstr ""
 
@@ -3060,7 +3064,7 @@ msgstr ""
 msgid "Random…"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:324
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:332
 msgid "Range"
 msgstr ""
 
@@ -3294,11 +3298,11 @@ msgstr ""
 msgid "Root"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:179
+#: src/pages/settings/TaskSettingsPage.tsx:182
 msgid "Run"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:205
+#: src/pages/settings/TaskSettingsPage.tsx:208
 msgid "Run now"
 msgstr ""
 
@@ -3548,7 +3552,7 @@ msgstr ""
 msgid "Shuffle programming in a channel, optionally grouping programs by certain criteria."
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:427
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:435
 msgid "Skip mid-roll for programs shorter than this"
 msgstr ""
 
@@ -3635,7 +3639,7 @@ msgstr ""
 msgid "Sorts the list by TV Show and the episodes in each TV show by their season/episode number. Movies are moved to the bottom of the schedule."
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:439
+#: src/components/channel_config/ChannelFlexConfig.tsx:457
 msgid "Soundtrack"
 msgstr ""
 
@@ -3743,7 +3747,7 @@ msgstr ""
 msgid "Successfully saved config!"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:68
+#: src/pages/settings/TaskSettingsPage.tsx:71
 msgid "Successfully scheduled {taskId} (running in background)."
 msgstr ""
 
@@ -3786,11 +3790,11 @@ msgstr ""
 msgid "Tail"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:436
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:444
 msgid "Tail Buffer (minutes)"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:267
+#: src/pages/settings/TaskSettingsPage.tsx:271
 #: src/pages/system/SystemLayout.tsx:34
 msgid "Tasks"
 msgstr ""
@@ -3949,11 +3953,11 @@ msgstr ""
 msgid "Thumbnail URL"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:279
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:287
 msgid "Time before first break"
 msgstr ""
 
-#: src/components/slot_scheduler/MidRollConfigPanel.tsx:298
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx:306
 msgid "Time between subsequent breaks"
 msgstr ""
 
@@ -4077,7 +4081,7 @@ msgstr ""
 msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx:269
+#: src/pages/settings/TaskSettingsPage.tsx:274
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 msgstr ""
 
@@ -4225,7 +4229,7 @@ msgstr ""
 msgid "Video Streams"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:321
+#: src/components/channel_config/ChannelFlexConfig.tsx:337
 msgid "Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time.<0/>Each filler can be assigned a cooldown, which restricts how frequently the list will be chosen during flex time."
 msgstr ""
 
@@ -4283,11 +4287,11 @@ msgstr ""
 msgid "Weekly"
 msgstr ""
 
+#: src/components/channel_config/ChannelFlexConfig.tsx:251
 #: src/components/slot_scheduler/RandomSlotTable.tsx:340
 msgid "Weight"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:243
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:544
 msgid "Weight %"
 msgstr ""
@@ -4353,7 +4357,7 @@ msgstr ""
 msgid "You haven't created any channels yet."
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx:270
+#: src/components/channel_config/ChannelFlexConfig.tsx:286
 msgid "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
 msgstr ""
 

@@ -1,3 +1,8 @@
+.md-header__social {
+  display: flex;
+  gap: 0.15rem;
+}
+
 [data-md-color-scheme='tunarr'] {
   --md-primary-fg-color: #008c93;
   --md-primary-fg-color--light: #ecb7b7;

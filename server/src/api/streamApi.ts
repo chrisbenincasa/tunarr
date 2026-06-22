@@ -1,4 +1,4 @@
-import type { Channel } from '@/db/schema/Channel.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
 import type { BaseHlsSession } from '@/stream/hls/BaseHlsSession.js';
 import { HlsPlaylistCreator } from '@/stream/hls/HlsPlaylistCreator.js';
 import type { HlsSession } from '@/stream/hls/HlsSession.js';
@@ -366,7 +366,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         userAgent: req.headers['user-agent'],
       };
 
-      let channel: Maybe<Channel>;
+      let channel: Maybe<ChannelOrm>;
       let channelId: string;
       if (isNumber(req.params.id)) {
         channel = await req.serverCtx.channelDB.getChannel(req.params.id);

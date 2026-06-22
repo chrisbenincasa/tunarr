@@ -173,8 +173,14 @@ export class StreamSelectionProfileResolver {
       await this.channelDB.getChannelSubtitlePreferences(channelId);
 
     let subtitleAction: StreamSelectionRule['subtitleAction'];
-    if (subtitlePrefs.length > 0) {
-      const sorted = orderBy(subtitlePrefs, 'priority', 'asc');
+    // Filter out preferences with filterType 'none' — they mean
+    // "don't match subtitles for this language", matching the
+    // behavior of SubtitleStreamPicker.pickSubtitles.
+    const activeSubtitlePrefs = subtitlePrefs.filter(
+      (p) => p.filterType !== 'none',
+    );
+    if (activeSubtitlePrefs.length > 0) {
+      const sorted = orderBy(activeSubtitlePrefs, 'priority', 'asc');
       const topPref = sorted[0]!;
       subtitleAction = {
         type: 'by_language' as const,

@@ -24,6 +24,7 @@ export default defineConfig(
       'server/esbuild/*',
       'server/src/web/*',
       'server/src/testing/*',
+      'server/tests/*',
       'server/cjs-shim.ts',
       // 'release.config.mjs',
     ],

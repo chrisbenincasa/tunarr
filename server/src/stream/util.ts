@@ -6,7 +6,8 @@ export function isImageBasedSubtitle(codec: string) {
     'vobsub',
     'pgssub',
     'pgs',
-  ].includes(codec);
+    'dvbsub',
+  ].includes(codec.toLowerCase());
 }
 
 export function extractIsAnamorphic(

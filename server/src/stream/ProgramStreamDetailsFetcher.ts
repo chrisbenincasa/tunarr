@@ -1,8 +1,15 @@
-import { nullToUndefined } from '@tunarr/shared/util';
+import { nullToUndefined, seq } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { groupBy, head, isEmpty, mapValues, orderBy } from 'lodash-es';
-import path from 'node:path';
+import {
+  groupBy,
+  head,
+  isEmpty,
+  mapValues,
+  orderBy,
+  trimEnd,
+  trimStart,
+} from 'lodash-es';
 import { match } from 'ts-pattern';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
@@ -121,21 +128,42 @@ export class ProgramStreamDetailsFetcher {
           }) satisfies SubtitleStreamDetails,
       ) ?? [];
 
+    const usableSubtitles = await Promise.all(
+      (program.subtitles ?? []).map(async (subtitle) => {
+        const pathOnDisk =
+          isNonEmptyString(subtitle.path) && (await fileExists(subtitle.path));
+        if (subtitle.subtitleType === 'sidecar') {
+          return pathOnDisk ? subtitle : null;
+        }
+        if (!subtitle.isExtracted) {
+          return null;
+        }
+        if (!pathOnDisk) {
+          this.logger.debug(
+            'Clearing isExtracted flag for program %s subtitle %s: file missing on disk (%s)',
+            program.uuid,
+            subtitle.uuid,
+            subtitle.path ?? '<no path>',
+          );
+          await this.programDB.clearExtractedSubtitle(subtitle.uuid);
+          return null;
+        }
+        return subtitle;
+      }),
+    );
+
     subtitleStreamDetails.push(
-      ...(program.subtitles
-        ?.filter((subtitle) => subtitle.isExtracted)
-        .map(
-          (subtitle) =>
-            ({
-              ...subtitle,
-              index: nullToUndefined(subtitle.streamIndex),
-              type:
-                subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
-              languageCodeISO6392: subtitle.language,
-              sdh: subtitle.sdh,
-              path: nullToUndefined(subtitle.path),
-            }) satisfies SubtitleStreamDetails,
-        ) ?? []),
+      ...seq.collect(usableSubtitles, (subtitle) => {
+        if (!subtitle) return null;
+        return {
+          ...subtitle,
+          index: nullToUndefined(subtitle.streamIndex),
+          type: subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
+          languageCodeISO6392: subtitle.language,
+          sdh: subtitle.sdh,
+          path: nullToUndefined(subtitle.path),
+        } satisfies SubtitleStreamDetails;
+      }),
     );
 
     const streamDetails: StreamDetails = {
@@ -228,7 +256,7 @@ export class ProgramStreamDetailsFetcher {
           { type: 'plex' },
           (server) =>
             new HttpStreamSource(
-              `${path.join(server.uri, serverPath)}?X-Plex-Token=${
+              `${trimEnd(server.uri, '/')}/${trimStart(serverPath, '/')}?X-Plex-Token=${
                 server.accessToken
               }`,
             ),
@@ -237,7 +265,7 @@ export class ProgramStreamDetailsFetcher {
           { type: 'jellyfin' },
           (server) =>
             new HttpStreamSource(
-              `${path.join(server.uri, 'Videos', serverPath, 'stream')}?static=true`,
+              `${trimEnd(server.uri, '/')}/Videos/${trimStart(serverPath, '/')}/stream?static=true`,
               {
                 'X-Emby-Token': server.accessToken,
               },
@@ -247,7 +275,7 @@ export class ProgramStreamDetailsFetcher {
           { type: 'emby' },
           (server) =>
             new HttpStreamSource(
-              `${path.join(server.uri, 'Videos', serverPath, 'stream')}?X-Emby-Token=${
+              `${trimEnd(server.uri, '/')}/Videos/${trimStart(serverPath, '/')}/stream?X-Emby-Token=${
                 server.accessToken
               }&static=true`,
             ),

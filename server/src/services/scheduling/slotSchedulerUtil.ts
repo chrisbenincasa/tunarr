@@ -565,7 +565,7 @@ function getContentProgramIterator(
     if (slot.seasonFilter.length > 0) {
       programs = programs.filter((program) => {
         const season = program.season?.index ?? program.seasonNumber;
-        return season && slot.seasonFilter.includes(season);
+        return !isNil(season) && slot.seasonFilter.includes(season);
       });
     }
     if (slot.seasonExcludeFilter?.length > 0) {

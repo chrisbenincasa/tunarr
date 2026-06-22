@@ -7,9 +7,10 @@ import { v4 } from 'uuid';
 import { test as baseTest, describe, expect, vi } from 'vitest';
 import { bootstrapTunarr } from '../bootstrap.ts';
 import { setGlobalOptionsUnchecked } from '../globals.ts';
+import { copyPreMigratedDb } from '../testing/testDbFactory.ts';
 import { CustomShowDB } from './CustomShowDB.ts';
-import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
 import { DBAccess } from './DBAccess.ts';
+import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
 import type { MediaSourceId, MediaSourceName } from './schema/base.ts';
 import { CustomShow } from './schema/CustomShow.ts';
 import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
@@ -47,19 +48,20 @@ type Fixture = {
 const test = baseTest.extend<Fixture>({
   db: async ({}, use) => {
     const dbResult = await tmp.dir({ unsafeCleanup: true });
+    await copyPreMigratedDb(dbResult.path);
     const opts = setGlobalOptionsUnchecked({
       database: dbResult.path,
       log_level: 'debug',
       verbose: 0,
     });
-    await bootstrapTunarr(opts, ':memory:');
+    await bootstrapTunarr(opts);
     await use(dbResult.path);
-    // const dbPath = `${dbResult.path}/db.db`;
-    // await DBAccess.instance.closeConnection(dbPath);
+    const dbPath = `${dbResult.path}/db.db`;
+    await DBAccess.instance.closeConnection(dbPath);
     await dbResult.cleanup();
   },
   mediaSourceId: async ({ db: _ }, use) => {
-    const drizzle = DBAccess.instance.getConnection(':memory:')!.drizzle!;
+    const drizzle = DBAccess.instance.drizzle!;
     const uuid = v4() as MediaSourceId;
     const now = +dayjs();
     await drizzle.insert(MediaSource).values({
@@ -89,7 +91,7 @@ const test = baseTest.extend<Fixture>({
     await use(customShowDb);
   },
   drizzle: async ({ db: _ }, use) => {
-    await use(DBAccess.instance.getConnection(':memory:')!.drizzle!);
+    await use(DBAccess.instance.drizzle!);
   },
 });
 

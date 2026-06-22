@@ -87,8 +87,12 @@ import {
   NewChannelProgram,
 } from '../schema/ChannelPrograms.ts';
 import { DB } from '../schema/db.ts';
-import { ChannelOrmWithPrograms } from '../schema/derivedTypes.ts';
+import {
+  ChannelOrmWithPrograms,
+  ChannelOrmWithRelations,
+} from '../schema/derivedTypes.ts';
 import { DrizzleDBAccess } from '../schema/index.ts';
+import { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
 
 // Module-level cache shared within this module
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
@@ -155,6 +159,8 @@ export class LineupRepository {
     @inject(MaterializeProgramsCommand)
     private materializeProgramsCommand: MaterializeProgramsCommand,
     @inject(ProgramConverter) private programConverter: ProgramConverter,
+    @inject(KEYS.ChannelReadOpsRepository)
+    private readonly channelReadOps: ChannelReadOpsRepository,
   ) {}
 
   async createLineup(channelId: string): Promise<void> {
@@ -603,11 +609,10 @@ export class LineupRepository {
 
   async loadChannelAndLineupOrm(
     channelId: string,
-  ): Promise<ChannelAndLineup<ChannelOrm> | null> {
-    const channel = await this.drizzleDB.query.channels.findFirst({
-      where: (ch, { eq }) => eq(ch.uuid, channelId),
-      with: { transcodeConfig: true },
-    });
+  ): Promise<ChannelAndLineup<
+    MarkRequired<ChannelOrmWithRelations, 'fillerShows'>
+  > | null> {
+    const channel = await this.channelReadOps.getChannelOrm(channelId);
     if (isNil(channel)) {
       return null;
     }

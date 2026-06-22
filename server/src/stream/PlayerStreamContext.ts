@@ -3,7 +3,7 @@ import type { ChannelOrm } from '@/db/schema/Channel.js';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import type { ChannelStreamMode } from '@tunarr/types';
 import dayjs from 'dayjs';
-import type { StreamEncoding } from '../ffmpeg/ffmpegBase.ts';
+import type { StreamEncoding } from '../ffmpeg/types.ts';
 import type { GetCurrentLineupItemRequest } from './StreamProgramCalculator.ts';
 
 export class PlayerContext {

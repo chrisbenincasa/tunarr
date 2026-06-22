@@ -356,7 +356,9 @@ Key directories:
 
 ## Pull Request Guidelines
 
-1. **Target the `dev` branch** for all PRs
+1. **Base branch** 
+    1. **Target the `main` branch** for all non-`feat` commits, i.e.g `fix`, `chore`, `refactor`, etc.
+    2. **Target the `dev` branch** for all `feat` commits or `fix` PRs that require DB schema updates.
 2. **Keep PRs focused** - one feature or fix per PR
 3. **Use conventional commits** - follow the [commit message format](#commit-messages)
 4. **Ensure all checks pass** before requesting review

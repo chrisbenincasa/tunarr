@@ -127,7 +127,7 @@ export const ProgrammingSelector = ({
       !librariesLoading &&
       !some(libraries, (lib) => lib.enabled && !!lib.lastScannedAt);
 
-    if (noSyncedLibraries) {
+    if (noSyncedLibraries && selectedLibrary?.type !== 'custom-show') {
       return (
         <Alert severity="error">
           <Trans>

@@ -13,6 +13,7 @@ import type {
   AudioStreamDetails,
   SubtitleStreamDetails,
 } from '../stream/types.ts';
+import { isImageBasedSubtitle } from '../stream/util.ts';
 import { isDefined } from '../util/index.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
@@ -212,7 +213,11 @@ async function resolveSubtitleAction(
     }
 
     case 'by_language': {
-      if (!subtitleStreams || subtitleStreams.length === 0) {
+      if (
+        action.filterType === 'none' ||
+        !subtitleStreams ||
+        subtitleStreams.length === 0
+      ) {
         return null;
       }
 
@@ -269,15 +274,4 @@ async function resolveSubtitleAction(
       return null;
     }
   }
-}
-
-function isImageBasedSubtitle(codec: string): boolean {
-  const imageCodecs = [
-    'hdmv_pgs_subtitle',
-    'pgssub',
-    'dvd_subtitle',
-    'dvdsub',
-    'dvbsub',
-  ];
-  return imageCodecs.includes(codec.toLowerCase());
 }

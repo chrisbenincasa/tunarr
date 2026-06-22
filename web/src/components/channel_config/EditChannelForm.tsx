@@ -1,5 +1,6 @@
 import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
 import { DefaultChannel } from '@/helpers/constants.ts';
+import { useLingui } from '@lingui/react/macro';
 import { Badge } from '@mui/material';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -12,7 +13,6 @@ import type {
   SaveableChannel,
   SubtitlePreference,
 } from '@tunarr/types';
-import { useLingui } from '@lingui/react/macro';
 import { isEmpty, isNil, keys, map, reject, some } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import {

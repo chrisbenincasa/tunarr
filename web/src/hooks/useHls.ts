@@ -51,10 +51,12 @@ export const useHls = (userConfig?: Partial<HlsConfig>) => {
   }, [userConfig]);
 
   const resetHls = useCallback(() => {
-    hls?.destroy();
-    setHls(null);
+    setHls((prev) => {
+      prev?.destroy();
+      return null;
+    });
     return refreshHls();
-  }, [hls, refreshHls]);
+  }, [refreshHls]);
 
   return {
     hls,

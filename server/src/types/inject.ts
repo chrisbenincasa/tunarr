@@ -105,6 +105,7 @@ const KEYS = {
   // ChannelDB repositories
   BasicChannelRepository: Symbol.for('BasicChannelRepository'),
   ChannelProgramRepository: Symbol.for('ChannelProgramRepository'),
+  ChannelReadOpsRepository: Symbol.for('ChannelReadOpsRepository'),
   LineupRepository: Symbol.for('LineupRepository'),
   ChannelConfigRepository: Symbol.for('ChannelConfigRepository'),
 };

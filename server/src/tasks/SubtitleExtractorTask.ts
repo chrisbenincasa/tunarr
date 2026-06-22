@@ -3,8 +3,11 @@ import { ContentGuideProgram, tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { isUndefined } from 'lodash-es';
+import { createReadStream, createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { dirname, extname } from 'node:path';
+import { Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { tmpName } from 'tmp-promise';
 import z from 'zod';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
@@ -320,7 +323,23 @@ export class SubtitleExtractorTask extends Task2<
 
     const copyResults = await Promise.allSettled(
       subtitlesToSave.map(async ({ outPath, tmpPath }) => {
-        return fs.cp(tmpPath, outPath);
+        // Stream through a Transform that drops stray NUL bytes that some
+        // sources (notably mov_text -> ass and certain Plex muxers) embed
+        // inside the extracted text. libass refuses to parse a file that
+        // contains a NUL, which manifests as missing burn-in subtitles
+        // with no obvious ffmpeg-level error.
+        await pipeline(
+          createReadStream(tmpPath),
+          new Transform({
+            transform(chunk: Buffer, _encoding, cb) {
+              cb(
+                null,
+                chunk.filter((byte) => byte !== 0x00),
+              );
+            },
+          }),
+          createWriteStream(outPath),
+        );
       }),
     );
 

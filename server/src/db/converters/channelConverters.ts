@@ -1,6 +1,7 @@
 import { DefaultChannelIcon } from '@/db/schema/base.js';
 import type { Channel, SubtitlePreference } from '@tunarr/types';
 import { filter, orderBy } from 'lodash-es';
+import type { MarkRequired } from 'ts-essentials';
 import {
   isDefined,
   isNonEmptyArray,
@@ -14,7 +15,9 @@ import type { ChannelOrmWithRelations } from '../schema/derivedTypes.ts';
 export const dbChannelToApiChannel = ({
   channel,
   lineup,
-}: ChannelAndLineup<ChannelOrmWithRelations>): Channel => {
+}: ChannelAndLineup<
+  MarkRequired<ChannelOrmWithRelations, 'fillerShows'>
+>): Channel => {
   const subtitlePreferences = orderBy(
     channel.subtitlePreferences?.map(
       (pref) =>
@@ -34,7 +37,7 @@ export const dbChannelToApiChannel = ({
     id: channel.uuid,
     number: channel.number,
     watermark: nilToUndefined(channel.watermark),
-    fillerCollections: channel.fillerShows?.map((filler) => ({
+    fillerCollections: channel.fillerShows.map((filler) => ({
       id: filler.fillerShowUuid,
       cooldownSeconds: filler.cooldown,
       weight: filler.weight,
