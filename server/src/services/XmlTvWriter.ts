@@ -9,6 +9,8 @@ import {
   writeXmltv,
   Xmltv,
   type XmltvChannel,
+  type XmltvCreditImage,
+  type XmltvPerson,
   type XmltvProgramme,
 } from '@iptv/xmltv';
 import { Mutex } from 'async-mutex';
@@ -65,6 +67,10 @@ export class XmlTvWriter {
     );
     return {
       generatorInfoName: 'tunarr',
+      generatorInfoUrl: 'https://tunarr.com',
+      sourceInfoName: 'tunarr',
+      sourceInfoUrl: `{{host}}/web`,
+      sourceDataUrl: `{{host}}/api/xmltv.xml`,
       date: new Date(),
       channels: map(channels, ({ channel }) =>
         this.makeXmlTvChannel(channel, xmlChannelIdById[channel.uuid]!),
@@ -151,6 +157,10 @@ export class XmlTvWriter {
         ({ program }) =>
           `${program.album?.title ? `${program.album.title} - ` : ''}${program.title}`,
       )
+      .with(
+        { type: 'program', program: { type: 'movie' } },
+        ({ program }) => program.tagline,
+      )
       // .with(
       //   { type: 'custom', program: { subtype: P.union('track', 'episode') } },
       //   (p) => p.program?.title,
@@ -161,7 +171,6 @@ export class XmlTvWriter {
       start: new Date(guideItem.start),
       stop: new Date(guideItem.stop),
       title: [{ _value: escape(title) }],
-      previouslyShown: {},
       channel: xmlChannelId,
     };
 
@@ -191,12 +200,60 @@ export class XmlTvWriter {
         ];
       }
 
+      const credits = program.credits?.length
+        ? program.credits
+        : program.show?.credits;
+
+      for (const credit of credits ?? []) {
+        partial.credits ??= {};
+        let xmlCreditList: XmltvPerson[] | undefined;
+        switch (credit.type) {
+          case 'cast':
+            xmlCreditList = partial.credits.actor ??= [];
+            break;
+          case 'director':
+            xmlCreditList = partial.credits.director ??= [];
+            break;
+          case 'writer':
+            xmlCreditList = partial.credits.writer ??= [];
+            break;
+          case 'producer':
+            xmlCreditList = partial.credits.producer ??= [];
+            break;
+        }
+
+        xmlCreditList.push({
+          _value: escape(credit.name),
+          ...(credit.role?.length && { role: credit.role }),
+          ...(this.settingsDB.featureFlags().xmltvCreditImagesEnabled &&
+            credit.artwork?.length && {
+              image: credit.artwork.map(
+                (a) =>
+                  ({
+                    _value: `{{host}}/api/credits/${credit.uuid}/artwork/${a.artworkType}`,
+                    type: 'person',
+                  }) as XmltvCreditImage,
+              ),
+            }),
+        } as XmltvPerson);
+      }
+
+      if (program.duration > 0) {
+        // length only supports seconds minutes or hours so convert duration from ms to seconds
+        partial.length = { _value: program.duration * 0.001, units: 'seconds' };
+      }
+
       const rating = firstDefined(program.rating, program.show?.rating);
       if (rating) {
         partial.rating ??= [
           {
-            system: 'MPAA',
-            value: rating,
+            system:
+              program.type === 'movie'
+                ? 'MPAA'
+                : program.type === 'track'
+                  ? 'RIAA'
+                  : 'VCHIP',
+            value: escape(rating),
           },
         ];
       }
@@ -212,12 +269,27 @@ export class XmlTvWriter {
         }
       }
 
-      partial.category = [];
-      for (const { genre } of program.genres ?? []) {
-        partial.category.push({
-          _value: genre.name,
-        });
+      const genres = [
+        ...(program.genres ?? []),
+        ...(program.show?.genres ?? []),
+      ];
+      const uniqueCategories: Set<string> = new Set();
+      for (const { genre } of genres ?? []) {
+        uniqueCategories.add(genre.name);
       }
+
+      partial.category = Array.from(uniqueCategories).map((c) => ({
+        _value: escape(c),
+      }));
+
+      const tags = [...(program.tags ?? []), ...(program.show?.tags ?? [])];
+      const uniqueKeywords: Set<string> = new Set();
+      for (const { tag } of tags ?? []) {
+        uniqueKeywords.add(tag.tag);
+      }
+      partial.keyword = Array.from(uniqueKeywords).map((k) => ({
+        _value: escape(k),
+      }));
 
       const [seasonNumber, episodeNumber] = match(program)
         .with({ type: 'episode' }, (ep) => {
@@ -226,21 +298,32 @@ export class XmlTvWriter {
         .with({ type: 'track' }, (track) => [track.album?.index, track.episode])
         .otherwise(() => [null, null]);
 
-      if (!isNil(seasonNumber) && !isNil(episodeNumber)) {
+      partial.episodeNum = [];
+      if (!isNil(episodeNumber)) {
+        const seasonString = isNil(seasonNumber)
+          ? ''
+          : `S${seasonNumber.toString().padStart(2, '0')}`;
         partial.episodeNum = [
           {
             system: 'onscreen',
-            _value: `S${seasonNumber}E${episodeNumber}`,
+            _value: `${seasonString}E${episodeNumber.toString().padStart(2, '0')}`,
           },
         ];
-        // Simply drop the xmltv notation system for specials (seasonn == 0)
-        // or for any epipsode number that would lead to invalid syntax
-        if (seasonNumber > 0 && episodeNumber > 0) {
-          partial.episodeNum.push({
-            system: 'xmltv_ns',
-            _value: `${seasonNumber - 1}.${episodeNumber - 1}.0/1`,
-          });
-        }
+      }
+
+      // xmltv_ns string is of the format SeasonIndex.EpisodeIndex.PartIndex/PartCount
+      // where indexes are 0-based and each portion is optional if unknown
+      // we don't have part information right now so we always omit it
+      // we also omit the season number for season 0 as that is used for specials which don't have a valid representation in this format
+      if (episodeNumber || seasonNumber) {
+        partial.episodeNum.push({
+          system: 'xmltv_ns',
+          _value: `${seasonNumber ? seasonNumber - 1 : ''}.${episodeNumber ? episodeNumber - 1 : ''}.`,
+        });
+      }
+
+      if (program.type === 'track') {
+        partial.video = { present: false };
       }
 
       const useShowPoster =
@@ -249,7 +332,7 @@ export class XmlTvWriter {
         useShowPoster,
       });
 
-      partial.image = [{ _value: url, size: 3 }];
+      partial.image = [{ _value: url, size: 3, type: 'poster' }];
       partial.icon = [{ src: url }];
     }
 

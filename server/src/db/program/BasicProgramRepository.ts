@@ -106,10 +106,30 @@ export class BasicProgramRepository {
             with: {
               externalIds: true,
               artwork: true,
+              tags: {
+                with: {
+                  tag: true,
+                },
+              },
+              genres: {
+                with: {
+                  genre: true,
+                },
+              },
             },
           },
           externalIds: true,
           artwork: true,
+          credits: {
+            with: {
+              artwork: true,
+            },
+          },
+          genres: {
+            with: {
+              genre: true,
+            },
+          },
           tags: {
             with: {
               tag: true,
