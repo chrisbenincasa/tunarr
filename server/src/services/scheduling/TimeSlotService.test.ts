@@ -7,7 +7,11 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createFakeProgramOrm } from '../../testing/fakes/entityCreators.ts';
 import { groupByUniq } from '../../util/index.ts';
 import type { SlotSchedulerProgram } from './slotSchedulerUtil.js';
-import { createProgramMap, createSlotIterators } from './slotSchedulerUtil.js';
+import {
+  createProgramMap,
+  createSlotIterators,
+  deduplicateSlotIds,
+} from './slotSchedulerUtil.js';
 import { scheduleTimeSlots } from './TimeSlotService.ts';
 import { MersenneTwister19937, Random } from 'random-js';
 
@@ -70,6 +74,153 @@ describe('createSlotIterators unit', () => {
     itA.next();
     expect(itA.current(state)?.id).toBe('ep2');
     expect(itB.current(state)?.id).toBe('ep1');
+  });
+
+  test('BUG REPRO: duplicate slot IDs cause slots to share iterators', () => {
+    // When switching from daily to weekly in the UI, slots are duplicated
+    // across days but keep the same ID. This causes the Map in
+    // createSlotIterators to overwrite earlier entries.
+    const showAEpisodes: SlotSchedulerProgram[] = [1, 2].map((i) => ({
+      ...createFakeProgramOrm({
+        uuid: `showA-ep${i}`,
+        title: `Show A Episode ${i}`,
+        type: 'episode',
+        duration: 30 * 60 * 1000,
+        episode: i,
+        tvShowUuid: 'showA',
+        show: { uuid: 'showA' },
+      }),
+      parentFillerLists: [],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+    const showBEpisodes: SlotSchedulerProgram[] = [1, 2].map((i) => ({
+      ...createFakeProgramOrm({
+        uuid: `showB-ep${i}`,
+        title: `Show B Episode ${i}`,
+        type: 'episode',
+        duration: 30 * 60 * 1000,
+        episode: i,
+        tvShowUuid: 'showB',
+        show: { uuid: 'showB' },
+      }),
+      parentFillerLists: [],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+    // Simulate the UI bug: both slots have the SAME id
+    const sharedId = randomUUID();
+    const slotA = {
+      id: sharedId,
+      startTime: 0,
+      type: 'show' as const,
+      showId: 'showA',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+    };
+    const slotB = {
+      id: sharedId, // Same ID — this is the bug
+      startTime: 24 * 60 * 60 * 1000, // Next day
+      type: 'show' as const,
+      showId: 'showB',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+    };
+
+    const mt = MersenneTwister19937.seed(42);
+    const random = new Random(mt);
+    const programMap = createProgramMap([...showAEpisodes, ...showBEpisodes]);
+
+    // Without deduplication, both slots resolve to the same iterator
+    // because result.set(sharedId, ...) overwrites the first entry.
+    const slots = [slotA, slotB];
+    deduplicateSlotIds(slots);
+
+    // After dedup, the IDs should be unique
+    expect(slots[0].id).not.toBe(slots[1].id);
+
+    const { iterators } = createSlotIterators(slots, programMap, random);
+
+    const itA = iterators.get(slots[0].id)!;
+    const itB = iterators.get(slots[1].id)!;
+
+    expect(itA).toBeDefined();
+    expect(itB).toBeDefined();
+    expect(itA).not.toBe(itB);
+
+    const state = { slotDuration: 60 * 60 * 1000, timeCursor: 0 };
+
+    // Slot A should only iterate over Show A episodes
+    expect(itA.current(state)?.id).toBe('showA-ep1');
+    itA.next();
+    expect(itA.current(state)?.id).toBe('showA-ep2');
+
+    // Slot B should only iterate over Show B episodes
+    expect(itB.current(state)?.id).toBe('showB-ep1');
+    itB.next();
+    expect(itB.current(state)?.id).toBe('showB-ep2');
+  });
+
+  test('deduplicateSlotIds assigns fresh IDs to duplicates only', () => {
+    const id1 = randomUUID();
+    const id2 = randomUUID();
+
+    const slots = [
+      {
+        id: id1,
+        type: 'show' as const,
+        showId: 'a',
+        startTime: 0,
+        order: 'next' as const,
+        direction: 'asc' as const,
+        seasonFilter: [],
+      },
+      {
+        id: id1,
+        type: 'show' as const,
+        showId: 'b',
+        startTime: 1000,
+        order: 'next' as const,
+        direction: 'asc' as const,
+        seasonFilter: [],
+      },
+      {
+        id: id2,
+        type: 'show' as const,
+        showId: 'c',
+        startTime: 2000,
+        order: 'next' as const,
+        direction: 'asc' as const,
+        seasonFilter: [],
+      },
+      {
+        id: id1,
+        type: 'show' as const,
+        showId: 'd',
+        startTime: 3000,
+        order: 'next' as const,
+        direction: 'asc' as const,
+        seasonFilter: [],
+      },
+    ];
+
+    deduplicateSlotIds(slots);
+
+    // First occurrence keeps its ID
+    expect(slots[0].id).toBe(id1);
+    // Second occurrence of id1 gets a new ID
+    expect(slots[1].id).not.toBe(id1);
+    // id2 is unique, stays the same
+    expect(slots[2].id).toBe(id2);
+    // Third occurrence of id1 also gets a new ID
+    expect(slots[3].id).not.toBe(id1);
+    // All IDs are now unique
+    const allIds = slots.map((s) => s.id);
+    expect(new Set(allIds).size).toBe(4);
   });
 
   test('rerun group: both slots see the same episode, advance after both fire', () => {

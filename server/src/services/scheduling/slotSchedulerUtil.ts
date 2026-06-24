@@ -394,6 +394,26 @@ export type SlotIteratorResult = {
 
 type GroupClassification = 'all-rerun' | 'all-continue' | 'mixed';
 
+/**
+ * Ensures every slot in the array has a unique `id`. If duplicate IDs are
+ * found (e.g. when the UI copies daily slots across a weekly schedule without
+ * regenerating IDs), later duplicates receive a fresh UUID so each slot
+ * gets its own program iterator.
+ *
+ * Mutates the slots in-place and returns the same array.
+ */
+export function deduplicateSlotIds<T extends BaseSlot>(slots: T[]): T[] {
+  const seenIds = new Set<string>();
+  for (const slot of slots) {
+    if (!('id' in slot) || typeof slot.id !== 'string') continue;
+    if (seenIds.has(slot.id)) {
+      (slot as BaseSlot & { id: string }).id = v4();
+    }
+    seenIds.add(slot.id);
+  }
+  return slots;
+}
+
 export function createSlotIterators(
   slots: BaseSlot[],
   programBySlotType: ProgramMapping,

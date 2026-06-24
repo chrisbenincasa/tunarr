@@ -8,6 +8,7 @@ import {
   OneWeekMillis,
   lineupItemAppearsInSchedule,
 } from '@/helpers/slotSchedulerUtil.ts';
+import { v4 } from 'uuid';
 import type {
   TimeSlotForm,
   TimeSlotViewModel,
@@ -259,6 +260,7 @@ export default function TimeSlotEditorPage() {
         newSlots = flatMap(offsets, (offset) => {
           return map(currentSlots, (slot) => ({
             ...slot,
+            ...('id' in slot ? { id: v4() } : {}),
             startTime: slot.startTime + offset,
           }));
         });
