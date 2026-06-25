@@ -5,6 +5,7 @@ import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
 import {
   createChannel,
   createFakeProgram,
+  createFakeShow,
 } from '../testing/fakes/entityCreators.ts';
 import {
   inMemorySettingsDB,
@@ -88,7 +89,10 @@ describe('XmlTvWriter', () => {
               program: {
                 ...createFakeProgram({
                   summary: `The family's trip to Itchy & Scratchy Land takes an unexpected turn when high-tech robots malfunction and become violent.`,
+                  type: 'episode',
                 }),
+                seasonNumber: 6,
+                episode: 4,
                 genres: [
                   {
                     genre: { uuid: v4(), name: 'Comedy' },
@@ -103,6 +107,61 @@ describe('XmlTvWriter', () => {
                     programId: '',
                   },
                 ],
+                tags: [
+                  {
+                    tag: { uuid: v4(), tag: 'Theme Park' },
+                    tagId: v4(),
+                    programId: null,
+                    source: 'media',
+                    groupingId: null,
+                  },
+                  {
+                    tag: { uuid: v4(), tag: 'Itchy & Scratchy' },
+                    tagId: v4(),
+                    programId: null,
+                    source: 'media',
+                    groupingId: null,
+                  },
+                ],
+                show: {
+                  ...createFakeShow({
+                    genres: [
+                      {
+                        genre: { uuid: v4(), name: 'Comedy' },
+                        genreId: '',
+                        groupId: '',
+                        programId: '',
+                      },
+                      {
+                        genre: { uuid: v4(), name: 'Animated' },
+                        genreId: '',
+                        groupId: '',
+                        programId: '',
+                      },
+                      {
+                        genre: { uuid: v4(), name: 'Long-Running' },
+                        genreId: '',
+                        groupId: '',
+                        programId: '',
+                      },
+                      {
+                        genre: { uuid: v4(), name: '< 30 min' },
+                        genreId: '',
+                        groupId: '',
+                        programId: '',
+                      },
+                    ],
+                    tags: [
+                      {
+                        tag: { uuid: v4(), tag: 'Dysfunctional Family' },
+                        tagId: v4(),
+                        programId: null,
+                        source: 'media',
+                        groupingId: null,
+                      },
+                    ],
+                  }),
+                },
               },
             },
           },
@@ -116,13 +175,103 @@ describe('XmlTvWriter', () => {
       expect(output.programmes[0]?.desc?.[0]?._value).includes('&amp;');
     });
 
-    test('adds genres', () => {
+    test('adds and escapes genres as categories', () => {
       const writer = new XmlTvWriter(inMemorySettingsDB());
       const output = writer.generateXmltv(channels);
       expect(output.programmes[0]?.category?.map((c) => c._value)).toEqual([
         'Comedy',
         'Animated',
+        'Long-Running',
+        '&lt; 30 min',
       ]);
+    });
+
+    test('adds and escapes tags as keywords', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const output = writer.generateXmltv(channels);
+      expect(output.programmes[0]?.keyword?.map((c) => c._value)).toEqual([
+        'Theme Park',
+        'Itchy &amp; Scratchy',
+        'Dysfunctional Family',
+      ]);
+    });
+
+    test('zero-pads single digit onscreen season and episode numbers', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const output = writer.generateXmltv(channels);
+      const onscreenEpisodeNum = output.programmes[0]?.episodeNum?.find(
+        (e) => e.system === 'onscreen',
+      );
+      expect(onscreenEpisodeNum?._value).toBe('S06E04');
+    });
+
+    test('generates xmltv_ns format with 0-based indices', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const output = writer.generateXmltv(channels);
+      const xmltvNs = output.programmes[0]?.episodeNum?.find(
+        (e) => e.system === 'xmltv_ns',
+      );
+      expect(xmltvNs?._value).toBe('5.3.');
+    });
+
+    test('handles double digit season and episode numbers', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    type: 'episode',
+                    seasonNumber: 12,
+                    episode: 25,
+                  }),
+                },
+              },
+              title: 'Test Episode',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      const onscreenEpisodeNum = output.programmes[0]?.episodeNum?.find(
+        (e) => e.system === 'onscreen',
+      );
+      expect(onscreenEpisodeNum?._value).toBe('S12E25');
+    });
+
+    test('omits season number for season 0 (specials) in xmltv_ns', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    type: 'episode',
+                    seasonNumber: 0,
+                    episode: 1,
+                  }),
+                },
+              },
+              title: 'Test Special',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      const xmltvNs = output.programmes[0]?.episodeNum?.find(
+        (e) => e.system === 'xmltv_ns',
+      );
+      expect(xmltvNs?._value).toBe('.0.');
     });
   });
 
@@ -450,6 +599,150 @@ describe('XmlTvWriter', () => {
         const url = resolveArtworkUrl(program, { useShowPoster: false });
         expect(url).toBe(`{{host}}/api/programs/${programId}/thumb`);
       });
+    });
+  });
+
+  describe('credits', () => {
+    test('maps cast type to actor credits', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    type: 'movie',
+                    credits: [
+                      {
+                        uuid: v4(),
+                        name: 'Alan Smithee',
+                        type: 'cast',
+                        role: 'Himself',
+                        artwork: [],
+                      },
+                    ],
+                  }),
+                },
+              },
+              start: Date.now(),
+              stop: Date.now() + 3600000,
+              title: 'See You Next Wednesday',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      const credits = output.programmes[0]?.credits;
+      expect(credits?.actor).toBeDefined();
+      expect(credits?.actor?.[0]?._value).toBe('Alan Smithee');
+      expect(credits?.actor?.[0]?.role).toBe('Himself');
+    });
+
+    test('maps director, writer, and producer credits correctly', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    type: 'movie',
+                    credits: [
+                      {
+                        uuid: v4(),
+                        name: 'Alan Smithee',
+                        type: 'director',
+                      },
+                      {
+                        uuid: v4(),
+                        name: 'Cordwainer Bird',
+                        type: 'writer',
+                      },
+                      {
+                        uuid: v4(),
+                        name: 'John Doe',
+                        type: 'producer',
+                      },
+                    ],
+                  }),
+                },
+              },
+              start: Date.now(),
+              stop: Date.now() + 3600000,
+              title: 'See You Next Wednesday',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      const credits = output.programmes[0]?.credits;
+      expect(credits?.director?.[0]?._value).toBe('Alan Smithee');
+      expect(credits?.writer?.[0]?._value).toBe('Cordwainer Bird');
+      expect(credits?.producer?.[0]?._value).toBe('John Doe');
+    });
+  });
+
+  describe('duration and metadata', () => {
+    test('omits length when duration is zero or negative', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    duration: 0,
+                  }),
+                },
+              },
+              start: Date.now(),
+              stop: Date.now() + 3600000,
+              title: 'Test',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      expect(output.programmes[0]?.length).toBeUndefined();
+    });
+
+    test('adds video present: false for tracks', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    type: 'track',
+                  }),
+                },
+              },
+              start: Date.now(),
+              stop: Date.now() + 3600000,
+              title: 'Test Track',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      expect(output.programmes[0]?.video?.present).toBe(false);
     });
   });
 });
