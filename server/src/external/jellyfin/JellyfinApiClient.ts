@@ -1267,7 +1267,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
           chapterType: 'chapter',
           endTime: end,
           index: i,
-          startTime: chapter.StartPositionTicks!,
+          startTime: chapter.StartPositionTicks! / 10_000,
           title: chapter.Name,
         });
       }

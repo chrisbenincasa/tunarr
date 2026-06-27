@@ -40,6 +40,7 @@ import {
   createSlotIterators,
   createSlotProgramIterator,
   deduplicatePrograms,
+  deduplicateSlotIds,
   distributeFlex,
   getFillerIteratorsForSlot,
   maybeAddPrePostFiller,
@@ -96,6 +97,10 @@ export async function scheduleTimeSlots(
 ): Promise<TimeSlotScheduleResult> {
   const mt = MersenneTwister19937.seedWithArray(seed).discard(discardCount);
   const random = new Random(mt);
+
+  // Ensure every slot has a unique ID. The UI can produce duplicate IDs
+  // when expanding a daily schedule into a weekly one.
+  deduplicateSlotIds(schedule.slots);
 
   // Load programs
   // TODO: include redirects and custom programs!

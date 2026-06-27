@@ -512,7 +512,7 @@ msgstr ""
 msgid "Allow Image Based"
 msgstr ""
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:383
+#: src/pages/channels/TimeSlotEditorPage.tsx:385
 msgid "Allows programs to play a bit late if the previous program took longer than usual. If a program is too late, Flex is scheduled instead."
 msgstr ""
 
@@ -663,7 +663,7 @@ msgid "Back"
 msgstr ""
 
 #: src/pages/channels/RandomSlotEditorPage.tsx:261
-#: src/pages/channels/TimeSlotEditorPage.tsx:529
+#: src/pages/channels/TimeSlotEditorPage.tsx:531
 msgid "Back to Programming"
 msgstr ""
 
@@ -752,7 +752,7 @@ msgstr ""
 msgid "By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups"
 msgstr ""
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:352
+#: src/pages/channels/TimeSlotEditorPage.tsx:354
 msgid "By default, time slots are time of the day-based, you can change it to time of the day + day of the week. That means scheduling 7x the number of time slots. If you change from daily to weekly, the current schedule will be repeated 7 times. If you change from weekly to daily, many of the slots will be deleted."
 msgstr ""
 
@@ -760,7 +760,7 @@ msgstr ""
 msgid "Caching"
 msgstr ""
 
-#: src/hooks/slot_scheduler/useScheduleSlots.ts:71
+#: src/hooks/slot_scheduler/useScheduleSlots.ts:88
 msgid "Calculated {humanizedDuration} ({numShows} programs) of programming in {duration}ms"
 msgstr ""
 
@@ -1155,7 +1155,7 @@ msgstr ""
 msgid "Cyclic Shuffle randomly shuffles groups of programming."
 msgstr ""
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:343
+#: src/pages/channels/TimeSlotEditorPage.tsx:345
 msgid "Daily"
 msgstr ""
 
@@ -1175,8 +1175,8 @@ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:200
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:202
-#: src/pages/channels/TimeSlotEditorPage.tsx:453
 #: src/pages/channels/TimeSlotEditorPage.tsx:455
+#: src/pages/channels/TimeSlotEditorPage.tsx:457
 msgid "Days to Precalculate"
 msgstr ""
 
@@ -1570,7 +1570,7 @@ msgstr ""
 msgid "End Time"
 msgstr ""
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:411
+#: src/pages/channels/TimeSlotEditorPage.tsx:413
 msgid "Ensures programs have a nice-looking start time, it will add Flex time to fill the gaps."
 msgstr ""
 
@@ -1945,8 +1945,8 @@ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:142
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:147
-#: src/pages/channels/TimeSlotEditorPage.tsx:422
-#: src/pages/channels/TimeSlotEditorPage.tsx:428
+#: src/pages/channels/TimeSlotEditorPage.tsx:424
+#: src/pages/channels/TimeSlotEditorPage.tsx:430
 msgid "Flex Style"
 msgstr ""
 
@@ -2433,8 +2433,8 @@ msgstr ""
 msgid "Max file size (bytes)"
 msgstr ""
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:366
-#: src/pages/channels/TimeSlotEditorPage.tsx:372
+#: src/pages/channels/TimeSlotEditorPage.tsx:368
+#: src/pages/channels/TimeSlotEditorPage.tsx:374
 msgid "Max Lateness"
 msgstr ""
 
@@ -2450,7 +2450,7 @@ msgstr ""
 msgid "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel."
 msgstr ""
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:462
+#: src/pages/channels/TimeSlotEditorPage.tsx:464
 msgid "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel.<0/><1>Note: Previewing the schedule in the browser for long lengths of time can cause UI performance issues</1>"
 msgstr ""
 
@@ -2853,8 +2853,8 @@ msgstr ""
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:92
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx:21
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx:26
-#: src/pages/channels/TimeSlotEditorPage.tsx:394
-#: src/pages/channels/TimeSlotEditorPage.tsx:400
+#: src/pages/channels/TimeSlotEditorPage.tsx:396
+#: src/pages/channels/TimeSlotEditorPage.tsx:402
 msgid "Pad Times"
 msgstr ""
 
@@ -2880,8 +2880,8 @@ msgstr ""
 msgid "Percentage-Based"
 msgstr ""
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:331
-#: src/pages/channels/TimeSlotEditorPage.tsx:338
+#: src/pages/channels/TimeSlotEditorPage.tsx:333
+#: src/pages/channels/TimeSlotEditorPage.tsx:340
 msgid "Period"
 msgstr ""
 
@@ -2990,12 +2990,12 @@ msgid "Programming"
 msgstr ""
 
 #: src/pages/channels/RandomSlotEditorPage.tsx:222
-#: src/pages/channels/TimeSlotEditorPage.tsx:494
+#: src/pages/channels/TimeSlotEditorPage.tsx:496
 msgid "Programming Preview"
 msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx:181
-#: src/pages/channels/TimeSlotEditorPage.tsx:498
+#: src/pages/channels/TimeSlotEditorPage.tsx:500
 msgid "Programming Start"
 msgstr ""
 
@@ -3105,7 +3105,7 @@ msgid "Refresh Page"
 msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:247
-#: src/pages/channels/TimeSlotEditorPage.tsx:488
+#: src/pages/channels/TimeSlotEditorPage.tsx:490
 msgid "Refresh Preview"
 msgstr ""
 
@@ -3237,7 +3237,7 @@ msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx:488
 #: src/pages/channels/RandomSlotEditorPage.tsx:266
-#: src/pages/channels/TimeSlotEditorPage.tsx:534
+#: src/pages/channels/TimeSlotEditorPage.tsx:536
 msgid "Reset Options"
 msgstr ""
 
@@ -3337,7 +3337,7 @@ msgstr ""
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:196
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:121
 #: src/pages/channels/RandomSlotEditorPage.tsx:270
-#: src/pages/channels/TimeSlotEditorPage.tsx:542
+#: src/pages/channels/TimeSlotEditorPage.tsx:544
 #: src/pages/settings/FeaturesSettingsPage.tsx:170
 #: src/pages/settings/FfmpegSettingsPage.tsx:417
 #: src/pages/settings/HdhrSettingsPage.tsx:152
@@ -3489,7 +3489,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:83
 #: src/hooks/useNavItems.tsx:129
-#: src/pages/channels/TimeSlotEditorPage.tsx:313
+#: src/pages/channels/TimeSlotEditorPage.tsx:315
 #: src/pages/settings/SettingsLayout.tsx:16
 msgid "Settings"
 msgstr ""
@@ -3852,7 +3852,7 @@ msgstr ""
 msgid "Theme Settings"
 msgstr ""
 
-#: src/hooks/slot_scheduler/useScheduleSlots.ts:122
+#: src/hooks/slot_scheduler/useScheduleSlots.ts:139
 msgid "There was an error generating time slots. Check the browser console log for more information"
 msgstr ""
 
@@ -3973,7 +3973,7 @@ msgstr ""
 msgid "Time Slot Editor"
 msgstr ""
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:301
+#: src/pages/channels/TimeSlotEditorPage.tsx:303
 msgid "Time Slots"
 msgstr ""
 
@@ -4170,7 +4170,7 @@ msgstr ""
 msgid "Username"
 msgstr ""
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:438
+#: src/pages/channels/TimeSlotEditorPage.tsx:440
 msgid "Usually slots need to add flex time to ensure that the next slot starts at the correct time. When there are multiple videos in the slot, you might prefer to distribute the flex time between the videos or to place most of the flex time at the end of the slot."
 msgstr ""
 
@@ -4283,7 +4283,7 @@ msgstr ""
 msgid "Week"
 msgstr ""
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:346
+#: src/pages/channels/TimeSlotEditorPage.tsx:348
 msgid "Weekly"
 msgstr ""
 

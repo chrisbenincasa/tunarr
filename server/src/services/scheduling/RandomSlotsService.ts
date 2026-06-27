@@ -39,6 +39,7 @@ import {
   createSlotIterators,
   createSlotProgramIterator,
   deduplicatePrograms,
+  deduplicateSlotIds,
   distributeFlex,
   getFillerIteratorsForSlot,
   maybeAddPrePostFiller,
@@ -75,6 +76,7 @@ class ScheduleContext {
       discardCount,
     );
     this.#random = new Random(this.#engine);
+    deduplicateSlotIds(schedule.slots);
     const programMap = createProgramMap(deduplicatePrograms(programming));
     const fillerIterators = createFillerIterators(
       schedule.slots,

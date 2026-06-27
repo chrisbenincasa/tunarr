@@ -2,16 +2,21 @@ import type { RandomSlotForm } from '@/model/SlotModels.ts';
 import { t } from '@lingui/core/macro';
 import { useMutation } from '@tanstack/react-query';
 import type { ChannelProgram } from '@tunarr/types';
+import type { TimeSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { isError } from 'lodash-es';
+import { isError, omit } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo } from 'react';
+import { match } from 'ts-pattern';
 import {
   postApiChannelsByChannelIdScheduleSlots,
   postApiChannelsByChannelIdScheduleTimeSlots,
 } from '../../generated/sdk.gen.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
-import type { TimeSlotForm } from '../../model/TimeSlotModels.ts';
+import type {
+  TimeSlotForm,
+  TimeSlotViewModel,
+} from '../../model/TimeSlotModels.ts';
 import {
   setCurrentLineup,
   updateCurrentChannel,
@@ -29,6 +34,17 @@ type TimeOrRandomForm =
   | ({ type: 'time' } & TimeSlotForm)
   | ({ type: 'random' } & RandomSlotForm);
 
+function removeProgrammingFromTimeSlot(slot: TimeSlotViewModel): TimeSlot {
+  return match(slot)
+    .with({ type: 'show' }, (show) => ({
+      ...omit(show, ['show', 'missingShow']),
+    }))
+    .with({ type: 'smart-collection' }, (sc) => ({
+      ...omit(sc, 'smartCollection'),
+    }))
+    .otherwise((slot) => slot);
+}
+
 export const useScheduleSlots = () => {
   const snackbar = useSnackbar();
   const {
@@ -42,6 +58,7 @@ export const useScheduleSlots = () => {
         body: {
           schedule: {
             ...values,
+            slots: values.slots.map(removeProgrammingFromTimeSlot),
             timeZoneOffset: new Date().getTimezoneOffset(),
             type: 'time',
           },
