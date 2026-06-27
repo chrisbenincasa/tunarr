@@ -79,8 +79,8 @@ const test = baseTest.extend<Fixture>({
   customShowDb: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
 
-    const kyselyDb = dbAccess.getKyselyDatabase(':memory:')!;
-    const drizzleDb = dbAccess.getConnection(':memory:')!.drizzle!;
+    const kyselyDb = dbAccess.db!;
+    const drizzleDb = dbAccess.drizzle!;
     const basicProgramRepo = new BasicProgramRepository(kyselyDb, drizzleDb);
     const customShowDb = new CustomShowDB(
       kyselyDb,
