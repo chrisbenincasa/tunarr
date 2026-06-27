@@ -103,7 +103,6 @@ export const ChannelConcatStreamModes = [
 export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;
 export const ChannelStreamModeSchema = z.enum(ChannelStreamModes);
 
-
 export type ChannelConcatStreamMode = TupleToUnion<
   typeof ChannelConcatStreamModes
 >;
@@ -113,6 +112,7 @@ export const StreamConnectionDetailsSchema = z.object({
   ip: z.ipv4().or(z.ipv6()),
   userAgent: z.string().optional(),
   lastHeartbeat: z.number().nonnegative().optional(),
+  lastHeartbeatStr: z.iso.datetime({ offset: true }).optional(),
 });
 
 export const ChannelSessionSchema = z.object({
