@@ -22,6 +22,7 @@ import { ProgramMetadataRepository } from './program/ProgramMetadataRepository.t
 import { ProgramGroupingUpsertRepository } from './program/ProgramGroupingUpsertRepository.ts';
 import { ProgramSearchRepository } from './program/ProgramSearchRepository.ts';
 import { ProgramStateRepository } from './program/ProgramStateRepository.ts';
+import { ProgramExtraRepository } from './program/ProgramExtraRepository.ts';
 import { NewArtwork } from './schema/Artwork.ts';
 import {
   MediaSourceId,
@@ -130,6 +131,7 @@ const test = baseTest.extend<Fixture>({
       groupingUpsertRepo,
       new ProgramSearchRepository(dbAccess.db!, dbAccess.drizzle!),
       new ProgramStateRepository(dbAccess.drizzle!),
+      new ProgramExtraRepository(dbAccess.drizzle!, metadataRepo),
     );
 
     await use(programDb);
