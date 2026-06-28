@@ -252,9 +252,11 @@ function wrapWithTransaction(
           ({
             ...m,
             upDrizzle(db) {
-              return db.transaction((tx) => {
+              db.run('PRAGMA defer_foreign_keys = ON');
+              db.transaction((tx) => {
                 return m.upDrizzle(tx);
               });
+              db.run('PRAGMA defer_foreign_keys = OFF');
             },
           }) satisfies TunarrDatabaseMigrationWithDrizzle,
       )
