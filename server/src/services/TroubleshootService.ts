@@ -16,7 +16,7 @@ import { isNonEmptyArray } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { TroubleshootStreamSelectionTrace } from '@tunarr/types';
+import type { TroubleshootStreamSelectionTrace } from '@tunarr/types';
 import type {
   TroubleshootRequest,
   TroubleshootResult,
@@ -31,13 +31,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { Writable } from 'node:stream';
 import { v4 as uuidv4 } from 'uuid';
-import { ChannelDB } from '../db/ChannelDB.ts';
+import type { ChannelDB } from '../db/ChannelDB.ts';
 import { TranscodeConfigDB } from '../db/TranscodeConfigDB.ts';
 import { ormChannelToApiChannel } from '../db/converters/channelConverters.ts';
 import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { PlayerContext } from '../stream/PlayerStreamContext.ts';
-import { ProgramStreamFactory } from '../stream/ProgramStreamFactory.ts';
+import type { ProgramStreamFactory } from '../stream/ProgramStreamFactory.ts';
 import type {
   AudioStreamDetails,
   SubtitleStreamDetails,

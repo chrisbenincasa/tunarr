@@ -1,5 +1,5 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import {
+import type {
   Genre,
   MusicAlbumMetadata,
   MusicArtist,
@@ -10,8 +10,9 @@ import {
 import glob from 'fast-glob';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { chunk, compact, head, isNil, uniq, uniqBy, uniqWith } from 'lodash-es';
-import { IAudioMetadata, parseFile } from 'music-metadata';
-import { Dirent } from 'node:fs';
+import type { IAudioMetadata} from 'music-metadata';
+import { parseFile } from 'music-metadata';
+import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { extname } from 'node:path';
 import { format } from 'node:util';
@@ -19,38 +20,39 @@ import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import {
+import type {
   IProgramDB,
   ProgramCanonicalIdLookupResult,
 } from '../../db/interfaces/IProgramDB.ts';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { ArtworkType } from '../../db/schema/Artwork.ts';
-import { NewGenre } from '../../db/schema/Genre.ts';
+import type { ArtworkType } from '../../db/schema/Artwork.ts';
+import type { NewGenre } from '../../db/schema/Genre.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import { MusicAlbumNfoParser } from '../../nfo/MusicAlbumNfoParser.ts';
 import { MusicArtistNfoParser } from '../../nfo/MusicArtistNfoParser.ts';
-import { MusicAlbumNfo, MusicArtistNfo } from '../../nfo/NfoSchemas.ts';
+import type { MusicAlbumNfo, MusicArtistNfo } from '../../nfo/NfoSchemas.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
-import { AlbumWithArtist, HasMediaSourceInfo } from '../../types/Media.ts';
+import type { AlbumWithArtist, HasMediaSourceInfo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { Maybe } from '../../types/util.ts';
+import type { Maybe } from '../../types/util.ts';
 import dayjs from '../../util/dayjs.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { isDefined, wait } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { titleToSortTitle } from '../../util/programs.ts';
-import { Canonicalizer } from '../Canonicalizer.ts';
+import type { Canonicalizer } from '../Canonicalizer.ts';
 import { ImageCache } from '../ImageCache.ts';
 import { FallbackMetadataService } from '../local/FallbackMetadataService.ts';
-import { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
-import { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
+import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
+import type { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { KnownAudioFileExtensions } from './constants.ts';
-import { FileSystemScanner, LocalScanContext } from './FileSystemScanner.ts';
+import type { LocalScanContext } from './FileSystemScanner.ts';
+import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
 type TrackParseResult = {

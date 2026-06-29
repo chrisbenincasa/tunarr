@@ -1,43 +1,44 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import { Director, MusicVideo, MusicVideoMetadata } from '@tunarr/types';
+import type { Director, MusicVideo, MusicVideoMetadata } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { chunk, compact, isNil } from 'lodash-es';
-import { Dirent } from 'node:fs';
+import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import {
+import type {
   IProgramDB,
   ProgramCanonicalIdLookupResult,
 } from '../../db/interfaces/IProgramDB.ts';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { ArtworkType } from '../../db/schema/Artwork.ts';
+import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import { MusicVideoNfoParser } from '../../nfo/MusicVideoNfoParser.ts';
-import { MusicVideoNfo } from '../../nfo/NfoSchemas.ts';
+import type { MusicVideoNfo } from '../../nfo/NfoSchemas.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { KEYS } from '../../types/inject.ts';
-import { HasMediaSourceInfo } from '../../types/Media.ts';
+import type { HasMediaSourceInfo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { Maybe } from '../../types/util.ts';
+import type { Maybe } from '../../types/util.ts';
 import { changeFileExtension, fileExists } from '../../util/fsUtil.ts';
 import { isDefined, wait } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { titleToSortTitle } from '../../util/programs.ts';
-import { Canonicalizer } from '../Canonicalizer.ts';
+import type { Canonicalizer } from '../Canonicalizer.ts';
 import { ImageCache } from '../ImageCache.ts';
 import { FallbackMetadataService } from '../local/FallbackMetadataService.ts';
 import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
-import { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
-import { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
+import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
+import type { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { KnownVideoFileExtensions } from './constants.ts';
-import { FileSystemScanner, LocalScanContext } from './FileSystemScanner.ts';
+import type { LocalScanContext } from './FileSystemScanner.ts';
+import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
 @injectable()

@@ -2,7 +2,8 @@ import { SessionManager } from '@/stream/SessionManager.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
-import { SimpleTask, TaskId } from './Task.js';
+import type { TaskId } from './Task.js';
+import { SimpleTask } from './Task.js';
 import { simpleTaskDef } from './TaskRegistry.ts';
 
 @injectable()

@@ -207,7 +207,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
 
       if (!errorExpected) {
         LoggerFactory.root.error(
-          { error: error as unknown, caller: EmbyApiClient.name },
+          { error: error, caller: EmbyApiClient.name },
           'Error retrieving Emby self user',
         );
       }
@@ -279,7 +279,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       }
 
       LoggerFactory.root.error(
-        { error: e as unknown, className: EmbyApiClient.name },
+        { error: e, className: EmbyApiClient.name },
         'Error logging into Emby',
       );
       throw e;

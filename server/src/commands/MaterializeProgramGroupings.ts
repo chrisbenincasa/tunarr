@@ -1,16 +1,17 @@
-import { MediaSourceId } from '@tunarr/shared';
-import { ProgramGrouping, untag } from '@tunarr/types';
+import type { MediaSourceId } from '@tunarr/shared';
+import type { ProgramGrouping} from '@tunarr/types';
+import { untag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { capitalize } from 'lodash-es';
-import { NonEmptyArray } from 'ts-essentials';
+import type { NonEmptyArray } from 'ts-essentials';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
-import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
+import type { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { KEYS } from '../types/inject.ts';
 import { groupByUniq } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
 export class MaterializeProgramGroupings {

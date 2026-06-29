@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 import 'vitest';
-import { FrameSize } from '../ffmpeg/builder/types.ts';
+import type { FrameSize } from '../ffmpeg/builder/types.ts';
 
 interface CustomMatchers<R = unknown> {
   toMatchPixelFormat: (expected: PixelFormat) => R;

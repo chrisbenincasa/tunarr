@@ -1,14 +1,15 @@
-import { MediaSourceId } from '@tunarr/shared';
-import { TerminalProgram, untag } from '@tunarr/types';
+import type { MediaSourceId } from '@tunarr/shared';
+import type { TerminalProgram} from '@tunarr/types';
+import { untag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { match } from 'ts-pattern';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
+import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
 
 import { groupByUniq } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
 export class MaterializeProgramsCommand {

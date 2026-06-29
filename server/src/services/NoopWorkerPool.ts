@@ -1,16 +1,16 @@
 import { inject, injectable } from 'inversify';
-import { StrictOmit } from 'ts-essentials';
+import type { StrictOmit } from 'ts-essentials';
 import { match } from 'ts-pattern';
-import { z } from 'zod/v4';
-import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import type { z } from 'zod/v4';
+import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 
-import {
+import type {
   WorkerRequest,
   WorkerRequestToResponse,
 } from '../types/worker_schemas.ts';
 import { USE_WORKER_POOL_ENV_VAR } from '../util/env.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { SlotSchedulerService } from './scheduling/RandomSlotSchedulerService.ts';
 import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.ts';
 

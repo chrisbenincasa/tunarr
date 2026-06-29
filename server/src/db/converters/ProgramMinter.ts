@@ -1,14 +1,15 @@
 import type { NewSingleOrMultiExternalId } from '@/db/schema/ProgramExternalId.js';
 import { seq } from '@tunarr/shared/util';
-import {
+import type {
   Actor,
   Episode,
-  isTerminalItemType,
   MediaArtwork,
   NamedEntity,
   ProgramLike,
   Resolution,
-  TerminalProgram,
+  TerminalProgram} from '@tunarr/types';
+import {
+  isTerminalItemType
 } from '@tunarr/types';
 import {
   isValidMultiExternalIdType,
@@ -19,24 +20,24 @@ import { injectable } from 'inversify';
 import { compact, find } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
-import {
+import type {
   HasMediaSourceInfo,
   MediaSourceMovie,
   MediaSourceMusicTrack,
   MediaSourceMusicVideo,
   MediaSourceOtherVideo,
 } from '../../types/Media.ts';
-import { Nilable } from '../../types/util.ts';
+import type { Nilable } from '../../types/util.ts';
 import { isNonEmptyString } from '../../util/index.ts';
-import { NewArtwork } from '../schema/Artwork.ts';
-import { CreditType, NewCredit } from '../schema/Credit.ts';
-import { MediaSourceOrm } from '../schema/MediaSource.ts';
-import { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
+import type { NewArtwork } from '../schema/Artwork.ts';
+import type { CreditType, NewCredit } from '../schema/Credit.ts';
+import type { MediaSourceOrm } from '../schema/MediaSource.ts';
+import type { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
 import { ProgramType } from '../schema/Program.ts';
-import { NewProgramMediaFile } from '../schema/ProgramMediaFile.ts';
-import { NewProgramMediaStream } from '../schema/ProgramMediaStream.ts';
-import { NewProgramSubtitles } from '../schema/ProgramSubtitles.ts';
-import {
+import type { NewProgramMediaFile } from '../schema/ProgramMediaFile.ts';
+import type { NewProgramMediaStream } from '../schema/ProgramMediaStream.ts';
+import type { NewProgramSubtitles } from '../schema/ProgramSubtitles.ts';
+import type {
   NewCreditWithArtwork,
   NewEpisodeProgram,
   NewMovieProgram,

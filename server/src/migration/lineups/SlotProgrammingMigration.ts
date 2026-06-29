@@ -6,7 +6,7 @@ import {
   type JsonObject,
 } from '../../types/schemas.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 
 @injectable()

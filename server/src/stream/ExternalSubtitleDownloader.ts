@@ -1,14 +1,14 @@
 import { inject, injectable } from 'inversify';
 import fs from 'node:fs/promises';
 import path from 'path';
-import { MediaSourceId, MediaSourceType } from '../db/schema/base.ts';
-import { QueryResult } from '../external/BaseApiClient.ts';
+import type { MediaSourceId, MediaSourceType } from '../db/schema/base.ts';
+import type { QueryResult } from '../external/BaseApiClient.ts';
 import { FileSystemService } from '../services/FileSystemService.ts';
 
-import { Maybe } from '../types/util.ts';
+import type { Maybe } from '../types/util.ts';
 import { fileExists } from '../util/fsUtil.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import {
   getSubtitleCacheFilePath,
   subtitleCodecToExt,

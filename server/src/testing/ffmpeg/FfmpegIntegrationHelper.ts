@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import z from 'zod';
+import type z from 'zod';
 import { NvidiaHardwareCapabilities } from '../../ffmpeg/builder/capabilities/NvidiaHardwareCapabilities.ts';
 import { parseNvidiaModelAndArchitecture } from '../../ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
 import { QsvHardwareCapabilities } from '../../ffmpeg/builder/capabilities/QsvHardwareCapabilities.ts';

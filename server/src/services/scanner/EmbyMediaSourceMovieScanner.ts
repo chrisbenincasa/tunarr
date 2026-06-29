@@ -1,23 +1,23 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import {
+import type {
   GetSubtitlesRequest,
   ScanContext,
 } from '@/services/scanner/MediaSourceScanner.js';
 import { inject, injectable } from 'inversify';
 import { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
-import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
+import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
-import { QueryResult } from '../../external/BaseApiClient.ts';
-import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
+import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
+import type { QueryResult } from '../../external/BaseApiClient.ts';
+import type { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { KEYS } from '../../types/inject.ts';
-import { EmbyT } from '../../types/internal.ts';
-import { EmbyMovie } from '../../types/Media.ts';
-import { Result } from '../../types/result.ts';
+import type { EmbyT } from '../../types/internal.ts';
+import type { EmbyMovie } from '../../types/Media.ts';
+import type { Result } from '../../types/result.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { EmbyScanUtil } from './EmbyScanUtil.ts';
 import { MediaSourceMovieLibraryScanner } from './MediaSourceMovieLibraryScanner.ts';

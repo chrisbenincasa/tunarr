@@ -13,13 +13,13 @@ import {
   parseFloatOrNull,
 } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
-import { MediaChapter } from '@tunarr/types';
+import type { MediaChapter } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { filter, find, isEmpty, isNull, map, orderBy } from 'lodash-es';
 import type { NonEmptyArray } from 'ts-essentials';
 import { LanguageService } from '../services/LanguageService.ts';
 import { Result } from '../types/result.ts';
-import { StreamDetailsFetcher } from './ExternalStreamDetailsFetcher.ts';
+import type { StreamDetailsFetcher } from './ExternalStreamDetailsFetcher.ts';
 import type {
   AudioStreamDetails,
   ProgramStreamResult,

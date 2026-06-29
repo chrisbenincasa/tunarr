@@ -1,11 +1,13 @@
 import { seq } from '@tunarr/shared/util';
-import { BaseSlot, slotIsLinkable } from '@tunarr/types/api';
+import type { BaseSlot} from '@tunarr/types/api';
+import { slotIsLinkable } from '@tunarr/types/api';
 import { injectable } from 'inversify';
 import { isArray } from 'lodash-es';
 import { v4 } from 'uuid';
-import { Json, JsonObject, isJsonObject } from '../../types/schemas.ts';
+import type { Json, JsonObject} from '../../types/schemas.ts';
+import { isJsonObject } from '../../types/schemas.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 
 @injectable()
