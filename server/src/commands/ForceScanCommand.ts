@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
-import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
-import { ProgramOrm } from '../db/schema/Program.ts';
-import { ProgramGroupingOrm } from '../db/schema/ProgramGrouping.ts';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { ProgramOrm } from '../db/schema/Program.ts';
+import type { ProgramGroupingOrm } from '../db/schema/ProgramGrouping.ts';
 import { MediaSourceScanCoordinator } from '../services/scanner/MediaSourceScanCoordinator.ts';
 import {
   GenericBadRequestError,
@@ -10,8 +10,8 @@ import {
 } from '../types/errors.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
-import { Maybe } from '../types/util.ts';
-import { Command } from './Command.ts';
+import type { Maybe } from '../types/util.ts';
+import type { Command } from './Command.ts';
 
 @injectable()
 export class ForceScanCommand implements Command<string, Result<void>> {

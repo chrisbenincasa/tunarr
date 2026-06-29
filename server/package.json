@@ -20,7 +20,7 @@
     "generate-env": "tsx scripts/generateEnvModule.ts",
     "generate-openapi": "tsx src/index.ts generate-openapi",
     "install-meilisearch": "tsx scripts/download-meilisearch.ts",
-    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
     "kysely": "dotenv -e .env.development -- kysely",
     "preinstall": "npx only-allow pnpm",
     "run-fixer": "dotenv -e .env.development -- tsx src/index.ts fixer",

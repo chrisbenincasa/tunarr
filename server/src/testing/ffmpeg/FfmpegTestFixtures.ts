@@ -11,14 +11,12 @@ import { FfprobeStreamDetails } from '@/stream/FfprobeStreamDetails.js';
 import { FileStreamSource } from '@/stream/types.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import pino from 'pino';
 import { test as base } from 'vitest';
 import type { FfmpegCapabilities } from '../../ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
 import type { NvidiaHardwareCapabilities } from '../../ffmpeg/builder/capabilities/NvidiaHardwareCapabilities.ts';
 import type { QsvHardwareCapabilities } from '../../ffmpeg/builder/capabilities/QsvHardwareCapabilities.ts';
 import type { FfmpegVersionResult } from '../../ffmpeg/ffmpegInfo.ts';
 import { FfmpegInfo } from '../../ffmpeg/ffmpegInfo.ts';
-import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import {
   discoverFfmpegBinaries,
   discoverNvidiaCapabilities,
@@ -99,11 +97,9 @@ export const vaapiOpenclSupported =
     ? discoverVaapiOpenclSupport(binaries.ffmpeg, vaapiInfo.device)
     : false;
 
-const noopLogger = pino({ level: 'silent' }) as Logger;
-
 function makeFfmpegInfo(): FfmpegInfo {
   // Instantiate directly, ignoring Inversify DI bindings
-  return new FfmpegInfo(binaries!.ffmpeg, binaries!.ffprobe, noopLogger);
+  return new FfmpegInfo(binaries!.ffmpeg, binaries!.ffprobe);
 }
 
 export type FfmpegTestFixtures = {

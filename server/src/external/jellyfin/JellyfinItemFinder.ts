@@ -1,4 +1,4 @@
-import { ProgramDaoMinter } from '@/db/converters/ProgramMinter.js';
+import type { ProgramDaoMinter } from '@/db/converters/ProgramMinter.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { MediaSourceType } from '@/db/schema/base.js';
@@ -7,20 +7,21 @@ import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { autoFactoryKey, KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { groupByUniq, isDefined, isNonEmptyString, run } from '@/util/index.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
-import { isTerminalItemType, TerminalProgram } from '@tunarr/types';
-import { JellyfinItemKind } from '@tunarr/types/jellyfin';
+import type { TerminalProgram } from '@tunarr/types';
+import { isTerminalItemType } from '@tunarr/types';
+import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { find, isUndefined } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { ProgramExternalIdType } from '../../db/custom_types/ProgramExternalIdType.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { MediaSourceId } from '../../db/schema/base.js';
-import { TerminalJellyfinItem } from '../../types/Media.ts';
-import { JellyfinGetItemsQuery } from './JellyfinApiClient.ts';
+import type { MediaSourceId } from '../../db/schema/base.js';
+import type { TerminalJellyfinItem } from '../../types/Media.ts';
+import type { JellyfinGetItemsQuery } from './JellyfinApiClient.ts';
 
 @injectable()
 export class JellyfinItemFinder {

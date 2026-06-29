@@ -1,11 +1,11 @@
 import { inject, injectable } from 'inversify';
 import { isNil, isString } from 'lodash-es';
-import { MarkRequired } from 'ts-essentials';
+import type { MarkRequired } from 'ts-essentials';
 import { KEYS } from '../../types/inject.ts';
-import { Maybe } from '../../types/util.ts';
-import { ChannelOrm } from '../schema/Channel.ts';
-import { ChannelOrmWithRelations } from '../schema/derivedTypes.ts';
-import { DrizzleDBAccess } from '../schema/index.ts';
+import type { Maybe } from '../../types/util.ts';
+import type { ChannelOrm } from '../schema/Channel.ts';
+import type { ChannelOrmWithRelations } from '../schema/derivedTypes.ts';
+import type { DrizzleDBAccess } from '../schema/index.ts';
 
 @injectable()
 export class ChannelReadOpsRepository {

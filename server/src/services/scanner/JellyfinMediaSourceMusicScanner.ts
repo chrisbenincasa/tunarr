@@ -1,30 +1,30 @@
 import { inject } from 'inversify';
 import { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
-import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
+import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
-import { QueryResult } from '../../external/BaseApiClient.ts';
-import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
+import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
+import type { QueryResult } from '../../external/BaseApiClient.ts';
+import type { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
-import { WrappedError } from '../../types/errors.ts';
+import type { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
-import { JellyfinT } from '../../types/internal.ts';
-import {
+import type { JellyfinT } from '../../types/internal.ts';
+import type {
   JellyfinMusicAlbum,
   JellyfinMusicArtist,
   JellyfinMusicTrack,
 } from '../../types/Media.ts';
-import { Result } from '../../types/result.ts';
+import type { Result } from '../../types/result.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { JellyfinScanUtil } from './JellyfinScanUtil.ts';
 import { MediaSourceMusicArtistScanner } from './MediaSourceMusicArtistScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import { GetSubtitlesRequest, ScanContext } from './MediaSourceScanner.ts';
+import type { GetSubtitlesRequest, ScanContext } from './MediaSourceScanner.ts';
 
 export class JellyfinMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
   JellyfinT,

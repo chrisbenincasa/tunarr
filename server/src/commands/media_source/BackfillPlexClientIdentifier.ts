@@ -1,15 +1,15 @@
 import { inject, injectable } from 'inversify';
 import { intersection, uniq } from 'lodash-es';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { MediaSourceId } from '../../db/schema/base.ts';
+import type { MediaSourceId } from '../../db/schema/base.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { PlexHostLookup } from '../../external/plex/PlexHostLookup.ts';
 import { TypedError } from '../../types/errors.ts';
 import { Result } from '../../types/result.ts';
-import { Maybe } from '../../types/util.ts';
+import type { Maybe } from '../../types/util.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
-import { Command } from '../Command.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Command } from '../Command.ts';
 
 type BackfillPlexClientIdentifierRequest = {
   mediaSourceId: MediaSourceId;

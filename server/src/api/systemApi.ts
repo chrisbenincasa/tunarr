@@ -47,7 +47,7 @@ import {
   isRunningInContainer,
 } from '../util/containerUtil.ts';
 import { getEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
-import { FeatureFlagService } from '../services/FeatureFlagService.ts';
+import type { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import { streamFileBackwards } from '../util/fsUtil.ts';
 import { take } from '../util/streams.ts';
 

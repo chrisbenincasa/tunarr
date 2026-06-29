@@ -13,7 +13,7 @@
     "compile-messages": "lingui compile --typescript",
     "regen-routes": "tsr generate",
     "generate-client": "openapi-ts",
-    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint": "oxlint src/ --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest --run",
     "typecheck": "tsgo -p tsconfig.build.json --noEmit"

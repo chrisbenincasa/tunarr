@@ -1,16 +1,17 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
-import { ProgramDB } from '@/db/ProgramDB.js';
+import type { ChannelDB } from '@/db/ChannelDB.js';
+import type { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
+import type {
+  Lineup,
+  LineupItem} from '@/db/derived_types/Lineup.js';
 import {
   isContentItem,
   isOfflineItem,
-  isRedirectItem,
-  Lineup,
-  LineupItem,
+  isRedirectItem
 } from '@/db/derived_types/Lineup.js';
-import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
+import type { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
 import { devAssert } from '@/util/debug.js';
@@ -22,16 +23,16 @@ import { makeLocalUrl } from '@/util/serverUtil.js';
 import throttle from '@/util/throttle.js';
 import constants from '@tunarr/shared/constants';
 import { seq } from '@tunarr/shared/util';
-import {
+import type {
   ChannelIcon,
   ChannelLineup,
   ChannelProgram,
   TvGuideProgram,
 } from '@tunarr/types';
 import retry from 'async-retry';
-import { Duration } from 'dayjs/plugin/duration.js';
+import type { Duration } from 'dayjs/plugin/duration.js';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import {
   compact,
   filter,
@@ -54,17 +55,17 @@ import {
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
-import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
-import { ChannelOrm } from '../db/schema/Channel.ts';
-import { ProgramOrm } from '../db/schema/Program.ts';
-import { DB } from '../db/schema/db.ts';
+import type { ChannelOrm } from '../db/schema/Channel.ts';
+import type { ProgramOrm } from '../db/schema/Program.ts';
+import type { DB } from '../db/schema/db.ts';
 import type {
   ChannelOrmWithPrograms,
   ChannelOrmWithRelations,
   ProgramWithRelationsOrm,
 } from '../db/schema/derivedTypes.ts';
-import {
+import type {
   FlexGuideItem,
   MaterializedGuideItem,
   ProgramGuideItem,

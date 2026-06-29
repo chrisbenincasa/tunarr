@@ -1,6 +1,6 @@
 import { Result } from '@/types/result.js';
-import { Maybe } from '@/types/util.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import type { Maybe } from '@/types/util.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import {
   compact,
@@ -18,36 +18,39 @@ import {
   GenericError,
   TypedError,
 } from '../types/errors.js';
+import type {
+  ConcatSession} from './ConcatSession.js';
 import {
-  ConcatSession,
   type ConcatSessionFactory,
   type ConcatSessionOptions,
 } from './ConcatSession.js';
-import { HlsConcatSessionType, Session } from './Session.js';
-import {
+import type { HlsConcatSessionType} from './Session.js';
+import { Session } from './Session.js';
+import type {
   HlsSession,
-  HlsSessionOptions,
+  HlsSessionOptions} from './hls/HlsSession.js';
+import {
   type HlsSessionProvider,
   type HlsSlowerSessionProvider,
 } from './hls/HlsSession.js';
-import { HlsSlowerSession } from './hls/HlsSlowerSession.js';
+import type { HlsSlowerSession } from './hls/HlsSlowerSession.js';
 
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { KEYS } from '@/types/inject.js';
 import { ifDefined } from '@/util/index.js';
-import { ChannelStreamMode } from '@tunarr/types';
-import { StreamConnectionDetails } from '@tunarr/types/api';
-import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
+import type { ChannelStreamMode } from '@tunarr/types';
+import type { StreamConnectionDetails } from '@tunarr/types/api';
+import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { InjectLogger } from '../util/inject.ts';
-import { Dictionary } from 'ts-essentials';
-import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import type { Dictionary } from 'ts-essentials';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { EventService } from '../services/EventService.ts';
-import { SessionType } from './Session.js';
-import { BaseHlsSessionOptions } from './hls/BaseHlsSession.ts';
+import type { SessionType } from './Session.js';
+import type { BaseHlsSessionOptions } from './hls/BaseHlsSession.ts';
 
 export type SessionKey = `${string}_${SessionType}`;
 

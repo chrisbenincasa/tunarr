@@ -1,25 +1,25 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/base.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import {
+import type {
   GetSubtitlesRequest,
   ScanContext,
 } from '@/services/scanner/MediaSourceScanner.js';
 import { inject, injectable } from 'inversify';
 import { isNil } from 'lodash-es';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
-import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
+import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { QueryResult } from '../../external/BaseApiClient.ts';
-import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
-import { WrappedError } from '../../types/errors.ts';
+import type { QueryResult } from '../../external/BaseApiClient.ts';
+import type { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
+import type { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 
-import { ProgramGrouping } from '@tunarr/types';
+import type { ProgramGrouping } from '@tunarr/types';
 import { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
-import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
-import {
+import type {
   EmbyEpisode,
   EmbySeason,
   EmbyShow,
@@ -27,7 +27,7 @@ import {
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { EmbyScanUtil } from './EmbyScanUtil.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';

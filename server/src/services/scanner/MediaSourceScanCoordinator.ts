@@ -1,19 +1,19 @@
-import { MediaSourceId } from '@tunarr/shared';
+import type { MediaSourceId } from '@tunarr/shared';
 import { E_ALREADY_LOCKED, tryAcquire } from 'async-mutex';
 import { inject, injectable } from 'inversify';
 import PQueue from 'p-queue';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { MediaSourceType } from '../../db/schema/base.ts';
+import type { MediaSourceType } from '../../db/schema/base.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.ts';
-import { Maybe } from '../../types/util.ts';
+import type { Maybe } from '../../types/util.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { EntityMutex } from '../EntityMutex.ts';
-import { GenericExternalCollectionScanner } from './ExternalCollectionScanner.ts';
-import { GenericLocalMediaSourceScannerFactory } from './FileSystemScanner.ts';
+import type { GenericExternalCollectionScanner } from './ExternalCollectionScanner.ts';
+import type { GenericLocalMediaSourceScannerFactory } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import { GenericMediaSourceScannerFactory } from './MediaSourceScanner.ts';
+import type { GenericMediaSourceScannerFactory } from './MediaSourceScanner.ts';
 
 @injectable()
 export class MediaSourceScanCoordinator {

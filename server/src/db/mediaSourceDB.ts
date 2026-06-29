@@ -1,5 +1,5 @@
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { tag } from '@tunarr/types';
@@ -10,7 +10,7 @@ import type {
 import dayjs from 'dayjs';
 import { and, eq, inArray } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import {
   chunk,
   differenceWith,
@@ -20,24 +20,25 @@ import {
   isNil,
   trimEnd,
 } from 'lodash-es';
-import { MarkRequired } from 'ts-essentials';
+import type { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
-import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
+import type { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
+import type { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 
-import {
+import type {
   MediaSourceId,
   MediaSourceName,
   MediaSourceType,
 } from './schema/base.js';
-import { DB } from './schema/db.ts';
-import { MediaSourceWithRelations } from './schema/derivedTypes.js';
-import { DrizzleDBAccess } from './schema/index.ts';
+import type { DB } from './schema/db.ts';
+import type { MediaSourceWithRelations } from './schema/derivedTypes.js';
+import type { DrizzleDBAccess } from './schema/index.ts';
 import { MediaSource } from './schema/MediaSource.ts';
-import {
-  MediaSourceLibrary,
+import type {
   MediaSourceLibraryUpdate,
-  NewMediaSourceLibrary,
+  NewMediaSourceLibrary} from './schema/MediaSourceLibrary.ts';
+import {
+  MediaSourceLibrary
 } from './schema/MediaSourceLibrary.ts';
 import { MediaSourceLibraryReplacePath } from './schema/MediaSourceLibraryReplacePath.ts';
 import { Program } from './schema/Program.ts';

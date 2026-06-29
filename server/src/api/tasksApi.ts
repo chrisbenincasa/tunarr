@@ -4,7 +4,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { ServiceIdentifier } from 'inversify';
+import type { ServiceIdentifier } from 'inversify';
 import { isFunction } from 'lodash-es';
 import { z } from 'zod/v4';
 import { container } from '../container.ts';

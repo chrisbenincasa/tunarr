@@ -5,9 +5,9 @@ import { isNonEmptyString } from '@/util/index.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { flushEventLoop } from '@tunarr/shared/util';
-import { Tag } from '@tunarr/types';
+import type { Tag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import {
   chunk,
   differenceWith,
@@ -19,9 +19,10 @@ import {
   uniqBy,
 } from 'lodash-es';
 import z from 'zod';
-import { ChannelOrm } from '../db/schema/Channel.ts';
-import { DB } from '../db/schema/db.ts';
-import { Task2, TaskMetadata } from './Task.ts';
+import type { ChannelOrm } from '../db/schema/Channel.ts';
+import type { DB } from '../db/schema/db.ts';
+import type { TaskMetadata } from './Task.ts';
+import { Task2 } from './Task.ts';
 import { taskDef } from './TaskRegistry.ts';
 
 export type ReconcileProgramDurationsTaskRequest = z.infer<

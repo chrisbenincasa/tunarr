@@ -2,29 +2,31 @@ import { CacheImageService } from '@/services/cacheImageService.js';
 import { ChannelNotFoundError } from '@/types/errors.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import dayjs from '@/util/dayjs.js';
 import type { SaveableChannel, Watermark } from '@tunarr/types';
 import { desc, eq, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import { isEmpty, isNil, isUndefined, map, sum } from 'lodash-es';
-import { MarkRequired } from 'ts-essentials';
+import type { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { isDefined, isNonEmptyString } from '../../util/index.ts';
-import { ChannelAndLineup } from '../interfaces/IChannelDB.ts';
-import { Channel, NewChannelOrm } from '../schema/Channel.ts';
+import type { ChannelAndLineup } from '../interfaces/IChannelDB.ts';
+import type { NewChannelOrm } from '../schema/Channel.ts';
+import { Channel } from '../schema/Channel.ts';
 import { ChannelFillerShow } from '../schema/ChannelFillerShow.ts';
 import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
 import type { DB } from '../schema/db.ts';
-import { ChannelOrmWithRelations } from '../schema/derivedTypes.ts';
+import type { ChannelOrmWithRelations } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
+import type {
+  NewChannelSubtitlePreferenceOrm} from '../schema/SubtitlePreferences.ts';
 import {
-  ChannelSubtitlePreferences,
-  NewChannelSubtitlePreferenceOrm,
+  ChannelSubtitlePreferences
 } from '../schema/SubtitlePreferences.ts';
-import { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
-import { LineupRepository } from './LineupRepository.ts';
+import type { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
+import type { LineupRepository } from './LineupRepository.ts';
 
 function sanitizeChannelWatermark(
   watermark: Maybe<Watermark>,

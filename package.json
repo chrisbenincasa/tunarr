@@ -10,7 +10,7 @@
     "dev": "turbo run dev",
     "fmt": "prettier --write .",
     "lint-staged": "lint-staged --allow-empty",
-    "lint-changed": "eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)",
+    "lint-changed": "oxlint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)",
     "test": "turbo run test",
     "preinstall": "npx only-allow pnpm",
     "should-semantic-release": "should-semantic-release --verbose",
@@ -21,29 +21,22 @@
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
     "@commitlint/types": "^19.0.3",
-    "@eslint/eslintrc": "^3.0.2",
-    "@eslint/js": "^9.0.0",
     "@release-it/bumper": "^7.0.5",
     "@release-it/conventional-changelog": "^10.0.4",
     "@semantic-release/changelog": "^6.0.3",
     "@types/node": "22.10.7",
     "@types/semver": "^7.7.1",
-    "@typescript-eslint/eslint-plugin": "catalog:",
-    "@typescript-eslint/parser": "catalog:",
     "@vitest/coverage-v8": "catalog:vitest",
     "esbuild": "^0.21.5",
     "eslint": "catalog:",
-    "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-lingui": "^0.13.1",
-    "eslint-plugin-react": "^7.37.3",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.16",
+
     "eslint-plugin-unused-imports": "^4.1.4",
     "globals": "^15.0.0",
     "husky": "^9.0.11",
     "knip": "^6.7.0",
     "lint-staged": "^15.2.2",
+    "oxlint": "^1.71.0",
+    "oxlint-tsgolint": "^0.23.0",
     "prettier": "^3.5.1",
     "release-it": "^19.2.2",
     "release-it-pnpm": "^4.6.6",
@@ -73,13 +66,14 @@
       "arktype",
       "better-sqlite3",
       "esbuild",
-      "unrs-resolver"
+      "unrs-resolver",
+      "oxlint"
     ]
   },
   "lint-staged": {
     "*.{ts,tsx}": [
       "prettier --write",
-      "eslint --fix --no-warn-ignored"
+      "oxlint --fix"
     ]
   },
   "resolutions": {

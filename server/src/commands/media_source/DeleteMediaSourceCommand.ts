@@ -1,12 +1,12 @@
 import { inject, injectable } from 'inversify';
-import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import type { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { MediaSourceId } from '../../db/schema/base.ts';
-import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
+import type { MediaSourceId } from '../../db/schema/base.ts';
+import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
+import type { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { MeilisearchService } from '../../services/MeilisearchService.ts';
 import { KEYS } from '../../types/inject.ts';
-import { Command } from '../Command.ts';
+import type { Command } from '../Command.ts';
 
 @injectable()
 export class DeleteMediaSourceCommand

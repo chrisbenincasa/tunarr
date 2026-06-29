@@ -14,11 +14,11 @@ import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import type { ContentProgramType } from '@tunarr/types/schemas';
 import { inject, injectable } from 'inversify';
 import type { MarkRequired } from 'ts-essentials';
-import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
-import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
-import { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
-import { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts';
-import { LineupRepository } from './channel/LineupRepository.ts';
+import type { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
+import type { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
+import type { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
+import type { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts';
+import type { LineupRepository } from './channel/LineupRepository.ts';
 import type {
   Lineup,
   LineupItem,

@@ -1,6 +1,6 @@
-import { TvEpisodeNfo, TvShowNfo } from '@/nfo/NfoSchemas.js';
+import type { TvEpisodeNfo, TvShowNfo } from '@/nfo/NfoSchemas.js';
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import {
+import type {
   EpisodeMetadata,
   EpisodeWithHierarchy,
   SeasonMetadata,
@@ -19,7 +19,7 @@ import {
   isUndefined,
   range,
 } from 'lodash-es';
-import { Dirent } from 'node:fs';
+import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import { format } from 'node:util';
@@ -27,27 +27,27 @@ import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import {
+import type {
   IProgramDB,
   ProgramCanonicalIdLookupResult,
 } from '../../db/interfaces/IProgramDB.ts';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { ArtworkType } from '../../db/schema/Artwork.ts';
+import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import { TvEpisodeNfoParser } from '../../nfo/TvEpisodeNfoParser.ts';
 import { TvShowNfoParser } from '../../nfo/TvShowNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
-import { HasMediaSourceInfo, SeasonWithShow } from '../../types/Media.ts';
+import type { HasMediaSourceInfo, SeasonWithShow } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { isDefined, wait } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { parseReleaseDate, titleToSortTitle } from '../../util/programs.ts';
-import { Canonicalizer } from '../Canonicalizer.ts';
+import type { Canonicalizer } from '../Canonicalizer.ts';
 import { ImageCache } from '../ImageCache.ts';
 import { FallbackMetadataService } from '../local/FallbackMetadataService.ts';
 import {
@@ -57,11 +57,12 @@ import {
   mapNfoToNamedEntity,
 } from '../local/localMetadataUtil.ts';
 import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
-import { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
-import { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
+import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
+import type { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { KnownVideoFileExtensions } from './constants.ts';
-import { FileSystemScanner, LocalScanContext } from './FileSystemScanner.ts';
+import type { LocalScanContext } from './FileSystemScanner.ts';
+import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
 @injectable()

@@ -9,18 +9,19 @@ import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { forEach, isBoolean, isEmpty, isNil } from 'lodash-es';
 import NodeCache from 'node-cache';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
-import { MediaSourceId } from '../db/schema/base.js';
-import { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
+import type { MediaSourceId } from '../db/schema/base.js';
+import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import { cacheGetOrSet } from '../util/cache.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { type ApiClientOptions } from './BaseApiClient.js';
 import { EmbyApiClient } from './emby/EmbyApiClient.ts';
-import { JellyfinApiClient } from './jellyfin/JellyfinApiClient.js';
-import { MediaSourceApiClientFactory } from './MediaSourceApiClient.ts';
-import { PlexApiClient, PlexApiClientFactory } from './plex/PlexApiClient.js';
+import type { JellyfinApiClient } from './jellyfin/JellyfinApiClient.js';
+import type { MediaSourceApiClientFactory } from './MediaSourceApiClient.ts';
+import type { PlexApiClientFactory } from './plex/PlexApiClient.js';
+import { PlexApiClient } from './plex/PlexApiClient.js';
 
 type TypeToClient = [
   [typeof MediaSourceType.Plex, PlexApiClient],

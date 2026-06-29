@@ -1,25 +1,26 @@
 import { isNonEmptyString, search } from '@tunarr/shared/util';
-import { SmartCollection as SmartCollectionDto } from '@tunarr/types';
-import { SearchFilter } from '@tunarr/types/schemas';
+import type { SmartCollection as SmartCollectionDto } from '@tunarr/types';
+import type { SearchFilter } from '@tunarr/types/schemas';
 import { Mutex } from 'async-mutex';
 import dayjs from 'dayjs';
 import { eq } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { head } from 'lodash-es';
 import NodeCache from 'node-cache';
-import { StrictOmit } from 'ts-essentials';
+import type { StrictOmit } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { SearchClause } from '../../../shared/dist/src/util/searchUtil.js';
+import type { SearchClause } from '../../../shared/dist/src/util/searchUtil.js';
+import type {
+  ProgramSearchDocument} from '../services/MeilisearchService.ts';
 import {
-  MeilisearchService,
-  ProgramSearchDocument,
+  MeilisearchService
 } from '../services/MeilisearchService.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
-import { Maybe } from '../types/util.ts';
+import type { Maybe } from '../types/util.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
 import { SmartCollection } from './schema/SmartCollection.ts';
 
 @injectable()

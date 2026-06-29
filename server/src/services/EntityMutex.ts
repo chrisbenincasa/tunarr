@@ -1,8 +1,8 @@
-import { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
+import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
 import { inject, injectable } from 'inversify';
-import { MediaSource, MediaSourceOrm } from '../db/schema/MediaSource.ts';
+import type { MediaSource, MediaSourceOrm } from '../db/schema/MediaSource.ts';
 import { KEYS } from '../types/inject.ts';
-import { MutexMap } from '../util/mutexMap.ts';
+import type { MutexMap } from '../util/mutexMap.ts';
 
 @injectable()
 export class EntityMutex {

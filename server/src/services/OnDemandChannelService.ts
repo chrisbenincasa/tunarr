@@ -1,9 +1,9 @@
-import { OnDemandChannelConfig } from '@/db/derived_types/Lineup.js';
+import type { OnDemandChannelConfig } from '@/db/derived_types/Lineup.js';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
-import { MutexMap } from '@/util/mutexMap.js';
+import type { MutexMap } from '@/util/mutexMap.js';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { isNull, isUndefined } from 'lodash-es';

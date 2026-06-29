@@ -1,16 +1,16 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import { CondensedChannelProgram } from '@tunarr/types';
+import type { CondensedChannelProgram } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { sum } from 'lodash-es';
 import { match, P } from 'ts-pattern';
-import { LineupItem } from '../db/derived_types/Lineup.ts';
-import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
-import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import type { LineupItem } from '../db/derived_types/Lineup.ts';
+import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
+import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
 import { KEYS } from '../types/inject.ts';
-import { Nullable } from '../types/util.ts';
+import type { Nullable } from '../types/util.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 type Request = {
   channelId: string;

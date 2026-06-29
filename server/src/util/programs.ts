@@ -1,5 +1,5 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { Nilable } from '../types/util.ts';
+import type { Nilable } from '../types/util.ts';
 import dayjs from './dayjs.ts';
 
 const articleRegex = /^(A|An|The)\s+(.*)/i;

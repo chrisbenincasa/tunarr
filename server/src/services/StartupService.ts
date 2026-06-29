@@ -3,13 +3,13 @@ import { DirectedGraph } from 'graphology';
 import * as dag from 'graphology-dag';
 import { inject, injectable, multiInject } from 'inversify';
 import { isMainThread } from 'node:worker_threads';
-import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { KEYS } from '../types/inject.ts';
 import { groupByUniq } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from './MeilisearchService.ts';
-import { IStartupTask } from './startup/IStartupTask.ts';
+import type { IStartupTask } from './startup/IStartupTask.ts';
 
 @injectable()
 export class StartupService {

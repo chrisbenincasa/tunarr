@@ -1,15 +1,16 @@
 import type { CachedImage } from '@/db/schema/CachedImage.js';
 import { InjectLogger } from '@/util/inject.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
-import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
-import { FastifyReply } from 'fastify';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
+import type { AxiosHeaders, AxiosRequestConfig } from 'axios';
+import axios from 'axios';
+import type { FastifyReply } from 'fastify';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import { isString, isUndefined } from 'lodash-es';
 import crypto from 'node:crypto';
 import { createWriteStream, promises as fs } from 'node:fs';
-import stream from 'node:stream';
-import { DB } from '../db/schema/db.ts';
+import type stream from 'node:stream';
+import type { DB } from '../db/schema/db.ts';
 import { KEYS } from '../types/inject.ts';
 import { FileCacheService } from './FileCacheService.ts';
 

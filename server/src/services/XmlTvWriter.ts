@@ -1,13 +1,14 @@
-import { SettingsDB } from '@/db/SettingsDB.js';
-import { ChannelOrm } from '@/db/schema/Channel.js';
+import type { SettingsDB } from '@/db/SettingsDB.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
 import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
 import { firstDefined, groupByFunc, isNonEmptyString } from '@/util/index.js';
 import { resolveIconUrl } from '@/util/iconUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import type {
+  Xmltv} from '@iptv/xmltv';
 import {
   writeXmltv,
-  Xmltv,
   type XmltvChannel,
   type XmltvProgramme,
 } from '@iptv/xmltv';
@@ -18,8 +19,8 @@ import { compact, escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
 import { match } from 'ts-pattern';
 import { type ArtworkType } from '../db/schema/Artwork.ts';
-import { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
-import { MaterializedGuideItem } from '../types/guide.ts';
+import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
+import type { MaterializedGuideItem } from '../types/guide.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
 
 const lock = new Mutex();

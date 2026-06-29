@@ -3,24 +3,25 @@ import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { groupBy, isEmpty, maxBy, sumBy } from 'lodash-es';
 import { ProgramPlayHistoryDB } from '../../db/ProgramPlayHistoryDB.ts';
-import { ChannelOrm } from '../../db/schema/Channel.ts';
-import {
+import type { ChannelOrm } from '../../db/schema/Channel.ts';
+import type {
   ChannelFillerShowWithContent,
   ProgramOrmWithExternalIds,
 } from '../../db/schema/derivedTypes.ts';
 import { OneDayMillis } from '../../ffmpeg/builder/constants.ts';
 
 import { OpenDateTimeRange } from '../../types/OpenDateTimeRange.ts';
-import { Maybe, Nullable } from '../../types/util.ts';
+import type { Maybe, Nullable } from '../../types/util.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { loggingDef } from '../../util/logging/loggingDef.ts';
 import { random } from '../../util/random.ts';
+import type {
+  FillerPickResult,
+  IFillerPicker} from '../interfaces/IFillerPicker.ts';
 import {
   DefaultFillerCooldownMillis,
   EmptyFillerPickResult,
-  FillerPickResult,
-  IFillerPicker,
   type FillerPickOptions,
 } from '../interfaces/IFillerPicker.ts';
 

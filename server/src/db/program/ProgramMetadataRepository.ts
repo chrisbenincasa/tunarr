@@ -13,17 +13,20 @@ import {
   type NewGenre,
   type NewGenreEntity,
 } from '../schema/Genre.ts';
+import type {
+  NewProgramSubtitles} from '../schema/ProgramSubtitles.ts';
 import {
-  NewProgramSubtitles,
   ProgramSubtitles,
 } from '../schema/ProgramSubtitles.ts';
-import {
+import type {
   NewStudio,
-  NewStudioEntity,
+  NewStudioEntity} from '../schema/Studio.ts';
+import {
   Studio,
   StudioEntity,
 } from '../schema/Studio.ts';
-import { NewTag, NewTagRelation, Tag, TagRelations } from '../schema/Tag.ts';
+import type { NewTag, NewTagRelation} from '../schema/Tag.ts';
+import { Tag, TagRelations } from '../schema/Tag.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
 
 @injectable()

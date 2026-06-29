@@ -3,7 +3,7 @@ import { inject, injectable } from 'inversify';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { MediaSourceScanCoordinator } from '../services/scanner/MediaSourceScanCoordinator.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import type { TaskMetadata } from './Task.ts';
 import { SimpleTask } from './Task.ts';
 import { simpleTaskDef } from './TaskRegistry.ts';

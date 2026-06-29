@@ -4,22 +4,23 @@ import { inject, injectable } from 'inversify';
 import { reject } from 'lodash-es';
 import { cpus } from 'node:os';
 import { performance } from 'node:perf_hooks';
-import { Worker } from 'node:worker_threads';
-import { StrictOmit } from 'ts-essentials';
+import type { Worker } from 'node:worker_threads';
+import type { StrictOmit } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
-import z from 'zod/v4';
-import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import type z from 'zod/v4';
+import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 
-import {
-  WorkerMessage,
+import type {
   WorkerRequest,
-  WorkerRequestToResponse,
+  WorkerRequestToResponse} from '../types/worker_schemas.ts';
+import {
+  WorkerMessage
 } from '../types/worker_schemas.ts';
 import { getNumericEnvVar, WORKER_POOL_SIZE_ENV_VAR } from '../util/env.ts';
 import { timeoutPromise } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { TunarrSubprocessService } from './TunarrSubprocessService.ts';
 
 const MAX_WORKERS = 8;

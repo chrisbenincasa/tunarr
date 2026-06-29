@@ -3,7 +3,7 @@ import { isNonEmptyString, nullToUndefined } from '@/util/index.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
-import {
+import type {
   Actor,
   ContentProgram,
   ContentProgramParent,
@@ -20,7 +20,8 @@ import {
   RedirectProgram,
   TerminalProgram,
   TvSeasonContentProgram,
-  TvShowContentProgram,
+  TvShowContentProgram} from '@tunarr/types';
+import {
   untag,
 } from '@tunarr/types';
 import {
@@ -29,17 +30,17 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import { first, isNil, orderBy } from 'lodash-es';
 import { isPromise } from 'node:util/types';
-import { DeepPartial, MarkRequired } from 'ts-essentials';
+import type { DeepPartial, MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { ApiProgramConverters } from '../../api/ApiProgramConverters.ts';
-import { MediaLocation } from '../../types/Media.ts';
+import type { MediaLocation } from '../../types/Media.ts';
 import { titleToSortTitle } from '../../util/programs.ts';
-import { OfflineItem, RedirectItem } from '../derived_types/Lineup.js';
-import { Channel, ChannelOrm } from '../schema/Channel.ts';
-import { DB } from '../schema/db.ts';
+import type { OfflineItem, RedirectItem } from '../derived_types/Lineup.js';
+import type { Channel, ChannelOrm } from '../schema/Channel.ts';
+import type { DB } from '../schema/db.ts';
 import type {
   ChannelOrmWithRelations,
   ChannelWithRelations,
@@ -52,7 +53,7 @@ import type {
   TvSeasonWithExternalIds,
   TvShowWithExternalIds,
 } from '../schema/derivedTypes.ts';
-import { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
+import type { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
 
 /**
  * Converts DB types to API types

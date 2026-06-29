@@ -1,5 +1,5 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { Person } from '@tunarr/types';
+import type { Person } from '@tunarr/types';
 import { Person as PersonSchema } from '@tunarr/types/schemas';
 import axios, { isAxiosError } from 'axios';
 import { inject, injectable } from 'inversify';
@@ -9,10 +9,10 @@ import { match } from 'ts-pattern';
 import z from 'zod';
 import { ArtworkTypes } from '../db/schema/Artwork.ts';
 import { CreditTypes } from '../db/schema/Credit.ts';
-import { DrizzleDBAccess } from '../db/schema/index.ts';
+import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { globalOptions } from '../globals.ts';
 import { KEYS } from '../types/inject.ts';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import type { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { extractAxiosHeaders } from '../util/axios.ts';
 
 @injectable()

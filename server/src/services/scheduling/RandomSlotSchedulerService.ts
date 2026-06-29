@@ -1,6 +1,7 @@
+import type {
+  SlotScheduleResult} from '@tunarr/types/api';
 import {
-  RandomSlotScheduleSchema,
-  SlotScheduleResult,
+  RandomSlotScheduleSchema
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';

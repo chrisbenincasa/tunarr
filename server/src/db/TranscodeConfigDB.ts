@@ -1,21 +1,23 @@
-import { TranscodeConfig } from '@tunarr/types';
+import type { TranscodeConfig } from '@tunarr/types';
 import { count, eq } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { head, omit, sumBy } from 'lodash-es';
 import { v4 } from 'uuid';
-import { TranscodeConfigNotFoundError, WrappedError } from '../types/errors.ts';
+import type { WrappedError } from '../types/errors.ts';
+import { TranscodeConfigNotFoundError } from '../types/errors.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
-import { Maybe } from '../types/util.ts';
-import { ITranscodeConfigDB } from './ITranscodeConfigDB.ts';
+import type { Maybe } from '../types/util.ts';
+import type { ITranscodeConfigDB } from './ITranscodeConfigDB.ts';
 import { Channel } from './schema/Channel.ts';
+import type {
+  NewTranscodeConfigOrm} from './schema/TranscodeConfig.ts';
 import {
   defaultTranscodeConfig,
-  NewTranscodeConfigOrm,
   TranscodeConfig as TranscodeConfigTable,
   type TranscodeConfigOrm,
 } from './schema/TranscodeConfig.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()
 export class TranscodeConfigDB implements ITranscodeConfigDB {

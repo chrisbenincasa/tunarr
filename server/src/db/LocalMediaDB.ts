@@ -1,20 +1,22 @@
-import { MediaSourceId } from '@tunarr/shared';
+import type { MediaSourceId } from '@tunarr/shared';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import { eq } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { head, isEmpty } from 'lodash-es';
 import { v4 } from 'uuid';
 import { KEYS } from '../types/inject.ts';
-import { Maybe } from '../types/util.ts';
-import { Artwork, NewArtwork } from './schema/Artwork.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
-import {
-  LocalMediaFolder,
+import type { Maybe } from '../types/util.ts';
+import type { NewArtwork } from './schema/Artwork.ts';
+import { Artwork } from './schema/Artwork.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
+import type {
   LocalMediaFolderOrm,
-  NewLocalMediaFolderOrm,
+  NewLocalMediaFolderOrm} from './schema/LocalMediaFolder.ts';
+import {
+  LocalMediaFolder
 } from './schema/LocalMediaFolder.ts';
-import { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
-import { ProgramType } from './schema/Program.ts';
+import type { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
+import type { ProgramType } from './schema/Program.ts';
 
 @injectable()
 export class LocalMediaDB {

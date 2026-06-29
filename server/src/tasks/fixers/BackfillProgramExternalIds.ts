@@ -1,20 +1,20 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
 import { withProgramExternalIds } from '@/db/programQueryHelpers.js';
-import { ProgramDao } from '@/db/schema/Program.js';
-import { NewSingleOrMultiExternalId } from '@/db/schema/ProgramExternalId.js';
+import type { ProgramDao } from '@/db/schema/Program.js';
+import type { NewSingleOrMultiExternalId } from '@/db/schema/ProgramExternalId.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import type { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { tag } from '@tunarr/types';
-import { PlexTerminalMedia } from '@tunarr/types/plex';
+import type { PlexTerminalMedia } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import {
   difference,
   first,
@@ -26,10 +26,10 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { v4 } from 'uuid';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { MediaSourceName } from '../../db/schema/base.js';
-import { DB } from '../../db/schema/db.ts';
+import type { MediaSourceName } from '../../db/schema/base.js';
+import type { DB } from '../../db/schema/db.ts';
 import { Timer } from '../../util/Timer.ts';
 import {
   attempt,

@@ -1,8 +1,8 @@
-import { SaveableChannel } from '@tunarr/types';
-import { FastifyInstance } from 'fastify';
+import type { SaveableChannel } from '@tunarr/types';
+import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { container } from '../src/container.ts';
-import { ChannelDB } from '../src/db/ChannelDB.ts';
+import type { ChannelDB } from '../src/db/ChannelDB.ts';
 import { TranscodeConfigDB } from '../src/db/TranscodeConfigDB.ts';
 import { KEYS } from '../src/types/inject.ts';
 import { getAvailablePort } from '../src/util/net.ts';
@@ -78,7 +78,7 @@ describe('POST /channels - transcode config validation', () => {
     });
 
     expect(res.statusCode).toBe(400);
-    const body = res.json();
+    const body = res.json<{ error: string }>();
     expect(body.error).toContain(NON_EXISTENT_UUID);
   });
 });
@@ -113,7 +113,7 @@ describe('PUT /channels/:id - transcode config validation', () => {
     });
 
     expect(res.statusCode).toBe(400);
-    const body = res.json();
+    const body = res.json<{ error: string }>();
     expect(body.error).toContain(NON_EXISTENT_UUID);
   });
 });

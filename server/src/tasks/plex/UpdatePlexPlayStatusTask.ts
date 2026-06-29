@@ -8,7 +8,7 @@ import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { RecurrenceRule } from 'node-schedule';
 import z from 'zod';
-import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { taskDef } from '../TaskRegistry.ts';
 

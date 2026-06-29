@@ -9,11 +9,12 @@ import type {
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { KEYS } from '@/types/inject.js';
 import { InjectLogger } from '@/util/inject.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
-import { MutexMap } from '@/util/mutexMap.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
+import type { MutexMap } from '@/util/mutexMap.js';
 import { seq } from '@tunarr/shared/util';
+import type {
+  CondensedContentProgram} from '@tunarr/types';
 import {
-  CondensedContentProgram,
   isTerminalItemType,
   tag,
   type Episode,

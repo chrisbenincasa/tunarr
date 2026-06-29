@@ -1,29 +1,29 @@
 import { KEYS } from '@/types/inject.js';
 import { parseFloatOrNull } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
-import { CondensedContentProgram } from '@tunarr/types';
-import {
+import type { CondensedContentProgram } from '@tunarr/types';
+import type {
   CreateCustomShowRequest,
   UpdateCustomShowRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { count, eq, sum } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import { chunk, isNil } from 'lodash-es';
-import { MarkRequired } from 'ts-essentials';
+import type { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
-import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
+import type { BasicProgramRepository } from './program/BasicProgramRepository.ts';
 import { CustomShow, type NewCustomShow } from './schema/CustomShow.ts';
 import {
   CustomShowContent,
   type NewCustomShowContent,
 } from './schema/CustomShowContent.ts';
-import { DB } from './schema/db.ts';
-import { ProgramWithRelationsOrm } from './schema/derivedTypes.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
+import type { DB } from './schema/db.ts';
+import type { ProgramWithRelationsOrm } from './schema/derivedTypes.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
 import { Program } from './schema/Program.ts';
 
 @injectable()

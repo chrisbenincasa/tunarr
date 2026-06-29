@@ -215,7 +215,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       }
 
       LoggerFactory.root.error(
-        { error: e as unknown, className: JellyfinApiClient.name },
+        { error: e, className: JellyfinApiClient.name },
         'Error logging into Jellyfin',
       );
       throw e;
