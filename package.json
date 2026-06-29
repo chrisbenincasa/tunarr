@@ -44,6 +44,8 @@
     "husky": "^9.0.11",
     "knip": "^6.7.0",
     "lint-staged": "^15.2.2",
+    "oxlint": "^1.71.0",
+    "oxlint-tsgolint": "^0.23.0",
     "prettier": "^3.5.1",
     "release-it": "^19.2.2",
     "release-it-pnpm": "^4.6.6",
@@ -73,7 +75,8 @@
       "arktype",
       "better-sqlite3",
       "esbuild",
-      "unrs-resolver"
+      "unrs-resolver",
+      "oxlint"
     ]
   },
   "lint-staged": {
