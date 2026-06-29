@@ -1,8 +1,8 @@
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import { find } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { DB } from '../../db/schema/db.ts';
+import type { DB } from '../../db/schema/db.ts';
 import { KEYS } from '../../types/inject.ts';
 import {
   type HealthCheck,

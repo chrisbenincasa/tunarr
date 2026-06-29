@@ -1,14 +1,15 @@
 import { inject, injectable } from 'inversify';
-import { NonEmptyArray } from 'ts-essentials';
+import type { NonEmptyArray } from 'ts-essentials';
+import type {
+  ContentBackedStreamLineupItem} from '../db/derived_types/StreamLineup.ts';
 import {
-  ContentBackedStreamLineupItem,
   isCommercialLineupItem,
   isProgramLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
-import { ChannelOrm } from '../db/schema/Channel.ts';
+import type { ChannelOrm } from '../db/schema/Channel.ts';
 import { CelEvaluationService } from '../services/CelEvaluationService.ts';
 import { StreamSelectionProfileResolver } from '../services/StreamSelectionProfileResolver.ts';
-import { AudioStreamDetails, SubtitleStreamDetails } from '../stream/types.ts';
+import type { AudioStreamDetails, SubtitleStreamDetails } from '../stream/types.ts';
 import {
   buildCelContext,
   evaluateStreamSelectionProfile,

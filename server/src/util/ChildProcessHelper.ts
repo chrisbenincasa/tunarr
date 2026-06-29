@@ -10,9 +10,9 @@ import type {
 } from 'node:child_process';
 import { execFile, spawn } from 'node:child_process';
 import events from 'node:events';
-import { Readable } from 'node:stream';
+import type { Readable } from 'node:stream';
 import PQueue from 'p-queue';
-import { TypedEventEmitter } from '../types/eventEmitter.ts';
+import type { TypedEventEmitter } from '../types/eventEmitter.ts';
 
 import { LastNBytesStream } from './LastNBytesStream.ts';
 import { InjectLogger } from './inject.ts';

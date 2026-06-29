@@ -14,11 +14,11 @@
 # Lingui catalogs are not a PR gate: lingui-extract.yml refreshes them after
 # merge, and `turbo bundle` extracts before building.
 #
-# eslint is deliberately included even though CI never runs it: it is enforced
+# oxlint is deliberately included even though CI never runs it: it is enforced
 # only by the pre-commit hook, so a commit made with the hook bypassed reaches
 # the PR unlinted.
 #
-# The pre-commit hook runs `prettier --write` and `eslint --fix` on staged files
+# The pre-commit hook runs `prettier --write` and `oxlint --fix` on staged files
 # at commit time. The format gate below applies the same prettier pass up front,
 # so the tree the gates check is the tree the hook will commit.
 set -uo pipefail
@@ -29,7 +29,7 @@ usage() {
   cat <<'USAGE'
 Usage: preflight [--quick]
 
-  (default)  run every gate CI runs, plus eslint
+  (default)  run every gate CI runs, plus oxlint
   --quick    skip the web bundle and the test suite (the two slow gates);
              typecheck and lint still run
 USAGE
@@ -92,7 +92,7 @@ gate_commitlint() {
 }
 
 # Mirrors what the pre-commit hook's lint-staged config does to staged files:
-# `prettier --write` then `eslint --fix`. Applying prettier here keeps the hook
+# `prettier --write` then `oxlint --fix`. Applying prettier here keeps the hook
 # from reformatting at commit time, after the gates have already run.
 gate_format() {
   local files
@@ -115,7 +115,7 @@ collect_changed_source() {
 # First: everything that rewrites source, in the same order the pre-commit hook
 # applies it, so the tree ends up where the hook would leave it.
 run_gate "format (changed)"    gate_format
-run_gate "eslint (changed)"    pnpm lint-changed
+run_gate "oxlint (changed)"    pnpm lint-changed
 
 run_gate "commitlint"          gate_commitlint
 run_gate "typecheck (server)"  pnpm turbo typecheck --filter=@tunarr/server
