@@ -69,9 +69,8 @@ class StubHlsSession extends BaseHlsSession<HlsSessionOptions> {
     return Result.success(void 0);
   }
 
-  isStale() {
-    return true;
-  }
+  // Use the real Session.isStale() implementation so staleness
+  // tests exercise the actual threshold logic.
 }
 
 // ---------------------------------------------------------------------------
@@ -269,6 +268,137 @@ describe('SessionManager', () => {
       sessionA.emit('cleanup');
 
       expect(manager.getHlsSession(channelUuid)).toBeUndefined();
+    });
+  });
+
+  describe('connection staleness and recovery', () => {
+    it('session is not stale when heartbeat is within threshold', async () => {
+      const sessions: StubHlsSession[] = [];
+      const manager = makeSessionManager((channel, options) => {
+        const s = new StubHlsSession(channel, options);
+        sessions.push(s);
+        return s;
+      });
+
+      await manager.getOrCreateHlsSession(channelUuid, '10.0.0.1', connection, {
+        streamMode: 'hls',
+      });
+      const session = sessions[0]!;
+
+      // Heartbeat was just recorded by getOrCreateHlsSession → addConnection
+      expect(session.isStale()).toBe(false);
+
+      // Advance 60 seconds — well within the 120s default threshold
+      vi.advanceTimersByTime(60_000);
+      session.recordHeartbeat('10.0.0.1');
+      expect(session.isStale()).toBe(false);
+    });
+
+    it('session becomes stale when heartbeat exceeds threshold', async () => {
+      const sessions: StubHlsSession[] = [];
+      const manager = makeSessionManager((channel, options) => {
+        const s = new StubHlsSession(channel, options);
+        sessions.push(s);
+        return s;
+      });
+
+      await manager.getOrCreateHlsSession(channelUuid, '10.0.0.1', connection, {
+        streamMode: 'hls',
+      });
+      const session = sessions[0]!;
+
+      // Advance past the 120s default threshold
+      vi.advanceTimersByTime(121_000);
+      expect(session.isStale()).toBe(true);
+    });
+
+    it('ghost heartbeat: recordHeartbeat after staleness removal does not prevent cleanup', async () => {
+      const sessions: StubHlsSession[] = [];
+      const manager = makeSessionManager((channel, options) => {
+        const s = new StubHlsSession(channel, options);
+        sessions.push(s);
+        return s;
+      });
+
+      await manager.getOrCreateHlsSession(channelUuid, '10.0.0.1', connection, {
+        streamMode: 'hls',
+      });
+      const session = sessions[0]!;
+
+      // Advance past staleness threshold
+      vi.advanceTimersByTime(121_000);
+
+      // removeStaleConnections drops the connection
+      expect(session.isStale()).toBe(true);
+      // Connection is now gone from #connections
+      expect(session.isKnownConnection('10.0.0.1')).toBe(false);
+
+      // Client sends a segment request → recordHeartbeat is called
+      // but this is a "ghost heartbeat" — it updates #heartbeats only
+      session.recordHeartbeat('10.0.0.1');
+
+      // Session is STILL stale because #connections is empty
+      expect(session.isStale()).toBe(true);
+    });
+
+    it('addConnection after staleness removal restores the session', async () => {
+      const sessions: StubHlsSession[] = [];
+      const manager = makeSessionManager((channel, options) => {
+        const s = new StubHlsSession(channel, options);
+        sessions.push(s);
+        return s;
+      });
+
+      await manager.getOrCreateHlsSession(channelUuid, '10.0.0.1', connection, {
+        streamMode: 'hls',
+      });
+      const session = sessions[0]!;
+
+      // Advance past staleness threshold
+      vi.advanceTimersByTime(121_000);
+
+      // Connection removed by staleness check
+      expect(session.isStale()).toBe(true);
+      expect(session.isKnownConnection('10.0.0.1')).toBe(false);
+
+      // The fix: fragment route checks isKnownConnection and re-adds
+      session.addConnection('10.0.0.1', { ip: '10.0.0.1' });
+      session.recordHeartbeat('10.0.0.1');
+
+      // Session is no longer stale
+      expect(session.isStale()).toBe(false);
+      expect(session.isKnownConnection('10.0.0.1')).toBe(true);
+    });
+
+    it('cleanupStaleSessions does not kill session with re-added connection', async () => {
+      const sessions: StubHlsSession[] = [];
+      const manager = makeSessionManager((channel, options) => {
+        const s = new StubHlsSession(channel, options);
+        sessions.push(s);
+        return s;
+      });
+
+      await manager.getOrCreateHlsSession(channelUuid, '10.0.0.1', connection, {
+        streamMode: 'hls',
+      });
+      const session = sessions[0]!;
+
+      // Advance past staleness threshold
+      vi.advanceTimersByTime(121_000);
+
+      // First cleanup pass: marks as stale, removes connection
+      manager.cleanupStaleSessions();
+
+      // Simulate the fix: client requests a segment, connection is re-added
+      session.addConnection('10.0.0.1', { ip: '10.0.0.1' });
+      session.recordHeartbeat('10.0.0.1');
+
+      // Grace period elapses (15s default)
+      vi.advanceTimersByTime(16_000);
+
+      // Session should still be in the manager — cleanup was aborted
+      // because #connections is non-empty when the timer fires
+      expect(manager.getHlsSession(channelUuid)).toBe(session);
     });
   });
 });
