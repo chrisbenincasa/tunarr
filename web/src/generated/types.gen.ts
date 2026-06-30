@@ -5808,7 +5808,7 @@ export type GetApiChannelsByIdTranscodeConfigResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9592,7 +9592,7 @@ export type GetApiTranscodeConfigsResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9647,7 +9647,7 @@ export type PostApiTranscodeConfigsData = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9707,7 +9707,7 @@ export type PostApiTranscodeConfigsResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9805,7 +9805,7 @@ export type GetApiTranscodeConfigsByIdResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9861,7 +9861,7 @@ export type PutApiTranscodeConfigsByIdData = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9923,7 +9923,7 @@ export type PutApiTranscodeConfigsByIdResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -10002,7 +10002,7 @@ export type PostApiTranscodeConfigsByIdCopyResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -12972,7 +12972,7 @@ export type PostApiTroubleshootResponses = {
             videoBitRate: number;
             videoBufferSize: number;
             audioChannels: number;
-            audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+            audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus';
             audioBitRate: number;
             audioBufferSize: number;
             audioSampleRate: number;
