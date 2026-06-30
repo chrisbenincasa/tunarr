@@ -1,23 +1,22 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { Person } from '@tunarr/types';
+import type { Person } from '@tunarr/types';
 import { Person as PersonSchema } from '@tunarr/types/schemas';
-import axios, { isAxiosError } from 'axios';
 import { inject, injectable } from 'inversify';
-import { trimStart } from 'lodash-es';
-import type stream from 'node:stream';
 import { match } from 'ts-pattern';
 import z from 'zod';
 import { ArtworkTypes } from '../db/schema/Artwork.ts';
 import { CreditTypes } from '../db/schema/Credit.ts';
-import { DrizzleDBAccess } from '../db/schema/index.ts';
-import { globalOptions } from '../globals.ts';
+import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { KEYS } from '../types/inject.ts';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { extractAxiosHeaders } from '../util/axios.ts';
+import type { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { ArtworkService } from '../services/ArtworkService.ts';
 
 @injectable()
 export class CreditsApiController {
-  constructor(@inject(KEYS.DrizzleDB) private db: DrizzleDBAccess) {}
+  constructor(
+    @inject(KEYS.DrizzleDB) private db: DrizzleDBAccess,
+    @inject(ArtworkService) private artworkService: ArtworkService,
+  ) {}
 
   // eslint-disable-next-line @typescript-eslint/require-await
   mount: RouterPluginAsyncCallback = async (fastify) => {
@@ -119,90 +118,12 @@ export class CreditsApiController {
         },
       },
       async (req, res) => {
-        const maybeCredit = await this.db.query.credit.findFirst({
-          where: (credit, { and, eq }) =>
-            and(
-              eq(credit.uuid, req.params.id),
-              req.query.type ? eq(credit.type, req.query.type) : undefined,
-            ),
-          with: {
-            artwork: true,
-          },
-        });
-
-        if (!maybeCredit) {
-          return res.status(404).send();
-        }
-
-        const art = maybeCredit.artwork.find(
-          (art) => art.artworkType === req.params.artworkType,
+        const result = await this.artworkService.resolveArtwork(
+          req.params.id,
+          'credit',
+          req.params.artworkType,
         );
-
-        if (!art) {
-          return res.status(404).send();
-        }
-
-        if (art.cachePath) {
-          const path = req.serverCtx.imageCache.getImagePath(
-            art.cachePath,
-            art.artworkType,
-          );
-
-          return res.sendFile(
-            trimStart(path.replace(globalOptions().databaseDirectory, ''), '/'),
-            { contentType: true },
-          );
-        } else if (URL.canParse(art.sourcePath)) {
-          // TODO: persist media source details with either
-          // artwork or credit to ensure we can add this functionality
-          // if (!program.mediaSourceId) {
-          //   return res.status(404).send();
-          // }
-          // const mediaSource = await req.serverCtx.mediaSourceDB.getById(
-          //   program.mediaSourceId,
-          // );
-          // if (!mediaSource) {
-          //   return res.status(404).send();
-          // }
-
-          const url = URL.parse(art.sourcePath)!;
-          // switch (mediaSource.type) {
-          //   case 'plex':
-          //     url?.searchParams.append('X-Plex-Token', mediaSource.accessToken);
-          //     break;
-          //   case 'jellyfin':
-          //   case 'emby':
-          //     url?.searchParams.append('X-Emby-Token', mediaSource.accessToken);
-          //     break;
-          //   case 'local':
-          //     break;
-          // }
-
-          const fullUrl = url.toString();
-
-          if (req.serverCtx.featureFlagService.get('proxyArtwork')) {
-            try {
-              const proxyRes = await axios.request<stream.Readable>({
-                url: fullUrl,
-                responseType: 'stream',
-              });
-
-              return res
-                .status(200)
-                .headers(extractAxiosHeaders(proxyRes.headers))
-                .send(proxyRes.data);
-            } catch (e) {
-              if (isAxiosError(e) && e.response?.status === 404) {
-                return res.status(404).send();
-              }
-              throw e;
-            }
-          }
-
-          return res.redirect(fullUrl);
-        } else {
-          return res.sendFile(art.sourcePath);
-        }
+        return this.artworkService.serveArtwork(result, res);
       },
     );
   };

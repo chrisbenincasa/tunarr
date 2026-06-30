@@ -291,7 +291,7 @@ describe('XmlTvWriter', () => {
         expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
       });
 
-      test('ignores non-poster artwork and falls back to /thumb', () => {
+      test('returns undefined when no poster artwork exists', () => {
         const programId = v4();
         const program = makeProgram({
           uuid: programId,
@@ -300,10 +300,10 @@ describe('XmlTvWriter', () => {
         });
 
         const url = resolveArtworkUrl(program, { useShowPoster: false });
-        expect(url).toBe(`{{host}}/api/programs/${programId}/thumb`);
+        expect(url).toBeUndefined();
       });
 
-      test('falls back to /thumb when no artwork exists', () => {
+      test('returns undefined when artwork array is empty', () => {
         const programId = v4();
         const program = makeProgram({
           uuid: programId,
@@ -312,10 +312,10 @@ describe('XmlTvWriter', () => {
         });
 
         const url = resolveArtworkUrl(program, { useShowPoster: false });
-        expect(url).toBe(`{{host}}/api/programs/${programId}/thumb`);
+        expect(url).toBeUndefined();
       });
 
-      test('falls back to /thumb when artwork is undefined', () => {
+      test('returns undefined when artwork is undefined', () => {
         const programId = v4();
         const program = makeProgram({
           uuid: programId,
@@ -323,7 +323,7 @@ describe('XmlTvWriter', () => {
         });
 
         const url = resolveArtworkUrl(program, { useShowPoster: false });
-        expect(url).toBe(`{{host}}/api/programs/${programId}/thumb`);
+        expect(url).toBeUndefined();
       });
     });
 
@@ -430,7 +430,7 @@ describe('XmlTvWriter', () => {
         );
       });
 
-      test('falls back to /thumb with useShowPoster param when no artwork', () => {
+      test('returns undefined when no artwork exists for episode or show', () => {
         const programId = v4();
         const program = makeProgram({
           uuid: programId,
@@ -440,12 +440,10 @@ describe('XmlTvWriter', () => {
         });
 
         const url = resolveArtworkUrl(program, { useShowPoster: true });
-        expect(url).toBe(
-          `{{host}}/api/programs/${programId}/thumb?useShowPoster=true`,
-        );
+        expect(url).toBeUndefined();
       });
 
-      test('falls back to /thumb without useShowPoster param when setting is false', () => {
+      test('returns undefined when episode has no artwork and useShowPoster is false', () => {
         const programId = v4();
         const program = makeProgram({
           uuid: programId,
@@ -454,7 +452,7 @@ describe('XmlTvWriter', () => {
         });
 
         const url = resolveArtworkUrl(program, { useShowPoster: false });
-        expect(url).toBe(`{{host}}/api/programs/${programId}/thumb`);
+        expect(url).toBeUndefined();
       });
     });
 
@@ -504,7 +502,7 @@ describe('XmlTvWriter', () => {
         expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
       });
 
-      test('falls back to /thumb using album UUID when no artwork', () => {
+      test('returns undefined when album and track have no poster artwork', () => {
         const albumUuid = v4();
         const program = makeProgram({
           type: 'track',
@@ -517,10 +515,10 @@ describe('XmlTvWriter', () => {
         });
 
         const url = resolveArtworkUrl(program, { useShowPoster: false });
-        expect(url).toBe(`{{host}}/api/programs/${albumUuid}/thumb`);
+        expect(url).toBeUndefined();
       });
 
-      test('falls back to /thumb using program UUID when album has no UUID', () => {
+      test('returns undefined when album has no UUID and no poster artwork', () => {
         const programId = v4();
         const program = makeProgram({
           uuid: programId,
@@ -533,7 +531,7 @@ describe('XmlTvWriter', () => {
         });
 
         const url = resolveArtworkUrl(program, { useShowPoster: false });
-        expect(url).toBe(`{{host}}/api/programs/${programId}/thumb`);
+        expect(url).toBeUndefined();
       });
     });
 
@@ -550,7 +548,7 @@ describe('XmlTvWriter', () => {
         expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
       });
 
-      test('other_video falls back to /thumb when no poster', () => {
+      test('other_video returns undefined when no poster artwork', () => {
         const programId = v4();
         const program = makeProgram({
           uuid: programId,
@@ -559,7 +557,7 @@ describe('XmlTvWriter', () => {
         });
 
         const url = resolveArtworkUrl(program, { useShowPoster: false });
-        expect(url).toBe(`{{host}}/api/programs/${programId}/thumb`);
+        expect(url).toBeUndefined();
       });
     });
 
@@ -583,7 +581,7 @@ describe('XmlTvWriter', () => {
         );
       });
 
-      test('skips artwork with null artworkType', () => {
+      test('returns undefined when artwork has null artworkType', () => {
         const programId = v4();
         const program = makeProgram({
           uuid: programId,
@@ -597,7 +595,7 @@ describe('XmlTvWriter', () => {
         });
 
         const url = resolveArtworkUrl(program, { useShowPoster: false });
-        expect(url).toBe(`{{host}}/api/programs/${programId}/thumb`);
+        expect(url).toBeUndefined();
       });
     });
   });
