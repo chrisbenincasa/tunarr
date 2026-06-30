@@ -304,6 +304,12 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send('No session found');
       }
 
+      if (!session.isKnownConnection(req.ip)) {
+        session.addConnection(req.ip, {
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        });
+      }
       session.recordHeartbeat(req.ip);
 
       if (
