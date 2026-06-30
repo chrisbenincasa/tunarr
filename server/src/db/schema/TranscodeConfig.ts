@@ -72,6 +72,7 @@ export const TranscodeAudioOutputFormats = [
   'ac3',
   'copy',
   'mp3',
+  'libopus',
 ] as const;
 
 export type TranscodeAudioOutputFormat = TupleToUnion<
@@ -83,6 +84,7 @@ export const TranscodeAudioOutputFormat = {
   Ac3: 'ac3' as const,
   Copy: 'copy' as const,
   Mp3: 'mp3' as const,
+  Opus: 'libopus' as const,
 } as const;
 
 export const ErrorScreenTypes = [

@@ -16,8 +16,10 @@ import {
   LoudnormConfigSchema,
   type SupportedTranscodeAudioOutputFormats,
 } from '@tunarr/types/schemas';
+import { useQuery } from '@tanstack/react-query';
 import { isNil } from 'lodash-es';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { getApiFfmpegInfoOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 import type { DropdownOption } from '../../../helpers/DropdownOption.ts';
 import type { BaseTranscodeConfigProps } from './BaseTranscodeConfigProps.ts';
 import { useBaseTranscodeConfigFormOptions } from './useTranscodeConfigFormOptions.ts';
@@ -36,6 +38,10 @@ const AudioFormats: DropdownOption<SupportedTranscodeAudioOutputFormats>[] = [
     value: 'mp3',
   },
   {
+    description: 'Opus',
+    value: 'libopus',
+  },
+  {
     description: 'Copy / Passthrough',
     value: 'copy',
   },
@@ -46,11 +52,38 @@ export const TranscodeConfigAudioSettingsForm = ({
   showAdvancedSettings,
 }: BaseTranscodeConfigProps) => {
   const { t } = useLingui();
+  const ffmpegInfo = useQuery({
+    ...getApiFfmpegInfoOptions(),
+  });
   const formOpts = useBaseTranscodeConfigFormOptions(initialConfig);
   const form = useTypedAppFormContext({ ...formOpts });
   const [loudnormEnabled, setLoudnormEnabled] = useState(
     !isNil(form.getFieldValue('audioLoudnormConfig')),
   );
+
+  const audioFormatOptions = useMemo(() => {
+    const availableEncoders = ffmpegInfo.data?.audioEncoders;
+
+    return AudioFormats.map((option) => {
+      if (option.value === 'copy') {
+        return option;
+      }
+
+      const isSupported = availableEncoders?.find((encoder) => {
+        return (
+          encoder.ffmpegName === option.value ||
+          // 'mp3' is an alias, the actual encoders in ffmpeg are called libmp3lame and libshine
+          (option.value === 'mp3' &&
+            encoder.name.includes(`(codec ${option.value})`))
+        );
+      });
+
+      return {
+        ...option,
+        disabled: ffmpegInfo.isSuccess && !isSupported,
+      };
+    });
+  }, [ffmpegInfo.data?.audioEncoders, ffmpegInfo.isSuccess]);
 
   const onLoudnormChange = useCallback(
     (enabled: boolean) => {
@@ -79,7 +112,7 @@ export const TranscodeConfigAudioSettingsForm = ({
                 selectProps={{
                   label: t`Audio Format`,
                 }}
-                options={AudioFormats}
+                options={audioFormatOptions}
                 helperText={
                   field.form.state.values.audioFormat === 'copy'
                     ? t`Passthrough audio unchanged. Other settings will not apply.`

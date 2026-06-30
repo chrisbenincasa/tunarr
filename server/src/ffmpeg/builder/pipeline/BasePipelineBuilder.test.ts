@@ -387,4 +387,34 @@ describe('BasePipelineBuilder', () => {
 
     expect(loudnormFilter).toBeUndefined();
   });
+
+  test('always add channel count for Opus', () => {
+    const audio = AudioInputSource.withStream(
+      new FileStreamSource('/path/to/movie.mkv'),
+      AudioStream.create({
+        channels: 6,
+        codec: 'ac3',
+        index: 0,
+      }),
+      AudioState.create({
+        audioEncoder: 'libopus',
+        audioChannels: 6,
+      }),
+    );
+
+    const pipeline = new NoopPipelineBuilder(
+      video,
+      audio,
+      null,
+      null,
+      null,
+      EmptyFfmpegCapabilities,
+    );
+
+    const result = pipeline.build(state, frameState, DefaultPipelineOptions);
+    const commandArgs = result.getCommandArgs();
+    const channelIdx = commandArgs?.indexOf('-ac');
+    expect(channelIdx).toBeDefined();
+    expect(commandArgs?.at(channelIdx + 1)).toBe('6');
+  });
 });

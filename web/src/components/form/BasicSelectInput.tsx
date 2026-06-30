@@ -67,7 +67,11 @@ export function SelectInput<ValueTypeT, InputTypeT extends string | number>({
         }
       >
         {options.map((opt) => (
-          <MenuItem key={opt.value} value={opt.value}>
+          <MenuItem
+            key={opt.value}
+            value={opt.value}
+            disabled={Boolean(opt.disabled)}
+          >
             {opt.description}
           </MenuItem>
         ))}
