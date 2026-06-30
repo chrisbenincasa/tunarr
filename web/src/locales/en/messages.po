@@ -1287,7 +1287,7 @@ msgstr "Descending"
 msgid "Description"
 msgstr "Description"
 
-#: src/components/channels/ChannelNowPlayingCard.tsx:259
+#: src/components/channels/ChannelNowPlayingCard.tsx:223
 msgid "Details"
 msgstr "Details"
 
@@ -2721,7 +2721,7 @@ msgstr "Not a valid URL"
 msgid "Not found!"
 msgstr "Not found!"
 
-#: src/components/channels/ChannelNowPlayingCard.tsx:244
+#: src/components/channels/ChannelNowPlayingCard.tsx:208
 msgid "Now Playing:"
 msgstr "Now Playing:"
 
@@ -3671,7 +3671,7 @@ msgstr "Start"
 msgid "Start Time"
 msgstr "Start Time"
 
-#: src/components/channels/ChannelNowPlayingCard.tsx:251
+#: src/components/channels/ChannelNowPlayingCard.tsx:215
 msgid "Started {startedAgo} - {remainingTime}remaining"
 msgstr "Started {startedAgo} - {remainingTime}remaining"
 
@@ -4229,7 +4229,7 @@ msgstr "View Full Details"
 
 #. placeholder {0}: capitalize(firstProgram.program.sourceType)
 #. placeholder {0}: capitalize(program.sourceType)
-#: src/components/channels/ChannelNowPlayingCard.tsx:277
+#: src/components/channels/ChannelNowPlayingCard.tsx:241
 #: src/components/ProgramMetadataDialogContent.tsx:144
 msgid "View in {0}"
 msgstr "View in {0}"

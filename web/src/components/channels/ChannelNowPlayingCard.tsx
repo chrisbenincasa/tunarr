@@ -11,13 +11,9 @@ import {
   Link,
   Skeleton,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { createExternalId } from '@tunarr/shared';
 import type { MediaArtwork } from '@tunarr/types';
-import { tag } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
 import { capitalize, isNil } from 'lodash-es';
 import { useMemo, useState } from 'react';
@@ -53,8 +49,6 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
   } = useChannelAndProgramming(channelId);
   const { data: firstProgram } = useChannelNowPlaying(channelId);
   const [open, toggleOpen] = useToggle(false);
-  const theme = useTheme();
-  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
   const queryClient = useQueryClient();
 
@@ -109,7 +103,7 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
     }
 
     if (firstProgram.type !== 'content') {
-      return; // Handle others
+      return;
     }
 
     const program = lineup.programs[firstProgram.id];
@@ -117,64 +111,34 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
       return;
     }
 
-    if (program.program.sourceType === 'local') {
-      // Temporary workaround, real fix on "dev"
-      const [id, artworkType, fallbackTypes] = match([
-        program.program,
-        extractProgramGrandparent(program.program),
+    const [id, artworkType, fallbackTypes] = match([
+      program.program,
+      extractProgramGrandparent(program.program),
+    ])
+      .returnType<[string, MediaArtwork['type'], MediaArtwork['type'][]]>()
+      .with([{ type: 'episode' }, P.nonNullable], ([_, show]) => [
+        show.uuid,
+        'fanart',
+        ['poster'],
       ])
-        .returnType<[string, MediaArtwork['type'], MediaArtwork['type'][]]>()
-        // We don't have enough type info to know here.
-        .with([{ type: 'episode' }, P.nonNullable], ([_, show]) => [
-          show.uuid,
-          'fanart',
-          ['poster'],
-        ])
-        .with([{ type: 'episode' }, P._], ([ep, _]) => [
-          ep.uuid,
-          'thumbnail',
-          [],
-        ])
-        .with([{ type: 'track' }, P.nonNullable], ([_, artist]) => [
-          artist.uuid,
-          'banner',
-          ['fanart', 'poster'],
-        ])
-        .with([{ type: 'movie' }, P._], ([movie, _]) => [
-          movie.uuid,
-          'banner',
-          ['fanart', 'poster'],
-        ])
-        .otherwise(([other, _]) => [other.uuid, 'fanart', ['poster']]);
-      const fallbackParts =
-        fallbackTypes.length === 0 ? '' : `${fallbackTypes.join(',')}`;
+      .with([{ type: 'episode' }, P._], ([ep, _]) => [ep.uuid, 'thumbnail', []])
+      .with([{ type: 'track' }, P.nonNullable], ([_, artist]) => [
+        artist.uuid,
+        'banner',
+        ['fanart', 'poster'],
+      ])
+      .with([{ type: 'movie' }, P._], ([movie, _]) => [
+        movie.uuid,
+        'banner',
+        ['fanart', 'poster'],
+      ])
+      .otherwise(([other, _]) => [other.uuid, 'fanart', ['poster']]);
 
-      return `${backendUri}/api/programs/${id}/artwork/${artworkType}?fallbackArtworkTypes=${fallbackParts}`;
-    }
+    const fallbackParts =
+      fallbackTypes.length === 0 ? '' : `${fallbackTypes.join(',')}`;
 
-    const id =
-      program.program.type === 'movie' ||
-      program.program.type === 'music_video' ||
-      program.program.type === 'other_video'
-        ? program.program.externalId
-        : extractProgramGrandparent(program.program)?.externalId;
-
-    const query = new URLSearchParams({
-      mode: 'proxy',
-      asset: 'image',
-      id: createExternalId(
-        program.program.sourceType,
-        tag(program.program.mediaSourceId),
-        id ?? '',
-      ),
-      imageType: smallViewport ? 'poster' : 'background',
-      // Commenting this out for now as temporary solution for image loading issue
-      // thumbOptions: JSON.stringify({ width: 480, height: 720 }),
-      cache: import.meta.env.PROD ? 'true' : 'false',
-    });
-
-    return `${backendUri}/api/metadata/external?${query.toString()}`;
-  }, [backendUri, firstProgram, lineup.programs, smallViewport]);
+    return `${backendUri}/api/programs/${id}/artwork/${artworkType}?fallbackArtworkTypes=${fallbackParts}`;
+  }, [backendUri, firstProgram, lineup.programs]);
 
   const [imageLoaded, setImageLoaded] = useState(false);
 

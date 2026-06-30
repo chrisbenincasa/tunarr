@@ -249,8 +249,10 @@ export class XmlTvWriter {
         useShowPoster,
       });
 
-      partial.image = [{ _value: url, size: 3 }];
-      partial.icon = [{ src: url }];
+      if (url) {
+        partial.image = [{ _value: url, size: 3 }];
+        partial.icon = [{ src: url }];
+      }
     }
 
     return partial;
@@ -259,7 +261,7 @@ export class XmlTvWriter {
   static resolveArtworkUrl(
     program: ProgramWithRelationsOrm,
     opts: { useShowPoster: boolean },
-  ): string {
+  ): string | undefined {
     type ArtworkCandidate = {
       id: string | null | undefined;
       artwork: { artworkType: ArtworkType | null }[] | undefined;
@@ -308,23 +310,7 @@ export class XmlTvWriter {
       }
     }
 
-    // Fallback to /thumb for programs with no stored artwork
-    const query: string[] = [];
-    if (program.type === 'episode' && opts.useShowPoster) {
-      query.push(`useShowPoster=${opts.useShowPoster}`);
-    }
-
-    let idToUse = program.uuid;
-    if (program.type === 'track' && isNonEmptyString(program.album?.uuid)) {
-      idToUse = program.album.uuid;
-    }
-
-    let queryPart = '';
-    if (query.length > 0) {
-      queryPart = `?${query.join('&amp;')}`;
-    }
-
-    return `{{host}}/api/programs/${idToUse}/thumb${queryPart}`;
+    return undefined;
   }
 
   isWriting() {

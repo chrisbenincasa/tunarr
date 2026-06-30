@@ -57,6 +57,7 @@ import { PlexMediaSourceMovieScanner } from './scanner/PlexMediaSourceMovieScann
 import { PlexMediaSourceMusicScanner } from './scanner/PlexMediaSourceMusicScanner.ts';
 import { PlexMediaSourceOtherVideoScanner } from './scanner/PlexMediaSourceOtherVideoScanner.ts';
 import { PlexMediaSourceTvShowScanner } from './scanner/PlexMediaSourceTvShowScanner.ts';
+import { ArtworkService } from './ArtworkService.ts';
 import { StreamSelectionProfileResolver } from './StreamSelectionProfileResolver.ts';
 
 export const ServicesModule = new ContainerModule(({ bind }) => {
@@ -227,4 +228,5 @@ export const ServicesModule = new ContainerModule(({ bind }) => {
   bind(StreamSelectionProfileResolver).toSelf().inSingletonScope();
   bind(FeatureFlagService).toSelf().inSingletonScope();
   bind(TroubleshootService).toSelf().inSingletonScope();
+  bind(ArtworkService).toSelf().inSingletonScope();
 });

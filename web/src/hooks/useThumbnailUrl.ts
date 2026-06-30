@@ -1,7 +1,5 @@
-import { createExternalId } from '@tunarr/shared';
-import { isNonEmptyString } from '@tunarr/shared/util';
 import type { Person, ProgramOrFolder } from '@tunarr/types';
-import { isStructuralItemType, tag } from '@tunarr/types';
+import { isStructuralItemType } from '@tunarr/types';
 import type { MediaArtworkType } from '@tunarr/types/schemas';
 import { groupBy, isEmpty } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
@@ -34,31 +32,7 @@ export const useGetArtworkUrl = () => {
       for (const type of artworkCheckOrder) {
         const matchingArt = artByType[type];
         if (!isEmpty(matchingArt)) {
-          const persistedArt = matchingArt.find((art) =>
-            isNonEmptyString(art.id),
-          );
-          if (persistedArt || item.sourceType === 'local') {
-            return `${actualBackendUri}/api/programs/${item.uuid}/artwork/${type}`;
-          }
-
-          // TODO: Just return the right URLs in the artwork item itself!
-          const url = new URL(`/api/metadata/external`, actualBackendUri);
-          url.searchParams.append('asset', 'image');
-          url.searchParams.append('imageType', type);
-          url.searchParams.append(
-            'cache',
-            import.meta.env.PROD ? 'true' : 'false',
-          );
-          url.searchParams.append('mode', 'proxy');
-          url.searchParams.append(
-            'id',
-            createExternalId(
-              item.sourceType,
-              tag(item.mediaSourceId),
-              item.externalId ?? '',
-            ),
-          );
-          return url.toString();
+          return `${actualBackendUri}/api/programs/${item.uuid}/artwork/${type}`;
         }
       }
 
