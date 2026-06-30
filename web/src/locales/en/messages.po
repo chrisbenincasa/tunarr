@@ -444,7 +444,7 @@ msgstr "Adds Flex breaks after each TV episode or movie to ensure that the progr
 msgid "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes."
 msgstr "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes."
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:196
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:229
 msgid "Adjust the output volume (not recommended). Values higher than 100 will boost the audio."
 msgstr "Adjust the output volume (not recommended). Values higher than 100 will boost the audio."
 
@@ -458,7 +458,7 @@ msgstr "Adjust Weights"
 #~ msgid "Advanced"
 #~ msgstr "Advanced"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:255
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:288
 msgid "Advanced options relating to audio. In general, do not change these unless you know what you are doing!"
 msgstr "Advanced options relating to audio. In general, do not change these unless you know what you are doing!"
 
@@ -466,7 +466,7 @@ msgstr "Advanced options relating to audio. In general, do not change these unle
 msgid "Advanced options relating to transcoding. In general, do not change these unless you know what you are doing! These settings exist in order to leave some parity with the old dizqueTV transcode pipeline as well as to provide mechanisms to aid in debugging streaming issues."
 msgstr "Advanced options relating to transcoding. In general, do not change these unless you know what you are doing! These settings exist in order to leave some parity with the old dizqueTV transcode pipeline as well as to provide mechanisms to aid in debugging streaming issues."
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:252
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:285
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx:223
 msgid "Advanced Video Options"
 msgstr "Advanced Video Options"
@@ -596,19 +596,19 @@ msgstr "Audio & Subtitles"
 msgid "Audio Action"
 msgstr "Audio Action"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:102
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:135
 msgid "Audio Bitrate"
 msgstr "Audio Bitrate"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:131
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:164
 msgid "Audio Buffer Size"
 msgstr "Audio Buffer Size"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:185
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:218
 msgid "Audio Channels"
 msgstr "Audio Channels"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:80
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:113
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:139
 msgid "Audio Format"
 msgstr "Audio Format"
@@ -617,8 +617,8 @@ msgstr "Audio Format"
 msgid "Audio Language Preferences"
 msgstr "Audio Language Preferences"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:211
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:214
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:244
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:247
 msgid "Audio Loudness Normalization"
 msgstr "Audio Loudness Normalization"
 
@@ -626,7 +626,7 @@ msgstr "Audio Loudness Normalization"
 msgid "Audio Options"
 msgstr "Audio Options"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:161
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:194
 msgid "Audio Sample Rate"
 msgstr "Audio Sample Rate"
 
@@ -634,7 +634,7 @@ msgstr "Audio Sample Rate"
 msgid "Audio Streams"
 msgstr "Audio Streams"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:195
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:228
 msgid "Audio Volume"
 msgstr "Audio Volume"
 
@@ -703,7 +703,7 @@ msgstr "Basic button group"
 msgid "Bit Depth"
 msgstr "Bit Depth"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:113
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:146
 msgid "Bitrate cannot be changed when copying input audio"
 msgstr "Bitrate cannot be changed when copying input audio"
 
@@ -736,7 +736,7 @@ msgstr "Break Interval (minutes)"
 msgid "Break Positioning"
 msgstr "Break Positioning"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:142
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:175
 msgid "Buffer size cannot be changed when copying input audio"
 msgstr "Buffer size cannot be changed when copying input audio"
 
@@ -1315,7 +1315,7 @@ msgstr "Disable Image Scaling"
 msgid "Disable Watermarks"
 msgstr "Disable Watermarks"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:219
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:252
 #: src/pages/settings/FfmpegSettingsPage.tsx:224
 #: src/pages/system/StatusPage.tsx:334
 msgid "Disabled"
@@ -1497,7 +1497,7 @@ msgstr "Emby"
 msgid "Empty Trash"
 msgstr "Empty Trash"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:226
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:259
 msgid "Enable <0>EBU R 128</0> loudness normalization via the <1>loudnorm</1> FFmpeg filter. May increase CPU usage during streaming."
 msgstr "Enable <0>EBU R 128</0> loudness normalization via the <1>loudnorm</1> FFmpeg filter. May increase CPU usage during streaming."
 
@@ -1554,7 +1554,7 @@ msgstr "Enable Watermark"
 msgid "Enabled"
 msgstr "Enabled"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:222
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:255
 msgid "Enabled (loudnorm)"
 msgstr "Enabled (loudnorm)"
 
@@ -2368,15 +2368,15 @@ msgstr "Looks like something went wrong."
 msgid "Loop Short Programs"
 msgstr "Loop Short Programs"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:281
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:314
 msgid "Loudness Range Target"
 msgstr "Loudness Range Target"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:271
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:304
 msgid "Loudness Target"
 msgstr "Loudness Target"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:263
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:296
 msgid "Loudnorm Options"
 msgstr "Loudnorm Options"
 
@@ -2438,7 +2438,7 @@ msgstr "Max file size (bytes)"
 msgid "Max Lateness"
 msgstr "Max Lateness"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:291
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:324
 msgid "Max True Peak"
 msgstr "Max True Peak"
 
@@ -2858,7 +2858,7 @@ msgstr "Pad Style"
 msgid "Pad Times"
 msgstr "Pad Times"
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:85
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:118
 msgid "Passthrough audio unchanged. Other settings will not apply."
 msgstr "Passthrough audio unchanged. Other settings will not apply."
 
@@ -3316,7 +3316,7 @@ msgstr "Run Troubleshooter"
 msgid "Running..."
 msgstr "Running..."
 
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:172
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:205
 msgid "Sample rate cannot be changed when copying input audio"
 msgstr "Sample rate cannot be changed when copying input audio"
 
