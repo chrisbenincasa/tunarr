@@ -291,7 +291,7 @@ export abstract class Session<
       keys(this.connections()),
       (token) =>
         now - this.lastHeartbeat(token)! <
-        (this.sessionOptions.stalenessMs ?? 30_000),
+        (this.sessionOptions.stalenessMs ?? 120_000),
     );
 
     // Cleanup stale connections

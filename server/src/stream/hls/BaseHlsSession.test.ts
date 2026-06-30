@@ -50,6 +50,7 @@ function makeConnection(ip: string): StreamConnectionDetails {
 const baseOptions: BaseHlsSessionOptions = {
   initialSegmentCount: 2,
   transcodeDirectory: '/tmp/test-sessions',
+  stalenessMs: 30_000,
 };
 
 describe('BaseHlsSession', () => {
