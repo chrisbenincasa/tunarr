@@ -84,6 +84,10 @@ export function buildCelContext(
   };
 }
 
+export type StreamSelectionHints = {
+  preferTextBased?: boolean;
+};
+
 export async function evaluateStreamSelectionProfile(
   profile: StreamSelectionProfile,
   audioStreams: NonEmptyArray<AudioStreamDetails>,
@@ -91,6 +95,7 @@ export async function evaluateStreamSelectionProfile(
   celService: CelEvaluationService,
   celContext: StreamSelectionCelContext,
   lineupItem: ContentBackedStreamLineupItem,
+  hints?: StreamSelectionHints,
 ): Promise<StreamSelectionResult> {
   for (const rule of profile.rules) {
     const conditionResult = celService.evaluate(rule.condition, celContext);
@@ -105,6 +110,7 @@ export async function evaluateStreamSelectionProfile(
         rule.subtitleAction,
         subtitleStreams,
         lineupItem,
+        hints,
       );
       return { audioStream, subtitleStream };
     }
@@ -178,6 +184,7 @@ async function resolveSubtitleAction(
   action: SubtitleAction,
   subtitleStreams: SubtitleStreamDetails[] | undefined,
   lineupItem: ContentBackedStreamLineupItem,
+  hints?: StreamSelectionHints,
 ): Promise<SubtitleStreamDetails | null> {
   switch (action.type) {
     case 'disable':
@@ -187,10 +194,34 @@ async function resolveSubtitleAction(
       if (!subtitleStreams || subtitleStreams.length === 0) {
         return null;
       }
-      const defaultStream = subtitleStreams.find((s) => s.default);
+
+      const effectivePreferText =
+        hints?.preferTextBased || action.preferTextBased;
+
+      const candidates = [...subtitleStreams];
+      if (effectivePreferText) {
+        candidates.sort((a, b) => {
+          const aImage = isImageBasedSubtitle(a.codec) ? 1 : 0;
+          const bImage = isImageBasedSubtitle(b.codec) ? 1 : 0;
+          return aImage - bImage;
+        });
+      }
+
+      const defaultStream = candidates.find((s) => s.default);
       if (!defaultStream) {
         return null;
       }
+
+      // When preferTextBased is active and the default is an embedded text-based
+      // sub, return it directly — the caller will extract via the pipeline.
+      if (
+        effectivePreferText &&
+        defaultStream.type === 'embedded' &&
+        !isImageBasedSubtitle(defaultStream.codec)
+      ) {
+        return defaultStream;
+      }
+
       const extracted =
         await SubtitleStreamPicker.getSubtitleDetailsWithExtractedPath(
           lineupItem,
@@ -221,9 +252,21 @@ async function resolveSubtitleAction(
         return null;
       }
 
+      const effectivePreferText =
+        hints?.preferTextBased || action.preferTextBased;
+
+      const candidates = [...subtitleStreams];
+      if (effectivePreferText) {
+        candidates.sort((a, b) => {
+          const aImage = isImageBasedSubtitle(a.codec) ? 1 : 0;
+          const bImage = isImageBasedSubtitle(b.codec) ? 1 : 0;
+          return aImage - bImage;
+        });
+      }
+
       for (const lang of action.languages) {
         const langLower = lang.toLowerCase();
-        for (const stream of subtitleStreams) {
+        for (const stream of candidates) {
           // Language match
           if (
             stream.languageCodeISO6392?.toLowerCase() !== langLower &&
@@ -249,6 +292,16 @@ async function resolveSubtitleAction(
           // Image-based check
           if (!action.allowImageBased && isImageBasedSubtitle(stream.codec)) {
             continue;
+          }
+
+          // When preferTextBased is active and we have an embedded text-based
+          // sub, return it directly — the caller will extract via the pipeline.
+          if (
+            effectivePreferText &&
+            !isImageBasedSubtitle(stream.codec) &&
+            stream.type === 'embedded'
+          ) {
+            return stream;
           }
 
           // For embedded text-based subs, verify extraction

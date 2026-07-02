@@ -168,29 +168,36 @@ export class StreamSelectionProfileResolver {
           }
         : { type: 'default' as const };
 
-    // Build subtitle action from channel subtitle preferences
-    const subtitlePrefs =
-      await this.channelDB.getChannelSubtitlePreferences(channelId);
+    // Check if the channel has subtitles enabled
+    const channel = await this.channelDB.getChannel(channelId);
 
     let subtitleAction: StreamSelectionRule['subtitleAction'];
-    // Filter out preferences with filterType 'none' — they mean
-    // "don't match subtitles for this language", matching the
-    // behavior of SubtitleStreamPicker.pickSubtitles.
-    const activeSubtitlePrefs = subtitlePrefs.filter(
-      (p) => p.filterType !== 'none',
-    );
-    if (activeSubtitlePrefs.length > 0) {
-      const sorted = orderBy(activeSubtitlePrefs, 'priority', 'asc');
-      const topPref = sorted[0]!;
-      subtitleAction = {
-        type: 'by_language' as const,
-        languages: sorted.map((p) => p.languageCode),
-        filterType: topPref.filterType ?? 'any',
-        allowImageBased: Boolean(topPref.allowImageBased ?? true),
-        allowExternal: Boolean(topPref.allowExternal ?? true),
-      };
+    if (!channel?.subtitlesEnabled) {
+      subtitleAction = { type: 'disable' as const };
     } else {
-      subtitleAction = { type: 'default' as const };
+      // Build subtitle action from channel subtitle preferences
+      const subtitlePrefs =
+        await this.channelDB.getChannelSubtitlePreferences(channelId);
+
+      // Filter out preferences with filterType 'none' — they mean
+      // "don't match subtitles for this language", matching the
+      // legacy SubtitleStreamPicker behavior.
+      const activeSubtitlePrefs = subtitlePrefs.filter(
+        (p) => p.filterType !== 'none',
+      );
+      if (activeSubtitlePrefs.length > 0) {
+        const sorted = orderBy(activeSubtitlePrefs, 'priority', 'asc');
+        const topPref = sorted[0]!;
+        subtitleAction = {
+          type: 'by_language' as const,
+          languages: sorted.map((p) => p.languageCode),
+          filterType: topPref.filterType ?? 'any',
+          allowImageBased: Boolean(topPref.allowImageBased ?? true),
+          allowExternal: Boolean(topPref.allowExternal ?? true),
+        };
+      } else {
+        subtitleAction = { type: 'default' as const };
+      }
     }
 
     rules.push({

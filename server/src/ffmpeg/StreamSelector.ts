@@ -13,12 +13,14 @@ import {
   buildCelContext,
   evaluateStreamSelectionProfile,
 } from './StreamSelectionEvaluator.ts';
+import type { StreamSelectionHints } from './StreamSelectionEvaluator.ts';
 
 type StreamSelectRequest = {
   channel: ChannelOrm;
   lineupItem: ContentBackedStreamLineupItem;
   audioStreams: NonEmptyArray<AudioStreamDetails>;
   subtitleStreams: Array<SubtitleStreamDetails>;
+  hints?: StreamSelectionHints;
 };
 
 @injectable()
@@ -34,6 +36,7 @@ export class StreamSelector {
     lineupItem,
     audioStreams,
     subtitleStreams,
+    hints,
   }: StreamSelectRequest) {
     const selectionCtx = {
       channelId: channel.uuid,
@@ -61,6 +64,7 @@ export class StreamSelector {
       this.celService,
       celContext,
       lineupItem,
+      hints,
     );
   }
 }
