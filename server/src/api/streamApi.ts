@@ -397,7 +397,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             .then((result) =>
               result.mapAsync(async (session) => {
                 session.recordHeartbeat(req.ip);
-                const masterResult = await session.getMasterPlaylist();
+                const masterResult = await session.getMasterPlaylist({
+                  wait: true,
+                });
 
                 if (masterResult.isFailure()) {
                   logger.error(masterResult.error);
@@ -415,8 +417,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
                     channelId,
                     session.masterPlaylistPath,
                   );
-                  logger.error(fmtError);
-                  throw new Error(fmtError);
+                  logger.info(fmtError);
+                  return res.status(404).send();
+                  // throw new Error(fmtError);
                 }
 
                 return res

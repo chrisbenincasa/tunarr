@@ -37,6 +37,9 @@ export type SessionType = ChannelStreamMode | ChannelConcatStreamMode;
 // TODO: sort these all out.... and write docs
 type StreamSessionEvents = {
   state: [newState: SessionState, oldState: SessionState];
+  // Emitted when a stream is initializing
+  init: [];
+  // Emitted when a stream has started (wait for ready is complete)
   start: [];
   stop: [];
   cleanup: [];
@@ -134,7 +137,7 @@ export abstract class Session<
 
       try {
         this.state = 'starting';
-        this.emit('start');
+        this.emit('init');
         await this.startInternal();
         await this.waitForStreamReadyInternal();
         this.state = 'started';
