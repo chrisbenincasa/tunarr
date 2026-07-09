@@ -17,6 +17,7 @@ import type {
 } from '@/db/schema/base.js';
 import type {
   MusicAlbumOrm,
+  NewProgramExtraWithRelations,
   NewProgramGroupingWithRelations,
   NewProgramVersion,
   NewProgramWithRelations,
@@ -240,6 +241,8 @@ export interface IProgramDB {
     groupingId: string,
     genres: NewGenre[],
   ): Promise<void>;
+
+  upsertProgramExtras(extras: NewProgramExtraWithRelations[]);
 }
 
 export type WithChannelIdFilter<T> = T & {
