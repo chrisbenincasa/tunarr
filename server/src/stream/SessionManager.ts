@@ -16,6 +16,7 @@ import {
 import {
   ChannelNotFoundError,
   GenericError,
+  TranscodeConfigNotFoundError,
   TypedError,
 } from '../types/errors.js';
 import type { ConcatSession } from './ConcatSession.js';
@@ -278,8 +279,21 @@ export class SessionManager {
         if (isNil(session)) {
           const channel = await this.channelDB.getChannelOrm(channelId);
 
-          if (!channel?.transcodeConfig) {
+          if (isNil(channel)) {
             throw new ChannelNotFoundError(channelId);
+          }
+
+          if (isNil(channel.transcodeConfig)) {
+            // The channel exists but points at a transcode config that
+            // doesn't. Surface an accurate error instead of a misleading
+            // "channel not found" (see issue #1772).
+            this.logger.error(
+              'Channel %s (%s) references transcode config %s, which does not exist. The channel cannot be streamed until it is assigned a valid transcode config; restarting the server will reassign it to the default config.',
+              channel.name,
+              channel.uuid,
+              channel.transcodeConfigId,
+            );
+            throw new TranscodeConfigNotFoundError(channel.transcodeConfigId);
           }
 
           session = sessionFactory(channel);

@@ -50,15 +50,35 @@ export class EnsureTranscodeConfigIds extends Fixer {
         .execute();
     }
 
+    // Channels with a NULL transcode config ID, or with an ID that does not
+    // reference an existing transcode config (e.g. channels saved via the API
+    // before referential validation existed -- see issue #1772). Note that the
+    // explicit NULL check is required because `NOT IN` never matches NULL.
     const channelsMissingTranscodeId = await this.db
       .selectFrom('channel')
-      .where('channel.transcodeConfigId', 'is', null)
+      .where((eb) =>
+        eb.or([
+          eb('channel.transcodeConfigId', 'is', null),
+          eb(
+            'channel.transcodeConfigId',
+            'not in',
+            eb.selectFrom('transcodeConfig').select('transcodeConfig.uuid'),
+          ),
+        ]),
+      )
       .selectAll()
       .execute();
 
     if (channelsMissingTranscodeId.length === 0) {
       return;
     }
+
+    this.logger.warn(
+      'Found %d channel(s) with a missing or dangling transcode config ID. Reassigning them to the default transcode config (%s): %O',
+      channelsMissingTranscodeId.length,
+      defaultConfig!.uuid,
+      map(channelsMissingTranscodeId, 'uuid'),
+    );
 
     await this.db
       .updateTable('channel')
