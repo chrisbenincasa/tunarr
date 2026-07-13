@@ -19,6 +19,7 @@ export interface ProgramIterator<
   current(state: IterationState): Nullable<ProgramT>;
   next(): void;
   reset(): void;
+  fork(): ProgramIterator<ProgramT>;
 }
 
 abstract class BaseProgramIterator<ProgramT extends CondensedChannelProgram>
@@ -32,6 +33,10 @@ abstract class BaseProgramIterator<ProgramT extends CondensedChannelProgram>
   abstract next(): void;
   abstract reset(): void;
   protected abstract mint(program: SlotSchedulerProgram): ProgramT;
+
+  fork(): ProgramIterator<ProgramT> {
+    return this;
+  }
 }
 
 export abstract class IndexBasedProgramIterator<
@@ -89,6 +94,10 @@ export class RerunProgramIterator<
     this.#consumedCount = 0;
     this.inner.reset();
   }
+
+  fork(): ProgramIterator<ProgramT> {
+    return this;
+  }
 }
 
 // Dummy state used when calling current() from next() for recording.
@@ -137,6 +146,10 @@ export class RecordingProgramIterator<
 
   get periodBuffer(): readonly ProgramT[] {
     return this.#periodBuffer;
+  }
+
+  fork(): ProgramIterator<ProgramT> {
+    return this;
   }
 }
 
@@ -195,6 +208,10 @@ export class ReplayProgramIterator<
   resetPeriod(): void {
     this.#replayCursor = 0;
     this.#overflowed = false;
+  }
+
+  fork(): ProgramIterator<ProgramT> {
+    return this;
   }
 }
 

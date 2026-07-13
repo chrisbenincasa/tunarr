@@ -117,6 +117,7 @@ export async function scheduleTimeSlots(
   const periodDuration = dayjs.duration(1, schedule.period);
   const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
 
+  const seenLinkGroups = new Set<string>();
   const sortedSlots = map(
     sortBy(schedule.slots, (slot) => slot.startTime),
     (slot) =>
@@ -128,7 +129,7 @@ export async function scheduleTimeSlots(
         ('id' in slot ? slotIterators.get(slot.id) : undefined) ??
           createSlotProgramIterator(slot, programMap, random),
         random,
-        getFillerIteratorsForSlot(slot, fillerIterators),
+        getFillerIteratorsForSlot(slot, fillerIterators, seenLinkGroups),
       ),
   );
 
