@@ -553,6 +553,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     library: MediaSourceLibrary,
     collection: PlexLibraryCollection,
   ): Collection {
+    if (!collection.childCount) {
+      this.logger.warn('Found collection without subtype: %O', collection);
+    }
     return {
       type: 'collection',
       externalId: collection.ratingKey,
@@ -603,6 +606,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           )
           .with({ type: 'artist' }, (artist) =>
             this.plexMusicArtistInjection(artist, library),
+          )
+          .with({ type: 'episode' }, (episode) =>
+            this.plexEpisodeInjection(episode, library),
           )
           .otherwise((x) =>
             Result.failure(
