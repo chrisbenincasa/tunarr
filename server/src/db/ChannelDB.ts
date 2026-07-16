@@ -21,8 +21,8 @@ import { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts'
 import { LineupRepository } from './channel/LineupRepository.ts';
 import type {
   Lineup,
+  LineupConfig,
   LineupItem,
-  PendingProgram,
 } from './derived_types/Lineup.ts';
 import type { PageParams } from './interfaces/IChannelDB.ts';
 import type { Channel, ChannelOrm } from './schema/Channel.ts';
@@ -198,6 +198,10 @@ export class ChannelDB implements IChannelDB {
     return this.lineup.loadCondensedLineup(channelId, offset, limit);
   }
 
+  loadLineupConfig(channelId: string): Promise<LineupConfig> {
+    return this.lineup.loadLineupConfig(channelId);
+  }
+
   loadChannelAndLineup(
     channelId: string,
   ): Promise<ChannelAndLineup<Channel> | null> {
@@ -273,13 +277,6 @@ export class ChannelDB implements IChannelDB {
   ): Promise<ChannelOrm | null> {
     // TODO: Update LineupRepository.setChannelPrograms to return ChannelOrm
     return this.lineup.setChannelPrograms(channel, lineup, startTime);
-  }
-
-  addPendingPrograms(
-    channelId: string,
-    pendingPrograms: PendingProgram[],
-  ): Promise<void> {
-    return this.lineup.addPendingPrograms(channelId, pendingPrograms);
   }
 
   removeProgramsFromLineup(
