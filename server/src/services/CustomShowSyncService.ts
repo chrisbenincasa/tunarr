@@ -21,7 +21,8 @@ import {
   type TerminalProgram,
 } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { groupBy } from 'lodash-es';
+import { groupBy, mapValues, sortBy } from 'lodash-es';
+import { groupByUniq, zipWithIndex } from '../util/index.ts';
 import { PlexHierarchyTraversal } from './PlexItemEnumerator.ts';
 import type { GenericMediaSourceScannerFactory } from './scanner/MediaSourceScanner.ts';
 
@@ -300,18 +301,30 @@ export class CustomShowSyncService {
 
     const items = result.getOrThrow();
 
-    const allPlaylistItems = seq.collect(items, (item) => {
+    const allPlaylistItems = seq.collect(zipWithIndex(items), ([item, idx]) => {
       if (!isTerminalItemType(item)) {
         return null;
       }
-      return item;
+      return [item, idx] as [TerminalProgram, number];
     });
 
+    const idxById = mapValues(
+      groupByUniq<[TerminalProgram, number], string>(
+        allPlaylistItems,
+        ([item]) => item.externalId,
+      ),
+      ([_, idx]) => idx,
+    );
+
+    // Order is not stable here necessarily. We will resort after expansion.
     const expandedItems = await new PlexHierarchyTraversal(
       client,
-    ).expandAncestors(allPlaylistItems);
+    ).expandAncestors(allPlaylistItems.map(([item]) => item));
 
-    return expandedItems;
+    return sortBy(
+      expandedItems,
+      (item) => idxById[item.externalId] ?? Number.MAX_SAFE_INTEGER,
+    );
   }
 }
 
