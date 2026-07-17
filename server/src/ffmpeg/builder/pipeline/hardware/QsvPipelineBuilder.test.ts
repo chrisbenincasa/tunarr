@@ -912,7 +912,7 @@ describe('QsvPipelineBuilder', () => {
       });
 
       const args = pipeline.getCommandArgs().join(' ');
-      expect(args).toContain('scale=192:-1');
+      expect(args).toContain('scale=192:-2');
     });
 
     test('does not add a scale filter when fixedSize is true', () => {
