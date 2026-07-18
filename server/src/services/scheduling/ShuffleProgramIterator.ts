@@ -5,7 +5,10 @@ import type {
 import type { CondensedCustomProgram } from '@tunarr/types/schemas';
 import { slice } from 'lodash-es';
 import type { Random } from 'random-js';
-import { IndexBasedProgramIterator } from './ProgramIterator.ts';
+import {
+  IndexBasedProgramIterator,
+  type ProgramIterator,
+} from './ProgramIterator.ts';
 import {
   createIndexByIdMap,
   type SlotSchedulerProgram,
@@ -16,7 +19,7 @@ abstract class ShuffleProgramIterator<
 > extends IndexBasedProgramIterator<ProgramT> {
   constructor(
     programs: SlotSchedulerProgram[],
-    private random: Random,
+    protected random: Random,
   ) {
     super(random.shuffle(programs));
   }
@@ -62,6 +65,15 @@ export class ProgramShuffleIteratorImpl<
 
   protected mint(program: SlotSchedulerProgram): ProgramT {
     return this.minterFunc(program);
+  }
+
+  fork(): ProgramIterator<ProgramT> {
+    const forked = new ProgramShuffleIteratorImpl(
+      [...this.programs],
+      this.random,
+      this.minterFunc,
+    );
+    return forked;
   }
 }
 

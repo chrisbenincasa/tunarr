@@ -17,4 +17,8 @@ export class StaticProgramIterator<ProgramT extends CondensedChannelProgram>
   next(): void {}
 
   reset(): void {}
+
+  fork(): ProgramIterator<ProgramT> {
+    return this;
+  }
 }

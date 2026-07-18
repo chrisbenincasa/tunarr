@@ -68,6 +68,50 @@ export class WeightedFillerProgramIterator
     ) as NonEmptyArray<WeightedProgram>;
   }
 
+  private static fromState(
+    weightedPrograms: NonEmptyArray<WeightedProgram>,
+    weightsById: Map<string, number>,
+    maxDuration: number,
+    slotDef: FillerProgrammingSlot,
+    random: Random,
+    fillerType: Maybe<SlotFillerTypes>,
+    decayFactor: number,
+    resetRate: number,
+  ): WeightedFillerProgramIterator {
+    const instance = Object.create(
+      WeightedFillerProgramIterator.prototype,
+    ) as WeightedFillerProgramIterator;
+    instance.weightedPrograms = weightedPrograms;
+    instance.lastSeenTimestampById = new Map();
+    instance.weightsById = weightsById;
+    instance.maxDuration = maxDuration;
+    instance.slotDef = slotDef;
+    instance.random = random;
+    instance.fillerType = fillerType;
+    instance.decayFactor = decayFactor;
+    instance.resetRate = resetRate;
+    return instance;
+  }
+
+  fork(): ProgramIterator<FillerProgram> {
+    const copiedPrograms = this.weightedPrograms.map((wp) => ({
+      program: wp.program,
+      currentWeight: wp.currentWeight,
+      originalWeight: wp.originalWeight,
+    })) as NonEmptyArray<WeightedProgram>;
+
+    return WeightedFillerProgramIterator.fromState(
+      copiedPrograms,
+      this.weightsById,
+      this.maxDuration,
+      this.slotDef,
+      this.random,
+      this.fillerType,
+      this.decayFactor,
+      this.resetRate,
+    );
+  }
+
   current(state: IterationState): Nullable<FillerProgram> {
     let idx = 0;
     if (state.slotDuration > this.maxDuration) {
