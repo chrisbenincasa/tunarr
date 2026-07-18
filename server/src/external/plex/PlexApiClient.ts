@@ -734,8 +734,46 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       );
   }
 
-  async getItemMetadata(key: string): Promise<QueryResult<PlexMedia>> {
+  async getItemMetadataRaw(key: string): Promise<QueryResult<PlexMedia>> {
     return this.getItemMetadataInternal(key, PlexMediaContainerResponseSchema);
+  }
+
+  async getItemMetadata(key: string): Promise<Result<ProgramOrFolder>> {
+    const rawResponse = await this.getItemMetadataRaw(key);
+    return rawResponse.flatMap((media) => {
+      return this.findLibraryFromPlexMedia(media).flatMap((library) =>
+        match(media)
+          .returnType<Result<ProgramOrFolder>>()
+          .with({ type: 'movie' }, (movie) =>
+            this.plexMovieInjection(movie, library),
+          )
+          .with({ type: 'episode' }, (ep) =>
+            this.plexEpisodeInjection(ep, library),
+          )
+          .with({ type: 'show' }, (show) =>
+            this.plexShowInjection(show, library),
+          )
+          .with({ type: 'season' }, (season) =>
+            this.plexSeasonInjection(season, library),
+          )
+          .with({ type: 'album' }, (album) =>
+            this.plexAlbumInjection(album, library),
+          )
+          .with({ type: 'artist' }, (artist) =>
+            this.plexMusicArtistInjection(artist, library),
+          )
+          .with({ type: 'track' }, (track) =>
+            this.plexTrackInjection(track, library),
+          )
+          .with({ type: 'collection' }, () => {
+            throw new Error('Collections are not supported in this call');
+          })
+          .with({ type: 'playlist' }, () => {
+            throw new Error('Playlists are not supported in this call');
+          })
+          .exhaustive(),
+      );
+    });
   }
 
   async getMovie(key: string): Promise<QueryResult<PlexMovie>> {

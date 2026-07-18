@@ -275,4 +275,3 @@ async function resolveSubtitleAction(
     }
   }
 }
-
