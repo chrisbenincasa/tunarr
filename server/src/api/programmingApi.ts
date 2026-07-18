@@ -707,21 +707,39 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       const program = await req.serverCtx.programDB.getProgramById(
         req.params.id,
       );
-      if (isNil(program)) {
-        return res.status(404).send(`Program ${req.params.id} not found.`);
+
+      let externalId:
+        | {
+            sourceType: string;
+            externalKey: string;
+            mediaSourceId: string | null;
+            externalSourceId: string | null;
+          }
+        | undefined;
+
+      if (program) {
+        externalId = program.externalIds.find(
+          (eid) => eid.sourceType === 'jellyfin' || eid.sourceType === 'plex',
+        );
+      } else {
+        const grouping = await req.serverCtx.programDB.getProgramGrouping(
+          req.params.id,
+        );
+        if (isNil(grouping)) {
+          return res.status(404).send(`Program ${req.params.id} not found.`);
+        }
+        externalId = grouping.externalIds.find(
+          (eid) => eid.sourceType === 'jellyfin' || eid.sourceType === 'plex',
+        );
       }
-
-      const mediaSources = await req.serverCtx.mediaSourceDB.getAll();
-
-      const externalId = program.externalIds.find(
-        (eid) => eid.sourceType === 'jellyfin' || eid.sourceType === 'plex',
-      );
 
       if (!externalId) {
         return res
           .status(404)
           .send(`Could not find viable external ID for program`);
       }
+
+      const mediaSources = await req.serverCtx.mediaSourceDB.getAll();
 
       const server = find(
         mediaSources,
@@ -762,7 +780,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           const url = `${server.uri}/web/index.html#!/server/${
             clientIdentifier
           }/details?key=${encodeURIComponent(
-            `/library/metadata/${program.externalKey}`,
+            `/library/metadata/${externalId.externalKey}`,
           )}&X-Plex-Token=${server.accessToken}`;
 
           if (!req.query.forward) {
