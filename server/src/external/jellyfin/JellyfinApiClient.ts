@@ -60,6 +60,7 @@ import {
 import type { NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { z } from 'zod';
 import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import { MediaSourceType } from '../../db/schema/base.ts';
 import type { ProgramType } from '../../db/schema/Program.ts';
@@ -121,6 +122,23 @@ const RequiredLibraryFields = [
   'MediaSources',
 ];
 
+const JellyfinUserMeResponse = z.object({ Id: z.string() }).passthrough();
+
+const JellyfinUserResponse = z
+  .object({
+    Id: z.string(),
+    Name: z.string().optional(),
+    Policy: z
+      .object({
+        IsAdministrator: z.boolean().optional(),
+        IsDisabled: z.boolean().optional(),
+      })
+      .optional(),
+  })
+  .passthrough();
+
+const JellyfinUsersResponse = z.array(JellyfinUserResponse);
+
 function getJellyfinAuthorization(
   apiKey: Maybe<string>,
   clientId: Maybe<string>,
@@ -170,6 +188,76 @@ type JellyfinItemTypes = {
 
 export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
   protected redacter = new JellyfinRequestRedacter();
+
+  private resolvedUserId: string | null = null;
+  private resolvingUserId: Promise<string> | null = null;
+
+  /**
+   * Ensure we have a usable Jellyfin userId for endpoints that require it.
+   *
+   * Username/password login yields a user session token, so /Users/Me works.
+   * Dashboard API keys are not tied to a user session; /Users/Me may 400.
+   * In that case, fall back to /Users and pick an enabled admin (or first enabled) user.
+   */
+  private async ensureUserId(): Promise<string> {
+    const configured = this.options.mediaSource.userId;
+    if (isNonEmptyString(configured)) {
+      this.resolvedUserId = configured;
+      return configured;
+    }
+
+    if (isNonEmptyString(this.resolvedUserId)) {
+      return this.resolvedUserId;
+    }
+
+    if (this.resolvingUserId) {
+      return this.resolvingUserId;
+    }
+
+    this.resolvingUserId = (async () => {
+      // 1) Try /Users/Me (works for user access tokens)
+      try {
+        const meRaw = await this.doGet<unknown>({ url: '/Users/Me' });
+        const parsed = JellyfinUserMeResponse.safeParse(meRaw);
+        if (parsed.success && isNonEmptyString(parsed.data.Id)) {
+          return parsed.data.Id;
+        }
+      } catch {
+        // Swallow; API keys may cause /Users/Me to 400.
+      }
+
+      // 2) Fallback to /Users (works for dashboard API keys)
+      const usersRaw = await this.doGet<unknown>({ url: '/Users' });
+      const users = JellyfinUsersResponse.safeParse(usersRaw);
+      if (!users.success || users.data.length === 0) {
+        throw new Error(
+          'Unable to resolve Jellyfin userId: /Users returned no users',
+        );
+      }
+
+      const enabled = users.data.filter((u) => !u.Policy?.IsDisabled);
+      const admin = enabled.find((u) => u.Policy?.IsAdministrator);
+      const chosen = admin ?? enabled[0] ?? users.data[0];
+
+      if (!isNonEmptyString(chosen?.Id)) {
+        throw new Error(
+          'Unable to resolve Jellyfin userId: chosen user had no Id',
+        );
+      }
+
+      return chosen.Id;
+    })();
+
+    try {
+      const userId = await this.resolvingUserId;
+      this.resolvedUserId = userId;
+      // Write back so downstream calls using this.options.mediaSource.userId pick it up.
+      (this.options.mediaSource as Record<string, unknown>).userId = userId;
+      return userId;
+    } finally {
+      this.resolvingUserId = null;
+    }
+  }
 
   constructor(
     private canonicalizer: Canonicalizer<ApiJellyfinItem>,
@@ -228,32 +316,13 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         url: '/System/Ping',
       });
 
-      // One of these should succeed. In the username/pw case
-      // we should be able to at least retrieve our own user.
-      // Access token based auth will not have a "me" but should be able
-      // to at least list all users.
-      const [meResult, allUsersResult] = await Promise.allSettled([
-        this.doGet({
-          url: '/Users/Me',
-          params: {
-            userId: this.options.mediaSource.userId,
-          },
-        }),
-        this.doGet({
-          url: '/Users',
-        }),
-      ]);
-
-      if (
-        meResult.status === 'fulfilled' ||
-        allUsersResult.status === 'fulfilled'
-      ) {
+      // Validate auth and resolve a userId for subsequent API calls.
+      // API keys may 400 on /Users/Me even though they are otherwise valid.
+      try {
+        await this.ensureUserId();
         return { healthy: true };
-      } else {
-        return {
-          healthy: false,
-          status: 'auth',
-        };
+      } catch {
+        return { healthy: false, status: 'auth' };
       }
     } catch (e) {
       return {
