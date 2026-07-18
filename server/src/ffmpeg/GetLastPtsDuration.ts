@@ -56,7 +56,7 @@ function parsePtsAndDuration(str: string): PtsAndDuration {
   const [pts, duration] = str.split('|', 2);
   const ptsParsed = parseFloat(pts!);
   if (isNaN(ptsParsed)) {
-    throw new Error('PTS was not a number');
+    throw new Error(`PTS was not a number: got ${str}`);
   }
   let durationParsed = parseFloat(duration!);
   if (isNaN(durationParsed)) {

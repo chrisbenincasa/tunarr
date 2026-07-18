@@ -550,6 +550,7 @@ export function createSlotIterators(
 export function getFillerIteratorsForSlot(
   slot: BaseSlot,
   map: Partial<Record<SlotIteratorKey, ProgramIterator>>,
+  seenLinkGroups?: Set<string>,
 ): Record<string, ProgramIterator<FillerProgram>> {
   if (!slotHasFiller(slot)) {
     return {};
@@ -558,12 +559,29 @@ export function getFillerIteratorsForSlot(
     return {};
   }
 
+  const shouldFork =
+    seenLinkGroups !== undefined &&
+    slotIsLinkable(slot) &&
+    slot.iterationGroup !== undefined &&
+    seenLinkGroups.has(slot.iterationGroup);
+
+  if (
+    seenLinkGroups !== undefined &&
+    slotIsLinkable(slot) &&
+    slot.iterationGroup !== undefined &&
+    !seenLinkGroups.has(slot.iterationGroup)
+  ) {
+    seenLinkGroups.add(slot.iterationGroup);
+  }
+
   const out: Record<string, ProgramIterator<FillerProgram>> = {};
   for (const filler of slot.filler) {
     const it =
       map[fillerSlotIteratorKey(filler.fillerListId, filler.fillerOrder)];
     if (it) {
-      out[filler.fillerListId] = it as ProgramIterator<FillerProgram>;
+      out[filler.fillerListId] = (
+        shouldFork ? it.fork() : it
+      ) as ProgramIterator<FillerProgram>;
     }
   }
 

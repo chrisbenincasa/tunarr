@@ -37,7 +37,6 @@ export type ProgramAndTimeElapsed = {
   program: StreamLineupItem;
   timeElapsed: number;
   programIndex: number;
-  contentStartOffsetMs?: number;
 };
 
 // Taking advantage of structural typing for transition
@@ -73,7 +72,7 @@ export type CurrentLineupItemResult = {
 
 @injectable()
 export class StreamProgramCalculator {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.FillerListDB) private fillerDB: IFillerListDB,
@@ -380,7 +379,6 @@ export class StreamProgramCalculator {
           program,
           timeElapsed,
           programIndex: currentProgramIndex,
-          contentStartOffsetMs: lineupItem.startOffsetMs,
         };
       }
       case 'offline': {
@@ -412,7 +410,7 @@ export class StreamProgramCalculator {
   }
 
   async createLineupItem(
-    { program, timeElapsed, contentStartOffsetMs }: ProgramAndTimeElapsed,
+    { program, timeElapsed }: ProgramAndTimeElapsed,
     streamDuration: number,
     channel: ChannelOrm,
     effectiveNow: number,
@@ -573,7 +571,7 @@ export class StreamProgramCalculator {
       };
     }
 
-    const mediaStartOffset = timeElapsed + (contentStartOffsetMs ?? 0);
+    const mediaStartOffset = timeElapsed;
 
     if (program.type === 'commercial') {
       return {

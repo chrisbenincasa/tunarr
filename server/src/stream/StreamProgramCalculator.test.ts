@@ -129,7 +129,11 @@ describe('StreamProgramCalculator', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     verify(
-      playHistoryDB.isProgramCurrentlyPlaying(channelId, programId1, +startTime),
+      playHistoryDB.isProgramCurrentlyPlaying(
+        channelId,
+        programId1,
+        +startTime,
+      ),
     ).once();
     verify(playHistoryDB.create(anything())).once();
   });
@@ -243,7 +247,11 @@ describe('StreamProgramCalculator', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     verify(
-      playHistoryDB.isProgramCurrentlyPlaying(channelId, programId1, +startTime),
+      playHistoryDB.isProgramCurrentlyPlaying(
+        channelId,
+        programId1,
+        +startTime,
+      ),
     ).once();
     verify(playHistoryDB.create(anything())).once();
   });
@@ -356,7 +364,11 @@ describe('StreamProgramCalculator', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     verify(
-      playHistoryDB.isProgramCurrentlyPlaying(channelId, programId1, +startTime),
+      playHistoryDB.isProgramCurrentlyPlaying(
+        channelId,
+        programId1,
+        +startTime,
+      ),
     ).once();
     verify(playHistoryDB.create(anything())).once();
   });
@@ -568,6 +580,124 @@ describe('StreamProgramCalculator', () => {
 
       // Verify play history was NOT created since program was already playing
       verify(playHistoryDB.create(anything())).never();
+    },
+  );
+
+  baseTest(
+    'mid-roll break: startOffset should not double-count startOffsetMs',
+    async () => {
+      const fillerDB = mock<IFillerListDB>();
+      const channelDB = mock<IChannelDB>();
+      const programDB = mock<IProgramDB>();
+      const fillerPicker = mock<IFillerPicker>();
+      const playHistoryDB = mock<ProgramPlayHistoryDB>();
+
+      const channelId = faker.string.uuid();
+      const programId = faker.string.uuid();
+
+      // Simulate a 22-min episode split by mid-roll into:
+      //   segment 1: 8 min of content (startOffsetMs=0)
+      //   flex break: 3 min
+      //   segment 2: 14 min of content (startOffsetMs=8min)
+      const seg1Duration = +dayjs.duration({ minutes: 8 });
+      const breakDuration = +dayjs.duration({ minutes: 3 });
+      const seg2Duration = +dayjs.duration({ minutes: 14 });
+      const seg2StartOffset = seg1Duration; // 8 min into the source media
+
+      const lineup: LineupItem[] = [
+        {
+          type: 'content',
+          durationMs: seg1Duration,
+          id: programId,
+          startOffsetMs: 0,
+        },
+        {
+          type: 'offline',
+          durationMs: breakDuration,
+        },
+        {
+          type: 'content',
+          durationMs: seg2Duration,
+          id: programId,
+          startOffsetMs: seg2StartOffset,
+        },
+      ];
+
+      const totalDuration = sumBy(lineup, (i) => i.durationMs);
+
+      // Channel started exactly at totalDuration ago, so we're at the
+      // start of the first cycle.
+      const channelStartTime = 0;
+      // "now" is 2 minutes into segment 2:
+      // seg1(8min) + break(3min) + 2min = 13min
+      const twoMinutes = +dayjs.duration({ minutes: 2 });
+      const currentTime = seg1Duration + breakDuration + twoMinutes;
+
+      when(programDB.getProgramById(programId)).thenReturn(
+        Promise.resolve(
+          createFakeProgram({
+            uuid: programId,
+            duration: seg1Duration + seg2Duration, // full episode duration
+            mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+          }),
+        ),
+      );
+
+      const channel = createChannelOrm({
+        uuid: channelId,
+        number: 1,
+        startTime: channelStartTime,
+        duration: totalDuration,
+      });
+
+      when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
+
+      when(channelDB.loadLineup(channelId)).thenReturn(
+        Promise.resolve({
+          version: 1,
+          items: lineup,
+          startTimeOffsets: calculateStartTimeOffsets(lineup),
+          lastUpdated: now(),
+        }),
+      );
+
+      when(
+        playHistoryDB.isProgramCurrentlyPlaying(
+          anything(),
+          anything(),
+          anything(),
+        ),
+      ).thenReturn(Promise.resolve(false));
+      when(playHistoryDB.create(anything())).thenReturn(
+        Promise.resolve(undefined),
+      );
+
+      const calc = new StreamProgramCalculator(
+        instance(fillerDB),
+        instance(channelDB),
+        instance(programDB),
+        instance(fillerPicker),
+        instance(playHistoryDB),
+      );
+
+      const out = (
+        await calc.getCurrentLineupItem({
+          allowSkip: false,
+          channelId: 1,
+          startTime: currentTime,
+        })
+      ).get();
+
+      // We are 2 minutes into segment 2 which starts at 8 min in the source.
+      // The correct seek position is 8min + 2min = 10min.
+      // NOT 8min + 2min + 8min = 18min (double-counted).
+      const expectedStartOffset = seg2StartOffset + twoMinutes;
+      expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
+        type: 'program',
+        program: { uuid: programId },
+        startOffset: expectedStartOffset,
+        streamDuration: seg2Duration - twoMinutes,
+      });
     },
   );
 

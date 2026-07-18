@@ -1,8 +1,4 @@
-import {
-  DynamicContentConfigSchema,
-  LineupScheduleSchema,
-  SchedulingOperationSchema,
-} from '@tunarr/types/api';
+import { LineupScheduleSchema } from '@tunarr/types/api';
 import { FillerType, OfflineFillerConfigSchema } from '@tunarr/types/schemas';
 import { first } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
@@ -128,23 +124,16 @@ export const LineupSchema = z.object({
   // a "start" time timestamp.
   startTimeOffsets: z.array(z.number()),
 
-  //
-  dynamicContentConfig: DynamicContentConfigSchema.optional(),
-
-  // Pending items are items that were found by dynamic content
-  // updaters. They are a listing of the 'next' set of programs
-  // that will be part of a channel once the channel's schedule is
-  // updated.
-  pendingPrograms: z.array(PendingProgramSchema).optional(),
-
-  schedulingOperations: z
-    .array(SchedulingOperationSchema)
-    .nonempty()
-    .optional(),
-
   // OnDemand configuration for this channel. If empty, the channel
   // is not configured as on-demand.
   onDemandConfig: OnDemandChannelConfigSchema.optional(),
 });
 
 export type Lineup = z.infer<typeof LineupSchema>;
+
+const _LineupConfigSchema = LineupSchema.omit({
+  startTimeOffsets: true,
+  items: true,
+});
+
+export type LineupConfig = z.infer<typeof _LineupConfigSchema>;

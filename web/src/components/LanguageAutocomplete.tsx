@@ -1,5 +1,5 @@
-import { useLingui } from '@lingui/react/macro';
 import languages from '@cospired/i18n-iso-languages/index';
+import { useLingui } from '@lingui/react/macro';
 import type {
   AutocompleteChangeReason,
   AutocompleteProps,
@@ -60,7 +60,7 @@ export const LanguageAutocomplete = ({
     () =>
       sortBy(
         seq.collect(entries(languages.getNames('en')), ([code, name]) => {
-          const iso6392 = languages.alpha2ToAlpha3B(code);
+          const iso6392 = languages.alpha2ToAlpha3T(code);
           if (!iso6392) {
             return;
           }

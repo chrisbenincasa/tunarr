@@ -14,6 +14,6 @@ export class WatermarkScaleFilter extends FilterOption {
     const width = Math.round(
       (this.watermark.width / 100) * this.resolution.width,
     );
-    return `scale=${width}:-1`;
+    return `scale=${width}:-2`;
   }
 }

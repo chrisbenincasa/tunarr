@@ -9,7 +9,6 @@ import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { deleteIfLocalAndCleared } from '@/util/iconUtil.js';
-import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '@/util/perf.js';
 import { type ChannelSession, type CreateChannelRequest } from '@tunarr/types';
@@ -275,6 +274,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             .send({ error: `Channel with ID ${req.params.id} not found.` });
         }
 
+        const lineupConfig = await req.serverCtx.channelDB.loadLineupConfig(
+          channel.uuid,
+        );
+
         const transcodeConfig = await req.serverCtx.transcodeConfigDB.getById(
           req.body.transcodeConfigId,
         );
@@ -312,9 +315,14 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           channel.guideMinimumDuration !==
             updatedChannel.channel.guideMinimumDuration ||
           channel.startTime !== updatedChannel.channel.startTime ||
-          isDefined(req.body.onDemand);
+          isNil(lineupConfig.onDemandConfig) !==
+            isNil(updatedChannel.lineup.onDemandConfig);
 
         if (needsGuideRegen) {
+          logger.debug(
+            'Regenerating lineup for channel %s after property change',
+            channel.uuid,
+          );
           await container
             .get<RegenerateChannelLineupCommand>(RegenerateChannelLineupCommand)
             .execute({ channelId: channel.uuid });

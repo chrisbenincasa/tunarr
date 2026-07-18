@@ -1,7 +1,7 @@
 import type {
   Lineup,
+  LineupConfig,
   LineupItem,
-  PendingProgram,
 } from '@/db/derived_types/Lineup.js';
 import type { Channel, ChannelOrm } from '@/db/schema/Channel.js';
 import type { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
@@ -120,6 +120,12 @@ export interface IChannelDB {
   ): Promise<CondensedChannelProgramming | null>;
 
   /**
+   * Load the lineup config without the items.
+   * @param channelId
+   */
+  loadLineupConfig(channelId: string): Promise<LineupConfig>;
+
+  /**
    * Replace associations between channel and programs completely
    * @param channelId
    * @param programIds
@@ -170,11 +176,6 @@ export interface IChannelDB {
     MarkRequired<ChannelOrmWithRelations, 'fillerShows'>
   > | null>;
 
-  addPendingPrograms(
-    channelId: string,
-    pendingPrograms: PendingProgram[],
-  ): Promise<void>;
-
   setChannelPrograms(
     channel: Channel,
     lineup: readonly LineupItem[],
@@ -194,13 +195,7 @@ export interface IChannelDB {
   findChannelsForProgramId(programId: string): Promise<ChannelOrm[]>;
 }
 export type UpdateChannelLineupRequest = MarkOptional<
-  MarkNullable<
-    Omit<Lineup, 'lastUpdated'>,
-    | 'dynamicContentConfig'
-    | 'schedule'
-    | 'schedulingOperations'
-    | 'pendingPrograms'
-  >,
+  MarkNullable<Omit<Lineup, 'lastUpdated'>, 'schedule'>,
   'version' | 'onDemandConfig' | 'items' | 'startTimeOffsets'
 >;
 

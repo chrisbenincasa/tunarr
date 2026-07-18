@@ -2289,6 +2289,123 @@ describe('TimeSlotService', () => {
         expect(firsts[1]).toBe('show2-ep1');
       });
 
+      test('linked rerun slots get independent filler iterators via fork', async () => {
+        const groupId = randomUUID();
+        const fillerListId = randomUUID();
+
+        // 10 episodes for the show content
+        const episodes = makeEpisodes('show1', 10);
+
+        // 15 short filler programs assigned to a filler list
+        const fillerPrograms: SlotSchedulerProgram[] = Array.from(
+          { length: 15 },
+          (_, i) => ({
+            ...createFakeProgramOrm({
+              uuid: `filler-${i}`,
+              title: `Filler ${i}`,
+              type: 'movie',
+              duration: 2 * 60 * 1000, // 2 min each
+            }),
+            parentFillerLists: [fillerListId],
+            parentCustomShows: [],
+            parentSmartCollections: [],
+          }),
+        );
+
+        // Two linked time slots with filler, same iterationGroup and rerun mode
+        const schedule: TimeSlotSchedule = {
+          type: 'time',
+          period: 'day',
+          maxDays: 2,
+          flexPreference: 'end',
+          padMs: oneHour,
+          latenessMs: 0,
+          timeZoneOffset: 0,
+          slots: [
+            {
+              id: randomUUID(),
+              startTime: 0,
+              type: 'show',
+              showId: 'show1',
+              order: 'next',
+              direction: 'asc',
+              seasonFilter: [],
+              iterationGroup: groupId,
+              linkMode: 'rerun',
+              filler: [
+                {
+                  types: ['tail'],
+                  fillerListId,
+                  fillerOrder: 'shuffle_prefer_short',
+                },
+              ],
+            },
+            {
+              id: randomUUID(),
+              startTime: 12 * oneHour,
+              type: 'show',
+              showId: 'show1',
+              order: 'next',
+              direction: 'asc',
+              seasonFilter: [],
+              iterationGroup: groupId,
+              linkMode: 'rerun',
+              filler: [
+                {
+                  types: ['tail'],
+                  fillerListId,
+                  fillerOrder: 'shuffle_prefer_short',
+                },
+              ],
+            },
+          ],
+        };
+
+        const result = await scheduleTimeSlots(
+          schedule,
+          [...episodes, ...fillerPrograms],
+          [42, 99, 13, 7],
+          undefined,
+          midnight,
+        );
+
+        // Partition the lineup into two halves by elapsed time.
+        // Slot 1 fills hours 0–11, slot 2 fills hours 12–23.
+        let elapsed = 0;
+        const firstHalf: typeof result.lineup = [];
+        const secondHalf: typeof result.lineup = [];
+        for (const item of result.lineup) {
+          if (elapsed < 12 * oneHour) {
+            firstHalf.push(item);
+          } else {
+            secondHalf.push(item);
+          }
+          elapsed += item.duration;
+        }
+
+        // Both slots should produce content (rerun behavior is tested
+        // separately in the createSlotIterators unit tests above).
+        const contentFirst = firstHalf.filter((p) => p.type === 'content');
+        const contentSecond = secondHalf.filter((p) => p.type === 'content');
+        expect(contentFirst.length).toBeGreaterThan(0);
+        expect(contentSecond.length).toBeGreaterThan(0);
+
+        // Filler programs should differ between the two halves because
+        // the second slot's filler iterator was forked (independent state).
+        const fillerFirst = firstHalf
+          .filter((p) => p.type === 'filler')
+          .map((p) => p.id);
+        const fillerSecond = secondHalf
+          .filter((p) => p.type === 'filler')
+          .map((p) => p.id);
+
+        // With 15 filler programs and independently forked iterators,
+        // the sequences should not be identical.
+        if (fillerFirst.length > 0 && fillerSecond.length > 0) {
+          expect(fillerFirst).not.toEqual(fillerSecond);
+        }
+      });
+
       test('same group, different ordering → independent', async () => {
         const episodes = makeEpisodes('show1', 10);
         const slotIdA = randomUUID();

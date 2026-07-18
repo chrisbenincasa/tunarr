@@ -89,6 +89,7 @@ class ScheduleContext {
       this.#random,
     );
     this.#startTime = this.#timeCursor = startTime;
+    const seenLinkGroups = new Set<string>();
     this.#sortedSlots = map(
       orderBy(schedule.slots, (slot, idx) => slot.index ?? idx, 'asc'),
       (slot) =>
@@ -97,7 +98,7 @@ class ScheduleContext {
           ('id' in slot ? slotIterators.get(slot.id) : undefined) ??
             createSlotProgramIterator(slot, programMap, this.#random),
           this.#random,
-          getFillerIteratorsForSlot(slot, fillerIterators),
+          getFillerIteratorsForSlot(slot, fillerIterators, seenLinkGroups),
         ),
     );
   }

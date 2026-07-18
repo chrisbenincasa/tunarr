@@ -50,6 +50,14 @@ vi.mock('@/util/logging/LoggerFactory.js', () => ({
   LoggerFactory: { child: () => fakeLogger, root: fakeLogger },
 }));
 
+// Mock PlexHierarchyTraversal so we can control expandAncestors behavior
+const mockExpandAncestors = vi.fn();
+vi.mock('./PlexItemEnumerator.ts', () => ({
+  PlexHierarchyTraversal: class {
+    expandAncestors = mockExpandAncestors;
+  },
+}));
+
 function makeMovie(
   mediaSourceId: MediaSourceId,
   libraryId: string,
@@ -479,6 +487,194 @@ describe('CustomShowSyncService', () => {
 
       // Content is still upserted — movie2 got a DB UUID, movie1 keeps its original
       expect(customShowDB.upsertCustomShowContent).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('playlist ordering', () => {
+    it('preserves original playlist order even when expandAncestors returns items in a different order', async () => {
+      const {
+        service,
+        customShowDB,
+        mediaSourceApiFactory,
+        programDB,
+        mediaSourceId,
+        libraryId,
+      } = makeMocks();
+
+      const customShowId = faker.string.uuid();
+      const playlistId = faker.string.alphanumeric(8);
+
+      // Three movies in a specific playlist order
+      const movie1 = makeMovie(mediaSourceId, libraryId);
+      const movie2 = makeMovie(mediaSourceId, libraryId);
+      const movie3 = makeMovie(mediaSourceId, libraryId);
+
+      vi.mocked(customShowDB.getShow).mockResolvedValue({
+        uuid: customShowId,
+        name: 'Ordered Show',
+        syncMediaSourceId: mediaSourceId,
+        syncMediaSourceType: 'plex',
+        syncExternalPlaylistId: playlistId,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        lastSyncedAt: null,
+        content: [],
+      });
+
+      // The Plex client returns items in the playlist's native order: 1, 2, 3
+      const plexClient = {
+        getItemChildren: vi
+          .fn()
+          .mockResolvedValue(Result.success([movie1, movie2, movie3])),
+      };
+      vi.mocked(mediaSourceApiFactory.getPlexApiClientById).mockResolvedValue(
+        plexClient as never,
+      );
+
+      // expandAncestors returns items in a SHUFFLED order: 3, 1, 2
+      mockExpandAncestors.mockResolvedValue([movie3, movie1, movie2]);
+
+      // All programs resolve to DB records
+      const dbUuid1 = faker.string.uuid();
+      const dbUuid2 = faker.string.uuid();
+      const dbUuid3 = faker.string.uuid();
+      vi.mocked(programDB.lookupByExternalIds).mockResolvedValue([
+        {
+          uuid: dbUuid1,
+          sourceType: 'plex',
+          mediaSourceId,
+          externalKey: movie1.externalId,
+          externalIds: [],
+        },
+        {
+          uuid: dbUuid2,
+          sourceType: 'plex',
+          mediaSourceId,
+          externalKey: movie2.externalId,
+          externalIds: [],
+        },
+        {
+          uuid: dbUuid3,
+          sourceType: 'plex',
+          mediaSourceId,
+          externalKey: movie3.externalId,
+          externalIds: [],
+        },
+      ] as never);
+
+      await service.syncShow(customShowId);
+
+      // The upserted content MUST preserve the original playlist order: 1, 2, 3
+      // (not the shuffled expandAncestors order: 3, 1, 2)
+      expect(customShowDB.upsertCustomShowContent).toHaveBeenCalledWith(
+        customShowId,
+        [
+          expect.objectContaining({ id: dbUuid1, type: 'content' }),
+          expect.objectContaining({ id: dbUuid2, type: 'content' }),
+          expect.objectContaining({ id: dbUuid3, type: 'content' }),
+        ],
+      );
+    });
+
+    it('reflects new playlist order when the underlying Plex playlist is reordered', async () => {
+      const {
+        service,
+        customShowDB,
+        mediaSourceApiFactory,
+        programDB,
+        mediaSourceId,
+        libraryId,
+      } = makeMocks();
+
+      const customShowId = faker.string.uuid();
+      const playlistId = faker.string.alphanumeric(8);
+
+      const movie1 = makeMovie(mediaSourceId, libraryId);
+      const movie2 = makeMovie(mediaSourceId, libraryId);
+      const movie3 = makeMovie(mediaSourceId, libraryId);
+
+      const dbUuid1 = faker.string.uuid();
+      const dbUuid2 = faker.string.uuid();
+      const dbUuid3 = faker.string.uuid();
+
+      vi.mocked(customShowDB.getShow).mockResolvedValue({
+        uuid: customShowId,
+        name: 'Reorder Show',
+        syncMediaSourceId: mediaSourceId,
+        syncMediaSourceType: 'plex',
+        syncExternalPlaylistId: playlistId,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        lastSyncedAt: null,
+        content: [],
+      });
+
+      vi.mocked(programDB.lookupByExternalIds).mockResolvedValue([
+        {
+          uuid: dbUuid1,
+          sourceType: 'plex',
+          mediaSourceId,
+          externalKey: movie1.externalId,
+          externalIds: [],
+        },
+        {
+          uuid: dbUuid2,
+          sourceType: 'plex',
+          mediaSourceId,
+          externalKey: movie2.externalId,
+          externalIds: [],
+        },
+        {
+          uuid: dbUuid3,
+          sourceType: 'plex',
+          mediaSourceId,
+          externalKey: movie3.externalId,
+          externalIds: [],
+        },
+      ] as never);
+
+      const plexClient = {
+        getItemChildren: vi.fn(),
+      };
+      vi.mocked(mediaSourceApiFactory.getPlexApiClientById).mockResolvedValue(
+        plexClient as never,
+      );
+
+      // First sync: playlist order is 1, 2, 3
+      plexClient.getItemChildren.mockResolvedValue(
+        Result.success([movie1, movie2, movie3]),
+      );
+      // expandAncestors returns in same order (no shuffle this time)
+      mockExpandAncestors.mockResolvedValue([movie1, movie2, movie3]);
+
+      await service.syncShow(customShowId);
+
+      expect(customShowDB.upsertCustomShowContent).toHaveBeenLastCalledWith(
+        customShowId,
+        [
+          expect.objectContaining({ id: dbUuid1, type: 'content' }),
+          expect.objectContaining({ id: dbUuid2, type: 'content' }),
+          expect.objectContaining({ id: dbUuid3, type: 'content' }),
+        ],
+      );
+
+      // Second sync: user reordered the Plex playlist to 3, 1, 2
+      plexClient.getItemChildren.mockResolvedValue(
+        Result.success([movie3, movie1, movie2]),
+      );
+      mockExpandAncestors.mockResolvedValue([movie3, movie1, movie2]);
+
+      await service.syncShow(customShowId);
+
+      // The custom show content must now reflect the new order: 3, 1, 2
+      expect(customShowDB.upsertCustomShowContent).toHaveBeenLastCalledWith(
+        customShowId,
+        [
+          expect.objectContaining({ id: dbUuid3, type: 'content' }),
+          expect.objectContaining({ id: dbUuid1, type: 'content' }),
+          expect.objectContaining({ id: dbUuid2, type: 'content' }),
+        ],
+      );
     });
   });
 });
