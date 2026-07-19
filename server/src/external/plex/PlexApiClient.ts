@@ -924,38 +924,67 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       .with('item', () => `/library/metadata/${key}/children`)
       .exhaustive();
 
-    const response = await this.doTypeCheckedGet(
-      path,
-      PlexMediaNoCollectionPlaylistResponse,
-      {
-        params: {
-          includeChapters: 1,
-          includeMarkers: 1,
-          includeElements: [
-            'Media',
-            'Part',
-            'Stream',
-            'Genre',
-            'Rating',
-            'Collection',
-            'Director',
-            'Writer',
-            'Role',
-            'Producer',
-          ].join(','),
-        },
-      },
-    );
+    const pageSize = 50;
+    const allItems: ProgramOrFolder[] = [];
+    let offset = 0;
+    let totalSize: number | undefined;
 
-    return response.map((data) => {
-      return seq.collect(data.MediaContainer.Metadata, (m) =>
+    do {
+      const response = await this.doTypeCheckedGet(
+        path,
+        PlexMediaNoCollectionPlaylistResponse,
+        {
+          params: {
+            includeChapters: 1,
+            includeMarkers: 1,
+            includeElements: [
+              'Media',
+              'Part',
+              'Stream',
+              'Genre',
+              'Rating',
+              'Collection',
+              'Director',
+              'Writer',
+              'Role',
+              'Producer',
+            ].join(','),
+            'X-Plex-Container-Start': offset,
+            'X-Plex-Container-Size': pageSize,
+          },
+        },
+      );
+
+      if (response.isFailure()) {
+        // If we already have some items, return what we have rather than failing entirely
+        if (allItems.length > 0) {
+          this.logger.warn(
+            'Failed to fetch page at offset %d for %s, returning %d items collected so far',
+            offset,
+            path,
+            allItems.length,
+          );
+          break;
+        }
+        return Result.forError(response.error);
+      }
+
+      const data = response.get();
+      totalSize ??= data.MediaContainer.totalSize ?? data.MediaContainer.size;
+
+      const items = seq.collect(data.MediaContainer.Metadata, (m) =>
         this.convertPlexResponse(
           m,
           m.librarySectionID?.toString() ??
             data.MediaContainer.librarySectionID?.toString(),
         ),
       );
-    });
+
+      allItems.push(...items);
+      offset += pageSize;
+    } while (offset < (totalSize ?? 0));
+
+    return Result.success(allItems);
   }
 
   getOtherVideosLibraryContents(
@@ -982,6 +1011,12 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       ? this.findMatchingLibrary(externalLibraryId)
       : null;
     if (!library) {
+      this.logger.debug(
+        'Dropping Plex item %s (type=%s) — no matching library for librarySectionID=%s. Ensure the library is synced in Tunarr.',
+        item.ratingKey,
+        item.type,
+        externalLibraryId ?? '<missing>',
+      );
       return null;
     }
 
