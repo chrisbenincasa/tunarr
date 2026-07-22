@@ -9,6 +9,8 @@ import type {
   ChannelPreset,
   ContentPreviewResponse,
   ContentQuery,
+  DynamicPresetParams,
+  ScheduleSkeleton,
   UpdateChannelProgrammingRequest,
 } from '@tunarr/types/api';
 import type { SearchFilter } from '@tunarr/types/schemas';
@@ -26,7 +28,10 @@ import type {
   ProgramSearchDocument,
   TerminalProgramSearchDocument,
 } from './MeilisearchService.ts';
-import { MeilisearchService } from './MeilisearchService.ts';
+import {
+  encodeCaseSensitiveId,
+  MeilisearchService,
+} from './MeilisearchService.ts';
 import { GlobalScheduler } from './Scheduler.js';
 
 @injectable()
@@ -95,10 +100,36 @@ export class AutoChannelService {
       throw new Error(`Preset not found: ${request.presetId}`);
     }
 
-    // Step 1: Resolve content for each role and create smart collections
+    // Step 1: Determine roles — dynamic presets derive roles from contentAssignments
+    const roles = preset.dynamicRequirements
+      ? Object.keys(request.contentAssignments).map((role) => ({
+          role,
+          label: role,
+          defaultQuery: {} as ContentQuery,
+          required: true,
+          minPrograms: 0,
+        }))
+      : preset.contentRequirements;
+
+    // Validate dynamic params match content assignments
+    if (request.dynamicParams) {
+      const paramRoles =
+        request.dynamicParams.type === 'weighted_mix'
+          ? request.dynamicParams.groups.map((g) => g.role)
+          : request.dynamicParams.blocks.map((b) => b.role);
+      const assignmentKeys = Object.keys(request.contentAssignments);
+      const missing = paramRoles.filter((r) => !assignmentKeys.includes(r));
+      if (missing.length > 0) {
+        throw new Error(
+          `Missing content assignments for roles: ${missing.join(', ')}`,
+        );
+      }
+    }
+
+    // Step 2: Resolve content for each role and create smart collections
     const smartCollectionIdsByRole: Record<string, string> = {};
 
-    for (const requirement of preset.contentRequirements) {
+    for (const requirement of roles) {
       const assignment = request.contentAssignments[requirement.role];
       const query = assignment?.query ?? requirement.defaultQuery;
 
@@ -122,33 +153,27 @@ export class AutoChannelService {
       smartCollectionIdsByRole[requirement.role] = collectionResult.get().uuid;
     }
 
-    // Step 2: Build the schedule config with resolved smart collection IDs
-    const scheduleConfig = structuredClone(preset.scheduleConfig);
+    // Step 3: Build the schedule config
+    const scheduleConfig = request.dynamicParams
+      ? this.buildScheduleFromDynamicParams(request.dynamicParams)
+      : structuredClone(preset.scheduleConfig);
 
     // Assign fresh IDs and replace placeholder smart collection IDs in slots
     for (const slot of 'slots' in scheduleConfig ? scheduleConfig.slots : []) {
       if ('id' in slot) {
         slot.id = v4();
       }
-      if (slot.type === 'smart-collection' && !slot.smartCollectionId) {
-        // Assign the first role's smart collection as default
-        const firstRole = preset.contentRequirements[0];
-        if (firstRole) {
-          slot.smartCollectionId =
-            smartCollectionIdsByRole[firstRole.role] ?? '';
+      if (slot.type === 'smart-collection') {
+        const resolvedId = smartCollectionIdsByRole[slot.smartCollectionId];
+        if (resolvedId !== undefined) {
+          slot.smartCollectionId = resolvedId;
         }
-      } else if (
-        slot.type === 'smart-collection' &&
-        slot.smartCollectionId in smartCollectionIdsByRole
-      ) {
-        slot.smartCollectionId =
-          smartCollectionIdsByRole[slot.smartCollectionId]!;
       }
     }
 
-    // Step 3: Resolve program IDs for the schedule
+    // Step 4: Resolve program IDs for the schedule
     const allProgramIds: string[] = [];
-    for (const requirement of preset.contentRequirements) {
+    for (const requirement of roles) {
       const assignment = request.contentAssignments[requirement.role];
 
       if (assignment?.programIds?.length) {
@@ -166,13 +191,13 @@ export class AutoChannelService {
       }
     }
 
-    // Step 4: Determine the next available channel number
+    // Step 5: Determine the next available channel number
     const channelNumber =
       request.channelNumber ?? (await this.getNextChannelNumber());
     const channelName =
       request.channelName ?? `${preset.name} ${channelNumber}`;
 
-    // Step 5: Create the channel
+    // Step 6: Create the channel
     const channelData: SaveableChannel = {
       id: v4(),
       name: channelName,
@@ -201,7 +226,7 @@ export class AutoChannelService {
 
     const savedResult = await this.channelDB.saveChannel(channelData);
 
-    // Step 6: Set the lineup using the schedule
+    // Step 7: Set the lineup using the schedule
     const channelId = savedResult.channel.uuid;
     const seed = request.seed ? [request.seed] : undefined;
 
@@ -224,7 +249,7 @@ export class AutoChannelService {
 
     await this.channelDB.updateLineup(channelId, lineupRequest);
 
-    // Step 7: Trigger guide regeneration
+    // Step 8: Trigger guide regeneration
     try {
       GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
         .runNow(true)
@@ -248,6 +273,51 @@ export class AutoChannelService {
     return dbChannelToApiChannel(channelAndLineup);
   }
 
+  private buildScheduleFromDynamicParams(
+    params: DynamicPresetParams,
+  ): ScheduleSkeleton {
+    switch (params.type) {
+      case 'weighted_mix':
+        return {
+          type: 'random',
+          flexPreference: 'end',
+          maxDays: 30,
+          padMs: 0,
+          padStyle: 'episode',
+          randomDistribution: 'weighted',
+          lockWeights: false,
+          slots: params.groups.map((g) => ({
+            id: v4(),
+            type: 'smart-collection' as const,
+            smartCollectionId: g.role,
+            order: 'shuffle' as const,
+            direction: 'asc' as const,
+            cooldownMs: 0,
+            weight: g.weight,
+            durationSpec: { type: 'dynamic' as const, programCount: 1 },
+          })),
+        };
+      case 'classic_tv_day':
+        return {
+          type: 'time',
+          flexPreference: 'end',
+          period: 'day',
+          maxDays: 30,
+          padMs: 0,
+          latenessMs: 900000, // 15 minutes
+          timeZoneOffset: 0,
+          slots: params.blocks.map((b) => ({
+            id: v4(),
+            type: 'smart-collection' as const,
+            smartCollectionId: b.role,
+            startTime: b.startTime,
+            order: 'shuffle' as const,
+            direction: 'asc' as const,
+          })),
+        };
+    }
+  }
+
   private async resolveContentQuery(
     query: ContentQuery,
   ): Promise<ProgramSearchDocument[]> {
@@ -255,6 +325,31 @@ export class AutoChannelService {
 
     if (isNonEmptyString(query.filterString)) {
       searchFilter = this.parseFilterString(query.filterString);
+    }
+
+    // Build groupingId filter (for binge channels — filter by show's grandparent.id)
+    if (isNonEmptyString(query.groupingId)) {
+      const encodedId = encodeCaseSensitiveId(query.groupingId);
+      const groupingFilter: SearchFilter = {
+        type: 'value',
+        fieldSpec: {
+          key: 'grandparent.id',
+          name: 'Show',
+          op: '=',
+          type: 'string',
+          value: [encodedId as string],
+        },
+      };
+
+      if (searchFilter) {
+        searchFilter = {
+          type: 'op',
+          op: 'and',
+          children: [searchFilter, groupingFilter],
+        };
+      } else {
+        searchFilter = groupingFilter;
+      }
     }
 
     // Build type filter if programTypes specified
@@ -320,6 +415,11 @@ export class AutoChannelService {
     if (query.programTypes?.length) {
       const types = query.programTypes.map((t) => `"${t}"`).join(', ');
       parts.push(`type in (${types})`);
+    }
+
+    if (isNonEmptyString(query.groupingId)) {
+      const encodedId = encodeCaseSensitiveId(query.groupingId);
+      parts.push(`grandparent.id = "${encodedId}"`);
     }
 
     return parts.length > 0 ? parts.join(' AND ') : undefined;
