@@ -1,5 +1,13 @@
+import { AdvancedFilterSection } from '@/components/auto-channel/AdvancedFilterSection';
 import { ContentPreview } from '@/components/auto-channel/ContentPreview';
+import {
+  GlobalContentControls,
+  type GlobalContentContext,
+} from '@/components/auto-channel/GlobalContentControls';
 import { PresetCard } from '@/components/auto-channel/PresetCard';
+import { FacetPicker } from '@/components/auto-channel/content-pickers/FacetPicker';
+import { SingleShowPicker } from '@/components/auto-channel/content-pickers/SingleShowPicker';
+import { YearRangePicker } from '@/components/auto-channel/content-pickers/YearRangePicker';
 import PaddedPaper from '@/components/base/PaddedPaper';
 import {
   useAutoChannelPresets,
@@ -26,6 +34,7 @@ import type {
   ContentAssignment,
   ContentPreviewResponse,
   ContentQuery,
+  ContentRequirement,
 } from '@tunarr/types/api';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -45,6 +54,7 @@ export function AutoCreateWizard() {
   >({});
   const [channelName, setChannelName] = useState('');
   const [channelNumber, setChannelNumber] = useState<number | undefined>();
+  const [globalContext, setGlobalContext] = useState<GlobalContentContext>({});
 
   const { data: presets, isLoading: presetsLoading } = useAutoChannelPresets();
   const previewMutation = usePreviewContent();
@@ -67,12 +77,29 @@ export function AutoCreateWizard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPreset?.id]);
 
+  const handleContentChange = useCallback(
+    (role: string, query: ContentQuery) => {
+      setContentAssignments((prev) => ({
+        ...prev,
+        [role]: { query },
+      }));
+      // Trigger preview for this role
+      previewMutation.mutate(query, {
+        onSuccess: (data) => {
+          setPreviews((prev) => ({ ...prev, [role]: data }));
+        },
+      });
+    },
+    [previewMutation],
+  );
+
   const handlePresetSelect = useCallback((preset: ChannelPreset) => {
     setSelectedPreset(preset);
     setChannelName('');
     setChannelNumber(undefined);
     setContentAssignments({});
     setPreviews({});
+    setGlobalContext({});
     setActiveStep(1);
   }, []);
 
@@ -135,6 +162,9 @@ export function AutoCreateWizard() {
             previews={previews}
             previewLoading={previewMutation.isPending}
             previewError={previewMutation.error}
+            globalContext={globalContext}
+            onGlobalContextChange={setGlobalContext}
+            onContentChange={handleContentChange}
           />
         );
       case 2:
@@ -234,38 +264,76 @@ function ChooseStyleStep({
     );
   }
 
+  // Group presets by category
+  const categoryLabels: Record<string, string> = {
+    simple: 'Simple',
+    binge: 'Binge',
+    genre: 'Themed',
+    people: 'People',
+    decade: 'Decades',
+    network: 'Networks',
+    'classic-tv': 'Structured',
+    movie: 'Movies',
+    music: 'Music',
+    custom: 'Custom',
+  };
+
+  const grouped = new Map<string, ChannelPreset[]>();
+  for (const preset of presets) {
+    const list = grouped.get(preset.category) ?? [];
+    list.push(preset);
+    grouped.set(preset.category, list);
+  }
+
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2 }}>
         Choose a channel style
       </Typography>
-      <Grid container spacing={2}>
-        {presets.map((preset) => (
-          <Grid key={preset.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <PresetCard
-              preset={preset}
-              selected={preset.id === selectedPresetId}
-              onClick={() => onSelect(preset)}
-            />
+      {[...grouped.entries()].map(([category, categoryPresets]) => (
+        <Box key={category} sx={{ mb: 3 }}>
+          <Typography
+            variant="overline"
+            color="text.secondary"
+            sx={{ mb: 1, display: 'block' }}
+          >
+            {categoryLabels[category] ?? category}
+          </Typography>
+          <Grid container spacing={2}>
+            {categoryPresets.map((preset) => (
+              <Grid key={preset.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <PresetCard
+                  preset={preset}
+                  selected={preset.id === selectedPresetId}
+                  onClick={() => onSelect(preset)}
+                />
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
+        </Box>
+      ))}
     </Box>
   );
 }
 
 function SelectContentStep({
   preset,
-  contentAssignments: _contentAssignments,
+  contentAssignments,
   previews,
   previewLoading,
   previewError,
+  globalContext,
+  onGlobalContextChange,
+  onContentChange,
 }: {
   preset: ChannelPreset;
   contentAssignments: Record<string, ContentAssignment>;
   previews: Record<string, ContentPreviewResponse>;
   previewLoading: boolean;
   previewError: Error | null;
+  globalContext: GlobalContentContext;
+  onGlobalContextChange: (ctx: GlobalContentContext) => void;
+  onContentChange: (role: string, query: ContentQuery) => void;
 }) {
   return (
     <Box>
@@ -273,42 +341,182 @@ function SelectContentStep({
         Content for {preset.name}
       </Typography>
 
+      <GlobalContentControls
+        context={globalContext}
+        onContextChange={onGlobalContextChange}
+      />
+
       {preset.contentRequirements.map((req) => (
-        <Box key={req.role} sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight="bold">
-            {req.label}
-            {req.required && (
-              <Typography component="span" color="error" sx={{ ml: 0.5 }}>
-                *
-              </Typography>
-            )}
-          </Typography>
-          {req.description && (
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {req.description}
-            </Typography>
-          )}
-
-          {req.defaultQuery.programTypes && (
-            <Typography variant="body2" color="text.secondary">
-              Default: {req.defaultQuery.programTypes.join(', ')}
-            </Typography>
-          )}
-          {!req.defaultQuery.programTypes &&
-            !req.defaultQuery.filterString &&
-            !req.defaultQuery.keywords && (
-              <Typography variant="body2" color="text.secondary">
-                Default: All content
-              </Typography>
-            )}
-
-          <ContentPreview
-            preview={previews[req.role]}
-            isLoading={previewLoading && !previews[req.role]}
-            error={!previews[req.role] ? previewError : null}
-          />
-        </Box>
+        <RoleSection
+          key={req.role}
+          requirement={req}
+          query={contentAssignments[req.role]?.query ?? req.defaultQuery}
+          preview={previews[req.role]}
+          previewLoading={previewLoading && !previews[req.role]}
+          previewError={!previews[req.role] ? previewError : null}
+          globalContext={globalContext}
+          onQueryChange={(query) => onContentChange(req.role, query)}
+        />
       ))}
+    </Box>
+  );
+}
+
+function RoleSection({
+  requirement,
+  query,
+  preview,
+  previewLoading,
+  previewError,
+  globalContext,
+  onQueryChange,
+}: {
+  requirement: ContentRequirement;
+  query: ContentQuery;
+  preview: ContentPreviewResponse | undefined;
+  previewLoading: boolean;
+  previewError: Error | null;
+  globalContext: GlobalContentContext;
+  onQueryChange: (query: ContentQuery) => void;
+}) {
+  const [advancedFilter, setAdvancedFilter] = useState('');
+
+  const mediaSourceId = globalContext.mediaSourceId;
+  const libraryId = globalContext.libraryIds?.[0];
+
+  const handleFacetChange = useCallback(
+    (_values: string[], filterString: string) => {
+      const parts: string[] = [];
+      if (filterString) parts.push(filterString);
+      if (advancedFilter) parts.push(advancedFilter);
+      onQueryChange({
+        ...query,
+        filterString: parts.length > 0 ? parts.join(' AND ') : undefined,
+        mediaSourceIds: globalContext.mediaSourceId
+          ? [globalContext.mediaSourceId]
+          : undefined,
+        libraryIds: globalContext.libraryIds,
+      });
+    },
+    [query, advancedFilter, globalContext, onQueryChange],
+  );
+
+  const handleYearRangeChange = useCallback(
+    (_range: { start: number; end: number } | undefined, filterString: string) => {
+      const parts: string[] = [];
+      if (filterString) parts.push(filterString);
+      if (advancedFilter) parts.push(advancedFilter);
+      onQueryChange({
+        ...query,
+        filterString: parts.length > 0 ? parts.join(' AND ') : undefined,
+        mediaSourceIds: globalContext.mediaSourceId
+          ? [globalContext.mediaSourceId]
+          : undefined,
+        libraryIds: globalContext.libraryIds,
+      });
+    },
+    [query, advancedFilter, globalContext, onQueryChange],
+  );
+
+  const handleShowChange = useCallback(
+    (show: { id: string; title: string; year: number | null } | null) => {
+      onQueryChange({
+        ...query,
+        groupingId: show?.id ?? undefined,
+        programTypes: show ? ['episode'] : query.programTypes,
+        mediaSourceIds: globalContext.mediaSourceId
+          ? [globalContext.mediaSourceId]
+          : undefined,
+        libraryIds: globalContext.libraryIds,
+      });
+    },
+    [query, globalContext, onQueryChange],
+  );
+
+  const handleAdvancedFilterChange = useCallback(
+    (value: string) => {
+      setAdvancedFilter(value);
+      const currentFilter = query.filterString ?? '';
+      // Replace only the advanced portion (this is a simplification —
+      // in practice we'd track picker filter vs advanced filter separately)
+      onQueryChange({
+        ...query,
+        filterString: value || currentFilter || undefined,
+        mediaSourceIds: globalContext.mediaSourceId
+          ? [globalContext.mediaSourceId]
+          : undefined,
+        libraryIds: globalContext.libraryIds,
+      });
+    },
+    [query, globalContext, onQueryChange],
+  );
+
+  const renderPicker = () => {
+    const hint = requirement.pickerHint;
+    if (!hint) return null;
+
+    switch (hint.type) {
+      case 'facet':
+        return (
+          <FacetPicker
+            facetFields={hint.facetFields}
+            label={hint.label}
+            value={[]} // Controlled externally if needed
+            onChange={handleFacetChange}
+            mediaSourceId={mediaSourceId}
+            libraryId={libraryId}
+          />
+        );
+      case 'year-range':
+        return (
+          <YearRangePicker value={undefined} onChange={handleYearRangeChange} />
+        );
+      case 'single-show':
+        return (
+          <SingleShowPicker
+            value={null}
+            onChange={handleShowChange}
+            mediaSourceId={mediaSourceId}
+            libraryId={libraryId}
+          />
+        );
+      case 'weighted_mix':
+      case 'classic_tv':
+        // These are handled by DynamicRoleManager/BlockConfigurator in Phase 4-5
+        return null;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Box sx={{ mb: 3, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+      <Typography variant="subtitle1" fontWeight="bold">
+        {requirement.label}
+        {requirement.required && (
+          <Typography component="span" color="error" sx={{ ml: 0.5 }}>
+            *
+          </Typography>
+        )}
+      </Typography>
+      {requirement.description && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          {requirement.description}
+        </Typography>
+      )}
+
+      {renderPicker()}
+
+      <AdvancedFilterSection
+        filterString={advancedFilter}
+        onFilterStringChange={handleAdvancedFilterChange}
+      />
+
+      <ContentPreview
+        preview={preview}
+        isLoading={previewLoading}
+        error={previewError}
+      />
     </Box>
   );
 }
