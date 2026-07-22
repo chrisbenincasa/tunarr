@@ -1,4 +1,15 @@
-import { LiveTv, Movie, MusicNote, Shuffle } from '@mui/icons-material';
+import {
+  Business,
+  CalendarMonth,
+  Category,
+  LiveTv,
+  Movie,
+  MusicNote,
+  Person,
+  PlaylistPlay,
+  Shuffle,
+  Tune,
+} from '@mui/icons-material';
 import {
   Card,
   CardActionArea,
@@ -13,7 +24,12 @@ const categoryIcons: Record<ChannelPresetCategory, React.ReactNode> = {
   'classic-tv': <LiveTv />,
   movie: <Movie />,
   music: <MusicNote />,
-  custom: <LiveTv />,
+  binge: <PlaylistPlay />,
+  genre: <Category />,
+  people: <Person />,
+  decade: <CalendarMonth />,
+  network: <Business />,
+  custom: <Tune />,
 };
 
 const categoryLabels: Record<ChannelPresetCategory, string> = {
@@ -21,6 +37,11 @@ const categoryLabels: Record<ChannelPresetCategory, string> = {
   'classic-tv': 'Classic TV',
   movie: 'Movie',
   music: 'Music',
+  binge: 'Binge',
+  genre: 'Themed',
+  people: 'People',
+  decade: 'Decades',
+  network: 'Networks',
   custom: 'Custom',
 };
 
