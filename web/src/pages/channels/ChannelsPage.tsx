@@ -2,7 +2,7 @@ import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
 import type { Maybe } from '@/types/util.ts';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
-import { Check, Close, Edit, MoreVert } from '@mui/icons-material';
+import { AutoFixHigh, Check, Close, Edit, MoreVert } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import type { BoxProps } from '@mui/material';
 import {
@@ -290,10 +290,20 @@ export default function ChannelsPage() {
               placement="top"
               title={
                 <Box component="span" sx={{ textAlign: 'center' }}>
-                  <Plural value={sessions.length} one="# session" other="# sessions" />
+                  <Plural
+                    value={sessions.length}
+                    one="# session"
+                    other="# sessions"
+                  />
                   <br />
-                  {totalConnections > 1 && <Trans>{totalConnections} total</Trans>}{' '}
-                  <Plural value={totalConnections} one="# connection" other="# connections" />
+                  {totalConnections > 1 && (
+                    <Trans>{totalConnections} total</Trans>
+                  )}{' '}
+                  <Plural
+                    value={totalConnections}
+                    one="# connection"
+                    other="# connections"
+                  />
                 </Box>
               }
             >
@@ -420,10 +430,20 @@ export default function ChannelsPage() {
         placement="top"
         title={
           <Box component="span" sx={{ textAlign: 'center' }}>
-            <Plural value={sessions.length} one="# session" other="# sessions" />
+            <Plural
+              value={sessions.length}
+              one="# session"
+              other="# sessions"
+            />
             <br />
-            {totalConnections > 1 && <Trans>{totalConnections} total</Trans>}{' '}
-            <Plural value={totalConnections} one="# connection" other="# connections" />
+            {totalConnections > 1 && (
+              <Trans>{totalConnections} total</Trans>
+            )}{' '}
+            <Plural
+              value={totalConnections}
+              one="# connection"
+              other="# connections"
+            />
           </Box>
         }
       >
@@ -489,7 +509,12 @@ export default function ChannelsPage() {
                       Ch {channel.number} · {channel.name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      <Plural value={channel.programCount} one="# program" other="# programs" /> ·{' '}
+                      <Plural
+                        value={channel.programCount}
+                        one="# program"
+                        other="# programs"
+                      />{' '}
+                      ·{' '}
                       {betterHumanize(dayjs.duration(channel.duration), {
                         style: 'short',
                       })}
@@ -565,13 +590,22 @@ export default function ChannelsPage() {
         <Typography flexGrow={1} variant="h3">
           <Trans>Channels</Trans>
         </Typography>
-        <RouterButtonLink
-          to="/channels/new"
-          variant="contained"
-          startIcon={<AddCircleIcon />}
-        >
-          <Trans>New</Trans>
-        </RouterButtonLink>
+        <Box display="flex" gap={1}>
+          <RouterButtonLink
+            to="/channels/auto-create"
+            variant="outlined"
+            startIcon={<AutoFixHigh />}
+          >
+            Auto Create
+          </RouterButtonLink>
+          <RouterButtonLink
+            to="/channels/new"
+            variant="contained"
+            startIcon={<AddCircleIcon />}
+          >
+            <Trans>New</Trans>
+          </RouterButtonLink>
+        </Box>
       </Box>
 
       {smallViewport ? (

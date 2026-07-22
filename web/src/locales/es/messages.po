@@ -45,7 +45,7 @@ msgstr ""
 #. placeholder {0}: value?.programCount ?? 0
 #: src/components/channel_config/ChannelLineupList.tsx:525
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:47
-#: src/pages/channels/ChannelsPage.tsx:492
+#: src/pages/channels/ChannelsPage.tsx:512
 msgid "{0, plural, one {# program} other {# programs}}"
 msgstr ""
 
@@ -67,7 +67,7 @@ msgstr ""
 
 #. placeholder {0}: sessions.length
 #: src/pages/channels/ChannelsPage.tsx:293
-#: src/pages/channels/ChannelsPage.tsx:423
+#: src/pages/channels/ChannelsPage.tsx:433
 msgid "{0, plural, one {# session} other {# sessions}}"
 msgstr ""
 
@@ -210,13 +210,13 @@ msgstr ""
 msgid "{remainingTime} left"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:296
-#: src/pages/channels/ChannelsPage.tsx:426
+#: src/pages/channels/ChannelsPage.tsx:302
+#: src/pages/channels/ChannelsPage.tsx:442
 msgid "{totalConnections, plural, one {# connection} other {# connections}}"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:295
-#: src/pages/channels/ChannelsPage.tsx:425
+#: src/pages/channels/ChannelsPage.tsx:300
+#: src/pages/channels/ChannelsPage.tsx:440
 msgid "{totalConnections} total"
 msgstr ""
 
@@ -232,7 +232,7 @@ msgstr ""
 msgid "# of Programs"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:342
+#: src/pages/channels/ChannelsPage.tsx:352
 #: src/pages/library/CustomShowsPage.tsx:160
 #: src/pages/library/FillerListsPage.tsx:166
 msgid "# Programs"
@@ -885,7 +885,7 @@ msgstr ""
 #: src/App.tsx:95
 #: src/hooks/useNavItems.tsx:63
 #: src/hooks/useRouteName.ts:38
-#: src/pages/channels/ChannelsPage.tsx:566
+#: src/pages/channels/ChannelsPage.tsx:591
 #: src/pages/system/TroubleshootPage.tsx:636
 msgid "Channels"
 msgstr ""
@@ -1389,7 +1389,7 @@ msgstr ""
 #: src/components/programming_controls/BalanceProgrammingModal.tsx:62
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:466
 #: src/components/slot_scheduler/RandomSlotTable.tsx:233
-#: src/pages/channels/ChannelsPage.tsx:346
+#: src/pages/channels/ChannelsPage.tsx:356
 #: src/pages/system/TroubleshootPage.tsx:521
 msgid "Duration"
 msgstr ""
@@ -2079,7 +2079,7 @@ msgstr ""
 msgid "HW Acceleration"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:314
+#: src/pages/channels/ChannelsPage.tsx:324
 msgid "Icon"
 msgstr ""
 
@@ -2580,7 +2580,7 @@ msgstr ""
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:162
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:108
 #: src/components/smart_collections/SmartCollectionsTable.tsx:59
-#: src/pages/channels/ChannelsPage.tsx:337
+#: src/pages/channels/ChannelsPage.tsx:347
 #: src/pages/library/CustomShowsPage.tsx:146
 #: src/pages/library/FillerListsPage.tsx:162
 #: src/pages/settings/MediaSourceSettingsPage.tsx:82
@@ -2608,7 +2608,7 @@ msgstr ""
 #: src/hooks/useRouteName.ts:51
 #: src/hooks/useRouteName.ts:113
 #: src/hooks/useRouteName.ts:125
-#: src/pages/channels/ChannelsPage.tsx:573
+#: src/pages/channels/ChannelsPage.tsx:606
 #: src/pages/library/CustomShowsPage.tsx:223
 #: src/pages/library/FillerListsPage.tsx:237
 msgid "New"
@@ -2656,7 +2656,7 @@ msgid "Next Scheduled Execution"
 msgstr ""
 
 #: src/pages/channels/ChannelsPage.tsx:272
-#: src/pages/channels/ChannelsPage.tsx:403
+#: src/pages/channels/ChannelsPage.tsx:413
 msgid "No active sessions"
 msgstr ""
 
@@ -2725,7 +2725,7 @@ msgstr ""
 msgid "Now Playing:"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:331
+#: src/pages/channels/ChannelsPage.tsx:341
 msgid "Number"
 msgstr ""
 
@@ -2750,7 +2750,7 @@ msgstr ""
 msgid "On-Demand channels resume from where you left off. Programming is paused when the channel is not streaming.<0/><1>NOTE:</1> While the channel is inactive, the TV Guide for the channel will be empty."
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:365
+#: src/pages/channels/ChannelsPage.tsx:375
 msgid "On-Demand?"
 msgstr ""
 
@@ -3682,7 +3682,7 @@ msgstr ""
 msgid "Stealth Mode"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:354
+#: src/pages/channels/ChannelsPage.tsx:364
 msgid "Stealth?"
 msgstr ""
 
@@ -3803,7 +3803,7 @@ msgstr ""
 msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
 msgstr ""
 
-#: src/routes/channels_/test.tsx:5
+#: src/routes/channels_/test.tsx:7
 msgid "Test"
 msgstr ""
 
@@ -4033,7 +4033,7 @@ msgstr ""
 msgid "Tracks"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:373
+#: src/pages/channels/ChannelsPage.tsx:383
 #: src/pages/system/TroubleshootPage.tsx:844
 msgid "Transcode Config"
 msgstr ""
