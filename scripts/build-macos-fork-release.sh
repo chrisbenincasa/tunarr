@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build signed + notarized Tunarr macOS DMG (operator fork).
-# See scripts/release.local.env.example for required variables.
+# See scripts/release-env.sample for required variables.
 set -euo pipefail
 
 SCRIPT_FOLDER=$(dirname "${BASH_SOURCE[0]}")
