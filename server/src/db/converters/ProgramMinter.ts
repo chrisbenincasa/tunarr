@@ -346,8 +346,9 @@ export class ProgramDaoMinter {
     episode: Episode,
     localFolderId?: string,
     now: number = +dayjs(),
+    programUuid?: string,
   ): NewProgramWithRelations<'episode'> {
-    const programId = v4();
+    const programId = programUuid ?? v4();
 
     const newEpisode = {
       uuid: programId,

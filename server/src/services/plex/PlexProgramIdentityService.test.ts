@@ -18,7 +18,7 @@ describe('PlexProgramIdentityService', () => {
     };
 
     const result = await service.resolveExistingProgram({
-      incomingMovie: {
+      incoming: {
         externalId: '111',
         canonicalId: 'canon-1',
         identifiers: [{ type: 'plex-guid', id: 'plex://movie/x' }],
@@ -44,7 +44,7 @@ describe('PlexProgramIdentityService', () => {
     });
 
     const result = await service.resolveExistingProgram({
-      incomingMovie: {
+      incoming: {
         externalId: '999',
         canonicalId: 'canon-1',
         identifiers: [{ type: 'plex-guid', id: 'plex://movie/x' }],

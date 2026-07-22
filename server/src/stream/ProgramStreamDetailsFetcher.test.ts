@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
 import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
 import { ProgramStreamDetailsFetcher } from './ProgramStreamDetailsFetcher.ts';
@@ -175,13 +176,31 @@ function makeProgramDB(program: ProgramWithRelationsOrm): IProgramDB {
   } as unknown as IProgramDB;
 }
 
+function makeSettingsDB(
+  streamPath: 'direct' | 'plex' = 'plex',
+): ISettingsDB {
+  return {
+    plexSettings: () => ({ streamPath }),
+  } as unknown as ISettingsDB;
+}
+
+function makeFetcher(
+  program: ProgramWithRelationsOrm,
+  streamPath: 'direct' | 'plex' = 'plex',
+) {
+  return new ProgramStreamDetailsFetcher(
+    makeProgramDB(program),
+    makeSettingsDB(streamPath),
+  );
+}
+
 describe('ProgramStreamDetailsFetcher', () => {
   describe('getStream constructs valid HTTP URLs for remote streams', () => {
     it('constructs a valid Plex stream URL preserving the http:// protocol', async () => {
       const serverPath = '/library/parts/1014/1222133011/file.avi';
       const program = makeProgram('plex', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = makeFetcher(program);
 
       const server = makeServer({
         type: 'plex',
@@ -211,7 +230,7 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = 'abc123def456';
       const program = makeProgram('jellyfin', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = makeFetcher(program);
 
       const server = makeServer({
         type: 'jellyfin',
@@ -240,7 +259,7 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = 'xyz789';
       const program = makeProgram('emby', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = makeFetcher(program);
 
       const server = makeServer({
         type: 'emby',
@@ -269,7 +288,7 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = '/library/parts/1014/file.avi';
       const program = makeProgram('plex', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = makeFetcher(program);
 
       const server = makeServer({
         type: 'plex',
@@ -305,7 +324,7 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = '/library/parts/1014/1222133011/file.avi';
       const program = makeProgram('plex', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = makeFetcher(program);
 
       const server = makeServer({
         type: 'plex',
@@ -331,7 +350,7 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = 'abc123def456';
       const program = makeProgram('jellyfin', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = makeFetcher(program);
 
       const server = makeServer({
         type: 'jellyfin',
@@ -357,7 +376,7 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = 'xyz789';
       const program = makeProgram('emby', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = makeFetcher(program);
 
       const server = makeServer({
         type: 'emby',

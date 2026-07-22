@@ -230,7 +230,7 @@ export abstract class MediaSourceMovieLibraryScanner<
     const fullMovie = fullMovieResult.get();
 
     const resolved = await identityService.resolveExistingProgram({
-      incomingMovie,
+      incoming: incomingMovie,
       existingByRatingKey: existingMovie,
       existingByCanonicalId,
       mediaSource,
@@ -251,22 +251,22 @@ export abstract class MediaSourceMovieLibraryScanner<
       return;
     }
 
-    const reuseProgramUuid = resolved?.existing.uuid;
     const plexLocation = fullMovie.mediaItem?.locations?.find(
       (loc) => loc.sourceType === mediaSource.type,
     );
 
-    if (resolved?.ratingKeyChanged && reuseProgramUuid) {
-      await this.programDB.reconcilePlexRatingKeyChange({
-        programUuid: reuseProgramUuid,
-        mediaSourceId: mediaSource.uuid,
-        newRatingKey: fullMovie.externalId,
-        directFilePath:
-          plexLocation?.type === 'local' ? plexLocation.path : null,
-        externalFilePath:
-          plexLocation?.type === 'remote' ? plexLocation.externalKey : null,
-      });
-    }
+    const reuseProgramUuid =
+      resolved && (await identityService.reconcileRatingKeyIfChanged(
+        resolved,
+        mediaSource.uuid,
+        fullMovie.externalId,
+        {
+          directFilePath:
+            plexLocation?.type === 'local' ? plexLocation.path : null,
+          externalFilePath:
+            plexLocation?.type === 'remote' ? plexLocation.externalKey : null,
+        },
+      )) ?? resolved?.existing.uuid;
 
     const minted = this.programMinter.mintMovie(
       mediaSource,
