@@ -160,6 +160,11 @@ export interface IChannelDB {
 
   removeProgramsFromAllLineups(programIds: string[]): Promise<void>;
 
+  replaceProgramUuidInAllLineups(
+    oldProgramUuid: string,
+    newProgramUuid: string,
+  ): Promise<void>;
+
   loadAllLineupConfigs(
     forceRead?: boolean,
   ): Promise<Record<string, ChannelAndLineup>>;
