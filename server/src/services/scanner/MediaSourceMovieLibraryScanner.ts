@@ -1,5 +1,7 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
+import dayjs from 'dayjs';
 import { differenceWith, head, isEmpty, round, values } from 'lodash-es';
+import type { Dictionary } from 'ts-essentials';
 import type { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type {
@@ -18,6 +20,7 @@ import { Result } from '../../types/result.ts';
 import type { Maybe } from '../../types/util.ts';
 import { devAssert } from '../../util/debug.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
+import { PlexProgramIdentityService } from '../plex/PlexProgramIdentityService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext } from './MediaSourceScanner.ts';
 import { MediaSourceScanner } from './MediaSourceScanner.ts';
@@ -108,7 +111,13 @@ export abstract class MediaSourceMovieLibraryScanner<
     });
 
     return Result.attemptAsync(() =>
-      this.scanSingleInternal(ctx, apiMovie.get(), existingMovie),
+      this.scanSingleInternal(
+        ctx,
+        apiMovie.get(),
+        existingMovie,
+        undefined,
+        new PlexProgramIdentityService(this.programDB),
+      ),
     );
   }
 
@@ -123,6 +132,16 @@ export abstract class MediaSourceMovieLibraryScanner<
         library.uuid,
         ProgramType.Movie,
       );
+
+    const existingByCanonicalId: Dictionary<ProgramCanonicalIdLookupResult> =
+      {};
+    for (const program of values(existingPrograms)) {
+      if (program.canonicalId) {
+        existingByCanonicalId[program.canonicalId] = program;
+      }
+    }
+
+    const identityService = new PlexProgramIdentityService(this.programDB);
 
     const seenMovieIds = new Set<string>();
 
@@ -149,6 +168,8 @@ export abstract class MediaSourceMovieLibraryScanner<
         context,
         incomingMovie,
         existingPrograms[incomingMovie.externalId],
+        existingByCanonicalId[incomingMovie.canonicalId ?? ''],
+        identityService,
       );
 
       const processedAmount = round(seenMovieIds.size / totalSize, 2) * 100.0;
@@ -190,6 +211,8 @@ export abstract class MediaSourceMovieLibraryScanner<
     context: ScanContext<ApiClientTypeT>,
     incomingMovie: MovieT,
     existingMovie: Maybe<ProgramCanonicalIdLookupResult>,
+    existingByCanonicalId: Maybe<ProgramCanonicalIdLookupResult>,
+    identityService: PlexProgramIdentityService,
   ) {
     const { mediaSource, library, force } = context;
 
@@ -206,24 +229,52 @@ export abstract class MediaSourceMovieLibraryScanner<
 
     const fullMovie = fullMovieResult.get();
 
+    const resolved = await identityService.resolveExistingProgram({
+      incoming: incomingMovie,
+      existingByRatingKey: existingMovie,
+      existingByCanonicalId,
+      mediaSource,
+    });
+
     if (
-      !force &&
-      existingMovie &&
-      existingMovie.canonicalId &&
-      existingMovie.canonicalId === incomingMovie.canonicalId
+      identityService.shouldSkipScanUpdate(
+        force,
+        resolved,
+        incomingMovie.canonicalId,
+      )
     ) {
       this.logger.debug(
         'Found an unchanged program: rating key = %s, program ID = %s',
         fullMovie.externalId,
-        existingMovie.uuid,
+        resolved!.existing.uuid,
       );
       return;
     }
+
+    const plexLocation = fullMovie.mediaItem?.locations?.find(
+      (loc) => loc.sourceType === mediaSource.type,
+    );
+
+    const reuseProgramUuid =
+      resolved && (await identityService.reconcileRatingKeyIfChanged(
+        resolved,
+        mediaSource.uuid,
+        fullMovie.externalId,
+        {
+          directFilePath:
+            plexLocation?.type === 'local' ? plexLocation.path : null,
+          externalFilePath:
+            plexLocation?.type === 'remote' ? plexLocation.externalKey : null,
+        },
+      )) ?? resolved?.existing.uuid;
 
     const minted = this.programMinter.mintMovie(
       mediaSource,
       library,
       fullMovie,
+      undefined,
+      +dayjs(),
+      reuseProgramUuid,
     );
 
     await this.downloadExternalSubtitleStreams(minted, (req) =>

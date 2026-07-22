@@ -6,6 +6,7 @@ import type { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingM
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type {
   IProgramDB,
+  ProgramCanonicalIdLookupResult,
   ProgramGroupingCanonicalIdLookupResult,
 } from '../../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
@@ -26,6 +27,7 @@ import type { Maybe } from '../../types/util.ts';
 
 import { devAssert } from '../../util/debug.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
+import { PlexProgramIdentityService } from '../plex/PlexProgramIdentityService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext, ScanSingleRequest } from './MediaSourceScanner.ts';
 import { MediaSourceScanner } from './MediaSourceScanner.ts';
@@ -534,6 +536,18 @@ export abstract class MediaSourceTvShowLibraryScanner<
         [ProgramGroupingType.Season, season.uuid],
       );
 
+      const existingByCanonicalId: Record<
+        string,
+        ProgramCanonicalIdLookupResult
+      > = {};
+      for (const program of values(existing)) {
+        if (program.canonicalId) {
+          existingByCanonicalId[program.canonicalId] = program;
+        }
+      }
+
+      const identityService = new PlexProgramIdentityService(this.programDB);
+
       const seenEpisodes = new Set<string>();
 
       for await (const episode of this.getSeasonEpisodes(season, scanContext)) {
@@ -556,9 +570,20 @@ export abstract class MediaSourceTvShowLibraryScanner<
 
         const fullEpisode = fullMetadataResult.get();
 
+        const resolved = await identityService.resolveExistingProgram({
+          incoming: fullEpisode,
+          existingByRatingKey: existing[externalKey],
+          existingByCanonicalId:
+            existingByCanonicalId[fullEpisode.canonicalId ?? ''],
+          mediaSource,
+        });
+
         if (
-          !force &&
-          existing[externalKey]?.canonicalId === fullEpisode.canonicalId
+          identityService.shouldSkipScanUpdate(
+            force,
+            resolved,
+            fullEpisode.canonicalId,
+          )
         ) {
           this.logger.debug(
             "Skipping episode key = %s because it hasn't changed",
@@ -566,6 +591,27 @@ export abstract class MediaSourceTvShowLibraryScanner<
           );
           continue;
         }
+
+        const plexLocation = fullEpisode.mediaItem?.locations?.find(
+          (loc) => loc.sourceType === mediaSource.type,
+        );
+
+        const reuseProgramUuid =
+          resolved &&
+          (await identityService.reconcileRatingKeyIfChanged(
+            resolved,
+            mediaSource.uuid,
+            fullEpisode.externalId,
+            {
+              directFilePath:
+                plexLocation?.type === 'local' ? plexLocation.path : null,
+              externalFilePath:
+                plexLocation?.type === 'remote'
+                  ? plexLocation.externalKey
+                  : null,
+            },
+          )) ??
+          resolved?.existing.uuid;
 
         this.logger.debug('Upserting episode key = %s', externalKey);
 
@@ -580,6 +626,9 @@ export abstract class MediaSourceTvShowLibraryScanner<
           mediaSource,
           library,
           episodeWithJoins,
+          undefined,
+          undefined,
+          reuseProgramUuid,
         );
 
         await this.downloadExternalSubtitleStreams(dao, (req) =>

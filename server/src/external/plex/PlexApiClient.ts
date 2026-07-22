@@ -1368,12 +1368,24 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     plexEpisode: ApiPlexEpisode,
     mediaLibrary: MediaSourceLibrary,
   ): Result<PlexEpisode> {
-    if (isNil(plexEpisode.duration) || plexEpisode.duration <= 0) {
-      return Result.forError(
-        new Error(
-          `Plex episode ID = ${plexEpisode.ratingKey} has invalid duration.`,
-        ),
-      );
+    let duration = plexEpisode.duration;
+    if (isNil(duration) || duration <= 0) {
+      const partDuration = plexEpisode.Media?.flatMap((m) => m.Part ?? [])
+        .map((p) => p.duration)
+        .find((d) => (d ?? 0) > 0);
+      if (partDuration && partDuration > 0) {
+        duration = partDuration;
+      } else {
+        this.logger.warn(
+          'Plex episode ID = %s has invalid duration; skipping item',
+          plexEpisode.ratingKey,
+        );
+        return Result.forError(
+          new Error(
+            `Plex episode ID = ${plexEpisode.ratingKey} has invalid duration.`,
+          ),
+        );
+      }
     }
 
     if (isNil(plexEpisode.Media) || isEmpty(plexEpisode.Media)) {
@@ -1398,7 +1410,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       originalTitle: null,
       year: releaseDate?.year() ?? null,
       summary: plexEpisode.summary ?? null,
-      duration: plexEpisode.duration,
+      duration,
       actors: plexActorInject(plexEpisode.Role),
       directors: plexDirectorInject(plexEpisode.Director),
       writers: plexWriterInject(plexEpisode.Writer),
@@ -1539,12 +1551,24 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     plexMovie: ApiPlexMovie,
     mediaLibrary: MediaSourceLibrary,
   ): Result<PlexMovie> {
-    if (isNil(plexMovie.duration) || plexMovie.duration <= 0) {
-      return Result.forError(
-        new Error(
-          `Plex movie ID = ${plexMovie.ratingKey} has invalid duration.`,
-        ),
-      );
+    let duration = plexMovie.duration;
+    if (isNil(duration) || duration <= 0) {
+      const partDuration = plexMovie.Media?.flatMap((m) => m.Part ?? [])
+        .map((p) => p.duration)
+        .find((d) => (d ?? 0) > 0);
+      if (partDuration && partDuration > 0) {
+        duration = partDuration;
+      } else {
+        this.logger.warn(
+          'Plex movie ID = %s has invalid duration; skipping item',
+          plexMovie.ratingKey,
+        );
+        return Result.forError(
+          new Error(
+            `Plex movie ID = ${plexMovie.ratingKey} has invalid duration.`,
+          ),
+        );
+      }
     }
 
     if (isNil(plexMovie.Media) || isEmpty(plexMovie.Media)) {
@@ -1579,7 +1603,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         plexMovie.ratingKey,
         plexMovie,
       ).getOrElse(() => emptyMediaItem(plexMovie)),
-      duration: plexMovie.duration,
+      duration,
       actors: plexActorInject(plexMovie.Role),
       directors: plexDirectorInject(plexMovie.Director),
       writers: plexWriterInject(plexMovie.Writer),
