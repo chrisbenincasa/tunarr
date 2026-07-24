@@ -3002,6 +3002,7 @@ export type GetChannelsResponses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3207,6 +3208,7 @@ export type CreateChannelV2Responses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3366,6 +3368,7 @@ export type GetChannelsByNumberV2Responses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3571,6 +3574,7 @@ export type PutApiChannelsByIdResponses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3766,11 +3770,24 @@ export type GetApiChannelsByIdProgrammingResponses = {
             flexPreference: 'distribute' | 'end';
             latenessMs: number;
             maxDays: number;
+            overflow: {
+                type: 'duration';
+                maxMs: number;
+            } | {
+                type: 'oneExtra';
+            };
             padMs: number;
             period: 'day' | 'week';
             slots: Array<{
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
@@ -3808,6 +3825,13 @@ export type GetApiChannelsByIdProgrammingResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter: Array<number>;
@@ -3848,6 +3872,13 @@ export type GetApiChannelsByIdProgrammingResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'flex';
             } | {
                 type: 'redirect';
@@ -3855,9 +3886,23 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 channelName?: string;
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
@@ -3933,9 +3978,23 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 };
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'smart-collection';
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
@@ -4331,11 +4390,24 @@ export type PostApiChannelsByIdProgrammingData = {
             flexPreference: 'distribute' | 'end';
             latenessMs: number;
             maxDays: number;
+            overflow?: {
+                type: 'duration';
+                maxMs: number;
+            } | {
+                type: 'oneExtra';
+            };
             padMs: number;
             period: 'day' | 'week';
             slots: Array<{
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
@@ -4373,6 +4445,13 @@ export type PostApiChannelsByIdProgrammingData = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter?: Array<number>;
@@ -4413,6 +4492,13 @@ export type PostApiChannelsByIdProgrammingData = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'flex';
             } | {
                 type: 'redirect';
@@ -4420,9 +4506,23 @@ export type PostApiChannelsByIdProgrammingData = {
                 channelName?: string;
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
@@ -4498,9 +4598,23 @@ export type PostApiChannelsByIdProgrammingData = {
                 };
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'smart-collection';
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
@@ -4919,11 +5033,24 @@ export type PostApiChannelsByIdProgrammingResponses = {
             flexPreference: 'distribute' | 'end';
             latenessMs: number;
             maxDays: number;
+            overflow: {
+                type: 'duration';
+                maxMs: number;
+            } | {
+                type: 'oneExtra';
+            };
             padMs: number;
             period: 'day' | 'week';
             slots: Array<{
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
@@ -4961,6 +5088,13 @@ export type PostApiChannelsByIdProgrammingResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter: Array<number>;
@@ -5001,6 +5135,13 @@ export type PostApiChannelsByIdProgrammingResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'flex';
             } | {
                 type: 'redirect';
@@ -5008,9 +5149,23 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 channelName?: string;
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
@@ -5086,9 +5241,23 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 };
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'smart-collection';
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
@@ -5848,11 +6017,24 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
             flexPreference: 'distribute' | 'end';
             latenessMs: number;
             maxDays: number;
+            overflow?: {
+                type: 'duration';
+                maxMs: number;
+            } | {
+                type: 'oneExtra';
+            };
             padMs: number;
             period: 'day' | 'week';
             slots: Array<{
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
@@ -5890,6 +6072,13 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter?: Array<number>;
@@ -5930,6 +6119,13 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'flex';
             } | {
                 type: 'redirect';
@@ -5937,9 +6133,23 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 channelName?: string;
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
@@ -6015,9 +6225,23 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 };
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'smart-collection';
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
@@ -6524,11 +6748,24 @@ export type GetApiChannelsByIdScheduleResponses = {
             flexPreference: 'distribute' | 'end';
             latenessMs: number;
             maxDays: number;
+            overflow: {
+                type: 'duration';
+                maxMs: number;
+            } | {
+                type: 'oneExtra';
+            };
             padMs: number;
             period: 'day' | 'week';
             slots: Array<{
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
@@ -6566,6 +6803,13 @@ export type GetApiChannelsByIdScheduleResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter: Array<number>;
@@ -6613,6 +6857,13 @@ export type GetApiChannelsByIdScheduleResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'flex';
             } | {
                 type: 'redirect';
@@ -6620,6 +6871,13 @@ export type GetApiChannelsByIdScheduleResponses = {
                 channelName?: string;
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 channel: {
                     disableFillerOverlay: boolean;
                     duration: number;
@@ -6717,6 +6975,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                             ip: string;
                             userAgent?: string;
                             lastHeartbeat?: number;
+                            lastHeartbeatStr?: string;
                         }>;
                     }>;
                     subtitlesEnabled: boolean;
@@ -6767,6 +7026,13 @@ export type GetApiChannelsByIdScheduleResponses = {
                 };
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 customShow: {
                     id: string;
                     name: string;
@@ -6781,6 +7047,13 @@ export type GetApiChannelsByIdScheduleResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
@@ -6827,6 +7100,13 @@ export type GetApiChannelsByIdScheduleResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'smart-collection';
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
@@ -7106,6 +7386,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                             ip: string;
                             userAgent?: string;
                             lastHeartbeat?: number;
+                            lastHeartbeatStr?: string;
                         }>;
                     }>;
                     subtitlesEnabled: boolean;
@@ -13075,6 +13356,7 @@ export type PostApiTroubleshootResponses = {
                     ip: string;
                     userAgent?: string;
                     lastHeartbeat?: number;
+                    lastHeartbeatStr?: string;
                 }>;
             }>;
             subtitlesEnabled: boolean;
