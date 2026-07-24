@@ -17,9 +17,18 @@ import {
 //
 // Time slots
 //
+export const OverflowConfig = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('duration'), maxMs: z.number().nonnegative() }),
+  z.object({ type: z.literal('oneExtra') }),
+]);
+
+export type OverflowConfig = z.infer<typeof OverflowConfig>;
+
 const BaseTimeSlot = z.object({
   startTime: z.number(), // Offset from midnight in millis
   padMs: z.number().optional(),
+  overflow: OverflowConfig.optional(),
+  latenessMs: z.number().optional(),
 });
 
 export const MovieProgrammingTimeSlotSchema = z.object({
@@ -158,6 +167,7 @@ export const TimeSlotScheduleSchema = z.object({
   flexPreference: z.enum(['distribute', 'end']),
   latenessMs: z.number(), // max lateness in millis
   maxDays: z.number(), // days to pregenerate schedule for
+  overflow: OverflowConfig.default({ type: 'duration', maxMs: 0 }),
   padMs: z.number(), // Pad time in millis
   period: z.enum(['day', 'week']),
   slots: z.array(TimeSlotSchema),

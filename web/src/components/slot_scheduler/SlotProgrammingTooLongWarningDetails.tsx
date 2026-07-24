@@ -140,7 +140,9 @@ export const SlotProgrammingTooLongWarningDetails = ({
             sx={{ mr: 1, color: (theme) => theme.palette.warning.main }}
           />
         )}
-        <Typography><Trans>Programs Too Long</Trans></Typography>
+        <Typography>
+          <Trans>Programs Too Long</Trans>
+        </Typography>
       </AccordionSummary>
       <AccordionDetails>
         <Stack>
@@ -158,22 +160,34 @@ export const SlotProgrammingTooLongWarningDetails = ({
           <div>
             <p>
               <Trans>
-              {warning.programs.length} of {slot.programCount}{' '}
-              {plural(slot.programCount, { one: 'program', other: 'programs' })} exceed the length of
-              this slot ({betterHumanize(dayjs.duration(slot.durationMs ?? 0))}
-              ). Average program length: {averageLength.humanize()}
+                {warning.programs.length} of {slot.programCount}{' '}
+                {plural(slot.programCount, {
+                  one: 'program',
+                  other: 'programs',
+                })}{' '}
+                exceed the length of this slot (
+                {betterHumanize(dayjs.duration(slot.durationMs ?? 0))}
+                ). Average program length: {averageLength.humanize()}
               </Trans>
               <br />
-              <Trans>This could cause the following slot's programs to go unscheduled.
-              Possible solutions include:</Trans>
+              <Trans>
+                This could cause the following slot's programs to go
+                unscheduled. Possible solutions include:
+              </Trans>
             </p>
             <ul>
               {}
               {slotType === 'time' && (
-                <li><Trans>Increasing "Max Lateness" for the schedule.</Trans></li>
+                <li>
+                  <Trans>Increasing "Max Overflow" for the schedule.</Trans>
+                </li>
               )}
-              <li><Trans>Increasing the slot duration.</Trans></li>
-              <li><Trans>Removing overrun programs from the channel.</Trans></li>
+              <li>
+                <Trans>Increasing the slot duration.</Trans>
+              </li>
+              <li>
+                <Trans>Removing overrun programs from the channel.</Trans>
+              </li>
             </ul>
           </div>
           <Box sx={{ width: '100%', height: 400 }}>
