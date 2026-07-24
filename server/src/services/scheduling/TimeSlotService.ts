@@ -237,9 +237,10 @@ export async function scheduleTimeSlots(
       slotDuration: slotDuration,
     });
 
+    const effectiveLateness = currSlot.latenessMs ?? schedule.latenessMs;
     if (
       !isNull(lateMillis) &&
-      lateMillis >= schedule.latenessMs + constants.SLACK
+      lateMillis >= effectiveLateness + constants.SLACK
     ) {
       pushFlex(slotDuration);
       continue;
@@ -282,18 +283,24 @@ export async function scheduleTimeSlots(
     );
     let totalAddedDuration = paddedProgram.totalDuration;
 
+    const effectiveOverflow = currSlot.overflow ?? schedule.overflow;
+
     for (;;) {
       const nextProgram = currSlot.getNextProgram({
         timeCursor: +timeCursor + totalAddedDuration,
         slotDuration: slotDuration,
       });
       if (isNull(nextProgram)) break;
-      if (
+
+      if (effectiveOverflow.type === 'oneExtra') {
+        if (totalAddedDuration >= slotDuration) break;
+      } else if (
         totalAddedDuration + nextProgram.duration >
-        slotDuration + schedule.latenessMs
+        slotDuration + effectiveOverflow.maxMs
       ) {
         break;
       }
+
       const nextPadded = createPaddedProgram(nextProgram, schedule.padMs);
       paddedPrograms.push(nextPadded);
       currSlot.advanceIterator();

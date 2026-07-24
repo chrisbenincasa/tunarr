@@ -5,13 +5,18 @@ import type {
   CondensedChannelProgram,
   ContentProgram,
 } from '@tunarr/types';
-import type { BaseSlot, RandomSlot } from '@tunarr/types/api';
+import type { BaseSlot, OverflowConfig, RandomSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { some } from 'lodash-es';
 import type { StrictExclude, StrictExtract } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import type { DropdownOption } from './DropdownOption.ts';
 import { extractProgramGrandparent } from './programUtil.ts';
+
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
 
 export type CustomShowProgramOption = DropdownOption<string> & {
   type: 'custom-show';
@@ -76,6 +81,46 @@ export const flexOptions: DropdownOption<'end' | 'distribute'>[] = [
   { value: 'distribute', description: 'Between videos' },
   { value: 'end', description: 'End of the slot' },
 ];
+
+export const latenessOptions: DropdownOption<number>[] = [
+  dayjs.duration(5, 'minutes'),
+  dayjs.duration(10, 'minutes'),
+  dayjs.duration(15, 'minutes'),
+  dayjs.duration(30, 'minutes'),
+  dayjs.duration(1, 'hour'),
+  dayjs.duration(2, 'hours'),
+  dayjs.duration(4, 'hours'),
+  dayjs.duration(8, 'hours'),
+]
+  .map((dur) => ({ value: dur.asMilliseconds(), description: dur.humanize() }))
+  .concat([
+    { value: 0, description: 'Do not allow' },
+    {
+      value: dayjs.duration(1, 'day').asMilliseconds(),
+      description: 'Any amount',
+    },
+  ]);
+
+export const overflowOptions: DropdownOption<string>[] = [
+  { value: '0', description: 'Do not allow' },
+  { value: String(5 * 60 * 1000), description: '5 minutes' },
+  { value: String(10 * 60 * 1000), description: '10 minutes' },
+  { value: String(15 * 60 * 1000), description: '15 minutes' },
+  { value: String(30 * 60 * 1000), description: '30 minutes' },
+  { value: String(60 * 60 * 1000), description: '1 hour' },
+  { value: String(2 * 60 * 60 * 1000), description: '2 hours' },
+  { value: 'oneExtra', description: 'One extra item' },
+];
+
+export function overflowToDropdownValue(config: OverflowConfig): string {
+  return config.type === 'oneExtra' ? 'oneExtra' : String(config.maxMs);
+}
+
+export function dropdownValueToOverflow(value: string): OverflowConfig {
+  return value === 'oneExtra'
+    ? { type: 'oneExtra' }
+    : { type: 'duration', maxMs: Number(value) };
+}
 
 export const lineupItemAppearsInSchedule = (
   slots: BaseSlot[],

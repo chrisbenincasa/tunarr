@@ -18,6 +18,7 @@ import { FileSystemService } from '../../services/FileSystemService.ts';
 import { parseIntOrNull } from '../../util/index.ts';
 import { getFirstValue } from '../../util/json.ts';
 import { JsonFileMigrator } from '../JsonFileMigrator.ts';
+import { AddOverflowMigration } from './AddOverflowMigration.ts';
 import { AddSlotIdMigration } from './AddSlotIdMigration.ts';
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 import { SlotProgrammingMigration } from './SlotProgrammingMigration.ts';
@@ -30,6 +31,7 @@ const MigrationSteps: ServiceIdentifier<
   RandomSlotDurationSpecMigration,
   SlotProgrammingMigration,
   AddSlotIdMigration,
+  AddOverflowMigration,
 ];
 
 /**
