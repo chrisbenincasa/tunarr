@@ -728,6 +728,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -779,6 +780,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -805,6 +807,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -868,6 +871,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -921,6 +925,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -975,6 +980,7 @@ describe('TimeSlotService', () => {
           maxDays: 1,
           padMs: 30 * 60 * 1000,
           latenessMs: 5 * 60 * 1000,
+          overflow: { type: 'duration', maxMs: 0 },
           period: 'day',
           timeZoneOffset: 0,
           slots: [
@@ -1082,6 +1088,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1133,6 +1140,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1212,6 +1220,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1283,6 +1292,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1327,6 +1337,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1386,6 +1397,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1436,6 +1448,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1490,6 +1503,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
           startTomorrow: true,
         };
@@ -1539,6 +1553,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'week',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1583,6 +1598,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1639,6 +1655,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1683,6 +1700,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1737,6 +1755,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1786,6 +1805,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1796,12 +1816,13 @@ describe('TimeSlotService', () => {
     });
   });
 
-  describe('max lateness', () => {
-    test('inner loop allows programs to overflow into the lateness buffer', async () => {
+  describe('max overflow', () => {
+    test('inner loop allows programs to overflow into the overflow buffer', async () => {
       // Slot A (movie) at 0, Slot B (show) at 2h — bounds Slot A to 2 hours.
       // Movies are 28 min each → padded to 30 min (padMs=30min).
-      // With latenessMs=0:    4 × 30min = 120min fills the slot exactly.
-      // With latenessMs=30min: a 5th movie should fit (150min = 120 + 30).
+      // With overflow maxMs=0:    4 × 30min = 120min fills the slot exactly.
+      // With overflow maxMs=30min: a 5th movie should fit (150min = 120 + 30).
+      // Lateness alone no longer lets the slot overflow.
       const HOUR_MS = 60 * 60 * 1000;
       const THIRTY_MIN = 30 * 60 * 1000;
       const TWENTY_EIGHT_MIN = 28 * 60 * 1000;
@@ -1821,7 +1842,10 @@ describe('TimeSlotService', () => {
         }),
       );
 
-      const makeSchedule = (latenessMs: number): TimeSlotSchedule => ({
+      const makeSchedule = (
+        overflowMs: number,
+        latenessMs: number = 0,
+      ): TimeSlotSchedule => ({
         type: 'time',
         flexPreference: 'end',
         maxDays: 1,
@@ -1844,6 +1868,7 @@ describe('TimeSlotService', () => {
         ],
         period: 'day',
         latenessMs,
+        overflow: { type: 'duration', maxMs: overflowMs },
         timeZoneOffset: 0,
       });
 
@@ -1864,25 +1889,35 @@ describe('TimeSlotService', () => {
         return count;
       };
 
-      // Baseline: latenessMs=0 → exactly 4 movies fit in the 2h slot
-      const resultNoLateness = await scheduleTimeSlots(
+      // Baseline: no overflow → exactly 4 movies fit in the 2h slot
+      const resultNoOverflow = await scheduleTimeSlots(
         makeSchedule(0),
         movies,
         seed,
         undefined,
         startTime,
       );
-      expect(countFirstSlotContent(resultNoLateness)).toBe(4);
+      expect(countFirstSlotContent(resultNoOverflow)).toBe(4);
 
-      // With latenessMs=30min → 5 movies should fit (overflows by 30min)
-      const resultWithLateness = await scheduleTimeSlots(
+      // Lateness without overflow → still 4 movies
+      const resultLatenessOnly = await scheduleTimeSlots(
+        makeSchedule(0, THIRTY_MIN),
+        movies,
+        seed,
+        undefined,
+        startTime,
+      );
+      expect(countFirstSlotContent(resultLatenessOnly)).toBe(4);
+
+      // With overflow maxMs=30min → 5 movies should fit (overflows by 30min)
+      const resultWithOverflow = await scheduleTimeSlots(
         makeSchedule(THIRTY_MIN),
         movies,
         seed,
         undefined,
         startTime,
       );
-      expect(countFirstSlotContent(resultWithLateness)).toBe(5);
+      expect(countFirstSlotContent(resultWithOverflow)).toBe(5);
     });
   });
 
@@ -1976,6 +2011,7 @@ describe('TimeSlotService', () => {
       ],
       period: 'day',
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       ...overrides,
     });
@@ -2274,6 +2310,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -2326,6 +2363,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -2382,6 +2420,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -2438,6 +2477,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -2489,6 +2529,7 @@ describe('TimeSlotService', () => {
           flexPreference: 'end',
           padMs: oneHour,
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
           slots: [
             {
@@ -2622,6 +2663,7 @@ describe('TimeSlotService', () => {
           flexPreference: 'end',
           padMs: oneHour,
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
           slots: [
             {
@@ -2696,6 +2738,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -2782,6 +2825,7 @@ describe('slot filler placement', () => {
       // used to make the slot look "full" and starve head/tail filler.
       padMs: 15 * oneMin,
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       slots: shows.map((showId, i) => ({
         id: randomUUID(),
@@ -2847,6 +2891,7 @@ describe('slot filler placement', () => {
       flexPreference: 'end',
       padMs: 5 * oneMin,
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       slots: shows.map((showId, i) => ({
         id: randomUUID(),
@@ -2940,6 +2985,7 @@ describe('slot filler placement', () => {
         flexPreference: 'end',
         padMs: 30 * oneMin,
         latenessMs: 0,
+        overflow: { type: 'duration', maxMs: 0 },
         timeZoneOffset: 0,
         slots: [
           {
@@ -3050,6 +3096,7 @@ describe('slot filler placement', () => {
       flexPreference: 'end',
       padMs: 30 * oneMin,
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       slots: [
         {
@@ -3117,6 +3164,7 @@ describe('slot filler placement', () => {
       flexPreference: 'end',
       padMs: oneMin,
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       // 30 minute slots covering the whole day, so that no slot is wide
       // enough for the oversized filler to legitimately fit.
@@ -3236,6 +3284,7 @@ describe('slot filler budgeting', () => {
       flexPreference: 'end',
       padMs: oneMin,
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       slots: Array.from({ length: 48 }, (_, i) => ({
         id: randomUUID(),

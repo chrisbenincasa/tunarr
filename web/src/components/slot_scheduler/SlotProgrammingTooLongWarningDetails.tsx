@@ -125,7 +125,7 @@ export const SlotProgrammingTooLongWarningDetails = ({
                 })}{' '}
                 exceed the length of this slot (
                 {betterHumanize(dayjs.duration(slot.durationMs ?? 0))}).
-              </Trans>
+</Trans>
               {averageLengthMs !== undefined && (
                 <>
                   {' '}
@@ -145,7 +145,7 @@ export const SlotProgrammingTooLongWarningDetails = ({
               {}
               {slotType === 'time' && (
                 <li>
-                  <Trans>Increasing "Max Lateness" for the schedule.</Trans>
+                  <Trans>Increasing "Max Overflow" for the schedule.</Trans>
                 </li>
               )}
               <li>
