@@ -255,18 +255,19 @@ export abstract class MediaSourceMovieLibraryScanner<
       (loc) => loc.sourceType === mediaSource.type,
     );
 
-    const reuseProgramUuid =
-      resolved && (await identityService.reconcileRatingKeyIfChanged(
-        resolved,
-        mediaSource.uuid,
-        fullMovie.externalId,
-        {
-          directFilePath:
-            plexLocation?.type === 'local' ? plexLocation.path : null,
-          externalFilePath:
-            plexLocation?.type === 'remote' ? plexLocation.externalKey : null,
-        },
-      )) ?? resolved?.existing.uuid;
+    const reuseProgramUuid = resolved
+      ? await identityService.reconcileRatingKeyIfChanged(
+          resolved,
+          mediaSource.uuid,
+          fullMovie.externalId,
+          {
+            directFilePath:
+              plexLocation?.type === 'local' ? plexLocation.path : null,
+            externalFilePath:
+              plexLocation?.type === 'remote' ? plexLocation.externalKey : null,
+          },
+        )
+      : undefined;
 
     const minted = this.programMinter.mintMovie(
       mediaSource,

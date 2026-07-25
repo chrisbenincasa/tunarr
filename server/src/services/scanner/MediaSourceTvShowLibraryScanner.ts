@@ -596,22 +596,21 @@ export abstract class MediaSourceTvShowLibraryScanner<
           (loc) => loc.sourceType === mediaSource.type,
         );
 
-        const reuseProgramUuid =
-          resolved &&
-          (await identityService.reconcileRatingKeyIfChanged(
-            resolved,
-            mediaSource.uuid,
-            fullEpisode.externalId,
-            {
-              directFilePath:
-                plexLocation?.type === 'local' ? plexLocation.path : null,
-              externalFilePath:
-                plexLocation?.type === 'remote'
-                  ? plexLocation.externalKey
-                  : null,
-            },
-          )) ??
-          resolved?.existing.uuid;
+        const reuseProgramUuid = resolved
+          ? await identityService.reconcileRatingKeyIfChanged(
+              resolved,
+              mediaSource.uuid,
+              fullEpisode.externalId,
+              {
+                directFilePath:
+                  plexLocation?.type === 'local' ? plexLocation.path : null,
+                externalFilePath:
+                  plexLocation?.type === 'remote'
+                    ? plexLocation.externalKey
+                    : null,
+              },
+            )
+          : undefined;
 
         this.logger.debug('Upserting episode key = %s', externalKey);
 
