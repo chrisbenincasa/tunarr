@@ -47,6 +47,10 @@ export class ProgramMetadataRepository {
       artwork.filter((art) => isNonEmptyString(art.creditId)),
       (art) => art.creditId,
     );
+    const extraArt = groupBy(
+      artwork.filter((art) => isNonEmptyString(art.programExtraId)),
+      (art) => art.programExtraId,
+    );
 
     return this.drizzleDB.transaction((tx) => {
       for (const batch of chunk(keys(programArt), 50)) {
@@ -57,6 +61,9 @@ export class ProgramMetadataRepository {
       }
       for (const batch of chunk(keys(creditArt), 50)) {
         tx.delete(Artwork).where(inArray(Artwork.creditId, batch)).run();
+      }
+      for (const batch of chunk(keys(extraArt), 50)) {
+        tx.delete(Artwork).where(inArray(Artwork.programExtraId, batch)).run();
       }
       const inserted: Artwork[] = [];
       for (const batch of chunk(artwork, 50)) {

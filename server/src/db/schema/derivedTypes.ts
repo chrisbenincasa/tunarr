@@ -5,6 +5,7 @@ import type {
 import type { MarkNonNullable, Nullable } from '@/types/util.js';
 import type { DeepNullable, MarkRequired, StrictOmit } from 'ts-essentials';
 import type { Artwork, NewArtwork } from './Artwork.ts';
+import type { NewProgramExtra } from './ProgramExtra.ts';
 import type { MediaSourceType } from './base.ts';
 import type { Channel, ChannelOrm } from './Channel.ts';
 import type {
@@ -231,6 +232,11 @@ export type NewProgramVersion = NewProgramVersionOrm & {
 
 export type NewCreditWithArtwork = {
   credit: NewCredit;
+  artwork: NewArtwork[];
+};
+
+export type NewProgramExtraWithRelations = {
+  extra: NewProgramExtra;
   artwork: NewArtwork[];
 };
 

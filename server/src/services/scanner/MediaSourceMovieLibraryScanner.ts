@@ -217,6 +217,7 @@ export abstract class MediaSourceMovieLibraryScanner<
         fullMovie.externalId,
         existingMovie.uuid,
       );
+      await this.scanExtrasForMovie(context, fullMovie, existingMovie.uuid);
       return;
     }
 
@@ -264,10 +265,18 @@ export abstract class MediaSourceMovieLibraryScanner<
           libraryId: library.uuid,
         },
       ]);
+
+      await this.scanExtrasForMovie(context, fullMovie, dbMovie.uuid);
     } else {
       this.logger.warn('No upserted movie');
     }
   }
+
+  protected async scanExtrasForMovie(
+    _context: ScanContext<ApiClientTypeT>,
+    _movie: MovieT & HasMediaSourceInfo,
+    _dbMovieUuid: string,
+  ): Promise<void> {}
 
   protected abstract scanMovie(
     context: ScanContext<ApiClientTypeT>,

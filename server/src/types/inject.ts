@@ -97,6 +97,7 @@ const KEYS = {
   ),
   ProgramSearchRepository: Symbol.for('ProgramSearchRepository'),
   ProgramStateRepository: Symbol.for('ProgramStateRepository'),
+  ProgramExtraRepository: Symbol.for('ProgramExtraRepository'),
 
   // Stream Selection
   CelEvaluationService: Symbol.for('CelEvaluationService'),
