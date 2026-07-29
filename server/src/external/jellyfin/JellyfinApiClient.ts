@@ -502,6 +502,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
             ids: extraParams.ids?.join(','),
             genres: extraParams.genres?.join('|'),
           },
+          excludeLocationTypes: 'Virtual', // prevent pulling in placeholders for missing episodes
           contributingArtistIds: extraParams.contributingArtistIds?.join(','),
           excludeItemIds: extraParams.excludeItemIds?.join(','),
           albumArtistIds: extraParams.albumArtistIds?.join(','),
@@ -1159,7 +1160,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
     const source = find(sources, { Protocol: 'File' }) ?? sources[0]!;
 
     if (isEmpty(source.MediaStreams)) {
-      this.logger.warn('No media streams!');
+      this.logger.warn(
+        'No media streams for program %s (%s)',
+        source.Name,
+        source.Id,
+      );
       return;
     }
 
