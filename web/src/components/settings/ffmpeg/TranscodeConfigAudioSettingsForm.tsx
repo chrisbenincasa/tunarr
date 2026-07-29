@@ -38,6 +38,10 @@ const AudioFormats: DropdownOption<SupportedTranscodeAudioOutputFormats>[] = [
     value: 'mp3',
   },
   {
+    description: 'E-AC3',
+    value: 'eac3',
+  },
+  {
     description: 'Opus (experimental)',
     value: 'libopus',
   },

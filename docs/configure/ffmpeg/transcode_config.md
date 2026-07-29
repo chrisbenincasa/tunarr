@@ -127,6 +127,7 @@ Controls the codec used to encode the output audio stream.
 
 - **AAC** — The default and most compatible format. Widely supported by all clients and streaming devices. Recommended for most setups.
 - **AC3 (Dolby Digital)** — Good choice for surround sound (5.1) content. Supported by most TVs and AV receivers, but not all streaming clients.
+- **E-AC3 (Dolby Digital Plus)** — Supports higher bitrates and more channels than AC3 but is less supported. Use if you want to stream 7.1 (8 channel) surround sound and have compatible clients/hardware.
 - **Opus (experimental)** — Highly efficient compression with inexpensive transcode perfomance and better multi-channel support than AAC or MP3. Would be ideal for surround sound content except that it isn't officially part of the the HLS spec as it is unsupported by most A/V hardware. Offered as an experimental option as it may still function due to nearly-universal software support.
 - **MP3** — Widely compatible but lower quality than AAC at equivalent bitrates. Only use if a specific client requires it.
 - **Copy** — Passes the audio stream through unchanged without re-encoding. When Copy is selected, all other audio settings (bitrate, sample rate, volume, channels) are **ignored**, since the stream is not being processed by FFmpeg.
