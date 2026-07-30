@@ -260,14 +260,20 @@ export class RandomSlotScheduler {
         paddedPrograms = maybePrograms;
       }
 
-      const finalPrograms: PaddedProgram[] = paddedPrograms.flatMap((pp) =>
-        applyMidRollBreaks(
-          pp,
-          currSlot,
-          currSlot.midRollConfig,
-          context.random,
-        ),
-      );
+      let midRollOffset = 0;
+      const finalPrograms: PaddedProgram[] = [];
+      for (const pp of paddedPrograms) {
+        finalPrograms.push(
+          ...applyMidRollBreaks(
+            pp,
+            currSlot,
+            currSlot.midRollConfig,
+            context.random,
+            +context.timeCursor + midRollOffset,
+          ),
+        );
+        midRollOffset += pp.totalDuration;
+      }
 
       const totalDuration = sum(map(finalPrograms, (p) => p.totalDuration));
       let remainingTimeInSlot = 0;
@@ -426,6 +432,7 @@ export class RandomSlotScheduler {
       currSlot,
       paddedProgram,
       slotDuration - paddedProgram.totalDuration,
+      +context.timeCursor,
     );
 
     let totalDuration = paddedProgram.totalDuration;
@@ -445,6 +452,7 @@ export class RandomSlotScheduler {
         currSlot,
         nextPadded,
         slotDuration - nextPadded.totalDuration,
+        +context.timeCursor + totalDuration,
       );
       totalDuration += nextPadded.totalDuration;
     }
@@ -461,7 +469,12 @@ export class RandomSlotScheduler {
     // Fallback filler gets added outside of this method after we've packed the
     // slot as much as possible.
     const remainingTime = currSlot.durationMs! - totalDuration;
-    addHeadAndTailFillerToSlot(remainingTime, currSlot, paddedPrograms);
+    addHeadAndTailFillerToSlot(
+      remainingTime,
+      currSlot,
+      paddedPrograms,
+      +context.timeCursor,
+    );
     return paddedPrograms;
   }
 

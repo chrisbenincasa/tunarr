@@ -738,6 +738,7 @@ export function addHeadAndTailFillerToSlot(
   remainingTime: number,
   slot: SlotImpl<BaseSlot>,
   contentPrograms: NonEmptyArray<PaddedProgram>,
+  timeCursor: number,
 ): number {
   if (remainingTime <= 0) {
     return remainingTime;
@@ -748,7 +749,8 @@ export function addHeadAndTailFillerToSlot(
       () =>
         slot.getFillerOfType(FillerTypes.head, {
           slotDuration: remainingTime,
-          timeCursor: -1,
+          timeCursor,
+          cooldownMs: 0,
         }),
       3,
     );
@@ -771,7 +773,8 @@ export function addHeadAndTailFillerToSlot(
       () =>
         slot.getFillerOfType(FillerTypes.tail, {
           slotDuration: remainingTime + lastItemPad,
-          timeCursor: -1,
+          timeCursor,
+          cooldownMs: 0,
         }),
       3,
     );
@@ -794,14 +797,22 @@ export function maybeAddPrePostFiller(
   slot: SlotImpl<BaseSlot>,
   program: PaddedProgram,
   remainingTime: number,
+  timeCursor: number,
 ): number {
   remainingTime = maybeAddFillerOfType(
     FillerTypes.pre,
     remainingTime,
     slot,
     program,
+    timeCursor,
   );
-  return maybeAddFillerOfType(FillerTypes.post, remainingTime, slot, program);
+  return maybeAddFillerOfType(
+    FillerTypes.post,
+    remainingTime,
+    slot,
+    program,
+    timeCursor,
+  );
 }
 
 function maybeAddFillerOfType(
@@ -809,6 +820,7 @@ function maybeAddFillerOfType(
   remainingTime: number,
   slot: SlotImpl<BaseSlot>,
   program: PaddedProgram,
+  timeCursor: number,
 ): number {
   if (!slot.hasFillerOfType(fillerType)) {
     // return { nextPrograms: contentPrograms, nextRemainingTime: remainingTime };
@@ -825,7 +837,8 @@ function maybeAddFillerOfType(
       () =>
         slot.getFillerOfType(fillerType, {
           slotDuration: totalTime,
-          timeCursor: -1,
+          timeCursor,
+          cooldownMs: 0,
         }),
       3,
     );
@@ -886,6 +899,7 @@ export function applyMidRollBreaks(
   slot: SlotImpl<BaseSlot>,
   midRollConfig: MidRollConfig | undefined,
   random: Random,
+  timeCursor: number,
 ): PaddedProgram[] {
   if (!midRollConfig || slot.getMidFillerListIds().length === 0) {
     return [paddedProgram];
@@ -925,6 +939,7 @@ export function applyMidRollBreaks(
     midRollConfig,
     slot,
     random,
+    timeCursor,
   );
 }
 
@@ -934,6 +949,7 @@ function buildEagerBreaks(
   config: MidRollConfig,
   slot: SlotImpl<BaseSlot>,
   random: Random,
+  timeCursor: number,
 ): PaddedProgram[] {
   const program = paddedProgram.program as CondensedContentProgram;
   const baseOffset = program.startOffsetMs ?? 0;
@@ -955,7 +971,7 @@ function buildEagerBreaks(
     );
 
     const breakDuration = resolveBreakDuration(config, random);
-    const fillers = fillDurationWithFiller(slot, breakDuration);
+    const fillers = fillDurationWithFiller(slot, breakDuration, timeCursor);
 
     for (const filler of fillers.fillers) {
       result.push(new PaddedProgram(filler, 0, {}));
@@ -1048,6 +1064,7 @@ function buildLazyBreaks(
 function fillDurationWithFiller(
   slot: SlotImpl<BaseSlot>,
   targetDurationMs: number,
+  timeCursor: number,
   maxAttempts: number = 10,
 ): { fillers: FillerProgram[]; totalDuration: number } {
   const fillers: FillerProgram[] = [];
@@ -1058,7 +1075,7 @@ function fillDurationWithFiller(
     const remaining = targetDurationMs - totalDuration;
     const filler = slot.getFillerOfType('mid', {
       slotDuration: remaining,
-      timeCursor: -1,
+      timeCursor,
     });
 
     if (!filler) break;

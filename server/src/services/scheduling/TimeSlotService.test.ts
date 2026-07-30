@@ -2406,6 +2406,92 @@ describe('TimeSlotService', () => {
         }
       });
 
+      test('weighted pre-roll filler does not deplete across programs in a slot', async () => {
+        const fillerListId = randomUUID();
+
+        // 6 short episodes that each fit within a 1-hour pad,
+        // so multiple programs fill the slot and each gets pre-roll filler.
+        const episodes: SlotSchedulerProgram[] = Array.from(
+          { length: 6 },
+          (_, i) => ({
+            ...createFakeProgramOrm({
+              uuid: `ep-${i}`,
+              title: `Episode ${i}`,
+              type: 'episode',
+              duration: 30 * 60 * 1000, // 30 min each
+              episode: i + 1,
+              tvShowUuid: 'show1',
+              show: { uuid: 'show1' },
+            }),
+            parentFillerLists: [],
+            parentCustomShows: [],
+            parentSmartCollections: [],
+          }),
+        );
+
+        // Only 2 filler programs — previously these would deplete after
+        // 2 programs, leaving the remaining 4 without pre-roll.
+        const fillerPrograms: SlotSchedulerProgram[] = Array.from(
+          { length: 2 },
+          (_, i) => ({
+            ...createFakeProgramOrm({
+              uuid: `filler-${i}`,
+              title: `Filler ${i}`,
+              type: 'movie',
+              duration: 15 * 1000, // 15 seconds each
+            }),
+            parentFillerLists: [fillerListId],
+            parentCustomShows: [],
+            parentSmartCollections: [],
+          }),
+        );
+
+        const schedule: TimeSlotSchedule = {
+          type: 'time',
+          period: 'day',
+          maxDays: 1,
+          flexPreference: 'end',
+          padMs: oneHour,
+          latenessMs: 0,
+          timeZoneOffset: 0,
+          slots: [
+            {
+              id: randomUUID(),
+              startTime: 0,
+              type: 'show',
+              showId: 'show1',
+              order: 'next',
+              direction: 'asc',
+              seasonFilter: [],
+              filler: [
+                {
+                  types: ['pre'],
+                  fillerListId,
+                  fillerOrder: 'shuffle_prefer_short',
+                },
+              ],
+            },
+          ],
+        };
+
+        const result = await scheduleTimeSlots(
+          schedule,
+          [...episodes, ...fillerPrograms],
+          [42, 99],
+          undefined,
+          midnight,
+        );
+
+        const fillerItems = result.lineup.filter((p) => p.type === 'filler');
+        const contentItems = result.lineup.filter((p) => p.type === 'content');
+
+        // We should have at least as many pre-roll filler items as
+        // content programs — the 2-item filler list should cycle, not
+        // deplete after 2 uses.
+        expect(contentItems.length).toBeGreaterThanOrEqual(6);
+        expect(fillerItems.length).toBeGreaterThanOrEqual(contentItems.length);
+      });
+
       test('same group, different ordering → independent', async () => {
         const episodes = makeEpisodes('show1', 10);
         const slotIdA = randomUUID();

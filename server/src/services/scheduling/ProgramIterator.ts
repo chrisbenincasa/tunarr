@@ -11,6 +11,11 @@ import type {
 export type IterationState = {
   slotDuration: number; // ms
   timeCursor: number; // ms since epoch
+  /** Optional dedup cooldown override. When set, the weighted filler
+   *  iterator uses this instead of slotDuration for its "last seen"
+   *  cooldown check. Pass 0 to disable hard dedup and rely solely on
+   *  weight decay for variety. Defaults to slotDuration when omitted. */
+  cooldownMs?: number;
 };
 
 export interface ProgramIterator<
