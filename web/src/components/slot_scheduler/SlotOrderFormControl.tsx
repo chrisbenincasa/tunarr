@@ -1,11 +1,14 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
+  Checkbox,
   FormControl,
+  FormControlLabel,
   FormHelperText,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
@@ -73,7 +76,8 @@ export const SlotOrderFormControl = () => {
       order === 'alphanumeric' ||
       order === 'next' ||
       order === 'ordered_shuffle' ||
-      order === 'chronological'
+      order === 'chronological' ||
+      order === 'block'
     ) {
       return (
         <Controller
@@ -104,31 +108,73 @@ export const SlotOrderFormControl = () => {
     return null;
   }
 
-  return (
-    <Stack direction="row" spacing={2}>
-      <Controller
-        control={control}
-        name="order"
-        render={({ field }) => {
-          const opts = slotOrderOptions(type);
-          const helperText = find(opts, { value: field.value })?.helperText;
-          return (
-            <FormControl fullWidth>
-              <InputLabel>{t`Order`}</InputLabel>
-              <Select label={t`Order`} disabled={false} {...field}>
-                {map(opts, ({ description, value }) => (
-                  <MenuItem key={value} value={value}>
-                    {description}
-                  </MenuItem>
-                ))}
-              </Select>
-              {helperText && <FormHelperText>{helperText}</FormHelperText>}
-            </FormControl>
-          );
-        }}
-      />
+  const blockShuffleControls =
+    type === 'smart-collection' && order === 'block' ? (
+      <Stack direction="row" spacing={2} alignItems="center">
+        <Controller
+          control={control}
+          name="blockSize"
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type="number"
+              label={t`Block Size`}
+              helperText={t`Episodes per show before switching`}
+              slotProps={{ htmlInput: { min: 1 } }}
+              onChange={(e) =>
+                field.onChange(
+                  e.target.value === '' ? '' : Number(e.target.value),
+                )
+              }
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="loopShortPrograms"
+          render={({ field }) => (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                />
+              }
+              label={t`Loop Short Programs`}
+            />
+          )}
+        />
+      </Stack>
+    ) : null;
 
-      {directionComponent}
+  return (
+    <Stack spacing={2}>
+      <Stack direction="row" spacing={2}>
+        <Controller
+          control={control}
+          name="order"
+          render={({ field }) => {
+            const opts = slotOrderOptions(type);
+            const helperText = find(opts, { value: field.value })?.helperText;
+            return (
+              <FormControl fullWidth>
+                <InputLabel>{t`Order`}</InputLabel>
+                <Select label={t`Order`} disabled={false} {...field}>
+                  {map(opts, ({ description, value }) => (
+                    <MenuItem key={value} value={value}>
+                      {description}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {helperText && <FormHelperText>{helperText}</FormHelperText>}
+              </FormControl>
+            );
+          }}
+        />
+
+        {directionComponent}
+      </Stack>
+      {blockShuffleControls}
     </Stack>
   );
 };

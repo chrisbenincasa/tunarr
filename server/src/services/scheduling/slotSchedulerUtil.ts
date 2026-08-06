@@ -53,6 +53,7 @@ import {
   resolveBreakPoints,
 } from './midRollBreakRules.ts';
 import {
+  ContentProgramBlockShuffle,
   ContentProgramChunkedShuffle,
   CustomProgramChunkedShuffle,
 } from './ProgramChunkedShuffle.ts';
@@ -382,6 +383,13 @@ export function createSlotProgramIterator(
             getProgramOrderer('next'),
             slot.direction === 'asc',
           );
+        case 'block':
+          return new ContentProgramBlockShuffle(
+            programs,
+            slot.blockSize ?? 3,
+            slot.loopShortPrograms ?? true,
+            slot.direction === 'asc',
+          );
       }
     })
     .exhaustive();
@@ -626,6 +634,16 @@ function getContentProgramIterator(
     case 'shuffle':
       return new ContentProgramShuffleIterator(programs, random);
     case 'ordered_shuffle':
+      return new ContentProgramChunkedShuffle(
+        programs,
+        getProgramOrderer('next'),
+        slot.direction === 'asc',
+      );
+    case 'block':
+      // Movie/show slots only ever contain a single group (all movies, or
+      // a single show's own episodes), so there's nothing meaningful to
+      // alternate between -- fall back to the same behavior as
+      // ordered_shuffle rather than leaving this order type unhandled.
       return new ContentProgramChunkedShuffle(
         programs,
         getProgramOrderer('next'),
