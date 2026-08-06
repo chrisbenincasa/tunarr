@@ -156,6 +156,11 @@ export type JellyfinGetItemsQuery = {
   contributingArtistIds?: string[];
   excludeItemIds?: string[];
   albumArtistIds?: string[];
+  // Jellyfin defaults this to the connected user's own "Group movies into
+  // collections" display preference when omitted. Library scans need this to
+  // be explicitly false, or movies inside a BoxSet are silently collapsed
+  // into their parent collection and never returned as individual items.
+  collapseBoxSetItems?: boolean;
 };
 
 type JellyfinItemTypes = {
@@ -580,7 +585,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       'Movie',
       (movie) => this.jellyfinApiMovieInjection(movie),
       [],
-      {},
+      { collapseBoxSetItems: false },
       pageSize,
     );
   }
@@ -901,6 +906,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         limit: 0,
         recursive: true,
         includeItemTypes: itemType,
+        // See comment on JellyfinGetItemsQuery#collapseBoxSetItems — without
+        // this, counts (and therefore pagination) silently undercount any
+        // library containing BoxSet collections whenever the connected
+        // account has "Group movies into collections" enabled.
+        collapseBoxSetItems: false,
       },
     }).then((_) => _.map((response) => response.TotalRecordCount));
   }
