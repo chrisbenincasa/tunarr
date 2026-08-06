@@ -84,20 +84,23 @@ export const SlotOrderFormControl = () => {
           control={control}
           name="direction"
           render={({ field }) => (
-            <ToggleButtonGroup
-              exclusive
-              value={field.value}
-              onChange={(_, value) =>
-                handleDirectionChange(value as string | null, field.onChange)
-              }
-            >
-              <ToggleButton value="asc">
-                <Trans>Asc</Trans>
-              </ToggleButton>
-              <ToggleButton value="desc">
-                <Trans>Desc</Trans>
-              </ToggleButton>
-            </ToggleButtonGroup>
+            <Stack sx={{ minWidth: 240, maxWidth: 320, width: '100%' }}>
+              <ToggleButtonGroup
+                exclusive
+                value={field.value}
+                onChange={(_, value) =>
+                  handleDirectionChange(value as string | null, field.onChange)
+                }
+                sx={{ width: '100%' }}
+              >
+                <ToggleButton value="asc">
+                  <Trans>Asc</Trans>
+                </ToggleButton>
+                <ToggleButton value="desc">
+                  <Trans>Desc</Trans>
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
           )}
         />
       );
@@ -110,7 +113,7 @@ export const SlotOrderFormControl = () => {
 
   const blockShuffleControls =
     type === 'smart-collection' && order === 'block' ? (
-      <Stack direction="row" spacing={2} alignItems="center">
+      <Stack direction="row" flexWrap="wrap" spacing={2} alignItems="flex-start" sx={{ width: '100%' }}>
         <Controller
           control={control}
           name="blockSize"
@@ -126,14 +129,17 @@ export const SlotOrderFormControl = () => {
                   e.target.value === '' ? '' : Number(e.target.value),
                 )
               }
+              sx={{ minWidth: 240, maxWidth: 320, flex: '1 1 320px' }}
             />
           )}
         />
+
         <Controller
           control={control}
           name="loopShortPrograms"
           render={({ field }) => (
             <FormControlLabel
+              sx={{ m: 0, alignSelf: 'flex-start' }}
               control={
                 <Checkbox
                   checked={field.value}
@@ -149,7 +155,7 @@ export const SlotOrderFormControl = () => {
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" spacing={2}>
+      <Stack direction="row" spacing={2} alignItems="flex-start">
         <Controller
           control={control}
           name="order"
