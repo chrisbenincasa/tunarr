@@ -71,6 +71,8 @@ export const AudioFormats = {
   Flac: 'flac',
   Dca: 'dca',
   TrueHd: 'truehd',
+  Opus: 'libopus',
+  Eac3: 'eac3',
 } as const;
 
 export type StdoutOutputLocation = {
