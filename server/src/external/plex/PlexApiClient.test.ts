@@ -95,42 +95,54 @@ function makePlexMovieMetadata(ratingKey: string, librarySectionID: number) {
   };
 }
 
+/**
+ * Serves `allMetadata` the way a Plex server does: honoring
+ * X-Plex-Container-Start/Size and returning an empty container once the
+ * listing is exhausted. Set `reportTotalSize: false` to model a server that
+ * omits totalSize.
+ */
+function mockPagedItems(
+  client: PlexApiClient,
+  allMetadata: unknown[],
+  { reportTotalSize = true }: { reportTotalSize?: boolean } = {},
+) {
+  return vi
+    .spyOn(client, 'doTypeCheckedGet' as never)
+    .mockImplementation(
+      (
+        _path: string,
+        _schema: unknown,
+        config: { params: Record<string, unknown> },
+      ) => {
+        const offset = (config.params['X-Plex-Container-Start'] as number) ?? 0;
+        const size = (config.params['X-Plex-Container-Size'] as number) ?? 50;
+        const page = allMetadata.slice(offset, offset + size);
+        return Promise.resolve(
+          Result.success({
+            MediaContainer: {
+              size: page.length,
+              ...(reportTotalSize ? { totalSize: allMetadata.length } : {}),
+              Metadata: page,
+            },
+          }),
+        );
+      },
+    );
+}
+
 describe('PlexApiClient', () => {
   describe('getItemChildren', () => {
-    it('paginates through all items when totalSize exceeds page size', async () => {
+    it('pages exactly to totalSize when the server reports it', async () => {
       const { client, externalLibraryKey } = makeMinimalPlexClient();
 
       const librarySectionID = Number(externalLibraryKey);
 
-      // Create 120 items (should require 3 pages of 50)
+      // 120 items across three pages of 50.
       const allMetadata = Array.from({ length: 120 }, (_, i) =>
         makePlexMovieMetadata(String(i + 1), librarySectionID),
       );
 
-      const doGetSpy = vi
-        .spyOn(client, 'doTypeCheckedGet' as never)
-        .mockImplementation(
-          (
-            _path: string,
-            _schema: unknown,
-            config: { params: Record<string, unknown> },
-          ) => {
-            const offset =
-              (config.params['X-Plex-Container-Start'] as number) ?? 0;
-            const size =
-              (config.params['X-Plex-Container-Size'] as number) ?? 50;
-            const page = allMetadata.slice(offset, offset + size);
-            return Promise.resolve(
-              Result.success({
-                MediaContainer: {
-                  size: page.length,
-                  totalSize: allMetadata.length,
-                  Metadata: page,
-                },
-              }),
-            );
-          },
-        );
+      const doGetSpy = mockPagedItems(client, allMetadata);
 
       const result = await client.getItemChildren('playlist-1', 'playlist');
 
@@ -138,7 +150,8 @@ describe('PlexApiClient', () => {
       const items = result.get();
       expect(items).toHaveLength(120);
 
-      // Verify pagination was called 3 times (0-49, 50-99, 100-119)
+      // 0-49, 50-99, 100-119. totalSize tells us we are done, so no extra
+      // request is spent discovering the end of the listing.
       expect(doGetSpy).toHaveBeenCalledTimes(3);
       expect(doGetSpy).toHaveBeenCalledWith(
         '/playlists/playlist-1/items',
@@ -172,36 +185,81 @@ describe('PlexApiClient', () => {
       );
     });
 
-    it('returns all items in a single request when totalSize <= page size', async () => {
+    it('pages until an empty page when the server omits totalSize', async () => {
       const { client, externalLibraryKey } = makeMinimalPlexClient();
 
       const librarySectionID = Number(externalLibraryKey);
-      const allMetadata = Array.from({ length: 10 }, (_, i) =>
+      const allMetadata = Array.from({ length: 120 }, (_, i) =>
         makePlexMovieMetadata(String(i + 1), librarySectionID),
       );
 
+      const doGetSpy = mockPagedItems(client, allMetadata, {
+        reportTotalSize: false,
+      });
+
+      const result = await client.getItemChildren('playlist-1a', 'playlist');
+
+      // Falling back to the container's `size` here would report a total of 50
+      // and stop after the first page.
+      expect(result.isSuccess()).toBe(true);
+      expect(result.get()).toHaveLength(120);
+      // 0-49, 50-99, 100-119, then the empty page at 120 that ends the loop
+      expect(doGetSpy).toHaveBeenCalledTimes(4);
+      expect(doGetSpy).toHaveBeenCalledWith(
+        '/playlists/playlist-1a/items',
+        expect.anything(),
+        expect.objectContaining({
+          params: expect.objectContaining({
+            'X-Plex-Container-Start': 120,
+            'X-Plex-Container-Size': 50,
+          }),
+        }),
+      );
+    });
+
+    it('advances by the returned count when the server serves short pages', async () => {
+      const { client, externalLibraryKey } = makeMinimalPlexClient();
+
+      const librarySectionID = Number(externalLibraryKey);
+      const allMetadata = Array.from({ length: 45 }, (_, i) =>
+        makePlexMovieMetadata(String(i + 1), librarySectionID),
+      );
+
+      // A server that caps pages at 20 regardless of X-Plex-Container-Size.
       const doGetSpy = vi
         .spyOn(client, 'doTypeCheckedGet' as never)
-        .mockImplementation(() => {
-          return Promise.resolve(
-            Result.success({
-              MediaContainer: {
-                size: allMetadata.length,
-                totalSize: allMetadata.length,
-                Metadata: allMetadata,
-              },
-            }),
-          );
-        });
+        .mockImplementation(
+          (
+            _path: string,
+            _schema: unknown,
+            config: { params: Record<string, unknown> },
+          ) => {
+            const offset =
+              (config.params['X-Plex-Container-Start'] as number) ?? 0;
+            const page = allMetadata.slice(offset, offset + 20);
+            return Promise.resolve(
+              Result.success({
+                MediaContainer: {
+                  size: page.length,
+                  totalSize: allMetadata.length,
+                  Metadata: page,
+                },
+              }),
+            );
+          },
+        );
 
       const result = await client.getItemChildren('playlist-2', 'playlist');
 
+      // Advancing by the requested 50 rather than the returned 20 would have
+      // skipped items 21-45 entirely.
       expect(result.isSuccess()).toBe(true);
-      expect(result.get()).toHaveLength(10);
-      expect(doGetSpy).toHaveBeenCalledTimes(1);
+      expect(result.get()).toHaveLength(45);
+      // 0, 20, 40 — totalSize is reached exactly despite the short pages
+      expect(doGetSpy).toHaveBeenCalledTimes(3);
     });
 
-    it('returns partial results with a warning when a mid-pagination request fails', async () => {
+    it('fails rather than truncating when a mid-pagination request fails', async () => {
       const { client, externalLibraryKey } = makeMinimalPlexClient();
 
       const librarySectionID = Number(externalLibraryKey);
@@ -227,11 +285,12 @@ describe('PlexApiClient', () => {
 
       const result = await client.getItemChildren('playlist-3', 'playlist');
 
-      // Should return the first page of items we collected
-      expect(result.isSuccess()).toBe(true);
-      expect(result.get()).toHaveLength(50);
-      expect(fakeLogger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to fetch page at offset'),
+      // A truncated listing is indistinguishable from a genuinely short one,
+      // and callers overwrite their contents with it. Fail instead.
+      expect(result.isFailure()).toBe(true);
+      expect(fakeLogger.error).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.stringContaining('failing rather than returning a truncated'),
         expect.anything(),
         expect.anything(),
         expect.anything(),
@@ -262,17 +321,7 @@ describe('PlexApiClient', () => {
         makePlexMovieMetadata('3', matchedLibrary),
       ];
 
-      vi.spyOn(client, 'doTypeCheckedGet' as never).mockImplementation(() =>
-        Promise.resolve(
-          Result.success({
-            MediaContainer: {
-              size: metadata.length,
-              totalSize: metadata.length,
-              Metadata: metadata,
-            },
-          }),
-        ),
-      );
+      mockPagedItems(client, metadata);
 
       const result = await client.getItemChildren('playlist-5', 'playlist');
 
@@ -282,6 +331,89 @@ describe('PlexApiClient', () => {
       // Debug log for the dropped item
       expect(fakeLogger.debug).toHaveBeenCalledWith(
         expect.stringContaining('no matching library'),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+      );
+    });
+
+    it('drops an item type Tunarr does not model without rejecting its page', async () => {
+      const { client, externalLibraryKey } = makeMinimalPlexClient();
+
+      const librarySectionID = Number(externalLibraryKey);
+      const metadata = [
+        makePlexMovieMetadata('1', librarySectionID),
+        // Plex playlists can hold extras/clips, which are not in the
+        // PlexMediaNoCollectionPlaylist discriminated union.
+        { ratingKey: '2', type: 'clip', title: 'Some Extra', librarySectionID },
+        makePlexMovieMetadata('3', librarySectionID),
+      ];
+
+      mockPagedItems(client, metadata);
+
+      const result = await client.getItemChildren('playlist-6', 'playlist');
+
+      expect(result.isSuccess()).toBe(true);
+      expect(result.get()).toHaveLength(2);
+      expect(fakeLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Dropping unsupported Plex item'),
+        expect.anything(),
+        '2',
+        'clip',
+        'Some Extra',
+        expect.anything(),
+      );
+    });
+
+    it('keeps paginating past a page containing an unmodeled item', async () => {
+      const { client, externalLibraryKey } = makeMinimalPlexClient();
+
+      const librarySectionID = Number(externalLibraryKey);
+      const allMetadata: unknown[] = Array.from({ length: 120 }, (_, i) =>
+        makePlexMovieMetadata(String(i + 1), librarySectionID),
+      );
+      // Put the unmodeled item on the third page. Before this fix the whole
+      // page failed validation and pagination stopped, yielding 100/120 items.
+      allMetadata[100] = {
+        ratingKey: '101',
+        type: 'clip',
+        title: 'Behind the Scenes',
+        librarySectionID,
+      };
+
+      mockPagedItems(client, allMetadata);
+
+      const result = await client.getItemChildren('playlist-7', 'playlist');
+
+      expect(result.isSuccess()).toBe(true);
+      // Only the single unmodeled item is lost, not the rest of its page nor
+      // the pages after it.
+      expect(result.get()).toHaveLength(119);
+    });
+
+    it('stops paginating when the server ignores X-Plex-Container-Start', async () => {
+      const { client, externalLibraryKey } = makeMinimalPlexClient();
+
+      const librarySectionID = Number(externalLibraryKey);
+      const metadata = [makePlexMovieMetadata('1', librarySectionID)];
+
+      // Never returns an empty page, so only the page cap ends the loop.
+      const doGetSpy = vi
+        .spyOn(client, 'doTypeCheckedGet' as never)
+        .mockImplementation(() =>
+          Promise.resolve(
+            Result.success({
+              MediaContainer: { size: 1, Metadata: metadata },
+            }),
+          ),
+        );
+
+      const result = await client.getItemChildren('playlist-8', 'playlist');
+
+      expect(result.isSuccess()).toBe(true);
+      expect(doGetSpy).toHaveBeenCalledTimes(1_000);
+      expect(fakeLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Stopped paginating'),
         expect.anything(),
         expect.anything(),
         expect.anything(),

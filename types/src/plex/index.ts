@@ -1105,6 +1105,29 @@ export const PlexMediaContainerResponseSchema =
 export const PlexMediaNoCollectionPlaylistResponse =
   MakePlexMediaContainerResponseSchema(PlexMediaNoCollectionPlaylist);
 
+/**
+ * A media container whose Metadata entries are left unvalidated, so that
+ * callers can validate each entry individually. Plex containers (playlists in
+ * particular) can hold item types Tunarr does not model, e.g. `clip` or
+ * `photo`. Validating the container as a whole makes one such entry reject the
+ * entire page.
+ */
+export const PlexRawMetadataContainerResponseSchema = z.object({
+  MediaContainer: BaseMediaContainerSchema.extend({
+    Metadata: z.array(z.unknown()).optional(),
+  }),
+});
+
+/**
+ * The subset of fields common to every Plex metadata entry, used to identify an
+ * entry in logs when full validation of it fails.
+ */
+export const PlexMetadataIdentitySchema = z.object({
+  ratingKey: z.string().optional(),
+  type: z.string().optional(),
+  title: z.string().optional(),
+});
+
 export const PlexMovieMediaContainerResponseSchema =
   MakePlexMediaContainerResponseSchema(PlexMovieSchema);
 

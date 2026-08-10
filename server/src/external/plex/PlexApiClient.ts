@@ -40,7 +40,6 @@ import type {
   PlexMediaContainerMetadata,
   PlexMediaContainerResponse,
   PlexMediaNoCollectionOrPlaylist,
-  PlexMediaNoCollectionPlaylist,
   PlexMediaSubtitleStream,
   PlexMediaVideoStream,
   PlexTerminalMedia,
@@ -57,13 +56,16 @@ import {
   PlexLibraryCollectionMediaContainerResponseSchema,
   type PlexMedia,
   PlexMediaContainerResponseSchema,
+  PlexMediaNoCollectionPlaylist,
   PlexMediaNoCollectionPlaylistResponse,
+  PlexMetadataIdentitySchema,
   type PlexMetadataResponse,
   PlexMovieMediaContainerResponseSchema,
   PlexMusicAlbumMediaContainerResponseSchema,
   PlexMusicArtistMediaContainerResponseSchema,
   PlexMusicTrackMediaContainerResponseSchema,
   PlexPlaylistMediaContainerResponseSchema,
+  PlexRawMetadataContainerResponseSchema,
   type PlexResource,
   PlexResourcesResponseSchema,
   PlexTagResultSchema,
@@ -94,7 +96,7 @@ import {
 } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
-import type z from 'zod';
+import z from 'zod/v4';
 import type { PageParams } from '../../db/interfaces/IChannelDB.ts';
 import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
@@ -925,14 +927,20 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       .exhaustive();
 
     const pageSize = 50;
+    // Bounds a server that ignores X-Plex-Container-Start and therefore never
+    // hands back an empty page.
+    const maxPages = 1_000;
     const allItems: ProgramOrFolder[] = [];
     let offset = 0;
+    let page = 0;
+    // Only ever set from totalSize. The container's `size` is the size of the
+    // page, so treating it as the total stops after one page.
     let totalSize: number | undefined;
 
-    do {
+    for (; page < maxPages; page++) {
       const response = await this.doTypeCheckedGet(
         path,
-        PlexMediaNoCollectionPlaylistResponse,
+        PlexRawMetadataContainerResponseSchema,
         {
           params: {
             includeChapters: 1,
@@ -955,34 +963,79 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         },
       );
 
+      // Returning the pages gathered so far would silently truncate the
+      // listing, which callers cannot distinguish from a genuinely shorter
+      // one. Custom show sync overwrites its contents with what it gets back,
+      // so a truncated result destroys programming.
       if (response.isFailure()) {
-        // If we already have some items, return what we have rather than failing entirely
-        if (allItems.length > 0) {
-          this.logger.warn(
-            'Failed to fetch page at offset %d for %s, returning %d items collected so far',
-            offset,
-            path,
-            allItems.length,
-          );
-          break;
-        }
+        this.logger.error(
+          response.error,
+          'Failed to fetch page at offset %d for %s after collecting %d item(s); failing rather than returning a truncated listing',
+          offset,
+          path,
+          allItems.length,
+        );
         return Result.forError(response.error);
       }
 
       const data = response.get();
-      totalSize ??= data.MediaContainer.totalSize ?? data.MediaContainer.size;
+      totalSize ??= data.MediaContainer.totalSize;
 
-      const items = seq.collect(data.MediaContainer.Metadata, (m) =>
-        this.convertPlexResponse(
-          m,
-          m.librarySectionID?.toString() ??
-            data.MediaContainer.librarySectionID?.toString(),
-        ),
+      const metadata = data.MediaContainer.Metadata ?? [];
+      // Terminates the listing when totalSize is absent, and guards against a
+      // totalSize larger than what the server will actually serve.
+      if (metadata.length === 0) {
+        break;
+      }
+
+      allItems.push(
+        ...seq.collect(metadata, (raw) => {
+          const parsed = PlexMediaNoCollectionPlaylist.safeParse(raw);
+          if (!parsed.success) {
+            const identity = PlexMetadataIdentitySchema.safeParse(raw);
+            this.logger.warn(
+              'Dropping unsupported Plex item from %s (ratingKey=%s, type=%s, title=%s). Tunarr cannot model this item type. Issues: %s',
+              path,
+              identity.data?.ratingKey ?? '<unknown>',
+              identity.data?.type ?? '<unknown>',
+              identity.data?.title ?? '<unknown>',
+              z.prettifyError(parsed.error),
+            );
+            return null;
+          }
+
+          const item = parsed.data;
+          return this.convertPlexResponse(
+            item,
+            item.librarySectionID?.toString() ??
+              data.MediaContainer.librarySectionID?.toString(),
+          );
+        }),
       );
 
-      allItems.push(...items);
-      offset += pageSize;
-    } while (offset < (totalSize ?? 0));
+      // Advance by what the server actually returned rather than by what was
+      // requested: a short page means the next item starts before
+      // offset + pageSize, and skipping ahead would drop the difference.
+      // Note this counts raw entries, not converted ones — entries filtered
+      // out above (unmodeled types, unsynced libraries) still occupy a
+      // position in the server's listing.
+      offset += metadata.length;
+
+      // When the server reports a total we page exactly and skip the extra
+      // request that empty-page detection would otherwise cost.
+      if (totalSize !== undefined && offset >= totalSize) {
+        break;
+      }
+    }
+
+    if (page === maxPages) {
+      this.logger.error(
+        'Stopped paginating %s after %d pages (%d items collected). The server may be ignoring X-Plex-Container-Start.',
+        path,
+        maxPages,
+        allItems.length,
+      );
+    }
 
     return Result.success(allItems);
   }
