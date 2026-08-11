@@ -301,7 +301,7 @@ export async function scheduleTimeSlots(
       maybeAddPrePostFiller(
         currSlot,
         nextPadded,
-        slotDuration - nextPadded.totalDuration,
+        slotDuration - totalAddedDuration - nextPadded.totalDuration,
         +timeCursor + totalAddedDuration,
       );
       totalAddedDuration += nextPadded.totalDuration;

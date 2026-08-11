@@ -22,6 +22,7 @@ import type { OfflineFillerConfig } from '@tunarr/types/schemas';
 import { FillerTypes } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import {
+  first,
   forEach,
   isEmpty,
   isNil,
@@ -32,6 +33,7 @@ import {
   reject,
   sortBy,
   sumBy,
+  toPairs,
   uniq,
   uniqBy,
   values,
@@ -740,57 +742,32 @@ export function addHeadAndTailFillerToSlot(
   contentPrograms: NonEmptyArray<PaddedProgram>,
   timeCursor: number,
 ): number {
-  if (remainingTime <= 0) {
+  const lastProgram = contentPrograms[contentPrograms.length - 1];
+  if (lastProgram === undefined) {
     return remainingTime;
   }
 
-  if (remainingTime > 0 && slot.hasFillerOfType(FillerTypes.head)) {
-    const filler = retrySimple(
-      () =>
-        slot.getFillerOfType(FillerTypes.head, {
-          slotDuration: remainingTime,
-          timeCursor,
-          cooldownMs: 0,
-        }),
-      3,
-    );
+  // Head and tail filler draw from the same budget as pre/post filler: the
+  // slot's unallocated time _plus_ the adjacent program's padding. That
+  // padding is flex time, so reclaiming it for a bumper keeps the slot's
+  // total duration unchanged. Without it, a slot whose programs are all
+  // padded out to the schedule's pad boundary looks "full" and never gets
+  // head or tail filler at all.
+  remainingTime = maybeAddFillerOfType(
+    FillerTypes.head,
+    remainingTime,
+    slot,
+    contentPrograms[0],
+    timeCursor,
+  );
 
-    if (filler) {
-      remainingTime -= filler.duration;
-      contentPrograms[0].filler.head = filler;
-    }
-  }
-
-  // Save the last item's pad.
-  const lastItemPad = contentPrograms[contentPrograms.length - 1]!.padMs;
-  // Temporarily add it to the remaining time
-  // remainingTime += lastItemPad;
-  if (
-    remainingTime + lastItemPad > 0 &&
-    slot.hasFillerOfType(FillerTypes.tail)
-  ) {
-    const filler = retrySimple(
-      () =>
-        slot.getFillerOfType(FillerTypes.tail, {
-          slotDuration: remainingTime + lastItemPad,
-          timeCursor,
-          cooldownMs: 0,
-        }),
-      3,
-    );
-
-    if (filler) {
-      // Play the tail filler right after
-      contentPrograms[contentPrograms.length - 1]!.padMs = 0;
-      remainingTime = remainingTime + lastItemPad - filler.duration;
-      contentPrograms[contentPrograms.length - 1]!.filler.tail = filler;
-    }
-  } else {
-    // Remove the extra pad if necessary
-    remainingTime -= lastItemPad;
-  }
-
-  return remainingTime;
+  return maybeAddFillerOfType(
+    FillerTypes.tail,
+    remainingTime,
+    slot,
+    lastProgram,
+    timeCursor,
+  );
 }
 
 export function maybeAddPrePostFiller(
@@ -816,7 +793,7 @@ export function maybeAddPrePostFiller(
 }
 
 function maybeAddFillerOfType(
-  fillerType: 'pre' | 'post',
+  fillerType: 'head' | 'pre' | 'post' | 'tail',
   remainingTime: number,
   slot: SlotImpl<BaseSlot>,
   program: PaddedProgram,
@@ -997,9 +974,11 @@ function buildEagerBreaks(
       startOffsetMs: baseOffset + segmentStart,
     },
     paddedProgram.padMs,
-    { ...paddedProgram.filler },
+    {},
   );
   result.push(lastSegment);
+
+  distributeFillerAcrossSegments(paddedProgram.filler, result);
 
   return result;
 }
@@ -1054,11 +1033,41 @@ function buildLazyBreaks(
       startOffsetMs: baseOffset + segmentStart,
     },
     paddedProgram.padMs,
-    { ...paddedProgram.filler },
+    {},
   );
   result.push(lastSegment);
 
+  distributeFillerAcrossSegments(paddedProgram.filler, result);
+
   return result;
+}
+
+/**
+ * Mid-roll breaks split one program into several segments. Filler that brackets
+ * the program has to follow the split: head/pre belong before the first
+ * segment, post/tail after the last. Attaching all of it to the last segment
+ * plays the head bumper after the program instead of before it.
+ */
+function distributeFillerAcrossSegments(
+  filler: Partial<Record<SlotFillerTypes, CondensedChannelProgram>>,
+  segments: PaddedProgram[],
+): void {
+  const firstSegment = first(segments);
+  const lastSegment = last(segments);
+  if (!firstSegment || !lastSegment) {
+    return;
+  }
+
+  for (const [type, program] of toPairs(filler) as [
+    SlotFillerTypes,
+    CondensedChannelProgram,
+  ][]) {
+    const target =
+      type === FillerTypes.head || type === FillerTypes.pre
+        ? firstSegment
+        : lastSegment;
+    target.filler[type] = program;
+  }
 }
 
 function fillDurationWithFiller(

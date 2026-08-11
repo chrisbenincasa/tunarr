@@ -451,7 +451,7 @@ export class RandomSlotScheduler {
       maybeAddPrePostFiller(
         currSlot,
         nextPadded,
-        slotDuration - nextPadded.totalDuration,
+        slotDuration - totalDuration - nextPadded.totalDuration,
         +context.timeCursor + totalDuration,
       );
       totalDuration += nextPadded.totalDuration;
