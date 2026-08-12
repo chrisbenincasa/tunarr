@@ -19,3 +19,5 @@
     * **Tail**: Filler that plays at the _end_ of each slot
     * **Mid**: Filler that plays during [mid-roll breaks](mid-roll-breaks.md) inserted _within_ a program
     * **Fallback**: Filler that is played during flex time in the slot
+
+    Filler is placed *inside* the slot rather than added on top of it: head, pre, post, and tail filler draw from the slot's unused time, including any *padding* applied to the programs around them. A slot only omits filler when it has genuinely no time left to give.

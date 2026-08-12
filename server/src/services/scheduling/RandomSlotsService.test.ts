@@ -181,3 +181,113 @@ describe('randomSlotsService', () => {
     expect(seqA).not.toEqual(seqB);
   });
 });
+
+describe('random slot filler budgeting', () => {
+  const oneMin = 60 * 1000;
+  const slotMs = 30 * oneMin;
+  const midnight = dayjs('2024-01-01T00:00:00.000Z');
+
+  const makeEpisodes = (
+    showId: string,
+    count: number,
+    durationMs: number,
+  ): SlotSchedulerProgram[] =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `${showId}-ep${i + 1}`,
+        title: `${showId} Episode ${i + 1}`,
+        type: 'episode',
+        duration: durationMs,
+        episode: i + 1,
+        tvShowUuid: showId,
+        show: { uuid: showId },
+      }),
+      parentFillerLists: [],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  const makeFillers = (
+    fillerListId: string,
+    count: number,
+    durationMs: number,
+  ): SlotSchedulerProgram[] =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `bumper-${i}`,
+        title: `Bumper ${i}`,
+        type: 'movie',
+        duration: durationMs,
+      }),
+      parentFillerLists: [fillerListId],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  test('post-roll filler on a later program cannot overflow a fixed duration slot', () => {
+    const fillerListId = randomUUID();
+
+    const scheduler = new RandomSlotScheduler({
+      type: 'random',
+      flexPreference: 'end',
+      maxDays: 1,
+      padMs: oneMin,
+      padStyle: 'episode',
+      randomDistribution: 'uniform',
+      lockWeights: false,
+      slots: [
+        {
+          weight: 100,
+          cooldownMs: 0,
+          durationSpec: { type: 'fixed', durationMs: slotMs },
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+          filler: [
+            {
+              types: ['post'],
+              fillerListId,
+              fillerOrder: 'shuffle_prefer_short',
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = scheduler.generateSchedule(
+      [
+        ...makeEpisodes('show1', 12, 5 * oneMin),
+        // Only fits at the top of a slot; budgeting it against the whole slot
+        // instead of the remaining time overruns the slot's duration.
+        ...makeFillers(fillerListId, 3, 12 * oneMin),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    // A 30 minute slot holding 5 minute episodes can afford exactly one
+    // 12 minute post-roll: after the first episode and its bumper there are
+    // 13 minutes left, which is not enough for a second one. Budgeting the
+    // bumper against the whole slot rather than the time actually left over
+    // buys a second one and overruns the slot.
+    const shape = result.lineup
+      .slice(0, 6)
+      .map((item) =>
+        item.type === 'content' && 'id' in item
+          ? `content:${item.id}`
+          : `${item.type}:${item.duration / oneMin}min`,
+      );
+
+    expect(shape).toEqual([
+      'content:show1-ep1',
+      'filler:12min',
+      'content:show1-ep2',
+      'content:show1-ep3',
+      'content:show1-ep4',
+      'filler:12min',
+    ]);
+  });
+});
