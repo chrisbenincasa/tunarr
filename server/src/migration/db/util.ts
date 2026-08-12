@@ -98,7 +98,9 @@ export function makeMigrationFromSqlStatements(
       }
     },
     upDrizzle(db) {
+      console.log('HELLOOOOOOO');
       for (const statement of allStatements) {
+        console.log('running statement ' + statement);
         db.run(sql.raw(statement));
       }
     },
