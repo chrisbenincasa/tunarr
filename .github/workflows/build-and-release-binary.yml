@@ -117,7 +117,6 @@ jobs:
             arch: arm64
             runner: macos-15
     runs-on: ${{matrix.os.runner}}
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v6 # Checkout code from repository
@@ -220,8 +219,33 @@ jobs:
       - name: Notarize
         shell: bash
         run: |
-          xcrun notarytool submit Tunarr.dmg --apple-id "${{ secrets.AC_USERNAME }}" --password "${{ secrets.AC_PASSWORD }}" --team-id XX35C4MZN8 --wait
+          set -euo pipefail
+
+          # `notarytool submit --wait` exits 0 even when the submission comes
+          # back Invalid, so the status has to be inspected explicitly.
+          # Otherwise the job only fails later at `stapler`, with the actual
+          # rejection reason never printed.
+          submission=$(xcrun notarytool submit Tunarr.dmg \
+            --apple-id "${{ secrets.AC_USERNAME }}" \
+            --password "${{ secrets.AC_PASSWORD }}" \
+            --team-id XX35C4MZN8 \
+            --output-format json --wait)
+          echo "$submission"
+
+          submission_id=$(jq -r '.id' <<<"$submission")
+          status=$(jq -r '.status' <<<"$submission")
+
+          if [[ "$status" != "Accepted" ]]; then
+            echo "::error::Notarization failed with status '$status'. Notary log follows:"
+            xcrun notarytool log "$submission_id" \
+              --apple-id "${{ secrets.AC_USERNAME }}" \
+              --password "${{ secrets.AC_PASSWORD }}" \
+              --team-id XX35C4MZN8 || true
+            exit 1
+          fi
+
           xcrun stapler staple Tunarr.dmg
+          xcrun stapler validate Tunarr.dmg
 
       - name: Finalize
         shell: bash
