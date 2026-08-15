@@ -6,6 +6,7 @@ import { SubtitlePreference } from './subtitleSchema.js';
 import { ChannelIconSchema, ContentProgramTypeSchema } from './utilSchemas.js';
 
 export const WatermarkSchema = z.object({
+  source: z.enum(['image', 'program-title']).optional().catch(undefined),
   url: z.string().optional(),
   enabled: z.boolean(),
   position: z

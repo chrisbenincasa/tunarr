@@ -1,6 +1,10 @@
 import { ColorFormat } from '@/ffmpeg/builder/format/ColorFormat.js';
 import { TONEMAP_ENABLED, TUNARR_ENV_VARS } from '@/util/env.js';
-import { FileStreamSource } from '../../../../stream/types.ts';
+import {
+  FileStreamSource,
+  FilterStreamSource,
+  type StreamSource,
+} from '../../../../stream/types.ts';
 import {
   EmptyFfmpegCapabilities,
   FfmpegCapabilities,
@@ -38,6 +42,7 @@ import { LavfiVideoInputSource } from '../../input/LavfiVideoInputSource.ts';
 import { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
 import { VideoInputSource } from '../../input/VideoInputSource.ts';
 import { WatermarkInputSource } from '../../input/WatermarkInputSource.ts';
+import { LavfiInputOption } from '../../options/input/LavfiInputOption.ts';
 import {
   AudioStream,
   EmbeddedSubtitleStream,
@@ -538,7 +543,8 @@ describe('VaapiPipelineBuilder pad', () => {
     binaryCapabilities?: FfmpegCapabilities;
     disableHardwareDecoding?: boolean;
     disableHardwareEncoding?: boolean;
-    watermarkStream?: StillImageStream;
+    watermarkSource?: StreamSource;
+    watermarkStream?: VideoStream;
     watermarkDuration?: number;
     watermarkAnimated?: boolean;
   }) {
@@ -570,7 +576,7 @@ describe('VaapiPipelineBuilder pad', () => {
     let wm: WatermarkInputSource | null = null;
     if (opts.watermarkStream) {
       wm = new WatermarkInputSource(
-        new FileStreamSource('/path/to/watermark.png'),
+        opts.watermarkSource ?? new FileStreamSource('/path/to/watermark.png'),
         opts.watermarkStream,
         {
           duration: opts.watermarkDuration ?? 0,
@@ -583,6 +589,9 @@ describe('VaapiPipelineBuilder pad', () => {
           width: 100,
         },
       );
+      if (opts.watermarkSource?.type === 'filter') {
+        wm.addOption(new LavfiInputOption());
+      }
     }
 
     const builder = new VaapiPipelineBuilder(
@@ -821,6 +830,32 @@ describe('VaapiPipelineBuilder pad', () => {
       'overlay_vaapi=x=0:y=0:eof_action=pass:repeatlast=0',
     );
     expect(args).not.toContain('hwdownload');
+  });
+
+  test('keeps generated program-title inputs on the VAAPI overlay path', () => {
+    const pipeline = buildWithPad({
+      videoStream: create169FhdVideoStream(),
+      watermarkSource: new FilterStreamSource(
+        'color=c=black@0.0:s=1600x96,format=rgba',
+      ),
+      watermarkStream: VideoStream.create({
+        codec: 'generated',
+        colorFormat: ColorFormat.unknown,
+        displayAspectRatio: '50:3',
+        frameSize: FrameSize.withDimensions(1600, 96),
+        index: 0,
+        inputKind: 'filter',
+        pixelFormat: new PixelFormatRgba(),
+        providedSampleAspectRatio: '1:1',
+      }),
+      watermarkDuration: 5,
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).toContain('-f lavfi');
+    expect(args).toContain('overlay_vaapi');
+    expect(args).not.toContain('hwdownload');
+    expect(args).not.toContain('-loop 1');
   });
 
   test('falls back to software overlay when overlay_vaapi is unavailable', () => {

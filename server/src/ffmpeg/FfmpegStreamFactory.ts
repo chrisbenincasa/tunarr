@@ -40,6 +40,7 @@ import { loggingDef } from '../util/logging/loggingDef.ts';
 import type { FfmpegPlaybackParams } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
+import { createProgramTitleOverlayInput } from './ProgramTitleOverlay.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
 import { StreamSelector } from './StreamSelector.ts';
 import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
@@ -591,18 +592,34 @@ export class FfmpegStreamFactory {
 
     let watermarkSource: Nullable<WatermarkInputSource> = null;
     if (watermark?.enabled) {
-      const watermarkUrl = watermark.url ?? makeLocalUrl('/images/tunarr.png');
-      watermarkSource = new WatermarkInputSource(
-        new HttpStreamSource(watermarkUrl),
-        StillImageStream.create({
-          frameSize: FrameSize.fromResolution({
-            widthPx: watermark.width,
-            heightPx: -1,
+      if (
+        watermark.source === 'program-title' &&
+        lineupItem.type === 'program'
+      ) {
+        try {
+          watermarkSource =
+            (await createProgramTitleOverlayInput(
+              lineupItem.program,
+              watermark,
+            )) ?? null;
+        } catch (e) {
+          this.logger.warn(e, 'Unable to create program title overlay');
+        }
+      } else if (watermark.source !== 'program-title') {
+        const watermarkUrl =
+          watermark.url ?? makeLocalUrl('/images/tunarr.png');
+        watermarkSource = new WatermarkInputSource(
+          new HttpStreamSource(watermarkUrl),
+          StillImageStream.create({
+            frameSize: FrameSize.fromResolution({
+              widthPx: watermark.width,
+              heightPx: -1,
+            }),
+            index: 0,
           }),
-          index: 0,
-        }),
-        { ...watermark, url: watermarkUrl },
-      );
+          { ...watermark, url: watermarkUrl },
+        );
+      }
     }
 
     return { audioInput, subtitleSource, subtitleRendition, watermarkSource };

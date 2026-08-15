@@ -6,6 +6,15 @@ Channels can have watermarks to aid in recreating a classic TV experience.
 
 There are many ways to customize watermarks for a channel. Here are some details on specific options:
 
+## Program title overlays
+
+Set the overlay source to **Current program title** to show program metadata
+instead of an image. Episodes are formatted as
+`Show name · S01E02 · Episode title`; movies and other videos use their title.
+The overlay is rebuilt for each program, so a total duration of 5 seconds shows
+the title for the first five seconds after every cutover. Program title overlays
+require a transcoding stream mode.
+
 ### Watermark Period
 
 This value can be used to fade a channel's watermark in/out every N minutes.

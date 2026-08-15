@@ -746,7 +746,8 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     return every(
       this.watermarkInputSource.streams,
-      (stream) => stream.inputKind === 'stillimage',
+      (stream) =>
+        stream.inputKind === 'stillimage' || stream.inputKind === 'filter',
     );
   }
 }

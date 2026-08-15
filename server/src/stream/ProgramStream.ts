@@ -358,6 +358,15 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
 
     if (channel.watermark?.enabled) {
       const watermark = { ...channel.watermark };
+      if (watermark.source === 'program-title') {
+        return {
+          ...watermark,
+          animated: false,
+          enabled: true,
+          url: undefined,
+        };
+      }
+
       let icon: string;
       // Capture this so it can't change asynchronously.
       const watermarkUrl = watermark.url;

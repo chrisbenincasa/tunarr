@@ -56,6 +56,7 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
     },
     watermark: {
       ...(channel.watermark ?? {}),
+      source: channel.watermark?.source ?? 'image',
       enabled: channel.watermark?.enabled ?? false,
       url: channel.watermark?.url ?? '',
       width: channel.watermark?.width ?? 10,

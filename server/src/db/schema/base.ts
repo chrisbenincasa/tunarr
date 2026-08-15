@@ -78,6 +78,7 @@ export type ChannelTranscodingSettings = z.infer<
 >;
 
 export const ChannelWatermarkSchema = z.object({
+  source: z.enum(['image', 'program-title']).optional().catch(undefined),
   url: z.string().optional().catch(undefined),
   enabled: z.boolean().catch(false),
   position: z
