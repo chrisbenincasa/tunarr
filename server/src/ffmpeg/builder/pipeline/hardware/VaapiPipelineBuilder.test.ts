@@ -539,6 +539,8 @@ describe('VaapiPipelineBuilder pad', () => {
     disableHardwareDecoding?: boolean;
     disableHardwareEncoding?: boolean;
     watermarkStream?: StillImageStream;
+    watermarkDuration?: number;
+    watermarkAnimated?: boolean;
   }) {
     const capabilities = new VaapiHardwareCapabilities([
       new VaapiProfileEntrypoint(
@@ -556,7 +558,7 @@ describe('VaapiPipelineBuilder pad', () => {
       new FfmpegCapabilities(
         new Set(),
         new Map(),
-        new Set([KnownFfmpegFilters.PadVaapi]),
+        new Set([KnownFfmpegFilters.PadVaapi, KnownFfmpegFilters.OverlayVaapi]),
         new Set(),
       );
 
@@ -571,8 +573,9 @@ describe('VaapiPipelineBuilder pad', () => {
         new FileStreamSource('/path/to/watermark.png'),
         opts.watermarkStream,
         {
-          duration: 0,
+          duration: opts.watermarkDuration ?? 0,
           enabled: true,
+          animated: opts.watermarkAnimated ?? false,
           horizontalMargin: 0,
           opacity: 1,
           position: 'top-left',
@@ -773,7 +776,7 @@ describe('VaapiPipelineBuilder pad', () => {
     expect(args).not.toContain('pad=');
   });
 
-  test('hardware download after pad_vaapi with watermark', () => {
+  test('keeps frames on hardware for a VAAPI watermark overlay', () => {
     const pipeline = buildWithPad({
       videoStream: VideoStream.create({
         index: 0,
@@ -794,16 +797,68 @@ describe('VaapiPipelineBuilder pad', () => {
     const args = pipeline.getCommandArgs().join(' ');
     // pad_vaapi must be present
     expect(args).toContain('pad_vaapi');
-    // hwdownload must appear after pad_vaapi (before the software overlay)
-    expect(args).toContain('hwdownload');
+    expect(args).toContain('overlay_vaapi=x=0:y=0');
+    expect(args).toContain('-loop 1');
+    expect(args).not.toContain('hwdownload');
     const padIdx = args.indexOf('pad_vaapi');
-    const dlIdx = args.indexOf('hwdownload');
-    expect(dlIdx).toBeGreaterThan(padIdx);
-    // any second hwupload (to re-enter hw for encoding) must come AFTER hwdownload
-    const secondHwuploadIdx = args.indexOf('hwupload', dlIdx);
-    if (secondHwuploadIdx !== -1) {
-      expect(secondHwuploadIdx).toBeGreaterThan(dlIdx);
-    }
+    const overlayIdx = args.indexOf('overlay_vaapi');
+    expect(overlayIdx).toBeGreaterThan(padIdx);
+  });
+
+  test('ends a finite-duration VAAPI watermark without downloading video frames', () => {
+    const pipeline = buildWithPad({
+      videoStream: create169FhdVideoStream(),
+      watermarkStream: StillImageStream.create({
+        frameSize: FrameSize.withDimensions(100, 100),
+        index: 0,
+      }),
+      watermarkDuration: 5,
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).toContain('trim=duration=5,setpts=PTS-STARTPTS');
+    expect(args).toContain(
+      'overlay_vaapi=x=0:y=0:eof_action=pass:repeatlast=0',
+    );
+    expect(args).not.toContain('hwdownload');
+  });
+
+  test('falls back to software overlay when overlay_vaapi is unavailable', () => {
+    const pipeline = buildWithPad({
+      videoStream: create43VideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.PadVaapi]),
+        new Set(),
+      ),
+      watermarkStream: StillImageStream.create({
+        frameSize: FrameSize.withDimensions(100, 100),
+        index: 0,
+      }),
+      watermarkDuration: 5,
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).toContain('hwdownload');
+    expect(args).toContain("overlay=x=0:y=0:format=0:enable='between(t,0,5)'");
+    expect(args).not.toContain('overlay_vaapi');
+  });
+
+  test('falls back to software overlay for animated watermarks', () => {
+    const pipeline = buildWithPad({
+      videoStream: create43VideoStream(),
+      watermarkStream: StillImageStream.create({
+        frameSize: FrameSize.withDimensions(100, 100),
+        index: 0,
+      }),
+      watermarkAnimated: true,
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).toContain('hwdownload');
+    expect(args).toContain('overlay=x=0:y=0:format=0');
+    expect(args).not.toContain('overlay_vaapi');
   });
 });
 
