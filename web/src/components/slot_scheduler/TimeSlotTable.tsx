@@ -101,7 +101,7 @@ export const TimeSlotTable = () => {
   const providedDjs = useDayjs();
   const localeData = useMemo(() => providedDjs().localeData(), [providedDjs]);
   const { watch, slotArray, setValue, getValues } = useTimeSlotFormContext();
-  const [currentPeriod, latenessMs] = watch(['period', 'latenessMs']);
+  const [currentPeriod, overflow] = watch(['period', 'overflow']);
   const programOptions = useSlotProgramOptionsContext();
   const startOfPeriod = dayjs().startOf(currentPeriod);
   const slotIds = useMemo(
@@ -156,10 +156,15 @@ export const TimeSlotTable = () => {
         const slotDetails = detailsBySlotId[slotId];
         let programCount = 0;
         if (slotDetails) {
-          const overDuration = filter(
-            slotDetails.programDurations,
-            ({ duration }) => duration > slotDuration + latenessMs,
-          );
+          const effectiveOverflow = slot.overflow ?? overflow;
+          const overDuration =
+            effectiveOverflow.type === 'oneExtra'
+              ? []
+              : filter(
+                  slotDetails.programDurations,
+                  ({ duration }) =>
+                    duration > slotDuration + effectiveOverflow.maxMs,
+                );
 
           if (overDuration.length > 0) {
             warnings.push({
@@ -179,13 +184,7 @@ export const TimeSlotTable = () => {
         } satisfies TimeSlotTableRowType;
       },
     );
-  }, [
-    currentPeriod,
-    detailsBySlotId,
-    latenessMs,
-    selectedDay,
-    slotArray.fields,
-  ]);
+  }, [currentPeriod, detailsBySlotId, overflow, selectedDay, slotArray.fields]);
 
   const columns = useMemo<MRT_ColumnDef<TimeSlotTableRowType>[]>(() => {
     return [

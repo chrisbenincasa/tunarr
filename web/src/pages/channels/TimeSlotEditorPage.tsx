@@ -2,11 +2,16 @@ import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
 import ChannelLineupList from '@/components/channel_config/ChannelLineupList.tsx';
 import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormProvider.tsx';
 import { TimeSlotTable } from '@/components/slot_scheduler/TimeSlotTable.tsx';
-import type { DropdownOption } from '@/helpers/DropdownOption.ts';
 import {
   OneDayMillis,
   OneWeekMillis,
+  dropdownValueToOverflow,
+  flexOptions,
+  latenessOptions,
   lineupItemAppearsInSchedule,
+  overflowOptions,
+  overflowToDropdownValue,
+  padOptions,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { v4 } from 'uuid';
 import type {
@@ -67,7 +72,6 @@ import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationA
 import { SlotProgrammingOptionsProvider } from '../../components/slot_scheduler/SlotProgrammingOptionsProvider.tsx';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
-import { flexOptions, padOptions } from '../../helpers/slotSchedulerUtil.ts';
 import { toggle } from '../../helpers/util.ts';
 import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
 import { useChannelSchedule } from '../../hooks/useChannelSchedule.ts';
@@ -79,30 +83,12 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(dayjsMod);
 
-const latenessOptions: DropdownOption<number>[] = [
-  dayjs.duration(5, 'minutes'),
-  dayjs.duration(10, 'minutes'),
-  dayjs.duration(15, 'minutes'),
-  dayjs.duration(30, 'minutes'),
-  dayjs.duration(1, 'hour'),
-  dayjs.duration(2, 'hours'),
-  dayjs.duration(4, 'hours'),
-  dayjs.duration(8, 'hours'),
-]
-  .map((dur) => ({ value: dur.asMilliseconds(), description: dur.humanize() }))
-  .concat([
-    { value: 0, description: 'Do not allow' },
-    {
-      value: dayjs.duration(1, 'day').asMilliseconds(),
-      description: 'Any amount',
-    },
-  ]);
-
 const defaultTimeSlotSchedule: TimeSlotSchedule = {
   type: 'time',
   flexPreference: 'distribute',
   latenessMs: 0,
   maxDays: 365,
+  overflow: { type: 'duration', maxMs: 0 },
   padMs: 1,
   slots: [],
   period: 'day',
@@ -383,9 +369,44 @@ export default function TimeSlotEditorPage() {
 
                     <FormHelperText>
                       <Trans>
-                        Allows programs to play a bit late if the previous
-                        program took longer than usual. If a program is too
-                        late, Flex is scheduled instead.
+                        If a previous slot ran long, should this slot still
+                        play? Controls how late a slot can start.
+                      </Trans>
+                    </FormHelperText>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ sm: 16, md: 5 }}>
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel>
+                      <Trans>Max Overflow</Trans>
+                    </InputLabel>
+                    <Controller
+                      control={control}
+                      name="overflow"
+                      render={({ field }) => (
+                        <Select
+                          label={t`Max Overflow`}
+                          value={overflowToDropdownValue(field.value)}
+                          onChange={(e) =>
+                            field.onChange(
+                              dropdownValueToOverflow(e.target.value),
+                            )
+                          }
+                        >
+                          {overflowOptions.map((opt) => (
+                            <MenuItem key={opt.value} value={opt.value}>
+                              {opt.description}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+
+                    <FormHelperText>
+                      <Trans>
+                        How far past its boundary can a slot's content extend?
+                        'One extra item' allows exactly one more program that
+                        crosses the boundary.
                       </Trans>
                     </FormHelperText>
                   </FormControl>
