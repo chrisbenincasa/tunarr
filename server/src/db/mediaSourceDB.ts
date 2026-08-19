@@ -260,6 +260,10 @@ export class MediaSourceDB {
           uri: trimEnd(updateReq.uri, '/'),
           accessToken: updateReq.accessToken,
           sendGuideUpdates: booleanToNumber(sendGuideUpdates),
+          sendPlayStatusUpdates:
+            updateReq.type === 'plex' || updateReq.type === 'jellyfin'
+              ? booleanToNumber(updateReq.sendPlayStatusUpdates ?? false)
+              : 0,
           updatedAt: +dayjs(),
           // This allows clearing the values
           userId: updateReq.userId,

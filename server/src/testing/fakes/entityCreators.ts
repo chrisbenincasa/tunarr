@@ -8,12 +8,14 @@ import type { MinimalProgramExternalId } from '../../db/schema/ProgramExternalId
 import type { MediaSourceName } from '../../db/schema/base.js';
 import { type MediaSourceId } from '../../db/schema/base.js';
 import type {
+  ProgramGroupingOrmWithRelations,
   ProgramWithExternalIds,
   ProgramWithRelationsOrm,
 } from '../../db/schema/derivedTypes.js';
 
 export function createChannel(overrides?: Partial<Channel>): Channel {
   return {
+    number: 1,
     uuid: faker.string.uuid(),
     duration: faker.number.int({ min: 0 }),
     startTime: faker.date.past().getTime(),
@@ -88,4 +90,24 @@ export function createFakeProgramOrm(
     summary: faker.lorem.sentences(),
     ...(overrides ?? {}),
   } satisfies ProgramWithRelationsOrm;
+}
+
+export function createFakeShow(
+  overrides?: Partial<ProgramGroupingOrmWithRelations>,
+): ProgramGroupingOrmWithRelations {
+  const uuid = faker.string.uuid();
+  return {
+    uuid: uuid,
+    type: 'show',
+    icon: faker.image.url(),
+    index: 0,
+    createdAt: faker.date.past().getMilliseconds(),
+    updatedAt: null,
+    canonicalId: null,
+    plot: faker.lorem.sentences(),
+    summary: faker.lorem.sentences(),
+    externalKey: faker.string.alphanumeric(),
+    mediaSourceId: tag<MediaSourceId>(faker.string.uuid()),
+    ...(overrides ?? {}),
+  } satisfies ProgramGroupingOrmWithRelations;
 }

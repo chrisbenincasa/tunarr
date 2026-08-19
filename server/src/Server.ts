@@ -40,12 +40,13 @@ import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
+import { createTunarrBasicAuthHook } from './util/basicAuth.js';
 import { defaultHlsOptions } from './ffmpeg/builder/constants.ts';
 import { type ServerOptions, serverOptions } from './globals.js';
 import { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { Result } from './types/result.ts';
-import { getBooleanEnvVar, TUNARR_ENV_VARS } from './util/env.ts';
+import { getBooleanEnvVar, getEnvVar, TUNARR_ENV_VARS } from './util/env.ts';
 import { filename, isDev, run, timeoutPromise } from './util/index.js';
 import { InjectLogger } from './util/inject.js';
 import { type Logger } from './util/logging/LoggerFactory.js';
@@ -86,6 +87,21 @@ export class Server {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       .setSerializerCompiler(serializerCompiler)
       .withTypeProvider<ZodTypeProvider>();
+
+    const basicAuthUser = getEnvVar(TUNARR_ENV_VARS.BASIC_AUTH_USER_ENV_VAR);
+    const basicAuthPassword = getEnvVar(
+      TUNARR_ENV_VARS.BASIC_AUTH_PASSWORD_ENV_VAR,
+    );
+
+    if (basicAuthUser && basicAuthPassword) {
+      this.app.addHook(
+        'onRequest',
+        createTunarrBasicAuthHook({
+          username: basicAuthUser,
+          password: basicAuthPassword,
+        }),
+      );
+    }
 
     if (serverOptions().printRoutes) {
       await this.app.register(
@@ -287,6 +303,7 @@ export class Server {
           if (!route.config) {
             route.config = {};
           }
+          route.config.authRequired = false;
           route.config.swaggerTransform = ({ schema, url }) => {
             const transformedSchema: FastifySchema = isUndefined(schema)
               ? {}
@@ -340,6 +357,9 @@ export class Server {
             schema: {
               hide: true,
               params: z.object({ hash: z.string() }),
+            },
+            config: {
+              authRequired: false,
             },
             // Workaround for https://github.com/fastify/fastify/issues/4859
             // eslint-disable-next-line @typescript-eslint/no-misused-promises

@@ -22,6 +22,8 @@ import { bindAutoFactory } from '../util/inject.ts';
 import { ProgramStream } from './ProgramStream.ts';
 import { ProgramStreamDetailsFetcher } from './ProgramStreamDetailsFetcher.ts';
 import type { ProgramStreamFactory } from './ProgramStreamFactory.ts';
+import { JellyfinPlayStatusUpdaterPlugin } from './plugins/JellyfinPlayStatusUpdaterPlugin.ts';
+import { PlexPlayStatusUpdaterPlugin } from './plugins/PlexPlayStatusUpdaterPlugin.ts';
 
 const configure = ({ bind }: ContainerModuleLoadOptions) => {
   bind(SessionManager).toSelf().inSingletonScope();
@@ -85,6 +87,9 @@ const configure = ({ bind }: ContainerModuleLoadOptions) => {
   });
 
   bind(KEYS.FillerPicker).to(FillerPickerV2).inSingletonScope();
+
+  bind(KEYS.ProgramStreamPlugin).to(PlexPlayStatusUpdaterPlugin);
+  bind(KEYS.ProgramStreamPlugin).to(JellyfinPlayStatusUpdaterPlugin);
 };
 
 class StreamModule extends ContainerModule {

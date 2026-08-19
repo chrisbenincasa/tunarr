@@ -615,7 +615,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       episodeDirent.name,
     );
 
-    const mediaItem = (await this.getMediaItem(fullEpisodePath)).getOrThrow();
+    const { mediaItem } = (await this.getMediaItem(fullEpisodePath)).getOrThrow();
 
     if (isNil(mediaItem.duration)) {
       throw new Error(`Could not derive duration for item: ${fullEpisodePath}`);

@@ -1,8 +1,8 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
 import { isNonEmptyString, isValidUrlWithError, toggle } from '@/helpers/util';
+import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
-import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import {
   CloudDoneOutlined,
   CloudOff,
@@ -61,6 +61,7 @@ const emptyDefaults: PlexServerSettingsForm = {
   name: '',
   accessToken: '',
   sendGuideUpdates: false,
+  sendPlayStatusUpdates: false,
   index: 0,
   type: 'plex',
   userId: '',
@@ -90,7 +91,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
     control,
     watch,
     reset,
-    formState: { isDirty, isValid, defaultValues },
+    formState: { isDirty, isValid, defaultValues, dirtyFields },
     handleSubmit,
   } = form;
 
@@ -133,7 +134,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
 
   const [serverStatusDetails, updateServerStatusDetails] = useDebounceValue(
     {
-      id: server?.id && !isDirty ? server.id : undefined,
+      id: server?.id && !dirtyFields.accessToken ? server.id : undefined,
       accessToken: defaultValues!.accessToken!,
       uri: defaultValues!.uri!,
     },
@@ -236,7 +237,9 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                       !serverStatus.healthy &&
                       isNonEmptyString(field.value) ? (
                       <>
-                        <span><Trans>Server is unreachable</Trans></span>
+                        <span>
+                          <Trans>Server is unreachable</Trans>
+                        </span>
                         <br />
                       </>
                     ) : null
@@ -262,7 +265,9 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
               }}
               render={({ field, formState: { errors } }) => (
                 <FormControl sx={{ m: 1 }} fullWidth variant="outlined">
-                  <InputLabel htmlFor="access-token"><Trans>Access Token</Trans> </InputLabel>
+                  <InputLabel htmlFor="access-token">
+                    <Trans>Access Token</Trans>{' '}
+                  </InputLabel>
                   <OutlinedInput
                     id="access-token"
                     type={showAccessToken ? 'text' : 'password'}
@@ -289,13 +294,16 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                       </>
                     )}
                     <span>
-                      <Trans>For more details on manually retrieving a Plex token, see{' '}
-                      <Link
-                        href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
-                        target="_blank"
-                      >
-                        here
-                      </Link></Trans>
+                      <Trans>
+                        For more details on manually retrieving a Plex token,
+                        see{' '}
+                        <Link
+                          href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
+                          target="_blank"
+                        >
+                          here
+                        </Link>
+                      </Trans>
                     </span>
                   </FormHelperText>
                 </FormControl>
@@ -329,7 +337,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
               </FormProvider>
             </Box>
             <Divider />
-            <Box sx={{ display: 'flex' }}>
+            <Stack direction={'row'}>
               <FormControl sx={{ flexGrow: 0.5 }}>
                 <FormControlLabel
                   control={
@@ -343,8 +351,34 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                   }
                   label={t`Auto-Update Guide`}
                 />
+                <FormHelperText>
+                  <Trans>
+                    Tunarr will attempt to get Plex to pull Tunarr's updated
+                    XMLTV upon regeneration
+                  </Trans>
+                </FormHelperText>
               </FormControl>
-            </Box>
+              <FormControl sx={{ flexGrow: 0.5 }}>
+                <FormControlLabel
+                  control={
+                    <Controller
+                      control={control}
+                      name="sendPlayStatusUpdates"
+                      render={({ field }) => (
+                        <Checkbox {...field} checked={field.value} />
+                      )}
+                    />
+                  }
+                  label={t`Update Play Status`}
+                />
+                <FormHelperText>
+                  <Trans>
+                    Tunarr will update Plex's "now playing" state while channels
+                    are active.
+                  </Trans>
+                </FormHelperText>
+              </FormControl>
+            </Stack>
           </Stack>
         </Box>
       </DialogContent>

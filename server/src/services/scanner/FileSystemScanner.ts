@@ -65,7 +65,7 @@ export abstract class FileSystemScanner {
   protected state: RunState = 'starting';
   private mediaSourceId: Maybe<string>;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     protected ffprobeStreamDetails: FfprobeStreamDetails,
@@ -145,17 +145,23 @@ export abstract class FileSystemScanner {
     );
   }
 
-  protected async getMediaItem(filePath: string): Promise<Result<MediaItem>> {
+  protected async getMediaItem(
+    filePath: string,
+  ): Promise<
+    Result<{ mediaItem: MediaItem; formatTags?: Record<string, string> }>
+  > {
     try {
-      const streamDetails = await this.ffprobeStreamDetails.getStream({
+      const streamDetailsResult = await this.ffprobeStreamDetails.getStream({
         path: filePath,
       });
 
-      if (streamDetails.isFailure()) {
-        return streamDetails.recast();
+      if (streamDetailsResult.isFailure()) {
+        return streamDetailsResult.recast();
       }
 
-      const videoStreams = streamDetails.get().streamDetails.videoDetails;
+      const streamDetails = streamDetailsResult.get();
+
+      const videoStreams = streamDetails.streamDetails.videoDetails;
       const streams: MediaStream[] = [];
       if (videoStreams) {
         for (const probeVideoStream of videoStreams) {
@@ -179,8 +185,8 @@ export abstract class FileSystemScanner {
         }
       }
 
-      for (const audioStream of streamDetails.get().streamDetails
-        .audioDetails ?? []) {
+      for (const audioStream of streamDetails.streamDetails.audioDetails ??
+        []) {
         const stream: MediaStream = {
           ...audioStream,
           // uuid: v4(),
@@ -200,7 +206,7 @@ export abstract class FileSystemScanner {
         streams.push(stream);
       }
 
-      for (const subtitleStream of streamDetails.get().streamDetails
+      for (const subtitleStream of streamDetails.streamDetails
         .subtitleDetails ?? []) {
         const stream: MediaStream = {
           ...subtitleStream,
@@ -227,13 +233,13 @@ export abstract class FileSystemScanner {
 
       const firstVideoStream = head(
         orderBy(
-          streamDetails.get().streamDetails.videoDetails,
+          streamDetails.streamDetails.videoDetails,
           (v, i) => (v.streamIndex ?? 0) + i,
           'asc',
         ),
       );
 
-      const chapters = streamDetails.get().streamDetails.chapters;
+      const chapters = streamDetails.streamDetails.chapters;
 
       const mediaItem: MediaItem = {
         // createdAt: statResult.ctime,
@@ -241,7 +247,7 @@ export abstract class FileSystemScanner {
         chapters,
         displayAspectRatio: firstVideoStream?.displayAspectRatio,
         sampleAspectRatio: firstVideoStream?.sampleAspectRatio,
-        duration: +streamDetails.get().streamDetails.duration,
+        duration: +streamDetails.streamDetails.duration,
         frameRate: firstVideoStream?.framerate,
         resolution:
           isDefined(firstVideoStream?.height) &&
@@ -261,7 +267,10 @@ export abstract class FileSystemScanner {
         ],
       };
 
-      return Result.success(mediaItem);
+      return Result.success({
+        mediaItem,
+        formatTags: streamDetails.streamDetails.formatTags,
+      });
     } catch (e) {
       return Result.forError(caughtErrorToError(e));
     }

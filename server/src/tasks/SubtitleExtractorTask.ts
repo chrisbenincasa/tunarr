@@ -332,7 +332,10 @@ export class SubtitleExtractorTask extends Task2<
           createReadStream(tmpPath),
           new Transform({
             transform(chunk: Buffer, _encoding, cb) {
-              cb(null, chunk.filter((byte) => byte !== 0x00));
+              cb(
+                null,
+                chunk.filter((byte) => byte !== 0x00),
+              );
             },
           }),
           createWriteStream(outPath),

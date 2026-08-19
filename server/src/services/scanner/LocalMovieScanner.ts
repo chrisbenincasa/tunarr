@@ -307,6 +307,8 @@ export class LocalMovieScanner extends FileSystemScanner {
         return mediaItemResult.mapPure(() => void 0);
       }
 
+      const { mediaItem } = mediaItemResult.get();
+
       const metadataResult = await this.loadMovieMetadata(fullVideoFilePath);
       if (metadataResult.isFailure()) {
         return metadataResult.recast();
@@ -339,8 +341,8 @@ export class LocalMovieScanner extends FileSystemScanner {
         ...metadataResult.get(),
         mediaSourceId: context.mediaSource.uuid,
         libraryId: context.library.uuid,
-        duration: mediaItemResult.get().duration,
-        mediaItem: mediaItemResult.get(),
+        duration: mediaItem.duration,
+        mediaItem,
         externalId: fullVideoFilePath,
         canonicalId: '',
         externalSubtitles: subtitlesResult.getOrElse([]),
