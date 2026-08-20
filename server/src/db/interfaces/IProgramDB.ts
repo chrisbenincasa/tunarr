@@ -115,6 +115,18 @@ export interface IProgramDB {
     externalKey: string;
   }): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>>;
 
+  lookupProgramByPlexGuid(
+    plexGuid: string,
+  ): Promise<Maybe<ProgramCanonicalIdLookupResult>>;
+
+  reconcilePlexRatingKeyChange(args: {
+    programUuid: string;
+    mediaSourceId: MediaSourceId;
+    newRatingKey: string;
+    directFilePath?: string | null;
+    externalFilePath?: string | null;
+  }): Promise<void>;
+
   lookupByExternalIds(
     ids:
       | Set<[RemoteSourceType, MediaSourceId, string]>
