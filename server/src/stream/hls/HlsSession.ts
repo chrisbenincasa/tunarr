@@ -26,7 +26,8 @@ import { filter, isEmpty, last, maxBy, sortBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
-import { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
+import { waitForEvent } from '../../types/events.ts';
+import type { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
 import { BaseHlsSession } from './BaseHlsSession.js';
 import { HlsMasterPlaylistMutator } from './HlsMasterPlaylistMutator.js';
@@ -46,6 +47,11 @@ export type HlsSlowerSessionProvider = (
 export interface HlsSessionOptions extends BaseHlsSessionOptions {
   streamMode: 'hls' | 'hls_direct_v2';
 }
+
+type GetMasterPlaylistOptions = {
+  wait?: boolean;
+  maxWaitMs?: number;
+};
 
 /**
  * Initializes an ffmpeg process that concatenates via the /playlist
@@ -80,10 +86,17 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     return this.readPlaylist();
   }
 
-  async getMasterPlaylist(): Promise<Result<string | undefined>> {
+  async getMasterPlaylist({
+    wait = false,
+    maxWaitMs = 30_000,
+  }: GetMasterPlaylistOptions = {}): Promise<Result<string | undefined>> {
     return Result.attemptAsync(async () => {
       if (!(await fileExists(this._masterPlaylistPath))) {
-        return undefined;
+        if (!wait) return;
+        return waitForEvent(this, 'start', maxWaitMs).then(async () => {
+          const result = await this.getMasterPlaylist({ wait: false });
+          return result.getOrThrow();
+        });
       }
       const content = await fs.readFile(this._masterPlaylistPath, 'utf-8');
       const rendition = this.#currentSubtitleRendition;
@@ -152,7 +165,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
         this.logger.trace(
           'No playlist for HLS sessions at %s',
-          this._m3u8PlaylistPath,
+          this._variantPlaylistPath,
         );
         return;
       });
@@ -410,11 +423,11 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   private async readPlaylist() {
-    if (!(await fileExists(this._m3u8PlaylistPath))) {
+    if (!(await fileExists(this._variantPlaylistPath))) {
       return;
     }
 
-    const playlistContents = await fs.readFile(this._m3u8PlaylistPath, {
+    const playlistContents = await fs.readFile(this._variantPlaylistPath, {
       encoding: 'utf-8',
     });
 

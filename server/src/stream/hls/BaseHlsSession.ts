@@ -25,7 +25,7 @@ export abstract class BaseHlsSession<
   // Working directory for m3u8 playlists and fragments
   protected _workingDirectory: string;
   // Absolute path to the stream directory
-  protected _m3u8PlaylistPath: string;
+  protected _variantPlaylistPath: string;
   // Absolute path to the HLS master playlist
   protected _masterPlaylistPath: string;
   // The path to request streaming assets from the server
@@ -53,7 +53,10 @@ export abstract class BaseHlsSession<
       this.baseDirectory,
       `stream_${this.channel.uuid}`,
     );
-    this._m3u8PlaylistPath = path.join(this._workingDirectory, 'stream.m3u8');
+    this._variantPlaylistPath = path.join(
+      this._workingDirectory,
+      'stream.m3u8',
+    );
     this._masterPlaylistPath = path.join(
       this._workingDirectory,
       'playlist.m3u8',
@@ -76,7 +79,7 @@ export abstract class BaseHlsSession<
   }
 
   get streamPath() {
-    return this._m3u8PlaylistPath;
+    return this._variantPlaylistPath;
   }
 
   get serverPath() {
@@ -188,7 +191,7 @@ export abstract class BaseHlsSession<
 
           const playlistExists = some(
             workingDirectoryFiles.get(),
-            (f) => f === basename(this._m3u8PlaylistPath),
+            (f) => f === basename(this._variantPlaylistPath),
           );
 
           const additionalRequired = this.getAdditionalRequiredFiles();
@@ -233,7 +236,7 @@ export abstract class BaseHlsSession<
   }
 
   get m3uPlaylistPath() {
-    return this._m3u8PlaylistPath;
+    return this._variantPlaylistPath;
   }
 
   get masterPlaylistPath() {
