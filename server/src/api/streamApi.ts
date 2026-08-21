@@ -16,7 +16,7 @@ import dayjs from 'dayjs';
 import type { FastifyReply } from 'fastify';
 import { isArray, isNil, isNumber, isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { format } from 'node:util';
 import { match } from 'ts-pattern';
@@ -327,13 +327,19 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       session.onSegmentRequested(req.ip, req.params.file);
 
       if (req.params.file.endsWith('.vtt')) {
-        const filePath = join(session.workingDirectory, req.params.file);
+        const filePath = resolve(session.workingDirectory, req.params.file);
+        if (!filePath.startsWith(session.workingDirectory + sep)) {
+          return res.status(400).send('Invalid file path');
+        }
         const content = await fs.readFile(filePath, 'utf-8');
         return res.type('text/vtt').send(injectTimestampMap(content));
       }
 
       if (req.params.file.endsWith('.m3u8')) {
-        const filePath = join(session.workingDirectory, req.params.file);
+        const filePath = resolve(session.workingDirectory, req.params.file);
+        if (!filePath.startsWith(session.workingDirectory + sep)) {
+          return res.status(400).send('Invalid file path');
+        }
         const content = await fs.readFile(filePath);
         return res.type('application/vnd.apple.mpegurl').send(content);
       }
