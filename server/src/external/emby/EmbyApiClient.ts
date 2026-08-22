@@ -895,13 +895,10 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     let totalCount = Number.MAX_SAFE_INTEGER;
 
     while (page * pageSize < totalCount) {
-      const result = await this.getRawItems(
-        null,
-        libraryId,
-        ['BoxSet'],
-        [],
-        { offset: page * pageSize, limit: pageSize },
-      );
+      const result = await this.getRawItems(null, libraryId, ['BoxSet'], [], {
+        offset: page * pageSize,
+        limit: pageSize,
+      });
 
       if (result.isFailure()) {
         throw result.error;
