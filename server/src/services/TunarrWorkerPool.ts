@@ -30,6 +30,13 @@ const envVarSetting = getNumericEnvVar(WORKER_POOL_SIZE_ENV_VAR);
 
 const numWorkers = envVarSetting ?? Math.min(cpuCount, MAX_WORKERS);
 
+// A worker that dies is respawned, but a worker that cannot start at all —
+// a broken bundle, a bad entry path — would otherwise be respawned in a tight
+// loop forever. Back off, and give up rather than spin.
+const MAX_CONSECUTIVE_RESTARTS = 5;
+const RESTART_BACKOFF_MS = 1_000;
+const MAX_RESTART_BACKOFF_MS = 30_000;
+
 interface PooledWorker {
   worker: Worker;
   ready: boolean;
@@ -123,13 +130,16 @@ type State = 'pending' | 'started' | 'terminating';
 export class TunarrWorkerPool implements IWorkerPool {
   #mu = new Mutex();
   #state: State = 'pending';
-  #pool: PooledWorker[] = Array<PooledWorker>(numWorkers);
+  #pool: (PooledWorker | undefined)[] = Array<PooledWorker | undefined>(
+    numWorkers,
+  ).fill(undefined);
+  #consecutiveRestarts: number[] = Array<number>(numWorkers).fill(0);
   #last = 0;
   #listeners = new Map<string, Future<unknown>>();
   #outstandingByIndex = new Map<number, string[]>();
   #startPromises: Promise<boolean>[] = [];
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(TunarrSubprocessService)
@@ -162,12 +172,9 @@ export class TunarrWorkerPool implements IWorkerPool {
     }
     this.#state = 'terminating';
     this.logger.info('Attempting graceful shutdown of all workers');
-    const shutdownPromises = this.#pool.map(({ worker }) => {
-      if (worker) {
-        return worker.terminate();
-      }
-      return Promise.resolve();
-    });
+    const shutdownPromises = this.#pool.map((pooled) =>
+      pooled ? pooled.worker.terminate() : Promise.resolve(0),
+    );
     return timeoutPromise(
       Promise.all(shutdownPromises).then(() => {}),
       timeout,
@@ -191,8 +198,12 @@ export class TunarrWorkerPool implements IWorkerPool {
     await retry(async () => {
       return this.#mu.runExclusive(() => {
         const idx = this.#last;
-        const { ready, worker } = this.#pool[idx]!;
+        const pooled = this.#pool[idx];
         this.#last = (this.#last + 1) % this.#pool.length;
+        if (pooled === undefined) {
+          throw new Error(`Worker at ${idx} has not been created yet`);
+        }
+        const { ready, worker } = pooled;
         if (ready) {
           this.logger.debug(
             'Schedule task type "%s" to worker index %d [request id = %s]',
@@ -251,15 +262,18 @@ export class TunarrWorkerPool implements IWorkerPool {
           // We should only ever get one of these
           this.logger.debug('Worker %d is ready', idx);
           started = true;
+          this.#consecutiveRestarts[idx] = 0;
+          const pooled = this.#pool[idx];
+          if (pooled) {
+            pooled.ready = true;
+          }
           fut.resolve();
-          this.#pool[idx]!.ready = true;
         })
         .with({ type: P.union('success', 'error') }, (reply) => {
-          performance.mark(reply.requestId);
           this.logger.debug(
             'Request id %s took %d ms',
             reply.requestId,
-            performance.measure(reply.requestId).duration,
+            this.consumeRequestTiming(reply.requestId),
           );
           const fut = this.#listeners.get(reply.requestId);
           if (fut) {
@@ -301,10 +315,8 @@ export class TunarrWorkerPool implements IWorkerPool {
     });
 
     worker.on('exit', (code) => {
-      this.#startPromises
-        // eslint-disable-next-line no-unexpected-multiline
-        [idx]!.then(() => this.setupWorker(idx))
-        .catch(() => this.setupWorker(idx));
+      this.#pool[idx] = undefined;
+      this.scheduleRestart(idx, code);
 
       const outstandingListeners = this.#outstandingByIndex.get(idx) ?? [];
       for (const outstanding of outstandingListeners) {
@@ -318,15 +330,73 @@ export class TunarrWorkerPool implements IWorkerPool {
       if (!started && fut.state === 'pending' && code !== 0) {
         fut.reject(new Error('Worker exited with code ' + code));
       }
-      this.logger.warn(
-        'Worker %d exited (code = %d).%s',
-        idx,
-        code,
-        this.#state === 'started' ? ' Restarting.' : '',
-      );
     });
 
     await fut;
     return true;
+  }
+
+  /**
+   * Respawns a dead worker with exponential backoff, giving up after repeated
+   * immediate failures.
+   *
+   * Without the backoff a worker that cannot start at all — a bad entry path in
+   * a bundled build, say — is respawned as fast as the process can fork,
+   * saturating a core and flooding the log.
+   */
+  private scheduleRestart(idx: number, exitCode: number) {
+    if (this.#state === 'terminating') {
+      this.logger.debug('Worker %d exited during shutdown.', idx);
+      return;
+    }
+
+    const attempts = (this.#consecutiveRestarts[idx] ?? 0) + 1;
+    this.#consecutiveRestarts[idx] = attempts;
+
+    if (attempts > MAX_CONSECUTIVE_RESTARTS) {
+      this.logger.error(
+        'Worker %d exited (code = %d) and failed to start %d times in a row. Giving up on this worker.',
+        idx,
+        exitCode,
+        MAX_CONSECUTIVE_RESTARTS,
+      );
+      return;
+    }
+
+    const delay = Math.min(
+      RESTART_BACKOFF_MS * Math.pow(2, attempts - 1),
+      MAX_RESTART_BACKOFF_MS,
+    );
+
+    this.logger.warn(
+      'Worker %d exited (code = %d). Restarting in %d ms (attempt %d/%d).',
+      idx,
+      exitCode,
+      delay,
+      attempts,
+      MAX_CONSECUTIVE_RESTARTS,
+    );
+
+    setTimeout(() => {
+      if (this.#state === 'terminating') {
+        return;
+      }
+      this.setupWorker(idx).catch((err) => {
+        this.logger.error(err, 'Failed to restart worker %d', idx);
+      });
+    }, delay).unref();
+  }
+
+  /**
+   * Returns how long a request took and clears its marks.
+   *
+   * Performance marks live on the global timeline until they are cleared, so
+   * leaving one behind per request leaks for as long as the server runs.
+   */
+  private consumeRequestTiming(requestId: string): number {
+    const [mark] = performance.getEntriesByName(requestId, 'mark');
+    const duration = mark ? performance.now() - mark.startTime : 0;
+    performance.clearMarks(requestId);
+    return Math.round(duration);
   }
 }

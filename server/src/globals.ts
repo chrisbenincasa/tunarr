@@ -58,7 +58,10 @@ export const globalOptions = () => {
   return _globalOptions;
 };
 
-const setServerOptionsUnchecked = (runtimeOptions: ServerArgsType) => {
+// Can overwrite server options! Used by tests and by worker threads, which
+// need to apply options inherited from the parent after the CLI middleware has
+// already consumed the once()-guarded setter.
+export const setServerOptionsUnchecked = (runtimeOptions: ServerArgsType) => {
   setGlobalOptions(runtimeOptions);
   _serverOptions = {
     ...globalOptions(),
