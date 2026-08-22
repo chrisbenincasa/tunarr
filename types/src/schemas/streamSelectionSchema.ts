@@ -30,13 +30,33 @@ export const SubtitleActionDisableSchema = z.object({
   type: z.literal('disable'),
 });
 
+// A single entry in a subtitle by_language preference list. Each entry may
+// override the action-level filter settings, which is what channel subtitle
+// preferences do: every preference row carries its own filter/allow flags.
+export const SubtitleLanguagePreferenceSchema = z.object({
+  language: z.string(),
+  filterType: SubtitleFilterSchema.optional(),
+  allowImageBased: z.boolean().optional(),
+  allowExternal: z.boolean().optional(),
+});
+
+export type SubtitleLanguagePreference = z.infer<
+  typeof SubtitleLanguagePreferenceSchema
+>;
+
 export const SubtitleActionByLanguageSchema = z.object({
   type: z.literal('by_language'),
-  languages: z.array(z.string()).min(1),
+  languages: z
+    .array(z.union([z.string(), SubtitleLanguagePreferenceSchema]))
+    .min(1),
   filterType: SubtitleFilterSchema.default('any'),
   allowImageBased: z.boolean().default(true),
   allowExternal: z.boolean().default(true),
 });
+
+export type SubtitleActionByLanguage = z.infer<
+  typeof SubtitleActionByLanguageSchema
+>;
 
 export const SubtitleActionDefaultSchema = z.object({
   type: z.literal('default'),

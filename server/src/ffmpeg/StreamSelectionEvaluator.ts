@@ -1,7 +1,10 @@
+import type { SubtitleFilter } from '@tunarr/types';
 import type {
   AudioAction,
   StreamSelectionProfile,
   SubtitleAction,
+  SubtitleActionByLanguage,
+  SubtitleLanguagePreference,
 } from '@tunarr/types/schemas';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
@@ -174,6 +177,38 @@ function selectDefautlAudioStream(
   );
 }
 
+type ResolvedSubtitleLanguagePreference = {
+  language: string;
+  filterType: SubtitleFilter;
+  allowImageBased: boolean;
+  allowExternal: boolean;
+};
+
+/**
+ * Resolves one entry of a by_language subtitle action against the
+ * action-level defaults. A bare string entry inherits all of them.
+ */
+function normalizeSubtitleLanguagePreference(
+  entry: string | SubtitleLanguagePreference,
+  defaults: Omit<SubtitleActionByLanguage, 'type' | 'languages'>,
+): ResolvedSubtitleLanguagePreference {
+  if (typeof entry === 'string') {
+    return {
+      language: entry,
+      filterType: defaults.filterType,
+      allowImageBased: defaults.allowImageBased,
+      allowExternal: defaults.allowExternal,
+    };
+  }
+
+  return {
+    language: entry.language,
+    filterType: entry.filterType ?? defaults.filterType,
+    allowImageBased: entry.allowImageBased ?? defaults.allowImageBased,
+    allowExternal: entry.allowExternal ?? defaults.allowExternal,
+  };
+}
+
 async function resolveSubtitleAction(
   action: SubtitleAction,
   subtitleStreams: SubtitleStreamDetails[] | undefined,
@@ -187,42 +222,43 @@ async function resolveSubtitleAction(
       if (!subtitleStreams || subtitleStreams.length === 0) {
         return null;
       }
-      const defaultStream = subtitleStreams.find((s) => s.default);
-      if (!defaultStream) {
+
+      // Falls back to the first stream when none is marked default, matching
+      // both SubtitleStreamPicker.pickSubtitles and selectDefautlAudioStream.
+      const candidate =
+        subtitleStreams.find((s) => s.default) ?? subtitleStreams[0];
+      if (!candidate) {
         return null;
       }
-      const extracted =
-        await SubtitleStreamPicker.getSubtitleDetailsWithExtractedPath(
-          lineupItem,
-          defaultStream,
-        );
-      if (extracted) {
-        return extracted;
-      }
 
+      // Embedded text-based subs are only usable once extracted to a sidecar.
       if (
-        defaultStream &&
-        (defaultStream.type === 'external' ||
-          (defaultStream.type === 'embedded' &&
-            isImageBasedSubtitle(defaultStream.codec)))
+        !isImageBasedSubtitle(candidate.codec) &&
+        candidate.type === 'embedded'
       ) {
-        return defaultStream;
+        return (
+          (await SubtitleStreamPicker.getSubtitleDetailsWithExtractedPath(
+            lineupItem,
+            candidate,
+          )) ?? null
+        );
       }
 
-      return null;
+      return candidate;
     }
 
     case 'by_language': {
-      if (
-        action.filterType === 'none' ||
-        !subtitleStreams ||
-        subtitleStreams.length === 0
-      ) {
+      if (!subtitleStreams || subtitleStreams.length === 0) {
         return null;
       }
 
-      for (const lang of action.languages) {
-        const langLower = lang.toLowerCase();
+      for (const entry of action.languages) {
+        const pref = normalizeSubtitleLanguagePreference(entry, action);
+        if (pref.filterType === 'none') {
+          continue;
+        }
+
+        const langLower = pref.language.toLowerCase();
         for (const stream of subtitleStreams) {
           // Language match
           if (
@@ -234,20 +270,20 @@ async function resolveSubtitleAction(
           }
 
           // Filter type check
-          if (action.filterType === 'forced' && !stream.forced) {
+          if (pref.filterType === 'forced' && !stream.forced) {
             continue;
           }
-          if (action.filterType === 'default' && !stream.default) {
+          if (pref.filterType === 'default' && !stream.default) {
             continue;
           }
 
           // External check
-          if (!action.allowExternal && stream.type === 'external') {
+          if (!pref.allowExternal && stream.type === 'external') {
             continue;
           }
 
           // Image-based check
-          if (!action.allowImageBased && isImageBasedSubtitle(stream.codec)) {
+          if (!pref.allowImageBased && isImageBasedSubtitle(stream.codec)) {
             continue;
           }
 
@@ -275,4 +311,3 @@ async function resolveSubtitleAction(
     }
   }
 }
-

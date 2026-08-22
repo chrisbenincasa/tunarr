@@ -173,22 +173,30 @@ export class StreamSelectionProfileResolver {
       await this.channelDB.getChannelSubtitlePreferences(channelId);
 
     let subtitleAction: StreamSelectionRule['subtitleAction'];
-    // Filter out preferences with filterType 'none' — they mean
-    // "don't match subtitles for this language", matching the
-    // behavior of SubtitleStreamPicker.pickSubtitles.
+    // Preferences with filterType 'none' mean "don't match subtitles for this
+    // language" and are skipped, matching SubtitleStreamPicker.pickSubtitles.
     const activeSubtitlePrefs = subtitlePrefs.filter(
       (p) => p.filterType !== 'none',
     );
     if (activeSubtitlePrefs.length > 0) {
-      const sorted = orderBy(activeSubtitlePrefs, 'priority', 'asc');
-      const topPref = sorted[0]!;
+      // Each preference carries its own filter settings, so emit them
+      // per-language rather than collapsing onto the top preference.
       subtitleAction = {
         type: 'by_language' as const,
-        languages: sorted.map((p) => p.languageCode),
-        filterType: topPref.filterType ?? 'any',
-        allowImageBased: Boolean(topPref.allowImageBased ?? true),
-        allowExternal: Boolean(topPref.allowExternal ?? true),
+        languages: orderBy(activeSubtitlePrefs, 'priority', 'asc').map((p) => ({
+          language: p.languageCode,
+          filterType: p.filterType ?? 'any',
+          allowImageBased: Boolean(p.allowImageBased ?? true),
+          allowExternal: Boolean(p.allowExternal ?? true),
+        })),
+        filterType: 'any' as const,
+        allowImageBased: true,
+        allowExternal: true,
       };
+    } else if (subtitlePrefs.length > 0) {
+      // Every preference is 'none' — legacy picks no subtitle at all rather
+      // than falling back to the default stream.
+      subtitleAction = { type: 'disable' as const };
     } else {
       subtitleAction = { type: 'default' as const };
     }

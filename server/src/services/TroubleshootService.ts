@@ -303,16 +303,21 @@ export class TroubleshootService {
               selectedSubtitle = null;
               subtitleReason = 'Disabled by stream selection rule';
             } else if (rule.subtitleAction.type === 'default') {
-              selectedSubtitle =
-                subtitleStreams?.find((s) => s.default) ?? null;
-              subtitleReason = selectedSubtitle
+              const marked = subtitleStreams?.find((s) => s.default);
+              selectedSubtitle = marked ?? subtitleStreams?.[0] ?? null;
+              subtitleReason = marked
                 ? 'Default subtitle stream'
-                : 'No default subtitle stream found';
+                : selectedSubtitle
+                  ? 'No default subtitle stream, using first'
+                  : 'No subtitle streams available';
             } else {
+              const languages = rule.subtitleAction.languages.map((lang) =>
+                typeof lang === 'string' ? lang : lang.language,
+              );
               selectedSubtitle = null;
-              subtitleReason = `No subtitle found for languages: ${rule.subtitleAction.languages.join(', ')}`;
+              subtitleReason = `No subtitle found for languages: ${languages.join(', ')}`;
               if (subtitleStreams) {
-                for (const lang of rule.subtitleAction.languages) {
+                for (const lang of languages) {
                   const langLower = lang.toLowerCase();
                   const found = subtitleStreams.find(
                     (s) =>
@@ -587,7 +592,7 @@ export class TroubleshootService {
 
   private describeSubtitleAction(action: {
     type: string;
-    languages?: string[];
+    languages?: (string | { language: string; filterType?: string })[];
     filterType?: string;
     allowImageBased?: boolean;
     allowExternal?: boolean;
@@ -596,8 +601,15 @@ export class TroubleshootService {
       case 'disable':
         return 'Disable subtitles';
       case 'by_language': {
+        const languages = action.languages?.map((lang) =>
+          typeof lang === 'string'
+            ? lang
+            : lang.filterType && lang.filterType !== 'any'
+              ? `${lang.language} (${lang.filterType})`
+              : lang.language,
+        );
         const parts = [
-          `Select subtitles by language: [${action.languages?.join(', ')}]`,
+          `Select subtitles by language: [${languages?.join(', ')}]`,
         ];
         if (action.filterType && action.filterType !== 'any') {
           parts.push(`filter: ${action.filterType}`);

@@ -14,6 +14,7 @@ import {
   buildCelContext,
   evaluateStreamSelectionProfile,
 } from './StreamSelectionEvaluator.ts';
+import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
 
 // Mock SubtitleStreamPicker so we don't hit the filesystem
 vi.mock('./SubtitleStreamPicker.ts', () => ({
@@ -787,9 +788,62 @@ describe('evaluateStreamSelectionProfile', () => {
       expect(result.subtitleStream!.index).toBe(3);
     });
 
-    it('returns null when no default subtitle exists', async () => {
+    it('falls back to the first stream when none is marked default', async () => {
       const subs: SubtitleStreamDetails[] = [
         makeSubtitleStream({ index: 2, default: false }),
+        makeSubtitleStream({ index: 3, default: false }),
+      ];
+      const profile = makeProfile([
+        makeRule({ subtitleAction: { type: 'default' } }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream).not.toBeNull();
+      expect(result.subtitleStream!.index).toBe(2);
+    });
+
+    it('returns an image-based fallback stream without extracting it', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          default: false,
+          codec: 'hdmv_pgs_subtitle',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({ subtitleAction: { type: 'default' } }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream!.index).toBe(2);
+      expect(result.subtitleStream!.path).toBeUndefined();
+    });
+
+    it('returns null when an embedded text-based stream is not extracted', async () => {
+      vi.mocked(
+        SubtitleStreamPicker.getSubtitleDetailsWithExtractedPath,
+      ).mockResolvedValueOnce(undefined);
+
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({ index: 2, default: true }),
       ];
       const profile = makeProfile([
         makeRule({ subtitleAction: { type: 'default' } }),
@@ -911,6 +965,82 @@ describe('evaluateStreamSelectionProfile', () => {
       );
 
       expect(result.subtitleStream!.languageCodeISO6392).toBe('jpn');
+    });
+
+    it('applies per-language filter overrides independently', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'jpn',
+          forced: false,
+        }),
+        makeSubtitleStream({
+          index: 3,
+          languageCodeISO6392: 'eng',
+          forced: false,
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: [
+              // jpn wants forced-only, and the only jpn stream is not forced,
+              // so it must fall through to the eng preference.
+              { language: 'jpn', filterType: 'forced' },
+              { language: 'eng', filterType: 'any' },
+            ],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream!.languageCodeISO6392).toBe('eng');
+    });
+
+    it('skips a language entry whose filterType is none', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({ index: 2, languageCodeISO6392: 'jpn' }),
+        makeSubtitleStream({ index: 3, languageCodeISO6392: 'eng' }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: [
+              { language: 'jpn', filterType: 'none' },
+              { language: 'eng' },
+            ],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+        }),
+      ]);
+      const celService = makeCelService(true);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream!.languageCodeISO6392).toBe('eng');
     });
 
     it('filters by forced when filterType is forced', async () => {

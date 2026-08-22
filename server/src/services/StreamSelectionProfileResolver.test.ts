@@ -281,16 +281,29 @@ describe('StreamSelectionProfileResolver', () => {
       const rule = result.rules[0]!;
       expect(rule.subtitleAction).toEqual({
         type: 'by_language',
-        // Languages are in priority order (priority 0 = jpn first)
-        languages: ['jpn', 'eng'],
-        // filterType/allowImageBased/allowExternal come from highest-priority pref (priority 0 = jpn)
-        filterType: 'forced',
-        allowImageBased: false,
-        allowExternal: false,
+        // Languages are in priority order (priority 0 = jpn first), each
+        // carrying its own filter settings.
+        languages: [
+          {
+            language: 'jpn',
+            filterType: 'forced',
+            allowImageBased: false,
+            allowExternal: false,
+          },
+          {
+            language: 'eng',
+            filterType: 'forced',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+        ],
+        filterType: 'any',
+        allowImageBased: true,
+        allowExternal: true,
       });
     });
 
-    it('sorts subtitle prefs by priority to determine top pref', async () => {
+    it('sorts subtitle prefs by priority and keeps each prefs own filters', async () => {
       const { resolver } = createResolver({
         programProfile: undefined,
         fillerProfile: undefined,
@@ -321,11 +334,28 @@ describe('StreamSelectionProfileResolver', () => {
       const result = await resolver.resolve({ channelId: 'ch-1' });
 
       const rule = result.rules[0]!;
-      // Top pref is priority 0 (eng) so filterType and allowImageBased come from that
       expect(rule.subtitleAction).toMatchObject({
         type: 'by_language',
-        filterType: 'default',
-        allowImageBased: false,
+        languages: [
+          {
+            language: 'eng',
+            filterType: 'default',
+            allowImageBased: false,
+            allowExternal: true,
+          },
+          {
+            language: 'jpn',
+            filterType: 'forced',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+          {
+            language: 'fra',
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+        ],
       });
     });
 
@@ -357,8 +387,56 @@ describe('StreamSelectionProfileResolver', () => {
       });
       expect(rule.subtitleAction).toMatchObject({
         type: 'by_language',
-        languages: ['eng'],
+        languages: [{ language: 'eng', filterType: 'any' }],
       });
+    });
+
+    it('drops prefs with filterType none but keeps the rest', async () => {
+      const { resolver } = createResolver({
+        programProfile: undefined,
+        fillerProfile: undefined,
+        channelProfile: undefined,
+        ffmpegSettings: makeFfmpegSettings(),
+        subtitlePrefs: [
+          makeSubtitlePref({
+            priority: 0,
+            languageCode: 'eng',
+            filterType: 'none',
+          }),
+          makeSubtitlePref({
+            priority: 1,
+            languageCode: 'jpn',
+            filterType: 'forced',
+          }),
+        ],
+      });
+
+      const result = await resolver.resolve({ channelId: 'ch-1' });
+
+      expect(result.rules[0]!.subtitleAction).toMatchObject({
+        type: 'by_language',
+        languages: [{ language: 'jpn', filterType: 'forced' }],
+      });
+    });
+
+    it('disables subtitles when every pref has filterType none', async () => {
+      const { resolver } = createResolver({
+        programProfile: undefined,
+        fillerProfile: undefined,
+        channelProfile: undefined,
+        ffmpegSettings: makeFfmpegSettings(),
+        subtitlePrefs: [
+          makeSubtitlePref({
+            priority: 0,
+            languageCode: 'eng',
+            filterType: 'none',
+          }),
+        ],
+      });
+
+      const result = await resolver.resolve({ channelId: 'ch-1' });
+
+      expect(result.rules[0]!.subtitleAction).toEqual({ type: 'disable' });
     });
 
     it('uses channelId in legacy profile uuid', async () => {

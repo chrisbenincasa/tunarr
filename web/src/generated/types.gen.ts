@@ -3002,6 +3002,7 @@ export type GetChannelsResponses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3207,6 +3208,7 @@ export type CreateChannelV2Responses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3366,6 +3368,7 @@ export type GetChannelsByNumberV2Responses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3571,6 +3574,7 @@ export type PutApiChannelsByIdResponses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -6717,6 +6721,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                             ip: string;
                             userAgent?: string;
                             lastHeartbeat?: number;
+                            lastHeartbeatStr?: string;
                         }>;
                     }>;
                     subtitlesEnabled: boolean;
@@ -7106,6 +7111,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                             ip: string;
                             userAgent?: string;
                             lastHeartbeat?: number;
+                            lastHeartbeatStr?: string;
                         }>;
                     }>;
                     subtitlesEnabled: boolean;
@@ -12581,7 +12587,12 @@ export type GetApiStreamSelectionProfilesResponses = {
                 type: 'disable';
             } | {
                 type: 'by_language';
-                languages: Array<string>;
+                languages: Array<string | {
+                    language: string;
+                    filterType?: 'none' | 'forced' | 'default' | 'any';
+                    allowImageBased?: boolean;
+                    allowExternal?: boolean;
+                }>;
                 filterType: 'none' | 'forced' | 'default' | 'any';
                 allowImageBased: boolean;
                 allowExternal: boolean;
@@ -12617,7 +12628,12 @@ export type PostApiStreamSelectionProfilesData = {
                 type: 'disable';
             } | {
                 type: 'by_language';
-                languages: Array<string>;
+                languages: Array<string | {
+                    language: string;
+                    filterType?: 'none' | 'forced' | 'default' | 'any';
+                    allowImageBased?: boolean;
+                    allowExternal?: boolean;
+                }>;
                 filterType?: 'none' | 'forced' | 'default' | 'any';
                 allowImageBased?: boolean;
                 allowExternal?: boolean;
@@ -12655,7 +12671,12 @@ export type PostApiStreamSelectionProfilesResponses = {
                 type: 'disable';
             } | {
                 type: 'by_language';
-                languages: Array<string>;
+                languages: Array<string | {
+                    language: string;
+                    filterType?: 'none' | 'forced' | 'default' | 'any';
+                    allowImageBased?: boolean;
+                    allowExternal?: boolean;
+                }>;
                 filterType: 'none' | 'forced' | 'default' | 'any';
                 allowImageBased: boolean;
                 allowExternal: boolean;
@@ -12731,7 +12752,12 @@ export type GetApiStreamSelectionProfilesByIdResponses = {
                 type: 'disable';
             } | {
                 type: 'by_language';
-                languages: Array<string>;
+                languages: Array<string | {
+                    language: string;
+                    filterType?: 'none' | 'forced' | 'default' | 'any';
+                    allowImageBased?: boolean;
+                    allowExternal?: boolean;
+                }>;
                 filterType: 'none' | 'forced' | 'default' | 'any';
                 allowImageBased: boolean;
                 allowExternal: boolean;
@@ -12764,7 +12790,12 @@ export type PutApiStreamSelectionProfilesByIdData = {
                 type: 'disable';
             } | {
                 type: 'by_language';
-                languages: Array<string>;
+                languages: Array<string | {
+                    language: string;
+                    filterType?: 'none' | 'forced' | 'default' | 'any';
+                    allowImageBased?: boolean;
+                    allowExternal?: boolean;
+                }>;
                 filterType?: 'none' | 'forced' | 'default' | 'any';
                 allowImageBased?: boolean;
                 allowExternal?: boolean;
@@ -12811,7 +12842,12 @@ export type PutApiStreamSelectionProfilesByIdResponses = {
                 type: 'disable';
             } | {
                 type: 'by_language';
-                languages: Array<string>;
+                languages: Array<string | {
+                    language: string;
+                    filterType?: 'none' | 'forced' | 'default' | 'any';
+                    allowImageBased?: boolean;
+                    allowExternal?: boolean;
+                }>;
                 filterType: 'none' | 'forced' | 'default' | 'any';
                 allowImageBased: boolean;
                 allowExternal: boolean;
@@ -13075,6 +13111,7 @@ export type PostApiTroubleshootResponses = {
                     ip: string;
                     userAgent?: string;
                     lastHeartbeat?: number;
+                    lastHeartbeatStr?: string;
                 }>;
             }>;
             subtitlesEnabled: boolean;
