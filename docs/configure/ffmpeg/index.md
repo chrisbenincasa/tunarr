@@ -49,7 +49,19 @@ If content in your channels have embedded, text-based subtitles, this option ena
 
 ### Sidecar Subtitles
 
-Tunarr supports sidecar subtitle files (`.srt`, `.vtt`, etc.) placed alongside your media files. When scanning local libraries, Tunarr automatically discovers external subtitle files and associates them with the corresponding media. For Plex, Jellyfin, and Emby sources, external subtitles reported by the media server are downloaded during scanning.
+Tunarr supports sidecar subtitle files (`.srt`, `.vtt`, etc.) placed alongside your media files. When scanning local libraries, Tunarr automatically discovers external subtitle files and associates them with the corresponding media.
+
+For Plex, Jellyfin, and Emby sources, external subtitles are always resolved to a local file during scanning, so that starting a stream never waits on the media server:
+
+1. **Shared storage.** If the subtitle file the media server reported is visible to Tunarr — directly, or through the source's [path replacements](../media_sources/jellyfin.md#configuring-path-replacements) — it is used as-is. Nothing is copied.
+2. **Downloaded during scanning.** Otherwise Tunarr fetches the subtitle from the media server and caches it locally.
+
+Setting up path replacements for a media source therefore benefits subtitles as well as video, and is the only way image-based external subtitles can be used, since those cannot be downloaded as text.
+
+A subtitle that could not be resolved during a scan — because the media server was unreachable, for example — is retried hourly for programs airing in the next hour on channels that have subtitles enabled, so it becomes available without waiting for a rescan of the whole library. The same pass restores a cached subtitle file that has since been deleted.
+
+!!! note
+    External subtitles from Jellyfin and Emby libraries scanned by an older version of Tunarr are picked up by that hourly pass once the program is scheduled, or immediately on the next rescan of the library.
 
 When using the **HLS Direct** stream mode, sidecar text-based subtitles are served as WebVTT tracks in the HLS master playlist. Clients that support HLS subtitle renditions (most modern players) will display them as selectable subtitle options.
 

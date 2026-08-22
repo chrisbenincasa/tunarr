@@ -314,6 +314,8 @@ export const PlexMediaSubtitleStreamSchema = BasePlexMediaStreamSchema.extend({
   displayTitle: z.string().optional(),
   extendedDisplayTitle: z.string().optional(),
   key: z.string().optional(),
+  /** Present for sidecar subtitles: the file's path on the Plex server. */
+  file: z.string().optional(),
   forced: z.coerce
     .boolean()
     .or(z.number().transform((i) => i === 1))

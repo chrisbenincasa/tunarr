@@ -14,10 +14,18 @@ import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
+import type {
+  MediaSourceWithRelations,
+  ProgramWithRelationsOrm,
+} from '../db/schema/derivedTypes.js';
+import type { ProgramSubtitles } from '../db/schema/ProgramSubtitles.ts';
+import { QueryError, type QueryResult } from '../external/BaseApiClient.ts';
+import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { HttpReconnectOptions } from '../ffmpeg/builder/options/input/HttpReconnectOptions.ts';
 import { GlobalOptions } from '../globals.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
+import { ExternalSubtitleDownloader } from '../stream/ExternalSubtitleDownloader.ts';
+import { PathCalculator } from '../stream/PathCalculator.ts';
 import { ProgramStreamDetailsFetcher } from '../stream/ProgramStreamDetailsFetcher.ts';
 import { isImageBasedSubtitle } from '../stream/util.ts';
 import { KEYS } from '../types/inject.ts';
@@ -29,7 +37,7 @@ import {
   SubtitlesCacheFolderName,
 } from '../util/constants.ts';
 import { fileExists } from '../util/fsUtil.ts';
-import { isDefined } from '../util/index.ts';
+import { isDefined, isNonEmptyString } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { getSubtitleCacheFilePath } from '../util/subtitles.ts';
@@ -76,7 +84,7 @@ const defaultFilter = {
 @taskDef({
   name: SubtitleExtractorTask.name,
   description:
-    'Extracted embedded, text-based subtitles from scheduled programs',
+    'Extracts embedded, text-based subtitles from scheduled programs and downloads any external subtitles that are still missing',
   schema: SubtitleExtractorTaskRequest,
 })
 export class SubtitleExtractorTask extends Task2<
@@ -99,6 +107,10 @@ export class SubtitleExtractorTask extends Task2<
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(ExternalSubtitleDownloader)
+    private externalSubtitleDownloader: ExternalSubtitleDownloader,
+    @inject(MediaSourceApiFactory)
+    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {
     super();
   }
@@ -106,11 +118,6 @@ export class SubtitleExtractorTask extends Task2<
   protected async runInternal(
     request: SubtitleExtractorTaskRequest,
   ): Promise<void> {
-    if (!this.settingsDB.ffmpegSettings().enableSubtitleExtraction) {
-      this.logger.trace('Subtitle extraction is not enabled, skipping task.');
-      return;
-    }
-
     const filter = request.filter ?? defaultFilter;
     switch (filter.type) {
       case 'time':
@@ -182,6 +189,142 @@ export class SubtitleExtractorTask extends Task2<
     }
   }
 
+  /**
+   * Resolves sidecar subtitles that currently have no file Tunarr can open --
+   * because the media source was unreachable when the library was scanned, or
+   * because the cached copy has since been deleted. Without this, such a
+   * subtitle stays missing until the library happens to be rescanned.
+   */
+  private async topUpExternalSubtitles(
+    dbProgram: ProgramWithRelationsOrm,
+    mediaSource: MediaSourceWithRelations,
+  ) {
+    for (const subtitle of dbProgram.subtitles ?? []) {
+      if (subtitle.subtitleType !== 'sidecar') {
+        continue;
+      }
+
+      if (
+        isNonEmptyString(subtitle.path) &&
+        (await fileExists(subtitle.path))
+      ) {
+        continue;
+      }
+
+      // Storage shared with the media source is preferred: no download, and no
+      // second copy of a file we can already read.
+      const sharedPath = await PathCalculator.findLocalPath(
+        subtitle.sourcePath,
+        mediaSource.replacePaths,
+      );
+      if (sharedPath) {
+        this.logger.debug(
+          'Found external subtitle %s for program %s on shared storage: %s',
+          subtitle.uuid,
+          dbProgram.uuid,
+          sharedPath,
+        );
+        await this.saveResolvedSubtitlePath(subtitle, sharedPath);
+        continue;
+      }
+
+      const subtitleKey = subtitle.sourceKey;
+      if (!isNonEmptyString(subtitleKey)) {
+        continue;
+      }
+
+      const downloadResult = await Result.attemptAsync(() =>
+        this.externalSubtitleDownloader.downloadSubtitlesIfNecessary(
+          {
+            externalKey: dbProgram.externalKey,
+            externalSourceId: mediaSource.uuid,
+            sourceType: dbProgram.sourceType,
+            uuid: dbProgram.uuid,
+          },
+          {
+            streamIndex: subtitle.streamIndex ?? undefined,
+            codec: subtitle.codec,
+            // External subtitles have no stream index, so the source-relative
+            // location is what keeps their cache entries distinct.
+            key: subtitleKey,
+          },
+          () => this.fetchExternalSubtitle(mediaSource, subtitleKey),
+        ),
+      );
+
+      if (downloadResult.isFailure()) {
+        this.logger.warn(
+          downloadResult.error,
+          'Error downloading external subtitle %s for program %s',
+          subtitle.uuid,
+          dbProgram.uuid,
+        );
+        continue;
+      }
+
+      const fullPath = downloadResult.get();
+      if (!isNonEmptyString(fullPath)) {
+        continue;
+      }
+
+      this.logger.debug(
+        'Downloaded external subtitle %s for program %s to local cache: %s',
+        subtitle.uuid,
+        dbProgram.uuid,
+        fullPath,
+      );
+      await this.saveResolvedSubtitlePath(subtitle, fullPath);
+    }
+  }
+
+  private async saveResolvedSubtitlePath(
+    subtitle: ProgramSubtitles,
+    path: string,
+  ) {
+    await this.programDB.setSubtitlePath(subtitle.uuid, path);
+    // Keep the in-memory row in step so anything downstream in this run sees
+    // the same location that was just persisted.
+    subtitle.path = path;
+  }
+
+  private async fetchExternalSubtitle(
+    mediaSource: MediaSourceWithRelations,
+    key: string,
+  ): Promise<QueryResult<string>> {
+    switch (mediaSource.type) {
+      case 'plex': {
+        const client =
+          await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(
+            mediaSource,
+          );
+        return client.getSubtitles(key);
+      }
+      case 'jellyfin': {
+        const client =
+          await this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
+            mediaSource,
+          );
+        return client.getSubtitlesByPath(key);
+      }
+      case 'emby': {
+        const client =
+          await this.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
+            mediaSource,
+          );
+        return client.getSubtitlesByPath(key);
+      }
+      case 'local':
+        // Local libraries are scanned off storage Tunarr already has open, so
+        // their sidecars are never fetched over the network.
+        return Result.failure(
+          QueryError.create(
+            'generic_request_error',
+            'Local media sources have no subtitle endpoint',
+          ),
+        );
+    }
+  }
+
   private async handleProgram(
     program: ContentGuideProgram,
     mediaSource: MediaSourceWithRelations,
@@ -190,6 +333,19 @@ export class SubtitleExtractorTask extends Task2<
     if (!dbProgram) {
       return;
     }
+
+    // External subtitles are files we fetch, not streams we extract, so they
+    // are topped up regardless of the extraction setting below.
+    await this.topUpExternalSubtitles(dbProgram, mediaSource);
+
+    if (!this.settingsDB.ffmpegSettings().enableSubtitleExtraction) {
+      this.logger.trace(
+        'Subtitle extraction is not enabled, skipping extraction for program %s',
+        program.id,
+      );
+      return;
+    }
+
     const stream = await this.streamDetailsFetcher.getStream({
       server: mediaSource,
       lineupItem: { ...dbProgram, mediaSourceId: mediaSource.uuid },
@@ -332,7 +488,10 @@ export class SubtitleExtractorTask extends Task2<
           createReadStream(tmpPath),
           new Transform({
             transform(chunk: Buffer, _encoding, cb) {
-              cb(null, chunk.filter((byte) => byte !== 0x00));
+              cb(
+                null,
+                chunk.filter((byte) => byte !== 0x00),
+              );
             },
           }),
           createWriteStream(outPath),
