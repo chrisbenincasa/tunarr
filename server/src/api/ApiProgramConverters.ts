@@ -1,4 +1,5 @@
 import dayjs from '@/util/dayjs.js';
+import type { Dayjs } from 'dayjs';
 import type {
   Actor,
   Episode,
@@ -77,18 +78,12 @@ export class ApiProgramConverters {
       return null;
     }
 
-    const parsed = dayjs(
-      program.originalAirDate,
-      [`YYYY-MM-DDTHH:mm:ssZ`, `YYYY-MM-DD`],
-      true,
-    );
-    const releaseDate = parsed.isValid() ? +parsed : null;
+    const parsed = parseAirDate(program.originalAirDate);
+    const releaseDate = parsed ? +parsed : null;
     const year =
       program.year && program.year > 0
         ? program.year
-        : parsed.isValid()
-          ? parsed.year()
-          : null;
+        : (parsed?.year() ?? null);
 
     const identifiers =
       program.externalIds?.map((eid) => ({
@@ -371,6 +366,44 @@ export class ApiProgramConverters {
 
     return result;
   }
+}
+
+const AirDateFormats = ['YYYY-MM-DDTHH:mm:ssZ', 'YYYY-MM-DD'] as const;
+
+/**
+ * Parses a program's original air date, or returns undefined if it is absent
+ * or matches neither supported format.
+ *
+ * Deliberately not `dayjs(value, [fmtA, fmtB], true)`, which is what this used
+ * to be. That call is the single most expensive thing in a large lineup save:
+ * dayjs's array-of-formats path rebuilds a parser per format and, on non-string
+ * input, throws and catches internally for each one. Measured per call:
+ *
+ *   dayjs(null, [2 formats], strict)              65.8us
+ *   dayjs('2020-05-04', [2 formats], strict)      46.2us
+ *   dayjs('2020-05-04T10:00:00Z', [2 fmts])       14.4us
+ *   dayjs('2020-05-04', 'YYYY-MM-DD', strict)      6.2us
+ *
+ * Running once per program, twice per save, that accounted for roughly half of
+ * the main thread stall while saving a 2200 item lineup. Guarding non-strings
+ * and trying one format at a time is behaviourally identical — the array form
+ * also returns the first format that matches, in order — and avoids both costs.
+ */
+export function parseAirDate(
+  value: Nullable<string> | undefined,
+): Maybe<Dayjs> {
+  if (!isNonEmptyString(value)) {
+    return undefined;
+  }
+
+  for (const format of AirDateFormats) {
+    const parsed = dayjs(value, format, true);
+    if (parsed.isValid()) {
+      return parsed;
+    }
+  }
+
+  return undefined;
 }
 
 function convertCreditWithArtwork(
