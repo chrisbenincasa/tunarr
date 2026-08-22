@@ -329,7 +329,7 @@ export class ProgramMetadataRepository {
         if (existing.isExtracted) {
           const needsExtraction =
             existing.subtitleType !== incoming.subtitleType ||
-            existing.codec !== incoming.subtitleType ||
+            existing.codec !== incoming.codec ||
             existing.language !== incoming.language ||
             existing.forced !== incoming.forced ||
             existing.sdh !== incoming.sdh ||
@@ -403,6 +403,17 @@ export class ProgramMetadataRepository {
         }
       });
     }
+  }
+
+  /**
+   * Records where a sidecar subtitle was resolved to on storage Tunarr can
+   * read: either shared storage or the cache copy it was downloaded into.
+   */
+  async setSubtitlePath(uuid: string, path: string): Promise<void> {
+    await this.drizzleDB
+      .update(ProgramSubtitles)
+      .set({ path, updatedAt: new Date() })
+      .where(eq(ProgramSubtitles.uuid, uuid));
   }
 
   async clearExtractedSubtitle(uuid: string): Promise<void> {
