@@ -56,6 +56,8 @@ export interface IProgramDB {
 
   clearExtractedSubtitle(uuid: string): Promise<void>;
 
+  setSubtitlePath(uuid: string, path: string): Promise<void>;
+
   getProgramsByIds(
     ids: string[] | readonly string[],
     batchSize?: number,

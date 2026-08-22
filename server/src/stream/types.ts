@@ -89,6 +89,10 @@ export class HttpStreamSource implements IStreamSource {
   redact() {
     this.path = this.path
       .replaceAll(/(X-Plex-Token=)([A-z0-9_\\-]+)/g, '$1REDACTED')
+      // Subtitle URLs carry the token in the query string, since ffmpeg reads
+      // them as a plain input and never sees our extra headers.
+      .replaceAll(/(X-Emby-Token=)([A-z0-9_\\-]+)/g, '$1REDACTED')
+      .replaceAll(/(api_key=)([A-z0-9_\\-]+)/g, '$1REDACTED')
       .replaceAll(/(X-Emby-Token:\s)([A-z0-9_\\-]+)/g, '$1REDACTED');
     if (this.extraHeaders['X-Emby-Token']) {
       this.extraHeaders['X-Emby-Token'] = 'REDACTED';

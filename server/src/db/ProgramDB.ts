@@ -100,6 +100,10 @@ export class ProgramDB implements IProgramDB {
     return this.metadataRepo.clearExtractedSubtitle(uuid);
   }
 
+  setSubtitlePath(uuid: string, path: string): Promise<void> {
+    return this.metadataRepo.setSubtitlePath(uuid, path);
+  }
+
   getProgramsByIds(
     ids: string[] | readonly string[],
     batchSize?: number,
