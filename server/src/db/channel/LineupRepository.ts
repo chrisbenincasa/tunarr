@@ -138,6 +138,25 @@ function channelProgramToLineupItemFunc(
     .exhaustive();
 }
 
+/**
+ * The outcome of a lineup update.
+ *
+ * `materializedPrograms` is present only for schedule-generated updates (time
+ * and random slots), where the programs had to be loaded and converted anyway
+ * in order to build the lineup. It is handed back so the caller can construct
+ * its API response without repeating that work — it is the single most
+ * expensive part of the save, and it used to be done twice.
+ *
+ * Manual lineup edits do not populate it: the request carries program ids
+ * rather than program details, so nothing was materialized and the caller has
+ * to load the lineup the long way.
+ */
+export type UpdateLineupResult = {
+  channel: ChannelOrm;
+  newLineup: LineupItem[];
+  materializedPrograms?: Record<string, ContentProgram>;
+};
+
 @injectable()
 export class LineupRepository {
   private logger = LoggerFactory.child({
@@ -720,14 +739,79 @@ export class LineupRepository {
       return ret;
     });
 
+    return this.assembleCondensedLineup({
+      channel,
+      lineup,
+      pagedLineup,
+      totalPrograms: len,
+      materializedPrograms,
+      knownProgramIds: new Set([...Object.keys(programsById)]),
+      cleanOffset,
+      cleanLimit,
+    });
+  }
+
+  /**
+   * Builds a condensed lineup response for a channel whose programs have
+   * already been materialized.
+   *
+   * Skips the two expensive steps in `loadCondensedLineup` — the relational
+   * program query and MaterializeProgramsCommand — which together were about
+   * 175ms of a 200ms stall on a 2200 item lineup. Everything else is cheap: the
+   * lineup itself comes from a file, and the remaining queries are small.
+   */
+  async condensedLineupFromMaterialized(
+    channelId: string,
+    materializedPrograms: Record<string, ContentProgram>,
+  ): Promise<CondensedChannelProgramming | null> {
+    const lineup = await this.loadLineup(channelId);
+
+    const channel = await this.db
+      .selectFrom('channel')
+      .where('channel.uuid', '=', channelId)
+      .selectAll()
+      .executeTakeFirst();
+
+    if (isNil(channel)) {
+      return null;
+    }
+
+    return this.assembleCondensedLineup({
+      channel,
+      lineup,
+      // Copied because the lineup is exposed as readonly; buildCondensedLineup
+      // takes a mutable array. Trivial next to the work this call avoids.
+      pagedLineup: [...lineup.items],
+      totalPrograms: lineup.items.length,
+      materializedPrograms,
+      knownProgramIds: new Set(Object.keys(materializedPrograms)),
+      cleanOffset: 0,
+      cleanLimit: lineup.items.length,
+    });
+  }
+
+  private async assembleCondensedLineup({
+    channel,
+    lineup,
+    pagedLineup,
+    totalPrograms,
+    materializedPrograms,
+    knownProgramIds,
+    cleanOffset,
+    cleanLimit,
+  }: {
+    channel: Channel;
+    lineup: Lineup;
+    pagedLineup: LineupItem[];
+    totalPrograms: number;
+    materializedPrograms: Record<string, ContentProgram>;
+    knownProgramIds: Set<string>;
+    cleanOffset: number;
+    cleanLimit: number;
+  }): Promise<CondensedChannelProgramming> {
     const { lineup: condensedLineup, offsets } = await this.timer.timeAsync(
       'build condensed lineup',
-      () =>
-        this.buildCondensedLineup(
-          channel,
-          new Set([...Object.keys(programsById)]),
-          pagedLineup,
-        ),
+      () => this.buildCondensedLineup(channel, knownProgramIds, pagedLineup),
     );
 
     let apiOffsets: number[];
@@ -745,7 +829,7 @@ export class LineupRepository {
       icon: channel.icon,
       name: channel.name,
       number: channel.number,
-      totalPrograms: len,
+      totalPrograms,
       programs: omitBy(materializedPrograms, isNil),
       lineup: condensedLineup,
       startTimeOffsets: apiOffsets,
@@ -756,7 +840,7 @@ export class LineupRepository {
   async updateLineup(
     id: string,
     req: UpdateChannelProgrammingRequest,
-  ): Promise<Nullable<{ channel: ChannelOrm; newLineup: LineupItem[] }>> {
+  ): Promise<Nullable<UpdateLineupResult>> {
     const channel = await this.drizzleDB.query.channels.findFirst({
       where: (fields, { eq }) => eq(fields.uuid, id),
       with: {
@@ -889,6 +973,9 @@ export class LineupRepository {
       };
     } else if (req.type === 'time' || req.type === 'random') {
       let programs: ChannelProgram[];
+      // Held onto so the caller can build its response without re-querying and
+      // re-materializing every program. See UpdateLineupResult.
+      let materializedPrograms: Record<string, ContentProgram>;
       if (req.type === 'time') {
         const { result } = await this.workerPoolProvider().queueTask({
           type: 'time-slots',
@@ -901,11 +988,12 @@ export class LineupRepository {
           },
         });
 
+        materializedPrograms = await this.materializeLineupCommand.execute({
+          lineup: result.lineup,
+        });
         programs = MaterializeLineupCommand.expandLineup(
           result.lineup,
-          await this.materializeLineupCommand.execute({
-            lineup: result.lineup,
-          }),
+          materializedPrograms,
         );
       } else {
         const { result } = await this.workerPoolProvider().queueTask({
@@ -918,11 +1006,12 @@ export class LineupRepository {
             seed: req.seed,
           },
         });
+        materializedPrograms = await this.materializeLineupCommand.execute({
+          lineup: result.lineup,
+        });
         programs = MaterializeLineupCommand.expandLineup(
           result.lineup,
-          await this.materializeLineupCommand.execute({
-            lineup: result.lineup,
-          }),
+          materializedPrograms,
         );
       }
 
@@ -937,6 +1026,7 @@ export class LineupRepository {
       return {
         channel: updatedChannel,
         newLineup,
+        materializedPrograms,
       };
     }
 

@@ -567,19 +567,25 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         logger.error(e, 'Unable to update guide after lineup update');
       }
 
-      // Potentially more DB queries than just building from the result,
-      // this way we don't have to worry about what entities may or may not
-      // be completely loaded by the ORM. It's cheap enough, so just do a wholesale
-      // reload of the lineup and rebuild it to return to the frontend.
-      // Alternatively:
-      //  1. We can figure out a simple way to refresh the affected entities
-      //     from the updateLineup call above. If performance suffers we can look into this
-      //  2. We can just remove this completely and invalidate the lineup on the frontend
-      //     and make it reload. Also not very clean, but not the end of the world.
+      // Schedule-generated updates already materialized every program in order
+      // to build the lineup, so the response is assembled from that rather than
+      // loading it all again. Reloading meant a second relational query over
+      // every program plus a second full materialization — about 200ms of
+      // blocked event loop on a 2200 item lineup, which is what option (1) in
+      // the note that used to live here was worried about.
+      //
+      // Manual edits still take the long path: the request carries program ids
+      // rather than program details, so nothing was materialized.
       const newLineup = await timeNamedAsync(
         'build fresh lineup',
         LoggerFactory.root,
-        () => req.serverCtx.channelDB.loadCondensedLineup(req.params.id),
+        () =>
+          result.materializedPrograms
+            ? req.serverCtx.channelDB.condensedLineupFromMaterialized(
+                req.params.id,
+                result.materializedPrograms,
+              )
+            : req.serverCtx.channelDB.loadCondensedLineup(req.params.id),
       );
 
       if (isNil(newLineup)) {
