@@ -640,7 +640,11 @@ function report(offRuns: RunResult[], onRuns: RunResult[]) {
     row('probe p99', `${p99.off.toFixed(1)}ms`, `${p99.on.toFixed(1)}ms`),
   );
   console.log(
-    row('probe max', `${maxMs.off.toFixed(1)}ms`, `${maxMs.on.toFixed(1)}ms`),
+    row(
+      'worst single stall',
+      `${maxMs.off.toFixed(1)}ms`,
+      `${maxMs.on.toFixed(1)}ms`,
+    ),
   );
   console.log(
     row(
@@ -653,14 +657,18 @@ function report(offRuns: RunResult[], onRuns: RunResult[]) {
     row('probe failures', `${fails.off.toFixed(0)}`, `${fails.on.toFixed(0)}`),
   );
   console.log('-'.repeat(58));
+  // A save can stall the loop more than once. Printing the slowest few samples
+  // per trial shows that shape; a max would collapse it to the first one.
+  const stalls = (r: RunResult) =>
+    r.probe.topSlowMs
+      .filter((ms) => ms > SLOW_THRESHOLD_MS)
+      .map((ms) => ms.toFixed(0))
+      .join(' + ') || '(none)';
+  console.log(`\nstalls per trial (slowest samples above the threshold)`);
+  offRuns.forEach((r, i) => console.log(`  off  trial ${i + 1}: ${stalls(r)}`));
+  onRuns.forEach((r, i) => console.log(`  on   trial ${i + 1}: ${stalls(r)}`));
   console.log(
-    `\nper-trial max stall   off: ${offRuns.map((r) => r.probe.maxMs.toFixed(0)).join(', ')}`,
-  );
-  console.log(
-    `                      on:  ${onRuns.map((r) => r.probe.maxMs.toFixed(0)).join(', ')}`,
-  );
-  console.log(
-    `per-trial save ms     off: ${offRuns.map((r) => r.saveMs.toFixed(0)).join(', ')}`,
+    `\nper-trial save ms     off: ${offRuns.map((r) => r.saveMs.toFixed(0)).join(', ')}`,
   );
   console.log(
     `                      on:  ${onRuns.map((r) => r.saveMs.toFixed(0)).join(', ')}`,
@@ -669,10 +677,10 @@ function report(offRuns: RunResult[], onRuns: RunResult[]) {
     `\nsave wall-clock         ${pct(saveMs.off, saveMs.on)} with the pool`,
   );
   console.log(
-    `worst-case stall        ${pct(maxMs.off, maxMs.on)} with the pool`,
+    `worst single stall      ${pct(maxMs.off, maxMs.on)} with the pool`,
   );
   console.log(
-    `total degraded time     ${pct(excess.off, excess.on)} with the pool`,
+    `total degraded time     ${pct(excess.off, excess.on)} with the pool   <- headline`,
   );
   console.log(
     `\nNegative is better. The pool is expected to cost save wall-clock and`,

@@ -22,6 +22,16 @@ export type ProbeSummary = {
    */
   slowCount: number;
   /**
+   * The largest samples, descending.
+   *
+   * `maxMs` collapses the whole run to one number, which hides the case where
+   * a request triggers several distinct stalls. A real save produced samples of
+   * 272ms and 197ms back to back, followed by nothing above 2ms: reported as a
+   * max, that looked like a single 272ms stall, and the second one — 40% of the
+   * damage — was invisible. Seeing the top few makes the shape obvious.
+   */
+  topSlowMs: number[];
+  /**
    * Total latency above `slowThresholdMs`, summed across slow probes. Stands in
    * for "how much service was degraded, in aggregate".
    */
@@ -42,6 +52,9 @@ export function percentile(sorted: number[], p: number): number {
   return sorted[index]!;
 }
 
+/** How many of the slowest samples `topSlowMs` retains. */
+const TOP_SLOW_COUNT = 5;
+
 export function summarizeProbes(
   samples: number[],
   failures: number,
@@ -59,6 +72,7 @@ export function summarizeProbes(
     p50Ms: percentile(sorted, 50),
     p99Ms: percentile(sorted, 99),
     slowCount: slow.length,
+    topSlowMs: [...sorted].reverse().slice(0, TOP_SLOW_COUNT),
     totalExcessMs: slow.reduce((sum, s) => sum + (s - slowThresholdMs), 0),
     slowThresholdMs,
     failures,
