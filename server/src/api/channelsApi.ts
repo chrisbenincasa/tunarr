@@ -5,6 +5,7 @@ import {
 import { globalOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { validateSlotGroups } from '@/services/scheduling/slotGroupValidator.js';
+import type { UpdateXmlTvTaskRequest } from '@/tasks/UpdateXmlTvTask.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -553,8 +554,14 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       try {
+        // Scope the refresh to the channel we just saved. Without a channel id
+        // the task rebuilds every channel's guide and regenerates the whole
+        // XMLTV document, which blocks the event loop long enough to stall
+        // in-flight HLS segment requests on every other live channel.
         GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
-          .runNow(true)
+          .runNow(true, {
+            channelId: req.params.id,
+          } satisfies UpdateXmlTvTaskRequest)
           .catch((err) => logger.error(err, 'Error regenerating guide'));
       } catch (e) {
         logger.error(e, 'Unable to update guide after lineup update');

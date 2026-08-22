@@ -27,7 +27,7 @@ const UpdateXmlTvTaskRequest = z
   })
   .optional();
 
-type UpdateXmlTvTaskRequest = z.infer<typeof UpdateXmlTvTaskRequest>;
+export type UpdateXmlTvTaskRequest = z.infer<typeof UpdateXmlTvTaskRequest>;
 
 @injectable()
 @taskDef({
@@ -39,7 +39,7 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
   public ID = UpdateXmlTvTask.ID;
   schema = UpdateXmlTvTaskRequest;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
@@ -79,25 +79,30 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
         xmltvSettings = this.settingsDB.xmlTvSettings();
       }
 
+      // Round start time down to the nearest hour so guide boundaries align
+      // with the hour-granular requests made by the UI and other consumers.
+      // Extend the duration by the fractional hour we went back so the guide
+      // end time — and therefore coverage before the next scheduled run — is
+      // identical to what it would have been without rounding.
+      const now = dayjs();
+      const startTime = now.startOf('hour');
+      const extraDuration = dayjs.duration(now.diff(startTime));
+      const guideDuration = dayjs
+        .duration({ hours: xmltvSettings.programmingHours })
+        .add(extraDuration);
+
       if (isNonEmptyString(channelId)) {
+        // Force the rebuild: a targeted refresh is only requested when that
+        // channel's programming actually changed, so the staleness guard in
+        // buildChannelGuide would only be able to skip work we know is needed.
         await this.guideService.refreshGuide(
-          dayjs.duration({ hours: xmltvSettings.programmingHours }),
+          guideDuration,
           channelId,
           true,
+          true,
+          startTime.valueOf(),
         );
       } else {
-        // Round start time down to the nearest hour so guide boundaries align
-        // with the hour-granular requests made by the UI and other consumers.
-        // Extend the duration by the fractional hour we went back so the guide
-        // end time — and therefore coverage before the next scheduled run — is
-        // identical to what it would have been without rounding.
-        const now = dayjs();
-        const startTime = now.startOf('hour');
-        const extraDuration = dayjs.duration(now.diff(startTime));
-        const guideDuration = dayjs
-          .duration({ hours: xmltvSettings.programmingHours })
-          .add(extraDuration);
-
         await this.guideService.buildAllChannels(
           guideDuration,
           false,

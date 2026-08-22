@@ -55,8 +55,9 @@ class Scheduler {
   runScheduledJobNow<Id extends TaskId, OutType = TaskOutputType<Id>>(
     id: Id,
     background?: boolean,
+    request?: unknown,
   ): Promise<OutType | undefined> {
-    return this.getScheduledJob<Id, OutType>(id)?.runNow(background);
+    return this.getScheduledJob<Id, OutType>(id)?.runNow(background, request);
   }
 
   // Clears all scheduled tasks for an ID and cancels them
