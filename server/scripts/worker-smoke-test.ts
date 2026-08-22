@@ -119,6 +119,24 @@ async function postJson(
   return { status: res.status, body: await res.text() };
 }
 
+/** Signals the server's whole process group, so meilisearch goes down with it. */
+function signalGroup(
+  child: ChildProcessWithoutNullStreams,
+  signal: NodeJS.Signals,
+) {
+  try {
+    if (child.pid !== undefined) {
+      process.kill(-child.pid, signal);
+    }
+  } catch {
+    try {
+      child.kill(signal);
+    } catch {
+      /* nothing left to signal */
+    }
+  }
+}
+
 async function main() {
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tunarr-smoke-'));
   // A directory nothing should ever write to. The worker DB-path regression
@@ -160,13 +178,14 @@ async function main() {
     if (values.binary) {
       const bin = path.resolve(values.binary);
       console.log(`Starting ${bin}`);
-      child = spawn(bin, serverArgs, { env });
+      child = spawn(bin, serverArgs, { env, detached: true });
     } else {
       console.log('Starting src/index.ts via tsx');
       child = spawn(
         path.resolve('node_modules/.bin/tsx'),
         ['src/index.ts', ...serverArgs],
-        { env },
+        // Own process group so teardown reaches the meilisearch child too.
+        { env, detached: true },
       );
     }
 
@@ -262,13 +281,13 @@ async function main() {
     if (child && child.exitCode === null) {
       // SIGTERM first so the server tears down its meilisearch child; SIGKILL
       // only if it will not go quietly.
-      child.kill('SIGTERM');
+      signalGroup(child, 'SIGTERM');
       await Promise.race([
         new Promise((r) => child?.once('exit', r)),
         delay(10_000),
       ]);
       if (child.exitCode === null) {
-        child.kill('SIGKILL');
+        signalGroup(child, 'SIGKILL');
         await delay(500);
       }
     }
