@@ -191,7 +191,14 @@ export function nextSlotStartTime(
   dayOffset: number,
 ): number {
   if (existingStartTimes.length > 0) {
-    return Math.max(...existingStartTimes) + OneHourMillis;
+    // Wrap rather than run past the end of the period. Building an hourly day
+    // takes 24 additions, and the 25th used to land on exactly 24h -- an offset
+    // the scheduler cannot match, which either throws or collapses the channel
+    // into a single flex block.
+    return (
+      (Math.max(...existingStartTimes) + OneHourMillis) %
+      slotPeriodMillis(period)
+    );
   }
   return period === 'week' ? OneDayMillis * dayOffset : 0;
 }
@@ -209,13 +216,21 @@ export function withSlotDayOfWeek(
   return (startTime % OneDayMillis) + dayOfWeek * OneDayMillis;
 }
 
-/** Set a slot's time of day, keeping the day a weekly offset encodes. */
+/**
+ * Set a slot's time of day, keeping the day a weekly offset encodes.
+ *
+ * Only a weekly schedule has a day to keep. Carrying one over in a daily
+ * schedule is how a slot ends up at an offset outside its own period, and the
+ * editor hides the day control in that mode, so nothing on screen would show
+ * what happened.
+ */
 export function withSlotTimeOfDay(
   startTime: number,
   hours: number,
   minutes: number,
+  period: SlotPeriod,
 ): number {
-  const dayOfWeek = slotDayOfWeek(startTime);
+  const dayOfWeek = period === 'week' ? slotDayOfWeek(startTime) : 0;
   const timeOfDay = dayjs.duration({ hours, minutes }).asMilliseconds();
   return timeOfDay + dayOfWeek * OneDayMillis;
 }

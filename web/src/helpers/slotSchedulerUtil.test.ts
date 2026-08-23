@@ -61,12 +61,14 @@ describe('withSlotDayOfWeek', () => {
 
 describe('withSlotTimeOfDay', () => {
   test('sets the time of day on a same-day slot', () => {
-    expect(withSlotTimeOfDay(0, 5, 50)).toBe(5 * HOUR + 50 * 60 * 1000);
+    expect(withSlotTimeOfDay(0, 5, 50, 'day')).toBe(5 * HOUR + 50 * 60 * 1000);
   });
 
   test('keeps the day a weekly offset encodes', () => {
     const tuesday = 2 * OneDayMillis;
-    expect(withSlotTimeOfDay(tuesday, 9, 0)).toBe(2 * OneDayMillis + 9 * HOUR);
+    expect(withSlotTimeOfDay(tuesday, 9, 0, 'week')).toBe(
+      2 * OneDayMillis + 9 * HOUR,
+    );
   });
 });
 
@@ -81,5 +83,37 @@ describe('nextSlotStartTime', () => {
 
   test('otherwise it is an hour after the latest slot', () => {
     expect(nextSlotStartTime([0, 2 * HOUR, HOUR], 'day', 0)).toBe(3 * HOUR);
+  });
+});
+
+// The two defects that produced a daily slot at 29h50m in the field.
+describe('offsets stay inside the schedule period', () => {
+  test('adding past the end of a day wraps instead of running on', () => {
+    expect(nextSlotStartTime([23 * HOUR], 'day', 0)).toBe(0);
+  });
+
+  test('repeatedly adding to a daily schedule never leaves the day', () => {
+    const starts: number[] = [];
+    for (let i = 0; i < 30; i++) {
+      starts.push(nextSlotStartTime(starts, 'day', 0));
+    }
+    expect(Math.max(...starts)).toBeLessThan(OneDayMillis);
+  });
+
+  test('adding past the end of a week wraps too', () => {
+    expect(nextSlotStartTime([7 * OneDayMillis - HOUR], 'week', 6)).toBe(0);
+  });
+
+  test('a daily schedule has no day component to preserve', () => {
+    // 24h with the time set to 05:50 is how 107400000 was produced.
+    expect(withSlotTimeOfDay(OneDayMillis, 5, 50, 'day')).toBe(
+      5 * HOUR + 50 * 60 * 1000,
+    );
+  });
+
+  test('a weekly schedule still keeps its day', () => {
+    expect(withSlotTimeOfDay(2 * OneDayMillis, 9, 0, 'week')).toBe(
+      2 * OneDayMillis + 9 * HOUR,
+    );
   });
 });
