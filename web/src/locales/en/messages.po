@@ -1351,7 +1351,7 @@ msgstr "Do not group programs at all. Normal shuffle."
 msgid "Documentation"
 msgstr "Documentation"
 
-#: src/components/MediaSourceLibraryTable.tsx:443
+#: src/components/MediaSourceLibraryTable.tsx:450
 msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
 msgstr "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
 
@@ -2214,7 +2214,7 @@ msgstr "Last Scanned: {0}"
 msgid "Last Scheduled Execution"
 msgstr "Last Scheduled Execution"
 
-#: src/components/MediaSourceLibraryTable.tsx:261
+#: src/components/MediaSourceLibraryTable.tsx:277
 msgid "Last Synced"
 msgstr "Last Synced"
 
@@ -2480,7 +2480,7 @@ msgstr "Media Sources"
 msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 msgstr "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 
-#: src/components/MediaSourceLibraryTable.tsx:254
+#: src/components/MediaSourceLibraryTable.tsx:270
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:255
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:256
 msgid "Media Type"
@@ -2569,7 +2569,7 @@ msgstr "Must use a valid URL, or empty."
 
 #: src/components/custom-shows/EditCustomShowForm.tsx:274
 #: src/components/filler/EditFillerListForm.tsx:137
-#: src/components/MediaSourceLibraryTable.tsx:241
+#: src/components/MediaSourceLibraryTable.tsx:257
 #: src/components/settings/ConnectMediaSources.tsx:44
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx:95
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:93
@@ -3649,7 +3649,7 @@ msgstr "Soundtrack"
 msgid "Source"
 msgstr "Source"
 
-#: src/components/MediaSourceLibraryTable.tsx:233
+#: src/components/MediaSourceLibraryTable.tsx:249
 msgid "Source Type"
 msgstr "Source Type"
 
