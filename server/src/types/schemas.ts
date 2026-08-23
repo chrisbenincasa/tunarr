@@ -12,9 +12,24 @@ export const TruthyQueryParam = z
   ])
   .transform((value) => value === 1 || value === true || value === 'true');
 
+/**
+ * `.default()` only fires for a *missing* key, so a present-but-empty
+ * `?limit=` never reached it: `z.coerce.number()` turned "" into 0, which
+ * passes `.min(-1)` and reaches the DB as `.limit(0)` — while the sentinel for
+ * "no limit" is -1. A client building its query as `limit=${value ?? ''}` got
+ * a 200 and an empty page. Map blank to undefined first so the default applies.
+ */
+const blankAsAbsent = <T extends z.ZodType>(schema: T) =>
+  z.preprocess(
+    (value) =>
+      typeof value === 'string' && value.trim() === '' ? undefined : value,
+    schema,
+  );
+
 export const PagingParams = z.object({
-  limit: z.coerce.number().min(-1).default(-1),
-  offset: z.coerce.number().nonnegative().default(0),
+  // `.int()` because there was none, so `?limit=1.5` reached SQL as a float.
+  limit: blankAsAbsent(z.coerce.number().int().min(-1).default(-1)),
+  offset: blankAsAbsent(z.coerce.number().int().nonnegative().default(0)),
 });
 
 export const jsonSchema = z.json();
