@@ -279,6 +279,7 @@ export async function scheduleTimeSlots(
       currSlot,
       paddedProgram,
       slotDuration - paddedProgram.totalDuration,
+      +timeCursor,
     );
     let totalAddedDuration = paddedProgram.totalDuration;
 
@@ -300,7 +301,8 @@ export async function scheduleTimeSlots(
       maybeAddPrePostFiller(
         currSlot,
         nextPadded,
-        slotDuration - nextPadded.totalDuration,
+        slotDuration - totalAddedDuration - nextPadded.totalDuration,
+        +timeCursor + totalAddedDuration,
       );
       totalAddedDuration += nextPadded.totalDuration;
     }
@@ -311,12 +313,24 @@ export async function scheduleTimeSlots(
         remainingTimeInSlot,
         currSlot,
         paddedPrograms,
+        +timeCursor,
       );
     }
 
-    const finalPrograms: PaddedProgram[] = paddedPrograms.flatMap((pp) =>
-      applyMidRollBreaks(pp, currSlot, currSlot.midRollConfig, random),
-    );
+    let midRollOffset = 0;
+    const finalPrograms: PaddedProgram[] = [];
+    for (const pp of paddedPrograms) {
+      finalPrograms.push(
+        ...applyMidRollBreaks(
+          pp,
+          currSlot,
+          currSlot.midRollConfig,
+          random,
+          +timeCursor + midRollOffset,
+        ),
+      );
+      midRollOffset += pp.totalDuration;
+    }
 
     // We have two options here if there is remaining time in the slot
     // If we want to be "greedy", we can keep attempting to look for items
@@ -353,7 +367,7 @@ export async function scheduleTimeSlots(
       if (padMs > 0) {
         let filler = currSlot.getFillerOfType('fallback', {
           slotDuration: -Infinity, // Pick anything
-          timeCursor: -1,
+          timeCursor: +timeCursor,
         });
 
         if (filler) {

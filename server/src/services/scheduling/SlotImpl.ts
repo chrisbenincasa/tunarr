@@ -10,6 +10,21 @@ import type { Random } from 'random-js';
 import type { Nullable } from '../../types/util.ts';
 import type { IterationState, ProgramIterator } from './ProgramIterator.js';
 
+/**
+ * A negative or non-finite {@link IterationState#slotDuration} is the caller's
+ * way of saying "pick anything" (fallback filler), so only a finite,
+ * non-negative budget constrains the pick.
+ */
+function fillerFitsAvailableTime(
+  filler: FillerProgram,
+  state: IterationState,
+): boolean {
+  if (!Number.isFinite(state.slotDuration) || state.slotDuration < 0) {
+    return true;
+  }
+  return filler.duration <= state.slotDuration;
+}
+
 export abstract class SlotImpl<
   SlotType extends BaseSlot,
   ProgramT extends CondensedChannelProgram = CondensedChannelProgram,
@@ -73,10 +88,21 @@ export abstract class SlotImpl<
     // Random pick right now
     const it = this.random.pick(its);
     const filler = it.current(state);
-    if (filler) {
-      it.next();
+    if (!filler) {
+      return null;
     }
-    return filler;
+
+    it.next();
+
+    // Not every iterator constrains its picks by the available time (index
+    // based orderings such as "uniform" hand back whatever is next in the
+    // shuffle). Reject an item that doesn't fit so it can't overflow the slot
+    // -- the iterator has already advanced, so a retry gets a new candidate.
+    if (!fillerFitsAvailableTime(filler, state)) {
+      return null;
+    }
+
+    return { ...filler, fillerType: type };
   }
 
   hasFillerOfType(type: SlotFillerTypes) {

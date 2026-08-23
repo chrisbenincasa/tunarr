@@ -3,7 +3,6 @@ import type {
   CondensedContentProgram,
 } from '@tunarr/types';
 import type { CondensedCustomProgram } from '@tunarr/types/schemas';
-import { slice } from 'lodash-es';
 import type { Random } from 'random-js';
 import {
   IndexBasedProgramIterator,
@@ -26,13 +25,11 @@ abstract class ShuffleProgramIterator<
 
   next() {
     super.next();
-    if (this.position >= this.programs.length) {
-      const mid = Math.floor(this.programs.length / 2);
-      this.programs = [
-        ...slice(this.programs, 0, mid),
-        ...slice(this.programs, mid),
-      ];
-      this.position = 0;
+    // IndexBasedProgramIterator#next wraps the position modulo the list
+    // length, so position === 0 means we just completed a full pass.
+    // Reshuffle so the next pass isn't a replay of the previous one.
+    if (this.position === 0) {
+      this.programs = this.random.shuffle([...this.programs]);
     }
   }
 

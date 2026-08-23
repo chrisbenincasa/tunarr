@@ -114,7 +114,7 @@ export class WeightedFillerProgramIterator
 
   current(state: IterationState): Nullable<FillerProgram> {
     let idx = 0;
-    if (state.slotDuration > this.maxDuration) {
+    if (state.slotDuration < 0 || state.slotDuration > this.maxDuration) {
       idx = this.weightedPrograms.length;
     } else {
       while (idx < this.weightedPrograms.length) {
@@ -125,14 +125,12 @@ export class WeightedFillerProgramIterator
       }
     }
 
+    const cooldown = state.cooldownMs ?? state.slotDuration;
     const programsToConsider = this.weightedPrograms
       .slice(0, idx)
       .filter(({ program }) => {
         const lastSeen = this.lastSeenTimestampById.get(program.uuid);
-        if (
-          !isNil(lastSeen) &&
-          state.timeCursor - lastSeen < state.slotDuration
-        ) {
+        if (!isNil(lastSeen) && state.timeCursor - lastSeen < cooldown) {
           return false;
         }
         return true;

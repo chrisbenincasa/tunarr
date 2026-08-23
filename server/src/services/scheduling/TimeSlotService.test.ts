@@ -2406,6 +2406,92 @@ describe('TimeSlotService', () => {
         }
       });
 
+      test('weighted pre-roll filler does not deplete across programs in a slot', async () => {
+        const fillerListId = randomUUID();
+
+        // 6 short episodes that each fit within a 1-hour pad,
+        // so multiple programs fill the slot and each gets pre-roll filler.
+        const episodes: SlotSchedulerProgram[] = Array.from(
+          { length: 6 },
+          (_, i) => ({
+            ...createFakeProgramOrm({
+              uuid: `ep-${i}`,
+              title: `Episode ${i}`,
+              type: 'episode',
+              duration: 30 * 60 * 1000, // 30 min each
+              episode: i + 1,
+              tvShowUuid: 'show1',
+              show: { uuid: 'show1' },
+            }),
+            parentFillerLists: [],
+            parentCustomShows: [],
+            parentSmartCollections: [],
+          }),
+        );
+
+        // Only 2 filler programs — previously these would deplete after
+        // 2 programs, leaving the remaining 4 without pre-roll.
+        const fillerPrograms: SlotSchedulerProgram[] = Array.from(
+          { length: 2 },
+          (_, i) => ({
+            ...createFakeProgramOrm({
+              uuid: `filler-${i}`,
+              title: `Filler ${i}`,
+              type: 'movie',
+              duration: 15 * 1000, // 15 seconds each
+            }),
+            parentFillerLists: [fillerListId],
+            parentCustomShows: [],
+            parentSmartCollections: [],
+          }),
+        );
+
+        const schedule: TimeSlotSchedule = {
+          type: 'time',
+          period: 'day',
+          maxDays: 1,
+          flexPreference: 'end',
+          padMs: oneHour,
+          latenessMs: 0,
+          timeZoneOffset: 0,
+          slots: [
+            {
+              id: randomUUID(),
+              startTime: 0,
+              type: 'show',
+              showId: 'show1',
+              order: 'next',
+              direction: 'asc',
+              seasonFilter: [],
+              filler: [
+                {
+                  types: ['pre'],
+                  fillerListId,
+                  fillerOrder: 'shuffle_prefer_short',
+                },
+              ],
+            },
+          ],
+        };
+
+        const result = await scheduleTimeSlots(
+          schedule,
+          [...episodes, ...fillerPrograms],
+          [42, 99],
+          undefined,
+          midnight,
+        );
+
+        const fillerItems = result.lineup.filter((p) => p.type === 'filler');
+        const contentItems = result.lineup.filter((p) => p.type === 'content');
+
+        // We should have at least as many pre-roll filler items as
+        // content programs — the 2-item filler list should cycle, not
+        // deplete after 2 uses.
+        expect(contentItems.length).toBeGreaterThanOrEqual(6);
+        expect(fillerItems.length).toBeGreaterThanOrEqual(contentItems.length);
+      });
+
       test('same group, different ordering → independent', async () => {
         const episodes = makeEpisodes('show1', 10);
         const slotIdA = randomUUID();
@@ -2460,5 +2546,457 @@ describe('TimeSlotService', () => {
         expect(firsts[0]).toBe('show1-ep1');
       });
     });
+  });
+});
+
+describe('slot filler placement', () => {
+  const oneMin = 60 * 1000;
+  const midnight = dayjs('2024-01-01T00:00:00.000Z').utc();
+
+  const makeShortEpisodes = (
+    showId: string,
+    count: number,
+  ): SlotSchedulerProgram[] =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `${showId}-ep${i + 1}`,
+        title: `${showId} Episode ${i + 1}`,
+        type: 'episode',
+        // 7-11 minute episodes, several of which fit in a 30 minute slot
+        duration: (7 + (i % 5)) * oneMin,
+        episode: i + 1,
+        tvShowUuid: showId,
+        show: { uuid: showId },
+      }),
+      parentFillerLists: [],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  const makeFillers = (
+    fillerListId: string,
+    prefix: string,
+    count: number,
+    durationMs: number,
+  ): SlotSchedulerProgram[] =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `${prefix}-${i}`,
+        title: `${prefix} ${i}`,
+        type: 'movie',
+        duration: durationMs,
+      }),
+      parentFillerLists: [fillerListId],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  type LineupItem = {
+    type: string;
+    id?: string;
+    duration: number;
+    fillerType?: string;
+  };
+
+  test('head/tail filler is emitted even when every program is padded', async () => {
+    const headList = randomUUID();
+    const bumperList = randomUUID();
+    const tailList = randomUUID();
+    const shows = ['show1', 'show2', 'show3'];
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      // A pad this large pads every short episode out to the boundary, which
+      // used to make the slot look "full" and starve head/tail filler.
+      padMs: 15 * oneMin,
+      latenessMs: 0,
+      timeZoneOffset: 0,
+      slots: shows.map((showId, i) => ({
+        id: randomUUID(),
+        startTime: i * 30 * oneMin,
+        type: 'show',
+        showId,
+        order: 'next',
+        direction: 'asc',
+        seasonFilter: [],
+        filler: [
+          {
+            types: ['head'],
+            fillerListId: headList,
+            fillerOrder: 'shuffle_prefer_short',
+          },
+          {
+            types: ['pre', 'post'],
+            fillerListId: bumperList,
+            fillerOrder: 'shuffle_prefer_short',
+          },
+          {
+            types: ['tail'],
+            fillerListId: tailList,
+            fillerOrder: 'shuffle_prefer_short',
+          },
+        ],
+      })),
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [
+        ...shows.flatMap((s) => makeShortEpisodes(s, 12)),
+        ...makeFillers(headList, 'head', 4, 30 * 1000),
+        ...makeFillers(bumperList, 'bumper', 6, 15 * 1000),
+        ...makeFillers(tailList, 'tail', 4, 30 * 1000),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const lineup = result.lineup as LineupItem[];
+    const byType = (t: string) =>
+      lineup.filter((p) => p.type === 'filler' && p.fillerType === t);
+
+    expect(byType('head').length).toBeGreaterThan(0);
+    expect(byType('tail').length).toBeGreaterThan(0);
+    // Every emitted head/tail should come from the list it was assigned to.
+    expect(byType('head').every((p) => p.id?.startsWith('head-'))).toBe(true);
+    expect(byType('tail').every((p) => p.id?.startsWith('tail-'))).toBe(true);
+  });
+
+  test('head filler opens a slot and tail filler closes it, across back-to-back slots', async () => {
+    const headList = randomUUID();
+    const tailList = randomUUID();
+    const shows = ['show1', 'show2', 'show3'];
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: 5 * oneMin,
+      latenessMs: 0,
+      timeZoneOffset: 0,
+      slots: shows.map((showId, i) => ({
+        id: randomUUID(),
+        startTime: i * 30 * oneMin,
+        type: 'show',
+        showId,
+        order: 'next',
+        direction: 'asc',
+        seasonFilter: [],
+        filler: [
+          {
+            types: ['head'],
+            fillerListId: headList,
+            fillerOrder: 'shuffle_prefer_short',
+          },
+          {
+            types: ['tail'],
+            fillerListId: tailList,
+            fillerOrder: 'shuffle_prefer_short',
+          },
+        ],
+      })),
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [
+        ...shows.flatMap((s) => makeShortEpisodes(s, 12)),
+        ...makeFillers(headList, 'head', 4, 30 * 1000),
+        ...makeFillers(tailList, 'tail', 4, 30 * 1000),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const lineup = result.lineup as LineupItem[];
+
+    // Walk the lineup and record the offset of each head/tail item.
+    let offset = 0;
+    const headOffsets: number[] = [];
+    const tailOffsets: number[] = [];
+    for (const item of lineup) {
+      if (item.type === 'filler' && item.fillerType === 'head') {
+        headOffsets.push(offset);
+      } else if (item.type === 'filler' && item.fillerType === 'tail') {
+        tailOffsets.push(offset);
+      }
+      offset += item.duration;
+    }
+
+    expect(headOffsets.length).toBeGreaterThanOrEqual(3);
+    // Each head lands exactly on a slot boundary.
+    for (const o of headOffsets) {
+      expect(o % (30 * oneMin)).toBe(0);
+    }
+    // A tail always precedes the next slot's head rather than spilling into it.
+    for (const tail of tailOffsets) {
+      const nextBoundary = Math.ceil((tail + 1) / (30 * oneMin)) * 30 * oneMin;
+      expect(tail).toBeLessThan(nextBoundary);
+    }
+  });
+
+  test.each(['eager', 'lazy'] as const)(
+    'head filler plays before the program when %s mid-roll breaks split it',
+    async (strategy) => {
+      const headList = randomUUID();
+      const midList = randomUUID();
+
+      const episodes: SlotSchedulerProgram[] = [
+        {
+          ...createFakeProgramOrm({
+            uuid: 'show1-ep1',
+            title: 'Episode 1',
+            type: 'episode',
+            duration: 20 * oneMin,
+            episode: 1,
+            tvShowUuid: 'show1',
+            show: { uuid: 'show1' },
+          }),
+          parentFillerLists: [],
+          parentCustomShows: [],
+          parentSmartCollections: [],
+        },
+      ];
+
+      const schedule: TimeSlotSchedule = {
+        type: 'time',
+        period: 'day',
+        maxDays: 1,
+        flexPreference: 'end',
+        padMs: 30 * oneMin,
+        latenessMs: 0,
+        timeZoneOffset: 0,
+        slots: [
+          {
+            id: randomUUID(),
+            startTime: 0,
+            type: 'show',
+            showId: 'show1',
+            order: 'next',
+            direction: 'asc',
+            seasonFilter: [],
+            filler: [
+              {
+                types: ['head'],
+                fillerListId: headList,
+                fillerOrder: 'shuffle_prefer_short',
+              },
+              {
+                types: ['mid'],
+                fillerListId: midList,
+                fillerOrder: 'shuffle_prefer_short',
+              },
+            ],
+            midRoll: {
+              strategy,
+              breakRule: { type: 'fixed_interval', intervalMs: 8 * oneMin },
+              breakDurationMs: 30 * 1000,
+              maxBreaks: 2,
+              minProgramDurationMs: 0,
+              tailBufferMs: 0,
+            },
+          },
+        ],
+      };
+
+      const result = await scheduleTimeSlots(
+        schedule,
+        [
+          ...episodes,
+          ...makeFillers(headList, 'head', 3, 30 * 1000),
+          ...makeFillers(midList, 'mid', 3, 30 * 1000),
+        ],
+        [42, 99],
+        undefined,
+        midnight,
+      );
+
+      const lineup = result.lineup as LineupItem[];
+      const headIdx = lineup.findIndex(
+        (p) => p.type === 'filler' && p.fillerType === 'head',
+      );
+      const firstContentIdx = lineup.findIndex((p) => p.type === 'content');
+
+      expect(headIdx).toBeGreaterThanOrEqual(0);
+      // The head bumper must open the block, not trail the program's last segment.
+      expect(headIdx).toBeLessThan(firstContentIdx);
+    },
+  );
+
+  test('uniform-ordered filler never exceeds the time available to it', async () => {
+    const bumperList = randomUUID();
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: oneMin,
+      latenessMs: 0,
+      timeZoneOffset: 0,
+      // 30 minute slots covering the whole day, so that no slot is wide
+      // enough for the oversized filler to legitimately fit.
+      slots: Array.from({ length: 48 }, (_, i) => ({
+        id: randomUUID(),
+        startTime: i * 30 * oneMin,
+        type: 'show',
+        showId: `show${(i % 3) + 1}`,
+        order: 'next',
+        direction: 'asc',
+        seasonFilter: [],
+        filler: [
+          {
+            types: ['pre', 'post', 'head', 'tail'],
+            fillerListId: bumperList,
+            fillerOrder: 'uniform',
+          },
+        ],
+      })),
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [
+        ...['show1', 'show2', 'show3'].flatMap((s) => makeShortEpisodes(s, 12)),
+        // Deliberately mixes tiny bumpers with one item longer than any slot,
+        // which must never be selected to bracket or separate programs.
+        ...makeFillers(bumperList, 'bumper', 4, 15 * 1000),
+        ...makeFillers(bumperList, 'huge', 1, 45 * oneMin),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const lineup = result.lineup as LineupItem[];
+    const oversized = lineup.filter(
+      (p) => p.type === 'filler' && p.id?.startsWith('huge-'),
+    );
+    expect(oversized).toHaveLength(0);
+  });
+});
+
+describe('slot filler budgeting', () => {
+  const oneMin = 60 * 1000;
+  const midnight = dayjs('2024-01-01T00:00:00.000Z').utc();
+  const slotMs = 30 * oneMin;
+
+  const makeEpisodesOfLength = (
+    showId: string,
+    count: number,
+    durationMs: number,
+  ): SlotSchedulerProgram[] =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `${showId}-ep${i + 1}`,
+        title: `${showId} Episode ${i + 1}`,
+        type: 'episode',
+        duration: durationMs,
+        episode: i + 1,
+        tvShowUuid: showId,
+        show: { uuid: showId },
+      }),
+      parentFillerLists: [],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  const makeFillersOfLength = (
+    fillerListId: string,
+    count: number,
+    durationMs: number,
+  ): SlotSchedulerProgram[] =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `bumper-${i}`,
+        title: `Bumper ${i}`,
+        type: 'movie',
+        duration: durationMs,
+      }),
+      parentFillerLists: [fillerListId],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  /**
+   * Returns the items that straddle a slot boundary. Flex is allowed to span
+   * one (it is what carries the lineup to the next slot start); anything else
+   * doing so means the slot overflowed.
+   */
+  const straddlingItems = (
+    lineup: { type: string; id?: string; duration: number }[],
+    horizonMs: number,
+  ) => {
+    const straddlers: { id?: string; start: number; end: number }[] = [];
+    let offset = 0;
+    for (const item of lineup) {
+      if (offset >= horizonMs) break;
+      const end = offset + item.duration;
+      const crosses =
+        Math.floor(offset / slotMs) !== Math.floor((end - 1) / slotMs);
+      if (crosses && item.type !== 'flex') {
+        straddlers.push({ id: item.id, start: offset, end });
+      }
+      offset = end;
+    }
+    return straddlers;
+  };
+
+  test('post-roll filler on a later program cannot overflow the slot', async () => {
+    const bumperList = randomUUID();
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: oneMin,
+      latenessMs: 0,
+      timeZoneOffset: 0,
+      slots: Array.from({ length: 48 }, (_, i) => ({
+        id: randomUUID(),
+        startTime: i * slotMs,
+        type: 'show',
+        showId: `show${(i % 2) + 1}`,
+        order: 'next',
+        direction: 'asc',
+        seasonFilter: [],
+        filler: [
+          {
+            types: ['post'],
+            fillerListId: bumperList,
+            fillerOrder: 'shuffle_prefer_short',
+          },
+        ],
+      })),
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [
+        ...makeEpisodesOfLength('show1', 12, 5 * oneMin),
+        ...makeEpisodesOfLength('show2', 12, 5 * oneMin),
+        // Long enough that it only fits early in a slot. Once a couple of
+        // programs are placed there is no longer room for it, and budgeting
+        // it against the whole slot rather than the remaining time pushes
+        // the block past the slot boundary.
+        ...makeFillersOfLength(bumperList, 3, 12 * oneMin),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const straddlers = straddlingItems(
+      result.lineup as { type: string; id?: string; duration: number }[],
+      6 * 60 * oneMin,
+    );
+    expect(straddlers).toEqual([]);
   });
 });
