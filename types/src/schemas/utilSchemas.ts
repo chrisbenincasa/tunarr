@@ -142,3 +142,26 @@ export const ContentProgramTypeSchema = z.enum([
 ]);
 
 export type Schedule = z.infer<typeof ScheduleSchema>;
+
+/**
+ * A boolean carried in a query string.
+ *
+ * Not `z.coerce.boolean()`, which is `Boolean(value)` and so returns true for
+ * every non-empty string — including "false" and "0". A parameter declared that
+ * way cannot be turned off: `?flag=false` reads as true, silently, with no
+ * validation error to indicate it. Nor is it `.or(z.stringbool())` as a
+ * fallback, because `z.coerce.boolean()` never fails, so a following union
+ * branch is unreachable.
+ *
+ * Accepts "true"/"false" and any number, where 0 is false. An absent value
+ * ("?flag" with no "=") arrives as the empty string and coerces to 0, so it is
+ * false; declare `.default(true)` if a bare flag should mean something else.
+ */
+export const TruthyQueryParam = z
+  .union([
+    z.boolean(),
+    z.literal('true'),
+    z.literal('false'),
+    z.coerce.number(),
+  ])
+  .transform((value) => value === 1 || value === true || value === 'true');

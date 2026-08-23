@@ -693,7 +693,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         tags: ['Programs'],
         params: BasicIdParamSchema,
         querystring: z.object({
-          forward: z.coerce.boolean().default(true),
+          forward: TruthyQueryParam.default(true),
         }),
         response: {
           200: z.object({ url: z.string() }),

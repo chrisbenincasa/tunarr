@@ -63,14 +63,14 @@ import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConvert
 import type { ChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
 import type { ChannelOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { Result } from '../types/result.ts';
-import { PagingParams } from '../types/schemas.ts';
+import { PagingParams, TruthyQueryParam } from '../types/schemas.ts';
 
 dayjs.extend(duration);
 
 const ChannelLineupQuery = z.object({
   from: z.iso.datetime().optional().pipe(z.coerce.date()),
   to: z.iso.datetime().optional().pipe(z.coerce.date()),
-  includePrograms: z.coerce.boolean().default(false),
+  includePrograms: TruthyQueryParam.default(false),
 });
 
 // eslint-disable-next-line @typescript-eslint/require-await
