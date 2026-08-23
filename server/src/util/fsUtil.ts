@@ -16,6 +16,29 @@ export async function fileExists(path: string) {
   }
 }
 
+/**
+ * Writes to a scratch file in the destination's directory and renames it into
+ * place. A plain write truncates the destination first, so an interrupted one
+ * leaves a zero-length or partially-written file behind; rename(2) is atomic
+ * within a filesystem, so the destination only ever holds the complete old or
+ * the complete new contents.
+ */
+export async function writeFileAtomic(filePath: string, contents: string) {
+  const tempPath = path.join(
+    path.dirname(filePath),
+    `.${path.basename(filePath)}.${process.pid}.tmp`,
+  );
+
+  try {
+    await fs.writeFile(tempPath, contents);
+    await fs.rename(tempPath, filePath);
+  } catch (e) {
+    // Best-effort cleanup; the write already failed and is being rethrown.
+    await fs.unlink(tempPath).catch(() => void 0);
+    throw e;
+  }
+}
+
 export async function* streamFileBackwards(
   filePath: string,
   chunkSize: number = 65536,
