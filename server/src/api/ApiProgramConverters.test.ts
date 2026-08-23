@@ -47,17 +47,36 @@ describe('parseAirDate', () => {
   );
 
   /**
-   * Documents a pre-existing quirk rather than endorsing it.
+   * Documents pre-existing quirks rather than endorsing them.
    *
-   * Under strict customParseFormat the `Z` token matches a numeric offset, not
-   * a literal "Z", so the most common ISO form does not parse and the program
-   * silently gets a null release date. parseAirDate reproduces this exactly —
-   * it was a performance change, not a behaviour change — and these cases exist
-   * so that anyone fixing the underlying bug sees what currently happens.
+   * Two of them. Under strict customParseFormat the `Z` token matches a numeric
+   * offset, not a literal "Z", so the most common ISO form does not parse and
+   * the program silently gets a null release date. And a numeric offset only
+   * parses when it equals the server's own UTC offset — confirmed across
+   * America/New_York, UTC and Asia/Kolkata — so a deployment in one zone drops
+   * every air date written in another.
+   *
+   * parseAirDate reproduces both exactly; it was a performance change, not a
+   * behaviour change. These cases exist so that anyone fixing the underlying
+   * bug sees what currently happens.
+   *
+   * The offsets are derived from the running timezone rather than hardcoded.
+   * A literal `-04:00` passes only where it was written: it succeeds in
+   * America/New_York and fails in CI, which runs UTC.
    */
+  const localOffset = dayjs('2020-05-04').format('Z');
+  // Nepal time, picked because no CI runner is plausibly set to it. The
+  // fallback covers the case where it somehow is.
+  const foreignOffset = localOffset === '+05:45' ? '+09:00' : '+05:45';
+
   test.each([
     ['plain date', '2020-05-04', true],
-    ['numeric offset', '2020-05-04T10:00:00-04:00', true],
+    ['offset matching the server', `2020-05-04T10:00:00${localOffset}`, true],
+    [
+      'offset differing from the server',
+      `2020-05-04T10:00:00${foreignOffset}`,
+      false,
+    ],
     ['literal Z suffix', '2020-05-04T10:00:00Z', false],
     ['no offset at all', '2020-05-04T10:00:00', false],
   ])('%s parses: %s -> %s', (_label, input, shouldParse) => {
