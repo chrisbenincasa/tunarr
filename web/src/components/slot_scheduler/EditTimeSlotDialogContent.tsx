@@ -2,7 +2,11 @@ import type {
   CustomShowProgramOption,
   FillerProgramOption,
 } from '@/helpers/slotSchedulerUtil';
-import { OneDayMillis } from '@/helpers/slotSchedulerUtil';
+import {
+  slotDayOfWeek,
+  withSlotDayOfWeek,
+  withSlotTimeOfDay,
+} from '@/helpers/slotSchedulerUtil';
 import type { TimeSlotViewModel } from '@/model/TimeSlotModels.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
@@ -144,9 +148,7 @@ export const EditTimeSlotDialogContent = ({
 
   const updateSlotDay = useCallback(
     (newDayOfWeek: number, originalOnChange: (...args: unknown[]) => void) => {
-      const startTimeOfDay = getValues('startTime') % OneDayMillis;
-      const newStartTime = startTimeOfDay + newDayOfWeek * OneDayMillis;
-      originalOnChange(newStartTime);
+      originalOnChange(withSlotDayOfWeek(getValues('startTime'), newDayOfWeek));
     },
     [getValues],
   );
@@ -157,11 +159,13 @@ export const EditTimeSlotDialogContent = ({
       originalOnChange: (...args: unknown[]) => void,
     ) => {
       if (!fieldValue) return;
-      const h = fieldValue.hour();
-      const m = fieldValue.minute();
-      const multiplier = Math.floor(getValues('startTime') / OneDayMillis);
-      const millis = dayjs.duration({ hours: h, minutes: m }).asMilliseconds();
-      originalOnChange(millis + multiplier * OneDayMillis);
+      originalOnChange(
+        withSlotTimeOfDay(
+          getValues('startTime'),
+          fieldValue.hour(),
+          fieldValue.minute(),
+        ),
+      );
     },
     [getValues],
   );
@@ -337,7 +341,7 @@ export const EditTimeSlotDialogContent = ({
                           <Select
                             {...field}
                             fullWidth
-                            value={Math.floor(field.value / OneDayMillis)}
+                            value={slotDayOfWeek(field.value)}
                             label={t`Day`}
                             onChange={(e) =>
                               updateSlotDay(
