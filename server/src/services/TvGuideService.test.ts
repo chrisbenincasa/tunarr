@@ -56,8 +56,6 @@ function makeChannelWithLineup(overrides?: Partial<ChannelOrm>) {
   return { channel, lineup: makeEmptyLineup() };
 }
 
-
-
 describe('TVGuideService', () => {
   describe('buildAllChannels', () => {
     it('removes a deleted channel from XMLTV output on the next guide build', async () => {
@@ -417,6 +415,129 @@ describe('TVGuideService', () => {
       ).map((entry) => entry.channel.uuid);
       expect(writeChannelIds).toContain(channelA.channel.uuid);
       expect(writeChannelIds).not.toContain(channelB.channel.uuid);
+    });
+  });
+
+  describe('buildChannelGuideWithRetries', () => {
+    // Production backs off for up to 30s before giving up, which is not
+    // something to sit through in a unit test.
+    class FastRetryGuideService extends TVGuideService {
+      protected readonly guideBuildRetryOptions = {
+        retries: 3,
+        factor: 1,
+        minTimeout: 1,
+        maxTimeout: 2,
+        maxRetryTime: 500,
+      };
+    }
+
+    // A channel that throws part-way through the build: it has lineup items but
+    // zero total duration, so the binary search finds no anchor and
+    // getChannelPrograms raises "General algorithm error" -- the failure a real
+    // guide build hits when a lineup is inconsistent.
+    function makeUnbuildableChannel() {
+      const channel = makeChannelOrm({
+        number: 2,
+        name: 'Broken',
+        duration: 0,
+      });
+      return {
+        channel,
+        lineup: {
+          version: 4,
+          lastUpdated: Date.now(),
+          items: [{ type: 'offline' as const, durationMs: 0 }],
+          startTimeOffsets: [0, 0],
+        } as unknown as Lineup,
+      };
+    }
+
+    function makeService(channels: Record<string, unknown>) {
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+      // Called once per build attempt on the failing path, so it counts attempts.
+      const syncChannelDuration = vi.fn().mockResolvedValue(false);
+      const service = new FastRetryGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(channels),
+          syncChannelDuration,
+          loadChannelWithProgamsAndLineup: vi.fn().mockResolvedValue(undefined),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+      return { service, mockWrite, syncChannelDuration };
+    }
+
+    const guideDuration = dayjs.duration({ hours: 4 });
+
+    it('retries a channel whose guide build fails', async () => {
+      const healthy = makeChannelWithLineup({ number: 1, name: 'Healthy' });
+      const { service, mockWrite } = makeService({
+        [healthy.channel.uuid]: healthy,
+      });
+      // refreshGuide writes XMLTV inside the per-channel build, so a failing
+      // write fails that build. One call per attempt makes it an attempt count.
+      mockWrite.mockRejectedValue(new Error('xmltv write failed'));
+
+      await service.refreshGuide(
+        guideDuration,
+        healthy.channel.uuid,
+        true,
+        true,
+      );
+
+      expect(mockWrite.mock.calls.length).toBeGreaterThan(1);
+    });
+
+    it('does not record a channel as built when its build failed', async () => {
+      const broken = makeUnbuildableChannel();
+      const healthy = makeChannelWithLineup({ number: 1, name: 'Healthy' });
+      const { service } = makeService({
+        [healthy.channel.uuid]: healthy,
+        [broken.channel.uuid]: broken,
+      });
+
+      await service.buildAllChannels(guideDuration, true);
+
+      // lastUpdateTime is what getChannelLineup consults to decide whether the
+      // cached guide covers a requested range. Advancing it for a build that
+      // produced nothing is what makes the failure invisible downstream.
+      const status = await service.getStatus();
+      expect(Object.keys(status.lastUpdate)).toContain(healthy.channel.uuid);
+      expect(Object.keys(status.lastUpdate)).not.toContain(broken.channel.uuid);
+    });
+
+    it('still builds and writes the other channels', async () => {
+      const broken = makeUnbuildableChannel();
+      const healthy = makeChannelWithLineup({ number: 1, name: 'Healthy' });
+      const { service, mockWrite } = makeService({
+        [healthy.channel.uuid]: healthy,
+        [broken.channel.uuid]: broken,
+      });
+
+      await service.buildAllChannels(guideDuration, true);
+
+      expect(mockWrite).toHaveBeenCalled();
+      const written = (
+        mockWrite.mock.calls.at(-1)![0] as MaterializedChannelPrograms[]
+      ).map((entry) => entry.channel.uuid);
+      expect(written).toContain(healthy.channel.uuid);
+      expect(written).not.toContain(broken.channel.uuid);
     });
   });
 });
