@@ -23,6 +23,7 @@ import {
   nth,
   sortBy,
   sumBy,
+  uniqBy,
 } from 'lodash-es';
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
@@ -117,15 +118,35 @@ export async function scheduleTimeSlots(
   const periodDuration = dayjs.duration(1, schedule.period);
   const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
 
+  // A slot's startTime is an offset into the period, but nothing enforces that:
+  // the editor can emit a daily slot that still carries a day multiplier. The
+  // cursor below is already reduced mod the period, so an unreduced slot never
+  // satisfies `slot.startTime <= currOffset` -- the schedule either throws
+  // outright or collapses into a single multi-period flex block. Reduce here so
+  // schedules already stored with such a value keep working.
+  const normalizeStartTime = (startTime: number) =>
+    ((startTime % periodMs) + periodMs) % periodMs;
+
+  // Normalizing can land two slots on the same offset (05:50 and 29:50 both
+  // become 05:50). Equal startTimes give the earlier one a zero-width window
+  // below, so it would air nothing and which of the two died would depend on
+  // array order. Collapse them here instead, keeping the first -- the same rule
+  // the editor uses when converting a weekly schedule to a daily one -- so what
+  // airs matches what the editor shows.
+  const normalizedSlots = uniqBy(
+    map(schedule.slots, (slot) => ({
+      ...slot,
+      startTime: normalizeStartTime(slot.startTime),
+    })),
+    (slot) => slot.startTime,
+  );
+
   const seenLinkGroups = new Set<string>();
   const sortedSlots = map(
-    sortBy(schedule.slots, (slot) => slot.startTime),
+    sortBy(normalizedSlots, (slot) => slot.startTime),
     (slot) =>
       new TimeSlotImpl(
-        {
-          ...slot,
-          startTime: slot.startTime,
-        },
+        slot,
         ('id' in slot ? slotIterators.get(slot.id) : undefined) ??
           createSlotProgramIterator(slot, programMap, random),
         random,
