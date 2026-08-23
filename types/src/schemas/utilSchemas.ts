@@ -156,6 +156,11 @@ export type Schedule = z.infer<typeof ScheduleSchema>;
  * Accepts "true"/"false" and any number, where 0 is false. An absent value
  * ("?flag" with no "=") arrives as the empty string and coerces to 0, so it is
  * false; declare `.default(true)` if a bare flag should mean something else.
+ *
+ * The number test is `!== 0` rather than `=== 1`. Comparing against 1 would
+ * accept any numeric through the coercion branch and then quietly read every
+ * value but 1 as false, so `?background=2` would run in the background — the
+ * same silent-false failure this schema exists to prevent.
  */
 export const TruthyQueryParam = z
   .union([
@@ -164,4 +169,9 @@ export const TruthyQueryParam = z
     z.literal('false'),
     z.coerce.number(),
   ])
-  .transform((value) => value === 1 || value === true || value === 'true');
+  .transform(
+    (value) =>
+      value === true ||
+      value === 'true' ||
+      (typeof value === 'number' && value !== 0),
+  );

@@ -68,8 +68,12 @@ import { PagingParams, TruthyQueryParam } from '../types/schemas.ts';
 dayjs.extend(duration);
 
 const ChannelLineupQuery = z.object({
-  from: z.iso.datetime().optional().pipe(z.coerce.date()),
-  to: z.iso.datetime().optional().pipe(z.coerce.date()),
+  // `.optional()` must sit outside the pipe. Inside, it only lets `undefined`
+  // through the left half and `z.coerce.date()` still runs on it; and because
+  // the pipe's output is non-optional, zod does not treat the key as optional
+  // either, so omitting the query string is a 400.
+  from: z.iso.datetime().pipe(z.coerce.date()).optional(),
+  to: z.iso.datetime().pipe(z.coerce.date()).optional(),
   includePrograms: TruthyQueryParam.default(false),
 });
 
