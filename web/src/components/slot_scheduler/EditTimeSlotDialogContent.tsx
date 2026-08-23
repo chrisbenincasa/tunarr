@@ -169,10 +169,11 @@ export const EditTimeSlotDialogContent = ({
           getValues('startTime'),
           fieldValue.hour(),
           fieldValue.minute(),
+          currentPeriod,
         ),
       );
     },
-    [getValues],
+    [getValues, currentPeriod],
   );
 
   const slotType = formMethods.watch('type');
