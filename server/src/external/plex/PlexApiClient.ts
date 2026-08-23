@@ -2277,6 +2277,12 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         },
       ],
       chapters,
+      scanKind:
+        videoStream?.scanType === 'interlaced'
+          ? 'interlaced'
+          : videoStream?.scanType === 'progressive'
+            ? 'progressive'
+            : 'unknown',
     } satisfies MediaItem);
   }
 }

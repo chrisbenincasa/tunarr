@@ -51,6 +51,7 @@ import {
   isNil,
   isNull,
   isNumber,
+  isUndefined,
   mapValues,
   omitBy,
   orderBy,
@@ -1307,6 +1308,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         heightPx: height,
       },
       chapters,
+      scanKind: isUndefined(videoStream?.IsInterlaced)
+        ? 'unknown'
+        : videoStream.IsInterlaced
+          ? 'interlaced'
+          : 'progressive',
     };
   }
 
