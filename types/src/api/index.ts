@@ -509,7 +509,27 @@ export type GetFeatureFlagsResponse = z.infer<
   typeof GetFeatureFlagsResponseSchema
 >;
 
-export const UpdateFeatureFlagsRequestSchema = FeatureFlagsSchema.partial();
+/**
+ * Declared field by field rather than as `FeatureFlagsSchema.partial()`. Every
+ * flag carries `.default(false)`, and `.partial()` wraps a default rather than
+ * removing it, so all six arrived populated whatever the client sent. The
+ * handler's `Object.assign(file.featureFlags, req.body)` then wrote all six,
+ * which meant turning one flag on turned every other flag off.
+ *
+ * Zod omits an absent optional key from its output entirely, so `Object.assign`
+ * is the correct handler for this shape once the schema is genuinely partial.
+ *
+ * A flag added to FeatureFlagsSchema must be added here too, or it will not be
+ * updatable. `featureFlagsRequest.test.ts` fails if the two drift apart.
+ */
+export const UpdateFeatureFlagsRequestSchema = z.object({
+  proxyArtwork: z.boolean().optional(),
+  tonemapEnabled: z.boolean().optional(),
+  webvttSidecarEnabled: z.boolean().optional(),
+  disableSearchSnapshotInBackup: z.boolean().optional(),
+  disableVulkan: z.boolean().optional(),
+  disableVaapiPad: z.boolean().optional(),
+});
 
 export type UpdateFeatureFlagsRequest = z.infer<
   typeof UpdateFeatureFlagsRequestSchema
