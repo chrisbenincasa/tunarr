@@ -1023,13 +1023,15 @@ export class TVGuideService {
   }
 
   private async writeXmlTv() {
-    const allProgramsById: Record<string, ProgramWithRelationsOrm> = {};
-    for (const { programs } of Object.values(this.cachedGuide)) {
-      const programsById = await this.getAllCurrentGuidePrograms(programs);
-      for (const [id, program] of Object.entries(programsById)) {
-        allProgramsById[id] = program;
-      }
-    }
+    // Every channel's programs are fetched in one pass rather than one query
+    // per channel. The results were being merged into a single flat map
+    // regardless, so the per-channel split bought nothing and cost plenty:
+    // deduplication was scoped to a channel, so a program scheduled on several
+    // channels had its whole relation graph fetched and rebuilt once per
+    // channel. getProgramsByIds dedupes and chunks internally.
+    const allProgramsById = await this.getAllCurrentGuidePrograms(
+      Object.values(this.cachedGuide).flatMap(({ programs }) => programs),
+    );
 
     const materializedGuide = Object.values(this.cachedGuide).map(
       ({ channel, programs }) => {
