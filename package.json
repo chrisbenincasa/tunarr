@@ -11,6 +11,7 @@
     "fmt": "prettier --write .",
     "lint-staged": "lint-staged --allow-empty",
     "lint-changed": "./scripts/lint-changed.sh",
+    "preflight": "./scripts/preflight.sh",
     "test": "turbo run test",
     "preinstall": "npx only-allow pnpm",
     "should-semantic-release": "should-semantic-release --verbose",
