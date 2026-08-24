@@ -20,12 +20,19 @@
 # the remedy, so leaving the result applied saves a round trip. If it reports a
 # diff, commit web/src/locales/ and the gate passes.
 #
-# GATE ORDER MATTERS. `eslint --fix` rewrites source, and the lingui catalogs
-# record source line numbers -- and, for messages with complex placeholders, the
-# whole surrounding file. So eslint runs FIRST and lingui runs LAST. Extracting
-# before an autofix produces catalogs that describe source the fix then changed,
-# which passes here and fails in CI. That is not hypothetical: it is how this
-# script let a red PR through the first time it was used.
+# GATE ORDER MATTERS. The lingui catalogs record source line numbers -- and,
+# for messages with complex placeholders, the whole surrounding file. So
+# anything that rewrites source has to run BEFORE the extraction, and lingui
+# runs last. Extracting first produces catalogs describing source that is then
+# changed: green here, red in CI. Not hypothetical -- it happened twice while
+# this script was being written.
+#
+# The subtle half is that the pre-commit hook is itself a rewriter. It runs
+# `prettier --write` and `eslint --fix` on staged files at commit time, which is
+# after any preflight can possibly run. So the format gate below applies the
+# same prettier pass the hook will, leaving the tree in the shape the hook would
+# produce. Without it the hook reformats at commit time and silently invalidates
+# catalogs this script just certified.
 set -uo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -96,6 +103,27 @@ gate_commitlint() {
   pnpm exec commitlint --from "$merge_base" --to HEAD
 }
 
+# Mirrors what the pre-commit hook's lint-staged config does to staged files:
+# `prettier --write` then `eslint --fix`. Applying prettier here keeps the hook
+# from reformatting at commit time, after the lingui gate has already run.
+gate_format() {
+  local files
+  files="$(collect_changed_source)"
+  if [ -z "$files" ]; then
+    echo "preflight: no changed TypeScript files to format"
+    return 0
+  fi
+  # shellcheck disable=SC2086
+  printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 --no-run-if-empty pnpm exec prettier --write --log-level warn
+}
+
+collect_changed_source() {
+  {
+    git diff --name-only --diff-filter=ACMR HEAD -- '*.ts' '*.tsx' '*.mts' '*.cts'
+    git ls-files --others --exclude-standard -- '*.ts' '*.tsx' '*.mts' '*.cts'
+  } | grep -v '^$' | sort -u
+}
+
 # Mirrors lingui-pr.yml. Extraction rewrites the catalogs in place; a non-empty
 # diff afterwards is exactly what CI fails on.
 gate_lingui() {
@@ -111,7 +139,9 @@ gate_lingui() {
   return 1
 }
 
-# First: the only gate that rewrites source of its own accord.
+# First: everything that rewrites source, in the same order the pre-commit hook
+# applies it, so the tree ends up where the hook would leave it.
+run_gate "format (changed)"    gate_format
 run_gate "eslint (changed)"    pnpm lint-changed
 
 run_gate "commitlint"          gate_commitlint
