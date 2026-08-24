@@ -1,4 +1,9 @@
 import { Trans } from '@lingui/react/macro';
+import { invalidateTaggedQueries } from '@/helpers/queryUtil.ts';
+import {
+  getApiSystemDebugNvidiaQueryKey,
+  getApiSystemDebugVaapiQueryKey,
+} from '@/generated/@tanstack/react-query.gen.ts';
 import { CopyAll, Refresh, Search } from '@mui/icons-material';
 import {
   Box,
@@ -43,8 +48,7 @@ export const SystemDebugPage = () => {
       if (ev.type === 'lifecycle') {
         queryClient
           .invalidateQueries({
-            exact: true,
-            queryKey: ['system', 'debug', 'env'],
+            predicate: invalidateTaggedQueries('System'),
           })
           .catch(console.error);
       }
@@ -74,8 +78,7 @@ export const SystemDebugPage = () => {
     } else {
       queryClient
         .invalidateQueries({
-          exact: true,
-          queryKey: ['system', 'debug', 'nvidia'],
+          queryKey: getApiSystemDebugNvidiaQueryKey(),
         })
         .catch(console.error);
     }
@@ -87,8 +90,7 @@ export const SystemDebugPage = () => {
     } else {
       queryClient
         .invalidateQueries({
-          exact: true,
-          queryKey: ['system', 'debug', 'vaapi'],
+          queryKey: getApiSystemDebugVaapiQueryKey(),
         })
         .catch(console.error);
     }

@@ -1,4 +1,5 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
+import { invalidateTaggedQueries } from '@/helpers/queryUtil.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
 import type { Maybe } from '@/types/util.ts';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
@@ -114,7 +115,7 @@ export default function ChannelsPage() {
       if (ev.type === 'stream') {
         queryClient
           .invalidateQueries({
-            queryKey: ['channels'],
+            predicate: invalidateTaggedQueries('Channels'),
           })
           .catch(console.error);
       }
@@ -161,7 +162,7 @@ export default function ChannelsPage() {
     ...deleteApiChannelsByIdMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['Channels'],
+        predicate: invalidateTaggedQueries('Channels'),
       });
     },
   });
@@ -290,10 +291,20 @@ export default function ChannelsPage() {
               placement="top"
               title={
                 <Box component="span" sx={{ textAlign: 'center' }}>
-                  <Plural value={sessions.length} one="# session" other="# sessions" />
+                  <Plural
+                    value={sessions.length}
+                    one="# session"
+                    other="# sessions"
+                  />
                   <br />
-                  {totalConnections > 1 && <Trans>{totalConnections} total</Trans>}{' '}
-                  <Plural value={totalConnections} one="# connection" other="# connections" />
+                  {totalConnections > 1 && (
+                    <Trans>{totalConnections} total</Trans>
+                  )}{' '}
+                  <Plural
+                    value={totalConnections}
+                    one="# connection"
+                    other="# connections"
+                  />
                 </Box>
               }
             >
@@ -420,10 +431,20 @@ export default function ChannelsPage() {
         placement="top"
         title={
           <Box component="span" sx={{ textAlign: 'center' }}>
-            <Plural value={sessions.length} one="# session" other="# sessions" />
+            <Plural
+              value={sessions.length}
+              one="# session"
+              other="# sessions"
+            />
             <br />
-            {totalConnections > 1 && <Trans>{totalConnections} total</Trans>}{' '}
-            <Plural value={totalConnections} one="# connection" other="# connections" />
+            {totalConnections > 1 && (
+              <Trans>{totalConnections} total</Trans>
+            )}{' '}
+            <Plural
+              value={totalConnections}
+              one="# connection"
+              other="# connections"
+            />
           </Box>
         }
       >
@@ -489,7 +510,12 @@ export default function ChannelsPage() {
                       Ch {channel.number} · {channel.name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      <Plural value={channel.programCount} one="# program" other="# programs" /> ·{' '}
+                      <Plural
+                        value={channel.programCount}
+                        one="# program"
+                        other="# programs"
+                      />{' '}
+                      ·{' '}
                       {betterHumanize(dayjs.duration(channel.duration), {
                         style: 'short',
                       })}
