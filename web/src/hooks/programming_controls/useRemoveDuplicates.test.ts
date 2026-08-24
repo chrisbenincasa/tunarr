@@ -5,6 +5,7 @@ import type {
   RedirectProgram,
 } from '@tunarr/types';
 import { describe, expect, test } from 'vitest';
+import { makeMovie } from '../../test/programFixtures.ts';
 import type { UIChannelProgram } from '../../types/index';
 import { removeDuplicatePrograms } from './useRemoveDuplicates';
 
@@ -14,9 +15,8 @@ const createContentProgram = (
 ): UIChannelProgram<ContentProgram> => ({
   type: 'content',
   id,
-  uniqueId: id,
   duration: 3600000,
-  program: { type: 'movie', identifiers: [] } as ContentProgram['program'],
+  program: makeMovie(),
   uiIndex: 0,
   originalIndex: 0,
   ...overrides,
@@ -34,6 +34,8 @@ const createRedirectProgram = (
 ): UIChannelProgram<RedirectProgram> => ({
   type: 'redirect',
   channel,
+  channelNumber: 1,
+  channelName: 'Channel One',
   duration: 3600000,
   uiIndex: 0,
   originalIndex: 0,
@@ -46,6 +48,7 @@ const createCustomProgram = (
   type: 'custom',
   customShowId,
   id,
+  index: 0,
   duration: 3600000,
   uiIndex: 0,
   originalIndex: 0,
@@ -92,12 +95,10 @@ describe('removeDuplicatePrograms', () => {
     ): UIChannelProgram<ContentProgram> => ({
       type: 'content',
       id: internalId,
-      uniqueId: internalId,
       duration: 3600000,
-      program: {
-        type: 'movie',
+      program: makeMovie({
         identifiers: [{ type: 'plex', sourceId: 'server-1', id: externalId }],
-      } as ContentProgram['program'],
+      }),
       uiIndex: 0,
       originalIndex: 0,
     });
