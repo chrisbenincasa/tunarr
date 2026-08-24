@@ -291,3 +291,121 @@ describe('random slot filler budgeting', () => {
     ]);
   });
 });
+
+describe('random slot cooldown', () => {
+  const oneMin = 60 * 1000;
+  const midnight = dayjs('2024-01-01T00:00:00.000Z');
+
+  const makeEpisodes = (
+    showId: string,
+    count: number,
+    durationMs: number,
+  ): SlotSchedulerProgram[] =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `${showId}-ep${i + 1}`,
+        title: `${showId} Episode ${i + 1}`,
+        type: 'episode',
+        duration: durationMs,
+        episode: i + 1,
+        tvShowUuid: showId,
+        show: { uuid: showId },
+      }),
+      parentFillerLists: [],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  test('a slot is not scheduled again within its cooldown', () => {
+    const slotMs = 30 * oneMin;
+    const cooldownMs = 2 * 60 * oneMin;
+
+    const scheduler = new RandomSlotScheduler({
+      type: 'random',
+      flexPreference: 'end',
+      maxDays: 1,
+      padMs: oneMin,
+      padStyle: 'episode',
+      randomDistribution: 'uniform',
+      lockWeights: false,
+      slots: [
+        {
+          weight: 100,
+          cooldownMs,
+          durationSpec: { type: 'fixed', durationMs: slotMs },
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+        },
+      ],
+    });
+
+    const result = scheduler.generateSchedule(
+      makeEpisodes('show1', 24, slotMs),
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    // Walk the lineup and record the offset at which each content program
+    // starts. With a single slot, every content start is that slot playing.
+    let offset = 0;
+    const contentStarts: number[] = [];
+    for (const item of result.lineup) {
+      if (item.type === 'content') {
+        contentStarts.push(offset);
+      }
+      offset += item.duration;
+    }
+
+    expect(contentStarts.length).toBeGreaterThan(1);
+    for (let i = 1; i < contentStarts.length; i++) {
+      expect(contentStarts[i]! - contentStarts[i - 1]!).toBeGreaterThanOrEqual(
+        cooldownMs,
+      );
+    }
+  });
+  test('a zero cooldown schedules back to back, as before', () => {
+    const slotMs = 30 * oneMin;
+
+    const scheduler = new RandomSlotScheduler({
+      type: 'random',
+      flexPreference: 'end',
+      maxDays: 1,
+      padMs: oneMin,
+      padStyle: 'episode',
+      randomDistribution: 'uniform',
+      lockWeights: false,
+      slots: [
+        {
+          weight: 100,
+          cooldownMs: 0,
+          durationSpec: { type: 'fixed', durationMs: slotMs },
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+        },
+      ],
+    });
+
+    const result = scheduler.generateSchedule(
+      makeEpisodes('show1', 24, slotMs),
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    // Every existing schedule in the wild uses cooldownMs: 0, so honouring
+    // cooldown must not start inserting flex into any of them.
+    expect(result.lineup.slice(0, 4).map((item) => item.type)).toEqual([
+      'content',
+      'content',
+      'content',
+      'content',
+    ]);
+  });
+});

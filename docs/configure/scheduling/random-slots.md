@@ -17,7 +17,9 @@ When creating a programming slot, you choose between "Fixed" and "Dynamic" lengt
 * **Fixed** length slots run for an absolute duration (e.g. 30 mins)
 * **Dynamic** length slots run for an absolute _count_ of programs (e.g. 3 episodes)
 
-The **Cooldown** parameter controls a frequency cooldown; it is used when using "random" mode scheduling, which picks slots at random during schedule generation.
+The **Cooldown** parameter sets the minimum amount of time that must pass before the same slot can be scheduled again. Once a slot places programming, it becomes ineligible until its cooldown has elapsed. If no slot is eligible at a given point, the scheduler fills the gap with Flex until the next one becomes available, so a long cooldown on every slot will produce Flex rather than repeats.
+
+Cooldown only applies to the "random" slot choice modes (uniform and weighted), which pick slots at random during schedule generation. Sequential ("none") mode walks the slots in order and ignores cooldown. A cooldown of 0 places no restriction.
 
 Some programming types also allow configuration of the **order** in which their constituents are scheduled. This controls the playback order; for example, if using "Next" ordering for a TV Show, episodes will be iterated over in episode order during scheduling.
 
