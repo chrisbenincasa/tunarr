@@ -94,7 +94,7 @@ msgid "{0, plural, one {Path} other {Paths}}"
 msgstr ""
 
 #. placeholder {0}: slot.programCount
-#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:120
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:122
 msgid "{0, plural, one {program} other {programs}}"
 msgstr ""
 
@@ -110,9 +110,9 @@ msgstr ""
 
 #. placeholder {0}: warning.programs.length
 #. placeholder {1}: slot.programCount
-#. placeholder {2}: import { betterHumanize } from '@/helpers/dayjs.ts'; import { alternateColors } from '@/helpers/util.ts'; import { plural } from '@lingui/core/macro'; import { Trans } from '@lingui/react/macro'; import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts'; import type { ProgramTooLongWarning, SlotTableWarnings, } from '@/model/CommonSlotModels'; import { removeChannelProgramsById } from '@/store/entityEditor/util.ts'; import { useStoreProgramLookup } from '@/store/selectors.ts'; import { Delete, Error, ExpandMore, WarningAmber } from '@mui/icons-material'; import { Accordion, AccordionDetails, AccordionSummary, Box, Button, IconButton, ListItem, ListItemText, Stack, Typography, } from '@mui/material'; import { seq } from '@tunarr/shared/util'; import type { BaseSlot } from '@tunarr/types/api'; import dayjs from 'dayjs'; import { map, uniqBy, values } from 'lodash-es'; import { averageProgramDurationMs } from '@/helpers/slots.ts'; import type { ListChildComponentProps } from 'react-window'; import { FixedSizeList } from 'react-window'; type Props = { slot: BaseSlot & SlotTableWarnings; slotType: 'time' | 'random'; warning: ProgramTooLongWarning; }; export const SlotProgrammingTooLongWarningDetails = ({ slot, warning, slotType, }: Props) => { const formatter = useProgramTitleFormatter(); const programLookup = useStoreProgramLookup(); const longPrograms = seq.collect( uniqBy(warning.programs, (p) => p.id), ({ id }) => { return programLookup[id]; }, ); const renderLongProgramRow = (props: ListChildComponentProps) => { const program = longPrograms[props.index]; if (!program.id) { return null; } const programId = program.id; return ( <ListItem style={props.style} sx={{ backgroundColor: (theme) => alternateColors(props.index, theme.palette.mode), }} key={programId} component="div" > <ListItemText primary={formatter(program)} /> <IconButton onClick={() => removeChannelProgramsById(programId)} edge="end" aria-label="delete" size="small" > <Delete fontSize="small" /> </IconButton> </ListItem> ); }; const averageLengthMs = averageProgramDurationMs(slot, values(programLookup)); return ( <Accordion defaultExpanded={slot.warnings.length === 1} key={warning.type} elevation={5} > <AccordionSummary expandIcon={<ExpandMore />}> {warning.programs.length === slot.programCount ? ( <Error sx={{ mr: 1, color: (theme) => theme.palette.error.main }} /> ) : ( <WarningAmber sx={{ mr: 1, color: (theme) => theme.palette.warning.main }} /> )} <Typography><Trans>Programs Too Long</Trans></Typography> </AccordionSummary> <AccordionDetails> <Stack> <Stack direction="row"> <Button onClick={() => removeChannelProgramsById( new Set(map(warning.programs, (p) => p.id)), ) } > <Trans>Remove All</Trans> </Button> </Stack> <div> <p> <Trans> {warning.programs.length} of {slot.programCount}{' '} {plural(slot.programCount, { one: 'program', other: 'programs' })} exceed the length of this slot ({betterHumanize(dayjs.duration(slot.durationMs ?? 0))}). </Trans> {averageLengthMs !== undefined && ( <> {' '} <Trans>Average program length: {betterHumanize(dayjs.duration(averageLengthMs))}</Trans> </> )} <br /> <Trans>This could cause the following slot's programs to go unscheduled. Possible solutions include:</Trans> </p> <ul> {} {slotType === 'time' && ( <li><Trans>Increasing "Max Lateness" for the schedule.</Trans></li> )} <li><Trans>Increasing the slot duration.</Trans></li> <li><Trans>Removing overrun programs from the channel.</Trans></li> </ul> </div> <Box sx={{ width: '100%', height: 400 }}> <FixedSizeList height={400} width={'100%'} itemSize={46} itemCount={longPrograms.length} overscanCount={5} > {renderLongProgramRow} </FixedSizeList> </Box> </Stack> </AccordionDetails> </Accordion> ); }; 
+#. placeholder {2}: import { betterHumanize } from '@/helpers/dayjs.ts'; import { alternateColors } from '@/helpers/util.ts'; import { plural } from '@lingui/core/macro'; import { Trans } from '@lingui/react/macro'; import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts'; import type { ProgramTooLongWarning, SlotTableWarnings, } from '@/model/CommonSlotModels'; import { removeChannelProgramsById } from '@/store/entityEditor/util.ts'; import { useStoreProgramLookup } from '@/store/selectors.ts'; import { Delete, Error, ExpandMore, WarningAmber } from '@mui/icons-material'; import { Accordion, AccordionDetails, AccordionSummary, Box, Button, IconButton, ListItem, ListItemText, Stack, Typography, } from '@mui/material'; import { seq } from '@tunarr/shared/util'; import type { BaseSlot } from '@tunarr/types/api'; import dayjs from 'dayjs'; import { map, uniqBy, values } from 'lodash-es'; import { averageProgramDurationMs } from '@/helpers/slots.ts'; import type { ListChildComponentProps } from 'react-window'; import { FixedSizeList } from 'react-window'; type Props = { slot: BaseSlot & SlotTableWarnings; slotType: 'time' | 'random'; warning: ProgramTooLongWarning; }; export const SlotProgrammingTooLongWarningDetails = ({ slot, warning, slotType, }: Props) => { const formatter = useProgramTitleFormatter(); const programLookup = useStoreProgramLookup(); const longPrograms = seq.collect( uniqBy(warning.programs, (p) => p.id), ({ id }) => { return programLookup[id]; }, ); const renderLongProgramRow = (props: ListChildComponentProps) => { const program = longPrograms[props.index]; if (!program.id) { return null; } const programId = program.id; return ( <ListItem style={props.style} sx={{ backgroundColor: (theme) => alternateColors(props.index, theme.palette.mode), }} key={programId} component="div" > <ListItemText primary={formatter(program)} /> <IconButton onClick={() => removeChannelProgramsById(programId)} edge="end" aria-label="delete" size="small" > <Delete fontSize="small" /> </IconButton> </ListItem> ); }; const averageLengthMs = averageProgramDurationMs(slot, values(programLookup)); return ( <Accordion defaultExpanded={slot.warnings.length === 1} key={warning.type} elevation={5} > <AccordionSummary expandIcon={<ExpandMore />}> {warning.programs.length === slot.programCount ? ( <Error sx={{ mr: 1, color: (theme) => theme.palette.error.main }} /> ) : ( <WarningAmber sx={{ mr: 1, color: (theme) => theme.palette.warning.main }} /> )} <Typography> <Trans>Programs Too Long</Trans> </Typography> </AccordionSummary> <AccordionDetails> <Stack> <Stack direction="row"> <Button onClick={() => removeChannelProgramsById( new Set(map(warning.programs, (p) => p.id)), ) } > <Trans>Remove All</Trans> </Button> </Stack> <div> <p> <Trans> {warning.programs.length} of {slot.programCount}{' '} {plural(slot.programCount, { one: 'program', other: 'programs', })}{' '} exceed the length of this slot ( {betterHumanize(dayjs.duration(slot.durationMs ?? 0))}). </Trans> {averageLengthMs !== undefined && ( <> {' '} <Trans> Average program length:{' '} {betterHumanize(dayjs.duration(averageLengthMs))} </Trans> </> )} <br /> <Trans> This could cause the following slot's programs to go unscheduled. Possible solutions include: </Trans> </p> <ul> {} {slotType === 'time' && ( <li> <Trans>Increasing "Max Lateness" for the schedule.</Trans> </li> )} <li> <Trans>Increasing the slot duration.</Trans> </li> <li> <Trans>Removing overrun programs from the channel.</Trans> </li> </ul> </div> <Box sx={{ width: '100%', height: 400 }}> <FixedSizeList height={400} width={'100%'} itemSize={46} itemCount={longPrograms.length} overscanCount={5} > {renderLongProgramRow} </FixedSizeList> </Box> </Stack> </AccordionDetails> </Accordion> ); }; 
 #. placeholder {3}: betterHumanize(dayjs.duration(slot.durationMs ?? 0))
-#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:118
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:120
 msgid "{0} of {1} {2} exceed the length of this slot ({3})."
 msgstr ""
 
@@ -662,7 +662,7 @@ msgid "Automatic"
 msgstr ""
 
 #. placeholder {0}: betterHumanize(dayjs.duration(averageLengthMs))
-#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:126
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:132
 msgid "Average program length: {0}"
 msgstr ""
 
@@ -2136,11 +2136,11 @@ msgstr ""
 msgid "Include Seasons"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:136
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:148
 msgid "Increasing \"Max Lateness\" for the schedule."
 msgstr ""
 
-#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:138
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:152
 msgid "Increasing the slot duration."
 msgstr ""
 
@@ -3030,7 +3030,7 @@ msgid ""
 "{0}"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:101
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:102
 msgid "Programs Too Long"
 msgstr ""
 
@@ -3151,7 +3151,7 @@ msgstr ""
 msgid "Remove {count} {0}"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:113
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:115
 msgid "Remove All"
 msgstr ""
 
@@ -3195,7 +3195,7 @@ msgstr ""
 msgid "Removes repeated programs."
 msgstr ""
 
-#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:139
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:155
 msgid "Removing overrun programs from the channel."
 msgstr ""
 
@@ -3902,7 +3902,7 @@ msgstr ""
 msgid "This channel number has already been used"
 msgstr ""
 
-#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:130
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:139
 msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
 msgstr ""
 
