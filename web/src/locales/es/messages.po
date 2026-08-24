@@ -415,7 +415,7 @@ msgid "Add Show"
 msgstr ""
 
 #: src/components/slot_scheduler/AddRandomSlotButton.tsx:142
-#: src/components/slot_scheduler/AddTimeSlotButton.tsx:136
+#: src/components/slot_scheduler/AddTimeSlotButton.tsx:131
 msgid "Add Slot"
 msgstr ""
 
@@ -792,7 +792,7 @@ msgstr ""
 #: src/components/settings/media_source/PlexServerEditDialog.tsx:353
 #: src/components/settings/UnsavedNavigationAlert.tsx:67
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:576
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:408
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:413
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:156
 #: src/components/slot_scheduler/SlotLinkingControl.tsx:313
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:301
@@ -963,7 +963,7 @@ msgstr ""
 msgid "Condition"
 msgstr ""
 
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:323
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:328
 msgid "Config"
 msgstr ""
 
@@ -1168,8 +1168,8 @@ msgid "Data Directory:"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx:180
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:332
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:341
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:337
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:346
 msgid "Day"
 msgstr ""
 
@@ -1844,7 +1844,7 @@ msgid "Fill with Flex"
 msgstr ""
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:401
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:319
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:324
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:46
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:293
 #: src/components/slot_scheduler/TimeSlotTable.tsx:299
@@ -2491,7 +2491,7 @@ msgid "Message"
 msgstr ""
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:402
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:324
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:329
 msgid "Mid-Roll"
 msgstr ""
 
@@ -2984,7 +2984,7 @@ msgstr ""
 #: src/components/custom-shows/EditCustomShowForm.tsx:420
 #: src/components/filler/EditFillerListForm.tsx:152
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:400
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:317
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:322
 #: src/hooks/useRouteName.ts:79
 msgid "Programming"
 msgstr ""
@@ -3332,7 +3332,7 @@ msgstr ""
 #: src/components/programming_controls/AdjustWeightsModal.tsx:36
 #: src/components/settings/general/GeneralSettingsForm.tsx:496
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:583
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:415
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:420
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:311
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:196
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:121
@@ -3664,7 +3664,7 @@ msgid "Start"
 msgstr ""
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx:112
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:373
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:378
 #: src/components/slot_scheduler/TimeSlotTable.tsx:261
 msgid "Start Time"
 msgstr ""
