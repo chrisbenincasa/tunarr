@@ -19,6 +19,13 @@
 # The lingui gate mutates the working tree -- regenerating the catalogs is also
 # the remedy, so leaving the result applied saves a round trip. If it reports a
 # diff, commit web/src/locales/ and the gate passes.
+#
+# GATE ORDER MATTERS. `eslint --fix` rewrites source, and the lingui catalogs
+# record source line numbers -- and, for messages with complex placeholders, the
+# whole surrounding file. So eslint runs FIRST and lingui runs LAST. Extracting
+# before an autofix produces catalogs that describe source the fix then changed,
+# which passes here and fails in CI. That is not hypothetical: it is how this
+# script let a red PR through the first time it was used.
 set -uo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -104,6 +111,9 @@ gate_lingui() {
   return 1
 }
 
+# First: the only gate that rewrites source of its own accord.
+run_gate "eslint (changed)"    pnpm lint-changed
+
 run_gate "commitlint"          gate_commitlint
 run_gate "typecheck (server)"  pnpm turbo typecheck --filter=@tunarr/server
 
@@ -115,8 +125,8 @@ else
   run_gate "test"        pnpm turbo test -- run
 fi
 
+# Last: derived from whatever source the gates above settled on.
 run_gate "lingui catalogs"     gate_lingui
-run_gate "eslint (changed)"    pnpm lint-changed
 
 printf '\n\033[1m==> preflight summary\033[0m\n'
 for i in "${!names[@]}"; do
