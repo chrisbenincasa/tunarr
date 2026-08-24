@@ -90,8 +90,16 @@ export async function bootstrapTunarr(
   const migrationBackups = dbDirContents
     .filter((entry) => entry.match(/db-(\d+)\.bak/))
     .sort();
-  // Keep all but last 3
-  const backupsToDelete = migrationBackups.slice(0, -3);
+  const preMigrationSnapshots = dbDirContents
+    .filter((entry) => entry.match(/db-pre-migration-(\d+)\.bak/))
+    .sort();
+
+  // Keep all but last 3 of each. Rotated as separate pools so that a run with
+  // several copy migrations cannot evict the snapshot taken before any of them.
+  const backupsToDelete = [
+    ...migrationBackups.slice(0, -3),
+    ...preMigrationSnapshots.slice(0, -3),
+  ];
 
   await Promise.all(
     backupsToDelete.map((backup) =>
