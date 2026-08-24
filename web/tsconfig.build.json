@@ -11,8 +11,6 @@
         "vitest.config.ts",
         "./build/**/*",
         "./dist/**/*",
-        "./src/**/*.test.ts",
-        "./src/**/*.test.tsx",
         "./src/**/*.ignore.ts"
     ]
 }

@@ -1,5 +1,6 @@
 import type { ChannelProgram, ContentProgram } from '@tunarr/types';
 import { describe, expect, test } from 'vitest';
+import { makeMovie } from '../../test/programFixtures.ts';
 import { sortPrograms } from './useAlphaSort';
 
 const createContentProgram = (
@@ -8,24 +9,22 @@ const createContentProgram = (
 ): ContentProgram => ({
   type: 'content',
   id: `id-${title}`,
-  uniqueId: `id-${title}`,
-  persisted: true,
   duration: 3600000,
-  program: { type: 'movie', title } as ContentProgram['program'],
+  program: makeMovie({ title }),
   ...overrides,
 });
 
 const createFlexProgram = (): ChannelProgram => ({
   type: 'flex',
   duration: 60000,
-  persisted: false,
 });
 
 const createRedirectProgram = (channel: string): ChannelProgram => ({
   type: 'redirect',
   channel,
+  channelNumber: 1,
+  channelName: 'Channel One',
   duration: 3600000,
-  persisted: false,
 });
 
 describe('sortPrograms', () => {
