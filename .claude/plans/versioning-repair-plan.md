@@ -1,8 +1,12 @@
 # Versioning & Release Repair — Plan
 
-Decision recorded 2026-08-24. **No repair work has been done.** Written from `main`,
-clean tree. Every claim below was verified by reading the repo; file:line references
-are given so each can be re-checked.
+Decision recorded 2026-08-24, revised same day after Phases 1 and 3 were built.
+Written from `main`. Every claim below was verified by reading the repo; file:line
+references are given so each can be re-checked.
+
+**Status:** Phase 3 done (`faee0050`, branch `feat/pre-migration-snapshot`).
+Phase 1 built as a pilot (`ed3bd9aa`, branch `ci/calver-release-pilot`), unmerged
+and unpushed. Phases 2 and 4 not started.
 
 ## Decision
 
@@ -12,6 +16,11 @@ its prerelease suffix: `2026.8.0-dev.1`.
 Conventional commits and commitlint stay. Auto-generated changelogs stay. What goes away
 is the `feat → minor` mapping, and with it the incentive to bundle features into larger
 releases to keep the numbers calm.
+
+**The changelog lives in GitHub Releases only.** `CHANGELOG.md` is retired — it stops at
+`1.1.3` (2026-01-20) while tags are at `v1.3.13`, because semantic-release deliberately
+does not commit generated files back. Release notes are generated per release and posted
+to the GitHub release body.
 
 **No separate API version.** The HTTP API has no path versioning (`/api/...`), so there is
 no compatibility contract today. Introducing a second number would create an obligation
@@ -33,6 +42,11 @@ Zero-padding is forbidden — `2026.8.0`, never `2026.08.0` — for three concre
 That last point matters beyond sorting: the jump from `v1.3.13` to `v2026.8.0` is
 **monotonically increasing under semver comparison**, so nothing regresses — Docker
 `latest` resolution, tag ordering and the docs dropdown all stay correct.
+
+**All three components are always present.** `2026.8` is not an acceptable rendering of
+the first release of a month; it breaks the Docker tag trigger, `type=semver`, and the
+three-component regex above. This ruled out `node-calver` (v24), whose documented default
+elides a zero minor/patch.
 
 ### Verified: nothing compares versions semantically at runtime
 
@@ -73,31 +87,50 @@ competing manual buttons.
 
 ---
 
-## Phase 1 — Pick one release tool and delete the others
+## Phase 1 — Replace the release tooling with a CalVer workflow
 
-**Do this before anything else.** Every other repair depends on knowing which pipeline is
-real.
+**Superseded revision.** This phase originally said to keep semantic-release and teach it
+CalVer. That is no longer the plan. Under CalVer, semantic-release's entire value —
+deriving the bump from commit types — is dead weight, and everything else it does is
+either unused or actively unwanted here:
 
-semantic-release is the one to keep: it is already configured with the branch/channel model
-this project uses (`release.config.mjs` — `main`, `dev` as a `dev`-channel prerelease,
-maintenance branches).
+- The bump analysis is moot; the date and a tag count decide the version.
+- `CHANGELOG.md` generation is unused (it stops at 1.1.3; nothing commits it back).
+- npm publish is off.
+- No branches match the configured maintenance pattern in `release.config.mjs`.
 
-1. Configure `@semantic-release/commit-analyzer` so `feat` no longer implies a minor bump.
-   Under CalVer the bump is computed from the date, not the commit types.
-2. Add CalVer computation. semantic-release has no native support; the options are a CalVer
-   plugin or `@semantic-release/exec` computing `nextRelease.version` from the date plus the
-   count of releases already made this month.
-3. Delete `.release-it.json`, `release-it.yml`, `release-please.yml`, and the
-   `release-please--*` branches.
-4. Decide whether release stays a manual `workflow_dispatch` or becomes automatic on merge.
-   **Recommendation: keep it manual.** It is the one thing standing between a bad merge and a
-   published Docker image, and CalVer removes the pressure to batch regardless.
+What remains is note generation and creating a GitHub release, which is ~30 lines of
+workflow. Teaching semantic-release CalVer would have meant a third-party plugin or an
+`@semantic-release/exec` shim computing `nextRelease.version` — new machinery to keep a
+tool whose remaining job is a `gh release create`.
 
-**Verify:** a dry run produces `2026.8.0` from a clean `main`, and a second dry run in the
-same month produces `2026.8.1`.
+**Built (`ed3bd9aa`, branch `ci/calver-release-pilot`, unmerged):**
 
-**Risk:** the CalVer computation is the only genuinely new machinery here. Everything else is
-deletion.
+1. New `.github/workflows/release.yml`. Computes the version by scanning git tags:
+   `YYYY.M` from the UTC date, patch from the count of existing stable tags in that month.
+   Prereleases are excluded from the stable count; `dev` produces `-dev.N`. Refuses to
+   reuse an existing tag. Notes come from `conventional-changelog-cli -p conventionalcommits`.
+   `dry_run` defaults to true.
+2. The release is created with `secrets.RELEASE_PLEASE_TOKEN`, **not** `GITHUB_TOKEN` —
+   tags pushed by the default token do not trigger the Docker build workflow.
+3. Deleted `.release-it.json`, `release-it.yml`, `release-please.yml`.
+4. Release stays manual (`workflow_dispatch`). It is the one thing standing between a bad
+   merge and a published Docker image, and CalVer removes the pressure to batch anyway.
+
+**Verified before commit** against a fake tag set in a throwaway repo: `2026.8.2` with
+prereleases present, `2026.8.2-dev.1` on `dev`, `2026.9.0` for an empty month, and
+`2026.7.10` from `v2026.7.9` (the lexical-vs-numeric sort trap).
+
+**Remaining:**
+
+- `semantic-release.yml` and `release.config.mjs` stay until the new flow has cut one real
+  release. Delete them after that, not before.
+- The four release-it dev dependencies (`release-it`, `release-it-pnpm`,
+  `@release-it/bumper`, `@release-it/conventional-changelog`) plus
+  `should-semantic-release` are now unreferenced in `package.json`. Removing them is a
+  separate, deliberate call.
+- Decide what happens to `CHANGELOG.md`: delete it, or leave it frozen with a header
+  pointing at GitHub Releases.
 
 ---
 
@@ -114,9 +147,10 @@ be referenced by the docs index.
 
 1. Use `args.apiVersion` for the output filename instead of `getTunarrVersion()`. Explicit
    beats ambient, and the argument already exists.
-2. Have the release workflow invoke `generate-openapi --apiVersion <tag>` after the version is
-   computed, then commit `docs/generated/tunarr-v<version>-openapi.json` plus the regenerated
-   `openapi-specs.js` as part of the release.
+2. Have `release.yml` invoke `generate-openapi --apiVersion <computed version>` after the
+   version step, then commit `docs/generated/tunarr-v<version>-openapi.json` plus the
+   regenerated `openapi-specs.js` as part of the release. The version is already an output
+   of that workflow, so there is nothing new to compute.
 3. Decide what `apiVersion=latest` should do when no version is passed — either refuse to
    write a versioned file at all, or write only `tunarr-latest-openapi.json`. Writing a
    version-stamped file from an unknown version is what created this mess.
@@ -131,62 +165,65 @@ dropdown lists it, and every URL in `openapi-specs.js` resolves to a tracked fil
 
 ---
 
-## Phase 3 — Rollback safety (independent of versioning, and worth more)
+## Phase 3 — Rollback safety (independent of versioning, and worth more) — **DONE**
+
+Shipped as `faee0050` on branch `feat/pre-migration-snapshot` (unmerged, unpushed).
 
 This is the phase that actually addresses the user behaviour behind the whole discussion:
 upgrade, hit a bug, roll back. No version number was ever going to fix it.
 
-**Verified state:**
+**State before the work:**
 
-- `server/src/migration/DrizzleMigrator.ts` contains **zero** references to backup.
-  Migrations run in place against the live database.
-- There is **no downgrade guard anywhere**. Nothing detects that the schema was written by a
-  newer Tunarr than the running binary.
-- The backup machinery already exists and is not wired to migration:
+- `server/src/migration/DrizzleMigrator.ts` contained **zero** references to backup.
+  Migrations ran in place against the live database.
+- There was **no downgrade guard anywhere**. Nothing detected that the schema was written by
+  a newer Tunarr than the running binary.
+- The backup machinery already existed and was not wired to migration:
   `server/src/db/backup/SqliteDatabaseBackup.ts`, `ArchiveDatabaseBackup.ts`,
-  `DatabaseBackupStrategy.ts`, and `BackupTask` bound in `TasksModule.ts:73-83`. Today it is
-  only a scheduled task the user has to configure.
+  `DatabaseBackupStrategy.ts`, and `BackupTask` bound in `TasksModule.ts:73-83`.
 
-**Work:**
+**What shipped:**
 
-1. **Snapshot before migrating.** Have `DrizzleMigrator` call the existing backup code before
-   applying anything, writing a copy stamped with the pre-migration schema state. Rollback
-   becomes a one-line support answer: restore this file.
-2. **Refuse to start on a newer schema.** If the migrations table contains entries the binary
-   does not know about, exit with a message naming the snapshot rather than running against a
-   schema it cannot read. Loud and specific beats mysterious.
+1. **Snapshot before migrating.** `DBAccess.snapshotBeforeMigration` writes
+   `db-pre-migration-<epoch>.bak` before any migration is applied. Rollback is now a
+   one-line support answer: restore this file.
+2. **Refuse to start on a newer schema.** `DrizzleMigrator.getUnknownAppliedMigrations()`
+   compares the migrations table against the binary's known migrations; unknown entries
+   raise `DatabaseSchemaTooNewError`, which names the offending migration and points at the
+   `*-pre-migration-*.bak` file. The guard runs *before* the pending-migration check.
+3. **Backup rotation split.** `bootstrap.ts` rotates two separate pools (keep last 3 each)
+   so copy-migrator `.bak` files cannot evict the pre-migration snapshot.
 
-**Verify:** migrate a DB forward, run the previous binary against it, and confirm it exits with
-a message naming a snapshot that exists.
-
-**Note:** this phase is independent of Phases 1 and 2 and could ship first. It is the highest
-user-visible value in this document.
+Covered by `server/src/db/DBAccess.test.ts` (6 tests, all red-green proven).
 
 ---
 
 ## Phase 4 — State the contract
 
-Only credible once Phase 3 exists; documentation alone will not stop anyone rolling back.
+Only credible once Phase 3 exists (it now does); documentation alone will not stop anyone
+rolling back.
 
 - Tunarr is not backwards compatible across versions. Upgrades may migrate the database.
 - Rollback is supported via the pre-migration snapshot, and the docs say where it is.
 - The version number denotes *when*, not *what changed*. Read the release notes for that.
+- Release notes live in GitHub Releases; there is no in-repo changelog.
 - The API spec dropdown is a historical record, not a compatibility contract.
 
 ---
 
 ## Suggested order
 
-| # | Phase | Depends on |
+| # | Phase | Status |
 |---|---|---|
-| 1 | Phase 3 — rollback safety | Nothing. Highest user value, fully independent. |
-| 2 | Phase 1 — one release tool | Nothing, but blocks Phase 2. |
-| 3 | Phase 2 — spec naming | Phase 1, since the version must come from somewhere real. |
-| 4 | Phase 4 — contract docs | Phase 3. |
+| 1 | Phase 3 — rollback safety | **Done** (`faee0050`), unmerged |
+| 2 | Phase 1 — CalVer release workflow | **Piloted** (`ed3bd9aa`), unmerged, needs one real dry run in CI |
+| 3 | Phase 2 — spec naming | Blocked on Phase 1 landing |
+| 4 | Phase 4 — contract docs | Ready; Phase 3 is done |
 
 ## Open questions
 
-1. Manual or automatic releases after consolidation? (Recommendation above: manual.)
-2. Backfill the missing `1.3.9`–`1.3.13` specs, or start the record clean?
-3. Does the first CalVer release get a `2.0.0`-style announcement, given the number jumps from
+1. Backfill the missing `1.3.9`–`1.3.13` specs, or start the record clean?
+2. Does the first CalVer release get a `2.0.0`-style announcement, given the number jumps from
    `1.3.13` to `2026.8.0` and will look alarming in a Docker tag list?
+3. Delete `CHANGELOG.md`, or freeze it with a pointer to GitHub Releases?
+4. Drop the five now-unreferenced release dev dependencies from `package.json`?
