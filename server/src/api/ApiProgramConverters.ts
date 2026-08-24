@@ -35,6 +35,7 @@ import type { Maybe, Nullable } from '../types/util.ts';
 import { isNonEmptyString } from '../util/index.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
+import { parseAirDate } from '../util/airDate.ts';
 import { titleToSortTitle } from '../util/programs.ts';
 
 export class ApiProgramConverters {
@@ -77,18 +78,12 @@ export class ApiProgramConverters {
       return null;
     }
 
-    const parsed = dayjs(
-      program.originalAirDate,
-      [`YYYY-MM-DDTHH:mm:ssZ`, `YYYY-MM-DD`],
-      true,
-    );
-    const releaseDate = parsed.isValid() ? +parsed : null;
+    const parsed = parseAirDate(program.originalAirDate);
+    const releaseDate = parsed ? +parsed : null;
     const year =
       program.year && program.year > 0
         ? program.year
-        : parsed.isValid()
-          ? parsed.year()
-          : null;
+        : (parsed?.year() ?? null);
 
     const identifiers =
       program.externalIds?.map((eid) => ({
