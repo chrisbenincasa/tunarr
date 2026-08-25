@@ -46,6 +46,31 @@ describe('search parser', () => {
     } satisfies SearchClause);
   });
 
+  test('parses season numeric field', () => {
+    const input = 'season >= 1';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'single_numeric_query',
+      field: 'season',
+      op: '>=',
+      value: 1,
+    } satisfies SearchClause);
+
+    const request = parsedSearchToRequest(query);
+    expect(request).toEqual({
+      type: 'value',
+      fieldSpec: {
+        key: 'seasonIndex',
+        name: 'season',
+        op: '>=',
+        type: 'numeric',
+        value: 1,
+      },
+    } satisfies SearchFilter);
+
+    expect(searchFilterToString(request)).toEqual(input);
+  });
+
   test('parse values with other keywords', () => {
     const query = parseAndCheckExpression(
       'title IN ["Rick and Morty", "Murder, She Wrote", "Not Real"]',

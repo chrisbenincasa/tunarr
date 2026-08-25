@@ -118,5 +118,9 @@ Fields available for search:
 | `show_genre` | `string` | Genre of the show a program belongs to (only applicable to episodes) | comedy |
 | `show_tags` | `string` | Tag on the show the program belongs to (only applicable to episodes) | - |
 | `show_studio` | `string` | Studio on the show the program belongs to | - |
+| `season` | `number` | Season number. For episodes: their season's number; for season groupings: their own number. `0` for Specials. | `1` |
 | `media_source_name` | `string` | Name of the media source (Plex server, Jellyfin server, etc.) the program was imported from | `My Plex` |
 | `library_name` | `string` | Name of the library within the media source the program belongs to | `TV Shows` |
+
+!!! note
+    The `season` field is only populated for content indexed after this change. Force-rescan existing TV libraries to populate it for previously indexed episodes and season groupings.
