@@ -117,7 +117,7 @@ class Future<T> implements Promise<T> {
   }
 }
 
-type State = 'pending' | 'started' | 'terminating';
+type State = 'pending' | 'starting' | 'started' | 'terminating';
 
 @injectable()
 export class TunarrWorkerPool implements IWorkerPool {
@@ -129,7 +129,7 @@ export class TunarrWorkerPool implements IWorkerPool {
   #outstandingByIndex = new Map<number, string[]>();
   #startPromises: Promise<boolean>[] = [];
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(TunarrSubprocessService)
@@ -140,12 +140,23 @@ export class TunarrWorkerPool implements IWorkerPool {
     if (this.#state !== 'pending') {
       return;
     }
-    this.#state = 'pending';
+    // Not 'pending' — that is the value just tested for, so assigning it back
+    // left the guard inert and the "already starting" state unreachable. The
+    // pool only reached 'started' an await boundary later, and a second
+    // start() inside that window built an entire second set of workers over
+    // the first: the originals were orphaned while queueTask round-robined
+    // over a half-replaced pool.
+    this.#state = 'starting';
     this.logger.info('Starting worker pool...');
+    // Replaced rather than appended to. Pushing meant a pool restarted after
+    // a shutdown kept the previous run's promises, so allReady() awaited —
+    // and re-threw for — workers that had already been terminated.
+    const startPromises = new Array<Promise<boolean>>();
     for (let i = 0; i < numWorkers; i++) {
-      this.#startPromises.push(this.setupWorker(i));
+      startPromises.push(this.setupWorker(i));
     }
-    Promise.all(this.#startPromises)
+    this.#startPromises = startPromises;
+    Promise.all(startPromises)
       .then(() => {
         this.logger.debug(
           'Worker pool successfully started %d workers',
@@ -153,7 +164,16 @@ export class TunarrWorkerPool implements IWorkerPool {
         );
         this.#state = 'started';
       })
-      .catch(console.error);
+      .catch((err: unknown) => {
+        // Deliberately not reset to 'pending'. Some workers may have come up,
+        // and a second start() over them would orphan those. shutdown() is
+        // the defined way back to a startable state.
+        this.logger.error(
+          err,
+          'Worker pool failed to start all %d workers',
+          numWorkers,
+        );
+      });
   }
 
   async shutdown(timeout: number = 5_000) {
