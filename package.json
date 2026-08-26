@@ -61,22 +61,6 @@
     "node": "22"
   },
   "packageManager": "pnpm@10.28.0",
-  "pnpm": {
-    "patchedDependencies": {
-      "kysely": "patches/kysely.patch"
-    },
-    "overrides": {
-      "eslint": "catalog:",
-      "@types/node": "22.10.7"
-    },
-    "onlyBuiltDependencies": [
-      "@swc/core",
-      "arktype",
-      "better-sqlite3",
-      "esbuild",
-      "unrs-resolver"
-    ]
-  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "prettier --write",

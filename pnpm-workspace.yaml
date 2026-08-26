@@ -21,3 +21,17 @@ catalogs:
     vitest: ^4.1.5
 
 enablePrePostScripts: true
+
+patchedDependencies:
+  kysely: "patches/kysely.patch"
+
+overrides:
+  eslint: "catalog:"
+  "@types/node": "22.10.7"
+
+onlyBuiltDependencies:
+  - "@swc/core"
+  - arktype
+  - better-sqlite3
+  - esbuild
+  - unrs-resolver
