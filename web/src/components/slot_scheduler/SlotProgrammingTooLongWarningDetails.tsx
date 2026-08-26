@@ -25,10 +25,10 @@ import {
 import { seq } from '@tunarr/shared/util';
 import type { BaseSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { map, round, sum, uniqBy, values } from 'lodash-es';
+import { map, uniqBy, values } from 'lodash-es';
+import { averageProgramDurationMs } from '@/helpers/slots.ts';
 import type { ListChildComponentProps } from 'react-window';
 import { FixedSizeList } from 'react-window';
-import { getEpisodeShowId } from '../../helpers/programUtil.ts';
 
 type Props = {
   slot: BaseSlot & SlotTableWarnings;
@@ -82,49 +82,7 @@ export const SlotProgrammingTooLongWarningDetails = ({
     );
   };
 
-  let averageLength = dayjs.duration(0);
-
-  switch (slot.type) {
-    case 'movie': {
-      const durations = seq.collect(values(programLookup), (program) => {
-        if (program.type === 'content' && program.program.type === 'movie') {
-          return program.duration;
-        }
-        return;
-      });
-      if (durations.length === 0) {
-        averageLength = dayjs.duration(
-          round(sum(durations) / durations.length),
-        );
-      }
-      break;
-    }
-    case 'show': {
-      const showId = slot.showId;
-      const durations = seq.collect(values(programLookup), (program) => {
-        if (
-          program.type === 'content' &&
-          program.program.type === 'episode' &&
-          getEpisodeShowId(program.program) === showId
-        ) {
-          return program.duration;
-        }
-        return;
-      });
-      if (durations.length > 0) {
-        averageLength = dayjs.duration(
-          round(sum(durations) / durations.length),
-        );
-      }
-      break;
-    }
-    case 'custom-show':
-    case 'filler':
-    case 'flex':
-    case 'redirect':
-    default:
-      break;
-  }
+  const averageLengthMs = averageProgramDurationMs(slot, values(programLookup));
 
   return (
     <Accordion
@@ -140,7 +98,9 @@ export const SlotProgrammingTooLongWarningDetails = ({
             sx={{ mr: 1, color: (theme) => theme.palette.warning.main }}
           />
         )}
-        <Typography><Trans>Programs Too Long</Trans></Typography>
+        <Typography>
+          <Trans>Programs Too Long</Trans>
+        </Typography>
       </AccordionSummary>
       <AccordionDetails>
         <Stack>
@@ -158,22 +118,42 @@ export const SlotProgrammingTooLongWarningDetails = ({
           <div>
             <p>
               <Trans>
-              {warning.programs.length} of {slot.programCount}{' '}
-              {plural(slot.programCount, { one: 'program', other: 'programs' })} exceed the length of
-              this slot ({betterHumanize(dayjs.duration(slot.durationMs ?? 0))}
-              ). Average program length: {averageLength.humanize()}
+                {warning.programs.length} of {slot.programCount}{' '}
+                {plural(slot.programCount, {
+                  one: 'program',
+                  other: 'programs',
+                })}{' '}
+                exceed the length of this slot (
+                {betterHumanize(dayjs.duration(slot.durationMs ?? 0))}).
               </Trans>
+              {averageLengthMs !== undefined && (
+                <>
+                  {' '}
+                  <Trans>
+                    Average program length:{' '}
+                    {betterHumanize(dayjs.duration(averageLengthMs))}
+                  </Trans>
+                </>
+              )}
               <br />
-              <Trans>This could cause the following slot's programs to go unscheduled.
-              Possible solutions include:</Trans>
+              <Trans>
+                This could cause the following slot's programs to go
+                unscheduled. Possible solutions include:
+              </Trans>
             </p>
             <ul>
               {}
               {slotType === 'time' && (
-                <li><Trans>Increasing "Max Lateness" for the schedule.</Trans></li>
+                <li>
+                  <Trans>Increasing "Max Lateness" for the schedule.</Trans>
+                </li>
               )}
-              <li><Trans>Increasing the slot duration.</Trans></li>
-              <li><Trans>Removing overrun programs from the channel.</Trans></li>
+              <li>
+                <Trans>Increasing the slot duration.</Trans>
+              </li>
+              <li>
+                <Trans>Removing overrun programs from the channel.</Trans>
+              </li>
             </ul>
           </div>
           <Box sx={{ width: '100%', height: 400 }}>
