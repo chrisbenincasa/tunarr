@@ -2829,6 +2829,115 @@ describe('slot filler placement', () => {
     },
   );
 
+  test('an oversized mid filler does not starve the rest of the break', async () => {
+    const midList = randomUUID();
+    const breakMs = 30 * 1000;
+    const breaksPerEpisode = 2;
+
+    const episodes: SlotSchedulerProgram[] = Array.from(
+      { length: 4 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `show1-ep${i + 1}`,
+          title: `Episode ${i + 1}`,
+          type: 'episode',
+          duration: 20 * oneMin,
+          episode: i + 1,
+          tvShowUuid: 'show1',
+          show: { uuid: 'show1' },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    // "uniform" ordering hands back whatever is next in the shuffle, so the
+    // 5 minute bumper will be offered for a 30 second break. It must be
+    // skipped in favor of the next candidate, not end the fill.
+    const midFillers: SlotSchedulerProgram[] = [
+      5 * oneMin,
+      10 * 1000,
+      10 * 1000,
+      10 * 1000,
+      10 * 1000,
+      10 * 1000,
+    ].map((duration, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `mid-${i}`,
+        title: `Mid ${i}`,
+        type: 'movie',
+        duration,
+      }),
+      parentFillerLists: [midList],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: 30 * oneMin,
+      latenessMs: 0,
+      timeZoneOffset: 0,
+      slots: [
+        {
+          id: randomUUID(),
+          startTime: 0,
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+          filler: [
+            {
+              types: ['mid'],
+              fillerListId: midList,
+              fillerOrder: 'uniform',
+            },
+          ],
+          midRoll: {
+            strategy: 'eager',
+            breakRule: { type: 'fixed_interval', intervalMs: 8 * oneMin },
+            breakDurationMs: breakMs,
+            maxBreaks: breaksPerEpisode,
+            minProgramDurationMs: 0,
+            tailBufferMs: 0,
+          },
+        },
+      ],
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [...episodes, ...midFillers],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const lineup = result.lineup as LineupItem[];
+    const midItems = lineup.filter(
+      (p) => p.type === 'filler' && p.fillerType === 'mid',
+    );
+    // Two breaks split each episode into three content segments, so the
+    // number of breaks in the day follows from the segment count.
+    const segments = lineup.filter((p) => p.type === 'content').length;
+    expect(segments % (breaksPerEpisode + 1)).toBe(0);
+    const breaks = (segments / (breaksPerEpisode + 1)) * breaksPerEpisode;
+    expect(breaks).toBeGreaterThan(0);
+
+    // The 5 minute bumper can never fit a 30 second break.
+    expect(midItems.every((p) => p.duration === 10 * 1000)).toBe(true);
+    // Every break is packed to its full duration. Bailing on the oversized
+    // candidate instead of skipping it leaves breaks as flex.
+    expect(midItems.reduce((acc, p) => acc + p.duration, 0)).toBe(
+      breaks * breakMs,
+    );
+  });
+
   test('uniform-ordered filler never exceeds the time available to it', async () => {
     const bumperList = randomUUID();
 

@@ -1087,7 +1087,13 @@ function fillDurationWithFiller(
       timeCursor,
     });
 
-    if (!filler) break;
+    // A null pick means this candidate didn't fit the remaining break time,
+    // not that the list is exhausted. The iterator has already advanced, so
+    // burn an attempt and let the next candidate try.
+    if (!filler) {
+      attempts++;
+      continue;
+    }
 
     if (totalDuration + filler.duration <= targetDurationMs) {
       fillers.push({ ...filler, fillerType: 'mid' });
