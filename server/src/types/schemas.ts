@@ -3,14 +3,9 @@ import z from 'zod/v4';
 import { programSourceTypeFromString } from '../db/custom_types/ProgramSourceType.ts';
 import type { Nilable } from './util.ts';
 
-export const TruthyQueryParam = z
-  .union([
-    z.boolean(),
-    z.literal('true'),
-    z.literal('false'),
-    z.coerce.number(),
-  ])
-  .transform((value) => value === 1 || value === true || value === 'true');
+// Defined in @tunarr/types so the schemas that live there can use it too, and
+// re-exported here so existing server-side imports keep resolving.
+export { TruthyQueryParam } from '@tunarr/types/schemas';
 
 /**
  * `.default()` only fires for a *missing* key, so a present-but-empty

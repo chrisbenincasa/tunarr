@@ -7,6 +7,7 @@ import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { LogLevels, tag } from '@tunarr/types';
 import { ChannelLineupQuery } from '@tunarr/types/api';
+import { TruthyQueryParam } from '../types/schemas.ts';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
@@ -118,7 +119,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   const CreateLineupSchema = ChannelQuerySchema.extend({
-    live: z.coerce.boolean(),
+    live: TruthyQueryParam,
     startTime: z.coerce.number().optional(),
     endTime: z.coerce.number().optional(),
   });

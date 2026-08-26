@@ -2,9 +2,10 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
+import { TruthyQueryParam } from '../types/schemas.ts';
 import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { ServiceIdentifier } from 'inversify';
+import type { ServiceIdentifier } from 'inversify';
 import { isFunction } from 'lodash-es';
 import { z } from 'zod/v4';
 import { container } from '../container.ts';
@@ -78,11 +79,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
           id: z.string(),
         }),
         querystring: z.object({
-          background: z.coerce
-            .boolean()
-            .or(z.stringbool())
-            .optional()
-            .default(true),
+          background: TruthyQueryParam.optional().default(true),
         }),
         body: z.any(),
         response: {

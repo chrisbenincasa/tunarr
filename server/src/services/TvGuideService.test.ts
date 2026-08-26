@@ -122,6 +122,81 @@ describe('TVGuideService', () => {
     });
   });
 
+  describe('concurrent guide builds', () => {
+    /**
+     * withGuideContext keeps its per-build context — channelsById and
+     * accumulateTable — on the instance and clears it in a finally. Two builds
+     * that overlap share one slot, so whichever finished first wiped the
+     * context out from under the other, which then found no entry for the
+     * channel it was building and threw. buildChannelGuideWithRetries logs and
+     * swallows that, so the only symptom was a guide quietly missing channels.
+     *
+     * This asserts the invariant that prevents it — that two builds never hold
+     * the context at once — rather than the corruption itself. Reproducing the
+     * corruption needs a second build to finish inside a specific window of the
+     * first, which depends on how many yields the lineups happen to produce and
+     * is not something to pin a regression test to.
+     */
+    it('serializes builds so one cannot clear another’s context', async () => {
+      const channelA = makeChannelWithLineup({ number: 1, name: 'Channel A' });
+      const lineups = { [channelA.channel.uuid]: channelA };
+
+      // Park the first build inside its context, at the last await before the
+      // finally that clears it.
+      let releaseFirstWrite: () => void = () => {};
+      let writeCalls = 0;
+      let inFirstWrite: (() => void) | undefined;
+      const firstWriteEntered = new Promise<void>((r) => (inFirstWrite = r));
+      const heldWrite = new Promise<void>((r) => (releaseFirstWrite = r));
+      const mockWrite = vi.fn().mockImplementation(async () => {
+        if (++writeCalls === 1) {
+          inFirstWrite?.();
+          await heldWrite;
+        }
+      });
+
+      const mockLoadAllLineups = vi.fn().mockResolvedValue(lineups);
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { loadAllLineups: mockLoadAllLineups } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+
+      const guideDuration = dayjs.duration({ hours: 4 });
+      const first = service.buildAllChannels(guideDuration, true);
+      await firstWriteEntered;
+
+      const second = service.buildAllChannels(guideDuration, true);
+      // Give the second build every chance to start. Unserialized it would
+      // load its own context here and clear it on the way out, while the first
+      // build is still holding one.
+      await new Promise((r) => setImmediate(r));
+      await new Promise((r) => setImmediate(r));
+
+      expect(mockLoadAllLineups).toHaveBeenCalledTimes(1);
+
+      releaseFirstWrite();
+      await Promise.all([first, second]);
+
+      expect(mockLoadAllLineups).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('getChannelLineup', () => {
     // Helper: build an offline GuideItem at a given start with a given duration
     function makeGuideItem(startTimeMs: number, durationMs: number) {

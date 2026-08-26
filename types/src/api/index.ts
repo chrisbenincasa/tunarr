@@ -9,6 +9,7 @@ import {
   SystemSettingsSchema,
 } from '../SystemSettings.js';
 import { JellyfinItemFields, JellyfinItemKind } from '../jellyfin/index.js';
+import { TruthyQueryParam } from '../schemas/utilSchemas.js';
 import { SearchRequestSchema } from '../schemas/SearchRequest.js';
 import {
   ChannelConcatStreamModes,
@@ -71,7 +72,7 @@ export const ChannelNumberParamSchema = z.object({
 export const ChannelLineupQuery = z.object({
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
-  includePrograms: z.coerce.boolean().default(false),
+  includePrograms: TruthyQueryParam.default(false),
 });
 
 export const LookupExternalProgrammingSchema = z.object({

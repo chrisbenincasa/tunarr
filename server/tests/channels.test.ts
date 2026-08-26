@@ -83,6 +83,74 @@ describe('POST /channels - transcode config validation', () => {
   });
 });
 
+/**
+ * `from`/`to` were declared `z.iso.datetime().optional().pipe(z.coerce.date())`.
+ * The `.optional()` sits inside the pipe, so it only lets `undefined` through
+ * the left half; `z.coerce.date()` then runs `new Date(undefined)` and fails.
+ * Because the pipe's output is non-optional, zod does not treat the object key
+ * as optional either, so omitting the query string was a 400 — even though the
+ * published OpenAPI contract declares both as optional, and the handlers pass
+ * them to `OpenDateTimeRange.create`, which accepts `undefined` on both sides.
+ */
+describe('GET /channels/:id/lineup - optional date range', () => {
+  let existingChannelId: string;
+
+  beforeAll(async () => {
+    const channelDB = container.get<ChannelDB>(KEYS.ChannelDB);
+    const result = await channelDB.saveChannel({
+      ...makeChannelPayload(validTranscodeConfigId),
+      number: 998,
+      name: 'Lineup Query Channel',
+    } as SaveableChannel);
+    existingChannelId = result.channel.uuid;
+  });
+
+  // `/lineup` can legitimately answer 500 ("Still waiting for guide to
+  // generate") against a freshly-booted server, which has nothing to do with
+  // query validation. What must not happen is a 400.
+  test('accepts no query string at all', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/channels/${existingChannelId}/lineup`,
+    });
+
+    expect(res.statusCode, res.body).not.toBe(400);
+    // The route blocks until the guide has generated, which on a cold test
+    // server takes longer than vitest's 5s default.
+  }, 30_000);
+
+  test('accepts only one side of the range', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/channels/${existingChannelId}/lineup`,
+      query: { from: new Date(0).toISOString() },
+    });
+
+    expect(res.statusCode, res.body).not.toBe(400);
+  }, 30_000);
+
+  test('still rejects a malformed date', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/channels/${existingChannelId}/lineup`,
+      query: { from: 'notadate' },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  // `/fallbacks` never reads `from`/`to` at all, yet could not be called
+  // without them.
+  test('accepts no query string on the fallbacks route', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/channels/${existingChannelId}/fallbacks`,
+    });
+
+    expect(res.statusCode).toBe(200);
+  });
+});
+
 describe('PUT /channels/:id - transcode config validation', () => {
   let existingChannelId: string;
 

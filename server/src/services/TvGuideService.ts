@@ -1,3 +1,4 @@
+import { Mutex } from 'async-mutex';
 import { ChannelDB } from '@/db/ChannelDB.js';
 import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
@@ -158,6 +159,7 @@ export class TVGuideService {
   // generation.
   private accumulateTable: Record<string, number[]> = {};
   private channelsById?: Record<string, ChannelWithLineup>;
+  private guideBuildLock = new Mutex();
 
   @InjectLogger() declare private readonly logger: Logger;
 
@@ -398,8 +400,30 @@ export class TVGuideService {
     return this.getChannelGuides(dateRange);
   }
 
-  // Initializes per-build context and then clears it
+  /**
+   * Initializes per-build context, runs the build, and clears the context.
+   *
+   * Serialized, because the context lives on the instance rather than in the
+   * call. Two overlapping builds share one `channelsById`/`accumulateTable`
+   * slot, so whichever finished first cleared it out from under the other,
+   * which then found no entry for the channel it was building and threw.
+   * buildChannelGuideWithRetries logs and swallows that, so the only symptom
+   * was a guide quietly missing channels.
+   *
+   * A channel save calling refreshGuide while the scheduled UpdateXmlTvTask
+   * runs buildAllChannels is enough to overlap, and the yields inside
+   * getChannelPrograms give the second build room to run.
+   *
+   * Safe to serialize: nothing reachable from a builder re-enters this, so
+   * there is no path that would deadlock on the lock it already holds.
+   */
   private async withGuideContext<T>(builder: () => Promise<T>) {
+    return this.guideBuildLock.runExclusive(async () => {
+      return await this.buildWithContext(builder);
+    });
+  }
+
+  private async buildWithContext<T>(builder: () => Promise<T>) {
     try {
       this.channelsById = await this.channelDB.loadAllLineups();
       this.accumulateTable = mapValues(this.channelsById, (channel) => {
