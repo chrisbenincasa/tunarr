@@ -23,7 +23,7 @@ import {
 } from '@tunarr/types/api';
 import type { BackupSettings } from '@tunarr/types/schemas';
 import { BackupSettingsSchema, HealthCheckSchema } from '@tunarr/types/schemas';
-import { identity, isError, isUndefined, map } from 'lodash-es';
+import { identity, isError, isNil, isUndefined, map } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { join } from 'path/posix';
@@ -47,7 +47,7 @@ import {
   isRunningInContainer,
 } from '../util/containerUtil.ts';
 import { getEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
-import { FeatureFlagService } from '../services/FeatureFlagService.ts';
+import type { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import { streamFileBackwards } from '../util/fsUtil.ts';
 import { take } from '../util/streams.ts';
 
@@ -187,30 +187,42 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     async (req, res) => {
       await req.serverCtx.settings.directUpdate((file) => {
         const { system } = file;
-        system.logging.useEnvVarLevel =
-          req.body.logging?.useEnvVarLevel ?? true;
-        if (system.logging.useEnvVarLevel) {
-          system.logging.logLevel = getDefaultLogLevel(false);
-        } else {
-          system.logging.logLevel =
-            req.body.logging?.logLevel ?? getDefaultLogLevel(false);
-        }
 
-        if (!req.body.logging?.categoryLogLevel?.scheduling) {
-          delete system.logging.categoryLogLevel?.scheduling;
-        } else {
-          system.logging.categoryLogLevel ??= {};
-          system.logging.categoryLogLevel.scheduling =
-            req.body.logging.categoryLogLevel.scheduling;
-        }
+        // Guarded the same way as the backup/cache/server blocks below.
+        // Previously this ran unconditionally, so a request that never
+        // mentioned logging forced useEnvVarLevel back to true, recomputed
+        // logLevel, and deleted both category levels.
+        ifDefined(req.body.logging, (logging) => {
+          if (!isUndefined(logging.useEnvVarLevel)) {
+            system.logging.useEnvVarLevel = logging.useEnvVarLevel;
+          }
 
-        if (!req.body.logging?.categoryLogLevel?.streaming) {
-          delete system.logging.categoryLogLevel?.streaming;
-        } else {
-          system.logging.categoryLogLevel ??= {};
-          system.logging.categoryLogLevel.streaming =
-            req.body.logging.categoryLogLevel.streaming;
-        }
+          if (system.logging.useEnvVarLevel) {
+            system.logging.logLevel = getDefaultLogLevel(false);
+          } else if (!isUndefined(logging.logLevel)) {
+            system.logging.logLevel = logging.logLevel;
+          }
+
+          // categoryLogLevel is declared `LogLevelsSchema.nullish()`, so an
+          // explicit null is the wire signal for "clear this category". A
+          // category the request does not mention is left alone — the previous
+          // `if (!level) delete` conflated the two.
+          ifDefined(logging.categoryLogLevel, (categories) => {
+            for (const category of ['scheduling', 'streaming'] as const) {
+              if (!(category in categories)) {
+                continue;
+              }
+
+              const level = categories[category];
+              if (isNil(level)) {
+                delete system.logging.categoryLogLevel?.[category];
+              } else {
+                system.logging.categoryLogLevel ??= {};
+                system.logging.categoryLogLevel[category] = level;
+              }
+            }
+          });
+        });
 
         if (!isUndefined(req.body.backup)) {
           system.backup = req.body.backup;
