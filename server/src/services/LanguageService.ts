@@ -24,7 +24,7 @@ export class LanguageService {
     }
 
     if (this.Known3BCodes.has(input)) {
-      const alpha2 = languages.alpha3TToAlpha2(input);
+      const alpha2 = languages.alpha3BToAlpha2(input);
       if (alpha2) {
         return languages.alpha2ToAlpha3T(alpha2);
       }
@@ -57,5 +57,35 @@ export class LanguageService {
     }
 
     return undefined;
+  }
+
+  /**
+   * Compare two language identifiers for equivalence.
+   *
+   * ISO 639-2 assigns 20 languages both a bibliographic (/B) and a
+   * terminological (/T) code — German is "ger" and "deu" — and media servers,
+   * containers and users pick between them freely. Both sides are normalized
+   * to /T before comparison so the two code sets are interchangeable.
+   *
+   * Falls back to a case-insensitive exact comparison when either side cannot
+   * be resolved, which keeps private-use codes (e.g. "qaa") working.
+   */
+  static codesMatch(a: string | undefined, b: string | undefined): boolean {
+    if (a === undefined || b === undefined) {
+      return false;
+    }
+
+    const aLower = a.toLowerCase().trim();
+    const bLower = b.toLowerCase().trim();
+    if (aLower === bLower) {
+      return true;
+    }
+
+    const aNormalized = this.normalizeToAlpha3T(aLower);
+    if (aNormalized === undefined) {
+      return false;
+    }
+
+    return aNormalized === this.normalizeToAlpha3T(bLower);
   }
 }

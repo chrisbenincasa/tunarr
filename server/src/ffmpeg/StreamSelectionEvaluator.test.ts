@@ -13,6 +13,7 @@ import type { StreamSelectionCelContext } from '../services/CelEvaluationService
 import {
   buildCelContext,
   evaluateStreamSelectionProfile,
+  resolveAudioAction,
 } from './StreamSelectionEvaluator.ts';
 
 // Mock SubtitleStreamPicker so we don't hit the filesystem
@@ -507,7 +508,12 @@ describe('evaluateStreamSelectionProfile', () => {
 
     it('falls through to next language when first is missing', async () => {
       const streams: NonEmptyArray<AudioStreamDetails> = [
-        makeAudioStream({ index: 0, languageCodeISO6392: 'fra' }),
+        makeAudioStream({
+          index: 0,
+          languageCodeISO6392: 'fra',
+          languageCodeISO6391: 'fr',
+          language: 'French',
+        }),
         makeAudioStream({ index: 1, languageCodeISO6392: 'eng' }),
       ];
       const profile = makeProfile([
@@ -1129,7 +1135,12 @@ describe('evaluateStreamSelectionProfile', () => {
 
     it('returns null when no subtitles match language', async () => {
       const subs: SubtitleStreamDetails[] = [
-        makeSubtitleStream({ index: 2, languageCodeISO6392: 'fra' }),
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'fra',
+          languageCodeISO6391: 'fr',
+          language: 'French',
+        }),
       ];
       const profile = makeProfile([
         makeRule({
@@ -1320,6 +1331,349 @@ describe('evaluateStreamSelectionProfile', () => {
         audioStreams,
         subs,
         celService,
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream).toBeNull();
+    });
+  });
+});
+
+// ── ISO 639-2 bibliographic vs terminological codes ─────────────────────────
+//
+// ISO 639-2 gives 20 languages two 3-letter codes: a bibliographic (/B) code
+// derived from the English name (German -> "ger") and a terminological (/T)
+// code derived from the native name (Deutsch -> "deu"). Media servers and
+// containers use them interchangeably, so a language preference stored in one
+// code set must still match a stream tagged in the other.
+// Regression test for https://github.com/chrisbenincasa/tunarr/issues/1960
+
+describe('ISO 639-2 B/T language code matching', () => {
+  const lineupItem = makeLineupItem();
+
+  function germanAudio(index: number, code: string): AudioStreamDetails {
+    return makeAudioStream({
+      index,
+      codec: 'aac',
+      channels: 2,
+      language: undefined,
+      languageCodeISO6391: undefined,
+      languageCodeISO6392: code,
+      title: 'German',
+    });
+  }
+
+  function englishAudio(index: number): AudioStreamDetails {
+    return makeAudioStream({
+      index,
+      codec: 'eac3',
+      channels: 6,
+      language: undefined,
+      languageCodeISO6391: undefined,
+      languageCodeISO6392: 'eng',
+      title: 'English',
+    });
+  }
+
+  describe('audio', () => {
+    it('matches a bibliographic preference against a terminological stream', () => {
+      // The exact shape reported in issue #1960: the preference list is built
+      // from /B codes while Jellyfin/ffprobe report the /T code.
+      const streams: NonEmptyArray<AudioStreamDetails> = [
+        germanAudio(1, 'deu'),
+        englishAudio(2),
+      ];
+
+      const picked = resolveAudioAction(
+        { type: 'by_language', languages: ['ger', 'eng'] },
+        streams,
+      );
+
+      expect(picked.index).toBe(1);
+    });
+
+    it('matches a terminological preference against a bibliographic stream', () => {
+      const streams: NonEmptyArray<AudioStreamDetails> = [
+        germanAudio(1, 'ger'),
+        englishAudio(2),
+      ];
+
+      const picked = resolveAudioAction(
+        { type: 'by_language', languages: ['deu', 'eng'] },
+        streams,
+      );
+
+      expect(picked.index).toBe(1);
+    });
+
+    it('matches a two-letter preference against either code set', () => {
+      // English is listed first so that a failed match falls back to it,
+      // making this assertion sensitive to the German match actually working.
+      for (const code of ['ger', 'deu']) {
+        const streams: NonEmptyArray<AudioStreamDetails> = [
+          englishAudio(1),
+          germanAudio(2, code),
+        ];
+
+        const picked = resolveAudioAction(
+          { type: 'by_language', languages: ['de'] },
+          streams,
+        );
+
+        expect(picked.index).toBe(2);
+      }
+    });
+
+    it('honors preference order across code sets', () => {
+      // French preference is listed second, so English must win even though
+      // the French stream is tagged with the other code set.
+      const streams: NonEmptyArray<AudioStreamDetails> = [
+        makeAudioStream({
+          index: 1,
+          languageCodeISO6392: 'fra',
+          languageCodeISO6391: undefined,
+          language: undefined,
+        }),
+        englishAudio(2),
+      ];
+
+      const picked = resolveAudioAction(
+        { type: 'by_language', languages: ['eng', 'fre'] },
+        streams,
+      );
+
+      expect(picked.index).toBe(2);
+    });
+
+    it('still matches languages with a single ISO 639-2 code', () => {
+      const streams: NonEmptyArray<AudioStreamDetails> = [
+        englishAudio(1),
+        makeAudioStream({
+          index: 2,
+          languageCodeISO6392: 'jpn',
+          languageCodeISO6391: undefined,
+          language: undefined,
+        }),
+      ];
+
+      const picked = resolveAudioAction(
+        { type: 'by_language', languages: ['jpn'] },
+        streams,
+      );
+
+      expect(picked.index).toBe(2);
+    });
+
+    it('falls back to the default stream when no code set matches', () => {
+      const streams: NonEmptyArray<AudioStreamDetails> = [
+        englishAudio(1),
+        makeAudioStream({
+          index: 2,
+          languageCodeISO6392: 'jpn',
+          languageCodeISO6391: undefined,
+          language: undefined,
+          default: true,
+        }),
+      ];
+
+      const picked = resolveAudioAction(
+        { type: 'by_language', languages: ['ger'] },
+        streams,
+      );
+
+      expect(picked.index).toBe(2);
+    });
+
+    it('resolves a conflicting stream by tag precedence, not by any-field match', () => {
+      // ISO 639-2 is the most specific tag, so a stream carrying a stale or
+      // contradictory ISO 639-1 / free-form value is still German only.
+      const streams: NonEmptyArray<AudioStreamDetails> = [
+        englishAudio(1),
+        makeAudioStream({
+          index: 2,
+          languageCodeISO6392: 'ger',
+          languageCodeISO6391: 'en',
+          language: 'English',
+        }),
+      ];
+
+      expect(
+        resolveAudioAction({ type: 'by_language', languages: ['deu'] }, streams)
+          .index,
+      ).toBe(2);
+
+      // ...and the English preference must not be satisfied by that stream.
+      expect(
+        resolveAudioAction({ type: 'by_language', languages: ['eng'] }, streams)
+          .index,
+      ).toBe(1);
+    });
+
+    it('falls back to ISO 639-1 when no ISO 639-2 tag is present', () => {
+      const streams: NonEmptyArray<AudioStreamDetails> = [
+        englishAudio(1),
+        makeAudioStream({
+          index: 2,
+          languageCodeISO6392: undefined,
+          languageCodeISO6391: 'de',
+          language: 'German',
+        }),
+      ];
+
+      const picked = resolveAudioAction(
+        { type: 'by_language', languages: ['ger'] },
+        streams,
+      );
+
+      expect(picked.index).toBe(2);
+    });
+
+    it('matches unresolvable codes by exact string as before', () => {
+      const streams: NonEmptyArray<AudioStreamDetails> = [
+        englishAudio(1),
+        makeAudioStream({
+          index: 2,
+          languageCodeISO6392: 'qaa',
+          languageCodeISO6391: undefined,
+          language: undefined,
+        }),
+      ];
+
+      const picked = resolveAudioAction(
+        { type: 'by_language', languages: ['qaa'] },
+        streams,
+      );
+
+      expect(picked.index).toBe(2);
+    });
+
+    it('applies preferChannels within a cross-code-set match', () => {
+      const streams: NonEmptyArray<AudioStreamDetails> = [
+        makeAudioStream({
+          index: 1,
+          languageCodeISO6392: 'deu',
+          languageCodeISO6391: undefined,
+          language: undefined,
+          channels: 2,
+        }),
+        makeAudioStream({
+          index: 2,
+          languageCodeISO6392: 'ger',
+          languageCodeISO6391: undefined,
+          language: undefined,
+          channels: 6,
+        }),
+      ];
+
+      // Both streams are German. Only the 6-channel one is tagged with the
+      // other code set, so 'most' can only reach it if both codes match.
+      const picked = resolveAudioAction(
+        { type: 'by_language', languages: ['deu'], preferChannels: 'most' },
+        streams,
+      );
+
+      expect(picked.index).toBe(2);
+    });
+  });
+
+  describe('subtitles', () => {
+    const audioStreams: NonEmptyArray<AudioStreamDetails> = [englishAudio(0)];
+    const celContext: StreamSelectionCelContext = buildCelContext(
+      audioStreams,
+      [],
+      { name: 'Test', number: 1 },
+      { title: 'Test Movie', type: 'movie' },
+    );
+
+    it('matches a bibliographic preference against a terminological stream', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 3,
+          type: 'external',
+          languageCodeISO6392: 'deu',
+          languageCodeISO6391: undefined,
+          language: undefined,
+        }),
+        makeSubtitleStream({ index: 4, type: 'external' }),
+      ];
+
+      const result = await evaluateStreamSelectionProfile(
+        makeProfile([
+          makeRule({
+            subtitleAction: {
+              type: 'by_language',
+              languages: ['ger'],
+              filterType: 'any',
+              allowImageBased: true,
+              allowExternal: true,
+            },
+          }),
+        ]),
+        audioStreams,
+        subs,
+        makeCelService(true),
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream?.index).toBe(3);
+    });
+
+    it('matches a terminological preference against a bibliographic stream', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 3,
+          type: 'external',
+          languageCodeISO6392: 'ger',
+          languageCodeISO6391: undefined,
+          language: undefined,
+        }),
+        makeSubtitleStream({ index: 4, type: 'external' }),
+      ];
+
+      const result = await evaluateStreamSelectionProfile(
+        makeProfile([
+          makeRule({
+            subtitleAction: {
+              type: 'by_language',
+              languages: ['deu'],
+              filterType: 'any',
+              allowImageBased: true,
+              allowExternal: true,
+            },
+          }),
+        ]),
+        audioStreams,
+        subs,
+        makeCelService(true),
+        celContext,
+        lineupItem,
+      );
+
+      expect(result.subtitleStream?.index).toBe(3);
+    });
+
+    it('returns null when neither code set matches', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({ index: 4, type: 'external' }),
+      ];
+
+      const result = await evaluateStreamSelectionProfile(
+        makeProfile([
+          makeRule({
+            subtitleAction: {
+              type: 'by_language',
+              languages: ['ger'],
+              filterType: 'any',
+              allowImageBased: true,
+              allowExternal: true,
+            },
+          }),
+        ]),
+        audioStreams,
+        subs,
+        makeCelService(true),
         celContext,
         lineupItem,
       );
