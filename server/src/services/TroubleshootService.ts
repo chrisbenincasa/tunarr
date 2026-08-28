@@ -1,9 +1,11 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 
 import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { LanguageTaggedStream } from '@/ffmpeg/StreamSelectionEvaluator.js';
 import {
   buildCelContext,
   resolveAudioAction,
+  streamMatchesLanguage,
 } from '@/ffmpeg/StreamSelectionEvaluator.js';
 import {
   defaultHlsOptions,
@@ -48,6 +50,33 @@ import { CelEvaluationService } from './CelEvaluationService.js';
 import { StreamSelectionProfileResolver } from './StreamSelectionProfileResolver.js';
 
 dayjs.extend(duration);
+
+/**
+ * Find the first subtitle stream matching any of the requested languages, in
+ * preference order, along with the language that matched.
+ *
+ * The troubleshoot report must agree with what playback would actually pick,
+ * so this uses the same matching the stream selector does.
+ */
+export function findSubtitleForLanguages<T extends LanguageTaggedStream>(
+  subtitleStreams: T[] | undefined,
+  languages: string[],
+): { stream: T; language: string } | undefined {
+  if (!subtitleStreams) {
+    return undefined;
+  }
+
+  for (const language of languages) {
+    const stream = subtitleStreams.find((s) =>
+      streamMatchesLanguage(s, language),
+    );
+    if (stream) {
+      return { stream, language };
+    }
+  }
+
+  return undefined;
+}
 
 @injectable()
 export class TroubleshootService {
@@ -311,21 +340,13 @@ export class TroubleshootService {
             } else {
               selectedSubtitle = null;
               subtitleReason = `No subtitle found for languages: ${rule.subtitleAction.languages.join(', ')}`;
-              if (subtitleStreams) {
-                for (const lang of rule.subtitleAction.languages) {
-                  const langLower = lang.toLowerCase();
-                  const found = subtitleStreams.find(
-                    (s) =>
-                      s.languageCodeISO6392?.toLowerCase() === langLower ||
-                      s.languageCodeISO6391?.toLowerCase() === langLower ||
-                      s.language?.toLowerCase() === langLower,
-                  );
-                  if (found) {
-                    selectedSubtitle = found;
-                    subtitleReason = `Matched language: ${lang}`;
-                    break;
-                  }
-                }
+              const match = findSubtitleForLanguages(
+                subtitleStreams,
+                rule.subtitleAction.languages,
+              );
+              if (match) {
+                selectedSubtitle = match.stream;
+                subtitleReason = `Matched language: ${match.language}`;
               }
             }
           }
