@@ -19,35 +19,31 @@ export async function* asyncPool<T, R>(
   iteratorFn: (item: T, iterable: Iterable<T>) => PromiseLike<R> | R,
   opts: AsyncPoolOpts,
 ): AsyncGenerator<Result<WithInput<R, T>, ErrorWithInput<T>>> {
-  const executing = new Set<Promise<readonly [T, Awaited<R>]>>();
+  type PoolResult = Result<WithInput<R, T>, ErrorWithInput<T>>;
 
-  async function consume(): Promise<
-    Result<WithInput<R, T>, ErrorWithInput<T>>
-  > {
-    try {
-      const [input, result] = await Promise.race(executing);
-      return Result.success({
-        result,
-        input,
-      });
-    } catch (e) {
-      return Result.failure(e as ErrorWithInput<T>);
-    }
-  }
+  // Settled tasks buffer their outcome here rather than being observed via
+  // Promise.race. Racing only ever surfaces a single winner, so every other
+  // task that settled in the same tick had its result discarded — with a
+  // synchronously-resolving iteratorFn that dropped all but 1 in
+  // `concurrency` results.
+  // A non-positive limit would spin the producer loop with nothing in flight
+  // and no await to yield on, starving the event loop entirely.
+  const concurrency = Math.max(1, opts.concurrency);
+  const completed: PoolResult[] = [];
+  let running = 0;
+  let onSettled: (() => void) | undefined;
 
-  for (const item of iterable) {
-    // Wrap iteratorFn() in an async fn to ensure we get a promise.
-    // Then expose such promise, so it's possible to later reference and
-    // remove it from the executing pool.
-    const promise = (async () => {
+  const start = (item: T) => {
+    running++;
+    void (async () => {
       try {
-        const r = await iteratorFn(item, iterable);
+        const result = await iteratorFn(item, iterable);
         if (opts.waitAfterEachMs && opts.waitAfterEachMs > 0) {
           await wait(opts.waitAfterEachMs);
         } else if (opts.flushAfterEach) {
           await wait();
         }
-        return [item, r] as const;
+        completed.push(Result.success({ result, input: item }));
       } catch (e) {
         let error: Error;
         if (isError(e)) {
@@ -58,18 +54,43 @@ export async function* asyncPool<T, R>(
           error = new Error(JSON.stringify(e));
         }
 
-        throw new ErrorWithInput(error, item);
+        completed.push(Result.failure(new ErrorWithInput(error, item)));
+      } finally {
+        running--;
+        const notify = onSettled;
+        onSettled = undefined;
+        notify?.();
       }
-    })().finally(() => executing.delete(promise));
+    })();
+  };
 
-    executing.add(promise);
-    if (executing.size >= opts.concurrency) {
-      yield await consume();
+  // Hands back everything buffered so far, waiting for at least one task to
+  // settle if nothing is buffered yet.
+  async function* drain(): AsyncGenerator<PoolResult> {
+    if (completed.length === 0 && running > 0) {
+      await new Promise<void>((resolve) => {
+        onSettled = resolve;
+      });
+    }
+
+    for (
+      let next = completed.shift();
+      next !== undefined;
+      next = completed.shift()
+    ) {
+      yield next;
     }
   }
 
-  while (executing.size) {
-    yield await consume();
+  for (const item of iterable) {
+    start(item);
+    while (running >= concurrency) {
+      yield* drain();
+    }
+  }
+
+  while (running > 0 || completed.length > 0) {
+    yield* drain();
   }
 }
 
