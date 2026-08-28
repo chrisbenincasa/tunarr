@@ -1,3 +1,8 @@
+> [!NOTE]
+> jediswimmer fork of [chrisbenincasa/tunarr](https://github.com/chrisbenincasa/tunarr). This clone is behind upstream. Not a Titans Rift product. Install and Docker: follow upstream.
+
+`tunarr · fork of chrisbenincasa/tunarr · jediswimmer`
+
 <p align="center">
   <img src="./design/tunarr-guide.png" alt="Tunarr TV Guide">
 </p>
