@@ -26,6 +26,9 @@ export async function* asyncPool<T, R>(
   // task that settled in the same tick had its result discarded — with a
   // synchronously-resolving iteratorFn that dropped all but 1 in
   // `concurrency` results.
+  // A non-positive limit would spin the producer loop with nothing in flight
+  // and no await to yield on, starving the event loop entirely.
+  const concurrency = Math.max(1, opts.concurrency);
   const completed: PoolResult[] = [];
   let running = 0;
   let onSettled: (() => void) | undefined;
@@ -81,7 +84,7 @@ export async function* asyncPool<T, R>(
 
   for (const item of iterable) {
     start(item);
-    while (running >= opts.concurrency) {
+    while (running >= concurrency) {
       yield* drain();
     }
   }

@@ -70,4 +70,18 @@ describe('asyncPool', () => {
     expect(results).toHaveLength(inputs.length);
     expect(peak).toBe(4);
   });
+
+  it(
+    'runs serially rather than spinning when given a non-positive concurrency',
+    { timeout: 5_000 },
+    async () => {
+      const inputs = range(1, 6);
+
+      const results = await unfurlPool(
+        asyncPool(inputs, (n) => Promise.resolve(n), { concurrency: 0 }),
+      );
+
+      expect(results).toEqual(inputs);
+    },
+  );
 });
