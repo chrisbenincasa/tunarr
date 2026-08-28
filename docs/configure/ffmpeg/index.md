@@ -59,3 +59,6 @@ When using the **HLS Direct** stream mode, sidecar text-based subtitles are serv
 ### Language Preference
 
 Currently, language preferences can only be configured globally. Use this setting to set an ordered list of preferred audio languages. The first matching audio language stream for a given piece of content will be chosen.
+
+!!! note
+    ISO 639-2 gives 20 languages two different three-letter codes — German is both `ger` and `deu`, French both `fre` and `fra` — and media servers and files use them interchangeably. Tunarr treats the two codes for a language as equivalent, so a preference matches a track regardless of which code the file or media server reports.
