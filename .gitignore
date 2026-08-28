@@ -50,3 +50,4 @@ web/.tanstack
 *.ipr
 
 .claude/worktrees
+.pnpm-store/
