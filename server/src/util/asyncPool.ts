@@ -1,8 +1,7 @@
-import { isError, isString } from 'lodash-es';
+import { isError, isString, sortBy } from 'lodash-es';
 import { WrappedError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import { wait } from './index.js';
-import { LoggerFactory } from './logging/LoggerFactory.js';
 
 type AsyncPoolOpts = {
   concurrency: number;
@@ -21,19 +20,20 @@ export async function* asyncPool<T, R>(
 ): AsyncGenerator<Result<WithInput<R, T>, ErrorWithInput<T>>> {
   type PoolResult = Result<WithInput<R, T>, ErrorWithInput<T>>;
 
+  // A non-positive limit would spin the producer loop with nothing in flight
+  // and no await to yield on, starving the event loop entirely.
+  const concurrency = Math.max(1, opts.concurrency);
+
   // Settled tasks buffer their outcome here rather than being observed via
   // Promise.race. Racing only ever surfaces a single winner, so every other
   // task that settled in the same tick had its result discarded — with a
   // synchronously-resolving iteratorFn that dropped all but 1 in
   // `concurrency` results.
-  // A non-positive limit would spin the producer loop with nothing in flight
-  // and no await to yield on, starving the event loop entirely.
-  const concurrency = Math.max(1, opts.concurrency);
   const completed: PoolResult[] = [];
   let running = 0;
   let onSettled: (() => void) | undefined;
 
-  const start = (item: T) => {
+  const start = (item: T, index: number) => {
     running++;
     void (async () => {
       try {
@@ -43,7 +43,7 @@ export async function* asyncPool<T, R>(
         } else if (opts.flushAfterEach) {
           await wait();
         }
-        completed.push(Result.success({ result, input: item }));
+        completed.push(Result.success({ result, input: item, index }));
       } catch (e) {
         let error: Error;
         if (isError(e)) {
@@ -82,8 +82,9 @@ export async function* asyncPool<T, R>(
     }
   }
 
+  let index = 0;
   for (const item of iterable) {
-    start(item);
+    start(item, index++);
     while (running >= concurrency) {
       yield* drain();
     }
@@ -94,21 +95,35 @@ export async function* asyncPool<T, R>(
   }
 }
 
+// Collects an entire pool into an array. Rejects if any task failed: a short
+// array is indistinguishable from a genuinely short one, and callers such as
+// custom show sync overwrite their contents with whatever comes back, so a
+// swallowed failure silently destroys programming. Callers that want to
+// tolerate individual failures should iterate the pool directly.
 export async function unfurlPool<T, R>(
   poolGen: AsyncGenerator<Result<WithInput<R, T>, ErrorWithInput<T>>>,
 ) {
-  const results: R[] = [];
+  const collected: WithInput<R, T>[] = [];
+  const failures: ErrorWithInput<T>[] = [];
+  let total = 0;
+
   for await (const result of poolGen) {
+    total++;
     if (result.isFailure()) {
-      LoggerFactory.root.error(
-        result.error,
-        'Error processing async pool task',
-      );
+      failures.push(result.error);
     } else {
-      results.push(result.get().result);
+      collected.push(result.get());
     }
   }
-  return results;
+
+  if (failures.length > 0) {
+    throw new AggregateError(
+      failures,
+      `${failures.length} of ${total} async pool task(s) failed`,
+    );
+  }
+
+  return sortBy(collected, (item) => item.index).map((item) => item.result);
 }
 
 class ErrorWithInput<In> extends WrappedError {
@@ -123,6 +138,9 @@ class ErrorWithInput<In> extends WrappedError {
 type WithInput<R, In> = {
   result: R;
   input: In;
+  // Position of `input` in the source iterable. Results are yielded in
+  // completion order; this is what lets a caller recover the input order.
+  index: number;
 };
 
 // type Result<In, R> = Success<R, In> | Failure<In>;

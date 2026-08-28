@@ -19,6 +19,43 @@ vi.mock('@/util/logging/LoggerFactory.js', () => ({
   LoggerFactory: { child: () => fakeLogger, root: fakeLogger },
 }));
 
+describe('unfurlPool', () => {
+  it('rejects instead of returning a short list when a task fails', async () => {
+    const inputs = range(1, 11);
+
+    await expect(
+      unfurlPool(
+        asyncPool(
+          inputs,
+          (n) =>
+            n === 4 ? Promise.reject(new Error('boom')) : Promise.resolve(n),
+          { concurrency: 3 },
+        ),
+      ),
+    ).rejects.toThrow(/1 of 10/);
+  });
+});
+
+describe('unfurlPool ordering', () => {
+  it('returns results in input order, not completion order', async () => {
+    const inputs = range(1, 7);
+
+    const results = await unfurlPool(
+      asyncPool(
+        inputs,
+        async (n) => {
+          // Later inputs finish first.
+          await new Promise((resolve) => setTimeout(resolve, (7 - n) * 5));
+          return n;
+        },
+        { concurrency: 6 },
+      ),
+    );
+
+    expect(results).toEqual(inputs);
+  });
+});
+
 describe('asyncPool', () => {
   it('yields a result for every input when tasks settle without I/O', async () => {
     const inputs = range(1, 41);
