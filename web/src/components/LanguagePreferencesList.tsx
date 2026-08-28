@@ -23,7 +23,11 @@ export function LanguagePreferencesList({
   };
 
   const languageOptions = useLanguageOptions();
-  const preferenceCodes = map(preferences, (pref) => pref.iso6392);
+  // Keyed on the ISO 639-1 code, matching isOptionEqualToValue below. The
+  // 3-letter code is ambiguous: ISO 639-2 gives 20 languages both a
+  // bibliographic and a terminological code, so a preference saved as "ger"
+  // would not suppress the "deu" option and German could be added twice.
+  const preferenceCodes = map(preferences, (pref) => pref.iso6391);
 
   return (
     <Autocomplete
@@ -31,8 +35,8 @@ export function LanguagePreferencesList({
       fullWidth
       value={preferences}
       onChange={(_, newValue) => handleChange(newValue)}
-      options={reject(languageOptions, ({ iso6392 }) =>
-        preferenceCodes.includes(iso6392),
+      options={reject(languageOptions, ({ iso6391 }) =>
+        preferenceCodes.includes(iso6391),
       )}
       getOptionLabel={(option) => option.displayName}
       isOptionEqualToValue={(option, value) => option.iso6391 === value.iso6391}
