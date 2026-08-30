@@ -179,6 +179,12 @@ const OrderedShuffleSortOpt = {
   value: 'ordered_shuffle',
   description: 'Ordered Shuffle',
 } as const;
+const BlockShuffleSortOpt = {
+  value: 'block',
+  description: 'Block Shuffle',
+  helperText:
+    'Plays a fixed number of episodes from each show before moving to the next',
+} as const;
 const ShufflePreferLongSortOpt = {
   value: 'shuffle_prefer_long',
   description: 'Shuffle (prefer long)',
@@ -220,6 +226,7 @@ export function slotOrderOptions(
       ShuffleSortOpt,
       NextEpSortOpt,
       OrderedShuffleSortOpt,
+      BlockShuffleSortOpt,
     ])
     .exhaustive();
 }
