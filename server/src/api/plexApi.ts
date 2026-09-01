@@ -371,7 +371,7 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
       return res
         .status(400)
         .send(
-          `Media source with ID = ${req.params.mediaSourceId} is not a Jellyfin server.`,
+          `Media source with ID = ${req.params.mediaSourceId} is not a Plex server.`,
         );
     }
 

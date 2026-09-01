@@ -233,7 +233,7 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
       return res
         .status(400)
         .send(
-          `Media source with ID = ${req.params.mediaSourceId} is not a Emby server.`,
+          `Media source with ID = ${req.params.mediaSourceId} is not an Emby server.`,
         );
     }
 

@@ -114,7 +114,7 @@ export class MediaSourceApiFactory {
         .catch((e) => {
           this.logger.error(
             e,
-            'Error updating Jellyfin media source user info',
+            'Error updating Emby media source user info',
           );
         });
     }
