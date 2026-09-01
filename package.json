@@ -66,8 +66,5 @@
       "prettier --write",
       "eslint --fix --no-warn-ignored"
     ]
-  },
-  "resolutions": {
-    "conventional-changelog-conventionalcommits": "^9.0.0"
   }
 }

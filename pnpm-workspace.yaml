@@ -26,6 +26,7 @@ patchedDependencies:
   kysely: "patches/kysely.patch"
 
 overrides:
+  conventional-changelog-conventionalcommits: "^9.0.0"
   eslint: "catalog:"
   "@types/node": "22.10.7"
 
