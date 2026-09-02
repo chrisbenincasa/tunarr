@@ -3,18 +3,28 @@ import z from 'zod/v4';
 import { programSourceTypeFromString } from '../db/custom_types/ProgramSourceType.ts';
 import type { Nilable } from './util.ts';
 
-export const TruthyQueryParam = z
-  .union([
-    z.boolean(),
-    z.literal('true'),
-    z.literal('false'),
-    z.coerce.number(),
-  ])
-  .transform((value) => value === 1 || value === true || value === 'true');
+// Defined in @tunarr/types so the schemas that live there can use it too, and
+// re-exported here so existing server-side imports keep resolving.
+export { TruthyQueryParam } from '@tunarr/types/schemas';
+
+/**
+ * `.default()` only fires for a *missing* key, so a present-but-empty
+ * `?limit=` never reached it: `z.coerce.number()` turned "" into 0, which
+ * passes `.min(-1)` and reaches the DB as `.limit(0)` — while the sentinel for
+ * "no limit" is -1. A client building its query as `limit=${value ?? ''}` got
+ * a 200 and an empty page. Map blank to undefined first so the default applies.
+ */
+const blankAsAbsent = <T extends z.ZodType>(schema: T) =>
+  z.preprocess(
+    (value) =>
+      typeof value === 'string' && value.trim() === '' ? undefined : value,
+    schema,
+  );
 
 export const PagingParams = z.object({
-  limit: z.coerce.number().min(-1).default(-1),
-  offset: z.coerce.number().nonnegative().default(0),
+  // `.int()` because there was none, so `?limit=1.5` reached SQL as a float.
+  limit: blankAsAbsent(z.coerce.number().int().min(-1).default(-1)),
+  offset: blankAsAbsent(z.coerce.number().int().nonnegative().default(0)),
 });
 
 export const jsonSchema = z.json();

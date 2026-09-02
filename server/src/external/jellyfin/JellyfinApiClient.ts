@@ -8,6 +8,11 @@ import {
   parseIntOrNull,
 } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import {
+  BlockedOutboundUrlError,
+  checkOutboundUrl,
+  outboundRequestGuard,
+} from '@/util/outboundRequests.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { seq } from '@tunarr/shared/util';
 import type {
@@ -51,6 +56,7 @@ import {
   isNil,
   isNull,
   isNumber,
+  isUndefined,
   mapValues,
   omitBy,
   orderBy,
@@ -199,6 +205,13 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
     password: string,
     clientId: string = v4(),
   ) {
+    // serverUrl comes straight from an unauthenticated API caller, so refuse the
+    // one class of destination that is never a media server.
+    const rejection = await checkOutboundUrl(serverUrl);
+    if (rejection) {
+      throw new BlockedOutboundUrlError(rejection);
+    }
+
     try {
       const response = await axios.post(
         `${serverUrl}/Users/AuthenticateByName`,
@@ -210,6 +223,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
           headers: {
             Authorization: getJellyfinAuthorization(undefined, clientId),
           },
+          ...outboundRequestGuard,
         },
       );
 
@@ -1307,6 +1321,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         heightPx: height,
       },
       chapters,
+      scanKind: isUndefined(videoStream?.IsInterlaced)
+        ? 'unknown'
+        : videoStream.IsInterlaced
+          ? 'interlaced'
+          : 'progressive',
     };
   }
 

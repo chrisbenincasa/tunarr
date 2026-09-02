@@ -10,7 +10,8 @@
     "dev": "turbo run dev",
     "fmt": "prettier --write .",
     "lint-staged": "lint-staged --allow-empty",
-    "lint-changed": "eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)",
+    "lint-changed": "./scripts/lint-changed.sh",
+    "preflight": "./scripts/preflight.sh",
     "test": "turbo run test",
     "preinstall": "npx only-allow pnpm",
     "should-semantic-release": "should-semantic-release --verbose",
@@ -60,29 +61,10 @@
     "node": "22"
   },
   "packageManager": "pnpm@10.28.0",
-  "pnpm": {
-    "patchedDependencies": {
-      "kysely": "patches/kysely.patch"
-    },
-    "overrides": {
-      "eslint": "catalog:",
-      "@types/node": "22.10.7"
-    },
-    "onlyBuiltDependencies": [
-      "@swc/core",
-      "arktype",
-      "better-sqlite3",
-      "esbuild",
-      "unrs-resolver"
-    ]
-  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "prettier --write",
       "eslint --fix --no-warn-ignored"
     ]
-  },
-  "resolutions": {
-    "conventional-changelog-conventionalcommits": "^9.0.0"
   }
 }

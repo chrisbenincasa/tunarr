@@ -63,14 +63,18 @@ import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConvert
 import type { ChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
 import type { ChannelOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { Result } from '../types/result.ts';
-import { PagingParams } from '../types/schemas.ts';
+import { PagingParams, TruthyQueryParam } from '../types/schemas.ts';
 
 dayjs.extend(duration);
 
 const ChannelLineupQuery = z.object({
-  from: z.iso.datetime().optional().pipe(z.coerce.date()),
-  to: z.iso.datetime().optional().pipe(z.coerce.date()),
-  includePrograms: z.coerce.boolean().default(false),
+  // `.optional()` must sit outside the pipe. Inside, it only lets `undefined`
+  // through the left half and `z.coerce.date()` still runs on it; and because
+  // the pipe's output is non-optional, zod does not treat the key as optional
+  // either, so omitting the query string is a 400.
+  from: z.iso.datetime().pipe(z.coerce.date()).optional(),
+  to: z.iso.datetime().pipe(z.coerce.date()).optional(),
+  includePrograms: TruthyQueryParam.default(false),
 });
 
 // eslint-disable-next-line @typescript-eslint/require-await

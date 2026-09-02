@@ -14,7 +14,6 @@ import {
   type XmltvProgramme,
 } from '@iptv/xmltv';
 import { Mutex } from 'async-mutex';
-import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { compact, escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
@@ -22,6 +21,7 @@ import { match } from 'ts-pattern';
 import { type ArtworkType } from '../db/schema/Artwork.ts';
 import { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
 import { MaterializedGuideItem } from '../types/guide.ts';
+import { parseAirDate } from '../util/airDate.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
 
 const lock = new Mutex();
@@ -258,15 +258,9 @@ export class XmlTvWriter {
         ];
       }
 
-      if (program.originalAirDate) {
-        const parsed = dayjs(
-          program.originalAirDate,
-          [`YYYY-MM-DDTHH:mm:ssZ`, `YYYY-MM-DD`],
-          true,
-        );
-        if (parsed.isValid()) {
-          partial.date ??= parsed.toDate();
-        }
+      const airDate = parseAirDate(program.originalAirDate);
+      if (airDate) {
+        partial.date ??= airDate.toDate();
       }
 
       const genres = [

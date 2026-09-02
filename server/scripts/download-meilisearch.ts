@@ -61,7 +61,9 @@ async function addExecPermission(targetPath: string) {
   try {
     const stat = await fs.stat(targetPath);
     const currentMode = stat.mode;
-    await fs.chmod(targetPath, currentMode | 0o100);
+    // Grant exec to owner, group, and other so the binary is runnable when
+    // the container runs as a non-root user (rootless docker, PUID/PGID, etc).
+    await fs.chmod(targetPath, currentMode | 0o111);
   } catch (e) {
     console.error(e, 'Error while trying to chmod +x meilisearch binary');
   }

@@ -51,6 +51,7 @@ Tunarr has various command line / environment variables for configuration. These
 | `TUNARR_SERVER_PORT` | `--port`/`-p` | `8000` | Sets the port that the Tunarr server will listen on. **NOTE** When using Docker, prefer using a port mapping instead of setting this. |
 | `TUNARR_BIND_ADDR` | N/A | `0.0.0.0` | Sets the interface that Tunarr will bind to. By default, Tunarr listens on all network interfaces. **NOTE** This generally does not have to be changed. |
 | `TUNARR_SERVER_TRUST_PROXY` | `--trust_proxy` | `false` | Enables [trust proxy](/configure/system/security/#trust-proxy) for using Tunarr behind a reverse proxy. |
+| `TUNARR_CORS_ORIGINS` | N/A | (same-origin) | Comma-separated list of browser origins allowed to call the Tunarr API cross-origin, e.g. `https://tunarr.example.com`. By default Tunarr sends no CORS headers, so browsers permit same-origin requests only. Set this only if you serve the web UI from a different origin than the API. |
 
 ### Logging
 

@@ -1,3 +1,4 @@
+import { Mutex } from 'async-mutex';
 import { ChannelDB } from '@/db/ChannelDB.js';
 import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
@@ -133,6 +134,15 @@ const PlaceholderChannelId = v4();
 export class TVGuideService {
   private timer: Timer;
   private locks = new MutexMap();
+
+  // Bounded by maxRetryTime rather than by the retry count: buildChannelGuide
+  // holds this channel's lock for the whole of it, so the ceiling on how long a
+  // failing channel can block its own rebuilds is what matters.
+  protected readonly guideBuildRetryOptions: retry.Options = {
+    retries: 15,
+    factor: 2,
+    maxRetryTime: 30_000,
+  };
   private xmltv: XmlTvWriter;
   private eventService: EventService;
   private programConverter: ProgramConverter;
@@ -149,8 +159,9 @@ export class TVGuideService {
   // generation.
   private accumulateTable: Record<string, number[]> = {};
   private channelsById?: Record<string, ChannelWithLineup>;
+  private guideBuildLock = new Mutex();
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(XmlTvWriter) xmltv: XmlTvWriter,
@@ -389,8 +400,30 @@ export class TVGuideService {
     return this.getChannelGuides(dateRange);
   }
 
-  // Initializes per-build context and then clears it
+  /**
+   * Initializes per-build context, runs the build, and clears the context.
+   *
+   * Serialized, because the context lives on the instance rather than in the
+   * call. Two overlapping builds share one `channelsById`/`accumulateTable`
+   * slot, so whichever finished first cleared it out from under the other,
+   * which then found no entry for the channel it was building and threw.
+   * buildChannelGuideWithRetries logs and swallows that, so the only symptom
+   * was a guide quietly missing channels.
+   *
+   * A channel save calling refreshGuide while the scheduled UpdateXmlTvTask
+   * runs buildAllChannels is enough to overlap, and the yields inside
+   * getChannelPrograms give the second build room to run.
+   *
+   * Safe to serialize: nothing reachable from a builder re-enters this, so
+   * there is no path that would deadlock on the lock it already holds.
+   */
   private async withGuideContext<T>(builder: () => Promise<T>) {
+    return this.guideBuildLock.runExclusive(async () => {
+      return await this.buildWithContext(builder);
+    });
+  }
+
+  private async buildWithContext<T>(builder: () => Promise<T>) {
     try {
       this.channelsById = await this.channelDB.loadAllLineups();
       this.accumulateTable = mapValues(this.channelsById, (channel) => {
@@ -991,36 +1024,43 @@ export class TVGuideService {
       this.currentEndTime[channelId]! - this.currentUpdateTime[channelId]!;
     const dur = dayjs.duration(thisGuideLength).humanize();
     this.logger.debug('Building Channel %s for %s', channelId, dur);
-    await retry(
-      async () => {
-        try {
-          await this.timer.timeAsync(
-            `Built Channel ${channelId} TV Guide for ${dur}`,
-            async () => {
-              this.cachedGuide[channelId] =
-                await this.buildGuideInternal(channelId);
-              if (
-                writeXmlTv &&
-                !this.channelsById![channelId]!.channel.stealth
-              ) {
-                await this.writeXmlTv();
-              }
-            },
-          );
-        } catch (err) {
-          this.logger.error(err, 'Unable to update internal guide data');
-        } finally {
-          this.lastUpdateTime[channelId] = this.currentUpdateTime[channelId]!;
-          this.lastEndTime[channelId] = this.currentEndTime[channelId]!;
-          this.currentUpdateTime[channelId] = -1;
-        }
-      },
-      {
-        retries: 15,
-        factor: 2,
-        maxRetryTime: 30000,
-      },
-    );
+
+    try {
+      // The catch has to live outside retry(): a callback that swallows its own
+      // errors never rejects, so retry() sees success on the first attempt and
+      // the retries never happen.
+      await retry(async () => {
+        await this.timer.timeAsync(
+          `Built Channel ${channelId} TV Guide for ${dur}`,
+          async () => {
+            this.cachedGuide[channelId] =
+              await this.buildGuideInternal(channelId);
+            if (writeXmlTv && !this.channelsById![channelId]!.channel.stealth) {
+              await this.writeXmlTv();
+            }
+          },
+        );
+      }, this.guideBuildRetryOptions);
+
+      this.lastUpdateTime[channelId] = this.currentUpdateTime[channelId]!;
+      this.lastEndTime[channelId] = this.currentEndTime[channelId]!;
+    } catch (err) {
+      // Deliberately leave lastUpdateTime and lastEndTime where they were.
+      // getChannelLineup consults lastEndTime to decide whether the cached
+      // guide covers a requested range, so advancing them for a build that
+      // produced nothing tells every downstream consumer the guide is fresh
+      // when there is no guide at all.
+      this.logger.error(
+        err,
+        'Unable to update guide data for channel %s; giving up after retries',
+        channelId,
+      );
+    } finally {
+      // Not swallowed silently but not rethrown either: buildAllChannels fans
+      // out over Promise.all, so letting this escape would abort every other
+      // channel's build and skip the XMLTV write entirely.
+      this.currentUpdateTime[channelId] = -1;
+    }
   }
 
   private async writeXmlTv() {

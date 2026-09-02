@@ -9489,12 +9489,42 @@ export type PostApiFfmpegSettingsData = {
     url: '/api/ffmpeg-settings';
 };
 
+export type PostApiFfmpegSettingsErrors = {
+    /**
+     * Default Response
+     */
+    500: 'error';
+};
+
+export type PostApiFfmpegSettingsError = PostApiFfmpegSettingsErrors[keyof PostApiFfmpegSettingsErrors];
+
 export type PostApiFfmpegSettingsResponses = {
     /**
      * Default Response
      */
-    200: unknown;
+    200: {
+        configVersion: number;
+        ffmpegExecutablePath: string;
+        ffprobeExecutablePath: string;
+        enableLogging: boolean;
+        enableFileLogging: boolean;
+        logLevel: 'panic' | 'fatal' | 'error' | 'warning' | 'info' | 'verbose' | 'debug' | 'trace';
+        languagePreferences: {
+            preferences: Array<{
+                iso6391: string;
+                iso6392: string;
+                displayName: string;
+            }>;
+        };
+        transcodeDirectory?: string;
+        scalingAlgorithm: 'bicubic' | 'fast_bilinear' | 'lanczos' | 'spline';
+        deinterlaceFilter: 'none' | 'bwdif=0' | 'bwdif=1' | 'w3fdif' | 'yadif=0' | 'yadif=1';
+        hlsDirectOutputFormat: 'mkv' | 'mpegts' | 'mp4';
+        enableSubtitleExtraction: boolean;
+    };
 };
+
+export type PostApiFfmpegSettingsResponse = PostApiFfmpegSettingsResponses[keyof PostApiFfmpegSettingsResponses];
 
 export type PutApiFfmpegSettingsData = {
     body?: {

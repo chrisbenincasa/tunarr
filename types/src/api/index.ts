@@ -5,10 +5,12 @@ import {
   LogCategoriesSchema,
   LoggingSettingsSchema,
   LogLevelsSchema,
+  LogRollConfigSchema,
   ServerSettingsSchema,
   SystemSettingsSchema,
 } from '../SystemSettings.js';
 import { JellyfinItemFields, JellyfinItemKind } from '../jellyfin/index.js';
+import { TruthyQueryParam } from '../schemas/utilSchemas.js';
 import { SearchRequestSchema } from '../schemas/SearchRequest.js';
 import {
   ChannelConcatStreamModes,
@@ -71,7 +73,7 @@ export const ChannelNumberParamSchema = z.object({
 export const ChannelLineupQuery = z.object({
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
-  includePrograms: z.coerce.boolean().default(false),
+  includePrograms: TruthyQueryParam.default(false),
 });
 
 export const LookupExternalProgrammingSchema = z.object({
@@ -256,18 +258,27 @@ export type SystemSettingsResponse = z.infer<
   typeof SystemSettingsResponseSchema
 >;
 
+/**
+ * Declared field by field rather than as `LoggingSettingsSchema.pick(...)
+ * .partial()`. `.partial()` wraps a field's `.default()` instead of removing
+ * it, so a key the client omitted still arrived populated with its default —
+ * `useEnvVarLevel` came through as `true` on every request, and
+ * `logRollConfig` as the default object. The handler could not distinguish
+ * "omitted" from "sent" and reset settings the request never mentioned.
+ *
+ * `categoryLogLevel` values are nullish: an explicit null clears one category,
+ * while a category that is absent is left alone.
+ */
 export const UpdateSystemSettingsRequestSchema = z.object({
-  logging: LoggingSettingsSchema.pick({
-    logLevel: true,
-    useEnvVarLevel: true,
-    logRollConfig: true,
-  })
-    .extend({
+  logging: z
+    .object({
+      logLevel: LogLevelsSchema.optional(),
+      useEnvVarLevel: z.boolean().optional(),
+      logRollConfig: LogRollConfigSchema.optional(),
       categoryLogLevel: z
         .partialRecord(LogCategoriesSchema, LogLevelsSchema.nullish())
         .optional(),
     })
-    .partial()
     .optional(),
   backup: BackupSettingsSchema.optional(),
   cache: CacheSettingsSchema.optional(),
