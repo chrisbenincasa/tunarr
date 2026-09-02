@@ -14,7 +14,9 @@ import {
   ParseJSONResultsPlugin,
   SqliteDialect,
 } from 'kysely';
-import { findIndex, isError, last, map, slice } from 'lodash-es';
+import { findIndex, isError, last, map, replace, slice } from 'lodash-es';
+import { SqliteDatabaseBackup } from './backup/SqliteDatabaseBackup.ts';
+import { DatabaseSchemaTooNewError } from '../migration/DatabaseSchemaTooNewError.ts';
 import { DatabaseCopyMigrator } from '../migration/db/DatabaseCopyMigrator.ts';
 import {
   DirectMigrationProvider,
@@ -142,6 +144,23 @@ class Connection {
 
   async databaseNeedsMigration() {
     return (await this.pendingDatabaseMigrations()).length > 0;
+  }
+
+  /**
+   * Migration names recorded in this database that this build does not know
+   * about. Non-empty means the database was written by a newer Tunarr.
+   */
+  async unknownAppliedMigrations(): Promise<string[]> {
+    const tables = await this.db.introspection.getTables({
+      withInternalKyselyTables: true,
+    });
+
+    // Fresh install: nothing has been applied, so nothing can be unknown.
+    if (!tables.some((table) => table.name === MigrationTableName)) {
+      return [];
+    }
+
+    return this.getDrizzleMigrator().getUnknownAppliedMigrations();
   }
 
   getMigrator() {
@@ -340,6 +359,14 @@ export class DBAccess {
 
   async migrateExistingDatabase(dbPathToMigrate: string) {
     const conn = this.getOrCreateConnection(dbPathToMigrate);
+
+    // Checked before the pending-migration check: a database from a newer
+    // Tunarr has nothing pending, so it would otherwise sail straight through.
+    const unknownMigrations = await conn.unknownAppliedMigrations();
+    if (unknownMigrations.length > 0) {
+      throw new DatabaseSchemaTooNewError(dbPathToMigrate, unknownMigrations);
+    }
+
     if (!(await conn.databaseNeedsMigration())) {
       return;
     }
@@ -355,6 +382,8 @@ export class DBAccess {
       return;
     }
 
+    await this.snapshotBeforeMigration(dbPathToMigrate);
+
     const copyMigrator = new DatabaseCopyMigrator(this);
     for (const migration of pendingMigrations) {
       this.logger.info('Running database migration "%s"', migration.name);
@@ -367,6 +396,35 @@ export class DBAccess {
         );
       }
     }
+  }
+
+  /**
+   * Copy the database before any migration touches it, so a user who upgrades,
+   * hits a problem and rolls back has something to return to. Named apart from
+   * the copy migrator's own per-migration .bak files so that its rotation
+   * cannot evict this one first.
+   */
+  private async snapshotBeforeMigration(dbPath: string) {
+    const snapshotPath = `${replace(dbPath, /\.db$/, '')}-pre-migration-${+dayjs()}.bak`;
+
+    const result = await attempt(() =>
+      new SqliteDatabaseBackup().backup(dbPath, snapshotPath),
+    );
+
+    if (isError(result)) {
+      this.logger.error(
+        result,
+        'Could not snapshot the database before migrating. Migration will not proceed.',
+      );
+      throw result;
+    }
+
+    this.logger.info(
+      'Snapshotted database to %s before migrating',
+      snapshotPath,
+    );
+
+    return snapshotPath;
   }
 
   getMigrator(dbPath?: string) {
