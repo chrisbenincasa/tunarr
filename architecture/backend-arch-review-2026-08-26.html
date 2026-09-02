@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture review — @tunarr/server</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", flowchart: { curve: "basis" } });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .card-diagram { height: 340px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-6xl mx-auto px-6 py-12 space-y-12">
+
+      <header class="space-y-6">
+        <div class="flex items-end justify-between border-b border-slate-300 pb-6">
+          <div>
+            <p class="text-xs uppercase tracking-widest text-slate-500">Architecture review · backend high-level plan</p>
+            <h1 class="text-4xl font-serif mt-1">Tunarr server — deepening opportunities</h1>
+            <p class="text-slate-600 mt-2">@tunarr/server · 796 TypeScript files · ~141k lines · 2026-08-25 · five explorers, one synthesis</p>
+          </div>
+          <div class="text-right text-sm text-slate-500 leading-6">
+            <div class="flex items-center gap-2 justify-end"><span class="inline-block w-4 h-4 border-2 border-slate-700 rounded-sm"></span> module</div>
+            <div class="flex items-center gap-2 justify-end"><span class="inline-block w-6 border-t-2 border-dashed border-slate-500"></span> seam</div>
+            <div class="flex items-center gap-2 justify-end"><span class="inline-block w-6 border-t-2 border-red-600"></span> leakage</div>
+            <div class="flex items-center gap-2 justify-end"><span class="inline-block w-4 h-4 rounded-sm deep"></span> deep module</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="rounded-lg border border-slate-200 bg-white p-4">
+            <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">The territory today</p>
+            <pre class="mermaid">
+flowchart TD
+    H["api/*.ts — 33 router files"] -->|"req.serverCtx.* (250+ sites)"| SC["ServerContext — 30-field god object"]
+    SC --> DF["ChannelDB / ProgramDB — pass-through facades"]
+    DF --> R["channel/ + program/ repositories"]
+    R --> D["Kysely + Drizzle over one better-sqlite3 handle"]
+    SC --> SV["services/ — scheduling, scanning, guide"]
+    SC --> SM["SessionManager + stream sessions"]
+    SC --> T["tasks/ + GlobalScheduler singleton"]
+    SC --> X["external/ — Plex · Jellyfin · Emby clients"]
+    H -.->|"container.get() in handlers"| CT["Inversify container singleton"]
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class SC leak
+            </pre>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-4 flex flex-col">
+            <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Mass — the ten biggest modules</p>
+            <div class="space-y-1.5 text-xs mono">
+              <div class="flex items-center gap-2"><span class="text-slate-500 w-60 truncate">external/plex/PlexApiClient.ts</span><span class="h-3 bg-slate-400 rounded" style="width:100%"></span><span class="text-slate-500">2.3k</span></div>
+              <div class="flex items-center gap-2"><span class="text-slate-500 w-60 truncate">services/MeilisearchService.ts</span><span class="h-3 bg-slate-400 rounded" style="width:86%"></span><span class="text-slate-500">2.0k</span></div>
+              <div class="flex items-center gap-2"><span class="text-slate-500 w-60 truncate">external/emby/EmbyApiClient.ts</span><span class="h-3 bg-slate-400 rounded" style="width:85%"></span><span class="text-slate-500">2.0k</span></div>
+              <div class="flex items-center gap-2"><span class="text-slate-500 w-60 truncate">external/jellyfin/JellyfinApiClient.ts</span><span class="h-3 bg-slate-400 rounded" style="width:84%"></span><span class="text-slate-500">2.0k</span></div>
+              <div class="flex items-center gap-2"><span class="text-slate-500 w-60 truncate">services/TvGuideService.ts</span><span class="h-3 bg-slate-400 rounded" style="width:61%"></span><span class="text-slate-500">1.4k</span></div>
+              <div class="flex items-center gap-2"><span class="text-slate-500 w-60 truncate">ffmpeg/FfmpegStreamFactory.ts</span><span class="h-3 bg-slate-400 rounded" style="width:48%"></span><span class="text-slate-500">1.1k</span></div>
+              <div class="flex items-center gap-2"><span class="text-slate-500 w-60 truncate">ffmpeg/builder/pipeline/BasePipelineBuilder.ts</span><span class="h-3 bg-slate-400 rounded" style="width:48%"></span><span class="text-slate-500">1.1k</span></div>
+              <div class="flex items-center gap-2"><span class="text-slate-500 w-60 truncate">services/scheduling/slotSchedulerUtil.ts</span><span class="h-3 bg-slate-400 rounded" style="width:47%"></span><span class="text-slate-500">1.1k</span></div>
+              <div class="flex items-center gap-2"><span class="text-slate-500 w-60 truncate">db/channel/LineupRepository.ts</span><span class="h-3 bg-slate-400 rounded" style="width:45%"></span><span class="text-slate-500">1.0k</span></div>
+              <div class="flex items-center gap-2"><span class="text-slate-500 w-60 truncate">api/programmingApi.ts</span><span class="h-3 bg-slate-400 rounded" style="width:45%"></span><span class="text-slate-500">1.0k</span></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-3">Test reality: <span class="mono">api/</span> has 2 test files — both test pure helpers, none uses <span class="mono">app.inject</span>, none overrides the container. <span class="mono">ffmpeg/</span> has 34. The external client mapping (~900 lines × 3) has zero tests.</p>
+          </div>
+        </div>
+      </header>
+
+      <section id="candidates" class="space-y-10">
+        <p class="text-sm text-slate-500">Thirteen candidates, ranked by friction. Strength: <span class="font-semibold text-emerald-700">Strong</span> = real friction, real payoff · <span class="font-semibold text-amber-700">Worth exploring</span> = real friction, verify payoff · <span class="font-semibold text-slate-600">Speculative</span> = plausible, needs evidence.</p>
+
+        <!-- ============ CANDIDATE 1 ============ -->
+        <article id="c1" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">1 · Own the request seam — retire the ambient ServerContext</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/ServerContext.ts:38-120 · server/src/Server.ts:198-213 · server/src/api/*.ts (250+ req.serverCtx sites) · server/src/container.ts:58 · 16 container.get() calls inside handlers (videoApi.ts:125, streamApi.ts:499, systemApi.ts:361…)</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — one ambient god object</p>
+                <pre class="mermaid grow">
+flowchart TD
+    A["channelsApi handler"] --> SC["ServerContext\n30 fields"]
+    B["mediaSourceApi handler"] --> SC
+    C["settings handlers"] --> SC
+    D["streamApi handler"] --> SC
+    SC --> X1["channelDB"] & X2["settings"] & X3["sessionManager"] & X4["guideService"] & X5["m3uService"] & X6["eventService"] & X7["searchService"] & X8["...24 more"]
+    A -.->|"container.get()"| CT["container"]
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class SC leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — explicit seams per router</p>
+                <pre class="mermaid grow">
+flowchart TD
+    A["channelsApi\n@inject channelDB, guideService, m3uService"] --> C1["ChannelUpdate module"]
+    B["settingsApi\n@inject settings, eventService"] --> C2["SettingsUpdate module"]
+    D["streamApi\n@inject StreamGateway"] --> C3["StreamGateway"]
+    classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+    class C1,C2,C3 deep
+                </pre>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> Every handler's real interface is one 30-field object reached through <span class="mono">AsyncLocalStorage</span> and <span class="mono">req.serverCtx</span> — plus <span class="mono">container.get()</span> calls inside handlers. A handler's dependencies are invisible, every handler couples to the whole world, and <span class="mono">getServerContext()</span> throws when ambient state is missing.</p>
+              <p><span class="font-semibold">Solution.</span> Routers declare dependencies at construction (constructor <span class="mono">@inject</span>, like the newer <span class="mono">*ApiController</span> classes) and receive a request context carrying only request data; the container resolves one router factory, never per-handler lookups.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>locality: dependencies visible at each router</li>
+                <li>testability: handlers become fakes-injectable (today: 0 handler tests)</li>
+                <li>leverage: one convention replaces 250 ambient reads</li>
+                <li>kills the service locator half of Inversify</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 2 ============ -->
+        <article id="c2" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">2 · One schedule evaluation — evaluate→convert→persist, validated everywhere</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/services/scheduling/TimeSlotSchedulerService.ts:47-66 · RandomSlotSchedulerService.ts:47-65 · services/NoopWorkerPool.ts:64-78 · services/TunarrWorker.ts:65-69 · db/channel/LineupRepository.ts:104-139, 890-941 · commands/RegenerateChannelLineupCommand.ts:40-97, 104-139 · api/channelsApi.ts:762-793, 826-858 · scheduling/slotGroupValidator.ts:19</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — four call sites, one validation site</p>
+                <pre class="mermaid grow">
+flowchart TD
+    A["channelsApi preview"] --> W["workerPool.queueTask"] --> M1["map programs → LineupItems\n(verbatim copy)"]
+    B["LineupRepository.updateLineup (save)"] --> W --> M2["map programs → LineupItems\n(verbatim copy)"]
+    C["RegenerateChannelLineupCommand"] --> W --> M3["map programs → LineupItems"]
+    D["debugApi"] --> W
+    A -.->|"validateSlotGroups — ONLY here"| V["validation"]
+    B -.->|"no validation"| P["persist"]
+    C -.->|"no validation"| P
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class B,C leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — one evaluator owns all three steps</p>
+                <pre class="mermaid grow">
+flowchart TD
+    A["channelsApi preview"] --> E["ChannelLineupEvaluator\nevaluate(channel, schedule, seed) → lineup"]
+    B["LineupRepository (save)"] --> E
+    C["RegenerateChannelLineupCommand"] --> E
+    D["debugApi"] --> E
+    E --> V["validate"] --> CV["convert"] --> PR["persist"]
+    classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+    class E deep
+                </pre>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> One conceptual operation — evaluate a schedule into a persisted lineup — forces every caller to re-implement the worker-pool request shape, the <span class="mono">CondensedChannelProgram → LineupItem</span> mapping (verbatim in <span class="mono">LineupRepository.ts:104-139</span> and <span class="mono">RegenerateChannelLineupCommand.ts:104-139</span>), program-id extraction, and the <span class="mono">replacePrograms → saveLineup → updateChannelDuration</span> ordering. <span class="mono">validateSlotGroups</span> runs only on the preview path (<span class="mono">channelsApi.ts:762,826</span>) — a <span class="text-red-700 font-semibold">live correctness bug: schedules the UI would reject persist silently</span> through save or regenerate.</p>
+              <p><span class="font-semibold">Solution.</span> One <span class="mono">ChannelLineupEvaluator</span> owning validation + conversion + persistence behind <span class="mono">evaluate()/persist()</span>; the four callers shrink to one line each and the worker protocol stops leaking past the evaluator.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>locality: conversion in one place, not two verbatim copies</li>
+                <li>validation runs on every path — bug closed</li>
+                <li>testability: evaluate is pure</li>
+                <li>leverage: callers stop knowing the worker protocol</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 3 ============ -->
+        <article id="c3" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">3 · One update-channel operation — stop re-deriving the choreography in handlers</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/api/channelsApi.ts:208-247, 265-351, 354-384, 525-584 · needsGuideRegen at :314-319 · server/src/api/{ffmpeg,hdhr,plex,xmltv}SettingsApi.ts + mediaSourceApi.ts (22 settings-update pushes in 5 files) · 42 try/catch + 43 status(500) across api/ · repsonse typo at ffmpegSettingsApi.ts:128</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — four handlers re-implement one invariant</p>
+                <pre class="mermaid grow">
+flowchart LR
+    P1["POST /channels"] --> DB["channelDB"] & GU["guideService"] & M3["m3uService"] & GS["GlobalScheduler"]
+    P2["PUT /channels/:id"] --> DB & GU & M3 & GS
+    P3["DELETE /channels/:id"] --> DB & GU & M3
+    P4["POST programming"] --> DB & GU & M3 & GS
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class GU,M3,GS leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — the operation owns its side effects</p>
+                <pre class="mermaid grow">
+flowchart LR
+    P1 --> OP["ChannelUpdate\nload → validate → persist →\ninvalidate guide → regen M3U"]
+    P2 --> OP
+    P3 --> OP
+    P4 --> OP
+    OP --> DB & GU & M3
+    classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+    class OP deep
+                </pre>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> The M3U-regen + guide-invalidation side effects and the "does this change need a guide regen" rule are re-derived inside four <span class="mono">channelsApi</span> handlers; every settings router repeats the update→<span class="mono">eventService.push('settings-update')</span> template (22 copies in 5 files, including error-path variants); error mapping is hand-rolled per handler — one misspelled schema key (<span class="mono">repsonse:</span>, <span class="mono">ffmpegSettingsApi.ts:128</span>) silently disables response validation.</p>
+              <p><span class="font-semibold">Solution.</span> One channel-update module (and one settings-update module) owns load→validate→persist→notify→invalidate; handlers reduce to parse→call→serialize; one response/error seam maps failures to status codes.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>locality: the invariant lives in one module</li>
+                <li>testability: business rules test without HTTP</li>
+                <li>leverage: 4 handlers shrink to one call</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 4 ============ -->
+        <article id="c4" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">4 · Delete the DB facades; one query dialect behind each repository</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/db/ChannelDB.ts:41-300 (all one-line delegations) · server/src/db/ProgramDB.ts:58-385 · db/interfaces/IProgramDB.ts:125-165 (duplicate programIdsByExternalIds, unusable return type at :160) · db/channel/BasicChannelRepository.ts:100-101, 274-283 vs 303-307 (same column via both ORMs) · db/mediaSourceDB.ts:55-58</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — a five-band pass-through</p>
+                <div class="grow flex flex-col justify-center gap-0.5 text-xs">
+                  <div class="h-9 border-l-4 border-slate-300 bg-white flex items-center px-3">api / services caller</div>
+                  <div class="h-9 border-l-4 border-slate-300 bg-white flex items-center px-3">IChannelDB — 205-line interface (drifting)</div>
+                  <div class="h-9 border-l-4 border-red-400 bg-red-50 flex items-center px-3">ChannelDB — 300 lines, zero logic</div>
+                  <div class="h-9 border-l-4 border-slate-300 bg-white flex items-center px-3">5 sub-repositories</div>
+                  <div class="h-9 border-l-4 border-slate-300 bg-white flex items-center px-3">Kysely <span class="text-slate-400 mx-1">+</span> Drizzle, mixed per file</div>
+                </div>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — repositories are the seam</p>
+                <div class="grow flex flex-col justify-center gap-0.5 text-xs">
+                  <div class="h-9 border-l-4 border-slate-300 bg-white flex items-center px-3">api / services caller</div>
+                  <div class="h-10 border-l-4 border-slate-800 deep text-white flex items-center px-3">LineupRepository · BasicChannelRepository · Program*Repository</div>
+                  <div class="h-9 border-l-4 border-slate-300 bg-white flex items-center px-3">Drizzle only</div>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> <span class="mono">ChannelDB</span>/<span class="mono">ProgramDB</span> are pure pass-throughs — deletion test fails: 70+ one-line delegations and no logic. The interfaces are not just wide, they drift from the implementation (duplicate <span class="mono">programIdsByExternalIds</span> with different signatures, an overload whose return type no caller can use). Meanwhile the same column (<span class="mono">channel.duration</span>) is written via Drizzle and Kysely in one file, so "which query dialect" is decided per method.</p>
+              <p><span class="font-semibold">Solution.</span> Delete the facades, promote the sub-repositories to the public seam (one behavior-holding aggregate per domain where needed), and finish the documented Drizzle migration so <span class="mono">KEYS.Database</span>/Kysely survives only in migrations.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>locality: one seam per domain aggregate</li>
+                <li>interface can't drift from implementation</li>
+                <li>one query dialect = one transaction model</li>
+                <li>cast walls at ProgramDB.ts:167,178,218,281 vanish</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 5 ============ -->
+        <article id="c5" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">5 · The media-source seam — one mapping, one library diff, one route adapter</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">Mapping: external/plex/PlexApiClient.ts:1591+ · external/jellyfin/JellyfinApiClient.ts:1085+ · external/emby/EmbyApiClient.ts:1154+ (~900 lines each; drift at JellyfinApiClient.ts:1880 vs EmbyApiClient.ts:1905) · services/Canonicalizer.ts:4-6 returns only an ID · Diff: services/MediaSourceLibraryRefresher.ts:75-156, 176-262, 264-340 (updatedLibraries:[] at :260,:338) · Routes: api/plexApi.ts:351-379 · api/jellyfinApi.ts:247 · api/embyApi.ts:213 · api/mediaSourceApi.ts:541-677 · copy-paste bug at plexApi.ts:374 · MediaSourceApiClient.ts:68-131 (14 methods)</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — three parallel towers, three shared algorithms</p>
+                <pre class="mermaid grow">
+flowchart TD
+    P["Plex"] --> PT1["client 2.3k"] & PT2["~900-line mapping"] & PT3["library diff"] & PT4["route adapter"]
+    J["Jellyfin"] --> JT1["client 2.0k"] & JT2["~900-line mapping"] & JT3["library diff"] & JT4["route adapter"]
+    E["Emby"] --> ET1["client 2.0k"] & ET2["~900-line mapping"] & ET3["library diff"] & ET4["route adapter"]
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class PT2,PT3,PT4,JT2,JT3,JT4,ET2,ET3,ET4 leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — shared algorithms, thin per-source adapters</p>
+                <pre class="mermaid grow">
+flowchart TD
+    P["Plex adapter"] --> CORE["MediaSourceAdapter core\nmapping validator · LibraryDiffer ·\nwithMediaSource facade"]
+    J["Jellyfin adapter"] --> CORE
+    E["Emby adapter"] --> CORE
+    CORE --> S["Canonicalizer → row assembler"]
+    classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+    class CORE deep
+                </pre>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> Three duplications of the same shape. (a) The source→internal-model mapping — ratings, roles, thumbnails, seasons/episodes, streams, locations — is ~900 private lines per client with zero tests, and Jellyfin/Emby already diverged on a null-guard. (b) The library-diff algorithm is copy-pasted three times in <span class="mono">MediaSourceLibraryRefresher</span> and already drifted (only Plex computes <span class="mono">updatedLibraries</span>). (c) Route adapters triplicate load→assert→call, with a copy-paste bug at <span class="mono">plexApi.ts:374</span>. The one real seam (<span class="mono">MediaSourceApiClient</span>) covers querying only; <span class="mono">Canonicalizer&lt;T&gt;</span> returns just an ID string; scanners bind concrete clients for the off-interface methods.</p>
+              <p><span class="font-semibold">Solution.</span> One <span class="mono">MediaSourceAdapter</span> seam: per-source adapters supply list/query + type-map + mapping; the shared algorithms (LibraryDiffer, canonicalize-to-row, withMediaSource) live once behind it. Widen the client interface so the 18 scanner subclasses stop binding concrete classes.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>drift between sources stops compounding</li>
+                <li>mapping becomes fixture-testable (today: zero tests)</li>
+                <li>new source = one adapter, not three algorithms</li>
+                <li>route bug class disappears</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 6 ============ -->
+        <article id="c6" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">6 · Unify the transcode target — one state assembler, not four copies</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/ffmpeg/FfmpegStreamFactory.ts:255-280, 419-466, 846-877, 934-964 (FfmpegState + FrameState + DefaultPipelineOptions rebuilt 4×) · :209, 328, 781, 910 (ad-hoc FfmpegPlaybackParamsCalculator)</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — four hand-built copies</p>
+                <div class="grow grid grid-cols-2 gap-2 text-[10px] uppercase tracking-wide text-slate-500">
+                  <div class="border border-slate-300 rounded p-2 bg-white">
+                    <p class="font-semibold text-slate-700">createStreamSession</p>
+                    <p class="mt-1">FfmpegState.create<br/>new FrameState<br/>DefaultPipelineOptions</p>
+                  </div>
+                  <div class="border border-slate-300 rounded p-2 bg-white">
+                    <p class="font-semibold text-slate-700">createErrorSession</p>
+                    <p class="mt-1">FfmpegState.create<br/>new FrameState<br/>DefaultPipelineOptions</p>
+                  </div>
+                  <div class="border border-slate-300 rounded p-2 bg-white">
+                    <p class="font-semibold text-slate-700">createOfflineSession</p>
+                    <p class="mt-1">FfmpegState.create<br/>new FrameState<br/>DefaultPipelineOptions</p>
+                  </div>
+                  <div class="border border-slate-300 rounded p-2 bg-white">
+                    <p class="font-semibold text-slate-700">createHlsSlowerConcat</p>
+                    <p class="mt-1">FfmpegState.create<br/>new FrameState<br/>DefaultPipelineOptions</p>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — one assembler</p>
+                <div class="grow flex flex-col items-center justify-center gap-2 text-[10px] uppercase tracking-wide text-slate-500">
+                  <div class="w-full text-center space-y-1">
+                    <div class="border border-slate-300 rounded p-1.5 bg-white">createStreamSession</div>
+                    <div class="border border-slate-300 rounded p-1.5 bg-white">createErrorSession</div>
+                    <div class="border border-slate-300 rounded p-1.5 bg-white">createOfflineSession</div>
+                    <div class="border border-slate-300 rounded p-1.5 bg-white">createHlsSlowerConcat</div>
+                  </div>
+                  <div class="text-slate-400">▼</div>
+                  <div class="deep text-white rounded px-4 py-2 text-center font-semibold">TranscodeStateAssembler<br/><span class="normal-case font-normal">(config, mode, details, format) → {state, frame, options}</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> The encode-target invariant — <span class="mono">FfmpegState</span> + <span class="mono">FrameState</span> (bitrate, buffer, pixel format, frame rate, timescale, realtime, preset, deinterlace…) + <span class="mono">DefaultPipelineOptions</span> — is hand-rebuilt four times with only field-by-field drift, and the playback-params calculator is instantiated ad hoc instead of injected. A new transcode default must be edited in four blocks.</p>
+              <p><span class="font-semibold">Solution.</span> One <span class="mono">TranscodeStateAssembler</span> takes (config, stream mode, stream details or placeholder, output format) and returns the populated triplet; the four call sites collapse to one call.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>locality: encode targets defined once</li>
+                <li>testability: arg assembly hits one seam</li>
+                <li>leverage: session creators get a session state, not homework</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 7 ============ -->
+        <article id="c7" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">7 · One subtitle selector — two pickers implement the same rule</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/ffmpeg/StreamSelectionEvaluator.ts:177-277 (resolveSubtitleAction) vs server/src/ffmpeg/SubtitleStreamPicker.ts:37-155 (pickSubtitles) · extraction helper shared at SubtitleStreamPicker.ts:157-196</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — two parallel implementations</p>
+                <pre class="mermaid grow">
+flowchart TD
+    T1["buildTranscodeInputs"] --> S1["StreamSelector"]
+    S1 --> E["StreamSelectionEvaluator\nresolveSubtitleAction\n(CEL-profile path)"]
+    T2["buildPassthroughSubtitles"] --> S2["SubtitleStreamPicker\npickSubtitles\n(preference-list path)"]
+    E --> X["getSubtitleDetailsWithExtractedPath"]
+    S2 --> X
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class E,S2 leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — one selector, two callers</p>
+                <pre class="mermaid grow">
+flowchart TD
+    T1["buildTranscodeInputs"] --> SEL["SubtitleSelector\nlanguage → forced/default →\nexternal → image → extraction"]
+    T2["buildPassthroughSubtitles"] --> SEL
+    SEL --> X["getSubtitleDetailsWithExtractedPath"]
+    classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+    class SEL deep
+                </pre>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> The subtitle-picking invariant (language match → forced/default filter → external check → image-based check → extraction fallback) is implemented twice — through the CEL-profile path and through the preference-list path. A rule fix must land in two files and the two filter orderings already risk diverging.</p>
+              <p><span class="font-semibold">Solution.</span> Make one <span class="mono">SubtitleSelector</span> the single adapter; the passthrough path delegates to it with a preference-list policy instead of re-implementing the algorithm.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>locality: subtitle rules in one module</li>
+                <li>leverage: callers pick by policy, not algorithm</li>
+                <li>testability: one picker to spec</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 8 ============ -->
+        <article id="c8" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">8 · One channel lifecycle — pause/resume/cleanup reconciles in one module</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/stream/SessionManager.ts:167-179, 425-498 (Tunarr-filtered connection count) · server/src/tasks/OnDemandChannelStateTask.ts:38-56 (raw numConnections()===0) · server/src/api/streamApi.ts:177-179 (inline resume) · server/src/stream/ConnectionTracker.ts:73-109 · server/src/stream/Session.ts:255-283 · server/src/services/OnDemandChannelService.ts:45-185 (cursor math + magic 1000ms task delay)</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — four sites decide "is this channel idle?"</p>
+                <pre class="mermaid grow">
+flowchart TD
+    A["streamApi — inline resume"] --> P["pause / resume"]
+    B["SessionManager.pauseChannelIfNecessary\nTunarr-filtered count"] --> P
+    C["OnDemandChannelStateTask\nraw count === 0"] --> P
+    D["CleanupSessionsTask + ConnectionTracker\ntimer, re-scheduled in Session"] --> P
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class B,C,D leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — one reconcile</p>
+                <pre class="mermaid grow">
+flowchart TD
+    A["streamApi"] --> R["reconcileChannelState(channelId)\nclassify connections → pause/resume →\nschedule cleanup"]
+    B["OnDemandChannelStateTask"] --> R
+    C["CleanupSessionsTask"] --> R
+    R --> OD["OnDemandChannelService.pause / resume"]
+    classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+    class R deep
+                </pre>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> "Is this channel idle?" is answered by three different connection-classification rules (one filters <span class="mono">userAgent.includes('Tunarr')</span>, one checks raw <span class="mono">numConnections()===0</span>, one resumes inline from a route), while cleanup timing lives in <span class="mono">ConnectionTracker</span> and is re-scheduled from <span class="mono">Session</span> and swept by a task. The on-demand clock (cursor, lastResumed, lastPaused) is separate math in <span class="mono">OnDemandChannelService</span> plus a duplicated <span class="mono">dayjs().add(1000)</span> task delay.</p>
+              <p><span class="font-semibold">Solution.</span> <span class="mono">SessionManager</span> owns a single <span class="mono">reconcileChannelState(channelId)</span> — one classification rule, one cleanup schedule — and the clock becomes one on-demand-timeline module used by pause, resume, and stream lookup.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>locality: pause rule in one file</li>
+                <li>no drift between connection-count variants</li>
+                <li>testability: state machine isolated (today: as-any + stubs)</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 9 ============ -->
+        <article id="c9" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">9 · Mint once — one program-row assembler, and db/ stops importing api/</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/db/converters/ProgramMinter.ts:96,342,410,465,522 (near-identical row literals ×5) + :579-612 · server/src/db/converters/ProgramGroupingMinter.ts:138-172 (self-documented duplicate TODO at :138) · server/src/db/converters/ProgramConverter.ts:37 (imports ../../api/ApiProgramConverters.ts) · server/src/db/channel/LineupRepository.ts:53-54,156-159 (repository runs Materialize*Commands)</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — the row invariant in 6+ places</p>
+                <pre class="mermaid grow">
+flowchart TD
+    M1["mintMovie"] --> L1["row literal + credits + artwork"]
+    M2["mintEpisode"] --> L2["row literal + credits + artwork"]
+    M3["mintMusicTrack"] --> L3["row literal + credits + artwork"]
+    M4["mintOtherVideo"] --> L4["row literal + credits + artwork"]
+    M5["mintMusicVideo"] --> L5["row literal + credits + artwork"]
+    G["ProgramGroupingMinter\n'duplicate — dedupe it' TODO"] --> G1["credits + artwork"]
+    P["ProgramConverter (db/)"] -.->|imports up| AP["api/ApiProgramConverters.ts"]
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class G,P leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — one assembler, one credit minter</p>
+                <pre class="mermaid grow">
+flowchart TD
+    M1["mintMovie"] --> RM["ProgramRowAssembler"]
+    M2["mintEpisode"] --> RM
+    M3["mintMusicTrack"] --> RM
+    M4["mintOtherVideo"] --> RM
+    M5["mintMusicVideo"] --> RM
+    RM --> CM["CreditMinter"]
+    G["ProgramGroupingMinter"] --> CM
+    AP -->|"converts rows; may import row types"| RM
+    classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+    class RM,CM deep
+                </pre>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> The media-source→program-row invariant (15-field literal, genres/studios/tags/artwork/credits, <span class="mono">state:'ok'</span>, credit ordering) is re-implemented across five <span class="mono">mint*</span> methods and a grouping minter that already diverged — the codebase says so at <span class="mono">ProgramGroupingMinter.ts:138</span>. On top, <span class="mono">db/</span> imports up into <span class="mono">api/</span> (<span class="mono">ProgramConverter.ts:37</span>) and a repository executes CLI commands (<span class="mono">LineupRepository.ts:156-159</span>), so the layer can't compile without the layers above it.</p>
+              <p><span class="font-semibold">Solution.</span> One parametrized row assembler + one <span class="mono">CreditMinter</span>; conversion of rows for API responses moves to the API layer (which may import row types); repositories return data and callers materialize.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>locality: row invariants in one module</li>
+                <li>db/ stops importing api/ and commands/</li>
+                <li>converters unit-testable in isolation</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 10 ============ -->
+        <article id="c10" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">10 · A pure guide timeline — extract the algorithm from TvGuideService</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/services/TvGuideService.ts:139-151 (6 cache maps), :155-166 (9 constructor deps), :457-544 (getCurrentPlayingIndex), :546-695 (getChannelPlaying), :697-971 (getChannelPrograms) · services/tvGuideUtil.ts:49-69 (findMidRollAnchorIndex) · services/OnDemandChannelService.ts:149-162 · tasks/UpdateXmlTvTask.ts:65-174</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — the algorithm needs 9 dependencies</p>
+                <pre class="mermaid grow">
+flowchart TD
+    T["UpdateXmlTvTask / debugApi"] --> TV["TvGuideService\nbuildChannelGuideWithRetries"]
+    TV --> I["getCurrentPlayingIndex\ngetChannelPlaying\ngetChannelPrograms\n(private, stateful)"]
+    I --> C1["cachedGuide"] & C2["accumulateTable"] & C3["channelsById"]
+    TV --> D["retry + eventService + xmltv + onDemand"]
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class I,TV leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — a pure timeline builder</p>
+                <pre class="mermaid grow">
+flowchart TD
+    T["UpdateXmlTvTask / debugApi"] --> TV2["TvGuideService\ncache + XMLTV writer + events"]
+    TV2 --> G["GuideTimelineBuilder\n(lineup, startTime, config) → GuideItem[]"]
+    G --> P1["offset search"] & P2["redirect resolution"] & P3["offline/flex melding"] & P4["mid-roll anchor"]
+    classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+    class G deep
+                </pre>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> The actual bug surface — binary search into accumulated offsets, redirect resolution, offline/flex melding, mid-roll anchor lookback — lives in private methods that mutate <span class="mono">cachedGuide</span>/<span class="mono">accumulateTable</span>/<span class="mono">channelsById</span> and require <span class="mono">retry</span>, <span class="mono">eventService</span>, <span class="mono">xmltv</span>, and <span class="mono">onDemandChannelService</span>. The 422-line test must build the whole object with <span class="mono">{ } as any</span> mocks and only exercises <span class="mono">buildAllChannels</span>.</p>
+              <p><span class="font-semibold">Solution.</span> A pure <span class="mono">GuideTimelineBuilder</span> — <span class="mono">(lineup, startTime, config) → GuideItem[]</span> — with no DB/event/XMLTV dependencies; <span class="mono">TvGuideService</span> becomes a thin cache + writer wrapper that calls it.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>testability: pure timeline, no mocks</li>
+                <li>locality: offset/redirect logic in one file</li>
+                <li>leverage: callers get a timeline from a small interface</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 11 ============ -->
+        <article id="c11" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">11 · One slot-emission pipeline — and delete midRollUtil</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/services/scheduling/slotSchedulerUtil.ts (1100 lines, ~35 exports, "exported for testing only" at :698) · scheduling/TimeSlotService.ts:62-88 (pushOrExtendFlex(number)), 264-387 (emit loop) · scheduling/RandomSlotsService.ts:46 (pushOrExtendFlex(Duration) from util), 247-356 (emit loop) · scheduling/midRollUtil.ts:10-72 (no production importer) vs midRollBreakRules.ts:28-90 (the real one)</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — the emission loop lives in both schedulers</p>
+                <pre class="mermaid grow">
+flowchart TD
+    TS["TimeSlotService"] --> E1["pad → pre/post filler → head/tail filler →\nmidroll → distribute-flex → fallback"]
+    RS["RandomSlotsService"] --> E2["pad → pre/post filler → head/tail filler →\nmidroll → distribute-flex → fallback"]
+    TS --> F1["pushOrExtendFlex(number)"]
+    RS --> F2["pushOrExtendFlex(Duration)"]
+    MU["midRollUtil.ts — dead,\ndifferent algorithm"] -.-> X["nothing"]
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class E1,E2,F1,F2 leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — one emitter</p>
+                <pre class="mermaid grow">
+flowchart TD
+    TS["TimeSlotService\n(its loop difference only)"] --> SE["SlotEmission\n(PaddedProgram[] + slot + remaining)\n→ CondensedChannelProgram[]"]
+    RS["RandomSlotsService\n(its loop difference only)"] --> SE
+    SE --> MB["midRollBreakRules — single authority"]
+    classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+    class SE deep
+                </pre>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> <span class="mono">pushOrExtendFlex</span> exists twice with different signatures (<span class="mono">number</span> vs <span class="mono">Duration</span>), and the pad→filler→midroll→distribute-flex→fallback emission loop is copy-pasted between the two schedulers with drift. <span class="mono">midRollUtil.ts</span> re-derives break points with a different algorithm and has no production importer — the deletion test passes cleanly: deleting it changes nothing.</p>
+              <p><span class="font-semibold">Solution.</span> One <span class="mono">SlotEmission</span> module — <span class="mono">PaddedProgram[] + slot + remaining → CondensedChannelProgram[]</span>; both schedulers keep only their loop difference. Delete <span class="mono">midRollUtil.ts</span>; <span class="mono">midRollBreakRules</span> becomes the single break-point authority.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>locality: filler budget logic in one place</li>
+                <li>leverage: schedulers keep only their difference</li>
+                <li>testability: emitter unit-testable</li>
+                <li>delete: midRollUtil.ts vanishes cleanly</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 12 ============ -->
+        <article id="c12" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">12 · One run-a-unit-of-work seam — and inject the Scheduler</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-800">Worth exploring</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/tasks/Task.ts:39-94 (Task2) + tasks/TaskRegistry.ts:30 (static Map + taskDef) · server/src/tasks/ScheduledTask.ts:27-142 + services/Scheduler.ts:23-147 (GlobalScheduler singleton at :147, container.get at :103) · server/src/services/StartupService.ts:22-85 (@multiInject DAG) · server/src/tasks/fixers/FixerModule.ts · server/src/commands/Command.ts · services/OnDemandChannelService.ts:10,89,141 · services/startup/ScheduleJobsStartupTask.ts:3,40-135 · tests: CustomShowSyncService.test.ts:34, TvGuideService.test.ts:15 (vi.mock('./Scheduler.ts'))</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — "what runs" has no single seam</p>
+                <pre class="mermaid grow">
+flowchart TD
+    A["channelsApi / api/index\nGlobalScheduler.getScheduledJob().runNow()"] --> S1["ScheduledTask\nnode-schedule"]
+    B["tasksApi\nTaskRegistry.getTask()"] --> S2["Task2 + taskDef"]
+    C["StartupService\n@multiInject(KEYS.StartupTask)"] --> S3["IStartupTask DAG"]
+    D["FixerRunner"] --> S4["Fixer"]
+    S1 -.->|"container.get()"| CT["container"]
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class S1,S2,S3,S4 leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — one unit, one timing adapter</p>
+                <pre class="mermaid grow">
+flowchart TD
+    A["api"] --> U["Task2 + one registry\n(injected Scheduler)"]
+    B["startup"] --> U
+    C["fixers"] --> U
+    U --> T["one timing adapter\nscheduled / immediate / at-boot"]
+    classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+    class U deep
+                </pre>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> Registration, triggering, and scheduling semantics exist in four variants — <span class="mono">Task2</span>/registry, <span class="mono">ScheduledTask</span>/<span class="mono">GlobalScheduler</span>, <span class="mono">IStartupTask</span> DAG, <span class="mono">Fixer</span> — so "what runs and how" has no single seam and triggering is split across three call sites. <span class="mono">Scheduler</span> is a module singleton that resolves task factories from the container, so anything scheduling a one-off job reaches into process-global state; tests must <span class="mono">vi.mock('./Scheduler.ts')</span>.</p>
+              <p><span class="font-semibold">Solution.</span> Make <span class="mono">Scheduler</span> an <span class="mono">@injectable()</span> singleton with injected task factories; unify on the newest shape (<span class="mono">Task2</span> + <span class="mono">taskDef</span>) with one timing adapter; startup tasks, fixers, and HTTP triggers all drive the same seam.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>locality: one scheduling/error contract</li>
+                <li>leverage: one way to schedule and trigger</li>
+                <li>testability: no module mocks, one fake for timing</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ CANDIDATE 13 ============ -->
+        <article id="c13" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">13 · Object-shaped pipeline builder seam — kill the positional argument orders</h2>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-800">Worth exploring</span>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <div class="text-sm mono text-slate-600">server/src/ffmpeg/builder/pipeline/PipelineBuilderFactory.ts:50-57, 106-169 · server/src/ffmpeg/builder/pipeline/BasePipelineBuilder.ts:233-240 · NvidiaPipelineBuilder.ts:69-86 vs VaapiPipelineBuilder.ts:74-91 (different concat/watermark/subtitle order)</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Before — order-dependent positionals</p>
+                <div class="grow flex items-center justify-center gap-4 text-[10px] mono">
+                  <div class="border border-slate-300 rounded p-2 bg-white leading-5">
+                    new NvidiaPipelineBuilder(hw, bin, video, audio,<br/><span class="text-red-600">concat, watermark, subtitle</span>)
+                  </div>
+                  <div class="border border-slate-300 rounded p-2 bg-white leading-5">
+                    new VaapiPipelineBuilder(hw, bin, video, audio,<br/><span class="text-red-600">watermark, subtitle, concat</span>)
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 card-diagram flex flex-col">
+                <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">After — one context object</p>
+                <div class="grow flex items-center justify-center">
+                  <div class="deep text-white rounded p-3 text-[10px] mono leading-5">
+                    new XxxPipelineBuilder(<br/>{ videoInputSource, audioInputSource,<br/>concatInputSource, watermarkInputSource,<br/>subtitleInputSource, capabilities })
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Problem.</span> The factory collects inputs into clean setter fields, then flattens them into positional constructor arguments whose order differs per adapter — concat/watermark/subtitle for Nvidia/Qsv/VideoToolbox, watermark/subtitle/concat for Vaapi/Software. A latent argument-swap hazard that <span class="mono">BasePipelineBuilder</span> already half-solves with its <span class="mono">PipelineBuilderContextProps</span> object.</p>
+              <p><span class="font-semibold">Solution.</span> Pass the already-merged context object through every constructor; the factory builds it once instead of re-ordering positionals per hardware mode.</p>
+              <ul class="list-disc list-inside text-slate-600">
+                <li>leverage: one context object</li>
+                <li>locality: add an input in one spot</li>
+                <li>no order-dependent swap bugs</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============ ALSO OBSERVED ============ -->
+        <article class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="text-xl font-serif">Also observed — smaller frictions, same shape</h2>
+          </div>
+          <div class="px-6 py-5 grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
+            <div class="space-y-1.5">
+              <p class="font-semibold">Scan loop ×10 + off-interface client methods <span class="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Worth exploring</span></p>
+              <p class="text-slate-600">The scan→diff→mark-missing→progress loop is re-implemented in 10 library scanners instead of one base template; <span class="mono">MediaSourceApiClient</span>'s 14 methods force 18 scanner subclasses of DI+delegation boilerplate. Static queue in <span class="mono">MediaSourceScanCoordinator.ts:20-21</span>. Plus three shallow *ScanUtil pass-throughs (14/19/19 lines).</p>
+            </div>
+            <div class="space-y-1.5">
+              <p class="font-semibold">NFO schemas + array tags drift <span class="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Worth exploring</span></p>
+              <p class="text-slate-600">~15 shared fields duplicated 3× in <span class="mono">NfoSchemas.ts:67-168</span> with inconsistent <span class="mono">.catch</span> defaults; 7 hand-maintained ArrayTags lists (<span class="mono">MovieNfoParser.ts:4-25</span>, <span class="mono">TvEpisodeNfoParser.ts:4-29</span>) already drifting on duplicate tags.</p>
+            </div>
+            <div class="space-y-1.5">
+              <p class="font-semibold">external/ writes DB + schedules tasks <span class="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Worth exploring</span></p>
+              <p class="text-slate-600"><span class="mono">MediaSourceApiFactory.ts:102-120, 230-254</span> writes user info + static NodeCache; <span class="mono">JellyfinItemFinder.ts:100-117</span> writes programDB and schedules <span class="mono">ReconcileProgramDurationsTask</span> via GlobalScheduler — but has only one caller.</p>
+            </div>
+            <div class="space-y-1.5">
+              <p class="font-semibold">LineupRepository spans two storage engines <span class="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Worth exploring</span></p>
+              <p class="text-slate-600">1049-line module mixing SQLite, per-channel JSON files (lowdb), cross-process locks, worker-pool fan-out, and command execution. <span class="mono">db/channel/LineupRepository.ts:97-200</span></p>
+            </div>
+            <div class="space-y-1.5">
+              <p class="font-semibold">CLI and server duplicate bootstrap <span class="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Worth exploring</span></p>
+              <p class="text-slate-600"><span class="mono">bootstrapTunarr</span> vs <span class="mono">bootstrapForTooling</span> encode the same startup sequence; <span class="mono">generate-openapi</span> special-cased twice. <span class="mono">bootstrap.ts:53-135</span>, <span class="mono">index.ts:78-87</span></p>
+            </div>
+            <div class="space-y-1.5">
+              <p class="font-semibold">Static singletons + token drift beside DI <span class="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Worth exploring</span></p>
+              <p class="text-slate-600"><span class="mono">DBAccess.instance</span> (static connection map), <span class="mono">GlobalScheduler</span>, <span class="mono">EventService.stream</span> (static), <span class="mono">OfflineStreamSource.instance()</span> all bypass the container. Same service typed as interface in one file, concrete in another — <span class="mono">autobind:true</span> makes both silently work.</p>
+            </div>
+            <div class="space-y-1.5">
+              <p class="font-semibold">A read path that mutates <span class="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Worth exploring</span></p>
+              <p class="text-slate-600"><span class="mono">StreamProgramCalculator.getCurrentLineupItem</span> writes <span class="mono">channel.duration</span> mid-read and mixes 6 dependencies, throttling, and filler picking. <span class="mono">StreamProgramCalculator.ts:105-109</span></p>
+            </div>
+            <div class="space-y-1.5">
+              <p class="font-semibold">FfmpegTranscodeSession pass-through <span class="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Speculative</span></p>
+              <p class="text-slate-600">Re-emits <span class="mono">FfmpegProcess</span> events verbatim, adds a start-once guard. Fold into <span class="mono">FfmpegProcess</span>. <span class="mono">FfmpegTrancodeSession.ts:22-93</span></p>
+            </div>
+            <div class="space-y-1.5">
+              <p class="font-semibold">Two disconnected event mechanisms <span class="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Speculative</span></p>
+              <p class="text-slate-600"><span class="mono">EventService</span> (SSE, static emitter) and <span class="mono">MediaSourceProgressService</span> (separate emitter for scan progress) don't share a domain; events ride a loose union with no constructors. Settings endpoints re-implement the push pattern inline.</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============ TOP RECOMMENDATION ============ -->
+      <section id="top-recommendation" class="rounded-xl border-2 border-slate-800 bg-white overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200">
+          <p class="text-xs uppercase tracking-widest text-slate-500">Top recommendation</p>
+        </div>
+        <div class="px-6 py-5 space-y-3">
+          <h2 class="text-2xl font-serif"><a href="#c1" class="underline decoration-slate-300 hover:decoration-slate-800">#1 — Own the request seam</a></h2>
+          <p class="text-slate-700">Retiring the ambient <span class="mono">ServerContext</span> is the gateway: it is the reason zero route handlers are tested, the reason <a href="#c3" class="underline decoration-slate-300">#3</a>'s choreography has no module to live in, and the reason <a href="#c4" class="underline decoration-slate-300">#4</a>'s facade question is invisible to callers. Every other candidate gets easier to land once handlers declare dependencies at construction and receive only request data.</p>
+          <p class="text-sm text-slate-500">Note: <a href="#c2" class="underline decoration-slate-300">#2</a> carries a live correctness bug (validation only on the preview path) and deserves the first grilling slot after #1. Suggested grilling order: 1 → 2 → 3 → 4 → 5 → 8 → 10 → 11 → 6 → 7 → 9 → 12 → 13, then the smaller frictions as time allows.</p>
+        </div>
+      </section>
+
+      <footer class="text-xs text-slate-400 border-t border-slate-200 pt-4">
+        Generated by the improve-codebase-architecture skill · durable copy of findings will be recorded in docs/architecture/server/ as candidates get grilled. Domain terms: Lineup, LineupSchedule (see CONTEXT.md — server terms to be added during grilling).
+      </footer>
+    </main>
+  </body>
+</html>
