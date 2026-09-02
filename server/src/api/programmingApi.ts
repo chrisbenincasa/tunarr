@@ -9,8 +9,6 @@ import {
   groupByUniq,
   groupByUniqAndMap,
   inConstArr,
-  isHttpUrl,
-  isNonEmptyArray,
   isNonEmptyString,
 } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -29,27 +27,14 @@ import {
   SearchFilterQuerySchema,
   TerminalProgramSchema,
 } from '@tunarr/types/schemas';
-import axios, { isAxiosError } from 'axios';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
-import {
-  compact,
-  find,
-  first,
-  head,
-  isNil,
-  isUndefined,
-  map,
-  trimStart,
-  values,
-} from 'lodash-es';
-import type stream from 'node:stream';
+import { compact, find, first, head, isNil, map, values } from 'lodash-es';
 import z from 'zod/v4';
 import { container } from '../container.ts';
 import {
   AllProgramFields,
   AllProgramGroupingFields,
 } from '../db/programQueryHelpers.ts';
-import type { Artwork } from '../db/schema/Artwork.ts';
 import { ArtworkTypes } from '../db/schema/Artwork.ts';
 import type { RemoteSourceType } from '../db/schema/base.js';
 import { RemoteSourceTypes, type MediaSourceId } from '../db/schema/base.js';
@@ -62,13 +47,11 @@ import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsComma
 import { BackfillPlexClientIdentifierCommand } from '../commands/media_source/BackfillPlexClientIdentifier.ts';
 import { SearchProgramsCommand } from '../commands/SearchProgramsCommand.ts';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
-import { globalOptions } from '../globals.ts';
+import { ArtworkService } from '../services/ArtworkService.ts';
 import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
 import { ProgramStreamDetailsFetcher } from '../stream/ProgramStreamDetailsFetcher.ts';
 import { TypedError } from '../types/errors.ts';
 import { KEYS } from '../types/inject.ts';
-import type { Maybe } from '../types/util.ts';
-import { extractAxiosHeaders } from '../util/axios.ts';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -415,102 +398,15 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      let program: Maybe<{
-        artwork?: Artwork[];
-        mediaSourceId: MediaSourceId | null;
-      }> = await req.serverCtx.programDB.getProgramById(req.params.id);
-
-      if (!program) {
-        program = await req.serverCtx.programDB.getProgramGrouping(
-          req.params.id,
-        );
-        if (!program) {
-          return res.status(404).send();
-        }
-      }
-
-      if (isUndefined(program.artwork)) {
-        return res.status(404).send();
-      }
-
-      let art = program.artwork.find(
-        (art) => art.artworkType === req.params.artworkType,
+      const artworkService = container.get(ArtworkService);
+      const result = await artworkService.resolveArtwork(
+        req.params.id,
+        'program',
+        req.params.artworkType,
+        req.query.fallbackArtworkTypes,
       );
 
-      if (!art && isNonEmptyArray(req.query.fallbackArtworkTypes)) {
-        for (const fallbackType of req.query.fallbackArtworkTypes) {
-          const fallback = program.artwork.find(
-            (art) => art.artworkType === fallbackType,
-          );
-          if (fallback) {
-            art = fallback;
-            break;
-          }
-        }
-      }
-
-      if (!art) {
-        return res.status(404).send();
-      }
-
-      if (art.cachePath) {
-        const path = req.serverCtx.imageCache.getImagePath(
-          art.cachePath,
-          art.artworkType,
-        );
-
-        return res.sendFile(
-          trimStart(path.replace(globalOptions().databaseDirectory, ''), '/'),
-          { contentType: true },
-        );
-      } else if (isHttpUrl(art.sourcePath)) {
-        if (!program.mediaSourceId) {
-          return res.status(404).send();
-        }
-        const mediaSource = await req.serverCtx.mediaSourceDB.getById(
-          program.mediaSourceId,
-        );
-
-        const url = URL.parse(art.sourcePath)!;
-        if (mediaSource) {
-          switch (mediaSource.type) {
-            case 'plex':
-              url?.searchParams.append('X-Plex-Token', mediaSource.accessToken);
-              break;
-            case 'jellyfin':
-            case 'emby':
-              url?.searchParams.append('X-Emby-Token', mediaSource.accessToken);
-              break;
-            case 'local':
-              break;
-          }
-        }
-
-        const fullUrl = url.toString();
-
-        if (req.serverCtx.featureFlagService.get('proxyArtwork')) {
-          try {
-            const proxyRes = await axios.request<stream.Readable>({
-              url: fullUrl,
-              responseType: 'stream',
-            });
-
-            return res
-              .status(200)
-              .headers(extractAxiosHeaders(proxyRes.headers))
-              .send(proxyRes.data);
-          } catch (e) {
-            if (isAxiosError(e) && e.response?.status === 404) {
-              return res.status(404).send();
-            }
-            throw e;
-          }
-        }
-
-        return res.redirect(fullUrl);
-      } else {
-        return res.sendFile(art.sourcePath);
-      }
+      return artworkService.serveArtwork(result, res);
     },
   );
 
@@ -777,11 +673,15 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               );
           }
 
+          // No X-Plex-Token here on purpose. This URL is handed to the client,
+          // so embedding the token would disclose it to any unauthenticated
+          // caller (see GHSA-h3r4-r2f2-qf59 against ErsatzTV). Plex Web resolves
+          // the link using the browser's own session instead.
           const url = `${server.uri}/web/index.html#!/server/${
             clientIdentifier
           }/details?key=${encodeURIComponent(
             `/library/metadata/${externalId.externalKey}`,
-          )}&X-Plex-Token=${server.accessToken}`;
+          )}`;
 
           if (!req.query.forward) {
             return res.send({ url });
