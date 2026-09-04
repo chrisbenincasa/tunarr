@@ -1,4 +1,5 @@
-import { differenceWith, head, round, values } from 'lodash-es';
+import { isNonEmptyString } from '@tunarr/shared/util';
+import { differenceWith, head, isEmpty, round, values } from 'lodash-es';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type {
   IProgramDB,
@@ -96,7 +97,7 @@ export abstract class MediaSourceOtherVideoScanner<
   ): Promise<void> {
     this.mediaSourceProgressService.scanStarted(context.library.uuid);
 
-    const { library } = context;
+    const { library, pathFilter } = context;
 
     const existingPrograms =
       await this.programDB.getProgramInfoForMediaSourceLibrary(
@@ -112,6 +113,10 @@ export abstract class MediaSourceOtherVideoScanner<
       for await (const video of this.getVideos(library.externalKey, context)) {
         if (this.state(library.uuid) === 'canceled') {
           return;
+        }
+
+        if (isNonEmptyString(pathFilter) && video.externalId !== pathFilter) {
+          continue;
         }
 
         const externalKey = video.externalId;
@@ -132,22 +137,24 @@ export abstract class MediaSourceOtherVideoScanner<
         );
       }
 
-      const missingVideos = differenceWith(
-        values(existingPrograms),
-        [...seenVideos.values()],
-        (existing, seen) => existing.externalKey === seen,
-      );
+      if (isEmpty(context.pathFilter)) {
+        const missingVideos = differenceWith(
+          values(existingPrograms),
+          [...seenVideos.values()],
+          (existing, seen) => existing.externalKey === seen,
+        );
 
-      await this.programDB.updateProgramsState(
-        missingVideos.map((ep) => ep.uuid),
-        'missing',
-      );
-      await this.searchService.updatePrograms(
-        missingVideos.map((ep) => ({
-          id: ep.uuid,
-          state: 'missing',
-        })),
-      );
+        await this.programDB.updateProgramsState(
+          missingVideos.map((ep) => ep.uuid),
+          'missing',
+        );
+        await this.searchService.updatePrograms(
+          missingVideos.map((ep) => ({
+            id: ep.uuid,
+            state: 'missing',
+          })),
+        );
+      }
 
       this.logger.debug('Completed scanning library %s', context.library.uuid);
     } finally {
