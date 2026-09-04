@@ -45,7 +45,7 @@ msgstr ""
 #. placeholder {0}: value?.programCount ?? 0
 #: src/components/channel_config/ChannelLineupList.tsx:525
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:47
-#: src/pages/channels/ChannelsPage.tsx:492
+#: src/pages/channels/ChannelsPage.tsx:513
 msgid "{0, plural, one {# program} other {# programs}}"
 msgstr ""
 
@@ -66,8 +66,8 @@ msgid "{0, plural, one {# Selected Item} other {# Selected Items}}"
 msgstr ""
 
 #. placeholder {0}: sessions.length
-#: src/pages/channels/ChannelsPage.tsx:293
-#: src/pages/channels/ChannelsPage.tsx:423
+#: src/pages/channels/ChannelsPage.tsx:294
+#: src/pages/channels/ChannelsPage.tsx:434
 msgid "{0, plural, one {# session} other {# sessions}}"
 msgstr ""
 
@@ -209,17 +209,17 @@ msgstr ""
 msgid "{minutes, plural, one {# minute} other {# minutes}}"
 msgstr ""
 
-#: src/components/guide/TvGuide.tsx:337
+#: src/components/guide/TvGuide.tsx:338
 msgid "{remainingTime} left"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:296
-#: src/pages/channels/ChannelsPage.tsx:426
+#: src/pages/channels/ChannelsPage.tsx:303
+#: src/pages/channels/ChannelsPage.tsx:443
 msgid "{totalConnections, plural, one {# connection} other {# connections}}"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:295
-#: src/pages/channels/ChannelsPage.tsx:425
+#: src/pages/channels/ChannelsPage.tsx:301
+#: src/pages/channels/ChannelsPage.tsx:441
 msgid "{totalConnections} total"
 msgstr ""
 
@@ -235,7 +235,7 @@ msgstr ""
 msgid "# of Programs"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:342
+#: src/pages/channels/ChannelsPage.tsx:353
 #: src/pages/library/CustomShowsPage.tsx:160
 #: src/pages/library/FillerListsPage.tsx:166
 msgid "# Programs"
@@ -268,7 +268,7 @@ msgid "<0>Pad Slot:</0> Align slot start times to the specified pad time.<1/><2>
 msgstr ""
 
 #. placeholder {0}: new URL( '/api/xmltv.xml', isEmpty(backendUri) ? document.location.href : backendUri, ).href
-#: src/pages/settings/XmlTvSettingsPage.tsx:96
+#: src/pages/settings/XmlTvSettingsPage.tsx:97
 msgid "<0>You can edit this location in your settings.json within your Tunarr data directory<1/><2>NOTE:</2> When manually adding the XMLTV location to a client like Plex, do not use this file directly. Instead, use the generated XMLTV from the Tunarr API endpoint: {0}</0>"
 msgstr ""
 
@@ -545,7 +545,7 @@ msgid "Amount"
 msgstr ""
 
 #. placeholder {0}: error.message
-#: src/components/guide/TvGuide.tsx:579
+#: src/components/guide/TvGuide.tsx:580
 msgid "An error occurred: {0}"
 msgstr ""
 
@@ -806,7 +806,7 @@ msgstr ""
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:301
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:189
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:114
-#: src/pages/channels/ChannelsPage.tsx:200
+#: src/pages/channels/ChannelsPage.tsx:201
 #: src/pages/library/CustomShowsPage.tsx:105
 #: src/pages/library/FillerListsPage.tsx:115
 msgid "Cancel"
@@ -893,7 +893,7 @@ msgstr ""
 #: src/App.tsx:95
 #: src/hooks/useNavItems.tsx:63
 #: src/hooks/useRouteName.ts:38
-#: src/pages/channels/ChannelsPage.tsx:566
+#: src/pages/channels/ChannelsPage.tsx:592
 #: src/pages/system/TroubleshootPage.tsx:636
 msgid "Channels"
 msgstr ""
@@ -906,8 +906,8 @@ msgstr ""
 msgid "Channels M3U Link:"
 msgstr ""
 
-#: src/pages/system/SystemDebugPage.tsx:117
-#: src/pages/system/SystemDebugPage.tsx:147
+#: src/pages/system/SystemDebugPage.tsx:119
+#: src/pages/system/SystemDebugPage.tsx:149
 msgid "Check"
 msgstr ""
 
@@ -1065,9 +1065,9 @@ msgstr ""
 msgid "Copied to clipboard!"
 msgstr ""
 
-#: src/pages/system/SystemDebugPage.tsx:109
-#: src/pages/system/SystemDebugPage.tsx:139
-#: src/pages/system/SystemDebugPage.tsx:170
+#: src/pages/system/SystemDebugPage.tsx:111
+#: src/pages/system/SystemDebugPage.tsx:141
+#: src/pages/system/SystemDebugPage.tsx:172
 msgid "Copy"
 msgstr ""
 
@@ -1112,7 +1112,7 @@ msgstr ""
 msgid "Creates a new collection"
 msgstr ""
 
-#: src/components/guide/TvGuide.tsx:207
+#: src/components/guide/TvGuide.tsx:208
 msgid "Custom Program"
 msgstr ""
 
@@ -1208,7 +1208,7 @@ msgstr ""
 #: src/components/DeleteConfirmationDialog.tsx:59
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:75
 #: src/components/smart_collections/SmartCollectionsTable.tsx:124
-#: src/pages/channels/ChannelsPage.tsx:206
+#: src/pages/channels/ChannelsPage.tsx:207
 #: src/pages/library/CustomShowsPage.tsx:113
 #: src/pages/library/CustomShowsPage.tsx:132
 #: src/pages/library/FillerListsPage.tsx:123
@@ -1222,7 +1222,7 @@ msgid "Delete \"{0}\""
 msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx:225
-#: src/pages/channels/ChannelsPage.tsx:185
+#: src/pages/channels/ChannelsPage.tsx:186
 msgid "Delete Channel"
 msgstr ""
 
@@ -1263,7 +1263,7 @@ msgid "Delete Transcoding Config \"{0}\"?"
 msgstr ""
 
 #: src/components/channels/ChannelDeleteDialog.tsx:72
-#: src/pages/channels/ChannelsPage.tsx:189
+#: src/pages/channels/ChannelsPage.tsx:190
 msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
 msgstr ""
 
@@ -1295,7 +1295,7 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-#: src/components/channels/ChannelNowPlayingCard.tsx:223
+#: src/components/channels/ChannelNowPlayingCard.tsx:226
 msgid "Details"
 msgstr ""
 
@@ -1397,7 +1397,7 @@ msgstr ""
 #: src/components/programming_controls/BalanceProgrammingModal.tsx:62
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:466
 #: src/components/slot_scheduler/RandomSlotTable.tsx:233
-#: src/pages/channels/ChannelsPage.tsx:346
+#: src/pages/channels/ChannelsPage.tsx:357
 #: src/pages/system/TroubleshootPage.tsx:521
 msgid "Duration"
 msgstr ""
@@ -1443,7 +1443,7 @@ msgstr ""
 msgid "Edit Channel Redirect"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:236
+#: src/pages/channels/ChannelsPage.tsx:237
 msgid "Edit Channel Settings"
 msgstr ""
 
@@ -1610,8 +1610,8 @@ msgstr ""
 msgid "EPG"
 msgstr ""
 
-#: src/pages/settings/XmlTvSettingsPage.tsx:122
-#: src/pages/settings/XmlTvSettingsPage.tsx:125
+#: src/pages/settings/XmlTvSettingsPage.tsx:126
+#: src/pages/settings/XmlTvSettingsPage.tsx:129
 msgid "EPG (Hours)"
 msgstr ""
 
@@ -2071,7 +2071,7 @@ msgstr ""
 msgid "How long each commercial break lasts"
 msgstr ""
 
-#: src/pages/settings/XmlTvSettingsPage.tsx:137
+#: src/pages/settings/XmlTvSettingsPage.tsx:141
 msgid "How often the XMLTV file is regenerated"
 msgstr ""
 
@@ -2087,11 +2087,11 @@ msgstr ""
 msgid "HW Acceleration"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:314
+#: src/pages/channels/ChannelsPage.tsx:325
 msgid "Icon"
 msgstr ""
 
-#: src/pages/settings/XmlTvSettingsPage.tsx:165
+#: src/pages/settings/XmlTvSettingsPage.tsx:169
 msgid "If enabled, TV show episodes will use the poster of their show, instead of the individual episode poster."
 msgstr ""
 
@@ -2588,7 +2588,7 @@ msgstr ""
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:162
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:108
 #: src/components/smart_collections/SmartCollectionsTable.tsx:59
-#: src/pages/channels/ChannelsPage.tsx:337
+#: src/pages/channels/ChannelsPage.tsx:348
 #: src/pages/library/CustomShowsPage.tsx:146
 #: src/pages/library/FillerListsPage.tsx:162
 #: src/pages/settings/MediaSourceSettingsPage.tsx:82
@@ -2616,7 +2616,7 @@ msgstr ""
 #: src/hooks/useRouteName.ts:51
 #: src/hooks/useRouteName.ts:113
 #: src/hooks/useRouteName.ts:125
-#: src/pages/channels/ChannelsPage.tsx:573
+#: src/pages/channels/ChannelsPage.tsx:599
 #: src/pages/library/CustomShowsPage.tsx:223
 #: src/pages/library/FillerListsPage.tsx:237
 msgid "New"
@@ -2663,8 +2663,8 @@ msgstr ""
 msgid "Next Scheduled Execution"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:272
-#: src/pages/channels/ChannelsPage.tsx:403
+#: src/pages/channels/ChannelsPage.tsx:273
+#: src/pages/channels/ChannelsPage.tsx:414
 msgid "No active sessions"
 msgstr ""
 
@@ -2680,11 +2680,11 @@ msgstr ""
 msgid "No programming added yet"
 msgstr ""
 
-#: src/components/guide/TvGuide.tsx:377
+#: src/components/guide/TvGuide.tsx:378
 msgid "No Programming scheduled"
 msgstr ""
 
-#: src/components/guide/TvGuide.tsx:354
+#: src/components/guide/TvGuide.tsx:355
 msgid "No programming scheduled for this time period"
 msgstr ""
 
@@ -2729,15 +2729,15 @@ msgstr ""
 msgid "Not found!"
 msgstr ""
 
-#: src/components/channels/ChannelNowPlayingCard.tsx:208
+#: src/components/channels/ChannelNowPlayingCard.tsx:211
 msgid "Now Playing:"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:331
+#: src/pages/channels/ChannelsPage.tsx:342
 msgid "Number"
 msgstr ""
 
-#: src/pages/settings/XmlTvSettingsPage.tsx:126
+#: src/pages/settings/XmlTvSettingsPage.tsx:130
 msgid "Number of hours to include in the XMLTV file"
 msgstr ""
 
@@ -2746,7 +2746,7 @@ msgstr ""
 msgid "Number of Replications"
 msgstr ""
 
-#: src/pages/system/SystemDebugPage.tsx:102
+#: src/pages/system/SystemDebugPage.tsx:104
 msgid "Nvidia Capabilities"
 msgstr ""
 
@@ -2758,7 +2758,7 @@ msgstr ""
 msgid "On-Demand channels resume from where you left off. Programming is paused when the channel is not streaming.<0/><1>NOTE:</1> While the channel is inactive, the TV Guide for the channel will be empty."
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:365
+#: src/pages/channels/ChannelsPage.tsx:376
 msgid "On-Demand?"
 msgstr ""
 
@@ -2816,7 +2816,7 @@ msgid "Other Videos"
 msgstr ""
 
 #: src/components/settings/general/BackupForm.tsx:76
-#: src/pages/settings/XmlTvSettingsPage.tsx:90
+#: src/pages/settings/XmlTvSettingsPage.tsx:91
 msgid "Output Path"
 msgstr ""
 
@@ -3096,7 +3096,7 @@ msgid "Redirect to \"{0}\""
 msgstr ""
 
 #. placeholder {0}: p.channel
-#: src/components/guide/TvGuide.tsx:208
+#: src/components/guide/TvGuide.tsx:209
 msgid "Redirect to Channel {0}"
 msgstr ""
 
@@ -3117,8 +3117,8 @@ msgstr ""
 msgid "Refresh Preview"
 msgstr ""
 
-#: src/pages/settings/XmlTvSettingsPage.tsx:133
-#: src/pages/settings/XmlTvSettingsPage.tsx:136
+#: src/pages/settings/XmlTvSettingsPage.tsx:137
+#: src/pages/settings/XmlTvSettingsPage.tsx:140
 msgid "Refresh Timer (Hours)"
 msgstr ""
 
@@ -3235,7 +3235,7 @@ msgstr ""
 #: src/pages/settings/FeaturesSettingsPage.tsx:162
 #: src/pages/settings/FfmpegSettingsPage.tsx:407
 #: src/pages/settings/HdhrSettingsPage.tsx:142
-#: src/pages/settings/XmlTvSettingsPage.tsx:208
+#: src/pages/settings/XmlTvSettingsPage.tsx:212
 msgid "Reset Changes"
 msgstr ""
 
@@ -3268,7 +3268,7 @@ msgid "Restore default logo"
 msgstr ""
 
 #: src/pages/settings/HdhrSettingsPage.tsx:129
-#: src/pages/settings/XmlTvSettingsPage.tsx:190
+#: src/pages/settings/XmlTvSettingsPage.tsx:194
 msgid "Restore Default Settings"
 msgstr ""
 
@@ -3350,7 +3350,7 @@ msgstr ""
 #: src/pages/settings/FfmpegSettingsPage.tsx:417
 #: src/pages/settings/HdhrSettingsPage.tsx:152
 #: src/pages/settings/ScannerSettingsPage.tsx:82
-#: src/pages/settings/XmlTvSettingsPage.tsx:218
+#: src/pages/settings/XmlTvSettingsPage.tsx:222
 msgid "Save"
 msgstr ""
 
@@ -3505,7 +3505,7 @@ msgstr ""
 #: src/components/settings/general/GeneralSettingsForm.tsx:216
 #: src/pages/settings/FfmpegSettingsPage.tsx:131
 #: src/pages/settings/HdhrSettingsPage.tsx:59
-#: src/pages/settings/XmlTvSettingsPage.tsx:57
+#: src/pages/settings/XmlTvSettingsPage.tsx:58
 msgid "Settings Saved!"
 msgstr ""
 
@@ -3677,7 +3677,7 @@ msgstr ""
 msgid "Start Time"
 msgstr ""
 
-#: src/components/channels/ChannelNowPlayingCard.tsx:215
+#: src/components/channels/ChannelNowPlayingCard.tsx:218
 msgid "Started {startedAgo} - {remainingTime}remaining"
 msgstr ""
 
@@ -3690,7 +3690,7 @@ msgstr ""
 msgid "Stealth Mode"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:354
+#: src/pages/channels/ChannelsPage.tsx:365
 msgid "Stealth?"
 msgstr ""
 
@@ -3781,7 +3781,7 @@ msgstr ""
 msgid "System"
 msgstr ""
 
-#: src/pages/system/SystemDebugPage.tsx:162
+#: src/pages/system/SystemDebugPage.tsx:164
 msgid "System Environment"
 msgstr ""
 
@@ -4041,7 +4041,7 @@ msgstr ""
 msgid "Tracks"
 msgstr ""
 
-#: src/pages/channels/ChannelsPage.tsx:373
+#: src/pages/channels/ChannelsPage.tsx:384
 #: src/pages/system/TroubleshootPage.tsx:844
 msgid "Transcode Config"
 msgstr ""
@@ -4148,7 +4148,7 @@ msgstr ""
 msgid "Use channel default"
 msgstr ""
 
-#: src/pages/settings/XmlTvSettingsPage.tsx:162
+#: src/pages/settings/XmlTvSettingsPage.tsx:166
 msgid "Use Show Poster"
 msgstr ""
 
@@ -4169,7 +4169,7 @@ msgstr ""
 msgid "VA-API Device"
 msgstr ""
 
-#: src/pages/system/SystemDebugPage.tsx:132
+#: src/pages/system/SystemDebugPage.tsx:134
 msgid "VAAPI Capabilities"
 msgstr ""
 
@@ -4235,7 +4235,7 @@ msgstr ""
 
 #. placeholder {0}: capitalize(firstProgram.program.sourceType)
 #. placeholder {0}: capitalize(program.sourceType)
-#: src/components/channels/ChannelNowPlayingCard.tsx:241
+#: src/components/channels/ChannelNowPlayingCard.tsx:244
 #: src/components/ProgramMetadataDialogContent.tsx:144
 msgid "View in {0}"
 msgstr ""
