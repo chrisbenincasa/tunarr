@@ -2,18 +2,18 @@ import type {
   Bind,
   BindWhenOnFluentSyntax,
   Factory,
-  ServiceIdentifier} from 'inversify';
-import {
-  inject
+  ServiceIdentifier,
 } from 'inversify';
+import { inject, multiInject } from 'inversify';
 import 'reflect-metadata';
 
 const INJECT_META = Symbol('assistedInject:inject');
 const ASSISTED_META = Symbol('assistedInject:assisted');
 
-// Our own @inject — stores tokens in our own metadata, not inversify's internals
-export function injected(serviceId: ServiceIdentifier<unknown>) {
-  const injectFn = inject(serviceId);
+function commonInjectedWrapper<T>(
+  serviceId: ServiceIdentifier<T>,
+  decorator: MethodDecorator & ParameterDecorator & PropertyDecorator,
+): ParameterDecorator {
   return (
     target: object,
     propertyKey: string | symbol | undefined,
@@ -26,8 +26,22 @@ export function injected(serviceId: ServiceIdentifier<unknown>) {
     ) ?? new Map();
     map.set(index, serviceId);
     Reflect.defineMetadata(INJECT_META, map, target);
-    injectFn(target, propertyKey, index);
+    decorator(target, propertyKey, index);
   };
+}
+
+// Our own @inject — stores tokens in our own metadata, not inversify's internals
+export function injected(serviceId: ServiceIdentifier<unknown>) {
+  const injectFn = inject(serviceId);
+  return commonInjectedWrapper(serviceId, injectFn);
+}
+
+// Our own @inject — stores tokens in our own metadata, not inversify's internals
+export function multiInjected<T extends unknown[]>(
+  serviceId: ServiceIdentifier<T>,
+) {
+  const injectFn = multiInject(serviceId);
+  return commonInjectedWrapper(serviceId, injectFn);
 }
 
 export function assisted(

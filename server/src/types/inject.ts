@@ -32,6 +32,7 @@ const KEYS = {
   ConcatSession: Symbol.for('ConcatSession'),
   HlsSessionProvder: Symbol.for('HlsSessionProvider'),
   ProgramStreamFactory: Symbol.for('Factory<ProgramStream>'),
+  ProgramStreamPlugin: Symbol.for('ProgramStreamPlugin'),
   JellyfinStreamDetails: Symbol.for('JellyfinStreamDetails'),
   JellyfinStreamDetailsFactory: Symbol.for('JellyfinStreamDetailsFactory'),
   PlexStreamDetails: Symbol.for('PlexStreamDetails'),

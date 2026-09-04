@@ -43,6 +43,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
           mediaType: null,
           paths: [],
           replacePaths: [],
+          sendPlayStatusUpdates: false,
         },
       });
 
@@ -84,6 +85,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
           mediaType: null,
           paths: [],
           replacePaths: [],
+          sendPlayStatusUpdates: false,
         },
       });
 

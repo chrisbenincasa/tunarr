@@ -20,5 +20,6 @@ declare module 'fastify' {
   interface FastifyContextConfig {
     logAtLevel?: LogLevels;
     disableRequestLogging?: boolean | 'only-errors';
+    authRequired?: boolean;
   }
 }

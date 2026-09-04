@@ -396,6 +396,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           404: z.void(),
         },
       },
+      config: {
+        authRequired: false,
+      },
     },
     async (req, res) => {
       const artworkService = container.get(ArtworkService);

@@ -318,13 +318,13 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
     await wait();
 
-    const mediaItem = (await this.getMediaItem(fullFilePath)).getOrThrow();
+    const { mediaItem, formatTags } = (await this.getMediaItem(fullFilePath)).getOrThrow();
 
     if (isNil(mediaItem.duration)) {
       throw new Error(`Could not derive duration for item: ${fullFilePath}`);
     }
 
-    const metadata = (await this.loadVideoMetadata(fullFilePath)).getOrThrow();
+    const metadata = (await this.loadVideoMetadata(fullFilePath, formatTags)).getOrThrow();
 
     metadata.tags.push(file.parentPath);
 
@@ -380,16 +380,24 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
   private async loadVideoMetadata(
     fullVideoFilePath: string,
+    formatTags?: Record<string, string>,
   ): Promise<Result<MusicVideoMetadata>> {
+    const probeMeta = this.extractMetadataFromFormatTags(formatTags);
     const nfoPath = await this.findNfoFile(fullVideoFilePath);
+
     if (!isNonEmptyString(nfoPath)) {
-      return Result.attemptAsync(() =>
-        Promise.resolve(
-          this.fallbackMetadataService.getMusicVideoFallbackMetadata(
-            fullVideoFilePath,
-          ),
-        ),
-      );
+      const fallback =
+        this.fallbackMetadataService.getMusicVideoFallbackMetadata(
+          fullVideoFilePath,
+        );
+      return Result.success({
+        ...fallback,
+        title: probeMeta.title ?? fallback.title,
+        sortTitle: titleToSortTitle(probeMeta.title ?? fallback.title),
+        artistName: probeMeta.artistName ?? null,
+        albumName: probeMeta.albumName ?? null,
+        year: probeMeta.year ?? fallback.year,
+      });
     }
 
     const parseResult = await this.nfoParser.parse(
@@ -400,11 +408,59 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
       return parseResult.recast();
     }
 
-    const parsed = parseResult.get();
+    const nfoMetadata = this.nfoToMusicVideo(parseResult.get().musicvideo);
 
-    return Result.attemptAsync(() =>
-      Promise.resolve(this.nfoToMusicVideo(parsed.musicvideo)),
-    );
+    return Result.success({
+      ...nfoMetadata,
+      artistName: nfoMetadata.artistName ?? probeMeta.artistName ?? null,
+      albumName: nfoMetadata.albumName ?? probeMeta.albumName ?? null,
+      year: nfoMetadata.year ?? probeMeta.year ?? null,
+    });
+  }
+
+  private extractMetadataFromFormatTags(
+    formatTags?: Record<string, string>,
+  ): {
+    title?: string;
+    artistName?: string;
+    albumName?: string;
+    year?: number;
+  } {
+    if (formatTags === undefined) {
+      return {};
+    }
+
+    const getTag = (...keys: string[]): string | undefined => {
+      for (const key of keys) {
+        const val =
+          formatTags[key] ??
+          formatTags[key.toLowerCase()] ??
+          formatTags[key.toUpperCase()];
+        if (val !== undefined) return val;
+      }
+      return undefined;
+    };
+
+    let year: number | undefined;
+    const dateStr = getTag('date', 'DATE', 'year', 'YEAR');
+    if (dateStr !== undefined) {
+      const parsed = parseInt(dateStr, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        year = parsed;
+      }
+    }
+
+    return {
+      title: getTag('title', 'TITLE'),
+      artistName: getTag(
+        'artist',
+        'ARTIST',
+        'album_artist',
+        'ALBUM_ARTIST',
+      ),
+      albumName: getTag('album', 'ALBUM'),
+      year,
+    };
   }
 
   private async findNfoFile(videoPath: string) {
@@ -440,6 +496,8 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
       year: releaseDate?.year() ?? null,
       actors: [],
       tags: nfo.tag ?? [],
+      artistName: nfo.artist?.join(', ') ?? null,
+      albumName: nfo.album ?? null,
       type: 'music_video',
       directors,
       studios: nfo.studio ? [{ name: nfo.studio }] : [],

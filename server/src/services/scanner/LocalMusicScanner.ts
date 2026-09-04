@@ -528,7 +528,7 @@ export class LocalMusicScanner extends FileSystemScanner {
     trackDirent: Dirent,
   ): Promise<Maybe<TrackParseResult>> {
     const trackPath = path.join(trackDirent.parentPath, trackDirent.name);
-    const fileDetails = (await this.getMediaItem(trackPath)).getOrThrow();
+    const { mediaItem: fileDetails } = (await this.getMediaItem(trackPath)).getOrThrow();
     const parsedTrackMetadataResult = await Result.attemptAsync(() =>
       parseFile(trackPath, {
         skipCovers: true,

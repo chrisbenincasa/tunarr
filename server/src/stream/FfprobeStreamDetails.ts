@@ -155,6 +155,7 @@ export class FfprobeStreamDetails
           ? subtitleStreamDetails
           : undefined,
         duration: dayjs.duration({ seconds: probeDetails.format.duration }),
+        formatTags: probeDetails.format.tags,
         chapters: seq.collect(
           orderBy(probeDetails.chapters, (c) => c.start, 'asc'),
           (chapter, index) => {

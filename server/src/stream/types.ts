@@ -18,6 +18,7 @@ export type StreamDetails = {
   serverPath?: string;
   directFilePath?: string;
   chapters?: MediaChapter[];
+  formatTags?: Record<string, string>;
 };
 
 export type VideoStreamDetails = {

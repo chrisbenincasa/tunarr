@@ -1,3 +1,10 @@
+import type { CustomShowDB } from '@/db/CustomShowDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import type { MediaSourceId, MediaSourceName } from '@/db/schema/base.js';
+import type { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { Result } from '@/types/result.js';
+import type { MutexMap } from '@/util/mutexMap.js';
 import { faker } from '@faker-js/faker';
 import type {
   CondensedContentProgram,
@@ -6,15 +13,8 @@ import type {
 } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import { describe, expect, it, vi } from 'vitest';
-import type { CustomShowDB } from '@/db/CustomShowDB.js';
-import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
-import type { MediaSourceId, MediaSourceName } from '@/db/schema/base.js';
-import type { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import type { MutexMap } from '@/util/mutexMap.js';
-import { Result } from '@/types/result.js';
-import type { GenericMediaSourceScannerFactory } from './scanner/MediaSourceScanner.js';
 import { CustomShowSyncService } from './CustomShowSyncService.js';
+import type { GenericMediaSourceScannerFactory } from './scanner/MediaSourceScanner.js';
 
 const { fakeLogger } = vi.hoisted(() => {
   const fakeLogger = {
@@ -220,6 +220,7 @@ describe('CustomShowSyncService', () => {
         {
           uuid: dbUuid1,
           sourceType: 'plex',
+          externalSourceId: mediaSourceId,
           mediaSourceId: mediaSourceId,
           externalKey: movie1.externalId,
           externalIds: [],
@@ -227,6 +228,7 @@ describe('CustomShowSyncService', () => {
         {
           uuid: dbUuid2,
           sourceType: 'plex',
+          externalSourceId: mediaSourceId,
           mediaSourceId: mediaSourceId,
           externalKey: movie2.externalId,
           externalIds: [],
@@ -357,6 +359,7 @@ describe('CustomShowSyncService', () => {
         [ep1, ep2, ep3].map((ep) => ({
           uuid: ep.uuid,
           sourceType: 'plex',
+          externalSourceId: mediaSourceId,
           mediaSourceId: mediaSourceId,
           externalKey: ep.externalId,
           externalIds: [],
@@ -470,6 +473,7 @@ describe('CustomShowSyncService', () => {
         {
           uuid: dbUuid2,
           sourceType: 'plex',
+          externalSourceId: mediaSourceId,
           mediaSourceId: mediaSourceId,
           externalKey: movie2.externalId,
           externalIds: [],

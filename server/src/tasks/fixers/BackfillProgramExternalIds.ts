@@ -42,7 +42,7 @@ import Fixer from './fixer.ts';
 @injectable()
 export class BackfillProgramExternalIds extends Fixer {
   private timer: Timer;
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(MediaSourceApiFactory)
@@ -179,7 +179,7 @@ export class BackfillProgramExternalIds extends Fixer {
       throw new Error('Plex server is not a saved media source');
     }
 
-    const metadataResult = await plex.getItemMetadata(program.externalKey);
+    const metadataResult = await plex.getItemMetadataRaw(program.externalKey);
 
     if (metadataResult.isFailure()) {
       throw new Error(
