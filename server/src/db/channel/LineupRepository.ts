@@ -487,6 +487,55 @@ export class LineupRepository {
     }
   }
 
+  async replaceProgramUuidInAllLineups(
+    oldProgramUuid: string,
+    newProgramUuid: string,
+  ): Promise<void> {
+    if (oldProgramUuid === newProgramUuid) {
+      return;
+    }
+
+    const lineups = await this.loadAllLineups();
+    for (const [channelId, { lineup }] of Object.entries(lineups)) {
+      let changed = false;
+      const newLineupItems: LineupItem[] = lineup.items.map((item) => {
+        if (isContentItem(item) && item.id === oldProgramUuid) {
+          changed = true;
+          return { ...item, id: newProgramUuid };
+        }
+        return item;
+      });
+
+      if (changed) {
+        await this.saveLineup(channelId, { ...lineup, items: newLineupItems });
+      }
+    }
+
+    const channelRows = await this.drizzleDB.query.channelPrograms.findMany({
+      where: (cp, { eq }) => eq(cp.programUuid, oldProgramUuid),
+    });
+
+    for (const row of channelRows) {
+      this.drizzleDB
+        .insert(ChannelPrograms)
+        .values({
+          channelUuid: row.channelUuid,
+          programUuid: newProgramUuid,
+        })
+        .onConflictDoNothing()
+        .run();
+      this.drizzleDB
+        .delete(ChannelPrograms)
+        .where(
+          and(
+            eq(ChannelPrograms.channelUuid, row.channelUuid),
+            eq(ChannelPrograms.programUuid, oldProgramUuid),
+          ),
+        )
+        .run();
+    }
+  }
+
   async loadAllLineups(): Promise<
     Record<string, { channel: ChannelOrm; lineup: Lineup }>
   > {

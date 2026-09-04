@@ -290,6 +290,16 @@ export class ChannelDB implements IChannelDB {
     return this.lineup.removeProgramsFromAllLineups(programIds);
   }
 
+  replaceProgramUuidInAllLineups(
+    oldProgramUuid: string,
+    newProgramUuid: string,
+  ): Promise<void> {
+    return this.lineup.replaceProgramUuidInAllLineups(
+      oldProgramUuid,
+      newProgramUuid,
+    );
+  }
+
   // --- ChannelConfigRepository delegation ---
 
   getChannelSubtitlePreferences(

@@ -11,7 +11,8 @@ import {
   trimStart,
 } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
@@ -37,7 +38,10 @@ import { extractIsAnamorphic } from './util.ts';
 export class ProgramStreamDetailsFetcher {
   @InjectLogger() declare private readonly logger: Logger;
 
-  constructor(@inject(KEYS.ProgramDB) private programDB: IProgramDB) {}
+  constructor(
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+  ) {}
 
   async getStream({
     lineupItem,
@@ -199,14 +203,20 @@ export class ProgramStreamDetailsFetcher {
       return Result.success({ streamDetails, streamSource });
     } else {
       const filePath = head(firstVersion.mediaFiles)?.path;
-      const serverPath = // details.serverPath ??
-        program.externalIds.find(
-          (eid) => eid.sourceType === server.type,
-        )?.externalFilePath;
+      const plexExternalId = program.externalIds.find(
+        (eid) => eid.sourceType === server.type,
+      );
+      const serverPath = plexExternalId?.externalFilePath;
+      const directFromDb = plexExternalId?.directFilePath;
+      const preferDirect =
+        server.type === 'plex' &&
+        this.settingsDB.plexSettings().streamPath === 'direct';
+
       const streamSource = await this.getStreamSource(
         server,
         filePath,
         serverPath,
+        preferDirect ? directFromDb : undefined,
       );
       return Result.success({ streamDetails, streamSource });
     }
@@ -216,33 +226,38 @@ export class ProgramStreamDetailsFetcher {
     server: MediaSourceWithRelations,
     potentialFilePath: Nilable<string>,
     serverPath: Nilable<string>,
+    preferredDirectPath?: Nilable<string>,
   ): Promise<StreamSource> {
-    if (isNonEmptyString(potentialFilePath)) {
-      if (await fileExists(potentialFilePath)) {
+    const diskCandidates = [preferredDirectPath, potentialFilePath].filter(
+      isNonEmptyString,
+    );
+
+    for (const candidate of diskCandidates) {
+      if (await fileExists(candidate)) {
         this.logger.debug(
           'Found item locally at path reported by server, playing from disk. Path: %s',
-          potentialFilePath,
+          candidate,
         );
         return {
           type: 'file',
-          path: potentialFilePath,
+          path: candidate,
         };
-      } else {
-        const replacedPath = await PathCalculator.findFirstValidPath(
-          potentialFilePath,
-          server.replacePaths,
+      }
+
+      const replacedPath = await PathCalculator.findFirstValidPath(
+        candidate,
+        server.replacePaths,
+      );
+      if (replacedPath) {
+        this.logger.debug(
+          'Found valid path replacement, playing from disk. Original path: "%s" Replace path: "%s',
+          candidate,
+          replacedPath,
         );
-        if (replacedPath) {
-          this.logger.debug(
-            'Found valid path replacement, playing from disk. Original path: "%s" Replace path: "%s',
-            potentialFilePath,
-            replacedPath,
-          );
-          return {
-            type: 'file',
-            path: replacedPath,
-          };
-        }
+        return {
+          type: 'file',
+          path: replacedPath,
+        };
       }
     }
 

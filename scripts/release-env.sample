@@ -1,0 +1,12 @@
+# Copy to config/release.local.env (gitignored) before running scripts/build-macos-fork-release.sh
+#
+# Apple Developer ID Application certificate name (from: security find-identity -p codesigning -v)
+APPLE_SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+APPLE_TEAM_ID="TEAMID"
+#
+# Notarization (app-specific password from appleid.apple.com)
+NOTARY_APPLE_ID="you@example.com"
+NOTARY_APP_PASSWORD="xxxx-xxxx-xxxx-xxxx"
+#
+# Optional overrides
+# TUNARR_VERSION=1.2.8-roto.1
