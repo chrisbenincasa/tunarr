@@ -489,7 +489,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           );
 
       if (!libraries || isEmpty(libraries)) {
-        return res.status(501);
+        return res.status(501).send();
       }
 
       if (mediaSource.type === 'local') {
