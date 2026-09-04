@@ -26,7 +26,7 @@ describe('TonemapOpenclFilter', () => {
     const filter = new TonemapOpenclFilter(currentState);
 
     expect(filter.filter).to.eq(
-      'hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1',
+      'hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:peak=1000:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1',
     );
   });
 
@@ -42,7 +42,7 @@ describe('TonemapOpenclFilter', () => {
     const filter = new TonemapOpenclFilter(currentState);
 
     expect(filter.filter).to.eq(
-      'format=vaapi|nv12|p010le,hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1',
+      'format=vaapi|nv12|p010le,hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:peak=1000:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1',
     );
   });
 
