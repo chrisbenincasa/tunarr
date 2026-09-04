@@ -296,7 +296,7 @@ export class LineupRepository {
       const newDur = sum(newLineup.items.map((item) => item.durationMs));
       await this.updateChannelDuration(channelId, newDur);
     }
-    return db.data;
+    return LineupRepository.snapshotLineup(db.data);
   }
 
   static applyUpdateLineupRequest(
@@ -560,7 +560,18 @@ export class LineupRepository {
     forceRead: boolean = false,
   ): Promise<Lineup> {
     const db = await this.getFileDb(channelId, forceRead);
-    return db.data;
+    return LineupRepository.snapshotLineup(db.data);
+  }
+
+  /**
+   * Callers hold a lineup across await boundaries (the guide build reads
+   * `items` and `startTimeOffsets` interleaved with DB writes), so they must
+   * not be handed the cached `Low.data`. Every writer rebinds whole properties
+   * on `Low.data` rather than mutating the arrays in place, so a top-level copy
+   * is enough to pin a caller to the lineup it actually read.
+   */
+  private static snapshotLineup(data: Lineup): Lineup {
+    return { ...data };
   }
 
   async loadLineupConfig(channelId: string): Promise<LineupConfig> {
