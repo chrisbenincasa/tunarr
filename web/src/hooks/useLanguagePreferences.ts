@@ -9,7 +9,10 @@ languages.registerLocale(en);
 
 export const languageOptions = sortBy(
   seq.collect(entries(languages.getNames('en')), ([code, name]) => {
-    const iso6392 = languages.alpha2ToAlpha3B(code);
+    // ISO 639-2/T, matching LanguageAutocomplete and the codes the server
+    // normalizes stream tags to. Emitting /B here ("ger" instead of "deu")
+    // silently broke language matching for the 20 languages that have both.
+    const iso6392 = languages.alpha2ToAlpha3T(code);
     if (!iso6392) {
       return;
     }

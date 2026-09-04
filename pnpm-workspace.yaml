@@ -29,6 +29,7 @@ overrides:
   conventional-changelog-conventionalcommits: "^9.0.0"
   eslint: "catalog:"
   "@types/node": "22.10.7"
+  conventional-changelog-conventionalcommits: ^9.0.0
 
 onlyBuiltDependencies:
   - "@swc/core"

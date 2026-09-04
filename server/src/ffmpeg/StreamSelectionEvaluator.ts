@@ -9,6 +9,7 @@ import type {
   CelEvaluationService,
   StreamSelectionCelContext,
 } from '../services/CelEvaluationService.ts';
+import { LanguageService } from '../services/LanguageService.ts';
 import type {
   AudioStreamDetails,
   SubtitleStreamDetails,
@@ -118,6 +119,30 @@ export async function evaluateStreamSelectionProfile(
   };
 }
 
+export type LanguageTaggedStream = {
+  language?: string;
+  languageCodeISO6391?: string;
+  languageCodeISO6392?: string;
+};
+
+/**
+ * Match a stream against a requested language.
+ *
+ * The stream's language is resolved with the same precedence buildCelContext
+ * uses (ISO 639-2 > ISO 639-1 > free-form), so a stream is only ever treated
+ * as being in one language. Comparison goes through LanguageService so that
+ * the two ISO 639-2 code sets are interchangeable — a stored preference of
+ * "ger" must match a stream that Jellyfin or ffprobe tagged "deu".
+ */
+export function streamMatchesLanguage(
+  stream: LanguageTaggedStream,
+  language: string,
+): boolean {
+  const streamLanguage =
+    stream.languageCodeISO6392 ?? stream.languageCodeISO6391 ?? stream.language;
+  return LanguageService.codesMatch(streamLanguage, language);
+}
+
 export function resolveAudioAction(
   action: AudioAction,
   audioStreams: NonEmptyArray<AudioStreamDetails>,
@@ -125,14 +150,9 @@ export function resolveAudioAction(
   switch (action.type) {
     case 'by_language': {
       for (const lang of action.languages) {
-        const langLower = lang.toLowerCase();
-        let matches = audioStreams.filter((stream) => {
-          return (
-            stream.languageCodeISO6392?.toLowerCase() === langLower ||
-            stream.languageCodeISO6391?.toLowerCase() === langLower ||
-            stream.language?.toLowerCase() === langLower
-          );
-        });
+        let matches = audioStreams.filter((stream) =>
+          streamMatchesLanguage(stream, lang),
+        );
 
         if (matches.length > 0) {
           if (action.preferChannels === 'most') {
@@ -222,14 +242,9 @@ async function resolveSubtitleAction(
       }
 
       for (const lang of action.languages) {
-        const langLower = lang.toLowerCase();
         for (const stream of subtitleStreams) {
           // Language match
-          if (
-            stream.languageCodeISO6392?.toLowerCase() !== langLower &&
-            stream.languageCodeISO6391?.toLowerCase() !== langLower &&
-            stream.language?.toLowerCase() !== langLower
-          ) {
+          if (!streamMatchesLanguage(stream, lang)) {
             continue;
           }
 
@@ -275,4 +290,3 @@ async function resolveSubtitleAction(
     }
   }
 }
-
