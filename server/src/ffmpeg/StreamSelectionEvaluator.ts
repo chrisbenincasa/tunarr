@@ -119,7 +119,7 @@ export async function evaluateStreamSelectionProfile(
   };
 }
 
-type LanguageTaggedStream = {
+export type LanguageTaggedStream = {
   language?: string;
   languageCodeISO6391?: string;
   languageCodeISO6392?: string;
@@ -134,7 +134,7 @@ type LanguageTaggedStream = {
  * the two ISO 639-2 code sets are interchangeable — a stored preference of
  * "ger" must match a stream that Jellyfin or ffprobe tagged "deu".
  */
-function streamMatchesLanguage(
+export function streamMatchesLanguage(
   stream: LanguageTaggedStream,
   language: string,
 ): boolean {
