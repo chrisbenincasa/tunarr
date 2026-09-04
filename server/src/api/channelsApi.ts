@@ -19,7 +19,7 @@ import {
   PagedResult,
   RandomSlotScheduleSchema,
   SlotScheduleWithPrograms,
-  TimeSlotScheduleSchema,
+  StrictTimeSlotScheduleSchema,
   TimeSlotScheduleWithPrograms,
   UpdateChannelProgrammingRequestSchema,
 } from '@tunarr/types/api';
@@ -743,7 +743,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           channelId: z.string(),
         }),
         body: z.object({
-          schedule: TimeSlotScheduleSchema,
+          schedule: StrictTimeSlotScheduleSchema,
         }),
         response: {
           200: TimeSlotScheduleWithPrograms,
