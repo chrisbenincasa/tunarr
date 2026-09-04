@@ -55,6 +55,7 @@ import {
   mapValues,
   omitBy,
   orderBy,
+  trimStart,
   union,
   uniq,
 } from 'lodash-es';
@@ -98,6 +99,7 @@ import type {
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { parseReleaseDate, titleToSortTitle } from '../../util/programs.ts';
+import { externalSubtitleDeliveryPath } from '../../util/subtitles.ts';
 import {
   QueryError,
   type ApiClientOptions,
@@ -480,6 +482,23 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
   getExternalUrl(id: string) {
     //TODO: This might need a server ID
     return `${this.options.mediaSource.uri}/web/#/item?id=${id}`;
+  }
+
+  /**
+   * Fetches an external subtitle file from the location the server reported for
+   * it. External subtitles are separate files, so unlike embedded streams they
+   * cannot be addressed by container stream index.
+   */
+  async getSubtitlesByPath(subtitlePath: string): Promise<QueryResult<string>> {
+    const subtitlesResult = await this.doGet<string>({
+      url: `/${trimStart(subtitlePath, '/')}`,
+    });
+
+    if (isError(subtitlesResult)) {
+      return this.makeErrorResult('generic_request_error');
+    }
+
+    return this.makeSuccessResult(subtitlesResult);
   }
 
   async getSubtitles(
@@ -1320,8 +1339,20 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
             profile: (subStream.Profile ?? '')?.toLowerCase(),
             default: subStream.IsDefault,
             selected: subStream.IsForced,
+            forced: subStream.IsForced,
+            sdh: subStream.IsHearingImpaired,
             languageCodeISO6392: nullToUndefined(subStream.Language),
             index: Math.max(0, (subStream.Index ?? 0) - streamIndexOffset),
+            // External subtitles live outside the container, so the adjusted
+            // index above cannot address them. Record both ways of reaching the
+            // file: where it sits on the server's disk (readable directly if
+            // Tunarr shares that storage) and the route that serves it.
+            fileName: subStream.IsExternal
+              ? nullToUndefined(subStream.Path)
+              : undefined,
+            externalKey: subStream.IsExternal
+              ? externalSubtitleDeliveryPath(item.Id, source.Id, subStream)
+              : undefined,
           };
         },
       ) ?? [];

@@ -2677,6 +2677,89 @@ describe('ProgramDB', () => {
         expect(subsAfterSecond[0]!.default).toBe(true);
         expect(subsAfterSecond[0]!.sdh).toBe(true);
       });
+
+      async function upsertTwice(
+        programDb: IProgramDB,
+        drizzle: DrizzleDBAccess,
+        first: Partial<NewProgramSubtitles>,
+        second: Partial<NewProgramSubtitles>,
+      ) {
+        const library = await createTestMediaSourceLibrary(drizzle);
+        const programData = createBaseProgram('movie', library.uuid, 'local', {
+          mediaSourceId: library.mediaSourceId,
+        });
+        const base: Omit<NewProgramWithRelations, 'subtitles'> = {
+          program: programData,
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          versions: [],
+          tags: [],
+        };
+
+        const firstResult = await programDb.upsertPrograms([
+          { ...base, subtitles: [createSubtitle(programData.uuid, first)] },
+        ]);
+        const programUuid = firstResult[0]!.uuid;
+
+        await programDb.upsertPrograms([
+          {
+            ...base,
+            program: { ...programData, uuid: programUuid },
+            subtitles: [createSubtitle(programData.uuid, second)],
+          },
+        ]);
+
+        return await drizzle.query.programSubtitles.findMany({
+          where: (fields, { eq }) => eq(fields.programId, programUuid),
+        });
+      }
+
+      test('should keep an extracted subtitle extracted when the stream is unchanged', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const extracted = {
+          streamIndex: 2,
+          language: 'eng',
+          codec: 'srt',
+          isExtracted: true,
+          path: '/cache/subtitles/ab/cd/abcd.srt',
+        };
+
+        const subs = await upsertTwice(programDb, drizzle, extracted, {
+          streamIndex: 2,
+          language: 'eng',
+          codec: 'srt',
+        });
+
+        expect(subs).toHaveLength(1);
+        expect(subs[0]!.isExtracted).toBe(true);
+        expect(subs[0]!.path).toBe('/cache/subtitles/ab/cd/abcd.srt');
+      });
+
+      test('should invalidate an extracted subtitle when its codec changes', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const subs = await upsertTwice(
+          programDb,
+          drizzle,
+          {
+            streamIndex: 2,
+            language: 'eng',
+            codec: 'srt',
+            isExtracted: true,
+            path: '/cache/subtitles/ab/cd/abcd.srt',
+          },
+          { streamIndex: 2, language: 'eng', codec: 'ass' },
+        );
+
+        expect(subs).toHaveLength(1);
+        expect(subs[0]!.isExtracted).toBe(false);
+      });
     });
   });
 });
