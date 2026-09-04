@@ -1896,7 +1896,8 @@ type PersonMapping = Partial<{
   director: Director[];
 }>;
 
-function getJellyfinItemPersonMap(
+// Exported for testing only
+export function getJellyfinItemPersonMap(
   item: ApiJellyfinItem,
   mediaSourceUrl: string,
 ): PersonMapping {
@@ -1906,41 +1907,44 @@ function getJellyfinItemPersonMap(
     (people, key) => {
       switch (key) {
         case 'actor':
-          mapping[key] = people.map(
-            (person, idx) =>
-              ({
-                name: person.Name,
-                role: person.Role ?? undefined,
-                thumb: new URL(
-                  `/Items/${person.Id}/Images/Primary`,
-                  mediaSourceUrl,
-                ).href,
-                order: idx,
-              }) satisfies Actor,
+          mapping[key] = seq.collect(people, (person, idx) =>
+            isNonEmptyString(person.Name)
+              ? ({
+                  name: person.Name,
+                  role: person.Role ?? undefined,
+                  thumb: new URL(
+                    `/Items/${person.Id}/Images/Primary`,
+                    mediaSourceUrl,
+                  ).href,
+                  order: idx,
+                } satisfies Actor)
+              : null,
           );
           break;
         case 'writer':
-          mapping[key] = people.map(
-            (person) =>
-              ({
-                name: person.Name,
-                thumb: new URL(
-                  `/Items/${person.Id}/Images/Primary`,
-                  mediaSourceUrl,
-                ).href,
-              }) satisfies Writer,
+          mapping[key] = seq.collect(people, (person) =>
+            isNonEmptyString(person.Name)
+              ? ({
+                  name: person.Name,
+                  thumb: new URL(
+                    `/Items/${person.Id}/Images/Primary`,
+                    mediaSourceUrl,
+                  ).href,
+                } satisfies Writer)
+              : null,
           );
           break;
         case 'director': {
-          mapping[key] = people.map(
-            (person) =>
-              ({
-                name: person.Name,
-                thumb: new URL(
-                  `/Items/${person.Id}/Images/Primary`,
-                  mediaSourceUrl,
-                ).href,
-              }) satisfies Director,
+          mapping[key] = seq.collect(people, (person) =>
+            isNonEmptyString(person.Name)
+              ? ({
+                  name: person.Name,
+                  thumb: new URL(
+                    `/Items/${person.Id}/Images/Primary`,
+                    mediaSourceUrl,
+                  ).href,
+                } satisfies Director)
+              : null,
           );
           return;
         }
