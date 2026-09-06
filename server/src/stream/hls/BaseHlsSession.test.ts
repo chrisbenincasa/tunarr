@@ -87,6 +87,24 @@ describe('BaseHlsSession', () => {
       expect(session.minSegment).toBe(10);
     });
 
+    it('removes the _minByIp entry when the start-handshake token differs from the client IP', () => {
+      // Bug #2045: the fragment route keys _minByIp by client IP, but the
+      // connection created by the start handshake is keyed by a UUID token,
+      // so removeConnection(token) never matched the IP entry — a departed
+      // client kept pinning the playlist window for every other viewer.
+      const startToken = '0f2c1e0a-8e6f-4b0b-9d2a-3c9f7a1b2c3d';
+      session.addConnection(startToken, makeConnection('192.168.1.1'));
+      session.addConnection('192.168.1.2', makeConnection('192.168.1.2'));
+      session.onSegmentRequested('192.168.1.1', 'data000010.ts');
+      session.onSegmentRequested('192.168.1.2', 'data000050.ts');
+
+      // Client 1 departs; its connection is removed under the start token
+      session.removeConnection(startToken);
+
+      expect(session.minByIp.has('192.168.1.1')).toBe(false);
+      expect(session.minSegment).toBe(50);
+    });
+
     it('removes stale IP entries from _minByIp after removeStaleConnections', () => {
       session.addConnection('192.168.1.1', makeConnection('192.168.1.1'));
       session.addConnection('192.168.1.2', makeConnection('192.168.1.2'));
