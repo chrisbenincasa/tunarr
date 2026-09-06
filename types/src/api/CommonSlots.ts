@@ -6,6 +6,7 @@ export const SlotProgrammingOrderSchema = z.enum([
   'ordered_shuffle',
   'alphanumeric',
   'chronological',
+  'block',
 ]);
 
 export const SlotProgrammingFillerOrder = z.enum([
@@ -206,6 +207,15 @@ export const SmartCollectionProgrammingSlot = z.object({
   smartCollectionId: z.uuid(),
   ...BaseSlotOrdering.shape,
   ...Slot.shape,
+  // Only meaningful when order === 'block'. Number of consecutive
+  // episodes/programs to play from one show/group before moving to the
+  // next.
+  blockSize: z.number().int().positive().default(3).optional(),
+  // Only meaningful when order === 'block'. When true, groups with fewer
+  // programs than the largest group are looped (repeated from the start)
+  // so every group completes the same number of blocks before the whole
+  // rotation repeats, rather than shorter shows dropping out early.
+  loopShortPrograms: z.boolean().default(true).optional(),
 });
 
 export const BaseSlotSchema = z.discriminatedUnion('type', [
