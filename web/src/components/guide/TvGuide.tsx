@@ -11,6 +11,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
+import { invalidateTaggedQueries } from '@/helpers/queryUtil.ts';
 import { seq } from '@tunarr/shared/util';
 import type { Channel } from '@tunarr/types';
 import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
@@ -100,10 +101,10 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
       if (ev.type === 'xmltv') {
         queryClient
           .invalidateQueries({
-            // Gnarly
-            predicate: (query) =>
-              query.queryKey?.[0] === 'channels' &&
-              query.queryKey?.[2] === 'guide',
+            // The guide renders from the channel lineup endpoints, which carry
+            // the 'Channels' tag -- not the 'Guide' tag, which belongs to the
+            // separate /api/guide/channels endpoints this page never calls.
+            predicate: invalidateTaggedQueries('Channels'),
           })
           .catch(console.error);
       }

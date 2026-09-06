@@ -1,5 +1,6 @@
 import { resetCurrentLineup } from '@/store/channelEditor/actions';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateTaggedQueries } from '../helpers/queryUtil.ts';
 import { postApiChannelsByIdProgrammingMutation } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useUpdateLineup = (
@@ -9,18 +10,12 @@ export const useUpdateLineup = (
   return useMutation({
     ...postApiChannelsByIdProgrammingMutation(),
     onSuccess: async (...args) => {
-      const [
-        response,
-        {
-          path: { id: channelId },
-        },
-      ] = args;
+      const [response] = args;
 
       resetCurrentLineup(response);
 
       await queryClient.invalidateQueries({
-        queryKey: ['channels', channelId],
-        exact: false,
+        predicate: invalidateTaggedQueries('Channels'),
       });
 
       if (opts?.onSuccess) {

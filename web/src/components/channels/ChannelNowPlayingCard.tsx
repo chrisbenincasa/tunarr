@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
+import { getApiChannelsByIdNowPlayingQueryKey } from '@/generated/@tanstack/react-query.gen.ts';
 import type { MediaArtwork } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
 import { capitalize, isNil } from 'lodash-es';
@@ -55,7 +56,9 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
   useTimeout(() => {
     queryClient
       .invalidateQueries({
-        queryKey: ['channels', channelId, 'now_playing'],
+        queryKey: getApiChannelsByIdNowPlayingQueryKey({
+          path: { id: channelId },
+        }),
       })
       .catch(console.error);
   }, firstProgram.stop + 5_000);
