@@ -99,13 +99,14 @@ export abstract class BaseHlsSession<
     const connection = this.connections()[token];
     super.removeConnection(token);
 
-    // _minByIp is keyed by client IP (see onSegmentRequested), but the
-    // connection token can differ from the IP: the start handshake keys
-    // connections by a UUID (streamApi `req.query.token ?? v4()`). Deleting
-    // by token never matched, so a departed client's entry kept pinning the
-    // playlist window to its last-requested segment for every other viewer.
-    // Remove by the connection's IP (falling back to the token when the
-    // connection is unknown) so the entry is released on disconnect.
+    // _minByIp is keyed by client IP (see onSegmentRequested). Today every
+    // BaseHlsSession connection is registered under the client IP, so the
+    // token and the IP coincide and deleting by either reaches the entry.
+    // Delete by the connection's IP instead of the token so the behavior
+    // holds even if a caller ever keys a connection under a non-IP token
+    // (the entry would otherwise be leaked and keep pinning the playlist
+    // window for other viewers). Fall back to the token when the connection
+    // is unknown to preserve the current no-op behavior for stale tokens.
     if (connection?.ip) {
       this._minByIp.delete(connection.ip);
     } else {
