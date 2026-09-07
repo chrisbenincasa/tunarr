@@ -1,8 +1,13 @@
 import { v4 } from 'uuid';
 import { describe, expect, test } from 'vitest';
 import { sortProgramsByReleaseDate } from './useReleaseDateSort';
-import { ChannelProgram } from '@tunarr/types';
+import type { ChannelProgram } from '@tunarr/types';
 import { map } from 'lodash-es';
+import {
+  makeContentProgram,
+  makeEpisode,
+  makeSeasonGrouping,
+} from '../../test/programFixtures.ts';
 
 describe('useReleaseDateSort', () => {
   test('use season and episode index as fallback to release date', () => {
@@ -10,47 +15,27 @@ describe('useReleaseDateSort', () => {
       two = v4(),
       three = v4();
 
-    const before = [
-      {
-        type: 'content',
-        id: one,
-        persisted: false,
-        duration: 0,
-        uniqueId: one,
-        program: {
-          type: 'episode',
+    const episode = (
+      id: string,
+      episodeNumber: number,
+      seasonIndex: number,
+    ): ChannelProgram =>
+      makeContentProgram(
+        makeEpisode({
+          uuid: id,
+          episodeNumber,
           releaseDate: 0,
-          episodeNumber: 7,
-          season: { index: 3 },
-        },
-      },
-      {
-        type: 'content',
-        id: two,
-        persisted: false,
-        duration: 0,
-        uniqueId: two,
-        program: {
-          type: 'episode',
-          releaseDate: 0,
-          episodeNumber: 1,
-          season: { index: 2 },
-        },
-      },
-      {
-        type: 'content',
-        id: three,
-        persisted: false,
-        duration: 0,
-        uniqueId: three,
-        program: {
-          type: 'episode',
-          releaseDate: 0,
-          episodeNumber: 2,
-          season: { index: 3 },
-        },
-      },
-    ] as ChannelProgram[];
+          season: makeSeasonGrouping(seasonIndex),
+        }),
+        0,
+        id,
+      );
+
+    const before: ChannelProgram[] = [
+      episode(one, 7, 3),
+      episode(two, 1, 2),
+      episode(three, 2, 3),
+    ];
 
     const sortedPrograms = sortProgramsByReleaseDate(before, 'asc');
 
