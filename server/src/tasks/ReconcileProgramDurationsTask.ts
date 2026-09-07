@@ -21,6 +21,7 @@ import {
 import z from 'zod';
 import { ChannelOrm } from '../db/schema/Channel.ts';
 import { DB } from '../db/schema/db.ts';
+import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
 import { Task2, TaskMetadata } from './Task.ts';
 import { taskDef } from './TaskRegistry.ts';
 
@@ -160,6 +161,7 @@ export class ReconcileProgramDurationsTask extends Task2<
         await this.channelDB.saveLineup(channel.uuid, {
           ...lineup,
           items: newLineupItems,
+          startTimeOffsets: calculateStartTimeOffsets(newLineupItems),
         });
       }
     }
