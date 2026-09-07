@@ -24,14 +24,15 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny>
   ) {
     this.schema = schema;
     this.path = filename;
-    this.adapter = new TextFile(filename);
   }
 
   async read(): Promise<z.output<T> | null> {
-    const data = await this.adapter.read().catch((e) => {
-      this.logger.error(e);
-      return null;
-    });
+    // A rejection here means the file exists but could not be read (EACCES,
+    // EIO, EMFILE...). It must propagate: treating it as "no data" sends us
+    // down the merge-with-defaults path below, which flushes those defaults
+    // back to disk and destroys the file we failed to read. Only a genuinely
+    // absent file yields null -- TextFile maps ENOENT, and nothing else, to it.
+    const data = await this.adapter.read();
 
     if (data === null && this.defaultValue === null) {
       this.logger.debug('Unexpected null data at %s', this.path.toString());

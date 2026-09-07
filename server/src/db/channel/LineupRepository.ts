@@ -7,7 +7,7 @@ import { Nullable } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import dayjs from '@/util/dayjs.js';
-import { fileExists } from '@/util/fsUtil.js';
+import { fileExists, writeFileAtomic } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { seq } from '@tunarr/shared/util';
@@ -205,7 +205,7 @@ export class LineupRepository {
   // Bypasses Low
   async saveChannelLineupDirect(channelId: string, lineup: Lineup) {
     const outPath = this.fileSystemService.getChannelLineupPath(channelId);
-    await fs.writeFile(outPath, JSON.stringify(lineup));
+    await writeFileAtomic(outPath, JSON.stringify(lineup));
   }
 
   async markLineupFileForDeletion(
