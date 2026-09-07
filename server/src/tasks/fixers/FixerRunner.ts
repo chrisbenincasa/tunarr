@@ -1,12 +1,12 @@
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { injectable, multiInject } from 'inversify';
 import { find, round } from 'lodash-es';
 import { SimpleStartupTask } from '../../services/startup/IStartupTask.ts';
 import { ScheduleJobsStartupTask } from '../../services/startup/ScheduleJobsStartupTask.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import Fixer from './fixer.js';
+import type Fixer from './fixer.js';
 
 @injectable()
 export class FixerRunner extends SimpleStartupTask {

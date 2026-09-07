@@ -3,8 +3,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import { match } from 'ts-pattern';
-import { ArtworkType } from '../db/schema/Artwork.ts';
-import { GlobalOptions } from '../globals.ts';
+import type { ArtworkType } from '../db/schema/Artwork.ts';
+import type { GlobalOptions } from '../globals.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import {

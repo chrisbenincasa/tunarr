@@ -1,15 +1,16 @@
 import { FfprobeMediaInfoSchema } from '@/types/ffmpeg.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
+import type {
+  GetStdoutOptions} from '@/util/ChildProcessHelper.js';
 import {
-  ChildProcessHelper,
-  GetStdoutOptions,
+  ChildProcessHelper
 } from '@/util/ChildProcessHelper.js';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
 import { InjectLogger } from '@/util/inject.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import { inject, injectable } from 'inversify';
 import {

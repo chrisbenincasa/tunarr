@@ -1,6 +1,6 @@
-import { MovieNfo } from '@/nfo/NfoSchemas.js';
+import type { MovieNfo } from '@/nfo/NfoSchemas.js';
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import { Actor, Director, Identifier, MovieMetadata } from '@tunarr/types';
+import type { Actor, Director, Identifier, MovieMetadata } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { chunk, compact, isEmpty, isUndefined } from 'lodash-es';
@@ -10,32 +10,34 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import {
+import type {
   IProgramDB,
   ProgramCanonicalIdLookupResult,
 } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { Artwork, ArtworkType } from '../../db/schema/Artwork.ts';
-import { ProgramOrm, ProgramType } from '../../db/schema/Program.ts';
+import type { Artwork, ArtworkType } from '../../db/schema/Artwork.ts';
+import type { ProgramOrm} from '../../db/schema/Program.ts';
+import { ProgramType } from '../../db/schema/Program.ts';
 import { MovieNfoParser } from '../../nfo/MovieNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
-import { MediaSourceMovie } from '../../types/Media.ts';
+import type { MediaSourceMovie } from '../../types/Media.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.js';
-import { Maybe } from '../../types/util.ts';
+import type { Maybe } from '../../types/util.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { caughtErrorToError, isDefined } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { titleToSortTitle } from '../../util/programs.ts';
-import { Canonicalizer } from '../Canonicalizer.ts';
+import type { Canonicalizer } from '../Canonicalizer.ts';
 import { ImageCache } from '../ImageCache.ts';
-import { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
-import { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
+import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
+import type { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { FallbackMetadataService } from '../local/FallbackMetadataService.ts';
 import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
-import { FileSystemScanner, LocalScanContext } from './FileSystemScanner.ts';
+import type { LocalScanContext } from './FileSystemScanner.ts';
+import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import {
   KnownImageFileExtensions,

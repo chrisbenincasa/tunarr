@@ -1,11 +1,12 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { MediaSubtitles } from '@tunarr/types';
+import type { MediaSubtitles } from '@tunarr/types';
 import { injectable } from 'inversify';
 import fs from 'node:fs/promises';
 import { basename, dirname, extname } from 'node:path';
 import { match, P } from 'ts-pattern';
-import { Nullable } from '../../types/util.ts';
-import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import type { Nullable } from '../../types/util.ts';
+import type { Logger} from '../../util/logging/LoggerFactory.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { LanguageService } from '../LanguageService.ts';
 
 @injectable()

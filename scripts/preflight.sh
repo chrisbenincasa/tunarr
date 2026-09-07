@@ -12,7 +12,7 @@
 #   lingui-pr.yml   lingui extract, then `git diff --exit-code web/src/locales/`
 #   commitlint.yml  conventional-commit check on every commit in the PR
 #
-# eslint is deliberately included even though CI never runs it: it is enforced
+# oxlint is deliberately included even though CI never runs it: it is enforced
 # only by the pre-commit hook, so a commit made with the hook bypassed reaches
 # the PR unlinted.
 #
@@ -28,7 +28,7 @@
 # this script was being written.
 #
 # The subtle half is that the pre-commit hook is itself a rewriter. It runs
-# `prettier --write` and `eslint --fix` on staged files at commit time, which is
+# `prettier --write` and `oxlint --fix` on staged files at commit time, which is
 # after any preflight can possibly run. So the format gate below applies the
 # same prettier pass the hook will, leaving the tree in the shape the hook would
 # produce. Without it the hook reformats at commit time and silently invalidates
@@ -41,7 +41,7 @@ usage() {
   cat <<'USAGE'
 Usage: preflight [--quick]
 
-  (default)  run every gate CI runs, plus eslint
+  (default)  run every gate CI runs, plus oxlint
   --quick    skip the web bundle and the test suite (the two slow gates);
              typecheck, lingui and lint still run
 USAGE
@@ -104,7 +104,7 @@ gate_commitlint() {
 }
 
 # Mirrors what the pre-commit hook's lint-staged config does to staged files:
-# `prettier --write` then `eslint --fix`. Applying prettier here keeps the hook
+# `prettier --write` then `oxlint --fix`. Applying prettier here keeps the hook
 # from reformatting at commit time, after the lingui gate has already run.
 gate_format() {
   local files
@@ -142,7 +142,7 @@ gate_lingui() {
 # First: everything that rewrites source, in the same order the pre-commit hook
 # applies it, so the tree ends up where the hook would leave it.
 run_gate "format (changed)"    gate_format
-run_gate "eslint (changed)"    pnpm lint-changed
+run_gate "oxlint (changed)"    pnpm lint-changed
 
 run_gate "commitlint"          gate_commitlint
 run_gate "typecheck (server)"  pnpm turbo typecheck --filter=@tunarr/server

@@ -2,22 +2,22 @@ import type {
   MediaSourceLibraryUpdate,
   NewMediaSourceLibrary,
 } from '@/db/schema/MediaSourceLibrary.js';
-import { EmbyItem } from '@tunarr/types/emby';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { PlexLibrarySection } from '@tunarr/types/plex';
+import type { EmbyItem } from '@tunarr/types/emby';
+import type { JellyfinItem } from '@tunarr/types/jellyfin';
+import type { PlexLibrarySection } from '@tunarr/types/plex';
 import { inject, injectable } from 'inversify';
 import { isString } from 'lodash-es';
 import { v4 } from 'uuid';
 import { MediaSourceDB } from '../db/mediaSourceDB.js';
-import { MediaSourceId } from '../db/schema/base.js';
+import type { MediaSourceId } from '../db/schema/base.js';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import type { MediaLibraryType } from '../db/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 
-import { Maybe } from '../types/util.ts';
+import type { Maybe } from '../types/util.ts';
 import { groupByUniq, isDefined } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
 export class MediaSourceLibraryRefresher {

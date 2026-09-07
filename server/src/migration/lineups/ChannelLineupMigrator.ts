@@ -1,11 +1,12 @@
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { RandomSlotDurationSpecMigration } from '@/migration/lineups/RandomSlotDurationSpecMigration.js';
 import { KEYS } from '@/types/inject.js';
-import { Json } from '@/types/schemas.js';
+import type { Json } from '@/types/schemas.js';
 import { InjectLogger } from '@/util/inject.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
-import { inject, injectable, ServiceIdentifier } from 'inversify';
+import type { ServiceIdentifier } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { findIndex, isArray, isNumber, isString } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -19,7 +20,7 @@ import { parseIntOrNull } from '../../util/index.ts';
 import { getFirstValue } from '../../util/json.ts';
 import { JsonFileMigrator } from '../JsonFileMigrator.ts';
 import { AddSlotIdMigration } from './AddSlotIdMigration.ts';
-import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
+import type { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 import { SlotProgrammingMigration } from './SlotProgrammingMigration.ts';
 import { SlotShowIdMigration } from './SlotShowIdMigration.ts';
 

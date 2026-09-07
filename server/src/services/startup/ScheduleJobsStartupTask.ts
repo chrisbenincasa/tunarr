@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { filter, flatten, forEach, values } from 'lodash-es';
 import { container } from '../../container.ts';
-import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
+import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { CleanupSessionsTask } from '../../tasks/CleanupSessionsTask.ts';
 import { OnDemandChannelStateTask } from '../../tasks/OnDemandChannelStateTask.ts';
 import { RefreshMediaSourceLibraryTask } from '../../tasks/RefreshMediaSourceLibraryTask.ts';
@@ -13,7 +13,8 @@ import { SyncCustomShowsTask } from '../../tasks/SyncCustomShowsTask.ts';
 import { UpdateXmlTvTask } from '../../tasks/UpdateXmlTvTask.ts';
 import { autoFactoryKey, KEYS } from '../../types/inject.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import type { Logger} from '../../util/logging/LoggerFactory.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import {
   GlobalScheduler,
   hoursCrontab,

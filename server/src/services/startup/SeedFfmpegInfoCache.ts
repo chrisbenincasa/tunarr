@@ -1,10 +1,10 @@
 import { inject, injectable } from 'inversify';
-import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
+import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { FfmpegInfo } from '../../ffmpeg/ffmpegInfo.ts';
 import { KEYS } from '../../types/inject.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { SimpleStartupTask } from './IStartupTask.ts';
 
 @injectable()

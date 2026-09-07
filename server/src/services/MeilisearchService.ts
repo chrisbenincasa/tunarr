@@ -1,21 +1,23 @@
 import { nullToUndefined, seq } from '@tunarr/shared/util';
-import {
+import type {
   Episode,
   FindChild,
   MediaStream,
   MusicTrack as MusicTrackType,
   MusicVideo,
-  tag,
   Tag,
   TerminalProgram,
-  TupleToUnion,
-} from '@tunarr/types';
+  TupleToUnion} from '@tunarr/types';
 import {
+  tag
+} from '@tunarr/types';
+import type {
   ExternalIdType,
-  isValidMultiExternalIdType,
-  isValidSingleExternalIdType,
   SearchFilter,
-  StringOperators,
+  StringOperators} from '@tunarr/types/schemas';
+import {
+  isValidMultiExternalIdType,
+  isValidSingleExternalIdType
 } from '@tunarr/types/schemas';
 import { Mutex } from 'async-mutex';
 import retry from 'async-retry';
@@ -25,33 +27,34 @@ import type { ProcessInfo } from 'find-process';
 import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
 import { compact, find, isEmpty, uniq } from 'lodash-es';
-import {
+import type {
   DocumentsQuery,
   EnqueuedTask,
   FacetDistribution,
   FacetStats,
-  MeiliSearch,
-  MeiliSearchApiError,
   ResourceResults,
   SearchParams,
   Settings,
-  Task,
+  Task} from 'meilisearch';
+import {
+  MeiliSearch,
+  MeiliSearchApiError
 } from 'meilisearch';
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { isMainThread } from 'node:worker_threads';
-import { MarkRequired, Paths } from 'ts-essentials';
+import type { MarkRequired, Paths } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import serverPackage from '../../package.json' with { type: 'json' };
-import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
-import { ProgramState } from '../db/schema/base.ts';
-import { ProgramType } from '../db/schema/Program.ts';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import type { ProgramState } from '../db/schema/base.ts';
+import type { ProgramType } from '../db/schema/Program.ts';
 import { ProgramGroupingType } from '../db/schema/ProgramGrouping.ts';
-import { ServerOptions } from '../globals.ts';
+import type { ServerOptions } from '../globals.ts';
 import { KEYS } from '../types/inject.ts';
-import {
+import type {
   AlbumWithArtist,
   EpisodeWithAncestors2,
   HasMediaSourceAndLibraryId,
@@ -68,12 +71,13 @@ import {
   SeasonWithShow,
   Show,
 } from '../types/Media.ts';
-import { Path } from '../types/path.ts';
+import type { Path } from '../types/path.ts';
 import { Result } from '../types/result.ts';
-import { Maybe, Nilable, Nullable } from '../types/util.ts';
+import type { Maybe, Nilable, Nullable } from '../types/util.ts';
+import type {
+  ChildProcessWrapper} from '../util/ChildProcessHelper.ts';
 import {
-  ChildProcessHelper,
-  ChildProcessWrapper,
+  ChildProcessHelper
 } from '../util/ChildProcessHelper.ts';
 import {
   getBooleanEnvVar,
@@ -84,10 +88,10 @@ import {
 import { fileExists } from '../util/fsUtil.ts';
 import { isNonEmptyString, isWindows, wait } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { getAvailablePort } from '../util/net.ts';
 import { FileSystemService } from './FileSystemService.ts';
-import { ISearchService } from './ISearchService.ts';
+import type { ISearchService } from './ISearchService.ts';
 import { SearchParser } from './search/SearchParser.ts';
 
 type FlattenArrayTypes<T> = {

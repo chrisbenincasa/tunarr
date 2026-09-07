@@ -1,8 +1,8 @@
 import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
-import { DB } from '../../db/schema/db.ts';
+import type { Kysely } from 'kysely';
+import type { DB } from '../../db/schema/db.ts';
 import { KEYS } from '../../types/inject.ts';
 import {
   type HealthCheck,

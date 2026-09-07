@@ -1,5 +1,5 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import { BaseSlot } from '@tunarr/types/api';
+import type { BaseSlot } from '@tunarr/types/api';
 import { inject, injectable } from 'inversify';
 import {
   flatten,
@@ -12,25 +12,25 @@ import {
 } from 'lodash-es';
 import { CustomShowDB } from '../../db/CustomShowDB.ts';
 import { FillerDB } from '../../db/FillerListDB.ts';
-import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
-import { ProgramDB } from '../../db/ProgramDB.ts';
-import { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
+import type { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import type { ProgramDB } from '../../db/ProgramDB.ts';
+import type { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
 import { SmartCollectionsDB } from '../../db/SmartCollectionsDB.ts';
 import { KEYS } from '../../types/inject.ts';
 import { zipWithIndex } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import {
   isProgramGroupingDocument,
   isTerminalProgramDocument,
 } from '../../util/search.ts';
 import { filterValues, flipMap } from '../../util/seq.ts';
-import { SlotScheduleServiceRequest } from './RandomSlotSchedulerService.ts';
-import {
+import type { SlotScheduleServiceRequest } from './RandomSlotSchedulerService.ts';
+import type {
   CustomShowContext,
   SlotSchedulerProgram,
 } from './slotSchedulerUtil.ts';
-import { TimeSlotScheduleServiceRequest } from './TimeSlotSchedulerService.ts';
+import type { TimeSlotScheduleServiceRequest } from './TimeSlotSchedulerService.ts';
 
 @injectable()
 export class SlotSchedulerHelper {

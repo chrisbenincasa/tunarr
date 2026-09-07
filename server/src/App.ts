@@ -1,10 +1,10 @@
 import { inject, injectable } from 'inversify';
-import { GlobalOptions } from './globals.ts';
+import type { GlobalOptions } from './globals.ts';
 import { Server } from './Server.ts';
 import { StartupService } from './services/StartupService.ts';
 import { KEYS } from './types/inject.ts';
 import { InjectLogger } from './util/inject.ts';
-import { Logger } from './util/logging/LoggerFactory.ts';
+import type { Logger } from './util/logging/LoggerFactory.ts';
 import { getTunarrVersion } from './util/version.ts';
 
 @injectable()
