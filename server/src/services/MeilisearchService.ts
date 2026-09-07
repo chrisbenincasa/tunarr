@@ -136,6 +136,7 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'originalReleaseDate',
     'originalReleaseYear',
     'addedAt',
+    'seasonIndex',
     'externalIdsMerged',
     'grandparent.id',
     'grandparent.type',
@@ -275,6 +276,7 @@ type BaseProgramSearchDocument = {
   originalReleaseDate: Nullable<number>;
   originalReleaseYear: Nullable<number>;
   index?: number;
+  seasonIndex?: number;
   genres: StringName[];
   actors: Actor[];
   writer: Writer[];
@@ -884,6 +886,7 @@ export class MeilisearchService implements ISearchService {
       writer: [],
       externalIds,
       index: season.index,
+      seasonIndex: season.index,
       externalIdsMerged: season.identifiers.map(
         (eid) =>
           `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
@@ -1780,6 +1783,8 @@ export class MeilisearchService implements ISearchService {
           : program.type === 'track'
             ? program.trackNumber
             : undefined,
+      seasonIndex:
+        program.type === 'episode' ? program.season?.index : undefined,
       rating,
       genres: program.genres ?? [],
       actors: program.actors ?? [],
@@ -1911,6 +1916,8 @@ export class MeilisearchService implements ISearchService {
           : program.type === 'track'
             ? program.trackNumber
             : undefined,
+      seasonIndex:
+        program.type === 'episode' ? program.season?.index : undefined,
       rating,
       genres: program.genres ?? [],
       actors: program.actors ?? [],

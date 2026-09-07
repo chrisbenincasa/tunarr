@@ -98,6 +98,7 @@ const NumericFields = [
   'audio_channels',
   'release_year',
   'year',
+  'season',
 ] as const;
 
 const NumericField = createToken({
@@ -412,6 +413,7 @@ export const virtualFieldToIndexField: Record<string, string> = {
   audio_channels: 'audioChannels',
   media_source_id: 'mediaSourceId',
   library_id: 'libraryId',
+  season: 'seasonIndex',
 };
 
 export const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);

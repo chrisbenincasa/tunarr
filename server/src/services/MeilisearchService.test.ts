@@ -368,6 +368,25 @@ describe('MeilisearchService.buildFilterExpression', () => {
       );
       expect(result).toBe('duration 1800 TO 7200');
     });
+
+    test('numeric season (seasonIndex)', () => {
+      const filter: SearchFilter = {
+        type: 'value',
+        fieldSpec: {
+          key: 'seasonIndex',
+          name: 'season',
+          type: 'numeric',
+          op: '>=',
+          value: 1,
+        },
+      };
+
+      const result = MeilisearchService.buildFilterExpression(
+        mockIndex,
+        filter,
+      );
+      expect(result).toBe('seasonIndex >= 1');
+    });
   });
 
   describe('date field filters', () => {
