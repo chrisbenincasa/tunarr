@@ -30,6 +30,7 @@ import { Nilable } from '../../types/util.ts';
 import { isNonEmptyString } from '../../util/index.ts';
 import { NewArtwork } from '../schema/Artwork.ts';
 import { CreditType, NewCredit } from '../schema/Credit.ts';
+import type { MediaSourceType } from '../schema/base.ts';
 import { MediaSourceOrm } from '../schema/MediaSource.ts';
 import { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
 import { ProgramType } from '../schema/Program.ts';
@@ -129,7 +130,7 @@ export class ProgramDaoMinter {
       program: newMovie,
       externalIds: this.mintExternalIdsNew(programId, movie, mediaSource, now),
       versions: this.mintVersions(programId, movie, localFolderId, now),
-      subtitles: this.mintSubtitles(programId, movie),
+      subtitles: this.mintSubtitles(programId, movie, mediaSource.type),
       artwork: movie.artwork.map((art) =>
         this.mintArtwork(art, programId, now),
       ),
@@ -291,6 +292,7 @@ export class ProgramDaoMinter {
   mintSubtitles(
     programId: string,
     item: TerminalProgram,
+    sourceType: MediaSourceType,
   ): NewProgramSubtitles[] {
     const subtitleStreams =
       item.mediaItem?.streams.filter(
@@ -301,20 +303,26 @@ export class ProgramDaoMinter {
 
     const now = dayjs().toDate();
     const mappedStreams = subtitleStreams.map((subtitle) => {
+      const isExternal = subtitle.streamType === 'external_subtitles';
+      // A local library is scanned off storage Tunarr already has open, so the
+      // reported filename is directly usable. Anything a remote source reports
+      // is in that source's own namespace and has to be resolved first.
+      const isLocalFile = isExternal && sourceType === 'local';
+
       return {
         uuid: v4(),
         programId,
         createdAt: now,
         updatedAt: now, // Do we need to use mtime?
         language: subtitle.languageCodeISO6392 ?? 'unknown',
-        subtitleType:
-          subtitle.streamType === 'subtitles' ? 'embedded' : 'sidecar',
+        subtitleType: isExternal ? 'sidecar' : 'embedded',
         default: subtitle.default ?? false,
         forced: subtitle.forced ?? false,
-        path: subtitle.fileName,
+        path: isLocalFile ? subtitle.fileName : null,
+        sourcePath: isExternal && !isLocalFile ? subtitle.fileName : null,
+        sourceKey: isExternal ? subtitle.externalKey : null,
         sdh: subtitle.sdh ?? false,
-        streamIndex:
-          subtitle.streamType === 'external_subtitles' ? null : subtitle.index,
+        streamIndex: isExternal ? null : subtitle.index,
         codec: subtitle.codec,
       } satisfies NewProgramSubtitles;
     });
@@ -329,6 +337,8 @@ export class ProgramDaoMinter {
         default: subtitle.default ?? false,
         forced: subtitle.forced ?? false,
         path: subtitle.path,
+        sourcePath: null,
+        sourceKey: null,
         sdh: subtitle.sdh ?? false,
         streamIndex: subtitle.streamIndex,
         uuid: v4(),
@@ -396,7 +406,7 @@ export class ProgramDaoMinter {
           this.mintCredit(director, 'director', programId, now),
         ) ?? []),
       ]),
-      subtitles: this.mintSubtitles(programId, episode),
+      subtitles: this.mintSubtitles(programId, episode, mediaSource.type),
       genres: seq.collect(episode.genres, (genre) =>
         CommonDaoMinter.mintGenre(genre.name),
       ),
@@ -508,7 +518,7 @@ export class ProgramDaoMinter {
           this.mintCredit(director, 'director', programId, now),
         ) ?? []),
       ]),
-      subtitles: this.mintSubtitles(programId, video),
+      subtitles: this.mintSubtitles(programId, video, mediaSource.type),
       genres: seq.collect(video.genres, (genre) =>
         CommonDaoMinter.mintGenre(genre.name),
       ),
@@ -565,7 +575,7 @@ export class ProgramDaoMinter {
           this.mintCredit(director, 'director', programId, now),
         ) ?? []),
       ]),
-      subtitles: this.mintSubtitles(programId, video),
+      subtitles: this.mintSubtitles(programId, video, mediaSource.type),
       genres: seq.collect(video.genres, (genre) =>
         CommonDaoMinter.mintGenre(genre.name),
       ),

@@ -2194,7 +2194,10 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             title: stream.displayTitle,
             sdh,
             languageCodeISO6392: stream.languageCode,
-            fileName: stream.key,
+            // A Plex stream key is a route to fetch the subtitle over HTTP; the
+            // file attribute is where it actually sits on the Plex server.
+            externalKey: stream.key,
+            fileName: stream.file,
             forced: stream.forced ?? false,
           } satisfies MediaStream;
           return details;

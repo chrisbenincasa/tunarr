@@ -12,7 +12,23 @@ export const ProgramSubtitles = sqliteTable('program_subtitles', {
   forced: integer({ mode: 'boolean' }).notNull().default(false),
   sdh: integer({ mode: 'boolean' }).notNull().default(false),
   language: text().notNull(),
+  /**
+   * A path Tunarr can open directly: either a sidecar discovered on a local
+   * library, or the cached copy downloaded from a media source.
+   */
   path: text(),
+  /**
+   * Where the media source says the subtitle file lives, in the media source's
+   * own filesystem namespace. Only usable after applying the source's path
+   * replacements, and only when Tunarr can see the same storage.
+   */
+  sourcePath: text(),
+  /**
+   * The source-relative route that serves the subtitle file over HTTP (Plex:
+   * the stream key, Jellyfin/Emby: the subtitle delivery URL). Always usable,
+   * at the cost of a network round trip.
+   */
+  sourceKey: text(),
   programId: text()
     .notNull()
     .references(() => Program.uuid, { onDelete: 'cascade' }),

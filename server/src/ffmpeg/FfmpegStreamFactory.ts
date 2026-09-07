@@ -546,11 +546,10 @@ export class FfmpegStreamFactory {
           ? SubtitleMethods.Convert
           : SubtitleMethods.Burn;
 
+        // External subtitles are always resolved to a local file before they
+        // get here -- downloaded during scanning, or read from storage shared
+        // with the media source.
         const source = match(subtitleStream.path)
-          .with(
-            P.string.startsWith('http'),
-            (path) => new HttpStreamSource(path),
-          )
           .with(P.string, (path) => new FileStreamSource(path))
           .otherwise(() => streamSource);
 
@@ -647,10 +646,6 @@ export class FfmpegStreamFactory {
         // WebVTT and burn-in is not possible without re-encoding.
         if (!isImageBasedSubtitle(pickedSubtitleStream.codec)) {
           const source = match(pickedSubtitleStream.path)
-            .with(
-              P.string.startsWith('http'),
-              (path) => new HttpStreamSource(path),
-            )
             .with(P.string, (path) => new FileStreamSource(path))
             .otherwise(() => streamSource);
 

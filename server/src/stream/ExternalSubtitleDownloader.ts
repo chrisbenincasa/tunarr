@@ -31,7 +31,7 @@ type ExternalItem = {
 
 @injectable()
 export class ExternalSubtitleDownloader {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(FileSystemService) private fileSystemService: FileSystemService,
@@ -47,7 +47,7 @@ export class ExternalSubtitleDownloader {
    */
   async downloadSubtitlesIfNecessary(
     item: ExternalItem,
-    details: { streamIndex: Maybe<number>; codec: string },
+    details: { streamIndex: Maybe<number>; codec: string; key?: Maybe<string> },
     getSubtitlesCb: GetSubtitlesCallback,
   ) {
     const outPath = getSubtitleCacheFilePath(
@@ -60,6 +60,7 @@ export class ExternalSubtitleDownloader {
       {
         codec: details.codec,
         streamIndex: details.streamIndex,
+        key: details.key,
       },
     );
     const ext = subtitleCodecToExt(details.codec);

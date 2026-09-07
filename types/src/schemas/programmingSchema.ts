@@ -190,6 +190,11 @@ export const MediaStream = z.object({
 
   // Subtitles
   sdh: z.boolean().nullish(),
+  /**
+   * For external subtitles: the source-relative route that serves the subtitle
+   * file (Plex stream key, Jellyfin/Emby subtitle delivery URL). Distinct from
+   * `fileName`, which is where the file lives on the source's own filesystem.
+   */
   externalKey: z.string().nullish(),
 
   // Audio or Subtitles

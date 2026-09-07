@@ -194,11 +194,14 @@ export abstract class MediaSourceOtherVideoScanner<
       fullMetadata,
     );
 
-    await this.downloadExternalSubtitleStreams(minted, (req) =>
-      this.getSubtitles(context, {
-        ...req,
-        externalMediaItemId: fullMetadata.mediaItem?.externalKey ?? undefined,
-      }),
+    await this.downloadExternalSubtitleStreams(
+      minted,
+      context.mediaSource.replacePaths,
+      (req) =>
+        this.getSubtitles(context, {
+          ...req,
+          externalMediaItemId: fullMetadata.mediaItem?.externalKey ?? undefined,
+        }),
     );
 
     const upsertResult = await Result.attemptAsync(() =>

@@ -582,12 +582,15 @@ export abstract class MediaSourceTvShowLibraryScanner<
           episodeWithJoins,
         );
 
-        await this.downloadExternalSubtitleStreams(dao, (req) =>
-          this.getSubtitles(scanContext, {
-            ...req,
-            externalMediaItemId:
-              episodeWithJoins.mediaItem?.externalKey ?? undefined,
-          }),
+        await this.downloadExternalSubtitleStreams(
+          dao,
+          scanContext.mediaSource.replacePaths,
+          (req) =>
+            this.getSubtitles(scanContext, {
+              ...req,
+              externalMediaItemId:
+                episodeWithJoins.mediaItem?.externalKey ?? undefined,
+            }),
         );
 
         dao.program.tvShowUuid = show.uuid;
