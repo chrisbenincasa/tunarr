@@ -12,12 +12,14 @@ import type {
 import { Trans } from '@lingui/react/macro';
 import AddIcon from '@mui/icons-material/Add';
 import { Button } from '@mui/material';
-import dayjs from 'dayjs';
-import { groupBy, isEmpty, maxBy, sortBy } from 'lodash-es';
+import { groupBy, isEmpty, sortBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import type { Dictionary } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { OneDayMillis } from '../../helpers/constants.ts';
+import {
+  nextSlotStartTime,
+  slotsForDayColumn,
+} from '../../helpers/slotSchedulerUtil.ts';
 
 export const AddTimeSlotButton = ({
   onAdd,
@@ -30,16 +32,10 @@ export const AddTimeSlotButton = ({
   } = useTimeSlotFormContext();
   const currentPeriod = watch('period');
 
-  const relevantSlots = useMemo(() => {
-    return slots.filter((slot) => {
-      if (currentPeriod !== 'week') {
-        return true;
-      }
-      const start = OneDayMillis * dayOffset;
-      const end = start + OneDayMillis;
-      return slot.startTime >= start && slot.startTime < end;
-    });
-  }, [currentPeriod, dayOffset, slots]);
+  const relevantSlots = useMemo(
+    () => slotsForDayColumn(slots, currentPeriod, dayOffset),
+    [currentPeriod, dayOffset, slots],
+  );
 
   const optionsByType = useMemo(() => {
     return groupBy(programOptions, (opt) => opt.type) as Dictionary<
@@ -49,15 +45,14 @@ export const AddTimeSlotButton = ({
   }, [programOptions]);
 
   const addSlot = useCallback(() => {
-    const maxSlot = maxBy(relevantSlots, (p) => p.startTime);
-    const newStartTime = maxSlot
-      ? dayjs.duration(maxSlot.startTime).add(1, 'hour')
-      : currentPeriod === 'week'
-        ? dayjs.duration(OneDayMillis * dayOffset)
-        : dayjs.duration(0);
+    const newStartTime = nextSlotStartTime(
+      relevantSlots.map((slot) => slot.startTime),
+      currentPeriod,
+      dayOffset,
+    );
 
     const baseSlot = {
-      startTime: +newStartTime,
+      startTime: newStartTime,
       direction: 'asc' as const,
       order: 'next' as const,
     } as const;
