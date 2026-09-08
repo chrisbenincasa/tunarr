@@ -224,7 +224,10 @@ export class MediaSourceDB {
           tx.delete(MediaSourceLibrary)
             .where(
               and(
-                eq(MediaSourceLibrary, tag<MediaSourceId>(updateReq.id)),
+                eq(
+                  MediaSourceLibrary.mediaSourceId,
+                  tag<MediaSourceId>(updateReq.id),
+                ),
                 inArray(MediaSourceLibrary.externalKey, deletePaths),
               ),
             )
