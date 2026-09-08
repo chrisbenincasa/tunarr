@@ -877,6 +877,108 @@ describe('TimeSlotService', () => {
         }
       });
 
+      test('per-slot pad override does not starve the following slot', async () => {
+        // Regression: a slot with a pad override only applied that override to
+        // the first program in the slot. Subsequent programs were padded with
+        // the schedule-level padMs, overrunning the slot and pushing the next
+        // slot past maxLateness, so it was never scheduled.
+        const mkEpisodes = (show: string, durationMs: number) =>
+          Array.from({ length: 10 }, (_, i) => ({
+            ...createFakeProgramOrm({
+              uuid: `${show}-ep${i + 1}`,
+              type: 'episode' as const,
+              duration: durationMs,
+              episode: i + 1,
+              tvShowUuid: show,
+              show: { uuid: show },
+            }),
+            parentFillerLists: [],
+            parentCustomShows: [],
+            parentSmartCollections: [],
+          }));
+
+        const programs: SlotSchedulerProgram[] = [
+          ...mkEpisodes('shortShow', 7 * 60 * 1000),
+          ...mkEpisodes('longShow', 25 * 60 * 1000),
+        ];
+
+        const schedule: TimeSlotSchedule = {
+          type: 'time',
+          flexPreference: 'distribute',
+          maxDays: 1,
+          padMs: 30 * 60 * 1000,
+          latenessMs: 5 * 60 * 1000,
+          period: 'day',
+          timeZoneOffset: 0,
+          slots: [
+            {
+              id: randomUUID(),
+              startTime: 6 * 60 * 60 * 1000,
+              type: 'show',
+              showId: 'shortShow',
+              order: 'next',
+              direction: 'asc',
+              seasonFilter: [],
+              seasonExcludeFilter: [],
+              padMs: 5 * 60 * 1000,
+            },
+            {
+              id: randomUUID(),
+              startTime: 6.5 * 60 * 60 * 1000,
+              type: 'show',
+              showId: 'longShow',
+              order: 'next',
+              direction: 'asc',
+              seasonFilter: [],
+              seasonExcludeFilter: [],
+            },
+          ],
+        };
+
+        const result = await scheduleTimeSlots(schedule, programs);
+
+        const contentStarts: { id: string; offset: number }[] = [];
+        let t = result.startTime;
+        for (const item of result.lineup) {
+          if (item.type === 'content') {
+            contentStarts.push({ id: item.id, offset: t });
+          }
+          t += item.duration;
+        }
+
+        const shortEntries = contentStarts.filter((c) =>
+          c.id.startsWith('shortShow'),
+        );
+        const longEntries = contentStarts.filter((c) =>
+          c.id.startsWith('longShow'),
+        );
+
+        // The second slot must actually be scheduled.
+        expect(shortEntries.length).toBeGreaterThan(0);
+        expect(longEntries.length).toBeGreaterThan(0);
+
+        // Every program in the overridden slot starts on a 5m mark, and the
+        // slot does not run past its 30m boundary.
+        const slotStart = dayjs(result.startTime)
+          .startOf('day')
+          .add(6, 'hour')
+          .valueOf();
+        for (const { offset } of shortEntries) {
+          expect(offset % (5 * 60 * 1000)).toBe(0);
+        }
+        expect(
+          shortEntries.every(({ offset }) => {
+            const intoDay = offset - slotStart;
+            return intoDay % (24 * 60 * 60 * 1000) < 30 * 60 * 1000;
+          }),
+        ).toBe(true);
+
+        // The un-overridden slot keeps the schedule-level 30m grid.
+        for (const { offset } of longEntries) {
+          expect(offset % (30 * 60 * 1000)).toBe(0);
+        }
+      });
+
       test('handles SLACK constant correctly', async () => {
         // SLACK = 300ms according to constants
         const programs: SlotSchedulerProgram[] = [
