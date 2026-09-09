@@ -417,8 +417,6 @@ export class RandomSlotScheduler {
       );
     }
 
-    const { padStyle, padMs } = this.schedule;
-
     const slotDuration = currSlot.durationSpec.durationMs;
 
     let program = context.getNextProgramForSlot(currSlot);
@@ -441,10 +439,7 @@ export class RandomSlotScheduler {
       return;
     }
 
-    const paddedProgram = createPaddedProgram(
-      program,
-      padStyle === 'slot' ? 1 : padMs,
-    );
+    const paddedProgram = this.createPaddedProgram(program);
 
     maybeAddPrePostFiller(
       currSlot,
