@@ -7,7 +7,6 @@ import archiver from 'archiver';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { compact, isEmpty, isNull, map, sortBy, take } from 'lodash-es';
-import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -27,6 +26,7 @@ import { run } from '../../util/index.ts';
 import { ISettingsDB } from '../interfaces/ISettingsDB.ts';
 import type { BackupResult } from './DatabaseBackup.ts';
 import { DatabaseBackup } from './DatabaseBackup.ts';
+import { pipeArchiveToFile } from './pipeArchiveToFile.ts';
 import { SqliteDatabaseBackup } from './SqliteDatabaseBackup.ts';
 
 export type ArchiveDatabaseBackupFactory = () => ArchiveDatabaseBackup;
@@ -97,17 +97,18 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
 
     this.logger.info(`Writing backup to ${backupFileName}`);
 
-    const outStream = createWriteStream(backupFileName);
     const archive = archiver(config.archiveFormat, { gzip: isGzip });
-    const finishedPromise = new Promise<void>((resolve, reject) => {
-      archive.on('end', () => resolve(void 0));
-      archive.on('error', reject);
-      archive.on('entry', (entry) => {
-        this.logger.trace('Added entry to backup: %s', entry.name);
-      });
+    archive.on('entry', (entry) => {
+      this.logger.trace('Added entry to backup: %s', entry.name);
     });
 
-    archive.pipe(outStream);
+    const written = pipeArchiveToFile(archive, backupFileName, (warning) => {
+      this.logger.warn(
+        warning,
+        'Backup %s is missing an entry that could not be added',
+        backupFileName,
+      );
+    });
 
     const sqlBackup = new SqliteDatabaseBackup();
     const sqlBackupFilePromise = sqlBackup.backup(
@@ -146,7 +147,14 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
         SearchSnapshotsFolderName,
       )
       .glob('*.xml', { cwd: getDatabasePath('') });
-    await archive.finalize();
+    try {
+      await archive.finalize();
+      await written;
+    } catch (e) {
+      this.logger.error(e, 'Error creating backup at %s', backupFileName);
+      await fs.rm(tempDir, { recursive: true, force: true });
+      return { type: 'error' };
+    }
 
     this.logger.trace('Finalized archive stream %s', backupFileName);
 
@@ -154,14 +162,11 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
 
     this.logger.trace('Deleted temp backup directory');
 
+    // Only prune once the new backup is confirmed on disk. Pruning first means
+    // a failed backup takes the known-good ones with it.
     await this.deleteOldBackupIfNecessary(config);
 
-    return finishedPromise
-      .then(() => ({ type: 'success' as const, data: backupFileName }))
-      .catch((e) => {
-        this.logger.error(e, 'Error creating backup');
-        return { type: 'error' };
-      });
+    return { type: 'success' as const, data: backupFileName };
   }
 
   private async deleteOldBackupIfNecessary(config: FileBackupOutput) {
