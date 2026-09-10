@@ -39,6 +39,23 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
     }
   }
 
+  /**
+   * Fold an array of Plex tags (e.g. `Label`) into the content hash. Labels are
+   * editable per-item in Plex without touching title/dates/media, so they must
+   * participate in the hash or a label-only change would not trigger a
+   * re-canonicalization (#2021).
+   */
+  private hashPlexTags(
+    hash: crypto.Hash,
+    key: string,
+    tags?: readonly { tag: string }[],
+  ) {
+    for (const tag of tags ?? []) {
+      hash.update(key);
+      hash.update(tag.tag);
+    }
+  }
+
   private canonicalizePlexMovie(plexMovie: PlexMovie): string {
     const hash = crypto.createHash('sha1');
     hash.update(plexMovie.key);
@@ -59,6 +76,8 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
       }
     }
 
+    this.hashPlexTags(hash, 'label', plexMovie.Label);
+
     return hash.digest('base64');
   }
 
@@ -77,6 +96,8 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
       hash.update('collection');
       hash.update(collection.tag);
     }
+
+    this.hashPlexTags(hash, 'label', plexShow.Label);
 
     return hash.digest('base64');
   }
@@ -104,6 +125,8 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
     if (isNonEmptyString(plexSeason.thumb)) {
       hash.update(plexSeason.thumb);
     }
+
+    this.hashPlexTags(hash, 'label', plexSeason.Label);
 
     return hash.digest('base64');
   }
@@ -154,6 +177,8 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
       hash.update(role.tag);
     }
 
+    this.hashPlexTags(hash, 'label', plexEpisode.Label);
+
     return hash.digest('base64');
   }
 
@@ -185,6 +210,8 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
       (g) => hash.update(g.tag),
     );
 
+    this.hashPlexTags(hash, 'label', plexArtist.Label);
+
     return hash.digest('base64');
   }
 
@@ -207,6 +234,8 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
     plexAlbum.Genre?.toSorted((a, b) => a.tag.localeCompare(b.tag)).forEach(
       (g) => hash.update(g.tag),
     );
+
+    this.hashPlexTags(hash, 'label', plexAlbum.Label);
 
     return hash.digest('base64');
   }
@@ -246,6 +275,8 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
     seq.collect(compact(flatten([plexMusicTrack.Guid])), (keyVal) => {
       hash.update(keyVal.id);
     });
+
+    this.hashPlexTags(hash, 'label', plexMusicTrack.Label);
 
     return hash.digest('base64');
   }
