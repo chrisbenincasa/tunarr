@@ -19,6 +19,7 @@ import { injectable } from 'inversify';
 import { compact, find } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { LanguageService } from '@/services/LanguageService.js';
 import {
   HasMediaSourceInfo,
   MediaSourceMovie,
@@ -47,6 +48,21 @@ import {
   NewProgramWithRelations,
 } from '../schema/derivedTypes.js';
 import { CommonDaoMinter } from './CommonDaoMinter.ts';
+
+/**
+ * Normalize a stored language code to ISO 639-2/T, keeping the raw value when
+ * it can't be resolved (e.g. an unknown provider code, or the 'unknown'
+ * sentinel on subtitles). Without this, ingest paths that write a provider's
+ * code verbatim mix ISO 639-2 /B ("ger") and /T ("deu") in the database and the
+ * search index built from it — so a language filter matches half the library
+ * depending on which source a program came from (#2044). Plain 2-letter and
+ * already-/T codes pass through unchanged.
+ */
+export function normalizeLanguageCode(
+  code: string | undefined,
+): string | undefined {
+  return code ? (LanguageService.normalizeToAlpha3T(code) ?? code) : code;
+}
 
 /**
  * Generates Program DB entities for Plex media
@@ -182,7 +198,7 @@ export class ProgramDaoMinter {
           colorPrimaries: stream.colorPrimaries ?? null,
           default: stream.default ?? false,
           //TODO: forced: stream.forced
-          language: stream.languageCodeISO6392,
+          language: normalizeLanguageCode(stream.languageCodeISO6392),
           pixelFormat: stream.pixelFormat,
           title: stream.title,
         } satisfies NewProgramMediaStream;
@@ -306,7 +322,7 @@ export class ProgramDaoMinter {
         programId,
         createdAt: now,
         updatedAt: now, // Do we need to use mtime?
-        language: subtitle.languageCodeISO6392 ?? 'unknown',
+        language: normalizeLanguageCode(subtitle.languageCodeISO6392) ?? 'unknown',
         subtitleType:
           subtitle.streamType === 'subtitles' ? 'embedded' : 'sidecar',
         default: subtitle.default ?? false,
@@ -324,7 +340,7 @@ export class ProgramDaoMinter {
         codec: subtitle.codec,
         createdAt: now,
         updatedAt: now, // Do we need to use mtime?
-        language: subtitle.language,
+        language: normalizeLanguageCode(subtitle.language),
         subtitleType: subtitle.subtitleType,
         default: subtitle.default ?? false,
         forced: subtitle.forced ?? false,

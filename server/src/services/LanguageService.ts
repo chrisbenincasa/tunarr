@@ -24,7 +24,7 @@ export class LanguageService {
     }
 
     if (this.Known3BCodes.has(input)) {
-      const alpha2 = languages.alpha3TToAlpha2(input);
+      const alpha2 = languages.alpha3BToAlpha2(input);
       if (alpha2) {
         return languages.alpha2ToAlpha3T(alpha2);
       }
