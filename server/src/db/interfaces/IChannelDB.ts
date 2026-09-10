@@ -158,7 +158,9 @@ export interface IChannelDB {
     programIds: string[],
   ): Promise<void>;
 
-  removeProgramsFromAllLineups(programIds: string[]): Promise<void>;
+  removeProgramsFromAllLineups(
+    programIds: ReadonlySet<string> | string[],
+  ): Promise<number>;
 
   loadAllLineupConfigs(
     forceRead?: boolean,

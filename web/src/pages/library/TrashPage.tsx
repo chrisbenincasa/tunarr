@@ -1,6 +1,6 @@
 import PaddedPaper from '@/components/base/PaddedPaper.tsx';
 import Breadcrumbs from '@/components/Breadcrumbs.tsx';
-import { Trans, useLingui } from '@lingui/react/macro';
+import { Trans } from '@lingui/react/macro';
 import {
   Delete,
   Movie,
@@ -12,45 +12,22 @@ import {
 import {
   Box,
   Button,
+  LinearProgress,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ProgramType } from '@tunarr/types';
 import type { SearchFilter, SearchRequest } from '@tunarr/types/schemas';
-import { useSnackbar } from 'notistack';
 import { useMemo, useState } from 'react';
 import { LibraryProgramGrid } from '../../components/library/LibraryProgramGrid.tsx';
-import { deleteApiTrashMutation } from '../../generated/@tanstack/react-query.gen.ts';
-import { invalidateQueryPrefix } from '../../helpers/queryUtil.ts';
+import { useEmptyTrash } from '../../hooks/useEmptyTrash.ts';
 
 export const TrashPage = () => {
-  const { t } = useLingui();
   const [itemTypes, setItemTypes] = useState<ProgramType[]>([]);
-  const snackbar = useSnackbar();
-  const queryClient = useQueryClient();
-
-  const emptyTrashMut = useMutation({
-    ...deleteApiTrashMutation(),
-    onSuccess: async () => {
-      snackbar.enqueueSnackbar({
-        message: t`Successfully emptied trash.`,
-        variant: 'success',
-      });
-      await queryClient.invalidateQueries({
-        predicate: invalidateQueryPrefix(['programs', 'search']),
-      });
-    },
-    onError: (err) => {
-      console.error(err);
-      snackbar.enqueueSnackbar({
-        variant: 'error',
-        message: t`Encountered an error when emptying trash. Check console logs for details.`,
-      });
-    },
-  });
+  const { status, isDraining, emptyTrash, isStarting, cancel, isCancelling } =
+    useEmptyTrash();
 
   const request = useMemo<SearchRequest>(() => {
     const trashedFilter = {
@@ -135,9 +112,19 @@ export const TrashPage = () => {
               <MusicVideo sx={{ mr: 1 }} /> <Trans>Music Videos</Trans>
             </ToggleButton>
           </ToggleButtonGroup>
+          {isDraining && (
+            <Button
+              disabled={isCancelling}
+              onClick={cancel}
+              variant="outlined"
+              sx={{ mr: 1 }}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+          )}
           <Button
-            disabled={emptyTrashMut.isPending}
-            onClick={() => emptyTrashMut.mutate({})}
+            disabled={isStarting || isDraining}
+            onClick={emptyTrash}
             startIcon={<Delete />}
             variant="contained"
             color="error"
@@ -145,7 +132,24 @@ export const TrashPage = () => {
             <Trans>Empty Trash</Trans>
           </Button>
         </Stack>
-        <LibraryProgramGrid searchRequest={request} />;
+        {isDraining && status && (
+          <Box sx={{ mt: 2 }}>
+            <LinearProgress
+              variant="determinate"
+              value={
+                status.total > 0
+                  ? Math.min(100, (status.deleted / status.total) * 100)
+                  : 0
+              }
+            />
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              <Trans>
+                Emptying trash: {status.deleted} / {status.total}
+              </Trans>
+            </Typography>
+          </Box>
+        )}
+        <LibraryProgramGrid searchRequest={request} />
       </PaddedPaper>
     </Stack>
   );
