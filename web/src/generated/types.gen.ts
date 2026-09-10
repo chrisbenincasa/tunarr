@@ -2860,7 +2860,7 @@ export type PostApiTasksByIdRunData = {
         id: string;
     };
     query?: {
-        background?: boolean | string;
+        background?: boolean | 'true' | 'false' | number;
     };
     url: '/api/tasks/{id}/run';
 };
@@ -3006,6 +3006,7 @@ export type GetChannelsResponses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3211,6 +3212,7 @@ export type CreateChannelV2Responses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3370,6 +3372,7 @@ export type GetChannelsByNumberV2Responses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3575,6 +3578,7 @@ export type PutApiChannelsByIdResponses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3595,9 +3599,9 @@ export type GetApiChannelsByIdProgramsData = {
     path: {
         id: string;
     };
-    query?: {
-        limit?: number;
-        offset?: number;
+    query: {
+        limit: number;
+        offset: number;
         type?: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
     };
     url: '/api/channels/{id}/programs';
@@ -3629,9 +3633,9 @@ export type GetApiChannelsByIdShowsData = {
     path: {
         id: string;
     };
-    query?: {
-        limit?: number;
-        offset?: number;
+    query: {
+        limit: number;
+        offset: number;
     };
     url: '/api/channels/{id}/shows';
 };
@@ -3655,9 +3659,9 @@ export type GetApiChannelsByIdArtistsData = {
     path: {
         id: string;
     };
-    query?: {
-        limit?: number;
-        offset?: number;
+    query: {
+        limit: number;
+        offset: number;
     };
     url: '/api/channels/{id}/artists';
 };
@@ -5444,7 +5448,7 @@ export type GetChannelFallbacksData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/{id}/fallbacks';
 };
@@ -5482,7 +5486,7 @@ export type GetApiChannelsAllLineupsData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/all/lineups';
 };
@@ -5583,7 +5587,7 @@ export type GetApiChannelsByIdLineupData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/{id}/lineup';
 };
@@ -6721,6 +6725,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                             ip: string;
                             userAgent?: string;
                             lastHeartbeat?: number;
+                            lastHeartbeatStr?: string;
                         }>;
                     }>;
                     subtitlesEnabled: boolean;
@@ -7110,6 +7115,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                             ip: string;
                             userAgent?: string;
                             lastHeartbeat?: number;
+                            lastHeartbeatStr?: string;
                         }>;
                     }>;
                     subtitlesEnabled: boolean;
@@ -8252,9 +8258,9 @@ export type GetApiProgramsByIdChildrenData = {
     path: {
         id: string;
     };
-    query?: {
-        limit?: number;
-        offset?: number;
+    query: {
+        limit: number;
+        offset: number;
         channelId?: string;
     };
     url: '/api/programs/{id}/children';
@@ -8303,7 +8309,7 @@ export type GetApiProgramsByIdExternalLinkData = {
         id: string;
     };
     query?: {
-        forward?: boolean;
+        forward?: boolean | 'true' | 'false' | number;
     };
     url: '/api/programs/{id}/external-link';
 };
@@ -10716,6 +10722,7 @@ export type GetApiSystemFeatureFlagsResponses = {
             proxyArtwork: boolean;
             tonemapEnabled: boolean;
             webvttSidecarEnabled: boolean;
+            xmltvCreditImagesEnabled: boolean;
             disableSearchSnapshotInBackup: boolean;
             disableVulkan: boolean;
             disableVaapiPad: boolean;
@@ -10737,6 +10744,7 @@ export type PutApiSystemFeatureFlagsData = {
         proxyArtwork?: boolean;
         tonemapEnabled?: boolean;
         webvttSidecarEnabled?: boolean;
+        xmltvCreditImagesEnabled?: boolean;
         disableSearchSnapshotInBackup?: boolean;
         disableVulkan?: boolean;
         disableVaapiPad?: boolean;
@@ -10755,6 +10763,7 @@ export type PutApiSystemFeatureFlagsResponses = {
             proxyArtwork: boolean;
             tonemapEnabled: boolean;
             webvttSidecarEnabled: boolean;
+            xmltvCreditImagesEnabled: boolean;
             disableSearchSnapshotInBackup: boolean;
             disableVulkan: boolean;
             disableVaapiPad: boolean;
@@ -11782,6 +11791,23 @@ export type JellyfinLoginData = {
     url: '/api/jellyfin/login';
 };
 
+export type JellyfinLoginErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        reason: 'blocked-address';
+    };
+    /**
+     * Default Response
+     */
+    502: {
+        reason: 'unreachable' | 'auth' | 'timeout' | 'bad_response' | 'unknown';
+    };
+};
+
+export type JellyfinLoginError = JellyfinLoginErrors[keyof JellyfinLoginErrors];
+
 export type JellyfinLoginResponses = {
     /**
      * Default Response
@@ -12444,6 +12470,23 @@ export type PostApiEmbyLoginData = {
     query?: never;
     url: '/api/emby/login';
 };
+
+export type PostApiEmbyLoginErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        reason: 'blocked-address';
+    };
+    /**
+     * Default Response
+     */
+    502: {
+        reason: 'unreachable' | 'auth' | 'timeout' | 'bad_response' | 'unknown';
+    };
+};
+
+export type PostApiEmbyLoginError = PostApiEmbyLoginErrors[keyof PostApiEmbyLoginErrors];
 
 export type PostApiEmbyLoginResponses = {
     /**
@@ -13132,6 +13175,7 @@ export type PostApiTroubleshootResponses = {
                     ip: string;
                     userAgent?: string;
                     lastHeartbeat?: number;
+                    lastHeartbeatStr?: string;
                 }>;
             }>;
             subtitlesEnabled: boolean;
@@ -13213,8 +13257,17 @@ export type DeleteApiTrashResponses = {
     /**
      * Default Response
      */
-    200: unknown;
+    202: {
+        state: 'idle' | 'running' | 'cancelling' | 'failed';
+        total: number;
+        deleted: number;
+        startedAt: number | null;
+        finishedAt: number | null;
+        error: string | null;
+    };
 };
+
+export type DeleteApiTrashResponse = DeleteApiTrashResponses[keyof DeleteApiTrashResponses];
 
 export type GetApiTrashData = {
     body?: never;
@@ -13273,6 +13326,52 @@ export type GetApiTrashResponses = {
 };
 
 export type GetApiTrashResponse = GetApiTrashResponses[keyof GetApiTrashResponses];
+
+export type GetApiTrashStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/trash/status';
+};
+
+export type GetApiTrashStatusResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        state: 'idle' | 'running' | 'cancelling' | 'failed';
+        total: number;
+        deleted: number;
+        startedAt: number | null;
+        finishedAt: number | null;
+        error: string | null;
+    };
+};
+
+export type GetApiTrashStatusResponse = GetApiTrashStatusResponses[keyof GetApiTrashStatusResponses];
+
+export type PostApiTrashCancelData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/trash/cancel';
+};
+
+export type PostApiTrashCancelResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        state: 'idle' | 'running' | 'cancelling' | 'failed';
+        total: number;
+        deleted: number;
+        startedAt: number | null;
+        finishedAt: number | null;
+        error: string | null;
+    };
+};
+
+export type PostApiTrashCancelResponse = PostApiTrashCancelResponses[keyof PostApiTrashCancelResponses];
 
 export type GetApiSmartCollectionsData = {
     body?: never;

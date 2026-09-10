@@ -81,6 +81,7 @@ nav:
           - Filler: configure/library/filler.md
           - Custom Shows: configure/library/custom-shows.md
           - Smart Collections: configure/library/smart-collections.md
+          - Trash: configure/library/trash.md
       - Scheduling:
           - configure/scheduling/index.md
           - Concepts: configure/scheduling/concepts.md

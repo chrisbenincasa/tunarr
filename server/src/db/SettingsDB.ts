@@ -77,6 +77,19 @@ export const MigrationStateSchema = z.object({
 
 export type MigrationState = z.infer<typeof MigrationStateSchema>;
 
+/**
+ * Persisted markers for long-running background work that must survive a
+ * restart. Deliberately a top-level section rather than part of
+ * {@link SystemSettingsSchema} so it is never exposed via the system settings
+ * API or UI.
+ */
+const PendingOperationsSchema = z.object({
+  /** Epoch millis at which an empty-trash drain was requested, if pending. */
+  emptyTrashRequestedAt: z.number().nullable().default(null),
+});
+
+export type PendingOperations = z.infer<typeof PendingOperationsSchema>;
+
 export const SettingsFileSchema = z.object({
   version: z.number(),
   migration: MigrationStateSchema,
@@ -89,6 +102,9 @@ export const SettingsFileSchema = z.object({
     }),
   }),
   featureFlags: FeatureFlagsSchema.default(() => FeatureFlagsSchema.parse({})),
+  pendingOperations: PendingOperationsSchema.default(() =>
+    PendingOperationsSchema.parse({}),
+  ),
 });
 
 export type SettingsFile = z.infer<typeof SettingsFileSchema>;
@@ -127,6 +143,7 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     server: DefaultServerSettings,
   },
   featureFlags: FeatureFlagsSchema.parse({}),
+  pendingOperations: PendingOperationsSchema.parse({}),
 });
 
 abstract class ITypedEventEmitter extends events.EventEmitter<SettingsChangeEvents> {}
@@ -193,6 +210,22 @@ export class SettingsDB extends ITypedEventEmitter implements ISettingsDB {
 
   featureFlags(): DeepReadonly<FeatureFlags> {
     return this.db.data.featureFlags;
+  }
+
+  get pendingOperations(): DeepReadonly<PendingOperations> {
+    return this.db.data.pendingOperations;
+  }
+
+  async markEmptyTrashRequested(at: number): Promise<void> {
+    await this.updateBaseSettings('pendingOperations', {
+      emptyTrashRequestedAt: at,
+    });
+  }
+
+  async clearEmptyTrashRequested(): Promise<void> {
+    await this.updateBaseSettings('pendingOperations', {
+      emptyTrashRequestedAt: null,
+    });
   }
 
   globalMediaSourceSettings(): DeepReadonly<GlobalMediaSourceSettings> {

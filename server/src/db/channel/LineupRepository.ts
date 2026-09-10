@@ -60,6 +60,7 @@ import {
   isNonEmptyString,
   mapReduceAsyncSeq,
   run,
+  wait,
 } from '../../util/index.ts';
 import { ProgramConverter } from '../converters/ProgramConverter.ts';
 import {
@@ -445,19 +446,33 @@ export class LineupRepository {
     await this.saveLineup(channelId, lineup);
   }
 
-  async removeProgramsFromAllLineups(programIds: string[]): Promise<void> {
-    if (isEmpty(programIds)) {
-      return;
+  /**
+   * Rewrites every reference to the given programs as flex, across all channel
+   * lineups. Returns the number of channels that actually changed.
+   *
+   * Accepts a Set so large callers (the empty-trash drain) can avoid rebuilding
+   * one per call.
+   */
+  async removeProgramsFromAllLineups(
+    programIds: ReadonlySet<string> | string[],
+  ): Promise<number> {
+    const programsToRemove =
+      programIds instanceof Set ? programIds : new Set(programIds);
+
+    if (programsToRemove.size === 0) {
+      return 0;
     }
 
     const lineups = await this.loadAllLineups();
 
-    const programsToRemove = new Set(programIds);
+    let changedChannels = 0;
     for (const [channelId, { lineup }] of Object.entries(lineups)) {
+      let changed = false;
       const newLineupItems: LineupItem[] = lineup.items.map((item) => {
         switch (item.type) {
           case 'content': {
             if (programsToRemove.has(item.id)) {
+              changed = true;
               return {
                 type: 'offline',
                 durationMs: item.durationMs,
@@ -471,20 +486,20 @@ export class LineupRepository {
         }
       });
 
-      await this.saveLineup(channelId, {
-        ...lineup,
-        items: newLineupItems,
-      });
+      if (changed) {
+        // saveLineup recalculates and persists channel.duration itself.
+        await this.saveLineup(channelId, {
+          ...lineup,
+          items: newLineupItems,
+        });
+        changedChannels++;
+      }
 
-      const duration = sum(newLineupItems.map((item) => item.durationMs));
-
-      await this.db
-        .updateTable('channel')
-        .set({ duration })
-        .where('uuid', '=', channelId)
-        .limit(1)
-        .executeTakeFirst();
+      // Give the event loop a turn so a large install stays responsive.
+      await wait(0);
     }
+
+    return changedChannels;
   }
 
   async loadAllLineups(): Promise<

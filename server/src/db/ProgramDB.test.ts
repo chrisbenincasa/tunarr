@@ -1,9 +1,10 @@
 import { faker } from '@faker-js/faker';
 import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { sql, SQL } from 'drizzle-orm';
+import { eq, sql, SQL } from 'drizzle-orm';
 import { SelectResultFields } from 'drizzle-orm/query-builders/select.types';
 import { SelectedFields } from 'drizzle-orm/sqlite-core';
+import { range } from 'lodash-es';
 import tmp from 'tmp-promise';
 import { copyPreMigratedDb } from '../testing/testDbFactory.ts';
 import { StrictOmit } from 'ts-essentials';
@@ -45,9 +46,10 @@ import {
   MediaSourceLibrary,
   MediaSourceLibraryOrm,
 } from './schema/MediaSourceLibrary.ts';
-import { NewProgramDao, ProgramType } from './schema/Program.ts';
+import { NewProgramDao, Program, ProgramType } from './schema/Program.ts';
 import {
   NewProgramGroupingOrm,
+  ProgramGrouping,
   ProgramGroupingType,
 } from './schema/ProgramGrouping.ts';
 import { NewMultiProgramGroupingId } from './schema/ProgramGroupingExternalId.ts';
@@ -88,6 +90,7 @@ type Fixture = {
   db: string;
   programDb: IProgramDB;
   drizzle: DrizzleDBAccess;
+  stateRepo: ProgramStateRepository;
 };
 
 const test = baseTest.extend<Fixture>({
@@ -137,6 +140,17 @@ const test = baseTest.extend<Fixture>({
   drizzle: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
     await use(dbAccess.drizzle!);
+  },
+  stateRepo: async ({ db: _ }, use) => {
+    const dbAccess = DBAccess.instance;
+    const drizzle = dbAccess.drizzle!;
+    // DBAccess is a process-wide singleton, so trashed rows can leak in from
+    // earlier tests in this file. Start from an empty trash.
+    await drizzle.delete(Program).where(eq(Program.state, 'missing'));
+    await drizzle
+      .delete(ProgramGrouping)
+      .where(eq(ProgramGrouping.state, 'missing'));
+    await use(new ProgramStateRepository(drizzle));
   },
 });
 
@@ -1633,6 +1647,320 @@ describe('ProgramDB', () => {
       expect(found).toBeDefined();
       expect(found?.uuid).toBe(result.entity.uuid);
       expect(found?.title).toBe('Test Show');
+    });
+  });
+
+  describe('Trash drain primitives', () => {
+    const emptyRelations = {
+      externalIds: [],
+      genres: [],
+      studios: [],
+      artwork: [],
+      credits: [],
+      versions: [],
+      subtitles: [],
+      tags: [],
+    } as const;
+
+    /**
+     * Runs the same phases the EmptyTrashService drives, without the service's
+     * scheduling/eventing, so the DB-level ordering guarantees can be asserted
+     * directly.
+     */
+    async function drain(stateRepo: ProgramStateRepository) {
+      for (;;) {
+        const batch = await stateRepo.nextMissingProgramIds(100);
+        if (batch.length === 0) {
+          break;
+        }
+        await stateRepo.deleteProgramsByIds(batch);
+      }
+
+      for (const types of [
+        ['season', 'album'],
+        ['show', 'artist'],
+      ] as const) {
+        for (;;) {
+          const ids = await stateRepo.nextDeletableMissingGroupingIds(
+            types,
+            100,
+          );
+          if (ids.length === 0) {
+            break;
+          }
+          await stateRepo.deleteGroupingsByIds(ids);
+        }
+      }
+    }
+
+    test('countMissingPrograms counts only trashed programs', async ({
+      programDb,
+      stateRepo,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      const programs = await programDb.upsertPrograms([
+        {
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          ...emptyRelations,
+        },
+        {
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          ...emptyRelations,
+        },
+        {
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          ...emptyRelations,
+        },
+      ]);
+
+      expect(await stateRepo.countMissingPrograms()).toBe(0);
+
+      await programDb.updateProgramsState(
+        [programs[0].uuid, programs[1].uuid],
+        'missing',
+      );
+
+      expect(await stateRepo.countMissingPrograms()).toBe(2);
+    });
+
+    test('nextMissingProgramIds returns only trashed ids and drains', async ({
+      programDb,
+      stateRepo,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      const programs = await programDb.upsertPrograms(
+        range(0, 5).map(() => ({
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          ...emptyRelations,
+        })),
+      );
+
+      const missingIds = programs.slice(0, 4).map((p) => p.uuid);
+      const survivorId = programs[4].uuid;
+      await programDb.updateProgramsState(missingIds, 'missing');
+
+      const first = await stateRepo.nextMissingProgramIds(3);
+      expect(first).toHaveLength(3);
+      expect(first).not.toContain(survivorId);
+
+      await stateRepo.deleteProgramsByIds(first);
+
+      const second = await stateRepo.nextMissingProgramIds(3);
+      expect(second).toHaveLength(1);
+      expect(second).not.toContain(survivorId);
+
+      await stateRepo.deleteProgramsByIds(second);
+      expect(await stateRepo.nextMissingProgramIds(3)).toEqual([]);
+    });
+
+    test('allMissingProgramIds pages through every trashed id', async ({
+      programDb,
+      stateRepo,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      const programs = await programDb.upsertPrograms(
+        range(0, 7).map(() => ({
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          ...emptyRelations,
+        })),
+      );
+
+      const missingIds = programs.map((p) => p.uuid);
+      await programDb.updateProgramsState(missingIds, 'missing');
+
+      const seen: string[] = [];
+      let pages = 0;
+      for await (const page of stateRepo.allMissingProgramIds(3)) {
+        pages++;
+        seen.push(...page);
+      }
+
+      expect(pages).toBe(3);
+      expect(seen.sort()).toEqual([...missingIds].sort());
+    });
+
+    test('deleteProgramsByIds cascades to child tables', async ({
+      programDb,
+      stateRepo,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      const program = createBaseProgram('movie', library.uuid, 'local', {
+        mediaSourceId: library.mediaSourceId,
+      });
+      const [inserted] = await programDb.upsertPrograms([
+        {
+          program,
+          ...emptyRelations,
+          subtitles: [createSubtitle(program.uuid)],
+        },
+      ]);
+
+      expect(
+        await drizzle
+          .select()
+          .from(ProgramSubtitles)
+          .where(eq(ProgramSubtitles.programId, inserted.uuid)),
+      ).toHaveLength(1);
+
+      await programDb.updateProgramsState([inserted.uuid], 'missing');
+      await stateRepo.deleteProgramsByIds([inserted.uuid]);
+
+      expect(
+        await drizzle
+          .select()
+          .from(ProgramSubtitles)
+          .where(eq(ProgramSubtitles.programId, inserted.uuid)),
+      ).toHaveLength(0);
+      expect(await programDb.getProgramById(inserted.uuid)).toBeUndefined();
+    });
+
+    test('a trashed show with a surviving program is left intact and the drain does not throw', async ({
+      programDb,
+      stateRepo,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      const show = createProgramGrouping('show', library.uuid, 'plex', {
+        mediaSourceId: library.mediaSourceId,
+      });
+      const showResult = await programDb.upsertProgramGrouping(show);
+
+      const season = createProgramGrouping('season', library.uuid, 'plex', {
+        mediaSourceId: library.mediaSourceId,
+        showUuid: showResult.entity.uuid,
+      });
+      const seasonResult = await programDb.upsertProgramGrouping(season);
+
+      const episodes = await programDb.upsertPrograms([
+        {
+          program: createBaseProgram('episode', library.uuid, 'plex', {
+            mediaSourceId: library.mediaSourceId,
+            tvShowUuid: showResult.entity.uuid,
+            seasonUuid: seasonResult.entity.uuid,
+          }),
+          ...emptyRelations,
+        },
+        {
+          program: createBaseProgram('episode', library.uuid, 'plex', {
+            mediaSourceId: library.mediaSourceId,
+            tvShowUuid: showResult.entity.uuid,
+            seasonUuid: seasonResult.entity.uuid,
+          }),
+          ...emptyRelations,
+        },
+      ]);
+
+      // Only one of the two episodes is trashed, but the show and season are.
+      await programDb.updateProgramsState([episodes[0].uuid], 'missing');
+      await programDb.updateGroupingsState(
+        [showResult.entity.uuid, seasonResult.entity.uuid],
+        'missing',
+      );
+
+      await expect(drain(stateRepo)).resolves.not.toThrow();
+
+      expect(await programDb.getProgramById(episodes[0].uuid)).toBeUndefined();
+      expect(await programDb.getProgramById(episodes[1].uuid)).toBeDefined();
+      expect(
+        await programDb.getProgramGrouping(showResult.entity.uuid),
+      ).toBeDefined();
+      expect(
+        await programDb.getProgramGrouping(seasonResult.entity.uuid),
+      ).toBeDefined();
+
+      // Once the last child is trashed, both groupings become deletable.
+      await programDb.updateProgramsState([episodes[1].uuid], 'missing');
+      await drain(stateRepo);
+
+      expect(await programDb.getProgramById(episodes[1].uuid)).toBeUndefined();
+      expect(
+        await programDb.getProgramGrouping(showResult.entity.uuid),
+      ).toBeUndefined();
+      expect(
+        await programDb.getProgramGrouping(seasonResult.entity.uuid),
+      ).toBeUndefined();
+    });
+
+    test('a show is not deletable while a trashed season still hangs off it', async ({
+      programDb,
+      stateRepo,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      const show = createProgramGrouping('show', library.uuid, 'plex', {
+        mediaSourceId: library.mediaSourceId,
+      });
+      const showResult = await programDb.upsertProgramGrouping(show);
+
+      const season = createProgramGrouping('season', library.uuid, 'plex', {
+        mediaSourceId: library.mediaSourceId,
+        showUuid: showResult.entity.uuid,
+      });
+      const seasonResult = await programDb.upsertProgramGrouping(season);
+
+      await programDb.updateGroupingsState(
+        [showResult.entity.uuid, seasonResult.entity.uuid],
+        'missing',
+      );
+
+      expect(
+        await stateRepo.nextDeletableMissingGroupingIds(['show', 'artist'], 10),
+      ).toEqual([]);
+
+      expect(
+        await stateRepo.nextDeletableMissingGroupingIds(
+          ['season', 'album'],
+          10,
+        ),
+      ).toEqual([seasonResult.entity.uuid]);
+    });
+
+    test('draining twice is a no-op the second time', async ({
+      programDb,
+      stateRepo,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      const programs = await programDb.upsertPrograms(
+        range(0, 3).map(() => ({
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          ...emptyRelations,
+        })),
+      );
+
+      await programDb.updateProgramsState(
+        programs.map((p) => p.uuid),
+        'missing',
+      );
+
+      await drain(stateRepo);
+      expect(await stateRepo.countMissingPrograms()).toBe(0);
+
+      await expect(drain(stateRepo)).resolves.not.toThrow();
+      expect(await stateRepo.countMissingPrograms()).toBe(0);
     });
   });
 
