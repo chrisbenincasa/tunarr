@@ -77,14 +77,14 @@ export class LocalSubtitlesService {
       opts.includes('hi') || opts.includes('cc') || opts.includes('sdh');
     const forced = opts.includes('forced');
 
-    const maybeLang3B = LanguageService.getAlpha3TCode(
+    const maybeLang3T = LanguageService.getAlpha3TCode(
       lang.split(/[-_]/)?.[0] ?? lang,
     );
 
-    if (isNonEmptyString(maybeLang3B)) {
+    if (isNonEmptyString(maybeLang3T)) {
       return {
         codec,
-        language: maybeLang3B,
+        language: maybeLang3T,
         subtitleType: 'sidecar',
         default: false,
         forced,

@@ -241,7 +241,7 @@ msgstr ""
 msgid "# Programs"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:314
+#: src/pages/settings/FfmpegSettingsPage.tsx:320
 msgid "<0>Configure the directory where Tunarr writes HLS segment files when transcoding. Tunarr will create the target directory (but not intermediate directories) if it doesn't exist.<1/>Changing this field will only affect new sessions. Existing sessions will continue writing to the previous setting, but will clean out segments when the segment ends.<2/>When unset, Tunarr will write segments to its current working directory.</0>"
 msgstr ""
 
@@ -487,7 +487,7 @@ msgid "Albums"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:181
-#: src/pages/settings/FfmpegSettingsPage.tsx:436
+#: src/pages/settings/FfmpegSettingsPage.tsx:447
 msgid "All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
 msgstr ""
 
@@ -587,7 +587,7 @@ msgstr ""
 msgid "Audio"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:338
+#: src/pages/settings/FfmpegSettingsPage.tsx:345
 msgid "Audio & Subtitle Options"
 msgstr ""
 
@@ -616,7 +616,7 @@ msgstr ""
 msgid "Audio Format"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:369
+#: src/pages/settings/FfmpegSettingsPage.tsx:378
 msgid "Audio Language Preferences"
 msgstr ""
 
@@ -898,7 +898,7 @@ msgstr ""
 msgid "Channels"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:299
+#: src/pages/settings/FfmpegSettingsPage.tsx:305
 msgid "Channels configured to use the HLS Direct stream mode will output in the selected container format."
 msgstr ""
 
@@ -979,7 +979,7 @@ msgstr ""
 msgid "Configure Cyclic Shuffle"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:372
+#: src/pages/settings/FfmpegSettingsPage.tsx:381
 msgid "Configure preferred audio languages globally."
 msgstr ""
 
@@ -987,7 +987,7 @@ msgstr ""
 msgid "Configure subtitle preferences. Preferences are evaluated in order of priority. The first matching subtitle stream on a program will be used."
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:426
+#: src/pages/settings/FfmpegSettingsPage.tsx:437
 msgid "Configure transcoding settings for Tunarr's streams. Each channel is assigned one transcode configuration."
 msgstr ""
 
@@ -1011,7 +1011,7 @@ msgstr ""
 msgid "Connect Sources"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:225
+#: src/pages/settings/FfmpegSettingsPage.tsx:228
 msgid "Console"
 msgstr ""
 
@@ -1258,7 +1258,7 @@ msgstr ""
 #. placeholder {0}: confirmDeleteTranscodeConfig?.name
 #. placeholder {0}: confirmDeleteTranscodeConfig?.name ?? ''
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:180
-#: src/pages/settings/FfmpegSettingsPage.tsx:435
+#: src/pages/settings/FfmpegSettingsPage.tsx:446
 msgid "Delete Transcoding Config \"{0}\"?"
 msgstr ""
 
@@ -1324,7 +1324,7 @@ msgid "Disable Watermarks"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx:219
-#: src/pages/settings/FfmpegSettingsPage.tsx:224
+#: src/pages/settings/FfmpegSettingsPage.tsx:225
 #: src/pages/system/StatusPage.tsx:334
 msgid "Disabled"
 msgstr ""
@@ -1521,11 +1521,11 @@ msgstr ""
 msgid "Enable dark Mode"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:350
+#: src/pages/settings/FfmpegSettingsPage.tsx:359
 msgid "Enable embedded subtitle extraction"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:230
+#: src/pages/settings/FfmpegSettingsPage.tsx:236
 msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
 msgstr ""
 
@@ -1566,7 +1566,7 @@ msgstr ""
 msgid "Enabled (loudnorm)"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:356
+#: src/pages/settings/FfmpegSettingsPage.tsx:365
 msgid "Enabling embedded subtitle extaction will periodically scan your upcoming programming for embedded text-based subtitle streams and extract them to a local cache. This is necessary in order to enable subtitle burning for text-based subtitles which are not external streams."
 msgstr ""
 
@@ -1789,8 +1789,8 @@ msgstr ""
 msgid "FFmpeg Log"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:241
-#: src/pages/settings/FfmpegSettingsPage.tsx:250
+#: src/pages/settings/FfmpegSettingsPage.tsx:247
+#: src/pages/settings/FfmpegSettingsPage.tsx:256
 msgid "FFMPEG Log Level"
 msgstr ""
 
@@ -1807,7 +1807,7 @@ msgstr ""
 msgid "FFmpeg Settings"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:312
+#: src/pages/settings/FfmpegSettingsPage.tsx:318
 msgid "FFmpeg Transcode Path"
 msgstr ""
 
@@ -1839,7 +1839,7 @@ msgstr ""
 msgid "Field"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:226
+#: src/pages/settings/FfmpegSettingsPage.tsx:231
 msgid "File"
 msgstr ""
 
@@ -2054,8 +2054,8 @@ msgstr ""
 msgid "Hide watermark during filler"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:280
-#: src/pages/settings/FfmpegSettingsPage.tsx:288
+#: src/pages/settings/FfmpegSettingsPage.tsx:286
+#: src/pages/settings/FfmpegSettingsPage.tsx:294
 msgid "HLS Direct Output Format"
 msgstr ""
 
@@ -2200,7 +2200,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx:39
 #: src/components/LanguageAutocomplete.tsx:130
-#: src/components/LanguagePreferencesList.tsx:42
+#: src/components/LanguagePreferencesList.tsx:46
 #: src/components/settings/general/WebSettings.tsx:57
 #: src/components/settings/general/WebSettings.tsx:61
 #: src/components/settings/general/WebSettings.tsx:66
@@ -2343,7 +2343,7 @@ msgstr ""
 msgid "Log Level"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:263
+#: src/pages/settings/FfmpegSettingsPage.tsx:269
 msgid "Log level to pass to ffmpeg. Read more about ffmpeg's log levels <0>here</0>"
 msgstr ""
 
@@ -2567,7 +2567,7 @@ msgstr ""
 msgid "Music Videos"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:382
+#: src/pages/settings/FfmpegSettingsPage.tsx:391
 msgid "Must define at least one language preference"
 msgstr ""
 
@@ -3233,7 +3233,7 @@ msgstr ""
 #: src/components/channel_config/ChannelEditActions.tsx:80
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx:268
 #: src/pages/settings/FeaturesSettingsPage.tsx:162
-#: src/pages/settings/FfmpegSettingsPage.tsx:407
+#: src/pages/settings/FfmpegSettingsPage.tsx:418
 #: src/pages/settings/HdhrSettingsPage.tsx:142
 #: src/pages/settings/XmlTvSettingsPage.tsx:212
 msgid "Reset Changes"
@@ -3347,7 +3347,7 @@ msgstr ""
 #: src/pages/channels/RandomSlotEditorPage.tsx:270
 #: src/pages/channels/TimeSlotEditorPage.tsx:544
 #: src/pages/settings/FeaturesSettingsPage.tsx:170
-#: src/pages/settings/FfmpegSettingsPage.tsx:417
+#: src/pages/settings/FfmpegSettingsPage.tsx:428
 #: src/pages/settings/HdhrSettingsPage.tsx:152
 #: src/pages/settings/ScannerSettingsPage.tsx:82
 #: src/pages/settings/XmlTvSettingsPage.tsx:222
@@ -3734,7 +3734,7 @@ msgstr ""
 msgid "Subtitle Streams"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:342
+#: src/pages/settings/FfmpegSettingsPage.tsx:350
 msgid "Subtitles"
 msgstr ""
 
@@ -3844,7 +3844,7 @@ msgstr ""
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 msgstr ""
 
-#: src/components/LanguagePreferencesList.tsx:46
+#: src/components/LanguagePreferencesList.tsx:50
 msgid "The selected languages will be considered in order they are selected."
 msgstr ""
 
@@ -4055,7 +4055,7 @@ msgstr ""
 msgid "Transcode Config <0> <1/></0>"
 msgstr ""
 
-#: src/pages/settings/FfmpegSettingsPage.tsx:423
+#: src/pages/settings/FfmpegSettingsPage.tsx:434
 msgid "Transcoding Configs"
 msgstr ""
 
