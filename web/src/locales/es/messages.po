@@ -809,6 +809,7 @@ msgstr ""
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
+#: src/pages/library/TrashPage.tsx
 msgid "Cancel"
 msgstr ""
 
@@ -1090,6 +1091,10 @@ msgstr ""
 #: src/components/ProgramStreamDetails.tsx
 #: src/components/RawProgramDetails.tsx
 msgid "Copy to Clipboard"
+msgstr ""
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Could not cancel emptying the trash."
 msgstr ""
 
 #: src/components/search/SearchFilterBuilder.tsx
@@ -1501,8 +1506,27 @@ msgstr ""
 msgid "Emby"
 msgstr ""
 
+#. placeholder {0}: ev.detail.deleted
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptied trash. Removed {0} item(s)."
+msgstr ""
+
 #: src/pages/library/TrashPage.tsx
 msgid "Empty Trash"
+msgstr ""
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptying the trash failed. Check the server logs for details."
+msgstr ""
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptying trash in the background. You can keep using Tunarr."
+msgstr ""
+
+#. placeholder {0}: status.deleted
+#. placeholder {1}: status.total
+#: src/pages/library/TrashPage.tsx
+msgid "Emptying trash: {0} / {1}"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
@@ -1570,7 +1594,7 @@ msgstr ""
 msgid "Enabling embedded subtitle extaction will periodically scan your upcoming programming for embedded text-based subtitle streams and extract them to a local cache. This is necessary in order to enable subtitle burning for text-based subtitles which are not external streams."
 msgstr ""
 
-#: src/pages/library/TrashPage.tsx
+#: src/hooks/useEmptyTrash.ts
 msgid "Encountered an error when emptying trash. Check console logs for details."
 msgstr ""
 
@@ -3776,8 +3800,8 @@ msgid "Successfully copied to clipboard!"
 msgstr ""
 
 #: src/pages/library/TrashPage.tsx
-msgid "Successfully emptied trash."
-msgstr ""
+#~ msgid "Successfully emptied trash."
+#~ msgstr ""
 
 #: src/pages/system/StatusPage.tsx
 msgid "Successfully ran system fixer {fixerId}"

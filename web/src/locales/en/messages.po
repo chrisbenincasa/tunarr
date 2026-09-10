@@ -809,6 +809,7 @@ msgstr "Calculating Slots..."
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
+#: src/pages/library/TrashPage.tsx
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -1091,6 +1092,10 @@ msgstr "Copy to clipboard"
 #: src/components/RawProgramDetails.tsx
 msgid "Copy to Clipboard"
 msgstr "Copy to Clipboard"
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Could not cancel emptying the trash."
+msgstr "Could not cancel emptying the trash."
 
 #: src/components/search/SearchFilterBuilder.tsx
 msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
@@ -1501,9 +1506,28 @@ msgstr "Editing Smart Collection \"{0}\""
 msgid "Emby"
 msgstr "Emby"
 
+#. placeholder {0}: ev.detail.deleted
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptied trash. Removed {0} item(s)."
+msgstr "Emptied trash. Removed {0} item(s)."
+
 #: src/pages/library/TrashPage.tsx
 msgid "Empty Trash"
 msgstr "Empty Trash"
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptying the trash failed. Check the server logs for details."
+msgstr "Emptying the trash failed. Check the server logs for details."
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptying trash in the background. You can keep using Tunarr."
+msgstr "Emptying trash in the background. You can keep using Tunarr."
+
+#. placeholder {0}: status.deleted
+#. placeholder {1}: status.total
+#: src/pages/library/TrashPage.tsx
+msgid "Emptying trash: {0} / {1}"
+msgstr "Emptying trash: {0} / {1}"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enable <0>EBU R 128</0> loudness normalization via the <1>loudnorm</1> FFmpeg filter. May increase CPU usage during streaming."
@@ -1570,7 +1594,7 @@ msgstr "Enabled (loudnorm)"
 msgid "Enabling embedded subtitle extaction will periodically scan your upcoming programming for embedded text-based subtitle streams and extract them to a local cache. This is necessary in order to enable subtitle burning for text-based subtitles which are not external streams."
 msgstr "Enabling embedded subtitle extaction will periodically scan your upcoming programming for embedded text-based subtitle streams and extract them to a local cache. This is necessary in order to enable subtitle burning for text-based subtitles which are not external streams."
 
-#: src/pages/library/TrashPage.tsx
+#: src/hooks/useEmptyTrash.ts
 msgid "Encountered an error when emptying trash. Check console logs for details."
 msgstr "Encountered an error when emptying trash. Check console logs for details."
 
@@ -3778,8 +3802,8 @@ msgid "Successfully copied to clipboard!"
 msgstr "Successfully copied to clipboard!"
 
 #: src/pages/library/TrashPage.tsx
-msgid "Successfully emptied trash."
-msgstr "Successfully emptied trash."
+#~ msgid "Successfully emptied trash."
+#~ msgstr "Successfully emptied trash."
 
 #: src/pages/system/StatusPage.tsx
 msgid "Successfully ran system fixer {fixerId}"

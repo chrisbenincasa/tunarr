@@ -22,6 +22,12 @@ The Library contains reusable collections of content that can be used across mul
 
     Dynamic collections that automatically include content matching specified criteria.
 
+-   **[Trash](trash.md)**
+
+    ---
+
+    Items that went missing since their last scan, held for review before they are permanently removed.
+
 </div>
 
 ## When to Use Each
@@ -31,3 +37,4 @@ The Library contains reusable collections of content that can be used across mul
 | **Filler** | Commercials, station IDs, bumpers, short clips to fill gaps |
 | **Custom Shows** | YouTube series, home videos, or any content you want to treat as episodic |
 | **Smart Collections** | Auto-updating playlists based on genre, year, rating, etc. |
+| **Trash** | Reviewing and permanently removing content that disappeared from your media |

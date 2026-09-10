@@ -1,5 +1,6 @@
 import type {
   MigrationState,
+  PendingOperations,
   Settings,
   SettingsFile,
 } from '@/db/SettingsDB.js';
@@ -21,6 +22,7 @@ import type { DeepReadonly } from 'ts-essentials';
 export interface ISettingsDB extends events.EventEmitter<SettingsChangeEvents> {
   migrationState: DeepReadonly<MigrationState>;
   backup: DeepReadonly<BackupSettings>;
+  pendingOperations: DeepReadonly<PendingOperations>;
 
   needsLegacyMigration(): boolean;
 
@@ -43,6 +45,10 @@ export interface ISettingsDB extends events.EventEmitter<SettingsChangeEvents> {
   systemSettings(): DeepReadonly<SystemSettings>;
 
   featureFlags(): DeepReadonly<FeatureFlags>;
+
+  markEmptyTrashRequested(at: number): Promise<void>;
+
+  clearEmptyTrashRequested(): Promise<void>;
 
   directUpdate(
     fn: (settings: SettingsFile) => SettingsFile | void,
