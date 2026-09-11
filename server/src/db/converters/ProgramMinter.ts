@@ -59,9 +59,9 @@ import { CommonDaoMinter } from './CommonDaoMinter.ts';
  * already-/T codes pass through unchanged.
  */
 export function normalizeLanguageCode(
-  code: string | undefined,
+  code: string | null | undefined,
 ): string | undefined {
-  return code ? (LanguageService.normalizeToAlpha3T(code) ?? code) : code;
+  return code ? (LanguageService.normalizeToAlpha3T(code) ?? code) : code ?? undefined;
 }
 
 /**
@@ -340,7 +340,7 @@ export class ProgramDaoMinter {
         codec: subtitle.codec,
         createdAt: now,
         updatedAt: now, // Do we need to use mtime?
-        language: normalizeLanguageCode(subtitle.language),
+        language: normalizeLanguageCode(subtitle.language) ?? 'unknown',
         subtitleType: subtitle.subtitleType,
         default: subtitle.default ?? false,
         forced: subtitle.forced ?? false,
