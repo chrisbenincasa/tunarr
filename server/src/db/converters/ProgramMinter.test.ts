@@ -49,4 +49,11 @@ describe('normalizeLanguageCode (#2044)', () => {
     expect(normalizeLanguageCode(undefined)).toBeUndefined();
     expect(normalizeLanguageCode('')).toBe('');
   });
+
+  it('coerces a null code to undefined', () => {
+    // Plex/Emby subtitle language fields are nullable; the function must not
+    // blow up and must return undefined so callers can fall back to their
+    // default (e.g. ?? 'unknown').
+    expect(normalizeLanguageCode(null)).toBeUndefined();
+  });
 });
