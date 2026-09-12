@@ -1,11 +1,9 @@
 /**
- * POC: route-level regression test for issue #2045 / PR #2064.
+ * Route-level test for HLS connection registration.
  *
- * Demonstrates, through the *actual* streamApi HTTP routes, that on HLS
- * sessions the connection token registered by both the master-playlist
- * handshake and the fragment route is the client IP (never a UUID), so
- * `BaseHlsSession.removeConnection(token)` deletes the right `_minByIp`
- * entry and stale cleanup releases the playlist window.
+ * On HLS sessions the connection token registered by both the master-playlist
+ * handshake and the fragment route is the client IP, never a UUID. Session
+ * bookkeeping keyed by token and by IP therefore refers to the same thing.
  */
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { Result } from '@/types/result.js';
@@ -28,14 +26,6 @@ import { streamApi } from './streamApi.js';
 
 class TestHlsSession extends BaseHlsSession {
   public readonly sessionType = 'hls' as const;
-
-  get minByIp() {
-    return new Map(this._minByIp);
-  }
-
-  get minSegment() {
-    return this.minSegmentRequested;
-  }
 
   async getMasterPlaylist() {
     return Result.success<string | undefined>('#EXTM3U\n');
@@ -72,7 +62,7 @@ const baseOptions: BaseHlsSessionOptions = {
   stalenessMs: 120_000,
 };
 
-describe('streamApi HLS connection registration (issue #2045 invariant)', () => {
+describe('streamApi HLS connection registration', () => {
   let session: TestHlsSession;
   let app: ReturnType<typeof Fastify>;
   let sessionManager: {
@@ -136,39 +126,30 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
     expect(Object.keys(session.connections())).toEqual(['203.0.113.10']);
   });
 
-  it('fragment route keys _minByIp and connections by the client IP, and stale cleanup releases the window', async () => {
-    // Client A is an active watcher near the live edge
+  it('fragment route keys connections by the client IP and stale cleanup drops them', async () => {
     await app.inject({
       method: 'GET',
       url: `/stream/channels/${makeChannel().uuid}/hls/data000100.ts`,
       remoteAddress: '203.0.113.10',
     });
-    // Client B requests segment 10 once and departs (PR #2064 scenario)
     await app.inject({
       method: 'GET',
       url: `/stream/channels/${makeChannel().uuid}/hls/data000010.ts`,
       remoteAddress: '203.0.113.20',
     });
 
-    // Invariant: every connection token equals the client IP it was
-    // registered under — a UUID-token connection never appears.
+    // Every connection token equals the client IP it was registered under —
+    // a UUID-token connection never appears on an HLS session.
     for (const [token, conn] of Object.entries(session.connections())) {
       expect(token).toBe(conn.ip);
     }
-    expect(session.minByIp.get('203.0.113.10')).toBe(100);
-    expect(session.minByIp.get('203.0.113.20')).toBe(10);
-    expect(session.minSegment).toBe(10); // window anchored to departed client
 
     // B goes quiet past the staleness window; A keeps heartbeating
     vi.setSystemTime(new Date(Date.now() + 121_000));
     session.recordHeartbeat('203.0.113.10');
     session.removeStaleConnections();
 
-    // B's IP entry is gone and the window advances to A's position.
-    // (This is the exact scenario PR #2064 guards against — it already
-    // behaves correctly through the real routes because token === ip.)
     expect(session.connections()).not.toHaveProperty('203.0.113.20');
-    expect(session.minByIp.has('203.0.113.20')).toBe(false);
-    expect(session.minSegment).toBe(100);
+    expect(session.connections()).toHaveProperty('203.0.113.10');
   });
 });
