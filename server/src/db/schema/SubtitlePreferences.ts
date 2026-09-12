@@ -10,7 +10,9 @@ export const SubtitleFilters = ['none', 'forced', 'default', 'any'] as const;
 
 const commonSubtitlePreferenceCols = {
   uuid: text().primaryKey(),
-  // iso6392 - 3-letter code
+  // ISO 639-2/T (Alpha-3 T) — the canonical set Tunarr stores for user-facing
+  // language codes; providers' /B codes are normalized on write via
+  // LanguageService.normalizeToAlpha3T (#2044).
   languageCode: text().notNull(),
   priority: integer().notNull(),
   allowImageBased: integer({ mode: 'boolean' }).notNull().default(true),
