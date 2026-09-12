@@ -25,6 +25,7 @@
         "noImplicitAny": false,
         "noImplicitThis": false,
         "strictNullChecks": true,
+        "skipLibCheck": true,
     },
     "include": [
         "./src/**/*.ts",

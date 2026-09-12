@@ -6,9 +6,24 @@ settings:
 
 catalogs:
   default:
+    '@typescript/native-preview':
+      specifier: beta
+      version: 7.0.0-dev.20260421.2
+    dayjs:
+      specifier: ^1.11.20
+      version: 1.11.20
+    lodash-es:
+      specifier: ^4.17.21
+      version: 4.17.21
+    random-js:
+      specifier: 2.1.0
+      version: 2.1.0
     typescript:
       specifier: 5.9.3
       version: 5.9.3
+    zod:
+      specifier: ^4.5.4
+      version: 4.6.5
   vitest:
     '@vitest/coverage-v8':
       specifier: ^4.1.5
@@ -182,7 +197,7 @@ importers:
         version: 3.2.0
       fastify-type-provider-zod:
         specifier: ^5.0.3
-        version: 5.0.3(@fastify/swagger@9.5.1)(fastify@5.6.1)(openapi-types@12.1.3)(zod@4.3.6)
+        version: 5.0.3(@fastify/swagger@9.5.1)(fastify@5.6.1)(openapi-types@12.1.3)(zod@4.6.5)
       file-type:
         specifier: ^19.6.0
         version: 19.6.0
@@ -266,7 +281,7 @@ importers:
         version: 17.7.2
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.5
     devDependencies:
       '@faker-js/faker':
         specifier: ^9.9.0
@@ -420,7 +435,7 @@ importers:
         version: 2.6.2
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.5
     devDependencies:
       '@rollup/plugin-swc':
         specifier: ^0.4.0
@@ -460,7 +475,7 @@ importers:
     dependencies:
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.5
     devDependencies:
       '@microsoft/api-extractor':
         specifier: ^7.43.0
@@ -530,7 +545,7 @@ importers:
         version: 1.133.13(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@tanstack/zod-adapter':
         specifier: ^1.131.27
-        version: 1.133.13(@tanstack/react-router@1.133.13(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(zod@4.3.6)
+        version: 1.133.13(@tanstack/react-router@1.133.13(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(zod@4.6.5)
       '@tunarr/shared':
         specifier: workspace:*
         version: link:../shared
@@ -617,7 +632,7 @@ importers:
         version: 9.0.1
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.5
       zustand:
         specifier: ^4.4.6
         version: 4.4.6(@types/react@18.2.15)(immer@10.0.3)(react@18.2.0)
@@ -7561,6 +7576,9 @@ packages:
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
+
   zustand@4.4.6:
     resolution: {integrity: sha512-Rb16eW55gqL4W2XZpJh0fnrATxYEG3Apl2gfHTyDSE965x/zxslTikpNch0JgNjJA9zK6gEFW8Fl6d1rTZaqgg==}
     engines: {node: '>=12.7.0'}
@@ -10015,10 +10033,10 @@ snapshots:
 
   '@tanstack/virtual-file-routes@1.133.3': {}
 
-  '@tanstack/zod-adapter@1.133.13(@tanstack/react-router@1.133.13(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(zod@4.3.6)':
+  '@tanstack/zod-adapter@1.133.13(@tanstack/react-router@1.133.13(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(zod@4.6.5)':
     dependencies:
       '@tanstack/react-router': 1.133.13(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      zod: 4.3.6
+      zod: 4.6.5
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -11082,10 +11100,6 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
-  debug@4.3.4:
-    dependencies:
-      ms: 2.1.2
-
   debug@4.3.4(supports-color@5.5.0):
     dependencies:
       ms: 2.1.2
@@ -11532,13 +11546,13 @@ snapshots:
       fastify-plugin: 4.5.1
       table: 6.8.2
 
-  fastify-type-provider-zod@5.0.3(@fastify/swagger@9.5.1)(fastify@5.6.1)(openapi-types@12.1.3)(zod@4.3.6):
+  fastify-type-provider-zod@5.0.3(@fastify/swagger@9.5.1)(fastify@5.6.1)(openapi-types@12.1.3)(zod@4.6.5):
     dependencies:
       '@fastify/error': 4.2.0
       '@fastify/swagger': 9.5.1
       fastify: 5.6.1
       openapi-types: 12.1.3
-      zod: 4.3.6
+      zod: 4.6.5
 
   fastify@5.6.1:
     dependencies:
@@ -12258,7 +12272,7 @@ snapshots:
     dependencies:
       chalk: 5.3.0
       commander: 11.1.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       execa: 8.0.1
       lilconfig: 3.0.0
       listr2: 8.0.1
@@ -14290,6 +14304,8 @@ snapshots:
   zod@4.1.11: {}
 
   zod@4.3.6: {}
+
+  zod@4.6.5: {}
 
   zustand@4.4.6(@types/react@18.2.15)(immer@10.0.3)(react@18.2.0):
     dependencies:
