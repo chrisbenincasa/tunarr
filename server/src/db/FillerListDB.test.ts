@@ -8,7 +8,7 @@ import { DBAccess } from './DBAccess.ts';
 import { FillerDB } from './FillerListDB.ts';
 
 describe('FillerDB.deleteFiller', () => {
-  test('fails when program_play_history still references the filler list (#2054)', async () => {
+  test('deletes a filler list still referenced by program_play_history (#2054)', async () => {
     const dir = await tmp.dir({ unsafeCleanup: true });
     try {
       await copyPreMigratedDb(dir.path);
@@ -24,6 +24,7 @@ describe('FillerDB.deleteFiller', () => {
       const fillerUuid = v4();
       const programUuid = v4();
       const channelUuid = v4();
+      const historyUuid = v4();
 
       conn.sqlite
         .prepare(
@@ -68,7 +69,7 @@ describe('FillerDB.deleteFiller', () => {
           `INSERT INTO program_play_history (uuid, program_uuid, channel_uuid, played_at, played_duration, created_at, filler_list_id)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
         )
-        .run(v4(), programUuid, channelUuid, 0, 1000, 0, fillerUuid);
+        .run(historyUuid, programUuid, channelUuid, 0, 1000, 0, fillerUuid);
 
       const db = DBAccess.instance.db;
       const drizzle = DBAccess.instance.drizzle;
@@ -77,44 +78,22 @@ describe('FillerDB.deleteFiller', () => {
       }
       const fillerDb = new FillerDB(db, drizzle);
 
-      // Deleting a filler list with playback-history references fails.
-      let caught: unknown;
-      try {
-        await fillerDb.deleteFiller(fillerUuid);
-      } catch (e) {
-        caught = e;
-      }
-      expect(caught).toBeInstanceOf(Error);
-      if (caught instanceof Error) {
-        expect(caught.message).toMatch(/FOREIGN KEY constraint failed/);
-      }
-
-      // The filler list is still present after the failed delete.
-      const fillerCountAfterFailure = conn.sqlite
-        .prepare('SELECT COUNT(*) AS count FROM filler_show WHERE uuid = ?')
-        .get(fillerUuid) as { count: number };
-      expect(fillerCountAfterFailure.count).toBe(1);
-
-      // Clearing the historical references (e.g. ON DELETE SET NULL or an
-      // explicit UPDATE inside the deletion transaction) unblocks the delete.
-      conn.sqlite
-        .prepare(
-          'UPDATE program_play_history SET filler_list_id = NULL WHERE filler_list_id = ?',
-        )
-        .run(fillerUuid);
-
       await fillerDb.deleteFiller(fillerUuid);
 
-      const fillerCountAfterClear = conn.sqlite
+      const fillerCount = conn.sqlite
         .prepare('SELECT COUNT(*) AS count FROM filler_show WHERE uuid = ?')
         .get(fillerUuid) as { count: number };
-      expect(fillerCountAfterClear.count).toBe(0);
+      expect(fillerCount.count).toBe(0);
 
-      // Playback history is preserved, minus the reference to the filler.
-      const historyCount = conn.sqlite
-        .prepare('SELECT COUNT(*) AS count FROM program_play_history')
-        .get() as { count: number };
-      expect(historyCount.count).toBe(1);
+      // The playback history row survives, with its reference to the deleted
+      // filler list nulled out by the FK's ON DELETE SET NULL.
+      const history = conn.sqlite
+        .prepare(
+          'SELECT filler_list_id FROM program_play_history WHERE uuid = ?',
+        )
+        .get(historyUuid) as { filler_list_id: string | null } | undefined;
+      expect(history).toBeDefined();
+      expect(history?.filler_list_id).toBeNull();
 
       await DBAccess.instance.closeConnection(dbPath);
     } finally {
