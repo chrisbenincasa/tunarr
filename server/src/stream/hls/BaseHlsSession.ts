@@ -6,7 +6,7 @@ import { isNonEmptyString } from '@/util/index.js';
 import retry from 'async-retry';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { filter, isError, isNaN, isString, minBy, some } from 'lodash-es';
+import { filter, isError, isString, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
@@ -32,16 +32,6 @@ export abstract class BaseHlsSession<
   protected _serverPath: string;
 
   protected transcodedUntil?: Dayjs;
-
-  protected _minByIp = new Map<string, number>();
-
-  protected get minSegmentRequested(): number {
-    if (this._minByIp.size === 0) {
-      return 0;
-    }
-
-    return minBy([...this._minByIp.entries()], ([_, seg]) => seg)?.[1] ?? 0;
-  }
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -81,23 +71,6 @@ export abstract class BaseHlsSession<
 
   get serverPath() {
     return this._serverPath;
-  }
-
-  onSegmentRequested(clientIp: string, filename: string) {
-    const base = basename(filename);
-    const matches = base.match(SegmentNameRegex);
-    if (matches && matches.length > 1) {
-      const m = matches[1]!;
-      const parsed = parseInt(m);
-      if (!isNaN(parsed)) {
-        this._minByIp.set(clientIp, parsed);
-      }
-    }
-  }
-
-  override removeConnection(token: string) {
-    super.removeConnection(token);
-    this._minByIp.delete(token);
   }
 
   protected abstract getHlsOptions(): DeepRequired<HlsOptions>;
