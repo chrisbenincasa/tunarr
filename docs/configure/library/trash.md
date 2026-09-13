@@ -9,7 +9,7 @@ Clicking **Empty Trash** starts a background job and returns immediately. Tunarr
 Emptying the Trash does three things:
 
 1. **Deletes the trashed items** and everything attached to them: artwork, subtitles, credits, chapters, stream details, and their membership in channels, filler lists and custom shows.
-2. **Rewrites affected channel lineups**, replacing each trashed item with [Flex](../channels/flex.md) of the same duration. Channel durations are therefore unchanged, and the rest of a lineup keeps its timing.
+2. **Rewrites affected channel lineups**, replacing each trashed item with [Flex](../channels/flex.md) of the same duration. Channel durations are therefore unchanged, and the rest of a lineup keeps its timing. Tunarr then rebuilds the TV guide and XMLTV file in the background, so they stop listing the trashed items.
 3. **Removes trashed shows, seasons, artists and albums** whose last remaining item is gone. A trashed show that still has playable episodes is kept, since deleting it would take those episodes' metadata with it.
 
 !!! warning
