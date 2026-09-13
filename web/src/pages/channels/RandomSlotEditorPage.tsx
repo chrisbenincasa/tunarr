@@ -4,7 +4,8 @@ import { RandomSlotTable } from '@/components/slot_scheduler/RandomSlotTable.tsx
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
 import { defaultRandomSlotSchedule } from '@/model/SlotModels.ts';
 import { useChannelEditor } from '@/store/selectors';
-import { Trans } from '@lingui/react/macro';
+import { plural } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { ArrowBack, HelpOutline } from '@mui/icons-material';
 import {
   Alert,
@@ -34,7 +35,13 @@ import {
   sum,
 } from 'lodash-es';
 import React, { useCallback, useMemo, useState } from 'react';
-import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
+import {
+  FormProvider,
+  useFieldArray,
+  useForm,
+  useWatch,
+} from 'react-hook-form';
+import { useSnackbar } from 'notistack';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
 import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
@@ -43,7 +50,11 @@ import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationA
 import { SlotProgrammingOptionsProvider } from '../../components/slot_scheduler/SlotProgrammingOptionsProvider.tsx';
 import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
-import { lineupItemAppearsInSchedule } from '../../helpers/slotSchedulerUtil';
+import { getApiErrorMessage } from '../../helpers/apiError.ts';
+import {
+  lineupItemAppearsInSchedule,
+  unavailableCustomShowSlotIndexes,
+} from '../../helpers/slotSchedulerUtil';
 import { useChannelSchedule } from '../../hooks/useChannelSchedule.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
 import type { RandomSlotForm } from '../../model/SlotModels.ts';
@@ -56,6 +67,8 @@ export default function RandomSlotEditorPage() {
   const { currentEntity: channel, programList: newLineup } = useChannelEditor();
   const { data: channelSchedule } = useChannelSchedule(channel!.id);
 
+  const { t } = useLingui();
+  const snackbar = useSnackbar();
   const queryClient = useQueryClient();
   const updateLineupMutation = useUpdateLineup({
     onSuccess() {
@@ -65,11 +78,18 @@ export default function RandomSlotEditorPage() {
         })
         .catch(console.error);
     },
+    onError(error) {
+      const message = getApiErrorMessage(error) ?? error.message;
+      snackbar.enqueueSnackbar(t`Error saving schedule. ${message}`, {
+        variant: 'error',
+      });
+    },
   });
 
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-  const { nameById: programOptionNameById } = useSlotProgramOptions();
+  const { nameById: programOptionNameById, dropdownOpts: programOptions } =
+    useSlotProgramOptions();
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
   const [randomState, setRandomState] =
     useState<Maybe<{ seed?: number[]; discardCount?: number }>>();
@@ -106,6 +126,11 @@ export default function RandomSlotEditorPage() {
       required: true,
     },
   });
+  const slots = useWatch({ control, name: 'slots' });
+  const unavailableSlotCount = unavailableCustomShowSlotIndexes(
+    slots,
+    programOptions,
+  ).length;
 
   const resetLineupToSaved = useCallback(() => {
     resetLineup();
@@ -207,6 +232,15 @@ export default function RandomSlotEditorPage() {
             </Trans>
           </Alert>
         )}
+        {unavailableSlotCount > 0 && (
+          <Alert severity="error">
+            {plural(unavailableSlotCount, {
+              one: '# slot uses a custom show that is empty or deleted. Fix or remove it before saving.',
+              other:
+                '# slots use a custom show that is empty or deleted. Fix or remove them before saving.',
+            })}
+          </Alert>
+        )}
         <PaddedPaper>
           <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
             <Trans>Slots</Trans>
@@ -276,7 +310,11 @@ export default function RandomSlotEditorPage() {
             <Trans>Reset Options</Trans>
           </Button>
         )}
-        <Button variant="contained" onClick={() => onSave()}>
+        <Button
+          variant="contained"
+          disabled={unavailableSlotCount > 0}
+          onClick={() => onSave()}
+        >
           <Trans>Save</Trans>
         </Button>
       </Box>

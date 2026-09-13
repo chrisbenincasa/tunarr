@@ -22,6 +22,16 @@ See below for an example of our schedule now that we have Flex after our two epi
 
 ![Time Slots preview with flex](../../assets/scheduling-tools-time_slots_previewflex.png)
 
+## Empty or Deleted Custom Shows
+
+A custom show with no programs cannot fill a time slot.
+
+- The editor does not offer empty custom shows for new slots.
+- A saved slot whose custom show later becomes empty, or is deleted, keeps its selection and shows a warning. Choose another show or remove the slot. Saving is blocked until every slot is fixed.
+- The API rejects a new schedule or preview that references an empty or unknown custom show with HTTP 400, and leaves the channel's lineup unchanged.
+- When Tunarr regenerates an already saved schedule, the empty slot's time is filled with [Flex](/configure/channels/flex).
+- Programs with no duration are skipped, because they cannot advance the schedule.
+
 ## Slot Linking
 
 By default, each time slot maintains its own episode cursor. If the same show appears in multiple time slots (e.g. a morning and evening airing), each slot independently starts at episode 1 and advances separately.
