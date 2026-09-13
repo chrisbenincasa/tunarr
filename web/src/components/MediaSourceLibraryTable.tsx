@@ -40,6 +40,7 @@ import { useDayjs } from '../hooks/useDayjs.ts';
 import { useQueryObserver } from '../hooks/useQueryObserver.ts';
 import { useStoreBackedTableSettings } from '../hooks/useTableSettings.ts';
 import type { Nullable } from '../types/util.ts';
+import { UnavailableLibraryChip } from './UnavailableLibraryChip.tsx';
 import { NetworkIcon } from './util/NetworkIcon.tsx';
 
 type MediaSourceLibraryRow = MediaSourceLibrary & {
@@ -263,6 +264,16 @@ export const MediaSourceLibraryTable = () => {
             return `${originalRow.mediaSource.name} - ${originalRow.name}`;
           }
         },
+        Cell: ({ renderedCellValue, row }) => (
+          <>
+            {renderedCellValue}
+            {row.original.unavailableSince !== undefined && (
+              <UnavailableLibraryChip
+                unavailableSince={row.original.unavailableSince}
+              />
+            )}
+          </>
+        ),
         // size: 150,
         // grow: false,
       },
@@ -324,6 +335,7 @@ export const MediaSourceLibraryTable = () => {
           name: source.name,
           lastScannedAt: maxBy(source.libraries, (lib) => lib.lastScannedAt)
             ?.lastScannedAt,
+          unavailableSince: undefined,
         } satisfies MediaSourceLibraryRow;
       });
 
@@ -377,6 +389,11 @@ export const MediaSourceLibraryTable = () => {
                     <Typography variant="caption" color="text.secondary">
                       · {dayjs(library.lastScannedAt).format('ll')}
                     </Typography>
+                  )}
+                  {library.unavailableSince !== undefined && (
+                    <UnavailableLibraryChip
+                      unavailableSince={library.unavailableSince}
+                    />
                   )}
                 </Box>
               </Box>

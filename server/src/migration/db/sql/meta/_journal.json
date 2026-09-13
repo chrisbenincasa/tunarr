@@ -351,6 +351,13 @@
       "when": 1790034899981,
       "tag": "0049_slim_toad_men",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1790035117345,
+      "tag": "0050_whole_molly_hayes",
+      "breakpoints": true
     }
   ]
 }

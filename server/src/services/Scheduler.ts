@@ -185,8 +185,8 @@ export function scheduleBackupJobs(
   );
 }
 
-export function hoursCrontab(hours: number): string {
-  return `0 0 */${hours} * * *`;
+export function hoursCrontab(hours: number, minute = 0): string {
+  return `0 ${minute} */${hours} * * *`;
 }
 
 export function minutesCrontab(mins: number): string {

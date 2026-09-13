@@ -8791,6 +8791,7 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -8817,6 +8818,7 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -8840,6 +8842,7 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -8863,6 +8866,7 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -8993,6 +8997,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -9019,6 +9024,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -9042,6 +9048,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -9065,6 +9072,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -9117,6 +9125,7 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
         type: 'plex' | 'jellyfin' | 'emby' | 'local';
         enabled: boolean;
         isLocked: boolean;
+        unavailableSince?: number;
         mediaSource?: {
             id: string;
             name: string;
@@ -9216,6 +9225,7 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
         type: 'plex' | 'jellyfin' | 'emby' | 'local';
         enabled: boolean;
         isLocked: boolean;
+        unavailableSince?: number;
         mediaSource?: {
             id: string;
             name: string;
@@ -9302,6 +9312,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
         type: 'plex' | 'jellyfin' | 'emby' | 'local';
         enabled: boolean;
         isLocked: boolean;
+        unavailableSince?: number;
         mediaSource: {
             id: string;
             name: string;
@@ -9314,6 +9325,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
@@ -9340,6 +9352,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
@@ -9363,6 +9376,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
@@ -9386,6 +9400,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
