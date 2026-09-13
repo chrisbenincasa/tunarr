@@ -268,7 +268,12 @@ export type ProgramTooLongWarning = {
   programs: { id: string; duration: number }[];
 };
 
-export type SlotWarning = ProgramTooLongWarning;
+export type UnavailableCustomShowWarning = {
+  type: 'custom_show_unavailable';
+  reason: 'empty' | 'missing';
+};
+
+export type SlotWarning = ProgramTooLongWarning | UnavailableCustomShowWarning;
 
 type TimeSlotTableDataType = FieldArrayWithId<TimeSlotForm, 'slots'>;
 type RandomSlotTableDataType = FieldArrayWithId<RandomSlotForm, 'slots'>;

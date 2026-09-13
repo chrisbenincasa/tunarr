@@ -2,11 +2,14 @@ import type {
   ProgramOption,
   ProgramOptionType,
 } from '@/helpers/slotSchedulerUtil';
-import { ProgramOptionTypes } from '@/helpers/slotSchedulerUtil.ts';
+import {
+  isSelectableForNewSlot,
+  ProgramOptionTypes,
+} from '@/helpers/slotSchedulerUtil.ts';
 import { useLingui } from '@lingui/react/macro';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { filter, map, uniqBy } from 'lodash-es';
+import { filter, map } from 'lodash-es';
 import { useMemo, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
@@ -49,11 +52,18 @@ export const EditSlotProgrammingForm = <
   });
   const programOptions = useSlotProgramOptionsContext();
   const availableTypes = useMemo(() => {
-    return map(
-      uniqBy(programOptions, ({ type }) => type),
-      'type',
+    const types = new Set<ProgramOptionType>(
+      programOptions.filter(isSelectableForNewSlot).map(({ type }) => type),
     );
-  }, [programOptions]);
+    // A saved slot keeps its own type listed so it stays editable after its
+    // content becomes unavailable.
+    types.add(type);
+    return types;
+  }, [programOptions, type]);
+
+  const onlyEmptyCustomShows =
+    !availableTypes.has('custom-show') &&
+    programOptions.some((opt) => opt.type === 'custom-show');
 
   const [typeSelectValue, setTypeSelectValue] =
     useState<ProgramOptionType>(type);
@@ -83,13 +93,18 @@ export const EditSlotProgrammingForm = <
         >
           {map(
             filter(ProgramOptionTypes, ({ value }) =>
-              availableTypes.includes(value),
+              availableTypes.has(value),
             ),
             ({ value, description }) => (
               <MenuItem key={value} value={value}>
                 {description}
               </MenuItem>
             ),
+          )}
+          {onlyEmptyCustomShows && (
+            <MenuItem value="custom-show" disabled>
+              {t`Custom Show (add programs to a custom show first)`}
+            </MenuItem>
           )}
         </Select>
       </FormControl>
