@@ -286,7 +286,9 @@ export class ChannelDB implements IChannelDB {
     return this.lineup.removeProgramsFromLineup(channelId, programIds);
   }
 
-  removeProgramsFromAllLineups(programIds: string[]): Promise<void> {
+  removeProgramsFromAllLineups(
+    programIds: ReadonlySet<string> | string[],
+  ): Promise<number> {
     return this.lineup.removeProgramsFromAllLineups(programIds);
   }
 

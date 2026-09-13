@@ -614,6 +614,111 @@ describe('ChannelDB', () => {
     });
   });
 
+  describe('removeProgramsFromAllLineups', () => {
+    async function createProgram(drizzle: any, durationMs: number) {
+      const programId = v4();
+      await drizzle.insert(Program).values({
+        uuid: programId,
+        duration: durationMs,
+        type: 'movie',
+        sourceType: 'plex',
+        externalKey: faker.string.alphanumeric({ length: 16 }),
+        externalSourceId: faker.string.alphanumeric({ length: 16 }),
+        title: faker.word.words(3),
+        year: 2020,
+      });
+      return programId;
+    }
+
+    test('rewrites matching content items to flex and leaves the rest alone', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+      drizzle,
+    }) => {
+      const target = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, { number: 810 }),
+      );
+      const other = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, { number: 811 }),
+      );
+
+      const trashedId = await createProgram(drizzle, 30000);
+      const keptId = await createProgram(drizzle, 45000);
+
+      await channelDb.saveLineup(target.channel.uuid, {
+        items: [
+          { type: 'content', id: trashedId, durationMs: 30000 },
+          { type: 'content', id: keptId, durationMs: 45000 },
+          { type: 'offline', durationMs: 5000 },
+          {
+            type: 'redirect',
+            channel: other.channel.uuid,
+            durationMs: 10000,
+          },
+        ],
+      });
+
+      const changed = await channelDb.removeProgramsFromAllLineups(
+        new Set([trashedId]),
+      );
+
+      expect(changed).toBe(1);
+
+      const lineup = await channelDb.loadLineup(target.channel.uuid, true);
+      expect(lineup.items).toHaveLength(4);
+      expect(lineup.items[0]).toEqual({ type: 'offline', durationMs: 30000 });
+      expect(lineup.items[1]).toEqual({
+        type: 'content',
+        id: keptId,
+        durationMs: 45000,
+      });
+      expect(lineup.items[2].type).toBe('offline');
+      expect(lineup.items[3].type).toBe('redirect');
+
+      // Flex preserves durationMs, so total channel duration is unchanged.
+      const channel = await channelDb.getChannel(target.channel.uuid);
+      expect(channel?.duration).toBe(90000);
+    });
+
+    test('does not rewrite lineups of unaffected channels', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+      drizzle,
+    }) => {
+      const affected = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, { number: 820 }),
+      );
+      const untouched = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, { number: 821 }),
+      );
+
+      const trashedId = await createProgram(drizzle, 30000);
+      const unrelatedId = await createProgram(drizzle, 30000);
+
+      await channelDb.saveLineup(affected.channel.uuid, {
+        items: [{ type: 'content', id: trashedId, durationMs: 30000 }],
+      });
+      await channelDb.saveLineup(untouched.channel.uuid, {
+        items: [{ type: 'content', id: unrelatedId, durationMs: 30000 }],
+      });
+
+      const before = await channelDb.loadLineup(untouched.channel.uuid, true);
+
+      const changed = await channelDb.removeProgramsFromAllLineups([trashedId]);
+
+      expect(changed).toBe(1);
+
+      const after = await channelDb.loadLineup(untouched.channel.uuid, true);
+      expect(after.items).toEqual(before.items);
+      expect(after.lastUpdated).toBe(before.lastUpdated);
+    });
+
+    test('is a no-op for an empty id set', async ({ channelDb }) => {
+      expect(await channelDb.removeProgramsFromAllLineups([])).toBe(0);
+      expect(await channelDb.removeProgramsFromAllLineups(new Set())).toBe(0);
+    });
+  });
+
   describe('Error Handling', () => {
     test('should return undefined for non-existent channel', async ({
       channelDb,

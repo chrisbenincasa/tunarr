@@ -473,6 +473,33 @@ export const ScanProgressSchema = z.discriminatedUnion('state', [
 
 export type ScanProgress = z.infer<typeof ScanProgressSchema>;
 
+export const EmptyTrashJobStateSchema = z.enum([
+  'idle',
+  'running',
+  'cancelling',
+  'failed',
+]);
+
+export type EmptyTrashJobState = z.infer<typeof EmptyTrashJobStateSchema>;
+
+/**
+ * Progress of the background "empty trash" drain. Flat rather than a
+ * discriminated union so the UI can render `deleted`/`total` as a lingering
+ * summary of the last run regardless of state.
+ */
+export const EmptyTrashStatusSchema = z.object({
+  state: EmptyTrashJobStateSchema,
+  total: z.number().int().nonnegative(),
+  deleted: z.number().int().nonnegative(),
+  /** Epoch millis. */
+  startedAt: z.number().nullable(),
+  /** Epoch millis. */
+  finishedAt: z.number().nullable(),
+  error: z.string().nullable(),
+});
+
+export type EmptyTrashStatus = z.infer<typeof EmptyTrashStatusSchema>;
+
 export const MaterializedTimeSlotSchedule = z.object({
   ...TimeSlotScheduleSchema.shape,
   slots: MaterializedTimeSlot.array(),
