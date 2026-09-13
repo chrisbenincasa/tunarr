@@ -8,7 +8,21 @@ import { TunarrWorkerPool } from './TunarrWorkerPool.ts';
 import type { TunarrSubprocessService } from './TunarrSubprocessService.ts';
 
 class FakeWorker extends EventEmitter {
-  postMessage = vi.fn();
+  // Replies to every request unless told to hang, which stands in for a worker
+  // stuck in a loop it never leaves.
+  hang = false;
+  postMessage = vi.fn((request: { requestId: string }) => {
+    if (this.hang) {
+      return;
+    }
+    setImmediate(() =>
+      this.emit('message', {
+        type: 'success',
+        requestId: request.requestId,
+        data: { type: 'status', status: 'healthy' },
+      }),
+    );
+  });
   terminate = vi.fn(() => {
     this.emit('exit', 0);
     return Promise.resolve(0);
@@ -122,5 +136,77 @@ describe('TunarrWorkerPool', () => {
 
     consoleError.mockRestore();
     await pool.shutdown(100);
+  });
+});
+
+describe('TunarrWorkerPool task timeouts', () => {
+  async function startedPool() {
+    const subprocess = makeSubprocessService();
+    const pool = new TunarrWorkerPool(subprocess.service);
+    pool.start();
+    await pool.allReady();
+    const [first] = subprocess.created;
+    if (first === undefined) {
+      throw new Error('The pool started no workers');
+    }
+    return { subprocess, pool, first };
+  }
+
+  test('a timed-out task frees its worker for later tasks', async () => {
+    const { subprocess, pool, first } = await startedPool();
+    const workerCount = subprocess.created.length;
+    first.hang = true;
+
+    await expect(pool.queueTask({ type: 'status' }, 50)).rejects.toThrow(
+      /timeout/i,
+    );
+
+    // One task per slot, so the timed-out worker's slot is used again.
+    for (let i = 0; i < workerCount; i++) {
+      await expect(pool.queueTask({ type: 'status' }, 1_000)).resolves.toEqual({
+        type: 'status',
+        status: 'healthy',
+      });
+    }
+
+    expect(first.terminate).toHaveBeenCalledTimes(1);
+    expect(subprocess.createWorker).toHaveBeenCalledTimes(workerCount + 1);
+    await pool.shutdown(100);
+  }, 15_000);
+
+  test('tasks queued behind a timed-out task are released', async () => {
+    const { subprocess, pool, first } = await startedPool();
+    const workerCount = subprocess.created.length;
+    first.hang = true;
+
+    const timedOut = pool.queueTask({ type: 'status' }, 200);
+    const others = Array.from({ length: workerCount - 1 }, () =>
+      pool.queueTask({ type: 'status' }, 1_000),
+    );
+    const queuedBehind = pool.queueTask({ type: 'status' }, 10_000);
+
+    await Promise.all([
+      expect(timedOut).rejects.toThrow(/timeout/i),
+      expect(queuedBehind).rejects.toThrow(/exited/i),
+      expect(Promise.all(others)).resolves.toHaveLength(workerCount - 1),
+    ]);
+    await pool.shutdown(100);
+  }, 5_000);
+
+  test('shutdown after replacing a timed-out worker starts no further workers', async () => {
+    const { subprocess, pool, first } = await startedPool();
+    first.hang = true;
+    await expect(pool.queueTask({ type: 'status' }, 50)).rejects.toThrow(
+      /timeout/i,
+    );
+    await tick();
+    await tick();
+    const spawned = subprocess.createWorker.mock.calls.length;
+
+    await pool.shutdown(100);
+    await tick();
+
+    expect(subprocess.createWorker).toHaveBeenCalledTimes(spawned);
+    expect(subprocess.created.at(-1)?.terminate).toHaveBeenCalled();
   });
 });
