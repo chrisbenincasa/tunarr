@@ -13,6 +13,14 @@ Durable records for the six architecture candidates surfaced in the web-package 
 | 5 | Split **server cache** from UI state; prune dead/derived state | Pending | — |
 | 6 | Break the **pages ↔ routes** cycle; centralize navigation | Pending | — |
 
+## Feature records
+
+Cross-package features get their own directory.
+
+| Feature | Status | Record |
+|---|---|---|
+| Dynamic schedules (code name "infinite schedules") | Review complete · plan recorded · decisions open | [dynamic-schedules/](./dynamic-schedules/README.md) |
+
 ## Domain language
 
 Terms are recorded in [`CONTEXT.md`](/CONTEXT.md): **Lineup**, **LineupSchedule**, **Program lookup**, **Editor**.
