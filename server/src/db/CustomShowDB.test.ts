@@ -622,4 +622,134 @@ describe('CustomShowDB', () => {
       expect(content[1]!.contentUuid).toBe(program2.uuid);
     });
   });
+
+  describe('saveShow program replacement', () => {
+    async function membership(drizzle: DrizzleDBAccess, showId: string) {
+      const rows = await drizzle.query.customShowContent.findMany({
+        where: (fields, { eq }) => eq(fields.customShowUuid, showId),
+        orderBy: (fields, { asc }) => asc(fields.index),
+      });
+      return rows.map((row) => row.contentUuid);
+    }
+
+    async function showWithOneProgram(
+      customShowDb: CustomShowDB,
+      drizzle: DrizzleDBAccess,
+      mediaSourceId: MediaSourceId,
+    ) {
+      const program = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
+      const showId = await customShowDb.createShow({
+        name: 'Original',
+        programs: [makePersistedContentProgram(program)],
+      });
+      return { program, showId };
+    }
+
+    test('omitting programs leaves membership alone', async ({
+      customShowDb,
+      drizzle,
+      mediaSourceId,
+    }) => {
+      const { program, showId } = await showWithOneProgram(
+        customShowDb,
+        drizzle,
+        mediaSourceId,
+      );
+
+      const saved = await customShowDb.saveShow(showId, {
+        name: 'Renamed',
+        enableSync: false,
+      });
+
+      expect(saved?.name).toBe('Renamed');
+      expect(await membership(drizzle, showId)).toEqual([program.uuid]);
+    });
+
+    test('an empty programs array clears membership', async ({
+      customShowDb,
+      drizzle,
+      mediaSourceId,
+    }) => {
+      const { showId } = await showWithOneProgram(
+        customShowDb,
+        drizzle,
+        mediaSourceId,
+      );
+
+      await customShowDb.saveShow(showId, { programs: [], enableSync: false });
+
+      expect(await membership(drizzle, showId)).toEqual([]);
+    });
+
+    test('valid programs replace membership in order', async ({
+      customShowDb,
+      drizzle,
+      mediaSourceId,
+    }) => {
+      const { program, showId } = await showWithOneProgram(
+        customShowDb,
+        drizzle,
+        mediaSourceId,
+      );
+      const other = await insertProgram(drizzle, createProgram(mediaSourceId));
+
+      await customShowDb.saveShow(showId, {
+        programs: [
+          makePersistedContentProgram(other),
+          makePersistedContentProgram(program),
+        ],
+        enableSync: false,
+      });
+
+      expect(await membership(drizzle, showId)).toEqual([
+        other.uuid,
+        program.uuid,
+      ]);
+    });
+
+    test.for(['unresolved', 'mixed'] as const)(
+      'an %s replacement is rejected without changing the show',
+      async (kind, { customShowDb, drizzle, mediaSourceId }) => {
+        const { program, showId } = await showWithOneProgram(
+          customShowDb,
+          drizzle,
+          mediaSourceId,
+        );
+        const missing = makePersistedContentProgram(
+          createProgram(mediaSourceId),
+        );
+        const programs =
+          kind === 'mixed'
+            ? [makePersistedContentProgram(program), missing]
+            : [missing];
+
+        await expect(
+          customShowDb.saveShow(showId, {
+            name: 'Should not apply',
+            programs,
+            enableSync: false,
+          }),
+        ).rejects.toThrow(missing.id);
+
+        expect((await customShowDb.getShow(showId))?.name).toBe('Original');
+        expect(await membership(drizzle, showId)).toEqual([program.uuid]);
+      },
+    );
+
+    test('an empty custom show can still be created', async ({
+      customShowDb,
+      drizzle,
+    }) => {
+      const showId = await customShowDb.createShow({
+        name: 'Staged',
+        programs: [],
+      });
+
+      expect((await customShowDb.getShow(showId))?.name).toBe('Staged');
+      expect(await membership(drizzle, showId)).toEqual([]);
+    });
+  });
 });

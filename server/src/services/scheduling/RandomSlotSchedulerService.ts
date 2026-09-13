@@ -13,6 +13,7 @@ export const ChannelSlotScheduleRequest = z.object({
   seed: z.number().array().optional(),
   discardCount: z.number().optional(),
   startTime: z.number().optional(),
+  validateReferences: z.boolean().optional(),
 });
 
 export type ChannelSlotScheduleRequest = z.infer<
@@ -26,6 +27,7 @@ export const ProgramsSlotScheduleRequest = z.object({
   seed: z.number().array().optional(),
   discardCount: z.number().optional(),
   startTime: z.number().optional(),
+  validateReferences: z.boolean().optional(),
 });
 
 export type ProgramsSlotScheduleRequest = z.infer<
@@ -53,6 +55,13 @@ export class SlotSchedulerService {
   ): Promise<SlotScheduleResult> {
     const slotPrograms =
       await this.slotSchedulerHelper.collectSlotProgramming(request);
+
+    if (request.validateReferences) {
+      this.slotSchedulerHelper.assertCustomShowReferences(
+        request.schedule.slots,
+        slotPrograms,
+      );
+    }
 
     return new RandomSlotScheduler(request.schedule).generateSchedule(
       slotPrograms,

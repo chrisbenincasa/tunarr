@@ -68,6 +68,7 @@ const WorkerErrorReply = z.object({
   type: z.literal('error'),
   message: z.string(),
   requestId: z.string(),
+  httpCode: z.number().optional(),
 });
 
 export type WorkerErrorReply = z.infer<typeof WorkerErrorReply>;

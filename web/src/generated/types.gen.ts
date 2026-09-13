@@ -7854,8 +7854,14 @@ export type PutApiCustomShowsByIdErrors = {
     /**
      * Default Response
      */
+    400: string;
+    /**
+     * Default Response
+     */
     404: unknown;
 };
+
+export type PutApiCustomShowsByIdError = PutApiCustomShowsByIdErrors[keyof PutApiCustomShowsByIdErrors];
 
 export type PutApiCustomShowsByIdResponses = {
     /**
