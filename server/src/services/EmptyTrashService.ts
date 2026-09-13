@@ -2,6 +2,8 @@ import type { IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { ProgramStateRepository } from '@/db/program/ProgramStateRepository.js';
 import type { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
+import { GlobalScheduler } from '@/services/Scheduler.js';
+import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { KEYS } from '@/types/inject.js';
 import type { Maybe } from '@/types/util.js';
 import { wait } from '@/util/index.js';
@@ -168,6 +170,12 @@ export class EmptyTrashService {
       );
       ids.clear();
 
+      // Lineups are final here even if the drain is cancelled later, so the
+      // guide can be rebuilt now.
+      if (changedChannels > 0) {
+        this.#rebuildGuide();
+      }
+
       // PHASE 2 - batched program deletes. Each DELETE cascades into the
       // program's child tables.
       let deleted = 0;
@@ -261,6 +269,29 @@ export class EmptyTrashService {
         e,
         'Failed to remove %d emptied trash document(s) from the search index',
         ids.length,
+      );
+    }
+  }
+
+  /**
+   * Rebuilds the guide and XMLTV so they stop listing trashed programs. Runs
+   * in the background because a full guide build would stall the drain.
+   */
+  #rebuildGuide(): void {
+    try {
+      GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
+        .runNow(true)
+        .catch((e) => {
+          this.logger.warn(
+            e,
+            'Failed to rebuild the guide after emptying trash',
+          );
+        });
+    } catch (e) {
+      // getScheduledJob throws when the job has not been scheduled yet.
+      this.logger.warn(
+        e,
+        'Unable to start a guide rebuild after emptying trash',
       );
     }
   }

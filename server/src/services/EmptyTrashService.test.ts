@@ -22,6 +22,14 @@ import {
 import type { EventService } from './EventService.ts';
 import type { MeilisearchService } from './MeilisearchService.ts';
 
+const { runXmlTvNow } = vi.hoisted(() => ({ runXmlTvNow: vi.fn() }));
+
+vi.mock('@/services/Scheduler.js', () => ({
+  GlobalScheduler: {
+    getScheduledJob: () => ({ runNow: runXmlTvNow }),
+  },
+}));
+
 type Harness = {
   service: EmptyTrashService;
   stateRepo: ProgramStateRepository;
@@ -82,6 +90,9 @@ const test = baseTest.extend<Fixture>({
     // this file. Start each one from an empty program/grouping table.
     await drizzle.delete(Program);
     await drizzle.delete(ProgramGrouping);
+
+    runXmlTvNow.mockReset();
+    runXmlTvNow.mockResolvedValue(undefined);
 
     const channelDB = {
       removeProgramsFromAllLineups: vi.fn().mockResolvedValue(0),
@@ -201,6 +212,50 @@ describe('EmptyTrashService', () => {
       EmptyTrashProgramBatchSize,
     );
     expect(harness.search.deleteByIds.mock.calls[1][0]).toHaveLength(10);
+  });
+
+  test('rebuilds the guide once when lineups change', async ({ harness }) => {
+    harness.channelDB.removeProgramsFromAllLineups.mockResolvedValue(2);
+    await insertMissingPrograms(
+      harness.drizzle,
+      EmptyTrashProgramBatchSize + 10,
+    );
+
+    await harness.service.request();
+    await settle(harness.events);
+
+    expect(runXmlTvNow).toHaveBeenCalledTimes(1);
+    expect(runXmlTvNow).toHaveBeenCalledWith(true);
+  });
+
+  test('skips the guide rebuild when no lineup changed', async ({
+    harness,
+  }) => {
+    await insertMissingPrograms(harness.drizzle, 3);
+
+    await harness.service.request();
+    await settle(harness.events);
+
+    expect(runXmlTvNow).not.toHaveBeenCalled();
+  });
+
+  test('a failed guide rebuild does not fail the drain', async ({
+    harness,
+  }) => {
+    harness.channelDB.removeProgramsFromAllLineups.mockResolvedValue(1);
+    runXmlTvNow.mockRejectedValue(new Error('guide build failed'));
+    await insertMissingPrograms(harness.drizzle, 3);
+
+    await harness.service.request();
+    await settle(harness.events);
+
+    expect(await harness.stateRepo.countMissingPrograms()).toBe(0);
+    expect(harness.pendingFlag()).toBeNull();
+    expect(
+      harness.events.map((ev) =>
+        ev.type === 'empty_trash' ? ev.detail.status : ev.type,
+      ),
+    ).toEqual(['started', 'completed']);
   });
 
   test('search deletes carry exactly the ids of their own batch', async ({
