@@ -152,6 +152,21 @@ export function deduplicatePrograms(
   return [...acc.values()];
 }
 
+// Programs without a finite, positive duration cannot advance a schedule, so
+// packing them loops without end.
+export function partitionSchedulablePrograms(programs: SlotSchedulerProgram[]) {
+  const schedulable: SlotSchedulerProgram[] = [];
+  const unschedulable: SlotSchedulerProgram[] = [];
+  for (const program of programs) {
+    if (Number.isFinite(program.duration) && program.duration > 0) {
+      schedulable.push(program);
+    } else {
+      unschedulable.push(program);
+    }
+  }
+  return { schedulable, unschedulable };
+}
+
 /**
  * Creates a mapping of 'schedulable' content
  * @param programs

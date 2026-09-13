@@ -40,6 +40,7 @@ import {
   createSlotIterators,
   createSlotProgramIterator,
   deduplicatePrograms,
+  partitionSchedulablePrograms,
   deduplicateSlotIds,
   distributeFlex,
   getFillerIteratorsForSlot,
@@ -104,7 +105,9 @@ export async function scheduleTimeSlots(
 
   // Load programs
   // TODO: include redirects and custom programs!
-  const allPrograms = deduplicatePrograms(programs);
+  const allPrograms = partitionSchedulablePrograms(
+    deduplicatePrograms(programs),
+  ).schedulable;
   const programMap = createProgramMap(allPrograms);
   const fillerIterators = createFillerIterators(
     schedule.slots,
