@@ -10,6 +10,7 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import { ScheduleValidationError } from '../types/errors.ts';
 
 import {
   WorkerMessage,
@@ -294,7 +295,11 @@ export class TunarrWorkerPool implements IWorkerPool {
             if (reply.type === 'success') {
               fut.resolve(reply.data);
             } else {
-              fut.reject(new Error(reply.message));
+              fut.reject(
+                reply.httpCode === 400
+                  ? new ScheduleValidationError(reply.message)
+                  : new Error(reply.message),
+              );
             }
           } else {
             this.logger.error(

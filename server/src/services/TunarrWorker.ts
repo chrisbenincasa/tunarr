@@ -2,6 +2,7 @@ import { inject, injectable } from 'inversify';
 import PQueue from 'p-queue';
 import { parentPort } from 'worker_threads';
 
+import { TypedError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import {
   WorkerReply,
@@ -21,7 +22,7 @@ import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.
 export class TunarrWorker {
   #queue: PQueue;
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(TimeSlotSchedulerService)
@@ -85,6 +86,10 @@ export class TunarrWorker {
         type: 'error',
         requestId: req.requestId,
         message: result.error.message,
+        httpCode:
+          result.error instanceof TypedError
+            ? result.error.httpCode
+            : undefined,
       });
       return;
     }
@@ -106,6 +111,10 @@ export class TunarrWorker {
         type: 'error',
         requestId: req.requestId,
         message: result.error.message,
+        httpCode:
+          result.error instanceof TypedError
+            ? result.error.httpCode
+            : undefined,
       });
       return;
     }

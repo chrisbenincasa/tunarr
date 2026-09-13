@@ -200,4 +200,44 @@ export const RandomSlotScheduleSchema = z.object({
   lockWeights: z.boolean().default(false),
 });
 
+// Request-only validation. RandomSlotScheduleSchema also parses lineups already
+// on disk, so it stays permissive enough to load schedules that need repair.
+export const StrictRandomSlotScheduleSchema = RandomSlotScheduleSchema.extend({
+  slots: z.array(RandomSlotSchema).min(1),
+}).superRefine((schedule, ctx) => {
+  schedule.slots.forEach((slot, index) => {
+    const spec = slot.durationSpec;
+    if (spec.type === 'fixed') {
+      if (!Number.isFinite(spec.durationMs) || spec.durationMs <= 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['slots', index, 'durationSpec', 'durationMs'],
+          message: `Slot ${index}: fixed duration must be a positive number of milliseconds, got ${spec.durationMs}`,
+        });
+      }
+      return;
+    }
+
+    if (!Number.isInteger(spec.programCount) || spec.programCount <= 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['slots', index, 'durationSpec', 'programCount'],
+        message: `Slot ${index}: program count must be a positive whole number, got ${spec.programCount}`,
+      });
+    }
+
+    if (slot.type === 'flex' || slot.type === 'redirect') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['slots', index, 'durationSpec', 'type'],
+        message: `Slot ${index}: ${slot.type} slots need a fixed duration`,
+      });
+    }
+  });
+});
+
+export type StrictRandomSlotSchedule = z.infer<
+  typeof StrictRandomSlotScheduleSchema
+>;
+
 export type RandomSlotSchedule = z.infer<typeof RandomSlotScheduleSchema>;
