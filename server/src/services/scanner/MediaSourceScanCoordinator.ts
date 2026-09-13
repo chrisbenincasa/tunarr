@@ -128,6 +128,17 @@ export class MediaSourceScanCoordinator {
       return false;
     }
 
+    // Scanning a library the server no longer reports would mark all of its
+    // programs missing.
+    if (library.unavailableSince !== null) {
+      this.logger.debug(
+        'Skipping scan of library %s: unavailable since %s',
+        library.uuid,
+        library.unavailableSince.toISOString(),
+      );
+      return false;
+    }
+
     const mediaSourceType = library.mediaSource.type;
     if (mediaSourceType === 'local') {
       this.logger.error('Scanning local libraries is not supported by scanner');

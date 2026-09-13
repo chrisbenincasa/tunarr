@@ -35,6 +35,7 @@ import {
 import { useMediaSourceLibraries } from '../../../hooks/media-sources/useMediaSourceLibraries.ts';
 import { useDayjs } from '../../../hooks/useDayjs.ts';
 import type { Nullable } from '../../../types/util.ts';
+import { UnavailableLibraryChip } from '../../UnavailableLibraryChip.tsx';
 
 type Props = {
   mediaSource: Nullable<MediaSourceSettings>;
@@ -92,7 +93,9 @@ export const EditMediaSourceLibrariesDialog = ({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle><Trans>Manage Libraries</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Manage Libraries</Trans>
+      </DialogTitle>
       <DialogContent>
         <List
           sx={{ width: '100%' }}
@@ -112,6 +115,11 @@ export const EditMediaSourceLibrariesDialog = ({
               >
                 {library.name}
               </ListItemText>
+              {library.unavailableSince !== undefined && (
+                <UnavailableLibraryChip
+                  unavailableSince={library.unavailableSince}
+                />
+              )}
               {library.enabled && (
                 <Tooltip
                   placement="top"

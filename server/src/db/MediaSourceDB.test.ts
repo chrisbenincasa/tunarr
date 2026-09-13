@@ -15,7 +15,10 @@ import type { DB } from './schema/db.ts';
 import type { DrizzleDBAccess } from './schema/index.ts';
 import { MediaSource } from './schema/MediaSource.ts';
 import { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
+import { Program } from './schema/Program.ts';
+import { eq } from 'drizzle-orm';
 import type { Kysely } from 'kysely';
+import type { MediaSourceLibrariesUpdate } from './mediaSourceDB.ts';
 
 type Fixture = {
   db: string;
@@ -104,7 +107,122 @@ function makeLocalMediaSource(drizzle: DrizzleDBAccess, paths: string[]) {
   return mediaSourceId;
 }
 
+function makePlexMediaSource(drizzle: DrizzleDBAccess) {
+  const mediaSourceId = tag<MediaSourceId>(v4());
+  drizzle
+    .insert(MediaSource)
+    .values({
+      uuid: mediaSourceId,
+      name: tag<MediaSourceName>('Test Plex Media Source'),
+      type: 'plex',
+      uri: 'http://localhost:32400',
+      index: 0,
+      accessToken: '',
+    })
+    .run();
+  return mediaSourceId;
+}
+
+function insertPrograms(
+  drizzle: DrizzleDBAccess,
+  mediaSourceId: MediaSourceId,
+  libraryId: string,
+  count: number,
+) {
+  drizzle
+    .insert(Program)
+    .values(
+      Array.from({ length: count }, () => ({
+        uuid: v4(),
+        duration: 1000,
+        externalKey: v4(),
+        externalSourceId: tag<MediaSourceName>('Test Plex Media Source'),
+        mediaSourceId,
+        libraryId,
+        sourceType: 'plex' as const,
+        title: 'Program',
+        type: 'movie' as const,
+      })),
+    )
+    .run();
+}
+
+function programCountForLibrary(drizzle: DrizzleDBAccess, libraryId: string) {
+  return drizzle
+    .select()
+    .from(Program)
+    .where(eq(Program.libraryId, libraryId))
+    .all().length;
+}
+
+const noLibraryChanges: MediaSourceLibrariesUpdate = {
+  addedLibraries: [],
+  updatedLibraries: [],
+  unavailableLibraries: [],
+  availableLibraries: [],
+  duplicateLibraries: [],
+};
+
 describe('MediaSourceDB', () => {
+  test('merging duplicate libraries moves their programs to the kept library', ({
+    mediaSourceDB,
+    drizzle,
+  }) => {
+    const mediaSourceId = makePlexMediaSource(drizzle);
+    const kept = makeLibrary(mediaSourceId, '1');
+    const duplicate = makeLibrary(mediaSourceId, '1');
+    drizzle.insert(MediaSourceLibrary).values([kept, duplicate]).run();
+    insertPrograms(drizzle, mediaSourceId, kept.uuid, 2);
+    insertPrograms(drizzle, mediaSourceId, duplicate.uuid, 3);
+
+    mediaSourceDB.updateLibraries({
+      ...noLibraryChanges,
+      duplicateLibraries: [
+        { keepUuid: kept.uuid, duplicateUuids: [duplicate.uuid] },
+      ],
+    });
+
+    const libraries = drizzle.select().from(MediaSourceLibrary).all();
+    expect(libraries.map((library) => library.uuid)).toEqual([kept.uuid]);
+    expect(programCountForLibrary(drizzle, kept.uuid)).toBe(5);
+    expect(drizzle.select().from(Program).all()).toHaveLength(5);
+  });
+
+  test('marking a library unavailable and then available keeps its programs and enabled flag', async ({
+    mediaSourceDB,
+    drizzle,
+  }) => {
+    const mediaSourceId = makePlexMediaSource(drizzle);
+    const library = { ...makeLibrary(mediaSourceId, '1'), enabled: false };
+    drizzle.insert(MediaSourceLibrary).values(library).run();
+    insertPrograms(drizzle, mediaSourceId, library.uuid, 2);
+
+    const unavailableSince = new Date('2026-09-01T00:00:00Z');
+    mediaSourceDB.updateLibraries({
+      ...noLibraryChanges,
+      unavailableLibraries: [{ uuid: library.uuid, unavailableSince }],
+    });
+
+    const unavailable = await mediaSourceDB.getLibrary(library.uuid);
+    expect(unavailable?.unavailableSince).toEqual(unavailableSince);
+    expect(unavailable?.enabled).toBe(false);
+    await expect(
+      mediaSourceDB.getLibraryReferenceCounts([library.uuid]),
+    ).resolves.toEqual([
+      { libraryId: library.uuid, programCount: 2, channelProgramCount: 0 },
+    ]);
+
+    mediaSourceDB.updateLibraries({
+      ...noLibraryChanges,
+      availableLibraries: [library.uuid],
+    });
+
+    const available = await mediaSourceDB.getLibrary(library.uuid);
+    expect(available?.unavailableSince).toBeNull();
+    expect(available?.enabled).toBe(false);
+    expect(programCountForLibrary(drizzle, library.uuid)).toBe(2);
+  });
+
   test('removing a path from a local media source deletes the library row', async ({
     mediaSourceDB,
     drizzle,
