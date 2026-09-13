@@ -36,7 +36,7 @@
     "@fastify/cors": "^10.1.0",
     "@fastify/error": "^4.2.0",
     "@fastify/multipart": "^9.0.3",
-    "@fastify/static": "^8.2.0",
+    "@fastify/static": "^10.1.3",
     "@fastify/swagger": "^9.5.1",
     "@iptv/xmltv": "^1.0.1",
     "@logdna/tail-file": "^4.0.2",
