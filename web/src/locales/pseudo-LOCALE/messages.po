@@ -3877,6 +3877,10 @@ msgstr ""
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 msgstr ""
 
+#: src/components/UnavailableLibraryChip.tsx
+msgid "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
+msgstr ""
+
 #: src/components/LanguagePreferencesList.tsx
 msgid "The selected languages will be considered in order they are selected."
 msgstr ""
@@ -4160,6 +4164,10 @@ msgstr ""
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Type"
+msgstr ""
+
+#: src/components/UnavailableLibraryChip.tsx
+msgid "Unavailable"
 msgstr ""
 
 #: src/components/search/DateSearchValueNode.tsx
