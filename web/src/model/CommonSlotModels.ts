@@ -112,6 +112,9 @@ export const CommonSmartCollectionViewModel = z.object({
   smartCollectionId: z.uuid(),
   smartCollection: SmartCollection.nullable(),
   isMissing: z.boolean().optional().default(false),
+  // Only meaningful when order === 'block'.
+  blockSize: z.number().int().positive().default(3),
+  loopShortPrograms: z.boolean().default(true),
 });
 
 export type CommonSmartCollectionViewModel = z.infer<
