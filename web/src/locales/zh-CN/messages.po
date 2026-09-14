@@ -223,6 +223,11 @@ msgstr "{totalConnections, plural, other {# 个连接}}"
 msgid "{totalConnections} total"
 msgstr "共 {totalConnections}"
 
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "{unavailableSlotCount, plural, one {# slot uses a custom show that is empty or deleted. Fix or remove it before saving.} other {# slots use a custom show that is empty or deleted. Fix or remove them before saving.}}"
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 msgid "{value, plural, one {# program} other {# programs}}"
 msgstr "{value, plural, other {# 个节目}}"
@@ -1135,6 +1140,10 @@ msgstr "自定义剧集"
 msgid "Custom Show - {0}"
 msgstr "自定义剧集 - {0}"
 
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+msgid "Custom Show (add programs to a custom show first)"
+msgstr ""
+
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Custom show programs are grouped by their parent show"
 msgstr "自定义剧集的节目按其所属剧集分组"
@@ -1266,6 +1275,10 @@ msgstr "删除时段"
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Delete Transcoding Config \"{0}\"?"
 msgstr "删除转码配置「{0}」？"
+
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "Deleted custom show"
+msgstr ""
 
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/pages/channels/ChannelsPage.tsx
@@ -1680,10 +1693,18 @@ msgstr "保存新的 Jellyfin 服务器时出错，详情请查看浏览器控�
 msgid "Error saving new Smart Collection. Check server logs and browser console for details."
 msgstr "保存新的智能合集时出错，详情请查看服务器日志和浏览器控制台。"
 
-#. placeholder {0}: error.message
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
-msgid "Error saving programs. {0}"
-msgstr "保存节目时出错。{0}"
+#~ msgid "Error saving programs. {0}"
+#~ msgstr "保存节目时出错。{0}"
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+msgid "Error saving programs. {message}"
+msgstr ""
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Error saving schedule. {message}"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
 msgid "Error Screen"
@@ -3924,6 +3945,10 @@ msgid "Theme Settings"
 msgstr "主题设置"
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
+msgid "There was an error generating slots. {serverMessage}"
+msgstr ""
+
+#: src/hooks/slot_scheduler/useScheduleSlots.ts
 msgid "There was an error generating time slots. Check the browser console log for more information"
 msgstr "生成时段时出错，详情请查看浏览器控制台日志"
 
@@ -3940,6 +3965,7 @@ msgid "These settings are stored in your browser and are saved automatically whe
 msgstr "这些设置保存在你的浏览器中，修改后会自动保存。"
 
 #. placeholder {0}: slot.type .split('-') .map((s) => capitalize(s)) .join(' ')
+#: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "This {0} is marked as missing in the database."
 msgstr "此 {0} 在数据库中被标记为缺失。"
@@ -3969,9 +3995,17 @@ msgstr "该频道号已被占用"
 msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
 msgstr "这可能导致下一个时段的节目无法排入。可行的解决办法包括："
 
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "This custom show has no programs. Add programs to it or choose another show."
+msgstr ""
+
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
 msgstr "此自定义剧集已与外部播放列表同步，内容会自动更新，无法手动编辑。"
+
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "This custom show was deleted. Choose another show."
+msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
@@ -4019,6 +4053,14 @@ msgstr "此时段已与另外 {0} 个{1, plural, other {时段}}关联，内容�
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "This slot replays content aired by continue slots earlier in the period."
 msgstr "此时段会重播本周期内前面续播时段已播出的内容。"
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
+msgid "This slot's custom show has no programs, so the slot cannot be scheduled. Add programs to the show, choose another show, or remove the slot."
+msgstr ""
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
+msgid "This slot's custom show was deleted, so the slot cannot be scheduled. Choose another show or remove the slot."
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Threads"

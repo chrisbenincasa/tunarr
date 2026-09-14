@@ -223,6 +223,11 @@ msgstr ""
 msgid "{totalConnections} total"
 msgstr ""
 
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "{unavailableSlotCount, plural, one {# slot uses a custom show that is empty or deleted. Fix or remove it before saving.} other {# slots use a custom show that is empty or deleted. Fix or remove them before saving.}}"
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 msgid "{value, plural, one {# program} other {# programs}}"
 msgstr ""
@@ -1135,6 +1140,10 @@ msgstr ""
 msgid "Custom Show - {0}"
 msgstr ""
 
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+msgid "Custom Show (add programs to a custom show first)"
+msgstr ""
+
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Custom show programs are grouped by their parent show"
 msgstr ""
@@ -1265,6 +1274,10 @@ msgstr ""
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Delete Transcoding Config \"{0}\"?"
+msgstr ""
+
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "Deleted custom show"
 msgstr ""
 
 #: src/components/channels/ChannelDeleteDialog.tsx
@@ -1680,9 +1693,17 @@ msgstr ""
 msgid "Error saving new Smart Collection. Check server logs and browser console for details."
 msgstr ""
 
-#. placeholder {0}: error.message
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
-msgid "Error saving programs. {0}"
+#~ msgid "Error saving programs. {0}"
+#~ msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+msgid "Error saving programs. {message}"
+msgstr ""
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Error saving schedule. {message}"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
@@ -3922,6 +3943,10 @@ msgid "Theme Settings"
 msgstr ""
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
+msgid "There was an error generating slots. {serverMessage}"
+msgstr ""
+
+#: src/hooks/slot_scheduler/useScheduleSlots.ts
 msgid "There was an error generating time slots. Check the browser console log for more information"
 msgstr ""
 
@@ -3938,6 +3963,7 @@ msgid "These settings are stored in your browser and are saved automatically whe
 msgstr ""
 
 #. placeholder {0}: slot.type .split('-') .map((s) => capitalize(s)) .join(' ')
+#: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "This {0} is marked as missing in the database."
 msgstr ""
@@ -3967,8 +3993,16 @@ msgstr ""
 msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
 msgstr ""
 
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "This custom show has no programs. Add programs to it or choose another show."
+msgstr ""
+
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
+msgstr ""
+
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "This custom show was deleted. Choose another show."
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
@@ -4016,6 +4050,14 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "This slot replays content aired by continue slots earlier in the period."
+msgstr ""
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
+msgid "This slot's custom show has no programs, so the slot cannot be scheduled. Add programs to the show, choose another show, or remove the slot."
+msgstr ""
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
+msgid "This slot's custom show was deleted, so the slot cannot be scheduled. Choose another show or remove the slot."
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
