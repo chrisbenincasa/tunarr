@@ -1,0 +1,1 @@
+ALTER TABLE `media_source_library` ADD `unavailable_since` integer;

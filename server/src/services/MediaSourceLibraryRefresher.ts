@@ -1,13 +1,8 @@
-import type {
-  MediaSourceLibraryUpdate,
-  NewMediaSourceLibrary,
-} from '@/db/schema/MediaSourceLibrary.js';
 import { EmbyItem } from '@tunarr/types/emby';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexLibrarySection } from '@tunarr/types/plex';
 import { inject, injectable } from 'inversify';
 import { isString } from 'lodash-es';
-import { v4 } from 'uuid';
 import { MediaSourceDB } from '../db/mediaSourceDB.js';
 import { MediaSourceId } from '../db/schema/base.js';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
@@ -15,13 +10,16 @@ import type { MediaLibraryType } from '../db/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 
 import { Maybe } from '../types/util.ts';
-import { groupByUniq, isDefined } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
+import {
+  reconcileLibraries,
+  type ReportedLibrary,
+} from './reconcileLibraries.ts';
 
 @injectable()
 export class MediaSourceLibraryRefresher {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
@@ -87,90 +85,16 @@ export class MediaSourceLibraryRefresher {
       return;
     }
 
-    const plexLibraries = plexLibrariesResult
+    const reported = plexLibrariesResult
       .get()
-      .MediaContainer.Directory.filter((lib) =>
-        isDefined(this.plexLibraryTypeToTunarrType(lib)),
-      );
-    const plexLibraryKeys = new Set(plexLibraries.map((lib) => lib.key));
-    const existingLibraries = new Set(
-      mediaSource.libraries.map((lib) => lib.externalKey),
-    );
-    const incomingLibrariesById = groupByUniq(plexLibraries, (lib) => lib.key);
-
-    const newLibraries = plexLibraryKeys.difference(existingLibraries);
-    const removedLibraries = existingLibraries.difference(plexLibraryKeys);
-    const updatedLibraries = plexLibraryKeys.intersection(existingLibraries);
-
-    const librariesToAdd: NewMediaSourceLibrary[] = [];
-    for (const newLibraryKey of newLibraries) {
-      const plexLibrary = plexLibraries.find(
-        (lib) => lib.key === newLibraryKey,
-      );
-      if (!plexLibrary) {
-        // Don't know why this would happen
-        continue;
-      }
-
-      librariesToAdd.push({
-        mediaSourceId: mediaSource.uuid,
-        externalKey: plexLibrary.key,
-        // Checked above
-        mediaType: this.plexLibraryTypeToTunarrType(plexLibrary)!,
-        uuid: v4(),
-        enabled: false,
-        name: plexLibrary.title,
-      } satisfies NewMediaSourceLibrary);
-    }
-
-    const librariesToRemove = mediaSource.libraries.filter((existing) =>
-      removedLibraries.has(existing.externalKey),
-    );
-
-    const librariesToUpdate = mediaSource.libraries
-      .filter((existing) => updatedLibraries.has(existing.externalKey))
-      .map((existing) => {
-        const updatedApiLibrary = incomingLibrariesById[existing.externalKey];
-        return {
-          externalKey: existing.externalKey,
-          name: updatedApiLibrary?.title ?? existing.name,
-          mediaType: updatedApiLibrary
-            ? this.plexLibraryTypeToTunarrType(updatedApiLibrary)
-            : existing.mediaType,
-          uuid: existing.uuid,
-        } satisfies MediaSourceLibraryUpdate;
+      .MediaContainer.Directory.flatMap((lib): ReportedLibrary[] => {
+        const mediaType = this.plexLibraryTypeToTunarrType(lib);
+        return mediaType
+          ? [{ externalKey: lib.key, name: lib.title, mediaType }]
+          : [];
       });
 
-    this.logger.debug(
-      'Found %d new Plex libraries, %d removed libraries for media source %s',
-      librariesToAdd.length,
-      librariesToRemove.length,
-      mediaSource.uuid,
-    );
-
-    this.mediaSourceDB.updateLibraries({
-      addedLibraries: librariesToAdd,
-      deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
-      updatedLibraries: librariesToUpdate,
-    });
-  }
-
-  private plexLibraryTypeToTunarrType(
-    plexLibrary: PlexLibrarySection,
-  ): Maybe<MediaLibraryType> {
-    switch (plexLibrary.type) {
-      case 'movie':
-        // Other video plex libraries have type=movie but a tv.plex.agents.none agent, AFAICT.
-        return plexLibrary.agent.includes('none') ? 'other_videos' : 'movies';
-      case 'show':
-      case 'episode':
-        return 'shows';
-      case 'artist':
-      case 'track':
-        return 'tracks';
-      case 'photo':
-        return;
-    }
+    await this.reconcile(mediaSource, 'Plex', reported);
   }
 
   private async handleJellyfin(mediaSource: MediaSourceWithRelations) {
@@ -188,77 +112,18 @@ export class MediaSourceLibraryRefresher {
       return;
     }
 
-    const jellyfinLibraries = jellyfinLibrariesResult
+    const reported = jellyfinLibrariesResult
       .get()
-      .filter(
-        (lib) =>
-          lib.CollectionType &&
-          isDefined(this.jellyfinLibraryTypeToTunarrType(lib.CollectionType)),
-      );
-    this.logger.trace('Existing Jellyfin libraries: %O', mediaSource.libraries);
-    const jellyfinLibraryKeys = new Set(
-      jellyfinLibraries.map((lib) => lib.ItemId),
-    );
-    const existingLibraries = new Set(
-      mediaSource.libraries.map((lib) => lib.externalKey),
-    );
+      .flatMap((lib): ReportedLibrary[] => {
+        const mediaType = this.jellyfinLibraryTypeToTunarrType(
+          lib.CollectionType,
+        );
+        return mediaType
+          ? [{ externalKey: lib.ItemId, name: lib.Name ?? '', mediaType }]
+          : [];
+      });
 
-    const newLibraries = jellyfinLibraryKeys.difference(existingLibraries);
-    const removedLibraries = existingLibraries.difference(jellyfinLibraryKeys);
-    // const updatedLibraries =
-    //   jellyfinLibraryKeys.intersection(existingLibraries);
-
-    const librariesToAdd: NewMediaSourceLibrary[] = [];
-    for (const newLibraryKey of newLibraries) {
-      const jellyfinLibrary = jellyfinLibraries.find(
-        (lib) => lib.ItemId === newLibraryKey,
-      );
-      if (!jellyfinLibrary) {
-        // Don't know why this would happen
-        continue;
-      }
-
-      librariesToAdd.push({
-        mediaSourceId: mediaSource.uuid,
-        externalKey: jellyfinLibrary.ItemId,
-        // Checked above
-        mediaType: this.jellyfinLibraryTypeToTunarrType(
-          jellyfinLibrary.CollectionType,
-        )!,
-        uuid: v4(),
-        enabled: false,
-        name: jellyfinLibrary.Name ?? '',
-      } satisfies NewMediaSourceLibrary);
-    }
-
-    const seenExternalIds = new Set<string>();
-    const dupeLibrariesToRemove: string[] = [];
-    for (const library of mediaSource.libraries) {
-      if (seenExternalIds.has(library.externalKey)) {
-        dupeLibrariesToRemove.push(library.uuid);
-      } else {
-        seenExternalIds.add(library.externalKey);
-      }
-    }
-
-    const librariesToRemove = mediaSource.libraries.filter(
-      (existing) =>
-        removedLibraries.has(existing.externalKey) ||
-        dupeLibrariesToRemove.includes(existing.uuid),
-    );
-
-    this.logger.debug(
-      'Found %d new Jellyfin libraries, %d removed libraries for media source %s',
-      librariesToAdd.length,
-      librariesToRemove.length,
-      mediaSource.uuid,
-    );
-
-    this.mediaSourceDB.updateLibraries({
-      addedLibraries: librariesToAdd,
-      deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
-      updatedLibraries: [],
-    });
+    await this.reconcile(mediaSource, 'Jellyfin', reported);
   }
 
   private async handleEmby(mediaSource: MediaSourceWithRelations) {
@@ -280,63 +145,108 @@ export class MediaSourceLibraryRefresher {
       return;
     }
 
-    if (embyLibrariesResult.get().Items.length === 0) {
-      this.logger.error('Got no libraries from Emby server: %O', mediaSource);
+    const reported = embyLibrariesResult
+      .get()
+      .Items.flatMap((lib): ReportedLibrary[] => {
+        const mediaType = this.embyLibraryTypeToTunarrType(lib.CollectionType);
+        return mediaType
+          ? [{ externalKey: lib.Id, name: lib.Name ?? '', mediaType }]
+          : [];
+      });
+
+    await this.reconcile(mediaSource, 'Emby', reported);
+  }
+
+  private async reconcile(
+    mediaSource: MediaSourceWithRelations,
+    backend: string,
+    reported: ReportedLibrary[],
+  ) {
+    const result = reconcileLibraries(mediaSource, reported, new Date());
+
+    if (result.type === 'empty_response') {
+      this.logger.error(
+        '%s media source %s reported no supported libraries but %d are stored. The access token may be restricted or the server may still be starting. Stored libraries were left untouched.',
+        backend,
+        mediaSource.uuid,
+        mediaSource.libraries.length,
+      );
       return;
     }
 
-    const embyLibraries = embyLibrariesResult
-      .get()
-      .Items.filter(
-        (lib) =>
-          lib.CollectionType &&
-          isDefined(this.embyLibraryTypeToTunarrType(lib.CollectionType)),
-      );
-    const embyLibraryKeys = new Set(embyLibraries.map((lib) => lib.Id));
-    const existingLibraries = new Set(
-      mediaSource.libraries.map((lib) => lib.externalKey),
+    const storedById = new Map(
+      mediaSource.libraries.map((library) => [library.uuid, library]),
     );
 
-    const newLibraries = embyLibraryKeys.difference(existingLibraries);
-    const removedLibraries = existingLibraries.difference(embyLibraryKeys);
+    // Counts are only queried on the transition to unavailable, so a
+    // permanently removed library costs nothing on later runs.
+    if (result.unavailableLibraries.length > 0) {
+      const counts = new Map(
+        (
+          await this.mediaSourceDB.getLibraryReferenceCounts(
+            result.unavailableLibraries.map(({ uuid }) => uuid),
+          )
+        ).map((count) => [count.libraryId, count]),
+      );
 
-    const librariesToAdd: NewMediaSourceLibrary[] = [];
-    for (const newLibraryKey of newLibraries) {
-      const embyLibrary = embyLibraries.find((lib) => lib.Id === newLibraryKey);
-      if (!embyLibrary) {
-        // Don't know why this would happen
-        continue;
+      for (const { uuid } of result.unavailableLibraries) {
+        this.logger.warn(
+          "Library '%s' (key '%s') of media source '%s' is missing from the %s response; marking unavailable (%d programs, %d channel schedule entries preserved)",
+          storedById.get(uuid)?.name,
+          storedById.get(uuid)?.externalKey,
+          mediaSource.uuid,
+          backend,
+          counts.get(uuid)?.programCount ?? 0,
+          counts.get(uuid)?.channelProgramCount ?? 0,
+        );
       }
-
-      librariesToAdd.push({
-        mediaSourceId: mediaSource.uuid,
-        externalKey: embyLibrary.Id,
-        // Checked above
-        mediaType: this.embyLibraryTypeToTunarrType(
-          embyLibrary.CollectionType,
-        )!,
-        uuid: v4(),
-        enabled: false,
-        name: embyLibrary.Name ?? '',
-      } satisfies NewMediaSourceLibrary);
     }
 
-    const librariesToRemove = mediaSource.libraries.filter((existing) =>
-      removedLibraries.has(existing.externalKey),
-    );
+    for (const uuid of result.availableLibraries) {
+      this.logger.info(
+        "Library '%s' (key '%s') of media source '%s' is back in the %s response; marking available",
+        storedById.get(uuid)?.name,
+        storedById.get(uuid)?.externalKey,
+        mediaSource.uuid,
+        backend,
+      );
+    }
+
+    for (const { keepUuid, duplicateUuids } of result.duplicateLibraries) {
+      this.logger.warn(
+        'Deleting duplicate libraries %O of media source %s after moving their programs to library %s',
+        duplicateUuids,
+        mediaSource.uuid,
+        keepUuid,
+      );
+    }
 
     this.logger.debug(
-      'Found %d new Emby libraries, %d removed libraries for media source %s',
-      librariesToAdd.length,
-      librariesToRemove.length,
+      'Found %d new %s libraries for media source %s',
+      result.addedLibraries.length,
+      backend,
       mediaSource.uuid,
     );
 
-    this.mediaSourceDB.updateLibraries({
-      addedLibraries: librariesToAdd,
-      deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
-      updatedLibraries: [],
-    });
+    this.mediaSourceDB.updateLibraries(result);
+  }
+
+  private plexLibraryTypeToTunarrType(
+    plexLibrary: PlexLibrarySection,
+  ): Maybe<MediaLibraryType> {
+    switch (plexLibrary.type) {
+      case 'movie':
+        // Other video plex libraries have type=movie but a tv.plex.agents.none agent, AFAICT.
+        return plexLibrary.agent.includes('none') ? 'other_videos' : 'movies';
+      case 'show':
+      case 'episode':
+        return 'shows';
+      case 'artist':
+      case 'track':
+        return 'tracks';
+      case 'photo':
+        return;
+    }
   }
 
   private jellyfinLibraryTypeToTunarrType(

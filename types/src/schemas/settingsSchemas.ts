@@ -124,6 +124,7 @@ const BaseMediaSourceLibrarySchema = z.object({
   type: MediaSourceType,
   enabled: z.boolean(),
   isLocked: z.boolean(),
+  unavailableSince: z.number().optional(),
 });
 
 export const MediaSourceLibrarySchema = z.object({
