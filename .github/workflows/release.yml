@@ -96,15 +96,42 @@ jobs:
         run: |
           set -euo pipefail
           # Grouped Features / Bug Fixes sections, the same shape
-          # semantic-release produced. Run before tagging so the range is
-          # "everything since the last release".
-          npx -y conventional-changelog-cli \
-            -p conventionalcommits \
-            -o RELEASE_NOTES.md \
-            -r 1
+          # semantic-release produced. The tag does not exist yet, so the
+          # version and range are passed explicitly; left to itself the CLI
+          # titles the notes with the stale package.json version.
+          #
+          # Stable releases cover everything since the last stable tag, so
+          # they roll up any dev prereleases in between. Dev prereleases only
+          # cover what changed since the nearest tag of either kind.
+          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then
+            PREV_TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD 2>/dev/null || true)"
+          else
+            PREV_TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude 'v*-*' HEAD 2>/dev/null || true)"
+          fi
+          echo "Previous tag: ${PREV_TAG:-<none>}"
 
-          if [ ! -s RELEASE_NOTES.md ]; then
-            echo "No conventional commits found since the last release." > RELEASE_NOTES.md
+          CONTEXT="${RUNNER_TEMP}/changelog-context.json"
+          jq -n \
+            --arg version "${{ steps.version.outputs.version }}" \
+            --arg currentTag "${{ steps.version.outputs.tag }}" \
+            --arg previousTag "${PREV_TAG}" \
+            '{version: $version, currentTag: $currentTag, previousTag: $previousTag}' \
+            > "${CONTEXT}"
+
+          # -i /dev/null: the CLI otherwise prepends CHANGELOG.md to the output.
+          npx -y \
+            -p conventional-changelog@8.1.3 \
+            -p conventional-changelog-conventionalcommits@10.4.0 \
+            -- conventional-changelog \
+            -p conventionalcommits \
+            --context "${CONTEXT}" \
+            ${PREV_TAG:+--from "${PREV_TAG}"} \
+            --to HEAD \
+            -i /dev/null \
+            --stdout > RELEASE_NOTES.md
+
+          if ! grep -q '^\* ' RELEASE_NOTES.md; then
+            echo "No conventional commits found since ${PREV_TAG:-the first commit}." > RELEASE_NOTES.md
           fi
 
           echo "--- notes ---"
