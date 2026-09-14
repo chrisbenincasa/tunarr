@@ -59,18 +59,19 @@ State at PR head `9eeafa1e`:
 - Keep dynamic mode behind a feature flag until slice 7 lands.
 - Generate the migration last, just before slice 2 merges.
 - Blocker IDs (B1–B10) refer to [01-design-review.md](./01-design-review.md#blockers).
+- Work is tracked in [#2104](https://github.com/chrisbenincasa/tunarr/issues/2104), with one sub-issue per slice.
 
 | Slice | Contents | Resolves | Depends on | Status | Tracking |
 |---|---|---|---|---|---|
-| 0 | Settle Q1–Q10. Replace the March spec with this record | — | — | In progress | — |
-| 1 | Shared building blocks in classic code, with no classic behavior change: serializable content iterators, season filter, filler selection | Parity bugs (shuffle wrap, season 0, cooldown) | 0 | Not started | — |
-| 2 | Schema and DB: lineup mode column, tables, IANA zone, `end_time_ms`, start offset, FKs and indexes, unique `(channel, sequence)`, transactional writes, slot diffing | B5, B9 | 0 | Not started | — |
-| 3 | Dynamic planner ported onto slice 1: anchor semantics per D3, correct resume, one shared path for ordered and shuffle modes, test suite restored | B3, B7 | 1, 2 | Not started | — |
-| 4 | Generation service: background buffer task, per-channel lock, one transaction per run, invalidation on edit, program lifecycle consumer | B2 | 3 | Not started | — |
-| 5 | Runtime readers: lineup-mode dispatch, one timeline read by guide and stream, stream safeguards, remaining lineup consumers | B1 | 4 | Not started | — |
-| 6 | API: one `/schedules` route family plus assignment, controller pattern, server-minted IDs, validation on every write | — | 2 | Not started | — |
-| 7 | Web: schedule pages, lineup-mode switch and assignment, dynamic filler panel with playback modes, zod-driven forms, slot delete and reorder, preview of unsaved edits | B6, B8, B10 | 6 | Not started | — |
-| 8 | Mid-roll, filler profiles, shareable templates | — | 5, 7 | Not started | — |
+| 0 | Settle Q1–Q10. Replace the March spec with this record | — | — | In progress | [#2095](https://github.com/chrisbenincasa/tunarr/issues/2095) |
+| 1 | Shared building blocks in classic code, with no classic behavior change: serializable content iterators, season filter, filler selection | Parity bugs (shuffle wrap, season 0, cooldown) | 0 | Not started | [#2096](https://github.com/chrisbenincasa/tunarr/issues/2096) |
+| 2 | Schema and DB: lineup mode column, tables, IANA zone, `end_time_ms`, start offset, FKs and indexes, unique `(channel, sequence)`, transactional writes, slot diffing | B5, B9 | 0 | Not started | [#2097](https://github.com/chrisbenincasa/tunarr/issues/2097) |
+| 3 | Dynamic planner ported onto slice 1: anchor semantics per D3, correct resume, one shared path for ordered and shuffle modes, test suite restored | B3, B7 | 1, 2 | Not started | [#2098](https://github.com/chrisbenincasa/tunarr/issues/2098) |
+| 4 | Generation service: background buffer task, per-channel lock, one transaction per run, invalidation on edit, program lifecycle consumer | B2 | 3 | Not started | [#2100](https://github.com/chrisbenincasa/tunarr/issues/2100) |
+| 5 | Runtime readers: lineup-mode dispatch, one timeline read by guide and stream, stream safeguards, remaining lineup consumers | B1 | 4 | Not started | [#2102](https://github.com/chrisbenincasa/tunarr/issues/2102) |
+| 6 | API: one `/schedules` route family plus assignment, controller pattern, server-minted IDs, validation on every write | — | 2 | Not started | [#2099](https://github.com/chrisbenincasa/tunarr/issues/2099) |
+| 7 | Web: schedule pages, lineup-mode switch and assignment, dynamic filler panel with playback modes, zod-driven forms, slot delete and reorder, preview of unsaved edits | B6, B8, B10 | 6 | Not started | [#2101](https://github.com/chrisbenincasa/tunarr/issues/2101) |
+| 8 | Mid-roll, filler profiles, shareable templates | — | 5, 7 | Not started | [#2103](https://github.com/chrisbenincasa/tunarr/issues/2103) |
 
 ### Rules for every slice
 
