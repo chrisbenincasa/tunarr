@@ -7,6 +7,7 @@ import {
   OneDayMillis,
   OneWeekMillis,
   lineupItemAppearsInSchedule,
+  unavailableCustomShowSlotIndexes,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { v4 } from 'uuid';
 import type {
@@ -14,6 +15,7 @@ import type {
   TimeSlotViewModel,
 } from '@/model/TimeSlotModels.ts';
 import { useChannelEditorLazy } from '@/store/selectors.ts';
+import { plural } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { ArrowBack, Autorenew, ExpandMore } from '@mui/icons-material';
 import type { SelectChangeEvent } from '@mui/material';
@@ -59,12 +61,15 @@ import {
   values,
 } from 'lodash-es';
 import { useCallback, useState } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { useSnackbar } from 'notistack';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { SlotProgrammingOptionsProvider } from '../../components/slot_scheduler/SlotProgrammingOptionsProvider.tsx';
+import { getApiErrorMessage } from '../../helpers/apiError.ts';
+import { useSlotProgramOptions } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { flexOptions, padOptions } from '../../helpers/slotSchedulerUtil.ts';
@@ -167,8 +172,15 @@ export default function TimeSlotEditorPage() {
       required: true,
     },
   });
+  const { dropdownOpts: programOptions } = useSlotProgramOptions();
+  const slots = useWatch({ control, name: 'slots' });
+  const unavailableSlotCount = unavailableCustomShowSlotIndexes(
+    slots,
+    programOptions,
+  ).length;
 
   const queryClient = useQueryClient();
+  const snackbar = useSnackbar();
   const updateLineupMutation = useUpdateLineup({
     onSuccess() {
       queryClient
@@ -176,6 +188,12 @@ export default function TimeSlotEditorPage() {
           predicate: invalidateTaggedQueries('Channels'),
         })
         .catch(console.error);
+    },
+    onError(error) {
+      const message = getApiErrorMessage(error) ?? error.message;
+      snackbar.enqueueSnackbar(t`Error saving schedule. ${message}`, {
+        variant: 'error',
+      });
     },
   });
 
@@ -296,6 +314,15 @@ export default function TimeSlotEditorPage() {
         <Typography variant="h4">{channel!.name}</Typography>
         {errors.slots?.message && (
           <Alert severity="error">{errors.slots.message}</Alert>
+        )}
+        {unavailableSlotCount > 0 && (
+          <Alert severity="error">
+            {plural(unavailableSlotCount, {
+              one: '# slot uses a custom show that is empty or deleted. Fix or remove it before saving.',
+              other:
+                '# slots use a custom show that is empty or deleted. Fix or remove them before saving.',
+            })}
+          </Alert>
         )}
         <PaddedPaper>
           <Stack direction="row" alignItems="center">
@@ -539,6 +566,7 @@ export default function TimeSlotEditorPage() {
         <Button
           variant="contained"
           // disabled={(!isValid || !isDirty) && !programsDirty}
+          disabled={unavailableSlotCount > 0}
           onClick={() => onSave()}
         >
           <Trans>Save</Trans>

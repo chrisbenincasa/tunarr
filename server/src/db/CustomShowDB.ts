@@ -13,6 +13,7 @@ import { Kysely } from 'kysely';
 import { chunk, isNil } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
+import { GenericBadRequestError } from '../types/errors.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
@@ -125,11 +126,19 @@ export class CustomShowDB {
       return null;
     }
 
-    if (updateRequest.programs && updateRequest.programs.length > 0) {
-      await this.upsertCustomShowContent(show.uuid, updateRequest.programs);
+    // An omitted field leaves membership alone. An explicit list, including an
+    // empty one, replaces it. Resolve every ID before changing anything.
+    const replacementPrograms = updateRequest.programs;
+    if (replacementPrograms !== undefined) {
+      const missingIds = await this.findMissingProgramIds(replacementPrograms);
+      if (missingIds.length > 0) {
+        throw new GenericBadRequestError(
+          `Cannot update custom show programs: ${missingIds.length} program(s) do not exist: ${missingIds.slice(0, 10).join(', ')}`,
+        );
+      }
     }
 
-    const updates: Partial<NewCustomShow> = {};
+    const updates: Partial<typeof CustomShow.$inferInsert> = {};
     if (updateRequest.name) {
       updates.name = updateRequest.name;
     }
@@ -145,20 +154,43 @@ export class CustomShowDB {
         updateRequest.syncExternalPlaylistId ?? null;
     }
 
-    if (Object.keys(updates).length > 0) {
-      await this.db
-        .updateTable('customShow')
-        .where('uuid', '=', show.uuid)
-        .limit(1)
-        .set({
-          ...updates,
-          // Do not allow clients to set this.
-          lastSyncedAt: undefined,
-        })
-        .execute();
-    }
+    this.drizzle.transaction((tx) => {
+      if (Object.keys(updates).length > 0) {
+        tx.update(CustomShow)
+          .set(updates)
+          .where(eq(CustomShow.uuid, show.uuid))
+          .run();
+      }
+
+      if (replacementPrograms === undefined) {
+        return;
+      }
+
+      tx.delete(CustomShowContent)
+        .where(eq(CustomShowContent.customShowUuid, show.uuid))
+        .run();
+
+      const rows = replacementPrograms.map(
+        (program, index) =>
+          ({
+            customShowUuid: show.uuid,
+            contentUuid: program.id,
+            index,
+          }) satisfies NewCustomShowContent,
+      );
+      for (const contentChunk of chunk(rows, 1_000)) {
+        tx.insert(CustomShowContent).values(contentChunk).run();
+      }
+    });
 
     return await this.getShow(show.uuid);
+  }
+
+  private async findMissingProgramIds(programs: CondensedContentProgram[]) {
+    const ids = [...new Set(programs.map((program) => program.id))];
+    const existingIds =
+      await this.basicProgramRepo.filterNonExistentProgramIds(ids);
+    return ids.filter((programId) => !existingIds.has(programId));
   }
 
   async createShow(createRequest: CreateCustomShowRequest) {

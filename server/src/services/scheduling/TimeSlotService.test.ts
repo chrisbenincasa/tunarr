@@ -1525,6 +1525,71 @@ describe('TimeSlotService', () => {
         expect(result.lineup).toBeDefined();
         // May have flex time or may be empty
       });
+
+      const midnight = dayjs('2024-01-01T00:00:00.000Z');
+      const movieProgram = (
+        uuid: string,
+        duration: number,
+      ): SlotSchedulerProgram => ({
+        ...createFakeProgramOrm({ uuid, type: 'movie', duration }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      });
+      const singleSlotSchedule = (
+        slot: TimeSlotSchedule['slots'][number],
+      ): TimeSlotSchedule => ({
+        type: 'time',
+        flexPreference: 'end',
+        maxDays: 1,
+        padMs: 60 * 60 * 1000,
+        slots: [slot],
+        period: 'day',
+        latenessMs: 0,
+        timeZoneOffset: 0,
+      });
+
+      test('an empty custom show slot fills its time with flex', async () => {
+        const result = await scheduleTimeSlots(
+          singleSlotSchedule({
+            id: randomUUID(),
+            startTime: 0,
+            type: 'custom-show',
+            customShowId: randomUUID(),
+            order: 'next',
+            direction: 'asc',
+          }),
+          [],
+          [42],
+          0,
+          midnight,
+        );
+
+        expect(result.lineup.length).toBeGreaterThan(0);
+        expect(result.lineup.every((item) => item.type === 'flex')).toBe(true);
+      });
+
+      test('zero-duration content does not stall a slot', async () => {
+        const result = await scheduleTimeSlots(
+          singleSlotSchedule({
+            id: randomUUID(),
+            startTime: 0,
+            type: 'movie',
+            order: 'next',
+            direction: 'asc',
+          }),
+          [movieProgram('zero', 0), movieProgram('valid', 20 * 60 * 1000)],
+          [42],
+          0,
+          midnight,
+        );
+
+        const ids = result.lineup.flatMap((item) =>
+          item.type === 'content' && 'id' in item && item.id ? [item.id] : [],
+        );
+        expect(ids.length).toBeGreaterThan(0);
+        expect(ids).not.toContain('zero');
+      });
     });
 
     describe('program deduplication', () => {

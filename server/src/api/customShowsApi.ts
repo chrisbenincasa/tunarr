@@ -11,6 +11,8 @@ import { isNil, isNull, isNumber, sumBy } from 'lodash-es';
 import { z } from 'zod/v4';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { container } from '../container.ts';
+import { findBadRequestError } from '../types/errors.ts';
+import { Result } from '../types/result.ts';
 import { parseFloatOrNull } from '../util/index.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -105,16 +107,25 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         body: UpdateCustomShowRequestSchema,
         response: {
           200: CustomShowSchema,
+          400: z.string(),
           404: z.void(),
         },
       },
     },
     async (req, res) => {
-      const customShow = await req.serverCtx.customShowDB.saveShow(
-        req.params.id,
-        req.body,
+      const saveResult = await Result.attemptAsync(() =>
+        req.serverCtx.customShowDB.saveShow(req.params.id, req.body),
       );
 
+      if (saveResult.isFailure()) {
+        const badRequest = findBadRequestError(saveResult.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw saveResult.error;
+      }
+
+      const customShow = saveResult.get();
       if (isNil(customShow)) {
         return res.status(404).send();
       }
