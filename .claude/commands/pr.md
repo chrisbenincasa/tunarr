@@ -17,12 +17,15 @@ argument-hint: Optional PR title or description hint
 Create a pull request following Tunarr's branching conventions:
 
 **Branch targeting rules:**
-- `fix` commits → target `main`
-- `feat` commits and large changes → target `dev`
+- Target `dev` for:
+  - New features (`feat` commits)
+  - Changes that aren't backwards compatible, such as fixes that require a database migration
+- Target `main` for everything else: backwards-compatible fixes, `chore`, `build`, `ci`, `docs`, `refactor`, `test`, etc.
+- Decide from what the change does, not just the commit prefix. For example, a `fix` that adds a migration under `server/src/migration/` goes to `dev`.
 - If the commits are mixed or ambiguous, ask the user which branch to target before proceeding
 
 **Steps:**
-1. Determine the correct target branch from the commit types above
+1. Determine the correct target branch using the rules above
 2. If there are uncommitted changes, stop and tell the user to commit first
 3. Push the current branch to origin if not already pushed
 4. Draft a PR title and body based on the commits and diff:
