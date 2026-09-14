@@ -818,7 +818,7 @@ msgstr "Cancel"
 msgid "Cannot be empty"
 msgstr "Cannot be empty"
 
-#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:150
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:158
 msgid "Cannot disable libraries when they are locked"
 msgstr "Cannot disable libraries when they are locked"
 
@@ -936,7 +936,7 @@ msgstr "Click to preview the items in this Custom Show. Note that only the whole
 
 #: src/components/channel_config/SelectedProgrammingList.tsx:223
 #: src/components/channels/ChannelSessionsDialog.tsx:30
-#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:171
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:179
 msgid "Close"
 msgstr "Close"
 
@@ -1359,7 +1359,7 @@ msgstr "Do not group programs at all. Normal shuffle."
 msgid "Documentation"
 msgstr "Documentation"
 
-#: src/components/MediaSourceLibraryTable.tsx:450
+#: src/components/MediaSourceLibraryTable.tsx:467
 msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
 msgstr "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
 
@@ -1962,7 +1962,7 @@ msgstr "Flex Style"
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
 msgstr "For more details on manually retrieving a Plex token, see <0>here</0>"
 
-#: src/components/MediaSourceLibraryTable.tsx:184
+#: src/components/MediaSourceLibraryTable.tsx:185
 msgid "Force Scan"
 msgstr "Force Scan"
 
@@ -2214,7 +2214,7 @@ msgid "Last run"
 msgstr "Last run"
 
 #. placeholder {0}: library.lastScannedAt ? dayjs(library.lastScannedAt)?.format() : t`never`
-#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:118
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:126
 msgid "Last Scanned: {0}"
 msgstr "Last Scanned: {0}"
 
@@ -2222,7 +2222,7 @@ msgstr "Last Scanned: {0}"
 msgid "Last Scheduled Execution"
 msgstr "Last Scheduled Execution"
 
-#: src/components/MediaSourceLibraryTable.tsx:277
+#: src/components/MediaSourceLibraryTable.tsx:288
 msgid "Last Synced"
 msgstr "Last Synced"
 
@@ -2247,7 +2247,7 @@ msgstr "Let's get started..."
 msgid "Level"
 msgstr "Level"
 
-#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:101
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:104
 msgid "Libraries"
 msgstr "Libraries"
 
@@ -2396,7 +2396,7 @@ msgstr "Makes multiple copies of the schedule and plays them in sequence"
 msgid "Makes multiple copies of the schedule and plays them in sequence. Normally this isn't necessary, because Tunarr will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels."
 msgstr "Makes multiple copies of the schedule and plays them in sequence. Normally this isn't necessary, because Tunarr will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels."
 
-#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:95
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:97
 msgid "Manage Libraries"
 msgstr "Manage Libraries"
 
@@ -2488,7 +2488,7 @@ msgstr "Media Sources"
 msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 msgstr "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 
-#: src/components/MediaSourceLibraryTable.tsx:270
+#: src/components/MediaSourceLibraryTable.tsx:281
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:255
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:256
 msgid "Media Type"
@@ -2577,7 +2577,7 @@ msgstr "Must use a valid URL, or empty."
 
 #: src/components/custom-shows/EditCustomShowForm.tsx:274
 #: src/components/filler/EditFillerListForm.tsx:137
-#: src/components/MediaSourceLibraryTable.tsx:257
+#: src/components/MediaSourceLibraryTable.tsx:258
 #: src/components/settings/ConnectMediaSources.tsx:44
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx:95
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx:93
@@ -2608,7 +2608,7 @@ msgstr "Name can only contain alphanumeric characters, dashes, and underscores"
 msgid "Need at least one path"
 msgstr "Need at least one path"
 
-#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:118
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx:126
 msgid "never"
 msgstr "never"
 
@@ -3050,8 +3050,8 @@ msgstr "Protocol must be HTTP or HTTPS"
 msgid "QSV Device"
 msgstr "QSV Device"
 
-#: src/components/MediaSourceLibraryTable.tsx:151
-#: src/components/MediaSourceLibraryTable.tsx:181
+#: src/components/MediaSourceLibraryTable.tsx:152
+#: src/components/MediaSourceLibraryTable.tsx:182
 msgid "Queued"
 msgstr "Queued"
 
@@ -3368,7 +3368,7 @@ msgstr "Save as Smart Collection"
 msgid "Save Smart Collection"
 msgstr "Save Smart Collection"
 
-#: src/components/MediaSourceLibraryTable.tsx:154
+#: src/components/MediaSourceLibraryTable.tsx:155
 msgid "Scan"
 msgstr "Scan"
 
@@ -3381,8 +3381,8 @@ msgstr "Scan {0}"
 msgid "Scanner"
 msgstr "Scanner"
 
-#: src/components/MediaSourceLibraryTable.tsx:153
-#: src/components/MediaSourceLibraryTable.tsx:183
+#: src/components/MediaSourceLibraryTable.tsx:154
+#: src/components/MediaSourceLibraryTable.tsx:184
 msgid "Scanning"
 msgstr "Scanning"
 
@@ -3657,7 +3657,7 @@ msgstr "Soundtrack"
 msgid "Source"
 msgstr "Source"
 
-#: src/components/MediaSourceLibraryTable.tsx:249
+#: src/components/MediaSourceLibraryTable.tsx:250
 msgid "Source Type"
 msgstr "Source Type"
 
@@ -3845,6 +3845,10 @@ msgstr "The image will be rendered at its actual size without any scaling applie
 #: src/hooks/useVersion.tsx:44
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 msgstr "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
+
+#: src/components/UnavailableLibraryChip.tsx:17
+msgid "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
+msgstr "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
 
 #: src/components/LanguagePreferencesList.tsx:50
 msgid "The selected languages will be considered in order they are selected."
@@ -4118,6 +4122,10 @@ msgstr "TV shows are grouped by show"
 #: src/pages/system/TroubleshootPage.tsx:683
 msgid "Type"
 msgstr "Type"
+
+#: src/components/UnavailableLibraryChip.tsx:23
+msgid "Unavailable"
+msgstr "Unavailable"
 
 #: src/components/search/DateSearchValueNode.tsx:104
 #: src/components/search/DateSearchValueNode.tsx:107
