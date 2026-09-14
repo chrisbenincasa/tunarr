@@ -7,6 +7,7 @@ import type {
   UpsertResult,
   WithChannelIdFilter,
 } from '@/db/interfaces/IProgramDB.js';
+import type { IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import type { Maybe, PagedResult } from '@/types/util.js';
 import { inject, injectable } from 'inversify';
@@ -73,6 +74,7 @@ export class ProgramDB implements IProgramDB {
     private readonly searchRepo: ProgramSearchRepository,
     @inject(KEYS.ProgramStateRepository)
     private readonly stateRepo: ProgramStateRepository,
+    @inject(KEYS.ChannelDB) private readonly channelDB: IChannelDB,
   ) {}
 
   getProgramById(
@@ -177,6 +179,51 @@ export class ProgramDB implements IProgramDB {
     return this.externalIdRepo.lookupByExternalId(
       eid as Parameters<typeof this.externalIdRepo.lookupByExternalId>[0],
     );
+  }
+
+  lookupProgramByPlexGuid(
+    plexGuid: string,
+  ): Promise<Maybe<ProgramCanonicalIdLookupResult>> {
+    return this.externalIdRepo.lookupProgramSummaryByPlexGuid(plexGuid);
+  }
+
+  async reconcilePlexRatingKeyChange(args: {
+    programUuid: string;
+    mediaSourceId: MediaSourceId;
+    newRatingKey: string;
+    directFilePath?: string | null;
+    externalFilePath?: string | null;
+  }): Promise<void> {
+    const duplicateProgramUuid =
+      await this.basicProg.findProgramUuidByMediaSourceExternalKey(
+        args.mediaSourceId,
+        'plex',
+        args.newRatingKey,
+        args.programUuid,
+      );
+
+    await this.basicProg.updateProgramExternalKey(
+      args.programUuid,
+      args.newRatingKey,
+    );
+
+    await this.externalIdRepo.updateProgramPlexRatingKey(
+      args.programUuid,
+      args.mediaSourceId,
+      {
+        externalKey: args.newRatingKey,
+        directFilePath: args.directFilePath ?? undefined,
+        externalFilePath: args.externalFilePath ?? undefined,
+      },
+    );
+
+    if (duplicateProgramUuid) {
+      await this.channelDB.replaceProgramUuidInAllLineups(
+        duplicateProgramUuid,
+        args.programUuid,
+      );
+      await this.stateRepo.updateProgramsState([duplicateProgramUuid], 'missing');
+    }
   }
 
   lookupByExternalIds(

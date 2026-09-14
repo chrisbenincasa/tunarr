@@ -61,6 +61,34 @@ export class ProgramExternalIdRepository {
     );
   }
 
+  async lookupProgramSummaryByPlexGuid(
+    plexGuid: string,
+  ): Promise<
+    | {
+        uuid: string;
+        canonicalId: string | null;
+        libraryId: string | null;
+        externalKey: string;
+      }
+    | undefined
+  > {
+    const row = await this.db
+      .selectFrom('programExternalId as eid')
+      .innerJoin('program as p', 'p.uuid', 'eid.programUuid')
+      .select([
+        'p.uuid as uuid',
+        'p.canonicalId as canonicalId',
+        'p.libraryId as libraryId',
+        'p.externalKey as externalKey',
+      ])
+      .where('eid.sourceType', '=', ProgramExternalIdType.PLEX_GUID)
+      .where('eid.externalKey', '=', plexGuid)
+      .where('eid.mediaSourceId', 'is', null)
+      .executeTakeFirst();
+
+    return row;
+  }
+
   async lookupByExternalIds(
     ids:
       | Set<[RemoteSourceType, MediaSourceId, string]>
@@ -295,6 +323,7 @@ export class ProgramExternalIdRepository {
                 targetWhere: dbIsNull(ProgramExternalId.mediaSourceId),
                 set: {
                   updatedAt: sql`excluded.updated_at`,
+                  externalKey: sql`excluded.external_key`,
                   externalFilePath: sql`excluded.external_file_path`,
                   directFilePath: sql`excluded.direct_file_path`,
                   programUuid: sql`excluded.program_uuid`,
@@ -327,6 +356,7 @@ export class ProgramExternalIdRepository {
                 targetWhere: isNotNull(ProgramExternalId.mediaSourceId),
                 set: {
                   updatedAt: sql`excluded.updated_at`,
+                  externalKey: sql`excluded.external_key`,
                   externalFilePath: sql`excluded.external_file_path`,
                   directFilePath: sql`excluded.direct_file_path`,
                   programUuid: sql`excluded.program_uuid`,

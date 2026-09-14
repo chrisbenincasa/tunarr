@@ -5,12 +5,14 @@ import { ContainerModule } from 'inversify';
 import { BackfillMediaSourceIdFixer } from './BackfillMediaSourceIdFixer.ts';
 import { BackfillProgramArtworkFixer } from './BackfillProgramArtworkFixer.ts';
 import { FixSmartCollectionFilters } from './FixSmartCollectionFIlters.ts';
+import { ReconcilePlexDuplicateProgramsFixer } from './ReconcilePlexDuplicateProgramsFixer.ts';
 
 const FixerModule = new ContainerModule(({ bind }) => {
   bind<Fixer>(KEYS.Fixer).to(EnsureTranscodeConfigIds);
   bind<Fixer>(KEYS.Fixer).to(BackfillMediaSourceIdFixer);
   bind<Fixer>(KEYS.Fixer).to(BackfillProgramArtworkFixer);
   bind<Fixer>(KEYS.Fixer).to(FixSmartCollectionFilters);
+  bind<Fixer>(KEYS.Fixer).to(ReconcilePlexDuplicateProgramsFixer);
 });
 
 export { FixerModule };

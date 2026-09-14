@@ -99,8 +99,9 @@ export class ProgramDaoMinter {
     movie: MediaSourceMovie,
     localFolderId?: string,
     now: number = +dayjs(),
+    programUuid?: string,
   ): NewProgramWithRelations<'movie'> {
-    const programId = v4();
+    const programId = programUuid ?? v4();
     const newMovie = {
       uuid: programId,
       sourceType: movie.sourceType,
@@ -345,8 +346,9 @@ export class ProgramDaoMinter {
     episode: Episode,
     localFolderId?: string,
     now: number = +dayjs(),
+    programUuid?: string,
   ): NewProgramWithRelations<'episode'> {
-    const programId = v4();
+    const programId = programUuid ?? v4();
 
     const newEpisode = {
       uuid: programId,

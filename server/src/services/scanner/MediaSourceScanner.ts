@@ -135,6 +135,9 @@ export abstract class MediaSourceScanner<
       });
 
       await this.mediaSourceDB.setLibraryLastScannedTime(library.uuid, dayjs());
+    } catch (e) {
+      this.logger.error(e, 'Error scanning library %s — lastScannedAt not updated', library.uuid);
+      throw e;
     } finally {
       this.#state.delete(library.uuid);
     }

@@ -77,6 +77,40 @@ export class BasicProgramRepository {
       .executeTakeFirst();
   }
 
+  async updateProgramExternalKey(
+    programId: string,
+    externalKey: string,
+  ): Promise<void> {
+    const now = Date.now();
+    await this.db
+      .updateTable('program')
+      .where('uuid', '=', programId)
+      .set({
+        externalKey,
+        updatedAt: now,
+      })
+      .executeTakeFirst();
+  }
+
+  async findProgramUuidByMediaSourceExternalKey(
+    mediaSourceId: MediaSourceId,
+    sourceType: string,
+    externalKey: string,
+    excludeProgramUuid?: string,
+  ): Promise<Maybe<string>> {
+    const row = await this.db
+      .selectFrom('program')
+      .select('uuid')
+      .where('mediaSourceId', '=', mediaSourceId)
+      .where('sourceType', '=', sourceType)
+      .where('externalKey', '=', externalKey)
+      .$if(!!excludeProgramUuid, (qb) =>
+        qb.where('uuid', '!=', excludeProgramUuid!),
+      )
+      .executeTakeFirst();
+    return row?.uuid;
+  }
+
   async getProgramsByIds(
     ids: string[] | readonly string[],
     batchSize: number = 500,

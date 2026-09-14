@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Fork macOS release scripts (`scripts/build-macos-fork-release.sh`, `scripts/sign-macos-local.sh`, `scripts/notarize-macos-dmg.sh`) with env-based signing.
+- `ReconcilePlexDuplicateProgramsFixer` to merge duplicate Plex programs sharing a `canonicalId`.
+
+### Fixed
+
+- Plex movie/episode scan identity reconciliation when `ratingKey` changes after Plex reindex.
+- Honor `plexStream.streamPath=direct` in `ProgramStreamDetailsFetcher` (prefer `directFilePath` on disk).
+- Library `lastScannedAt` only updates after a successful scan.
+- Optional Plex stream `width`/`height` in Zod schema (soft-fail strict parse).
+- Plex duration fallback from `Media.Part` when top-level duration is missing.
+
 ## [1.1.3](https://github.com/chrisbenincasa/tunarr/compare/v1.1.2...v1.1.3) (2026-01-20)
 
 ### Bug Fixes
