@@ -200,8 +200,8 @@ msgstr "{days, plural, one {# day} other {# days}}"
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, one {# hour} other {# hours}}"
 
-#: src/components/slot_scheduler/RandomSlotTable.tsx:200
-#: src/components/slot_scheduler/TimeSlotTable.tsx:205
+#: src/components/slot_scheduler/RandomSlotTable.tsx:204
+#: src/components/slot_scheduler/TimeSlotTable.tsx:223
 msgid "{len, plural, one {There is # warning. Click for details.} other {There are # warnings. Click for details.}}"
 msgstr "{len, plural, one {There is # warning. Click for details.} other {There are # warnings. Click for details.}}"
 
@@ -223,7 +223,12 @@ msgstr "{totalConnections, plural, one {# connection} other {# connections}}"
 msgid "{totalConnections} total"
 msgstr "{totalConnections} total"
 
-#: src/components/slot_scheduler/RandomSlotTable.tsx:252
+#: src/pages/channels/RandomSlotEditorPage.tsx:237
+#: src/pages/channels/TimeSlotEditorPage.tsx:320
+msgid "{unavailableSlotCount, plural, one {# slot uses a custom show that is empty or deleted. Fix or remove it before saving.} other {# slots use a custom show that is empty or deleted. Fix or remove them before saving.}}"
+msgstr "{unavailableSlotCount, plural, one {# slot uses a custom show that is empty or deleted. Fix or remove it before saving.} other {# slots use a custom show that is empty or deleted. Fix or remove them before saving.}}"
+
+#: src/components/slot_scheduler/RandomSlotTable.tsx:273
 msgid "{value, plural, one {# program} other {# programs}}"
 msgstr "{value, plural, one {# program} other {# programs}}"
 
@@ -417,8 +422,8 @@ msgstr "Add Selected Media"
 msgid "Add Show"
 msgstr "Add Show"
 
-#: src/components/slot_scheduler/AddRandomSlotButton.tsx:142
-#: src/components/slot_scheduler/AddTimeSlotButton.tsx:136
+#: src/components/slot_scheduler/AddRandomSlotButton.tsx:148
+#: src/components/slot_scheduler/AddTimeSlotButton.tsx:137
 msgid "Add Slot"
 msgstr "Add Slot"
 
@@ -453,7 +458,7 @@ msgstr "Adjust the output volume (not recommended). Values higher than 100 will 
 
 #: src/components/programming_controls/AdjustWeightsModal.tsx:21
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:149
-#: src/components/slot_scheduler/RandomSlotTable.tsx:502
+#: src/components/slot_scheduler/RandomSlotTable.tsx:537
 msgid "Adjust Weights"
 msgstr "Adjust Weights"
 
@@ -515,7 +520,7 @@ msgstr "Allow External"
 msgid "Allow Image Based"
 msgstr "Allow Image Based"
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:385
+#: src/pages/channels/TimeSlotEditorPage.tsx:412
 msgid "Allows programs to play a bit late if the previous program took longer than usual. If a program is too late, Flex is scheduled instead."
 msgstr "Allows programs to play a bit late if the previous program took longer than usual. If a program is too late, Flex is scheduled instead."
 
@@ -670,8 +675,8 @@ msgstr "Average program length: {0}"
 msgid "Back"
 msgstr "Back"
 
-#: src/pages/channels/RandomSlotEditorPage.tsx:261
-#: src/pages/channels/TimeSlotEditorPage.tsx:531
+#: src/pages/channels/RandomSlotEditorPage.tsx:305
+#: src/pages/channels/TimeSlotEditorPage.tsx:558
 msgid "Back to Programming"
 msgstr "Back to Programming"
 
@@ -760,7 +765,7 @@ msgstr "Builder"
 msgid "By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups"
 msgstr "By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups"
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:354
+#: src/pages/channels/TimeSlotEditorPage.tsx:381
 msgid "By default, time slots are time of the day-based, you can change it to time of the day + day of the week. That means scheduling 7x the number of time slots. If you change from daily to weekly, the current schedule will be repeated 7 times. If you change from weekly to daily, many of the slots will be deleted."
 msgstr "By default, time slots are time of the day-based, you can change it to time of the day + day of the week. That means scheduling 7x the number of time slots. If you change from daily to weekly, the current schedule will be repeated 7 times. If you change from weekly to daily, many of the slots will be deleted."
 
@@ -768,7 +773,7 @@ msgstr "By default, time slots are time of the day-based, you can change it to t
 msgid "Caching"
 msgstr "Caching"
 
-#: src/hooks/slot_scheduler/useScheduleSlots.ts:88
+#: src/hooks/slot_scheduler/useScheduleSlots.ts:89
 msgid "Calculated {humanizedDuration} ({numShows} programs) of programming in {duration}ms"
 msgstr "Calculated {humanizedDuration} ({numShows} programs) of programming in {duration}ms"
 
@@ -776,7 +781,7 @@ msgstr "Calculated {humanizedDuration} ({numShows} programs) of programming in {
 msgid "Calculates a schedule where all programs end at the same time, creating a perfectly looping schedule."
 msgstr "Calculates a schedule where all programs end at the same time, creating a perfectly looping schedule."
 
-#: src/pages/channels/RandomSlotEditorPage.tsx:237
+#: src/pages/channels/RandomSlotEditorPage.tsx:281
 msgid "Calculating Slots..."
 msgstr "Calculating Slots..."
 
@@ -799,8 +804,8 @@ msgstr "Calculating Slots..."
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx:330
 #: src/components/settings/media_source/PlexServerEditDialog.tsx:353
 #: src/components/settings/UnsavedNavigationAlert.tsx:67
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:576
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:408
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:587
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:418
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx:156
 #: src/components/slot_scheduler/SlotLinkingControl.tsx:313
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:301
@@ -971,7 +976,7 @@ msgstr "Component"
 msgid "Condition"
 msgstr "Condition"
 
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:323
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:333
 msgid "Config"
 msgstr "Config"
 
@@ -1035,8 +1040,8 @@ msgstr "Continue with New Content"
 msgid "Controls what happens when this slot runs out of replayed content from earlier continue slots."
 msgstr "Controls what happens when this slot runs out of replayed content from earlier continue slots."
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:495
-#: src/components/slot_scheduler/RandomSlotTable.tsx:323
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:506
+#: src/components/slot_scheduler/RandomSlotTable.tsx:344
 msgid "Cooldown"
 msgstr "Cooldown"
 
@@ -1116,7 +1121,7 @@ msgstr "Creates a new collection"
 msgid "Custom Program"
 msgstr "Custom Program"
 
-#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx:52
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx:81
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:235
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:275
 #: src/hooks/useProgramTitleFormatter.ts:42
@@ -1129,6 +1134,10 @@ msgstr "Custom Show"
 #: src/hooks/slot_scheduler/useSlotName.ts:31
 msgid "Custom Show - {0}"
 msgstr "Custom Show - {0}"
+
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx:106
+msgid "Custom Show (add programs to a custom show first)"
+msgstr "Custom Show (add programs to a custom show first)"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:93
 msgid "Custom show programs are grouped by their parent show"
@@ -1163,7 +1172,7 @@ msgstr "Cyclic Shuffle"
 msgid "Cyclic Shuffle randomly shuffles groups of programming."
 msgstr "Cyclic Shuffle randomly shuffles groups of programming."
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:345
+#: src/pages/channels/TimeSlotEditorPage.tsx:372
 msgid "Daily"
 msgstr "Daily"
 
@@ -1175,16 +1184,16 @@ msgstr "Dark"
 msgid "Data Directory:"
 msgstr "Data Directory:"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:180
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:332
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:341
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:182
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:342
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:351
 msgid "Day"
 msgstr "Day"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:200
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:202
-#: src/pages/channels/TimeSlotEditorPage.tsx:455
-#: src/pages/channels/TimeSlotEditorPage.tsx:457
+#: src/pages/channels/TimeSlotEditorPage.tsx:482
+#: src/pages/channels/TimeSlotEditorPage.tsx:484
 msgid "Days to Precalculate"
 msgstr "Days to Precalculate"
 
@@ -1250,8 +1259,8 @@ msgstr "Delete Media Source \"{0}\"?"
 #~ msgid "Delete Media Source?"
 #~ msgstr "Delete Media Source?"
 
-#: src/components/slot_scheduler/RandomSlotTable.tsx:428
-#: src/components/slot_scheduler/TimeSlotTable.tsx:446
+#: src/components/slot_scheduler/RandomSlotTable.tsx:449
+#: src/components/slot_scheduler/TimeSlotTable.tsx:464
 msgid "Delete Slot"
 msgstr "Delete Slot"
 
@@ -1261,6 +1270,10 @@ msgstr "Delete Slot"
 #: src/pages/settings/FfmpegSettingsPage.tsx:446
 msgid "Delete Transcoding Config \"{0}\"?"
 msgstr "Delete Transcoding Config \"{0}\"?"
+
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx:49
+msgid "Deleted custom show"
+msgstr "Deleted custom show"
 
 #: src/components/channels/ChannelDeleteDialog.tsx:72
 #: src/pages/channels/ChannelsPage.tsx:190
@@ -1363,8 +1376,8 @@ msgstr "Documentation"
 msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
 msgstr "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
 
-#: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx:44
-#: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx:44
+#: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx:54
+#: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx:54
 msgid "Done"
 msgstr "Done"
 
@@ -1395,8 +1408,8 @@ msgid "Duplicates"
 msgstr "Duplicates"
 
 #: src/components/programming_controls/BalanceProgrammingModal.tsx:62
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:466
-#: src/components/slot_scheduler/RandomSlotTable.tsx:233
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:477
+#: src/components/slot_scheduler/RandomSlotTable.tsx:254
 #: src/pages/channels/ChannelsPage.tsx:357
 #: src/pages/system/TroubleshootPage.tsx:521
 msgid "Duration"
@@ -1415,7 +1428,7 @@ msgstr "Duration must be greater than 0."
 msgid "Duration must be numeric"
 msgstr "Duration must be numeric"
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:428
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:439
 msgid "Dynamic"
 msgstr "Dynamic"
 
@@ -1463,10 +1476,10 @@ msgstr "Edit Libraries"
 msgid "Edit Media Source"
 msgstr "Edit Media Source"
 
-#: src/components/slot_scheduler/RandomSlotTable.tsx:415
-#: src/components/slot_scheduler/RandomSlotTable.tsx:554
-#: src/components/slot_scheduler/TimeSlotTable.tsx:431
-#: src/components/slot_scheduler/TimeSlotTable.tsx:521
+#: src/components/slot_scheduler/RandomSlotTable.tsx:436
+#: src/components/slot_scheduler/RandomSlotTable.tsx:589
+#: src/components/slot_scheduler/TimeSlotTable.tsx:449
+#: src/components/slot_scheduler/TimeSlotTable.tsx:539
 msgid "Edit Slot"
 msgstr "Edit Slot"
 
@@ -1578,7 +1591,7 @@ msgstr "Encountered an error when emptying trash. Check console logs for details
 msgid "End Time"
 msgstr "End Time"
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:413
+#: src/pages/channels/TimeSlotEditorPage.tsx:440
 msgid "Ensures programs have a nice-looking start time, it will add Flex time to fill the gaps."
 msgstr "Ensures programs have a nice-looking start time, it will add Flex time to fill the gaps."
 
@@ -1656,10 +1669,18 @@ msgstr "Error saving new Jellyfin server. See browser console and server logs fo
 msgid "Error saving new Smart Collection. Check server logs and browser console for details."
 msgstr "Error saving new Smart Collection. Check server logs and browser console for details."
 
-#. placeholder {0}: error.message
 #: src/components/channel_config/ChannelProgrammingConfig.tsx:86
-msgid "Error saving programs. {0}"
-msgstr "Error saving programs. {0}"
+#~ msgid "Error saving programs. {0}"
+#~ msgstr "Error saving programs. {0}"
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:88
+msgid "Error saving programs. {message}"
+msgstr "Error saving programs. {message}"
+
+#: src/pages/channels/RandomSlotEditorPage.tsx:83
+#: src/pages/channels/TimeSlotEditorPage.tsx:194
+msgid "Error saving schedule. {message}"
+msgstr "Error saving schedule. {message}"
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx:50
 msgid "Error Screen"
@@ -1851,11 +1872,11 @@ msgstr "File a Bug Report"
 msgid "Fill with Flex"
 msgstr "Fill with Flex"
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:401
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:319
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:412
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:329
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx:46
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:293
-#: src/components/slot_scheduler/TimeSlotTable.tsx:299
+#: src/components/slot_scheduler/TimeSlotTable.tsx:317
 msgid "Filler"
 msgstr "Filler"
 
@@ -1931,7 +1952,7 @@ msgstr "Finish"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:124
 #: src/components/programming_controls/AddReplicateModal.tsx:97
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:425
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:436
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx:329
 msgid "Fixed"
 msgstr "Fixed"
@@ -1953,8 +1974,8 @@ msgstr "Flex"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:142
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:147
-#: src/pages/channels/TimeSlotEditorPage.tsx:424
-#: src/pages/channels/TimeSlotEditorPage.tsx:430
+#: src/pages/channels/TimeSlotEditorPage.tsx:451
+#: src/pages/channels/TimeSlotEditorPage.tsx:457
 msgid "Flex Style"
 msgstr "Flex Style"
 
@@ -1974,7 +1995,7 @@ msgstr "Forced"
 msgid "Frame Rate"
 msgstr "Frame Rate"
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:544
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:555
 msgid "Frequency"
 msgstr "Frequency"
 
@@ -2302,7 +2323,7 @@ msgid "Linked slots advance episode progression together sequentially."
 msgstr "Linked slots advance episode progression together sequentially."
 
 #: src/components/base/ProgramViewToggleButton.tsx:39
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:175
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:177
 msgid "List"
 msgstr "List"
 
@@ -2314,7 +2335,7 @@ msgstr "Load More"
 msgid "Load Stream"
 msgstr "Load Stream"
 
-#: src/pages/channels/RandomSlotEditorPage.tsx:187
+#: src/pages/channels/RandomSlotEditorPage.tsx:214
 msgid "Loading"
 msgstr "Loading"
 
@@ -2441,8 +2462,8 @@ msgstr "Max Duration (minutes)"
 msgid "Max file size (bytes)"
 msgstr "Max file size (bytes)"
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:368
-#: src/pages/channels/TimeSlotEditorPage.tsx:374
+#: src/pages/channels/TimeSlotEditorPage.tsx:395
+#: src/pages/channels/TimeSlotEditorPage.tsx:401
 msgid "Max Lateness"
 msgstr "Max Lateness"
 
@@ -2458,7 +2479,7 @@ msgstr "Maximum number of breaks per program (0 = unlimited)"
 msgid "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel."
 msgstr "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel."
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:464
+#: src/pages/channels/TimeSlotEditorPage.tsx:491
 msgid "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel.<0/><1>Note: Previewing the schedule in the browser for long lengths of time can cause UI performance issues</1>"
 msgstr "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel.<0/><1>Note: Previewing the schedule in the browser for long lengths of time can cause UI performance issues</1>"
 
@@ -2498,8 +2519,8 @@ msgstr "Media Type"
 msgid "Message"
 msgstr "Message"
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:402
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:324
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:413
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:334
 msgid "Mid-Roll"
 msgstr "Mid-Roll"
 
@@ -2523,7 +2544,7 @@ msgstr "Minimum Program Duration (minutes)"
 msgid "Modify Programming"
 msgstr "Modify Programming"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:190
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:192
 msgid "Month"
 msgstr "Month"
 
@@ -2794,15 +2815,15 @@ msgstr "Options"
 msgid "OR"
 msgstr "OR"
 
-#: src/components/slot_scheduler/RandomSlotTable.tsx:298
-#: src/components/slot_scheduler/RandomSlotTable.tsx:308
+#: src/components/slot_scheduler/RandomSlotTable.tsx:319
+#: src/components/slot_scheduler/RandomSlotTable.tsx:329
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx:117
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx:118
-#: src/components/slot_scheduler/TimeSlotTable.tsx:286
+#: src/components/slot_scheduler/TimeSlotTable.tsx:304
 msgid "Order"
 msgstr "Order"
 
-#: src/components/slot_scheduler/RandomSlotTable.tsx:305
+#: src/components/slot_scheduler/RandomSlotTable.tsx:326
 msgid "Order of programming within the slot"
 msgstr "Order of programming within the slot"
 
@@ -2861,8 +2882,8 @@ msgstr "Pad Style"
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:92
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx:21
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx:26
-#: src/pages/channels/TimeSlotEditorPage.tsx:396
-#: src/pages/channels/TimeSlotEditorPage.tsx:402
+#: src/pages/channels/TimeSlotEditorPage.tsx:423
+#: src/pages/channels/TimeSlotEditorPage.tsx:429
 msgid "Pad Times"
 msgstr "Pad Times"
 
@@ -2888,8 +2909,8 @@ msgstr "Path Replacements"
 msgid "Percentage-Based"
 msgstr "Percentage-Based"
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:333
-#: src/pages/channels/TimeSlotEditorPage.tsx:340
+#: src/pages/channels/TimeSlotEditorPage.tsx:360
+#: src/pages/channels/TimeSlotEditorPage.tsx:367
 msgid "Period"
 msgstr "Period"
 
@@ -2968,16 +2989,16 @@ msgid "Profile"
 msgstr "Profile"
 
 #: src/components/ProgramSearchAutocomplete.tsx:38
-#: src/components/slot_scheduler/RandomSlotTable.tsx:259
+#: src/components/slot_scheduler/RandomSlotTable.tsx:280
 #: src/components/slot_scheduler/RedirectProgrammingForm.tsx:46
 #: src/components/slot_scheduler/ShowSlotProgrammingForm.tsx:55
-#: src/components/slot_scheduler/TimeSlotTable.tsx:274
+#: src/components/slot_scheduler/TimeSlotTable.tsx:292
 #: src/pages/system/TroubleshootPage.tsx:497
 msgid "Program"
 msgstr "Program"
 
 #: src/components/programming_controls/BalanceProgrammingModal.tsx:63
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:439
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:450
 msgid "Program Count"
 msgstr "Program Count"
 
@@ -2991,19 +3012,19 @@ msgstr "Program Playback Troubleshooter"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx:420
 #: src/components/filler/EditFillerListForm.tsx:152
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:400
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:317
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:411
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:327
 #: src/hooks/useRouteName.ts:79
 msgid "Programming"
 msgstr "Programming"
 
-#: src/pages/channels/RandomSlotEditorPage.tsx:222
-#: src/pages/channels/TimeSlotEditorPage.tsx:496
+#: src/pages/channels/RandomSlotEditorPage.tsx:265
+#: src/pages/channels/TimeSlotEditorPage.tsx:523
 msgid "Programming Preview"
 msgstr "Programming Preview"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx:181
-#: src/pages/channels/TimeSlotEditorPage.tsx:500
+#: src/pages/channels/TimeSlotEditorPage.tsx:527
 msgid "Programming Start"
 msgstr "Programming Start"
 
@@ -3019,7 +3040,7 @@ msgstr "Programs"
 msgid "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
 msgstr "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:81
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:82
 msgid "Programs saved!"
 msgstr "Programs saved!"
 
@@ -3115,7 +3136,7 @@ msgid "Refresh Page"
 msgstr "Refresh Page"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:247
-#: src/pages/channels/TimeSlotEditorPage.tsx:490
+#: src/pages/channels/TimeSlotEditorPage.tsx:517
 msgid "Refresh Preview"
 msgstr "Refresh Preview"
 
@@ -3226,7 +3247,7 @@ msgstr "Rerun"
 msgid "Rescan Interval (hours)"
 msgstr "Rescan Interval (hours)"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:233
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:235
 #: src/components/custom-shows/EditCustomShowForm.tsx:435
 #: src/components/filler/EditFillerListForm.tsx:172
 msgid "Reset"
@@ -3241,13 +3262,13 @@ msgstr "Reset"
 msgid "Reset Changes"
 msgstr "Reset Changes"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:217
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:219
 msgid "Reset changes made to the channel's lineup"
 msgstr "Reset changes made to the channel's lineup"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx:488
-#: src/pages/channels/RandomSlotEditorPage.tsx:266
-#: src/pages/channels/TimeSlotEditorPage.tsx:536
+#: src/pages/channels/RandomSlotEditorPage.tsx:310
+#: src/pages/channels/TimeSlotEditorPage.tsx:563
 msgid "Reset Options"
 msgstr "Reset Options"
 
@@ -3330,7 +3351,7 @@ msgstr "Sample rate cannot be changed when copying input audio"
 
 #: src/components/channel_config/ChannelEditActions.tsx:98
 #: src/components/channel_config/ChannelEditActions.tsx:118
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:268
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:270
 #: src/components/custom-shows/EditCustomShowForm.tsx:466
 #: src/components/filler/EditFillerListForm.tsx:199
 #: src/components/programming_controls/AddBreaksModal.tsx:209
@@ -3341,13 +3362,13 @@ msgstr "Sample rate cannot be changed when copying input audio"
 #: src/components/programming_controls/AddRestrictHoursModal.tsx:141
 #: src/components/programming_controls/AdjustWeightsModal.tsx:36
 #: src/components/settings/general/GeneralSettingsForm.tsx:496
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:583
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:415
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:594
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:425
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:311
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx:196
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx:121
-#: src/pages/channels/RandomSlotEditorPage.tsx:270
-#: src/pages/channels/TimeSlotEditorPage.tsx:544
+#: src/pages/channels/RandomSlotEditorPage.tsx:318
+#: src/pages/channels/TimeSlotEditorPage.tsx:572
 #: src/pages/settings/FeaturesSettingsPage.tsx:170
 #: src/pages/settings/FfmpegSettingsPage.tsx:428
 #: src/pages/settings/HdhrSettingsPage.tsx:152
@@ -3499,7 +3520,7 @@ msgstr "Sets the number of threads used to decode the input stream. Set to 0 to 
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx:83
 #: src/hooks/useNavItems.tsx:129
-#: src/pages/channels/TimeSlotEditorPage.tsx:315
+#: src/pages/channels/TimeSlotEditorPage.tsx:342
 #: src/pages/settings/SettingsLayout.tsx:16
 msgid "Settings"
 msgstr "Settings"
@@ -3570,16 +3591,16 @@ msgstr "Skip mid-roll for programs shorter than this"
 msgid "Slot Editor"
 msgstr "Slot Editor"
 
-#: src/pages/channels/RandomSlotEditorPage.tsx:194
+#: src/pages/channels/RandomSlotEditorPage.tsx:224
 msgid "Slot Scheduler"
 msgstr "Slot Scheduler"
 
-#: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx:40
-#: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx:40
+#: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx:49
+#: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx:49
 msgid "Slot Warnings"
 msgstr "Slot Warnings"
 
-#: src/pages/channels/RandomSlotEditorPage.tsx:205
+#: src/pages/channels/RandomSlotEditorPage.tsx:246
 msgid "Slots"
 msgstr "Slots"
 
@@ -3674,8 +3695,8 @@ msgid "Start"
 msgstr "Start"
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx:112
-#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:373
-#: src/components/slot_scheduler/TimeSlotTable.tsx:261
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:383
+#: src/components/slot_scheduler/TimeSlotTable.tsx:279
 msgid "Start Time"
 msgstr "Start Time"
 
@@ -3862,7 +3883,11 @@ msgstr "The type of media in the provided paths"
 msgid "Theme Settings"
 msgstr "Theme Settings"
 
-#: src/hooks/slot_scheduler/useScheduleSlots.ts:139
+#: src/hooks/slot_scheduler/useScheduleSlots.ts:142
+msgid "There was an error generating slots. {serverMessage}"
+msgstr "There was an error generating slots. {serverMessage}"
+
+#: src/hooks/slot_scheduler/useScheduleSlots.ts:143
 msgid "There was an error generating time slots. Check the browser console log for more information"
 msgstr "There was an error generating time slots. Check the browser console log for more information"
 
@@ -3879,7 +3904,8 @@ msgid "These settings are stored in your browser and are saved automatically whe
 msgstr "These settings are stored in your browser and are saved automatically when changed."
 
 #. placeholder {0}: slot.type .split('-') .map((s) => capitalize(s)) .join(' ')
-#: src/components/slot_scheduler/TimeSlotTable.tsx:245
+#: src/components/slot_scheduler/RandomSlotTable.tsx:228
+#: src/components/slot_scheduler/TimeSlotTable.tsx:263
 msgid "This {0} is marked as missing in the database."
 msgstr "This {0} is marked as missing in the database."
 
@@ -3891,7 +3917,7 @@ msgstr "This allows to schedule specific shows to run at specific time slots of 
 msgid "This allows you to pick the weights for each of the shows, so you can decide that some shows should be less frequent than other shows."
 msgstr "This allows you to pick the weights for each of the shows, so you can decide that some shows should be less frequent than other shows."
 
-#: src/pages/channels/RandomSlotEditorPage.tsx:197
+#: src/pages/channels/RandomSlotEditorPage.tsx:228
 msgid "This channel has an existing time slot schedule. A channel can only use one scheduling type at a time. Saving a schedule here will remove the existing time slot schedule."
 msgstr "This channel has an existing time slot schedule. A channel can only use one scheduling type at a time. Saving a schedule here will remove the existing time slot schedule."
 
@@ -3908,9 +3934,17 @@ msgstr "This channel number has already been used"
 msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
 msgstr "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
 
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx:61
+msgid "This custom show has no programs. Add programs to it or choose another show."
+msgstr "This custom show has no programs. Add programs to it or choose another show."
+
 #: src/components/custom-shows/EditCustomShowForm.tsx:403
 msgid "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
 msgstr "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
+
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx:63
+msgid "This custom show was deleted. Choose another show."
+msgstr "This custom show was deleted. Choose another show."
 
 #: src/components/settings/general/GeneralSettingsForm.tsx:467
 msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
@@ -3932,8 +3966,8 @@ msgstr "This media source has no enabled or scanned libraries. Enable libraries 
 msgid "This option is disabled because it would calculate a schedule that is too long."
 msgstr "This option is disabled because it would calculate a schedule that is too long."
 
-#: src/components/slot_scheduler/TimeSlotTable.tsx:223
-#: src/components/slot_scheduler/TimeSlotTable.tsx:233
+#: src/components/slot_scheduler/TimeSlotTable.tsx:241
+#: src/components/slot_scheduler/TimeSlotTable.tsx:251
 msgid "This show is marked as missing in the database."
 msgstr "This show is marked as missing in the database."
 
@@ -3954,6 +3988,14 @@ msgstr "This slot is linked with {0} other {1, plural, one {slot} other {slots}}
 #: src/components/slot_scheduler/SlotLinkingControl.tsx:247
 msgid "This slot replays content aired by continue slots earlier in the period."
 msgstr "This slot replays content aired by continue slots earlier in the period."
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx:13
+msgid "This slot's custom show has no programs, so the slot cannot be scheduled. Add programs to the show, choose another show, or remove the slot."
+msgstr "This slot's custom show has no programs, so the slot cannot be scheduled. Add programs to the show, choose another show, or remove the slot."
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx:19
+msgid "This slot's custom show was deleted, so the slot cannot be scheduled. Choose another show or remove the slot."
+msgstr "This slot's custom show was deleted, so the slot cannot be scheduled. Choose another show or remove the slot."
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx:129
 msgid "Threads"
@@ -3983,7 +4025,7 @@ msgstr "Time Format"
 msgid "Time Slot Editor"
 msgstr "Time Slot Editor"
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:303
+#: src/pages/channels/TimeSlotEditorPage.tsx:330
 msgid "Time Slots"
 msgstr "Time Slots"
 
@@ -4108,9 +4150,9 @@ msgstr "TV shows are grouped by show"
 #: src/components/programming_controls/AddBlockShuffleModal.tsx:121
 #: src/components/programming_controls/AddReplicateModal.tsx:90
 #: src/components/programming_controls/AddReplicateModal.tsx:95
-#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx:75
-#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx:77
-#: src/components/slot_scheduler/RandomSlotTable.tsx:223
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx:85
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx:87
+#: src/components/slot_scheduler/RandomSlotTable.tsx:244
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:219
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx:222
 #: src/pages/settings/MediaSourceSettingsPage.tsx:74
@@ -4163,7 +4205,7 @@ msgstr "Use these settings to override global ffmpeg settings for this channel."
 msgid "Username"
 msgstr "Username"
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:440
+#: src/pages/channels/TimeSlotEditorPage.tsx:467
 msgid "Usually slots need to add flex time to ensure that the next slot starts at the correct time. When there are multiple videos in the slot, you might prefer to distribute the flex time between the videos or to place most of the flex time at the end of the slot."
 msgstr "Usually slots need to add flex time to ensure that the next slot starts at the correct time. When there are multiple videos in the slot, you might prefer to distribute the flex time between the videos or to place most of the flex time at the end of the slot."
 
@@ -4272,20 +4314,20 @@ msgstr "Web Settings"
 msgid "Web version = {0}, Server version = {1}"
 msgstr "Web version = {0}, Server version = {1}"
 
-#: src/components/channel_config/ChannelProgrammingConfig.tsx:185
+#: src/components/channel_config/ChannelProgrammingConfig.tsx:187
 msgid "Week"
 msgstr "Week"
 
-#: src/pages/channels/TimeSlotEditorPage.tsx:348
+#: src/pages/channels/TimeSlotEditorPage.tsx:375
 msgid "Weekly"
 msgstr "Weekly"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx:251
-#: src/components/slot_scheduler/RandomSlotTable.tsx:340
+#: src/components/slot_scheduler/RandomSlotTable.tsx:361
 msgid "Weight"
 msgstr "Weight"
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:544
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:555
 msgid "Weight %"
 msgstr "Weight %"
 
@@ -4354,7 +4396,7 @@ msgstr "You haven't created any channels yet."
 msgid "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
 msgstr "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
 
-#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:555
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx:566
 msgid "You must create at least one <0>filler list</0> before assigning filler to a lot."
 msgstr "You must create at least one <0>filler list</0> before assigning filler to a lot."
 
