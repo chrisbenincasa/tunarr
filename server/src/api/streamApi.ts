@@ -324,8 +324,6 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           .send(playlist.playlist);
       }
 
-      session.onSegmentRequested(req.ip, req.params.file);
-
       if (req.params.file.endsWith('.vtt')) {
         const filePath = resolve(session.workingDirectory, req.params.file);
         if (!filePath.startsWith(session.workingDirectory + sep)) {

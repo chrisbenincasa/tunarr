@@ -482,9 +482,10 @@ describe('HlsPlaylistMutator', () => {
   });
 
   describe('discontinuity sequence calculation', () => {
-    // Playlist: 31 old-program segments (0–30), one DISC, 30 new-program
-    // segments (31–60). Total 61 segments, all numbered with 6 digits.
-    function createTransitionPlaylist(): string[] {
+    // Playlist: 31 old-program segments (0–30), one DISC, then new-program
+    // segments from 31 up to `lastSegment`. The window always ends at the live
+    // edge, so `lastSegment` is what positions it over the boundary.
+    function createTransitionPlaylist(lastSegment = 60): string[] {
       const lines = [
         '#EXTM3U',
         '#EXT-X-VERSION:3',
@@ -500,7 +501,7 @@ describe('HlsPlaylistMutator', () => {
         );
       }
       lines.push('#EXT-X-DISCONTINUITY');
-      for (let i = 31; i <= 60; i++) {
+      for (let i = 31; i <= lastSegment; i++) {
         lines.push(
           '#EXTINF:4.004000,',
           '#EXT-X-PROGRAM-DATE-TIME:2024-10-18T14:02:04.000-0400',
@@ -512,14 +513,12 @@ describe('HlsPlaylistMutator', () => {
 
     const start = dayjs('2024-10-18T14:00:00.000-0400');
 
-    function trimWithSegmentFilter(
-      segmentNumber: number,
-      segmentsToKeepBefore = 10,
-    ) {
+    // Window = the last 20 segments, i.e. [liveEdge - 19, liveEdge].
+    function trimAtLiveEdge(liveEdge: number) {
       return mutator.trimPlaylist(
         start,
-        { type: 'before_segment_number', segmentNumber, segmentsToKeepBefore },
-        createTransitionPlaylist(),
+        undefined,
+        createTransitionPlaylist(liveEdge),
         { ...defaultOpts, maxSegmentsToKeep: 20 },
       );
     }
@@ -535,38 +534,38 @@ describe('HlsPlaylistMutator', () => {
     }
 
     it('DISC in middle of selected window: disc-seq=0, DISC tag emitted', () => {
-      // minSeg = max(25-10, 0) = 15 → filtered segs 15..60 (46 >= 20) → take first 20 = segs 15..34
+      // Live edge 34 → window segs 15..34.
       // DISC between seg30 and seg31; seg31 IS in window → tag emitted, no counting
-      const result = trimWithSegmentFilter(25);
+      const result = trimAtLiveEdge(34);
       expect(discSeq(result.playlist)).toBe(0);
       expect(discTagCount(result.playlist)).toBe(1);
     });
 
     it('DISC immediately before first selected segment: folded into disc-seq, no tag emitted', () => {
-      // minSeg = max(41-10, 0) = 31 → filtered segs 31..60 (30 >= 20) → take first 20 = segs 31..50
+      // Live edge 50 → window segs 31..50.
       // DISC is immediately before seg31 (first selected segment).
       // Since there are no selected segments BEFORE the DISC, it must NOT be
       // emitted as a tag (that would create an empty leading period which
       // breaks Kodi's inputstream.adaptive). Instead it is folded into the
       // discontinuity sequence number.
-      const result = trimWithSegmentFilter(41);
+      const result = trimAtLiveEdge(50);
       expect(discSeq(result.playlist)).toBe(1);
       expect(discTagCount(result.playlist)).toBe(0);
     });
 
     it('DISC before window with a gap: disc-seq=1, DISC tag NOT emitted', () => {
-      // minSeg = max(45-10, 0) = 35 → filtered segs 35..60 (26 >= 20) → take first 20 = segs 35..54
+      // Live edge 54 → window segs 35..54.
       // DISC before seg31; seg31 not in window → DISC counted in sequence, not emitted
-      const result = trimWithSegmentFilter(45);
+      const result = trimAtLiveEdge(54);
       expect(discSeq(result.playlist)).toBe(1);
       expect(discTagCount(result.playlist)).toBe(0);
     });
 
     it('disc-seq is monotonically non-decreasing as the DISC rolls off the window', () => {
-      // Simulates three consecutive playlist polls as the client advances
-      const poll1 = trimWithSegmentFilter(25); // DISC in middle of window
-      const poll2 = trimWithSegmentFilter(41); // DISC before first selected (no segs before it)
-      const poll3 = trimWithSegmentFilter(45); // DISC before window with gap
+      // Simulates three consecutive playlist polls as the live edge advances
+      const poll1 = trimAtLiveEdge(34); // DISC in middle of window
+      const poll2 = trimAtLiveEdge(50); // DISC before first selected (no segs before it)
+      const poll3 = trimAtLiveEdge(54); // DISC before window with gap
 
       const seq1 = discSeq(poll1.playlist);
       const seq2 = discSeq(poll2.playlist);
@@ -585,7 +584,7 @@ describe('HlsPlaylistMutator', () => {
       //   DISC1
       //   prog2: segs 15–29 (15 segs)
       //   DISC2
-      //   prog3: segs 30–60 (31 segs)
+      //   prog3: segs 30–49 (20 segs)
       const lines = [
         '#EXTM3U',
         '#EXT-X-VERSION:3',
@@ -609,7 +608,7 @@ describe('HlsPlaylistMutator', () => {
         );
       }
       lines.push('#EXT-X-DISCONTINUITY');
-      for (let i = 30; i <= 60; i++) {
+      for (let i = 30; i <= 49; i++) {
         lines.push(
           '#EXTINF:4.004000,',
           '#EXT-X-PROGRAM-DATE-TIME:2024-10-18T14:02:00.000-0400',
@@ -617,23 +616,14 @@ describe('HlsPlaylistMutator', () => {
         );
       }
 
-      // minSeg = max(40-10, 0) = 30 → filtered segs 30..60 (31 >= 20) → take first 20 = segs 30..49
+      // Live edge 49 → window segs 30..49.
       // Both DISC1 and DISC2 are before the first selected segment (seg30).
       // Neither has selected segments before it, so both are folded into disc-seq.
-      const result = mutator.trimPlaylist(
-        start,
-        {
-          type: 'before_segment_number',
-          segmentNumber: 40,
-          segmentsToKeepBefore: 10,
-        },
-        lines,
-        {
-          ...defaultOpts,
-          maxSegmentsToKeep: 20,
-          previousDiscontinuitySequence: 1,
-        },
-      );
+      const result = mutator.trimPlaylist(start, undefined, lines, {
+        ...defaultOpts,
+        maxSegmentsToKeep: 20,
+        previousDiscontinuitySequence: 1,
+      });
 
       expect(discSeq(result.playlist)).toBe(2); // DISC1 + DISC2 both counted
       expect(discTagCount(result.playlist)).toBe(0); // no tags emitted
@@ -650,7 +640,7 @@ describe('HlsPlaylistMutator', () => {
     // Simulates a long-running channel: Program A (675 segments ≈ 45min)
     // followed by Program B. The sliding window eventually moves past all
     // of A's segments.
-    function createLongPlaylist(): string[] {
+    function createLongPlaylist(lastSegment = 79): string[] {
       const lines = [
         '#EXTM3U',
         '#EXT-X-VERSION:3',
@@ -667,8 +657,8 @@ describe('HlsPlaylistMutator', () => {
         );
       }
       lines.push('#EXT-X-DISCONTINUITY');
-      // Program B: 30 segments (50-79)
-      for (let i = 50; i < 80; i++) {
+      // Program B: segments 50 up to `lastSegment`
+      for (let i = 50; i <= lastSegment; i++) {
         lines.push(
           '#EXTINF:4.000000,',
           `#EXT-X-PROGRAM-DATE-TIME:2024-10-18T14:03:${String((i - 50) * 4).padStart(2, '0')}.000-0400`,
@@ -678,16 +668,16 @@ describe('HlsPlaylistMutator', () => {
       return lines;
     }
 
-    function trim(segmentNumber: number) {
+    // Window = the last 20 segments, i.e. [liveEdge - 19, liveEdge].
+    function trim(liveEdge: number) {
       return mutator.trimPlaylist(
         start,
+        undefined,
+        createLongPlaylist(liveEdge),
         {
-          type: 'before_segment_number',
-          segmentNumber,
-          segmentsToKeepBefore: 10,
+          ...defaultOpts,
+          maxSegmentsToKeep: 20,
         },
-        createLongPlaylist(),
-        { ...defaultOpts, maxSegmentsToKeep: 20 },
       );
     }
 
@@ -707,8 +697,8 @@ describe('HlsPlaylistMutator', () => {
     }
 
     it('window spanning the boundary: DISC between selected segments is emitted as tag', () => {
-      // Client at seg 45: window includes both A and B segments
-      const result = trim(45);
+      // Live edge 54 → window segs 35..54: includes both A and B segments
+      const result = trim(54);
       expect(discSeq(result.playlist)).toBe(0);
       expect(discTagCount(result.playlist)).toBe(1);
       expect(result.playlist).toContain('data000049.ts'); // last of A
@@ -716,26 +706,26 @@ describe('HlsPlaylistMutator', () => {
     });
 
     it('window just past the boundary: DISC folded into disc-seq, NOT emitted as tag', () => {
-      // Client at seg 60: first selected is seg50 (first of B).
+      // Live edge 69 → window segs 50..69: first selected is seg50 (first of B).
       // The DISC is before seg50 with no selected A segments before it.
       // CRITICAL: must NOT emit DISC tag (would create empty period 0).
-      const result = trim(60);
+      const result = trim(69);
       expect(discSeq(result.playlist)).toBe(1);
       expect(discTagCount(result.playlist)).toBe(0);
       expect(firstSegmentNum(result.playlist)).toBe(50);
     });
 
     it('window well past the boundary: DISC folded into disc-seq', () => {
-      const result = trim(70);
+      const result = trim(79);
       expect(discSeq(result.playlist)).toBe(1);
       expect(discTagCount(result.playlist)).toBe(0);
       expect(firstSegmentNum(result.playlist)).toBe(60);
     });
 
     it('no empty periods across the full transition', () => {
-      // Simulate the full client progression across the program boundary.
+      // Simulate the live edge advancing across the program boundary.
       // At every point, the first period must have at least one segment.
-      const polls = [40, 45, 50, 55, 60, 65, 70];
+      const polls = [49, 54, 59, 64, 69, 74, 79];
       for (const seg of polls) {
         const result = trim(seg);
         const lines = result.playlist.split('\n');
@@ -1056,6 +1046,48 @@ describe('HlsPlaylistMutator', () => {
       // The test file has 2 leading discontinuities in the header — these are
       // FFmpeg artifacts and should be ignored. First item should be a segment.
       expect(parsed[0]?.type).toBe('segment');
+    });
+  });
+  describe('live-edge window (issue #2045)', () => {
+    const mutator = new HlsPlaylistMutator();
+    const start = dayjs('2024-10-18T14:00:00.000-0400');
+    const opts = { ...defaultOpts, maxSegmentsToKeep: 20 };
+
+    function lastSegmentNum(playlist: string): number {
+      const matches = playlist.match(/data(\d{6})\.ts/g) ?? [];
+      const lastMatch = matches[matches.length - 1];
+      return lastMatch ? parseInt(lastMatch.slice(4, 10)) : -1;
+    }
+
+    it('window advances with the live edge as ffmpeg writes segments', () => {
+      for (const total of [200, 220, 260]) {
+        const result = mutator.trimPlaylist(
+          start,
+          undefined,
+          createPlaylist(total),
+          opts,
+        );
+        expect(result.segmentCount).toBe(20);
+        expect(lastSegmentNum(result.playlist)).toBe(total - 1);
+        expect(result.sequence).toBe(total - 20);
+      }
+    });
+
+    it('a client lagging far behind does not hold the window back', () => {
+      // A floor well below the live edge must not anchor the window to it.
+      const lagging = mutator.trimPlaylist(
+        start,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 100,
+          segmentsToKeepBefore: 10,
+        },
+        createPlaylist(260),
+        opts,
+      );
+
+      expect(lastSegmentNum(lagging.playlist)).toBe(259);
+      expect(lagging.sequence).toBe(240);
     });
   });
 });

@@ -26,7 +26,7 @@ import { filter, isEmpty, last, maxBy, sortBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
-import { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
+import type { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
 import { BaseHlsSession } from './BaseHlsSession.js';
 import { HlsMasterPlaylistMutator } from './HlsMasterPlaylistMutator.js';
@@ -112,12 +112,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   async trimPlaylist(filterOpts?: HlsPlaylistFilterOptions) {
-    filterOpts ??= {
-      type: 'before_segment_number',
-      segmentNumber: this.minSegmentRequested,
-      segmentsToKeepBefore: 10,
-      // segmentFloor: this.#highestDeletedBelow,
-    };
     return Result.attemptAsync(async () => {
       return await this.lock.runExclusive(async () => {
         const playlistLines = await this.readPlaylist();
