@@ -440,30 +440,7 @@ export class MeilisearchService implements ISearchService {
       if (isMainThread) {
         this.logger.info('Starting Meilisearch service...');
 
-        const processInfo: ProcessInfo[] = await findProcess.default(
-          'port',
-          this.port,
-        );
-
-        // There should really only be one, but OK.
-        if (processInfo.length > 0 && processInfo[0]!.name === 'meilisearch') {
-          const matchingProcess = processInfo[0]!;
-          this.logger.debug(
-            'Killing existing Meilisearch service on port %d',
-            this.port,
-          );
-          process.kill(matchingProcess.pid);
-
-          await retry(async () => {
-            const results = await findProcess.default(
-              'pid',
-              matchingProcess.pid,
-            );
-            if (results.length > 0) {
-              throw new Error('Meilisearch process is not dead yet...');
-            }
-          });
-        }
+        await this.killOrphanedProcess();
 
         const args = [
           '--http-addr',
@@ -588,6 +565,7 @@ export class MeilisearchService implements ISearchService {
           },
         });
         this.logger.info('Meilisearch service started on port %d', this.port);
+        await this.writePidFile(this.proc.process?.pid);
         const outStream = createWriteStream(searchServerLogFile);
         this.proc.process?.stdout.pipe(outStream);
         this.proc.process?.stderr.pipe(outStream);
@@ -611,6 +589,151 @@ export class MeilisearchService implements ISearchService {
 
   stop() {
     this.proc?.kill();
+    // Best effort: if this shutdown is graceful the process is going away, so
+    // the recorded pid is stale and should not be killed by the next start.
+    void this.clearPidFile();
+  }
+
+  private get pidFilePath(): string {
+    return path.join(this.serverOptions.databaseDirectory, 'meilisearch.pid');
+  }
+
+  /**
+   * True if `name` looks like the Meilisearch binary.
+   *
+   * The binary is shipped per-platform as meilisearch-linux-x64,
+   * meilisearch-darwin-arm64, meilisearch.exe and so on, so an equality test
+   * against 'meilisearch' never matches. It used to be one, which is why the
+   * stale process cleanup here has never actually fired.
+   */
+  private static looksLikeMeilisearch(name: string | undefined): boolean {
+    return name !== undefined && name.toLowerCase().startsWith('meilisearch');
+  }
+
+  private async writePidFile(pid: number | undefined) {
+    if (pid === undefined) {
+      return;
+    }
+    try {
+      await fs.writeFile(this.pidFilePath, String(pid), 'utf-8');
+    } catch (e) {
+      this.logger.warn(e, 'Could not record the Meilisearch pid');
+    }
+  }
+
+  private async clearPidFile() {
+    try {
+      await fs.rm(this.pidFilePath, { force: true });
+    } catch {
+      // Nothing useful to do; a stale file is handled on the next start.
+    }
+  }
+
+  /**
+   * Kills a Meilisearch left behind by a previous run.
+   *
+   * Meilisearch is spawned as a child, and a child does not die with its
+   * parent. On a clean shutdown `stop()` signals it, but a hard kill — OOM,
+   * `docker kill`, a crash — leaves it running, reparented to init, holding its
+   * port and its database directory forever.
+   *
+   * Two lookups are needed. The port lookup only finds an orphan if the new
+   * process happens to pick the same port, which it usually does not: the port
+   * is chosen by getAvailablePort() unless configured, and an orphan is still
+   * holding the old one. So the pid recorded at spawn time is the reliable
+   * handle, and the port lookup remains as a fallback for orphans predating the
+   * pid file.
+   */
+  private async killOrphanedProcess() {
+    const candidates: number[] = [];
+
+    const recordedPid = await this.readRecordedPid();
+    if (recordedPid !== undefined) {
+      candidates.push(recordedPid);
+    }
+
+    if (this.port !== undefined) {
+      const onPort: ProcessInfo[] = await findProcess.default(
+        'port',
+        this.port,
+      );
+      for (const proc of onPort) {
+        if (
+          MeilisearchService.looksLikeMeilisearch(proc.name) &&
+          !candidates.includes(proc.pid)
+        ) {
+          candidates.push(proc.pid);
+        }
+      }
+    }
+
+    for (const pid of candidates) {
+      await this.killIfMeilisearch(pid);
+    }
+
+    await this.clearPidFile();
+  }
+
+  private async readRecordedPid(): Promise<Maybe<number>> {
+    try {
+      const raw = await fs.readFile(this.pidFilePath, 'utf-8');
+      const pid = Number.parseInt(raw.trim(), 10);
+      return Number.isSafeInteger(pid) && pid > 0 ? pid : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Kills `pid`, but only after confirming it is actually Meilisearch.
+   *
+   * Pids are recycled. A recorded pid from a previous boot may by now belong to
+   * something else entirely, and killing that would be considerably worse than
+   * leaving an orphan alive.
+   */
+  private async killIfMeilisearch(pid: number) {
+    const found: ProcessInfo[] = await findProcess.default('pid', pid);
+    const proc = found[0];
+    if (
+      proc === undefined ||
+      !MeilisearchService.looksLikeMeilisearch(proc.name)
+    ) {
+      return;
+    }
+
+    this.logger.info(
+      'Killing orphaned Meilisearch process %d left by a previous run',
+      pid,
+    );
+
+    try {
+      process.kill(pid);
+    } catch (e) {
+      this.logger.warn(e, 'Could not signal orphaned Meilisearch %d', pid);
+      return;
+    }
+
+    try {
+      await retry(
+        async () => {
+          const results = await findProcess.default('pid', pid);
+          if (results.length > 0) {
+            throw new Error('Meilisearch process is not dead yet...');
+          }
+        },
+        { retries: 5, minTimeout: 200 },
+      );
+    } catch {
+      this.logger.warn(
+        'Orphaned Meilisearch %d did not exit after SIGTERM; escalating',
+        pid,
+      );
+      try {
+        process.kill(pid, 'SIGKILL');
+      } catch {
+        // It exited between the check and the signal.
+      }
+    }
   }
 
   async getMeilisearchVersion(): Promise<Maybe<string>> {
