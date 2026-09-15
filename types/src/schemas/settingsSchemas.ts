@@ -150,38 +150,43 @@ export const MediaSourcePathReplacement = z.object({
 const BaseMediaSourceSettingsSchema = z.object({
   id: z.string(),
   name: z.string(),
-  uri: z.string(),
-  accessToken: z.string().optional(),
-  userId: z.string().nullable(),
-  username: z.string().nullable(),
   libraries: z.array(BaseMediaSourceLibrarySchema),
   pathReplacements: z.array(MediaSourcePathReplacement),
 });
 
-export const PlexServerSettingsSchema = BaseMediaSourceSettingsSchema.extend({
+const RemoteMediaSourceSettingsSchema = z.object({
+  ...BaseMediaSourceSettingsSchema.shape,
+  uri: z.string(),
+  accessToken: z.string().optional(),
+  userId: z.string().nullable(),
+  sendPlayStatusUpdates: z.boolean().default(false),
+  username: z.string().nullable(),
+});
+
+export const PlexServerSettingsSchema = z.object({
+  ...RemoteMediaSourceSettingsSchema.shape,
   type: z.literal(MediaSourceType.enum.plex),
   sendGuideUpdates: z.boolean(),
   index: z.number(),
   clientIdentifier: z.string().optional(),
 });
 
-export const JellyfinServerSettingsSchema =
-  BaseMediaSourceSettingsSchema.extend({
-    type: z.literal('jellyfin'),
-  });
+export const JellyfinServerSettingsSchema = z.object({
+  ...RemoteMediaSourceSettingsSchema.shape,
+  type: z.literal('jellyfin'),
+});
 
-export const EmbyServerSettingsSchema = BaseMediaSourceSettingsSchema.extend({
+export const EmbyServerSettingsSchema = z.object({
+  ...RemoteMediaSourceSettingsSchema.shape,
   type: z.literal('emby'),
 });
 
-export const LocalMediaSourceSchema = z
-  .object({
-    ...BaseMediaSourceSettingsSchema.shape,
-    type: z.literal('local'),
-    mediaType: MediaSourceContentType,
-    paths: z.array(z.string().min(1)).nonempty(),
-  })
-  .omit({ accessToken: true, userId: true, username: true, uri: true });
+export const LocalMediaSourceSchema = z.object({
+  ...BaseMediaSourceSettingsSchema.shape,
+  type: z.literal('local'),
+  mediaType: MediaSourceContentType,
+  paths: z.array(z.string().min(1)).nonempty(),
+});
 
 export const MediaSourceSettingsSchema = z.discriminatedUnion('type', [
   PlexServerSettingsSchema,
