@@ -537,6 +537,7 @@ export const UpdateFeatureFlagsRequestSchema = z.object({
   disableSearchSnapshotInBackup: z.boolean().optional(),
   disableVulkan: z.boolean().optional(),
   disableVaapiPad: z.boolean().optional(),
+  xmltvCreditImagesEnabled: z.boolean().optional(),
 });
 
 export type UpdateFeatureFlagsRequest = z.infer<
