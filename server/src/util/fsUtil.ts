@@ -1,4 +1,4 @@
-import fs, { constants } from 'node:fs/promises';
+import fs, { constants, type FileHandle } from 'node:fs/promises';
 import path from 'node:path';
 import { isNodeError } from './index.js';
 
@@ -12,6 +12,75 @@ export async function fileExists(path: string) {
     }
 
     // Re-throw any other error type
+    throw e;
+  }
+}
+
+/**
+ * Writes to a scratch file in the destination's directory and renames it into
+ * place. A plain write truncates the destination first, so an interrupted one
+ * leaves a zero-length or partially-written file behind; rename(2) is atomic
+ * within a filesystem, so the destination only ever holds the complete old or
+ * the complete new contents.
+ *
+ * Calls for the same destination are serialized through a per-path queue, so
+ * concurrent callers cannot clobber each other's scratch file (the scratch
+ * name embeds only the pid, so it is shared within a process).
+ *
+ * Durability notes: the scratch file is flushed to disk before the rename so
+ * its contents survive a power loss, but the containing directory is not
+ * synced, so the rename itself is only guaranteed against process
+ * interruption. This matches the write path lowdb uses (steno). The rename
+ * also replaces the destination's inode, so an existing file's permissions
+ * are not preserved: the new file is created with the umask default
+ * (typically 0644).
+ */
+const pendingWrites = new Map<string, Promise<void>>();
+
+export function writeFileAtomic(
+  filePath: string,
+  contents: string,
+): Promise<void> {
+  const queueKey = path.resolve(filePath);
+  const prior = pendingWrites.get(queueKey);
+
+  const write = (prior ?? Promise.resolve())
+    // A failed write does not poison the queue -- the next caller still runs.
+    .catch(() => void 0)
+    .then(() => writeFileAtomicInternal(filePath, contents));
+
+  pendingWrites.set(queueKey, write);
+  return write.finally(() => {
+    if (pendingWrites.get(queueKey) === write) {
+      pendingWrites.delete(queueKey);
+    }
+  });
+}
+
+async function writeFileAtomicInternal(filePath: string, contents: string) {
+  const tempPath = path.join(
+    path.dirname(filePath),
+    `.${path.basename(filePath)}.${process.pid}.tmp`,
+  );
+
+  let fileHandle: FileHandle | undefined;
+  try {
+    fileHandle = await fs.open(tempPath, 'w');
+    await fileHandle.writeFile(contents);
+    // Flush the data to disk before renaming into place. Without this, a
+    // power loss after the rename can still surface an empty or partial
+    // destination on filesystems with delayed allocation (e.g. ext4).
+    await fileHandle.sync();
+    await fileHandle.close();
+    fileHandle = undefined;
+    await fs.rename(tempPath, filePath);
+  } catch (e) {
+    if (fileHandle !== undefined) {
+      await fileHandle.close().catch(() => void 0);
+    }
+
+    // Best-effort cleanup; the write already failed and is being rethrown.
+    await fs.unlink(tempPath).catch(() => void 0);
     throw e;
   }
 }

@@ -6,13 +6,14 @@ import { merge } from 'lodash-es';
 import { Low, LowSync } from 'lowdb';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { DeepPartial } from 'ts-essentials';
+import type { DeepPartial } from 'ts-essentials';
 import { SchemaBackedDbAdapter } from './json/SchemaBackedJsonDBAdapter.ts';
 import { SyncSchemaBackedDbAdapter } from './json/SyncSchemaBackedJSONDBAdapter.ts';
+import type {
+  SettingsFile} from './SettingsDB.ts';
 import {
   CURRENT_VERSION,
   SettingsDB,
-  SettingsFile,
   SettingsFileSchema,
   defaultSettings,
 } from './SettingsDB.ts';

@@ -11,7 +11,8 @@ import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { dbOptions, GlobalOptions } from '../../globals.ts';
+import type { GlobalOptions } from '../../globals.ts';
+import { dbOptions } from '../../globals.ts';
 import { FeatureFlagService } from '../../services/FeatureFlagService.ts';
 import { FileSystemService } from '../../services/FileSystemService.ts';
 import { MeilisearchService } from '../../services/MeilisearchService.ts';
@@ -24,7 +25,7 @@ import {
   SettingsJsonFilename,
 } from '../../util/constants.ts';
 import { run } from '../../util/index.ts';
-import { ISettingsDB } from '../interfaces/ISettingsDB.ts';
+import type { ISettingsDB } from '../interfaces/ISettingsDB.ts';
 import type { BackupResult } from './DatabaseBackup.ts';
 import { DatabaseBackup } from './DatabaseBackup.ts';
 import { SqliteDatabaseBackup } from './SqliteDatabaseBackup.ts';

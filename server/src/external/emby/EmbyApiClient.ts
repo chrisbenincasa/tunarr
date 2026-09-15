@@ -7,6 +7,11 @@ import {
   parseIntOrNull,
 } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import {
+  BlockedOutboundUrlError,
+  checkOutboundUrl,
+  outboundRequestGuard,
+} from '@/util/outboundRequests.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { seq } from '@tunarr/shared/util';
 import type {
@@ -202,7 +207,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
 
       if (!errorExpected) {
         LoggerFactory.root.error(
-          { error: error as unknown, caller: EmbyApiClient.name },
+          { error: error, caller: EmbyApiClient.name },
           'Error retrieving Emby self user',
         );
       }
@@ -245,6 +250,13 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     password: string,
     clientId: string = v4(),
   ) {
+    // serverUrl comes straight from an unauthenticated API caller, so refuse the
+    // one class of destination that is never a media server.
+    const rejection = await checkOutboundUrl(serverUrl);
+    if (rejection) {
+      throw new BlockedOutboundUrlError(rejection);
+    }
+
     try {
       const response = await axios.post(
         `${serverUrl}/Users/AuthenticateByName`,
@@ -256,6 +268,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
           headers: {
             Authorization: getEmbyAuthorization(undefined, clientId),
           },
+          ...outboundRequestGuard,
         },
       );
 
@@ -266,7 +279,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       }
 
       LoggerFactory.root.error(
-        { error: e as unknown, className: EmbyApiClient.name },
+        { error: e, className: EmbyApiClient.name },
         'Error logging into Emby',
       );
       throw e;
@@ -936,7 +949,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       for (const item of data.Items ?? []) {
         const converted = this.embyApiItemInjection(item);
         if (converted) {
-          yield converted as ProgramOrFolder;
+          yield converted;
         }
       }
 

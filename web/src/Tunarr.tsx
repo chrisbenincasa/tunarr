@@ -16,7 +16,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ServerEventsProvider } from './components/server_events/ServerEventsProvider.tsx';
 import { TunarrApiProvider } from './context/TunarrApiContext.tsx';
-import { messages as enMessages } from './locales/en/messages';
+import { messages as enMessages } from './locales/en/messages.po';
 import { queryClient } from './queryClient.ts';
 import { router } from './router.ts';
 import { Theme } from './theme.ts';
@@ -45,9 +45,7 @@ export const Tunarr = () => {
     <TunarrApiProvider queryClient={queryClient}>
       <I18nProvider i18n={i18n}>
         <DayjsProvider>
-          <LocalizationProvider
-            dateAdapter={AdapterDayjs}
-          >
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DndProvider backend={HTML5Backend}>
               <ServerEventsProvider>
                 <QueryClientProvider client={queryClient}>

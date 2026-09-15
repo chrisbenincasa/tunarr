@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateTaggedQueries } from '../helpers/queryUtil.ts';
 import { createChannelV2Mutation } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useCreateChannel = (
@@ -10,8 +11,7 @@ export const useCreateChannel = (
     ...createChannelV2Mutation(),
     onSuccess: async (...args) => {
       await queryClient.invalidateQueries({
-        exact: false,
-        queryKey: ['Channels'],
+        predicate: invalidateTaggedQueries('Channels'),
       });
 
       if (opts?.onSuccess) {

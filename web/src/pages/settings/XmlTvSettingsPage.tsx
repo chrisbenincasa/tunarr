@@ -1,4 +1,5 @@
 import { useSettings } from '@/store/settings/selectors.ts';
+import { invalidateTaggedQueries } from '@/helpers/queryUtil.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Box,
@@ -60,7 +61,7 @@ export default function XmlTvSettingsPage() {
       setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
-        queryKey: ['settings', 'xmltv-settings'],
+        predicate: invalidateTaggedQueries('Settings'),
       });
     },
   });
@@ -98,13 +99,16 @@ export default function XmlTvSettingsPage() {
                     You can edit this location in your settings.json within your
                     Tunarr data directory
                     <br />
-                    <strong>NOTE:</strong> When manually adding the XMLTV location
-                    to a client like Plex, do not use this file directly. Instead,
-                    use the generated XMLTV from the Tunarr API endpoint:{' '}
+                    <strong>NOTE:</strong> When manually adding the XMLTV
+                    location to a client like Plex, do not use this file
+                    directly. Instead, use the generated XMLTV from the Tunarr
+                    API endpoint:{' '}
                     {
                       new URL(
                         '/api/xmltv.xml',
-                        isEmpty(backendUri) ? document.location.href : backendUri,
+                        isEmpty(backendUri)
+                          ? document.location.href
+                          : backendUri,
                       ).href
                     }
                   </span>

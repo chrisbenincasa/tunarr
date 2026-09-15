@@ -2,8 +2,8 @@ import { SmartCollection } from '@tunarr/types/schemas';
 import { inject, injectable } from 'inversify';
 import z from 'zod';
 import { SmartCollectionsDB } from '../db/SmartCollectionsDB.ts';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { ApiController } from './ApiController.ts';
+import type { RouterPluginAsyncCallback } from '../types/serverType.js';
+import type { ApiController } from './ApiController.ts';
 
 @injectable()
 export class SmartCollectionsApiController implements ApiController {

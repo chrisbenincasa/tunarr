@@ -5,15 +5,16 @@ import z from 'zod';
 import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
 import { container } from '../container.ts';
 import { ProgramGroupingDB } from '../db/ProgramGroupingDB.ts';
-import {
+import type {
   MediaSourceId,
-  RemoteSourceType,
+  RemoteSourceType} from '../db/schema/base.ts';
+import {
   RemoteSourceTypes,
 } from '../db/schema/base.ts';
 import { BatchLookupExternalProgrammingSchema } from '../types/schemas.ts';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import type { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { groupByUniq, inConstArr } from '../util/index.ts';
-import { ApiController } from './ApiController.ts';
+import type { ApiController } from './ApiController.ts';
 
 @injectable()
 export class ProgramGroupingApiController implements ApiController {

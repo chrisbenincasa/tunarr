@@ -8,7 +8,7 @@ import axios, { isAxiosError } from 'axios';
 import { eq } from 'drizzle-orm';
 import type { FastifyReply } from 'fastify';
 import { inject, injectable } from 'inversify';
-import { trimStart } from 'lodash-es';
+import { isEmpty, trimStart } from 'lodash-es';
 import type stream from 'node:stream';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import type { Artwork } from '../db/schema/Artwork.ts';
@@ -23,7 +23,7 @@ import { ImageCache } from './ImageCache.ts';
 
 export type ArtworkResult =
   | { kind: 'file'; path: string; artworkType: ArtworkType }
-  | { kind: 'url'; url: string }
+  | { kind: 'url'; url: string; headers?: Record<string, string> }
   | { kind: 'not-found' };
 
 @injectable()
@@ -70,10 +70,15 @@ export class ArtworkService {
       }
 
       case 'url': {
-        if (this.featureFlagService.get('proxyArtwork')) {
+        // Artwork that needs a media source credential must always be proxied.
+        // Redirecting would put the credential in the Location header, where any
+        // unauthenticated caller could read it.
+        const requiresCredential = !isEmpty(result.headers);
+        if (requiresCredential || this.featureFlagService.get('proxyArtwork')) {
           try {
             const proxyRes = await axios.request<stream.Readable>({
               url: result.url,
+              headers: result.headers,
               responseType: 'stream',
             });
 
@@ -256,19 +261,24 @@ export class ArtworkService {
         return { kind: 'not-found' };
       }
 
+      // The credential travels as a request header on a server-side fetch, never
+      // as a query param on a URL we hand to the client. Putting it in the URL
+      // leaks it via the Location header of a redirect (see GHSA-h3r4-r2f2-qf59
+      // against ErsatzTV, which had the same shape).
+      const headers: Record<string, string> = {};
       switch (mediaSource.type) {
         case 'plex':
-          url.searchParams.append('X-Plex-Token', mediaSource.accessToken);
+          headers['X-Plex-Token'] = mediaSource.accessToken;
           break;
         case 'jellyfin':
         case 'emby':
-          url.searchParams.append('X-Emby-Token', mediaSource.accessToken);
+          headers['X-Emby-Token'] = mediaSource.accessToken;
           break;
         case 'local':
           break;
       }
 
-      return { kind: 'url', url: url.toString() };
+      return { kind: 'url', url: url.toString(), headers };
     }
 
     return { kind: 'file', path: art.sourcePath, artworkType: art.artworkType };

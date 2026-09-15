@@ -12,7 +12,7 @@ import {
 } from '../../util/drizzleUtil.ts';
 import type { PageParams } from '../interfaces/IChannelDB.ts';
 import { Artwork } from '../schema/Artwork.ts';
-import { ChannelOrm } from '../schema/Channel.ts';
+import type { ChannelOrm } from '../schema/Channel.ts';
 import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
 import { Program, ProgramType } from '../schema/Program.ts';
 import type { ProgramExternalId } from '../schema/ProgramExternalId.ts';
@@ -20,7 +20,7 @@ import {
   ProgramGrouping,
   ProgramGroupingType,
 } from '../schema/ProgramGrouping.ts';
-import { ProgramGroupingExternalIdOrm } from '../schema/ProgramGroupingExternalId.ts';
+import type { ProgramGroupingExternalIdOrm } from '../schema/ProgramGroupingExternalId.ts';
 import type { DB } from '../schema/db.ts';
 import type {
   ChannelOrmWithRelations,

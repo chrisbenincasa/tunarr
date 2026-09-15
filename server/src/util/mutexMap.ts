@@ -1,6 +1,7 @@
-import { Mutex, MutexInterface, withTimeout } from 'async-mutex';
+import type { MutexInterface} from 'async-mutex';
+import { Mutex, withTimeout } from 'async-mutex';
 import { injectable } from 'inversify';
-import { Maybe } from '../types/util.ts';
+import type { Maybe } from '../types/util.ts';
 import { isDefined } from './index.ts';
 
 /**

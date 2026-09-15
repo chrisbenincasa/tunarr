@@ -66,6 +66,24 @@ export function makeShowGrouping(
   };
 }
 
+type SeasonGrouping = NonNullable<Episode['season']>;
+
+export function makeSeasonGrouping(
+  index: number,
+  overrides: Partial<SeasonGrouping> = {},
+): SeasonGrouping {
+  return {
+    ...terminalDefaults,
+    uuid: `season-${index}`,
+    type: 'season',
+    index,
+    plot: null,
+    tagline: null,
+    studios: [],
+    ...overrides,
+  };
+}
+
 export function makeEpisode(overrides: Partial<Episode> = {}): Episode {
   return {
     ...terminalDefaults,

@@ -1,7 +1,12 @@
-import type { ChannelProgram, ContentProgram, FlexProgram } from '@tunarr/types';
+import type {
+  ChannelProgram,
+  ContentProgram,
+  FlexProgram,
+} from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { makeContentProgram, makeMovie } from '../../test/programFixtures.ts';
 import { addBreaks, type AddBreaksConfig } from './useAddBreaks';
 
 dayjs.extend(duration);
@@ -9,27 +14,26 @@ dayjs.extend(duration);
 // Mock the random helper
 vi.mock('../../helpers/random.ts', () => ({
   random: {
-    integer: vi.fn((min: number, max: number) => min), // Always return min for deterministic tests
+    integer: vi.fn((min: number) => min), // Always return min for deterministic tests
   },
 }));
 
 const createContentProgram = (
   durationMs: number,
   title = 'Test',
-): ContentProgram => ({
-  type: 'content',
-  id: `id-${title}-${durationMs}`,
-  persisted: true,
-  subtype: 'movie',
-  title,
-  duration: durationMs,
-  externalIds: [],
-});
+): ContentProgram =>
+  makeContentProgram(
+    makeMovie({ title }),
+    durationMs,
+    `id-${title}-${durationMs}`,
+  );
+
+const programTitle = (program: ChannelProgram) =>
+  program.type === 'content' ? program.program.title : undefined;
 
 const createFlexProgram = (durationMs: number): FlexProgram => ({
   type: 'flex',
   duration: durationMs,
-  persisted: false,
 });
 
 const createConfig = (
@@ -168,8 +172,8 @@ describe('addBreaks', () => {
 
     // Flex should be inserted before 'Second'
     expect(result).toHaveLength(3);
-    expect((result[0] as ContentProgram).title).toBe('First');
+    expect(programTitle(result[0])).toBe('First');
     expect(result[1].type).toBe('flex');
-    expect((result[2] as ContentProgram).title).toBe('Second');
+    expect(programTitle(result[2])).toBe('Second');
   });
 });

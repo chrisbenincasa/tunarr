@@ -2,6 +2,7 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { nullToUndefined, run } from '@/util/index.js';
+import { checkOutboundUrl } from '@/util/outboundRequests.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import type { LocalMediaSource } from '@tunarr/types';
@@ -630,6 +631,15 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
+      // req.body.uri is caller-supplied on an unauthenticated endpoint. Refuse
+      // the one class of destination that is never a media server.
+      if (req.body.type !== 'local') {
+        const rejection = await checkOutboundUrl(req.body.uri);
+        if (rejection) {
+          return res.send({ healthy: false, status: 'unreachable' });
+        }
+      }
+
       let healthyPromise: Promise<MediaSourceStatus>;
       switch (req.body.type) {
         case 'plex': {

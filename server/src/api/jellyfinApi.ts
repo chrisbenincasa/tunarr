@@ -2,6 +2,11 @@ import { MediaSourceType } from '@/db/schema/base.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { mediaSourceParamsSchema, TruthyQueryParam } from '@/types/schemas.js';
 import { isDefined, nullToUndefined } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import {
+  classifyUpstreamError,
+  isBlockedOutboundUrlError,
+} from '@/util/outboundRequests.js';
 import type { ProgramOrFolder } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import { JellyfinLoginRequest, PagedResult } from '@tunarr/types/api';
@@ -34,6 +39,11 @@ function isNonEmptyTyped<T>(f: T[]): f is [T, ...T[]] {
 }
 
 export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'JellyfinApi',
+  });
+
   fastify.addHook('onRoute', (routeOptions) => {
     if (!routeOptions.schema) {
       routeOptions.schema = {};
@@ -51,21 +61,43 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             accessToken: z.string().optional(),
             userId: z.string().optional(),
           }),
+          400: z.object({ reason: z.literal('blocked-address') }),
+          502: z.object({
+            reason: z.enum([
+              'unreachable',
+              'auth',
+              'timeout',
+              'bad_response',
+              'unknown',
+            ]),
+          }),
         },
       },
     },
     async (req, res) => {
-      const response = await JellyfinApiClient.login(
-        req.body.url,
-        req.body.username,
-        req.body.password,
-        req.serverCtx.settings.clientId(),
-      );
+      try {
+        const response = await JellyfinApiClient.login(
+          req.body.url,
+          req.body.username,
+          req.body.password,
+          req.serverCtx.settings.clientId(),
+        );
 
-      return res.send({
-        accessToken: nullToUndefined(response.AccessToken),
-        userId: nullToUndefined(response.User?.Id),
-      });
+        return res.send({
+          accessToken: nullToUndefined(response.AccessToken),
+          userId: nullToUndefined(response.User?.Id),
+        });
+      } catch (e) {
+        if (isBlockedOutboundUrlError(e)) {
+          return res.status(400).send({ reason: 'blocked-address' });
+        }
+
+        // Deliberately coarse. This endpoint is unauthenticated, so echoing the
+        // upstream error would hand an attacker the errno, host and port of any
+        // internal address they probe. Detail stays in the log.
+        logger.warn(e, 'Error logging into Jellyfin server');
+        return res.status(502).send({ reason: classifyUpstreamError(e) });
+      }
     },
   );
 

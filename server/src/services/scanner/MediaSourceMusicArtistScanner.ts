@@ -5,7 +5,14 @@ import type {
   Season,
   Show,
 } from '@tunarr/types';
-import { differenceWith, flatten, head, round, values } from 'lodash-es';
+import {
+  differenceWith,
+  flatten,
+  head,
+  isEmpty,
+  round,
+  values,
+} from 'lodash-es';
 import type { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import type { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
@@ -152,7 +159,7 @@ export abstract class MediaSourceMusicArtistScanner<
   ): Promise<void> {
     this.mediaSourceProgressService.scanStarted(context.library.uuid);
 
-    const { library } = context;
+    const { library, pathFilter } = context;
     const existingArtists =
       await this.programDB.getExistingProgramGroupingDetails(
         library.uuid,
@@ -166,6 +173,10 @@ export abstract class MediaSourceMusicArtistScanner<
     for await (const artist of this.getArtists(library.externalKey, context)) {
       if (this.state(library.uuid) === 'canceled') {
         return;
+      }
+
+      if (isNonEmptyString(pathFilter) && artist.externalId !== pathFilter) {
+        continue;
       }
 
       seenArtists.add(artist.externalId);
@@ -202,51 +213,53 @@ export abstract class MediaSourceMusicArtistScanner<
       }
     }
 
-    const missingArtists = differenceWith(
-      values(existingArtists),
-      [...seenArtists.values()],
-      (existing, seen) => {
-        return existing.externalKey === seen;
-      },
-    );
+    if (isEmpty(context.pathFilter)) {
+      const missingArtists = differenceWith(
+        values(existingArtists),
+        [...seenArtists.values()],
+        (existing, seen) => {
+          return existing.externalKey === seen;
+        },
+      );
 
-    const missingAlbums = flatten(
-      await Promise.all(
-        missingArtists.map((show) =>
-          this.programDB.getChildren(show.uuid, ProgramGroupingType.Artist),
-        ),
-      ),
-    );
-
-    const missingTracks = flatten(
-      await Promise.all(
-        missingArtists.map((show) =>
-          this.programDB.getProgramGroupingDescendants(
-            show.uuid,
-            ProgramGroupingType.Artist,
+      const missingAlbums = flatten(
+        await Promise.all(
+          missingArtists.map((show) =>
+            this.programDB.getChildren(show.uuid, ProgramGroupingType.Artist),
           ),
         ),
-      ),
-    );
+      );
 
-    const missingAlbumIds = missingAlbums.flatMap((album) =>
-      album.results.map((a) => a.uuid),
-    );
-    await this.programDB.updateGroupingsState(missingAlbumIds, 'missing');
+      const missingTracks = flatten(
+        await Promise.all(
+          missingArtists.map((show) =>
+            this.programDB.getProgramGroupingDescendants(
+              show.uuid,
+              ProgramGroupingType.Artist,
+            ),
+          ),
+        ),
+      );
 
-    const missingTrackIds = missingTracks.map((track) => track.uuid);
-    await this.programDB.updateProgramsState(missingTrackIds, 'missing');
+      const missingAlbumIds = missingAlbums.flatMap((album) =>
+        album.results.map((a) => a.uuid),
+      );
+      await this.programDB.updateGroupingsState(missingAlbumIds, 'missing');
 
-    // Mark programs we didn't find as missing in the search index.
-    await this.searchService.updatePrograms(
-      missingAlbumIds
-        .concat(missingTrackIds)
-        .concat(missingArtists.map((artist) => artist.uuid))
-        .map((id) => ({
-          id,
-          state: 'missing',
-        })),
-    );
+      const missingTrackIds = missingTracks.map((track) => track.uuid);
+      await this.programDB.updateProgramsState(missingTrackIds, 'missing');
+
+      // Mark programs we didn't find as missing in the search index.
+      await this.searchService.updatePrograms(
+        missingAlbumIds
+          .concat(missingTrackIds)
+          .concat(missingArtists.map((artist) => artist.uuid))
+          .map((id) => ({
+            id,
+            state: 'missing',
+          })),
+      );
+    }
 
     this.mediaSourceProgressService.scanEnded(library.uuid);
   }
