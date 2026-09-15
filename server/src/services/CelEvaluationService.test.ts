@@ -177,6 +177,34 @@ describe('CelEvaluationService', () => {
         expect(service.evaluate('hasAudioLang("French")', ctx)).toBe(false);
       });
 
+      it('matches across both ISO 639-2 code sets', () => {
+        // ISO 639-2 gives German both "ger" (bibliographic) and "deu"
+        // (terminological); a CEL rule written with either must match a
+        // stream tagged with the other.
+        // Regression test for
+        // https://github.com/chrisbenincasa/tunarr/issues/1960
+        const ctx = makeContext({
+          audio: {
+            streams: [
+              {
+                index: 0,
+                language: 'deu',
+                codec: 'aac',
+                channels: 2,
+                title: '',
+                default: true,
+                selected: true,
+              },
+            ],
+            languages: ['deu'],
+          },
+        });
+        expect(service.evaluate('hasAudioLang("ger")', ctx)).toBe(true);
+        expect(service.evaluate('hasAudioLang("deu")', ctx)).toBe(true);
+        expect(service.evaluate('hasAudioLang("de")', ctx)).toBe(true);
+        expect(service.evaluate('hasAudioLang("dut")', ctx)).toBe(false);
+      });
+
       it('falls back to case-insensitive match for unknown inputs', () => {
         const ctx = makeContext({
           audio: {

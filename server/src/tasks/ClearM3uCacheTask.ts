@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { M3uService } from '../services/M3UService.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { SimpleTask } from './Task.ts';
 import { simpleTaskDef } from './TaskRegistry.ts';
 

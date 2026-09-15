@@ -175,7 +175,7 @@ When adding new services or components that need dependency injection:
 - **TypeScript**: All code must be written in TypeScript
 - **No `as any`**: Never cast types using `as any`
 - **Formatting**: Prettier handles formatting (run `pnpm fmt`)
-- **Linting**: ESLint 9.x with flat config
+- **Linting**: oxlint (config in `.oxlintrc.json`)
 - **Pre-commit hooks**: Husky + lint-staged run automatically
 
 ### Import Aliases
@@ -192,7 +192,7 @@ Tunarr uses [Husky](https://typicode.github.io/husky/) and [lint-staged](https:/
 When you commit, the following checks run automatically on staged files:
 
 - **Prettier** - Formats code and auto-fixes formatting issues
-- **ESLint** - Lints code and reports errors
+- **oxlint** - Lints code and reports errors
 
 If any check fails, the commit will be blocked. Fix the reported issues and try again.
 

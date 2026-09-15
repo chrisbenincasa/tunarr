@@ -15,7 +15,7 @@ import type {
 import { FileStreamSource, HttpStreamSource } from '@/stream/types.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import type {
   ChannelStreamMode,

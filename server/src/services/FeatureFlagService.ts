@@ -38,7 +38,7 @@ export class FeatureFlagService {
   }
 
   getAll(): FeatureFlags {
-    const persisted = { ...this.settings.featureFlags() } as FeatureFlags;
+    const persisted = { ...this.settings.featureFlags() };
     for (const meta of FeatureFlagMetadata) {
       const envValue = process.env[meta.envVar];
       if (envValue !== undefined && envValue !== '') {

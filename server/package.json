@@ -20,7 +20,7 @@
     "generate-env": "tsx scripts/generateEnvModule.ts",
     "generate-openapi": "tsx src/index.ts generate-openapi",
     "install-meilisearch": "tsx scripts/download-meilisearch.ts",
-    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
     "kysely": "dotenv -e .env.development -- kysely",
     "preinstall": "npx only-allow pnpm",
     "run-fixer": "dotenv -e .env.development -- tsx src/index.ts fixer",
@@ -36,7 +36,7 @@
     "@fastify/cors": "^10.1.0",
     "@fastify/error": "^4.2.0",
     "@fastify/multipart": "^9.0.3",
-    "@fastify/static": "^8.2.0",
+    "@fastify/static": "^10.1.3",
     "@fastify/swagger": "^9.5.1",
     "@iptv/xmltv": "^1.0.1",
     "@logdna/tail-file": "^4.0.2",
@@ -119,7 +119,6 @@
     "esbuild-plugin-pino": "^2.3.3",
     "fast-check": "^4.2.0",
     "fast-glob": "^3.3.3",
-    "globals": "^15.15.0",
     "kysely-ctl": "^0.9.0",
     "memfs": "^4.51.0",
     "node-abi": "^3.75.0",
@@ -135,7 +134,6 @@
     "tsx": "^4.20.5",
     "typed-emitter": "^2.1.0",
     "typescript": "catalog:",
-    "typescript-eslint": "^8.41.0",
     "vitest": "catalog:vitest"
   },
   "meilisearch": {

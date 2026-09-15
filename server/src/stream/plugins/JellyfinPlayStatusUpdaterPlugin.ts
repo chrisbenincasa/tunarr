@@ -2,15 +2,16 @@ import { inject, injectable } from 'inversify';
 import { v4 } from 'uuid';
 import { isContentBackedLineupItem } from '../../db/derived_types/StreamLineup.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
+import type {
+  UpdateJellyfinPlayStatusScheduledTaskFactory} from '../../tasks/jellyfin/UpdateJellyfinPlayStatusTask.ts';
 import {
-  UpdateJellyfinPlayStatusScheduledTask,
-  UpdateJellyfinPlayStatusScheduledTaskFactory,
+  UpdateJellyfinPlayStatusScheduledTask
 } from '../../tasks/jellyfin/UpdateJellyfinPlayStatusTask.ts';
 import { Result } from '../../types/result.ts';
-import { Maybe } from '../../types/util.ts';
+import type { Maybe } from '../../types/util.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
-import { PluginContext, ProgramStreamPlugin } from './ProgramStreamPlugin.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { PluginContext, ProgramStreamPlugin } from './ProgramStreamPlugin.ts';
 
 @injectable()
 export class JellyfinPlayStatusUpdaterPlugin implements ProgramStreamPlugin {

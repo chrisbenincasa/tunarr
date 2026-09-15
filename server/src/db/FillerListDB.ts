@@ -1,12 +1,12 @@
 import { KEYS } from '@/types/inject.js';
-import {
+import type {
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
@@ -27,25 +27,26 @@ import {
   values,
 } from 'lodash-es';
 import { v4 } from 'uuid';
-import { Maybe, Nilable } from '../types/util.ts';
+import type { Maybe, Nilable } from '../types/util.ts';
 import { caseWhen } from './DrizzleSqlCaseWhen.ts';
-import {
+import type {
   FillerShowWithContent,
   IFillerListDB,
 } from './interfaces/IFillerListDB.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
 import { ChannelFillerShow } from './schema/ChannelFillerShow.ts';
-import { FillerShow, NewFillerShow } from './schema/FillerShow.ts';
+import type { NewFillerShow } from './schema/FillerShow.ts';
+import { FillerShow } from './schema/FillerShow.ts';
 import {
   FillerShowContent,
   type NewFillerShowContent,
 } from './schema/FillerShowContent.ts';
-import { DB } from './schema/db.ts';
+import type { DB } from './schema/db.ts';
 import type {
   ChannelFillerShowWithContent,
   ProgramOrmWithExternalIds,
 } from './schema/derivedTypes.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()
 export class FillerDB implements IFillerListDB {

@@ -6,7 +6,7 @@ import { CacheImageService } from '@/services/cacheImageService.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import { resolveIconUrl } from '@/util/iconUtil.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import type { Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -14,7 +14,7 @@ import { isUndefined } from 'lodash-es';
 import events from 'node:events';
 import { PassThrough } from 'node:stream';
 import { match, P } from 'ts-pattern';
-import {
+import type {
   ContentBackedStreamLineupItem,
   ErrorStreamLineupItem,
   OfflineStreamLineupItem,
@@ -33,7 +33,7 @@ import {
 import { InjectLogger } from '../util/inject.ts';
 import type { PlayerContext } from './PlayerStreamContext.ts';
 import { ProgramStreamDetailsFetcher } from './ProgramStreamDetailsFetcher.ts';
-import { ProgramStreamPlugin } from './plugins/ProgramStreamPlugin.ts';
+import type { ProgramStreamPlugin } from './plugins/ProgramStreamPlugin.ts';
 import type { StreamRenditions } from './types.ts';
 
 type ProgramStreamEvents = {

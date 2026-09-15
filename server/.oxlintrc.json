@@ -1,0 +1,20 @@
+{
+  "$schema": "../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../.oxlintrc.json"],
+  "ignorePatterns": [
+    "**/.tsup/*",
+    "**/dist/*",
+    "**/build/*",
+    "**/scripts/*",
+    "**/*.config.ts",
+    "**/*.ignore.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/generated/*",
+    "esbuild/*",
+    "src/web/*",
+    "src/testing/*",
+    "tests/*",
+    "cjs-shim.ts"
+  ]
+}

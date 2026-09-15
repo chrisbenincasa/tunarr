@@ -44,6 +44,7 @@ export class OnDemandChannelStateTask extends SimpleTask {
         channel.uuid,
       );
       if (
+        allChannelSessions.length > 0 &&
         every(allChannelSessions, (session) => session.numConnections() === 0)
       ) {
         this.onDemandService.pauseChannel(channel.uuid, stopTime).catch((e) => {

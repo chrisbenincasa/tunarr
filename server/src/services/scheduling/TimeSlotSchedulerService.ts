@@ -1,5 +1,6 @@
+import type {
+  TimeSlotScheduleResult} from '@tunarr/types/api';
 import {
-  TimeSlotScheduleResult,
   TimeSlotScheduleSchema,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';

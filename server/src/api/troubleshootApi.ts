@@ -7,7 +7,7 @@ import {
 } from '@tunarr/types/schemas';
 import fs from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { z } from 'zod/v4';
 import { container } from '../container.js';
 import { TroubleshootSessionFolderName } from '../util/constants.ts';
@@ -53,7 +53,10 @@ export const troubleshootApiRouter: RouterPluginCallback = (
         return res.status(404).send('Session not found or expired');
       }
 
-      const filePath = join(dir, req.params.file);
+      const filePath = resolve(dir, req.params.file);
+      if (!filePath.startsWith(dir + sep)) {
+        return res.status(400).send('Invalid file path');
+      }
 
       try {
         await fs.access(filePath);
@@ -141,30 +144,23 @@ export const troubleshootApiRouter: RouterPluginCallback = (
 
       // session.onSegmentRequested(req.ip, req.params.file);
 
+      const troubleshootDir = join(tmpdir(), TroubleshootSessionFolderName);
+      const requestedFile = resolve(troubleshootDir, req.params.file);
+      if (!requestedFile.startsWith(troubleshootDir + sep)) {
+        return res.status(400).send({ message: 'Invalid file path' });
+      }
+
       if (req.params.file.endsWith('.vtt')) {
-        const filePath = join(
-          tmpdir(),
-          TroubleshootSessionFolderName,
-          req.params.file,
-        );
-        const content = await fs.readFile(filePath, 'utf-8');
+        const content = await fs.readFile(requestedFile, 'utf-8');
         return res.type('text/vtt').send(injectTimestampMap(content));
       }
 
       if (req.params.file.endsWith('.m3u8')) {
-        const filePath = join(
-          tmpdir(),
-          TroubleshootSessionFolderName,
-          req.params.file,
-        );
-        const content = await fs.readFile(filePath);
+        const content = await fs.readFile(requestedFile);
         return res.type('application/vnd.apple.mpegurl').send(content);
       }
 
-      return res.sendFile(
-        req.params.file,
-        join(tmpdir(), TroubleshootSessionFolderName),
-      );
+      return res.sendFile(req.params.file, troubleshootDir);
     },
   );
 

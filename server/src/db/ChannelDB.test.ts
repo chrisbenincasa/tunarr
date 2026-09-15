@@ -328,6 +328,111 @@ describe('ChannelDB', () => {
       expect(lineup.items[0].type).toBe('offline');
     });
 
+    test('should not hand out the cached lineup by reference', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, {
+          name: 'Lineup Aliasing Channel',
+          number: 601,
+        }),
+      );
+
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [
+          { type: 'offline' as const, durationMs: 1000 },
+          { type: 'offline' as const, durationMs: 2000 },
+          { type: 'offline' as const, durationMs: 3000 },
+        ],
+        startTimeOffsets: [0, 1000, 3000],
+      });
+
+      // A reader takes the lineup and then yields, as the guide build does.
+      const readerLineup = await channelDb.loadLineup(created.channel.uuid);
+      const itemsAtReadTime = readerLineup.items;
+      const offsetsAtReadTime = readerLineup.startTimeOffsets;
+
+      // A writer replaces the lineup while the reader still holds its copy.
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [{ type: 'offline' as const, durationMs: 5000 }],
+        startTimeOffsets: [0],
+      });
+
+      // The reader's view must be the one it read, not the writer's.
+      expect(readerLineup.items).toBe(itemsAtReadTime);
+      expect(readerLineup.items).toHaveLength(3);
+      expect(readerLineup.startTimeOffsets).toBe(offsetsAtReadTime);
+      expect(readerLineup.startTimeOffsets).toHaveLength(3);
+
+      // A fresh load sees the write.
+      const afterWrite = await channelDb.loadLineup(created.channel.uuid);
+      expect(afterWrite).not.toBe(readerLineup);
+      expect(afterWrite.items).toHaveLength(1);
+    });
+
+    test('should not let a mutated loaded lineup leak into the cache', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, {
+          name: 'Lineup Mutation Channel',
+          number: 602,
+        }),
+      );
+
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [
+          { type: 'offline' as const, durationMs: 1000 },
+          { type: 'offline' as const, durationMs: 2000 },
+        ],
+        startTimeOffsets: [0, 1000],
+      });
+
+      const lineup = await channelDb.loadLineup(created.channel.uuid);
+      lineup.items = [];
+      lineup.startTimeOffsets = [];
+
+      const reloaded = await channelDb.loadLineup(created.channel.uuid);
+      expect(reloaded.items).toHaveLength(2);
+      expect(reloaded.startTimeOffsets).toHaveLength(2);
+    });
+
+    test('should still persist removeProgramsFromLineup edits', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, {
+          name: 'Lineup Removal Channel',
+          number: 603,
+        }),
+      );
+
+      const programId = v4();
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [
+          {
+            type: 'content' as const,
+            id: programId,
+            durationMs: 1000,
+          } as ContentItem,
+          { type: 'offline' as const, durationMs: 2000 },
+        ],
+        startTimeOffsets: [0, 1000],
+      });
+
+      await channelDb.removeProgramsFromLineup(created.channel.uuid, [
+        programId,
+      ]);
+
+      const reloaded = await channelDb.loadLineup(created.channel.uuid);
+      expect(reloaded.items).toHaveLength(2);
+      expect(reloaded.items[0].type).toBe('offline');
+      expect(reloaded.items[0].durationMs).toBe(1000);
+    });
+
     test('should load channel and lineup together', async ({
       channelDb,
       defaultTranscodeConfigId,

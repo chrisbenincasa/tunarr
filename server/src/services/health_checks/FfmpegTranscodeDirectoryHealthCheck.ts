@@ -1,16 +1,17 @@
 import { inject, injectable } from 'inversify';
 import fs from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
+import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { isNodeError, isNonEmptyString } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
-import {
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
+import type {
   HealthCheck,
-  HealthCheckResult,
+  HealthCheckResult} from './HealthCheck.ts';
+import {
   healthCheckResult,
 } from './HealthCheck.ts';
 

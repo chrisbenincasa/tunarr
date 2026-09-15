@@ -1,6 +1,6 @@
 import { seq } from '@tunarr/shared/util';
-import { Show } from '@tunarr/types';
-import {
+import type { Show } from '@tunarr/types';
+import type {
   MaterializedCustomShowRandomSlot,
   MaterializedCustomShowTimeSlot,
   MaterializedFillerTimeSlot,
@@ -15,13 +15,13 @@ import { inject, injectable } from 'inversify';
 import { uniq } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { ormChannelToApiChannel } from '../db/converters/channelConverters.ts';
-import { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
+import type { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { ServerContext } from '../ServerContext.ts';
 
-import { Maybe } from '../types/util.ts';
+import type { Maybe } from '../types/util.ts';
 import { groupByUniq } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { MaterializeProgramGroupings } from './MaterializeProgramGroupings.ts';
 
 type GetMaterializedChannelScheduleRequest = {
