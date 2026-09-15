@@ -1,7 +1,7 @@
 name: Release (CalVer)
 
-# Pilot of the CalVer release flow that replaces semantic-release.
-# See .claude/plans/versioning-repair-plan.md for why.
+# CalVer release flow. See .claude/plans/versioning-repair-plan.md for why.
+# release-comment.yml comments on shipped PRs and issues once this publishes.
 #
 # Versions are YYYY.M.PATCH, unpadded, because that form is still valid semver:
 # docker/metadata-action's type=semver, the docs spec sort, and the Docker tag
@@ -142,7 +142,7 @@ jobs:
         env:
           # A PAT, not GITHUB_TOKEN: tags pushed with the default token do not
           # trigger other workflows, and build-and-push-docker.yml runs on tag
-          # push. Same reason the semantic-release job used it.
+          # push.
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
         run: |
           set -euo pipefail
