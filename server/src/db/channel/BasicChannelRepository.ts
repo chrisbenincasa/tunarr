@@ -180,7 +180,7 @@ export class BasicChannelRepository {
 
     return {
       channel,
-      lineup: (await this.lineupRepository.getFileDb(channel.uuid)).data,
+      lineup: await this.lineupRepository.loadLineup(channel.uuid),
     };
   }
 
