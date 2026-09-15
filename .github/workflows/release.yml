@@ -44,11 +44,14 @@ jobs:
 
           # Stable tags for this month only. The suffix filter drops
           # prereleases, so v2026.8.0-dev.1 never counts as a stable release.
+          #
+          # A month with no tags makes grep exit 1, which pipefail turns into
+          # a step failure. `|| true` lets that case fall through to patch 0.
           LAST_PATCH="$(git tag --list "${PREFIX}*" \
             | sed "s|^${PREFIX}||" \
             | grep -E '^[0-9]+$' \
             | sort -n \
-            | tail -1)"
+            | tail -1 || true)"
 
           if [ -z "${LAST_PATCH}" ]; then
             PATCH=0
@@ -64,7 +67,7 @@ jobs:
               | sed "s|^v${BASE}-dev\.||" \
               | grep -E '^[0-9]+$' \
               | sort -n \
-              | tail -1)"
+              | tail -1 || true)"
 
             if [ -z "${LAST_DEV}" ]; then
               DEV=0
