@@ -107,11 +107,11 @@ pnpm regen-routes     # Regenerate TanStack Router routes
 
 ### Making Changes
 
-1. Create a new branch from `dev`:
+1. Create a new branch from `main`, or from `dev` for a large feature (see [base branch](#pull-request-guidelines)):
 
     ```bash
-    git checkout dev
-    git pull origin dev
+    git checkout main
+    git pull origin main
     git checkout -b feature/your-feature-name
     ```
 
@@ -126,7 +126,7 @@ pnpm regen-routes     # Regenerate TanStack Router routes
     ```
 
 4. Commit your changes using [conventional commit](#commit-messages) format
-5. Push your branch and open a Pull Request against `dev`
+5. Push your branch and open a Pull Request against the branch you started from
 
 ### Adding API Endpoints
 
@@ -357,8 +357,8 @@ Key directories:
 ## Pull Request Guidelines
 
 1. **Base branch** 
-    1. **Target the `main` branch** for all non-`feat` commits, i.e.g `fix`, `chore`, `refactor`, etc.
-    2. **Target the `dev` branch** for all `feat` commits or `fix` PRs that require DB schema updates.
+    1. **Target the `main` branch** by default. This includes fixes, chores, refactors, and small to medium features, even when they add a database migration.
+    2. **Target the `dev` branch** only for large features that will need many prerelease iterations before they reach stable, such as infinite schedules or remote streaming sources. Ask in the issue or on Discord if you're unsure.
 2. **Keep PRs focused** - one feature or fix per PR
 3. **Use conventional commits** - follow the [commit message format](#commit-messages)
 4. **Ensure all checks pass** before requesting review
