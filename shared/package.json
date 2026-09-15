@@ -14,6 +14,7 @@
     "clean": "rimraf ./dist/",
     "dev": "tsgo --declaration --watch",
     "generate-search-diagram": "tsx scripts/generate_search_diagram.ts",
+    "lint": "oxlint src/",
     "test": "vitest --run"
   },
   "exports": {

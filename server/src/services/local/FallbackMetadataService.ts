@@ -1,4 +1,4 @@
-import {
+import type {
   MovieMetadata,
   MusicAlbumMetadata,
   MusicArtistMetadata,
@@ -10,7 +10,7 @@ import { injectable } from 'inversify';
 import { isNull } from 'lodash-es';
 import { basename, extname } from 'node:path';
 import { v4 } from 'uuid';
-import { Nullable } from '../../types/util.ts';
+import type { Nullable } from '../../types/util.ts';
 import { parseIntOrNull } from '../../util/index.ts';
 import { titleToSortTitle } from '../../util/programs.ts';
 

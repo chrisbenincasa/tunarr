@@ -41,7 +41,7 @@ import type {
   ProgramGroupingOrmWithRelations,
 } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess, schema } from '../schema/index.ts';
-import { ProgramMetadataRepository } from './ProgramMetadataRepository.ts';
+import type { ProgramMetadataRepository } from './ProgramMetadataRepository.ts';
 
 @injectable()
 export class ProgramGroupingUpsertRepository {

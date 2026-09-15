@@ -71,10 +71,9 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny>
     }
 
     if (needsWriteFlush) {
-      await this.write(parseResult.data as z.output<T>);
+      await this.write(parseResult.data);
     }
 
-    // eslint can't seem to handle this but TS compiler gets it right.
     return parseResult.data;
   }
 

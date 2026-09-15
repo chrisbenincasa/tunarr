@@ -588,7 +588,7 @@ export class SearchParser extends EmbeddedActionsParser {
             {
               ALT: () => {
                 this.CONSUME(NotContainsOperator);
-                return 'not contains' as StringOps;
+                return 'not contains';
               },
             },
             {

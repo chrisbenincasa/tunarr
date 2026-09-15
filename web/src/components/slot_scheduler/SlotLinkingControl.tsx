@@ -178,7 +178,7 @@ export function SlotLinkingControl({
       ...copySlotForLinking(sourceSlot),
       iterationGroup: groupId,
       linkMode,
-    } as CommonSlotViewModel);
+    });
 
     if (isNewGroup) {
       onLinkSourceSlot?.(sourceSlot.id, groupId, linkMode);
@@ -231,7 +231,7 @@ export function SlotLinkingControl({
               <Select
                 label={t`Link Mode`}
                 {...field}
-                value={(field.value as string | undefined) ?? 'continue'}
+                value={field.value ?? 'continue'}
               >
                 <MenuItem value="continue">
                   <Trans>Continue</Trans>
@@ -265,7 +265,7 @@ export function SlotLinkingControl({
                 <Select
                   label={t`Overflow Behavior`}
                   {...field}
-                  value={(field.value as string | undefined) ?? 'flex'}
+                  value={field.value ?? 'flex'}
                 >
                   <MenuItem value="flex">
                     <Trans>Fill with Flex</Trans>

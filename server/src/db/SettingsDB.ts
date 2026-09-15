@@ -1,31 +1,33 @@
-import {
+import type {
   ISettingsDB,
   ReadableFfmpegSettings,
   SettingsChangeEvents,
 } from '@/db/interfaces/ISettingsDB.js';
 import { deepCopy, isProduction } from '@/util/index.js';
 import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import {
-  DefaultServerSettings,
+import type {
   FeatureFlags,
-  FeatureFlagsSchema,
   FfmpegSettings,
   HdhrSettings,
-  LoggingSettingsSchema,
   PlexStreamSettings,
   SystemSettings,
+  XmlTvSettings} from '@tunarr/types';
+import {
+  DefaultServerSettings,
+  FeatureFlagsSchema,
+  LoggingSettingsSchema,
   SystemSettingsSchema,
-  XmlTvSettings,
   defaultFfmpegSettings,
   defaultGlobalMediaSourceSettings,
   defaultHdhrSettings,
   defaultPlexStreamSettings,
   defaultXmlTvSettings as defaultXmlTvSettingsSchema,
 } from '@tunarr/types';
-import {
+import type {
   BackupSettings,
+  GlobalMediaSourceSettings} from '@tunarr/types/schemas';
+import {
   FfmpegSettingsSchema,
-  GlobalMediaSourceSettings,
   GlobalMediaSourceSettingsSchema,
   HdhrSettingsSchema,
   PlexStreamSettingsSchema,
@@ -33,14 +35,14 @@ import {
 } from '@tunarr/types/schemas';
 import { injectable } from 'inversify';
 import { merge } from 'lodash-es';
-import { Low } from 'lowdb';
+import type { Low } from 'lowdb';
 import events from 'node:events';
 import path from 'node:path';
 import { setImmediate } from 'node:timers';
-import { DeepPartial, DeepReadonly } from 'ts-essentials';
+import type { DeepPartial, DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod/v4';
-import { Maybe } from '../types/util.ts';
+import type { Maybe } from '../types/util.ts';
 import {
   getDefaultLogDirectory,
   getDefaultLogLevel,
