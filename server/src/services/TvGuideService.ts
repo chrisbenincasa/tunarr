@@ -743,7 +743,20 @@ export class TVGuideService {
     let melded = 0;
 
     const push = (program: GuideItem) => {
-      const currentProgram = program.lineupItem;
+      // Normalize filler items to offline so they always participate
+      // in offline melding and never appear as content in the EPG.
+      let currentProgram = program.lineupItem;
+      if (
+        currentProgram.type === 'content' &&
+        isNonEmptyString(currentProgram.fillerListId)
+      ) {
+        currentProgram = {
+          type: 'offline',
+          durationMs: currentProgram.durationMs,
+        };
+        program = { ...program, lineupItem: currentProgram };
+      }
+
       const previousProgramIndex =
         !isUndefined(program.index) &&
         inRange(program.index - 1, 0, programs.length)
