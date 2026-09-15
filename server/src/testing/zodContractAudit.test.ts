@@ -82,29 +82,10 @@ const KNOWN: Record<string, string> = {
   'UpdateCustomShowRequestSchema.programs':
     'defused by a length guard in CustomShowDB.saveShow',
 
-  // Tracked: xmltv/system settings partial-update fixes.
-  'UpdateSystemSettingsRequestSchema.logging.useEnvVarLevel':
-    'fixed in the settings partial-update branch',
-  'UpdateSystemSettingsRequestSchema.logging.logRollConfig':
-    'fixed in the settings partial-update branch',
   'UpdateSystemSettingsRequestSchema.cache.enablePlexRequestCache':
     'catch on a boolean; low impact, not yet changed',
   'XmlTvSettingsSchema.useShowPoster':
     'catch on a boolean; low impact, not yet changed',
-
-  // PUT /system/feature-flags is declared partial but Object.assign's a body
-  // that always carries all six flags, so a partial update silently turns the
-  // others off.
-  'UpdateFeatureFlagsRequestSchema.proxyArtwork': 'feature-flags partial bug',
-  'UpdateFeatureFlagsRequestSchema.tonemapEnabled': 'feature-flags partial bug',
-  'UpdateFeatureFlagsRequestSchema.webvttSidecarEnabled':
-    'feature-flags partial bug',
-  'UpdateFeatureFlagsRequestSchema.disableSearchSnapshotInBackup':
-    'feature-flags partial bug',
-  'UpdateFeatureFlagsRequestSchema.disableVulkan': 'feature-flags partial bug',
-
-  'UpdateFeatureFlagsRequestSchema.disableVaapiPad':
-    'feature-flags partial bug',
 };
 
 const registry: Record<string, unknown> = {
