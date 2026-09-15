@@ -17,8 +17,8 @@ Conventional commits and commitlint stay. Auto-generated changelogs stay. What g
 is the `feat → minor` mapping, and with it the incentive to bundle features into larger
 releases to keep the numbers calm.
 
-**The changelog lives in GitHub Releases only.** `CHANGELOG.md` is retired — it stops at
-`1.1.3` (2026-01-20) while tags are at `v1.3.13`, because semantic-release deliberately
+**The changelog lives in GitHub Releases only.** `CHANGELOG.md` is deleted — it stopped at
+`1.1.3` (2026-01-20) while tags reached `v1.3.15`, because semantic-release deliberately
 does not commit generated files back. Release notes are generated per release and posted
 to the GitHub release body.
 
@@ -126,6 +126,12 @@ tool whose remaining job is a `gh release create`.
    semantic-release release.
 6. Release stays manual (`workflow_dispatch`). It is the one thing standing between a bad
    merge and a published Docker image, and CalVer removes the pressure to batch anyway.
+7. Dropped the seven release dev dependencies (`release-it`, `release-it-pnpm`,
+   `@release-it/bumper`, `@release-it/conventional-changelog`, `semantic-release`,
+   `@semantic-release/changelog`, `should-semantic-release`) and the
+   `should-semantic-release` script.
+8. Deleted `CHANGELOG.md`, its `Dockerfile` copy and its `.prettierignore` entry. Nothing
+   read it at runtime.
 
 **Verified before commit** against a fake tag set in a throwaway repo: `2026.8.2` with
 prereleases present, `2026.8.2-dev.1` on `dev`, `2026.9.0` for an empty month, and
@@ -133,15 +139,6 @@ prereleases present, `2026.8.2-dev.1` on `dev`, `2026.9.0` for an empty month, a
 
 The comment script, dry-run locally against `v1.3.15`, targets the same 36 PRs and issues
 that semantic-release tried and failed to comment on. `v1.4.0-dev.1` is skipped.
-
-**Remaining:**
-
-- Release dev dependencies are unreferenced in `package.json`: `release-it`,
-  `release-it-pnpm`, `@release-it/bumper`, `@release-it/conventional-changelog`,
-  `semantic-release`, `@semantic-release/changelog`, `should-semantic-release`, and the
-  `should-semantic-release` script. Removing them is a separate, deliberate call.
-- Decide what happens to `CHANGELOG.md`: delete it, or leave it frozen with a header
-  pointing at GitHub Releases.
 
 ---
 
@@ -236,5 +233,3 @@ rolling back.
 1. Backfill the missing `1.3.9`–`1.3.13` specs, or start the record clean?
 2. Does the first CalVer release get a `2.0.0`-style announcement, given the number jumps from
    `1.3.13` to `2026.8.0` and will look alarming in a Docker tag list?
-3. Delete `CHANGELOG.md`, or freeze it with a pointer to GitHub Releases?
-4. Drop the five now-unreferenced release dev dependencies from `package.json`?
