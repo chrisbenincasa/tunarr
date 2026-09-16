@@ -169,6 +169,121 @@ describe.skipIf(!binaries)('SoftwarePipelineBuilder integration', () => {
   );
 
   ffmpegTest(
+    'scale from 1080p to 720p uses the configured software scaling algorithm',
+    async ({ binaryCapabilities, ffmpegVersion }) => {
+      const video = makeVideoInput(
+        Fixtures.video1080p,
+        FrameSize.withDimensions(1920, 1080),
+      );
+      const audio = makeAudioInput(Fixtures.video1080p);
+
+      const builder = new SoftwarePipelineBuilder(
+        video,
+        audio,
+        null,
+        null,
+        null,
+        binaryCapabilities,
+      );
+
+      const frameState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.withDimensions(1280, 720),
+        paddedSize: FrameSize.withDimensions(1280, 720),
+      });
+
+      const outputPath = path.join(workdir, 'output_scale_lanczos.ts');
+      const pipeline = builder.build(
+        FfmpegState.create({
+          version: ffmpegVersion,
+          outputLocation: FileOutputLocation(outputPath, true),
+          // The offline/error session builds honor the configured software
+          // scaling algorithm (#2024 style); a non-default value should be
+          // carried into the real scale filter flags.
+          softwareScalingAlgorithm: 'lanczos',
+        }),
+        frameState,
+        DefaultPipelineOptions,
+      );
+
+      const args = pipeline.getCommandArgs();
+      expect(args.join(' ')).toContain('flags=lanczos');
+
+      const { exitCode, stderr } = runFfmpegWithPipeline(
+        binaries!.ffmpeg,
+        args,
+      );
+
+      expect(
+        exitCode,
+        `Pipeline command failed: ${args.join(' ')}\n${stderr}`,
+      ).toBe(0);
+
+      const probe = probeFile(binaries!.ffprobe, outputPath);
+      const videoStream = probe.streams.find((s) => s.codec_type === 'video');
+      expect(videoStream).toBeDefined();
+      expect(videoStream!.width).toBe(1280);
+      expect(videoStream!.height).toBe(720);
+    },
+  );
+
+  ffmpegTest(
+    'software transcode with deinterlace=true applies the configured deinterlace filter',
+    async ({ binaryCapabilities, ffmpegVersion }) => {
+      const video = makeVideoInput(
+        Fixtures.video720p,
+        FrameSize.withDimensions(1280, 720),
+      );
+      const audio = makeAudioInput(Fixtures.video720p);
+
+      const builder = new SoftwarePipelineBuilder(
+        video,
+        audio,
+        null,
+        null,
+        null,
+        binaryCapabilities,
+      );
+
+      const frameState = new FrameState({
+        isAnamorphic: false,
+        deinterlace: true,
+        scaledSize: FrameSize.withDimensions(1280, 720),
+        paddedSize: FrameSize.withDimensions(1280, 720),
+      });
+
+      const outputPath = path.join(workdir, 'output_deinterlace.ts');
+      const pipeline = builder.build(
+        FfmpegState.create({
+          version: ffmpegVersion,
+          outputLocation: FileOutputLocation(outputPath, true),
+          // Mirror the offline/error session wiring: the configured
+          // deinterlace filter replaces the FfmpegState default.
+          softwareDeinterlaceFilter: 'yadif=0',
+        }),
+        frameState,
+        DefaultPipelineOptions,
+      );
+
+      const args = pipeline.getCommandArgs();
+      expect(args.join(' ')).toContain('yadif=0');
+
+      const { exitCode, stderr } = runFfmpegWithPipeline(
+        binaries!.ffmpeg,
+        args,
+      );
+
+      expect(
+        exitCode,
+        `Pipeline command failed: ${args.join(' ')}\n${stderr}`,
+      ).toBe(0);
+
+      const probe = probeFile(binaries!.ffprobe, outputPath);
+      expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+    },
+  );
+
+  ffmpegTest(
     'h264 software transcode includes -preset:v veryfast',
     async ({ binaryCapabilities, ffmpegVersion }) => {
       const video = makeVideoInput(
