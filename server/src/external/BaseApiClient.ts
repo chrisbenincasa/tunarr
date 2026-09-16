@@ -1,4 +1,5 @@
 import type { AxiosRequestRedacter } from '@/external/Redacter.js';
+import { outboundRequestGuard } from '@/util/outboundRequests.js';
 import type { Maybe } from '@/types/util.js';
 import { configureAxiosLogging } from '@/util/axios.js';
 import { isDefined, isNodeError } from '@/util/index.js';
@@ -103,6 +104,7 @@ export abstract class BaseApiClient<
         ...(options.extraHeaders ?? {}),
       },
       timeout: 60_000,
+      ...outboundRequestGuard,
     });
 
     if (options.queueOpts) {

@@ -227,6 +227,22 @@ export const MediaSourceLibraryTable = () => {
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
+  const navigateToLibrary = useCallback(
+    (library: MediaSourceLibraryRow) => {
+      navigate({
+        to:
+          library.type === 'local'
+            ? '/media_sources/$mediaSourceId'
+            : '/media_sources/$mediaSourceId/libraries/$libraryId',
+        params: {
+          mediaSourceId: library.mediaSource.id,
+          libraryId: library.id,
+        },
+      }).catch(console.error);
+    },
+    [navigate],
+  );
+
   const columns = useMemo<MRT_ColumnDef<MediaSourceLibraryRow>[]>(() => {
     return [
       {
@@ -320,6 +336,8 @@ export const MediaSourceLibraryTable = () => {
         <Card
           key={`${library.mediaSource.id}-${library.id}`}
           variant="outlined"
+          onClick={() => navigateToLibrary(library)}
+          sx={{ cursor: 'pointer' }}
         >
           <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -402,18 +420,7 @@ export const MediaSourceLibraryTable = () => {
       />
     ),
     muiTableBodyRowProps: ({ row }) => ({
-      onClick: () => {
-        navigate({
-          to:
-            row.original.type === 'local'
-              ? '/media_sources/$mediaSourceId'
-              : '/media_sources/$mediaSourceId/libraries/$libraryId',
-          params: {
-            mediaSourceId: row.original.mediaSource.id,
-            libraryId: row.original.id,
-          },
-        }).catch(console.error);
-      },
+      onClick: () => navigateToLibrary(row.original),
       sx: {
         cursor: 'pointer',
       },

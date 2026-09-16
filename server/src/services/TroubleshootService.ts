@@ -1,9 +1,11 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 
 import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { LanguageTaggedStream } from '@/ffmpeg/StreamSelectionEvaluator.js';
 import {
   buildCelContext,
   resolveAudioAction,
+  streamMatchesLanguage,
 } from '@/ffmpeg/StreamSelectionEvaluator.js';
 import {
   defaultHlsOptions,
@@ -16,7 +18,7 @@ import { isNonEmptyArray } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { TroubleshootStreamSelectionTrace } from '@tunarr/types';
+import type { TroubleshootStreamSelectionTrace } from '@tunarr/types';
 import type {
   TroubleshootRequest,
   TroubleshootResult,
@@ -31,13 +33,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { Writable } from 'node:stream';
 import { v4 as uuidv4 } from 'uuid';
-import { ChannelDB } from '../db/ChannelDB.ts';
+import type { ChannelDB } from '../db/ChannelDB.ts';
 import { TranscodeConfigDB } from '../db/TranscodeConfigDB.ts';
 import { ormChannelToApiChannel } from '../db/converters/channelConverters.ts';
 import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { PlayerContext } from '../stream/PlayerStreamContext.ts';
-import { ProgramStreamFactory } from '../stream/ProgramStreamFactory.ts';
+import type { ProgramStreamFactory } from '../stream/ProgramStreamFactory.ts';
 import type {
   AudioStreamDetails,
   SubtitleStreamDetails,
@@ -48,6 +50,33 @@ import { CelEvaluationService } from './CelEvaluationService.js';
 import { StreamSelectionProfileResolver } from './StreamSelectionProfileResolver.js';
 
 dayjs.extend(duration);
+
+/**
+ * Find the first subtitle stream matching any of the requested languages, in
+ * preference order, along with the language that matched.
+ *
+ * The troubleshoot report must agree with what playback would actually pick,
+ * so this uses the same matching the stream selector does.
+ */
+export function findSubtitleForLanguages<T extends LanguageTaggedStream>(
+  subtitleStreams: T[] | undefined,
+  languages: string[],
+): { stream: T; language: string } | undefined {
+  if (!subtitleStreams) {
+    return undefined;
+  }
+
+  for (const language of languages) {
+    const stream = subtitleStreams.find((s) =>
+      streamMatchesLanguage(s, language),
+    );
+    if (stream) {
+      return { stream, language };
+    }
+  }
+
+  return undefined;
+}
 
 @injectable()
 export class TroubleshootService {
@@ -311,21 +340,13 @@ export class TroubleshootService {
             } else {
               selectedSubtitle = null;
               subtitleReason = `No subtitle found for languages: ${rule.subtitleAction.languages.join(', ')}`;
-              if (subtitleStreams) {
-                for (const lang of rule.subtitleAction.languages) {
-                  const langLower = lang.toLowerCase();
-                  const found = subtitleStreams.find(
-                    (s) =>
-                      s.languageCodeISO6392?.toLowerCase() === langLower ||
-                      s.languageCodeISO6391?.toLowerCase() === langLower ||
-                      s.language?.toLowerCase() === langLower,
-                  );
-                  if (found) {
-                    selectedSubtitle = found;
-                    subtitleReason = `Matched language: ${lang}`;
-                    break;
-                  }
-                }
+              const match = findSubtitleForLanguages(
+                subtitleStreams,
+                rule.subtitleAction.languages,
+              );
+              if (match) {
+                selectedSubtitle = match.stream;
+                subtitleReason = `Matched language: ${match.language}`;
               }
             }
           }

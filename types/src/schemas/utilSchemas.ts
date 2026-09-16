@@ -88,18 +88,47 @@ export const ExternalIdSchema = z.discriminatedUnion('type', [
   MultiExternalIdSchema,
 ]);
 
+export const ChannelIconPositionSchema = z.union([
+  z.literal('top-left'),
+  z.literal('top-right'),
+  z.literal('bottom-left'),
+  z.literal('bottom-right'),
+]);
+
+/**
+ * The icon as accepted from a client.
+ *
+ * `.default()` where the lenient schema below has `.catch()`. Both produce the
+ * same value for a *missing* field, so a partial icon is still accepted; the
+ * difference is an *invalid* one. `.catch()` swallows it — `width: -20` was
+ * stored as 0, `position: "centre"` as "bottom-right", `path: null` as "" —
+ * and answered 200, so the client was told its value had been saved when
+ * something else had been. These now fail validation.
+ */
+export const StrictChannelIconSchema = z.object({
+  path: z.string().default(''),
+  width: z.number().nonnegative().default(0),
+  duration: z.number().default(0),
+  position: ChannelIconPositionSchema.default('bottom-right'),
+  useDefaultIconFallback: z.boolean().optional(),
+});
+
+/**
+ * The icon as read back out.
+ *
+ * Deliberately lenient, and the `.catch()` calls here are load-bearing: the
+ * channel `icon` column is raw JSON that drizzle casts but never validates, and
+ * this schema sits on the response of GET /channels, GET /channels/:id,
+ * GET /channels/all/lineups, GET /channels/:id/lineup and GET /guide/channels.
+ * fastify-type-provider-zod validates responses too, so a legacy or malformed
+ * stored icon would become a hard 500 on those routes rather than a coerced
+ * value. Do not tighten this one without a migration.
+ */
 export const ChannelIconSchema = z.object({
   path: z.string().catch(''),
   width: z.number().nonnegative().catch(0),
   duration: z.number().catch(0),
-  position: z
-    .union([
-      z.literal('top-left'),
-      z.literal('top-right'),
-      z.literal('bottom-left'),
-      z.literal('bottom-right'),
-    ])
-    .catch('bottom-right'),
+  position: ChannelIconPositionSchema.catch('bottom-right'),
   useDefaultIconFallback: z.boolean().optional().catch(true),
 });
 
@@ -142,3 +171,36 @@ export const ContentProgramTypeSchema = z.enum([
 ]);
 
 export type Schedule = z.infer<typeof ScheduleSchema>;
+
+/**
+ * A boolean carried in a query string.
+ *
+ * Not `z.coerce.boolean()`, which is `Boolean(value)` and so returns true for
+ * every non-empty string — including "false" and "0". A parameter declared that
+ * way cannot be turned off: `?flag=false` reads as true, silently, with no
+ * validation error to indicate it. Nor is it `.or(z.stringbool())` as a
+ * fallback, because `z.coerce.boolean()` never fails, so a following union
+ * branch is unreachable.
+ *
+ * Accepts "true"/"false" and any number, where 0 is false. An absent value
+ * ("?flag" with no "=") arrives as the empty string and coerces to 0, so it is
+ * false; declare `.default(true)` if a bare flag should mean something else.
+ *
+ * The number test is `!== 0` rather than `=== 1`. Comparing against 1 would
+ * accept any numeric through the coercion branch and then quietly read every
+ * value but 1 as false, so `?background=2` would run in the background — the
+ * same silent-false failure this schema exists to prevent.
+ */
+export const TruthyQueryParam = z
+  .union([
+    z.boolean(),
+    z.literal('true'),
+    z.literal('false'),
+    z.coerce.number(),
+  ])
+  .transform(
+    (value) =>
+      value === true ||
+      value === 'true' ||
+      (typeof value === 'number' && value !== 0),
+  );

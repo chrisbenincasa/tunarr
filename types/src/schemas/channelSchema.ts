@@ -3,7 +3,11 @@ import type { TupleToUnion } from '../util.js';
 import { ResolutionSchema } from './miscSchemas.js';
 import { ProgramSchema } from './programmingSchema.js';
 import { SubtitlePreference } from './subtitleSchema.js';
-import { ChannelIconSchema, ContentProgramTypeSchema } from './utilSchemas.js';
+import {
+  ChannelIconSchema,
+  ContentProgramTypeSchema,
+  StrictChannelIconSchema,
+} from './utilSchemas.js';
 
 export const WatermarkSchema = z.object({
   url: z.string().optional(),
@@ -34,6 +38,36 @@ export const WatermarkSchema = z.object({
         // If true, the watermark will fade in immediately on channel stream start.
         // If false, the watermark will start not visible and fade in after periodMins.
         leadingEdge: z.boolean().optional().catch(true),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * The watermark as accepted from a client.
+ *
+ * Same split as StrictChannelIconSchema: identical handling of a *missing*
+ * field, validation failure instead of silent substitution for an *invalid*
+ * one. The `.catch()` calls in WatermarkSchema above are kept because that
+ * schema also sits on channel responses, which are serialized from an
+ * unvalidated JSON column.
+ *
+ * What they were hiding:
+ * - `opacity: 150`, `-10`, `50.5` or `"50"` was stored as 100, fully opaque.
+ * - `fadeConfig[].programType: "movies"` (not a ContentProgramType) became
+ *   undefined, which means "no restriction" — so a fade rule the user scoped
+ *   to one program type silently applied to every program on the channel.
+ * - `fadeConfig[].leadingEdge: "false"`, as a form serialiser would send it,
+ *   became true, the opposite of what was asked for.
+ */
+export const StrictWatermarkSchema = WatermarkSchema.extend({
+  opacity: z.number().min(0).max(100).int().optional().default(100),
+  fadeConfig: z
+    .array(
+      z.object({
+        programType: ContentProgramTypeSchema.optional(),
+        periodMins: z.number().positive().min(1),
+        leadingEdge: z.boolean().optional(),
       }),
     )
     .optional(),
@@ -151,14 +185,22 @@ export const ChannelSchema = z.object({
   subtitlePreferences: z.array(SubtitlePreference).nonempty().optional(),
 });
 
+// The write path validates strictly: a bad icon or watermark value is a 400,
+// not a 200 that stored something else. The read path (ChannelSchema, used on
+// channel responses) stays lenient so existing rows still serialize.
 export const SaveableChannelSchema = ChannelSchema.omit({
   fallback: true, // Figure out how to update this
   programCount: true,
   transcoding: true,
   sessions: true,
-}).partial({
-  onDemand: true,
-});
+})
+  .partial({
+    onDemand: true,
+  })
+  .extend({
+    icon: StrictChannelIconSchema,
+    watermark: StrictWatermarkSchema.optional(),
+  });
 
 export const NewChannelSaveRequestSchema = z.object({
   type: z.literal('new'),

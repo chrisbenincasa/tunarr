@@ -269,10 +269,8 @@ export async function scheduleTimeSlots(
       continue;
     }
 
-    const paddedProgram = createPaddedProgram(
-      program,
-      currSlot.padMs ?? schedule.padMs,
-    );
+    const slotPadMs = currSlot.padMs ?? schedule.padMs;
+    const paddedProgram = createPaddedProgram(program, slotPadMs);
     currSlot.advanceIterator();
     const paddedPrograms: NonEmptyArray<PaddedProgram> = [paddedProgram];
     maybeAddPrePostFiller(
@@ -295,7 +293,7 @@ export async function scheduleTimeSlots(
       ) {
         break;
       }
-      const nextPadded = createPaddedProgram(nextProgram, schedule.padMs);
+      const nextPadded = createPaddedProgram(nextProgram, slotPadMs);
       paddedPrograms.push(nextPadded);
       currSlot.advanceIterator();
       maybeAddPrePostFiller(
@@ -343,7 +341,7 @@ export async function scheduleTimeSlots(
     ) {
       distributeFlex(
         finalPrograms,
-        schedule.padMs,
+        slotPadMs,
         Math.max(
           0,
           slotDuration - sumBy(finalPrograms, (p) => p.totalDuration),

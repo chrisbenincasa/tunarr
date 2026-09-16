@@ -7,7 +7,8 @@ import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
 import glob from 'fast-glob';
-import fastify, { FastifySchema } from 'fastify';
+import type { FastifySchema } from 'fastify';
+import fastify from 'fastify';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import fp from 'fastify-plugin';
 import fastifyPrintRoutes from 'fastify-print-routes';
@@ -42,15 +43,40 @@ import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
 import { defaultHlsOptions } from './ffmpeg/builder/constants.ts';
 import { type ServerOptions, serverOptions } from './globals.js';
-import { IWorkerPool } from './interfaces/IWorkerPool.ts';
+import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { Result } from './types/result.ts';
-import { getBooleanEnvVar, TUNARR_ENV_VARS } from './util/env.ts';
+import { getBooleanEnvVar, getEnvVar, TUNARR_ENV_VARS } from './util/env.ts';
 import { filename, isDev, run, timeoutPromise } from './util/index.js';
 import { InjectLogger } from './util/inject.js';
 import { type Logger } from './util/logging/LoggerFactory.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
+
+/**
+ * Resolves the allowed CORS origin(s).
+ *
+ * The API is unauthenticated, so a wildcard origin lets any page the user
+ * happens to visit drive it from their browser. Default to same-origin (no CORS
+ * headers at all) and make the permissive case opt-in.
+ *
+ * Dev is exempt: there is no vite proxy, so the web app on :5173 talks to the
+ * API on :8000 cross-origin and would otherwise break.
+ */
+function resolveCorsOrigin(): string[] | boolean {
+  const configured = getEnvVar(TUNARR_ENV_VARS.CORS_ORIGINS_ENV_VAR);
+  if (configured) {
+    const origins = configured
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0);
+    if (origins.length > 0) {
+      return origins;
+    }
+  }
+
+  return isDev;
+}
 
 @injectable()
 export class Server {
@@ -192,7 +218,7 @@ export class Server {
       //   },
       // })
       .register(cors, {
-        origin: '*', // Testing
+        origin: resolveCorsOrigin(),
       })
       .register(fastifyMultipart)
       .addHook('onRequest', (_req, _res, done) => {

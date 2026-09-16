@@ -220,9 +220,13 @@ export function createFillerIterators(
   programBySlotType: ProgramMapping,
   random: Random,
 ): Partial<Record<SlotIteratorKey, ProgramIterator<FillerProgram>>> {
+  // Iterators are keyed by list *and* order, so a list referenced at two
+  // different orders needs one iterator per order. Deduping on the list id
+  // alone leaves the second order without an iterator, and slots using it
+  // silently get no filler.
   const slotFiller = uniqBy(
     slots.filter(slotHasFiller).flatMap((slot) => slot.filler ?? []),
-    ({ fillerListId }) => fillerListId,
+    ({ fillerListId, fillerOrder }) => `${fillerListId}_${fillerOrder}`,
   );
 
   const fillerIterators: Partial<
@@ -1087,7 +1091,13 @@ function fillDurationWithFiller(
       timeCursor,
     });
 
-    if (!filler) break;
+    // A null pick means this candidate didn't fit the remaining break time,
+    // not that the list is exhausted. The iterator has already advanced, so
+    // burn an attempt and let the next candidate try.
+    if (!filler) {
+      attempts++;
+      continue;
+    }
 
     if (totalDuration + filler.duration <= targetDurationMs) {
       fillers.push({ ...filler, fillerType: 'mid' });

@@ -6,20 +6,15 @@
       "dependsOn": ["^build"]
     },
     "bundle": {
-      "dependsOn": ["^build", "extract-template"],
+      "dependsOn": ["^build", "extract-messages"],
       "outputs": ["dist/**"]
     },
     "clean-build": {
       "dependsOn": ["^build"]
     },
-    "compile-messages": {
-      "dependsOn": ["extract-messages"]
+    "extract-messages": {
+      "cache": false
     },
-    "dev": {
-      "dependsOn": ["compile-messages"]
-    },
-    "extract-messages": {},
-    "extract-template": {},
     "typecheck": {
       "dependsOn": ["^build"]
     },

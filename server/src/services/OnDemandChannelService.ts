@@ -1,19 +1,26 @@
-import { OnDemandChannelConfig } from '@/db/derived_types/Lineup.js';
+import type { OnDemandChannelConfig } from '@/db/derived_types/Lineup.js';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
-import { MutexMap } from '@/util/mutexMap.js';
+import type { MutexMap } from '@/util/mutexMap.js';
 import dayjs from 'dayjs';
-import { inject, injectable } from 'inversify';
+import { bindingScopeValues, inject, injectable } from 'inversify';
 import { isNull, isUndefined } from 'lodash-es';
 import { GlobalScheduler } from './Scheduler.ts';
 
-@injectable()
+// Singleton is load-bearing, not an optimization. #locks below serializes
+// read-modify-write of a channel's onDemandConfig, and a lock only serializes
+// callers that share it. The container autobinds this class, and Inversify's
+// default scope is Transient, so without this each of the three injection sites
+// -- ServerContext, OnDemandChannelStateTask, and the HlsSession factory in
+// StreamModule -- would hold a private MutexMap and lock a channel only against
+// itself.
+@injectable(bindingScopeValues.Singleton)
 export class OnDemandChannelService {
   #locks: MutexMap;
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.MutexMap) mutexMap: MutexMap,

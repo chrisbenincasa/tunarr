@@ -33,12 +33,11 @@ export type InitTestAppOptions = {
 export async function initTestApp(
   port: number,
   { registerGuideTask = false }: InitTestAppOptions = {},
-) {
+): Promise<Server> {
   dbResult = await tmp.dir({ unsafeCleanup: true });
   await copyPreMigratedDb(dbResult.path);
   setServerOptions({
     database: dbResult.path,
-    force_migration: false,
     log_level: 'debug',
     verbose: 0,
     port,

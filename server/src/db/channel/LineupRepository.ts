@@ -3,26 +3,26 @@ import { FileSystemService } from '@/services/FileSystemService.js';
 import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
 import { jsonSchema } from '@/types/schemas.js';
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import dayjs from '@/util/dayjs.js';
-import { fileExists } from '@/util/fsUtil.js';
+import { fileExists, writeFileAtomic } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { seq } from '@tunarr/shared/util';
-import {
+import type {
   ChannelProgram,
   CondensedChannelProgram,
   CondensedChannelProgramming,
   CondensedContentProgram,
   ContentProgram,
 } from '@tunarr/types';
-import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
-import { CondensedFillerProgram } from '@tunarr/types/schemas';
+import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
+import type { CondensedFillerProgram } from '@tunarr/types/schemas';
 import { and, eq, inArray, notInArray } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import {
   chunk,
   drop,
@@ -48,11 +48,11 @@ import {
 import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
-import { MarkRequired } from 'ts-essentials';
+import type { MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { MaterializeLineupCommand } from '../../commands/MaterializeLineupCommand.ts';
 import { MaterializeProgramsCommand } from '../../commands/MaterializeProgramsCommand.ts';
-import { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
+import type { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
 import {
   asyncMapToRecord,
   groupByUniqProp,
@@ -62,36 +62,37 @@ import {
   run,
 } from '../../util/index.ts';
 import { ProgramConverter } from '../converters/ProgramConverter.ts';
-import {
+import type {
   ContentItem,
+  Lineup,
+  LineupConfig,
+  LineupItem,
+} from '../derived_types/Lineup.ts';
+import {
   CurrentLineupSchemaVersion,
   isContentItem,
   isOfflineItem,
   isRedirectItem,
-  Lineup,
-  LineupConfig,
-  LineupItem,
   LineupSchema,
 } from '../derived_types/Lineup.ts';
-import {
+import type {
   ChannelAndLineup,
   ChannelAndRawLineup,
   UpdateChannelLineupRequest,
 } from '../interfaces/IChannelDB.ts';
 import { SchemaBackedDbAdapter } from '../json/SchemaBackedJsonDBAdapter.ts';
 import { calculateStartTimeOffsets } from '../lineupUtil.ts';
-import { Channel, ChannelOrm } from '../schema/Channel.ts';
-import {
-  ChannelPrograms,
-  NewChannelProgram,
-} from '../schema/ChannelPrograms.ts';
-import { DB } from '../schema/db.ts';
-import {
+import type { ChannelOrm } from '../schema/Channel.ts';
+import { Channel } from '../schema/Channel.ts';
+import type { NewChannelProgram } from '../schema/ChannelPrograms.ts';
+import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
+import type { DB } from '../schema/db.ts';
+import type {
   ChannelOrmWithPrograms,
   ChannelOrmWithRelations,
 } from '../schema/derivedTypes.ts';
-import { DrizzleDBAccess } from '../schema/index.ts';
-import { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
+import type { DrizzleDBAccess } from '../schema/index.ts';
+import type { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
 
 // Module-level cache shared within this module
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
@@ -224,7 +225,7 @@ export class LineupRepository {
   // Bypasses Low
   async saveChannelLineupDirect(channelId: string, lineup: Lineup) {
     const outPath = this.fileSystemService.getChannelLineupPath(channelId);
-    await fs.writeFile(outPath, JSON.stringify(lineup));
+    await writeFileAtomic(outPath, JSON.stringify(lineup));
   }
 
   async markLineupFileForDeletion(
@@ -315,7 +316,7 @@ export class LineupRepository {
       const newDur = sum(newLineup.items.map((item) => item.durationMs));
       await this.updateChannelDuration(channelId, newDur);
     }
-    return db.data;
+    return LineupRepository.snapshotLineup(db.data);
   }
 
   static applyUpdateLineupRequest(
@@ -522,7 +523,7 @@ export class LineupRepository {
         prev[channel.uuid] = { channel, lineup };
         return prev;
       },
-      {} as Record<string, { channel: ChannelOrm; lineup: Lineup }>,
+      {},
     );
   }
 
@@ -579,7 +580,18 @@ export class LineupRepository {
     forceRead: boolean = false,
   ): Promise<Lineup> {
     const db = await this.getFileDb(channelId, forceRead);
-    return db.data;
+    return LineupRepository.snapshotLineup(db.data);
+  }
+
+  /**
+   * Callers hold a lineup across await boundaries (the guide build reads
+   * `items` and `startTimeOffsets` interleaved with DB writes), so they must
+   * not be handed the cached `Low.data`. Every writer rebinds whole properties
+   * on `Low.data` rather than mutating the arrays in place, so a top-level copy
+   * is enough to pin a caller to the lineup it actually read.
+   */
+  private static snapshotLineup(data: Lineup): Lineup {
+    return { ...data };
   }
 
   async loadLineupConfig(channelId: string): Promise<LineupConfig> {

@@ -1,0 +1,1148 @@
+<title>Tunarr Defect Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --ground: #fbfcfd;
+    --surface: #ffffff;
+    --sunken: #f1f5f6;
+    --ink: #0f1a1e;
+    --ink-soft: #3d5057;
+    --muted: #6b8189;
+    --rule: #dbe4e6;
+    --rule-strong: #c2d0d3;
+    --accent: #0e7c86;
+    --accent-soft: #e2f1f2;
+    --critical: #b3261e;
+    --critical-soft: #fbe9e7;
+    --high: #a85b00;
+    --high-soft: #fdf0e0;
+    --medium: #40638f;
+    --medium-soft: #e8eef7;
+    --done: #1e6b4f;
+    --done-soft: #e3f1eb;
+
+    --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0c1417;
+      --surface: #111c20;
+      --sunken: #16242a;
+      --ink: #e6eef0;
+      --ink-soft: #b3c5ca;
+      --muted: #7d949b;
+      --rule: #24373d;
+      --rule-strong: #334c54;
+      --accent: #46b8c2;
+      --accent-soft: #10333a;
+      --critical: #f2867c;
+      --critical-soft: #3a1a17;
+      --high: #e0a256;
+      --high-soft: #38260f;
+      --medium: #8fb0dd;
+      --medium-soft: #1a2739;
+      --done: #6cc4a1;
+      --done-soft: #122f26;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0c1417;
+    --surface: #111c20;
+    --sunken: #16242a;
+    --ink: #e6eef0;
+    --ink-soft: #b3c5ca;
+    --muted: #7d949b;
+    --rule: #24373d;
+    --rule-strong: #334c54;
+    --accent: #46b8c2;
+    --accent-soft: #10333a;
+    --critical: #f2867c;
+    --critical-soft: #3a1a17;
+    --high: #e0a256;
+    --high-soft: #38260f;
+    --medium: #8fb0dd;
+    --medium-soft: #1a2739;
+    --done: #6cc4a1;
+    --done-soft: #122f26;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px 96px;
+  }
+
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding: 56px 0 22px;
+    margin-bottom: 34px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 18px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2.5rem, 6vw, 4.1rem);
+    line-height: 0.98;
+    letter-spacing: -0.028em;
+    margin: 0 0 20px;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    font-size: 1.22rem;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0 0 8px;
+  }
+
+  .standfirst em { color: var(--ink); font-style: italic; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 34px 0 12px;
+  }
+
+  .stat {
+    background: var(--surface);
+    padding: 16px 18px 18px;
+  }
+
+  .stat-n {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 2.15rem;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    display: block;
+    margin-bottom: 7px;
+  }
+
+  .stat-l {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+
+  .stat.is-critical .stat-n { color: var(--critical); }
+  .stat.is-high .stat-n { color: var(--high); }
+  .stat.is-open .stat-n { color: var(--accent); }
+
+  .thesis {
+    background: var(--sunken);
+    border-left: 3px solid var(--accent);
+    padding: 22px 26px;
+    margin: 40px 0 12px;
+  }
+
+  .thesis p { margin: 0 0 12px; max-width: 68ch; }
+  .thesis p:last-child { margin-bottom: 0; }
+
+  section { margin-top: 62px; scroll-margin-top: 20px; }
+
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--rule-strong);
+    padding-bottom: 10px;
+    margin-bottom: 6px;
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.72rem;
+    letter-spacing: -0.018em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .sec-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .sec-intro {
+    color: var(--ink-soft);
+    max-width: 68ch;
+    margin: 14px 0 4px;
+  }
+
+  .finding {
+    border-top: 1px solid var(--rule);
+    padding: 26px 0 4px;
+  }
+
+  .f-top {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .f-id {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+
+  h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.16rem;
+    letter-spacing: -0.008em;
+    margin: 0;
+    flex: 1 1 340px;
+    line-height: 1.32;
+    text-wrap: balance;
+  }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+
+  .chip.critical { color: var(--critical); background: var(--critical-soft); }
+  .chip.high { color: var(--high); background: var(--high-soft); }
+  .chip.medium { color: var(--medium); background: var(--medium-soft); }
+  .chip.fixed { color: var(--done); background: var(--done-soft); }
+  .chip.repro { color: var(--ink-soft); border-color: var(--rule-strong); }
+  .chip.read { color: var(--muted); border-color: var(--rule); }
+
+  .finding p { margin: 0 0 12px; max-width: 72ch; }
+
+  .where {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    background: var(--sunken);
+    padding: 8px 11px;
+    margin: 0 0 13px;
+    overflow-x: auto;
+    white-space: nowrap;
+    border-left: 2px solid var(--rule-strong);
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.87em;
+    background: var(--sunken);
+    padding: 1px 5px;
+  }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    background: var(--sunken);
+    border-left: 2px solid var(--accent);
+    padding: 13px 16px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+  }
+
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  .t-wrap { overflow-x: auto; margin: 0 0 16px; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14.5px;
+    min-width: 460px;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    font-weight: 400;
+    padding: 0 14px 8px 0;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+
+  td {
+    padding: 9px 14px 9px 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  td:first-child { color: var(--ink); }
+  td.mono, th.mono { font-family: var(--mono); font-size: 12.5px; }
+  td.bad { color: var(--critical); }
+
+  .outcome {
+    border: 1px solid var(--rule-strong);
+    padding: 15px 18px;
+    margin: 0 0 14px;
+    background: var(--surface);
+  }
+
+  .outcome-l {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 7px;
+  }
+
+  .outcome p { margin: 0; max-width: 70ch; }
+
+  .prs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  .pr {
+    background: var(--surface);
+    padding: 12px 15px;
+    display: flex;
+    gap: 11px;
+    align-items: baseline;
+  }
+
+  .pr-n {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .pr-t { font-size: 14.5px; color: var(--ink-soft); line-height: 1.4; }
+
+  footer {
+    margin-top: 72px;
+    border-top: 2px solid var(--ink);
+    padding-top: 18px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    .wrap { padding: 0 18px 64px; }
+    .masthead { padding-top: 36px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Tunarr &middot; audit in progress &middot; 2026-08-23</p>
+    <h1>Defect Register</h1>
+    <p class="standfirst">
+      Findings from a sweep for code that <em>silently succeeds</em> &mdash; that reports success while
+      doing nothing, doing the wrong thing, or quietly substituting a value nobody asked for.
+      Thirty-two entries across the scheduler, the API contracts, the web editors, and the
+      build tooling. Twelve now have fixes open; the rest are recorded and ranked.
+    </p>
+  </header>
+
+  <div class="stats">
+    <div class="stat is-critical"><span class="stat-n">2</span><span class="stat-l">Critical</span></div>
+    <div class="stat is-high"><span class="stat-n">7</span><span class="stat-l">High</span></div>
+    <div class="stat is-open"><span class="stat-n">20</span><span class="stat-l">PRs open</span></div>
+    <div class="stat"><span class="stat-n">13</span><span class="stat-l">Reproduced<br>with tests</span></div>
+    <div class="stat"><span class="stat-n">12</span><span class="stat-l">Findings<br>with fixes open</span></div>
+  </div>
+
+  <div class="thesis">
+    <p>
+      Every entry here shares one shape. Something goes wrong, and the system returns success.
+      A backup reports completion without writing a file. A partial settings update resets the
+      fields it omitted. A cache invalidation matches no query. A scheduler hands back a channel
+      that plays nothing for three days and logs not a word.
+    </p>
+    <p>
+      That shape is why the reported bugs were hard to trace: the logs are clean precisely
+      <em>because</em> the failures are silent. It is also why they cluster &mdash; the same habits
+      produce them, so finding one reliably predicts where the next one lives.
+    </p>
+  </div>
+
+  <section id="scheduler">
+    <div class="sec-head">
+      <h2>Time-slot scheduler</h2>
+      <span class="sec-count">8 findings &middot; 2 critical</span>
+    </div>
+    <p class="sec-intro">
+      Traced from one user report: a slot at offset <code>107400000</code> &mdash; 29h 50m &mdash; in a
+      daily schedule. Probing the scheduler's other unguarded inputs turned up worse.
+    </p>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TS-1</span>
+        <h3>A slot offset beyond the period kills the schedule</h3>
+        <span class="chip critical">Critical</span>
+        <span class="chip repro">Reproduced</span>
+        <span class="chip fixed">Fixed &middot; #2012</span>
+      </div>
+      <p class="where">server/src/services/scheduling/TimeSlotService.ts:183, :210, :253</p>
+      <p>
+        The scheduler reduces its <em>cursor</em> modulo the period but never the <em>slot</em>:
+        <code>currOffset = totalOffsetMs % periodMs</code> is compared against a raw
+        <code>slot.startTime</code>. An offset at or past the period therefore matches no cursor
+        position at all. That asymmetry is the whole bug.
+      </p>
+      <p>Which failure you get depends on the time of day the schedule is generated:</p>
+      <div class="t-wrap">
+        <table>
+          <thead><tr><th>Generated at</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">00:00 &ndash; 05:45</td><td class="bad">throws &ldquo;Could not find a suitable slot&rdquo;</td></tr>
+            <tr><td class="mono">05:50 &ndash; 23:55</td><td>1 lineup item &mdash; a single 48&ndash;72h flex block</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        With the reporter's settings &mdash; 5-minute pad, 10-minute lateness &mdash; <strong>70 of 288
+        five-minute start times throw, 24% of the day</strong>. The rest return a channel that
+        plays nothing. A control slot inside the period never throws at any of the 288, and
+        produces 32 items with a longest block of 1.5h.
+      </p>
+      <div class="outcome">
+        <span class="outcome-l">Fixed</span>
+        <p>
+          Normalize <code>startTime</code> into the period at schedule time so values already on
+          disk heal themselves, plus a strict request schema (TS-8) so new ones cannot be created.
+          Four tests; the strongest asserts that a slot at <code>t</code> and one at
+          <code>t + period</code> schedule identically &mdash; before, they produced 33 items or 1.
+        </p>
+      </div>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TS-2</span>
+        <h3>A fractional offset hangs the worker thread permanently</h3>
+        <span class="chip critical">Critical</span>
+        <span class="chip repro">Reproduced</span>
+      </div>
+      <p class="where">server/src/services/scheduling/TimeSlotService.ts &mdash; scheduling loop</p>
+      <p>
+        <code>startTime: 1234.567</code> sends the scheduler into a loop that never advances.
+        Because the loop is <em>synchronous</em> despite the enclosing <code>async</code>, it
+        blocks the event loop outright: the test runner's own 15-second timeout never fired and
+        the process had to be killed at 60 seconds.
+      </p>
+      <p>
+        Nothing can interrupt it. The worker pool's <code>timeoutPromise</code> rejects the
+        caller's promise after 60s while the thread keeps burning a core forever, so N such
+        requests permanently exhaust an N-worker pool. It passes the current schema, because
+        <code>startTime</code> is a bare <code>z.number()</code>.
+      </p>
+      <div class="outcome">
+        <span class="outcome-l">Fixed at the boundary</span>
+        <p>Rejected by the strict request schema (TS-8). The loop itself is unchanged and would still hang given a fractional value arriving by any other route.</p>
+      </div>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TS-3</span>
+        <h3>A pad of zero returns a lineup of NaN durations</h3>
+        <span class="chip high">High</span>
+        <span class="chip repro">Reproduced</span>
+      </div>
+      <p>
+        <code>padMs: 0</code> makes the cursor's modulo <code>NaN</code>. The scheduler completes
+        and reports success, handing back 32 lineup items whose durations are all <code>NaN</code>.
+        No error, no warning.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TS-4</span>
+        <h3>A non-positive horizon silently yields an empty or half schedule</h3>
+        <span class="chip medium">Medium</span>
+        <span class="chip repro">Reproduced</span>
+      </div>
+      <p>
+        <code>maxDays: -1</code> returns <strong>zero</strong> lineup items and reports success.
+        <code>maxDays: 0</code> returns 16 items where 32 are expected. Both pass the schema.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TS-5</span>
+        <h3>An empty slot list reports the same error as a broken one</h3>
+        <span class="chip medium">Medium</span>
+        <span class="chip repro">Reproduced</span>
+      </div>
+      <p>
+        A schedule with no slots throws &ldquo;Could not find a suitable slot&rdquo; &mdash; the identical
+        message produced by TS-1. Two unrelated causes, one string, so the log cannot tell them apart.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TS-6</span>
+        <h3>Normalizing collides two slots, and the loser depends on array order</h3>
+        <span class="chip high">High</span>
+        <span class="chip repro">Reproduced</span>
+        <span class="chip fixed">Fixed &middot; #2012</span>
+      </div>
+      <p>
+        Found by review of the TS-1 fix, not in the original code. Reducing offsets into the period
+        maps 05:50 and 29:50 onto the same value. Equal offsets give the <em>earlier</em> slot a
+        zero-width window &mdash; <code>endTime</code> equals its own <code>startTime</code> &mdash; so it airs
+        nothing, and which of the two dies depends on storage order:
+      </p>
+      <div class="t-wrap">
+        <table>
+          <thead><tr><th>Slots, in array order</th><th>Before</th><th>After</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">A@05:50, B@29:50</td><td class="bad">A dropped</td><td>A wins</td></tr>
+            <tr><td class="mono">B@29:50, A@05:50</td><td class="bad">B dropped</td><td>B wins</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="outcome">
+        <span class="outcome-l">Fixed</span>
+        <p>
+          Collisions collapse explicitly, keeping the first &mdash; the same rule the editor already uses
+          when converting a weekly schedule to a daily one. Had the server kept the last instead,
+          what airs would not match what the editor displays.
+        </p>
+      </div>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TS-7</span>
+        <h3>The server's OneDayMillis is one week</h3>
+        <span class="chip high">High</span>
+        <span class="chip read">Read-only</span>
+      </div>
+      <p class="where">server/src/ffmpeg/builder/constants.ts:238</p>
+      <pre><code>export const OneDayMillis = 7 * 24 * 60 * 60 * 1000;   // 604800000
+export const FiveMinutesMillis = 5 * 60 * 60 * 1000;   // five HOURS</code></pre>
+      <p>
+        Used as a day in four live places &mdash; <code>StreamProgramCalculator.ts:329</code> (offline
+        lineup item duration) and <code>:603</code> (stream duration for an empty lineup), plus
+        three sentinel uses in <code>FillerPickerV2.ts</code>. The two stream-duration uses produce
+        week-long blocks where a day was intended. <code>FiveMinutesMillis</code> is 60&times; too large
+        but has no callers.
+      </p>
+      <p>
+        The codebase now holds three <code>OneDayMillis</code> definitions: two correct in web, this
+        one wrong on the server.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TS-8</span>
+        <h3>Every schedule field was an unbounded number</h3>
+        <span class="chip high">High</span>
+        <span class="chip fixed">Fixed &middot; #2013</span>
+      </div>
+      <p class="where">types/src/api/TimeSlots.ts &mdash; StrictTimeSlotScheduleSchema</p>
+      <p>
+        <code>latenessMs</code>, <code>maxDays</code>, <code>padMs</code> and <code>startTime</code>
+        were all bare <code>z.number()</code>, and <code>slots</code> had no minimum length &mdash; which
+        is how TS-1 through TS-5 all reached the scheduler.
+      </p>
+      <p>
+        The obvious fix was wrong. <code>TimeSlotScheduleSchema</code> also feeds
+        <code>LineupScheduleSchema</code> inside <code>CondensedChannelProgrammingSchema</code>, a
+        persisted <em>and</em> response schema. Tightening it would make any channel already holding
+        a bad value fail response serialization and stop loading &mdash; worse than the bug. So the bounds
+        live in a strict request-only variant, mirroring the existing
+        <code>StrictChannelIconSchema</code> split, with a test asserting the permissive schema still
+        accepts every rejected case.
+      </p>
+    </div>
+  </section>
+
+  <section id="producers">
+    <div class="sec-head">
+      <h2>Where the bad slot comes from</h2>
+      <span class="sec-count">5 findings</span>
+    </div>
+    <p class="sec-intro">
+      The reported value decomposes exactly: <code>107400000 = 05:50 + 1 &times; OneDayMillis</code>.
+      Two controls in the editor combine to produce it, and a third hides the result.
+    </p>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">FE-A</span>
+        <h3>&ldquo;Add slot&rdquo; advances an hour at a time with no wraparound</h3>
+        <span class="chip high">High</span>
+        <span class="chip fixed">Fixed &middot; #2014</span>
+      </div>
+      <p class="where">web/src/components/slot_scheduler/AddTimeSlotButton.tsx:35-37, :53-57</p>
+      <pre><code>const maxSlot = maxBy(relevantSlots, (p) =&gt; p.startTime);
+const newStartTime = maxSlot
+  ? dayjs.duration(maxSlot.startTime).add(1, 'hour')   // no modulo
+  : ...</code></pre>
+      <p>
+        In a daily schedule the &ldquo;relevant slots&rdquo; filter is a no-op &mdash; it returns <code>true</code>
+        for every slot whenever the period is not <code>week</code> &mdash; so each click walks the global
+        maximum upward without limit. Building an hourly day takes 24 clicks; <strong>the 25th
+        lands on exactly 24h</strong>. That is the ordinary way to build an hourly schedule, not an
+        exotic sequence.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">FE-B</span>
+        <h3>The time picker preserves a day multiplier that only means something weekly</h3>
+        <span class="chip high">High</span>
+        <span class="chip fixed">Fixed &middot; #2014</span>
+      </div>
+      <p class="where">web/src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:162-164</p>
+      <pre><code>const multiplier = Math.floor(getValues('startTime') / OneDayMillis);
+originalOnChange(millis + multiplier * OneDayMillis);</code></pre>
+      <p>
+        Applied unconditionally. Take the 24h slot from FE-A, set it to 5:50 AM, and the multiplier
+        of 1 survives: <code>21000000 + 86400000 = 107400000</code>. Exactly the reported value.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">FE-C</span>
+        <h3>The control that would reveal the extra day is hidden</h3>
+        <span class="chip medium">Medium</span>
+        <span class="chip read">Read-only</span>
+      </div>
+      <p class="where">web/src/components/slot_scheduler/EditTimeSlotDialogContent.tsx:330</p>
+      <p>
+        The Day dropdown renders only when <code>currentPeriod === 'week'</code>. In a daily schedule
+        the slot displays as an ordinary <strong>&ldquo;5:50 AM&rdquo;</strong> with no affordance to see or
+        clear the extra day &mdash; so the state is both invisible and uncorrectable from the editor.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">FE-D</span>
+        <h3>The editor normalizes on read but not on save, so the evidence self-destructs</h3>
+        <span class="chip medium">Medium</span>
+        <span class="chip read">Read-only</span>
+      </div>
+      <p class="where">web/src/pages/channels/TimeSlotEditorPage.tsx:119-121 (read) &middot; :187 (save)</p>
+      <p>
+        <code>convertToViewModel</code> applies <code>% OneDayMillis</code> when loading a schedule;
+        <code>onSave</code> spreads <code>getValues()</code> with no normalization. So a bad value can
+        only be created and saved inside a single editing session &mdash; and <strong>reopening that
+        channel and saving again silently repairs it</strong>.
+      </p>
+      <p>
+        This is why the bug resists reproduction after the fact, and it is worth asking the reporter
+        whether they have touched the schedule since filing.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">FE-E</span>
+        <h3>Switching a daily schedule to weekly multiplies a bad value across seven days</h3>
+        <span class="chip medium">Medium</span>
+        <span class="chip read">Read-only</span>
+      </div>
+      <p class="where">web/src/pages/channels/TimeSlotEditorPage.tsx:264</p>
+      <p>
+        <code>startTime: slot.startTime + offset</code> across seven offsets. It cannot originate the
+        bug &mdash; the reverse conversion does apply a modulo &mdash; but it replicates an existing bad value
+        seven times.
+      </p>
+    </div>
+  </section>
+
+  <section id="frontend">
+    <div class="sec-head">
+      <h2>Web application</h2>
+      <span class="sec-count">5 confirmed &middot; 6 candidate classes</span>
+    </div>
+    <p class="sec-intro">
+      51,535 lines across 443 files, covered by 11 test files. Test tooling &mdash; vitest, jsdom, Testing
+      Library &mdash; is already configured; the gap is coverage, not infrastructure. Zustand appears in
+      137 files against TanStack Query's 67, and the stores hold drafts of server entities.
+    </p>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">FE-1</span>
+        <h3>An inverted guard makes the &ldquo;too long&rdquo; warning invent an average</h3>
+        <span class="chip high">High</span>
+        <span class="chip repro">Reproduced</span>
+        <span class="chip fixed">Fixed &middot; #2016</span>
+      </div>
+      <p class="where">web/src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx:95</p>
+      <pre><code>if (durations.length === 0) {
+  averageLength = dayjs.duration(round(sum(durations) / durations.length));
+}</code></pre>
+      <p>
+        Divides by zero when the list is empty, and never computes the average when it is not. The
+        <code>'show'</code> branch fifteen lines below is the same code with the correct
+        <code>&gt; 0</code> &mdash; a typo with its own correct twin adjacent to it. One-line fix.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">FE-2</span>
+        <h3>There is no timezone handling, only an offset captured at edit time</h3>
+        <span class="chip high">High</span>
+        <span class="chip repro">Verified</span>
+      </div>
+      <p class="where">useScheduleSlots.ts:62,:77 &middot; RandomSlotEditorPage.tsx:121 &middot; TimeSlotEditorPage.tsx:109,:190</p>
+      <p>
+        Five sites call <code>new Date().getTimezoneOffset()</code> at save time. The dayjs timezone
+        plugin is imported and extended &mdash; and <code>.tz(</code> appears <strong>zero times in the
+        entire frontend</strong>. A schedule saved in January carries the winter offset and applies
+        to summer playback.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">FE-3</span>
+        <h3>Day arithmetic mixes fixed millisecond constants with DST-aware dayjs</h3>
+        <span class="chip medium">Medium</span>
+        <span class="chip read">Read-only</span>
+      </div>
+      <p class="where">web/src/helpers/slotSchedulerUtil.ts:152-153 &middot; hooks/calendarHooks.ts:100-125</p>
+      <p>
+        <code>OneDayMillis = 86400000</code> is combined with <code>dayjs().startOf('day')</code> in
+        the same computations. A DST-transition day is 23 or 25 hours. Needs a reproduction before
+        it is called a bug.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">FE-4</span>
+        <h3>Creating and deleting a channel invalidate a cache key that matches nothing</h3>
+        <span class="chip high">High</span>
+        <span class="chip repro">Reproduced</span>
+        <span class="chip fixed">Fixed &middot; #2018</span>
+      </div>
+      <p class="where">hooks/useCreateChannel.ts:14 &middot; pages/channels/ChannelsPage.tsx:164 &middot; helpers/queryUtil.ts:9</p>
+      <p>
+        Two query-key conventions coexist. The generated client builds keys whose first element is an
+        <em>object</em> carrying <code>tags</code> &mdash; thirteen queries are tagged <code>Channels</code>.
+        But both call sites above invalidate with the plain string key <code>['Channels']</code>, and
+        TanStack matches keys structurally by prefix. <strong>They match nothing.</strong>
+      </p>
+      <p>
+        <code>queryKeySchema</code> also declares <code>tags</code> as <code>.optional()</code>, so an
+        object key with no tags parses cleanly and then intersects to zero &mdash; a second fail-open in the
+        same nine lines. Masked on navigation by <code>staleTime: 0</code>, but not while the list
+        stays mounted, which is exactly where the delete mutation lives.
+      </p>
+      <p>
+        Five further mutation files invalidate nothing at all, including the slot save path
+        <code>hooks/slot_scheduler/useScheduleSlots.ts</code>.
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">FE-5</span>
+        <h3>Candidate classes awaiting confirmation</h3>
+        <span class="chip medium">Medium</span>
+        <span class="chip read">Reported</span>
+      </div>
+      <p>Surfaced by recon, consistent with the code, not independently reproduced:</p>
+      <div class="t-wrap">
+        <table>
+          <thead><tr><th>Class</th><th>Evidence</th></tr></thead>
+          <tbody>
+            <tr><td>Server state duplicated ~6&times; on the slot page</td><td>3 cache entries, 2 store lists, 1 form array</td></tr>
+            <tr><td>Effects used to sync one state source into another</td><td>~15 sites; 6 <code>set-state-in-effect</code> warnings</td></tr>
+            <tr><td>Competing form sync paths</td><td><code>FeaturesSettingsPage.tsx:102-105</code> supplies both <code>defaultValues</code> and <code>values</code></td></tr>
+            <tr><td>Whole-object submit from a stale copy</td><td><code>ChannelProgrammingConfig.tsx:96-104</code> PUTs the entire channel when only <code>startTime</code> differs</td></tr>
+            <tr><td>A second hand-rolled cache</td><td><code>programmingSelector</code>, no TTL, no invalidation</td></tr>
+            <tr><td>Direct cache writes</td><td><code>useSystemSettings.ts:27-28</code>, <code>setQueryData</code> with no invalidation</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Also: <code>store/customShowEditor/store.ts</code> is a 0-byte file, and eslint already emits
+        roughly 50 warnings nobody acts on.
+      </p>
+    </div>
+  </section>
+
+  <section id="sweep">
+    <div class="sec-head">
+      <h2>Server fail-open sweep</h2>
+      <span class="sec-count">14 PRs &middot; plus the 3-PR slot chain</span>
+    </div>
+    <p class="sec-intro">
+      The original sweep. Each fix was written red-green: a failing test first, then the change.
+      Three times the stated cause turned out to be wrong, and verifying changed the fix.
+    </p>
+
+    <div class="prs">
+      <div class="pr"><span class="pr-n">#1996</span><span class="pr-t">Four bugs that silently do nothing</span></div>
+      <div class="pr"><span class="pr-n">#1997</span><span class="pr-t">Stop a failed lineup read from erasing the lineup</span></div>
+      <div class="pr"><span class="pr-n">#1998</span><span class="pr-t">Stop reporting a backup as successful when it was not written</span></div>
+      <div class="pr"><span class="pr-n">#1999</span><span class="pr-t">Make OnDemandChannelService a singleton so its locks work</span></div>
+      <div class="pr"><span class="pr-n">#2000</span><span class="pr-t">Make the guide build retry actually retry</span></div>
+      <div class="pr"><span class="pr-n">#2001</span><span class="pr-t">Make the random slot cooldown actually apply</span></div>
+      <div class="pr"><span class="pr-n">#2002</span><span class="pr-t">Stop handing out the cached lineup by reference</span></div>
+      <div class="pr"><span class="pr-n">#2003</span><span class="pr-t">Stop an empty limit paging into nothing</span></div>
+      <div class="pr"><span class="pr-n">#2004</span><span class="pr-t">Make the worker pool start() guard actually guard</span></div>
+      <div class="pr"><span class="pr-n">#2005</span><span class="pr-t">Stop partial updates resetting the fields they omit</span></div>
+      <div class="pr"><span class="pr-n">#2006</span><span class="pr-t">Reject bad watermark and icon values instead of rewriting them</span></div>
+      <div class="pr"><span class="pr-n">#2009</span><span class="pr-t">Audit request schemas for contract-breaking zod constructs</span></div>
+      <div class="pr"><span class="pr-n">#2010</span><span class="pr-t">Stop a partial feature-flag update turning the others off</span></div>
+      <div class="pr"><span class="pr-n">#2011</span><span class="pr-t">Repair lint-changed, add a preflight that mirrors CI</span></div>
+    </div>
+
+    <h3 style="margin:30px 0 4px">The slot chain &mdash; one report, three layers</h3>
+    <p class="sec-intro" style="margin-top:0">
+      Split deliberately rather than shipped as one change: each layer is independently correct,
+      independently revertable, and independently reviewable. The server fix alone would leave the
+      editor still producing bad values; the editor fix alone would leave every schedule already
+      stored broken.
+    </p>
+    <div class="prs">
+      <div class="pr"><span class="pr-n">#2012</span><span class="pr-t">Scheduler &mdash; stop an out-of-period offset killing the schedule</span></div>
+      <div class="pr"><span class="pr-n">#2013</span><span class="pr-t">API &mdash; validate schedules before the scheduler sees them</span></div>
+      <div class="pr"><span class="pr-n">#2014</span><span class="pr-t">Editor &mdash; stop producing offsets outside the period</span></div>
+    </div>
+
+    <div class="finding" style="margin-top:34px">
+      <div class="f-top">
+        <span class="f-id">KEY</span>
+        <h3>The discovery that generalized: .partial() keeps .default()</h3>
+        <span class="chip high">High</span>
+        <span class="chip repro">Verified</span>
+      </div>
+      <p>
+        Zod's <code>.partial()</code> wraps a field's <code>.default()</code> rather than removing it.
+        So a request schema built with <code>.partial()</code> silently substitutes defaults for
+        fields the caller omitted &mdash; which is how a partial settings update reset the settings it
+        never mentioned. No handler-side <code>?? stored</code> could have fixed it; the cause was
+        one layer up.
+      </p>
+      <p>
+        A 200-line walker over the <code>_zod.def</code> tree now audits 28 request schemas for four
+        contract-breaking constructs, with an allowlist that fails if an entry stops matching. It
+        independently rediscovered a known bug, which is what validated the detector.
+      </p>
+    </div>
+  </section>
+
+  <section id="tooling">
+    <div class="sec-head">
+      <h2>Build tooling</h2>
+      <span class="sec-count">4 findings &middot; all fixed</span>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TL-1</span>
+        <h3>The lint gate linted the whole repository, or nothing at all</h3>
+        <span class="chip high">High</span>
+        <span class="chip fixed">Fixed &middot; #2011</span>
+      </div>
+      <p class="where">package.json &mdash; lint-changed</p>
+      <pre><code>eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)</code></pre>
+      <p>
+        Three defects in one line. With a clean tree the subshell expands to nothing, so eslint
+        receives no paths and lints the entire monorepo until the V8 heap aborts &mdash; and because
+        <code>--fix</code> rewrites files as it goes, it reformats whatever it reached on the way
+        down. Deleted paths were passed straight through and killed it. And since a clean tree
+        produced an empty list, the gate reported success on a branch full of changes.
+      </p>
+      <p>
+        It failed exactly when you ran it <em>after</em> committing, which is the normal moment to
+        run a final check.
+      </p>
+      <div class="outcome">
+        <span class="outcome-l">Fixed &mdash; and the first fix was wrong too</span>
+        <p>
+          Scoping to the merge-base with <code>main</code> meant <code>--fix</code> would rewrite
+          202 files on <code>infinite-schedules</code> and 735 on an older branch. Default scope is
+          now the working tree; branch scope moved behind an explicit <code>--branch</code> flag that
+          announces its file count first.
+        </p>
+      </div>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TL-2</span>
+        <h3>No local command covers what CI checks</h3>
+        <span class="chip high">High</span>
+        <span class="chip repro">Reproduced</span>
+        <span class="chip fixed">Fixed &middot; #2011</span>
+      </div>
+      <p class="where">.github/workflows/ &mdash; main.yml, lingui-pr.yml, commitlint.yml</p>
+      <p>
+        This one was found by hitting it. #2014 went up after a clean
+        <code>turbo typecheck</code> and a clean test run, and failed CI anyway. The gates are spread
+        across three workflows and no local command runs them together:
+      </p>
+      <div class="t-wrap">
+        <table>
+          <thead><tr><th>Gate</th><th>Workflow</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">turbo typecheck --filter=@tunarr/server</td><td>main.yml</td></tr>
+            <tr><td class="mono">turbo build --filter=@tunarr/web</td><td>main.yml</td></tr>
+            <tr><td class="mono">turbo test -- run</td><td>main.yml</td></tr>
+            <tr><td class="mono">lingui extract + git diff --exit-code</td><td>lingui-pr.yml</td></tr>
+            <tr><td class="mono">conventional-commit check</td><td>commitlint.yml</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The failure was an import block growing five lines, which shifted the source-line references
+        lingui writes into the <code>.po</code> catalogs. No message changed &mdash; 957 strings before
+        and after &mdash; but <code>git diff --exit-code</code> does not care. Running the full
+        <code>turbo build</code> would <em>not</em> have caught it either; the check does not live there.
+      </p>
+      <p>
+        Two gaps worth naming separately. CI never runs eslint at all &mdash; the pre-commit hook is its
+        only enforcement, so a commit made with the hook bypassed reaches the PR unlinted. And the
+        lingui catalogs are a generated artifact checked in as source, so any edit that moves a line
+        in a file containing a translated string silently invalidates them.
+      </p>
+      <div class="outcome">
+        <span class="outcome-l">Fixed &mdash; pnpm preflight</span>
+        <p>
+          One command runs all five gates plus eslint and prints a single summary rather than
+          stopping at the first failure. The lingui gate leaves the regenerated catalogs applied,
+          since regenerating them is also the remedy, and names the files to commit. Verified by
+          replaying it against the exact stale-catalog state that broke #2014: it fails, and passes
+          once the catalogs are committed.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tooling-extra" style="margin-top:-10px">
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TL-3</span>
+        <h3>Web test files have never been typechecked</h3>
+        <span class="chip high">High</span>
+        <span class="chip repro">Reproduced</span>
+        <span class="chip fixed">Fixed &middot; #2017</span>
+      </div>
+      <p class="where">web/tsconfig.build.json &mdash; exclude</p>
+      <p>
+        <code>tsconfig.build.json</code> excludes <code>./src/**/*.test.ts(x)</code>, and it is the
+        only config CI typechecks web through &mdash; <code>turbo build --filter=@tunarr/web</code>
+        runs <code>tsgo -p tsconfig.build.json</code>. Checking with the config that <em>does</em>
+        include them reports <strong>14 errors across 4 of the 11 web test files</strong>: fixtures
+        carrying <code>persisted</code>, <code>uniqueId</code>, <code>subtype</code> and a top-level
+        <code>title</code>, none of which exist on <code>ContentProgram</code>.
+      </p>
+      <p>
+        <code>useAddBreaks.test.ts</code> is the clearest: its fixture has no <code>program</code>
+        field at all, and its assertions read a <code>title</code> the fixture itself invented. The
+        tests pass, against a shape nothing in the app can produce &mdash; and these are four of the
+        five pure-function tests this plan calls &ldquo;the pattern that already works.&rdquo;
+      </p>
+    </div>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">TL-4</span>
+        <h3>The pre-commit hook invalidates the catalogs the preflight just certified</h3>
+        <span class="chip medium">Medium</span>
+        <span class="chip repro">Reproduced</span>
+        <span class="chip fixed">Fixed &middot; #2011</span>
+      </div>
+      <p class="where">.husky/pre-commit &rarr; lint-staged</p>
+      <p>
+        Found by the tool failing on its own author, twice. lint-staged runs
+        <code>prettier --write</code> and <code>eslint --fix</code> on staged files
+        <em>at commit time</em> &mdash; after any preflight can possibly run. So a tree that passed
+        the lingui gate gets reformatted during <code>git commit</code>, shifting the source line
+        numbers the catalogs record, and the PR goes red for catalogs certified moments earlier.
+      </p>
+      <p>
+        Reordering gates inside the preflight does not fix this on its own. The preflight now applies
+        the same prettier pass the hook will, so the hook has nothing left to change.
+      </p>
+    </div>
+  </section>
+
+  <section id="s1">
+    <div class="sec-head">
+      <h2>Sweep S1 &mdash; dead cache invalidations</h2>
+      <span class="sec-count">11 sites &middot; 1 cause &middot; fixed</span>
+    </div>
+    <p class="sec-intro">
+      The first mechanical sweep the plan proposed, and the cheapest. Walk every query key used to
+      <em>register</em> a query against every key used to <em>invalidate</em> one. FE-4 was the
+      known instance; the sweep found ten more, all the same mistake.
+    </p>
+
+    <div class="finding">
+      <div class="f-top">
+        <span class="f-id">S1</span>
+        <h3>A hand-written string key can never match a generated one</h3>
+        <span class="chip high">High</span>
+        <span class="chip repro">Reproduced</span>
+        <span class="chip fixed">Fixed &middot; #2018</span>
+      </div>
+      <p class="where">11 sites across hooks/, pages/ and components/</p>
+      <p>
+        Generated hey-api keys are a single-element array holding an object &mdash;
+        <code>[{ _id, baseURL, tags }]</code>. TanStack matches by structural prefix, so a
+        hand-written string key diverges at element 0 and matches nothing. The call resolves, logs
+        nothing, and the cache stays stale. The give-away is the literal <code>['Channels']</code>:
+        <strong>Channels is the endpoint tag, not a key segment.</strong>
+      </p>
+      <div class="t-wrap">
+        <table>
+          <thead><tr><th>Site</th><th>What stayed stale</th></tr></thead>
+          <tbody>
+            <tr><td>useCreateChannel</td><td class="bad">new channel absent from the list</td></tr>
+            <tr><td>ChannelsPage &mdash; delete</td><td class="bad">deleted row stays on screen</td></tr>
+            <tr><td>ChannelsPage &mdash; stream events</td><td>session counts never update</td></tr>
+            <tr><td>ChannelNowPlayingCard</td><td>finished program shown indefinitely</td></tr>
+            <tr><td>XmlTvSettingsPage</td><td>settings cache stale after save</td></tr>
+            <tr><td>SystemDebugPage &times;3</td><td>env / nvidia / vaapi checks inert on reclick</td></tr>
+            <tr><td>TvGuide</td><td>ignores xmltv regeneration events</td></tr>
+            <tr><td>useUpdateLineup</td><td>lineup queries missed</td></tr>
+            <tr><td>useScanNow</td><td class="bad">pre-scan metadata retained</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>useScanNow</code> had two stacked bugs: its predicate compared a <code>Query</code>
+        instance against a key array, and one operand was an options object rather than a key.
+        <code>TvGuide</code> carried a <code>// Gnarly</code> comment &mdash; the author knew.
+        <code>ChannelDeleteDialog</code> already did it correctly, so the app had two channel-delete
+        paths that behaved differently.
+      </p>
+      <div class="outcome">
+        <span class="outcome-l">The fix nearly repeated the bug</span>
+        <p>
+          Invalidating by tag is the right mechanism, but picking a tag is not automatically safe.
+          The TV Guide fix nearly shipped against the <code>Guide</code> tag &mdash; which belongs to
+          <code>/api/guide/channels</code>, endpoints that page never calls. It renders from the
+          channel lineup endpoints, tagged <code>Channels</code>. That would have replaced one dead
+          invalidation with another. The tests are therefore table-driven and pin every site to the
+          query it must refresh, driving a real <code>QueryClient</code> rather than reimplementing
+          the matcher.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="outstanding">
+    <div class="sec-head">
+      <h2>Not yet started</h2>
+      <span class="sec-count">6 threads</span>
+    </div>
+    <div class="t-wrap">
+      <table>
+        <thead><tr><th>Thread</th><th>Blocked on</th></tr></thead>
+        <tbody>
+          <tr><td>G11 &mdash; error visibility</td><td>Nothing; not started</td></tr>
+          <tr><td>G10 &mdash; dead settings</td><td>Product decisions, per field</td></tr>
+          <tr><td>TS-7 &mdash; server OneDayMillis is one week</td><td>Nothing; not started</td></tr>
+          <tr><td>Phase 0 &mdash; remaining eslint triage</td><td>Nothing; 51 messages categorised, the bug-shaped ones checked</td></tr>
+          <tr><td>Sweeps S2, S3, S4 + Track B</td><td>Nothing; S1 done and it paid out</td></tr>
+          <tr><td>Frontend audit phases 0&ndash;4</td><td>Ordering confirmation</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sec-intro">
+      FE-A and FE-B are no longer here. They could not be written red-green while both were closures
+      inside components with no test covering the slot editors, so they were first lifted into pure
+      helpers &mdash; the pattern already proven in <code>hooks/programming_controls/</code>, where five
+      of the eleven existing web tests live &mdash; and then fixed against 17 new unit tests, as two
+      separate commits.
+    </p>
+  </section>
+
+  <footer>
+    <span>Tunarr defect register &middot; findings from an in-progress audit</span>
+    <span>Reproduced = run here &middot; Structural = confirmed by reading</span>
+  </footer>
+
+</div>

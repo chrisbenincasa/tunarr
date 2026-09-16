@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import type { Channel, ChannelProgram, FlexProgram } from '@tunarr/types';
+import type { Channel, ChannelProgram } from '@tunarr/types';
 import Color from 'colorjs.io';
 import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
@@ -103,8 +103,7 @@ export function MidRollGroupRow({
   const segmentBarParts = useMemo(() => {
     const isBreak = (p: ChannelProgram) =>
       (p.type === 'filler' && p.fillerType === 'mid') ||
-      (p.type === 'flex' &&
-        (p as FlexProgram).fillerConfig?.origin === 'midroll');
+      (p.type === 'flex' && p.fillerConfig?.origin === 'midroll');
 
     const segmentBarParts: Array<{ fraction: number; isFiller: boolean }> = [];
     for (let i = 0; i < group.items.length; i++) {

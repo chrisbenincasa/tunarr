@@ -1,24 +1,25 @@
 import { seq } from '@tunarr/shared/util';
-import { ProgramSearchRequest, ProgramSearchResponse } from '@tunarr/types/api';
+import type { ProgramSearchRequest, ProgramSearchResponse } from '@tunarr/types/api';
 import { inject } from 'inversify';
 import { isEmpty } from 'lodash-es';
 import { match } from 'ts-pattern';
-import z from 'zod';
+import type z from 'zod';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
-import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
+import type { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
+import type {
+  ProgramSearchDocument} from '../services/MeilisearchService.ts';
 import {
   decodeCaseSensitiveId,
-  MeilisearchService,
-  ProgramSearchDocument,
+  MeilisearchService
 } from '../services/MeilisearchService.ts';
 import { KEYS } from '../types/inject.ts';
-import { Path } from '../types/path.ts';
-import { Maybe } from '../types/util.ts';
+import type { Path } from '../types/path.ts';
+import type { Maybe } from '../types/util.ts';
 import { groupByUniq } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import {
   isProgramGroupingDocument,
   isTerminalProgramDocument,

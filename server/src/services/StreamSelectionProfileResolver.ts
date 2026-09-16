@@ -14,7 +14,7 @@ import { Program } from '../db/schema/Program.ts';
 import { StreamSelectionProfile as StreamSelectionProfileTable } from '../db/schema/StreamSelectionProfile.ts';
 import { KEYS } from '../types/inject.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 export type StreamSelectionContext = {
   channelId: string;
@@ -97,7 +97,7 @@ export class StreamSelectionProfileResolver {
       .limit(1);
 
     if (result.length > 0) {
-      return result[0] as StreamSelectionProfile;
+      return result[0];
     }
     return;
   }
@@ -123,7 +123,7 @@ export class StreamSelectionProfileResolver {
       .limit(1);
 
     if (result.length > 0) {
-      return result[0] as StreamSelectionProfile;
+      return result[0];
     }
     return;
   }
@@ -146,7 +146,7 @@ export class StreamSelectionProfileResolver {
       .limit(1);
 
     if (result.length > 0) {
-      return result[0] as StreamSelectionProfile;
+      return result[0];
     }
     return;
   }

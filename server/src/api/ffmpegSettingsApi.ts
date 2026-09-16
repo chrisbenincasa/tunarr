@@ -125,7 +125,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
         body: z.object({
           ffmpegPath: z.string(),
         }),
-        repsonse: {
+        response: {
           200: FfmpegSettingsSchema,
           500: z.literal('error'),
         },
@@ -146,7 +146,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
           },
           level: 'warning',
         });
-        return res.send(req.serverCtx.settings.ffmpegSettings());
+        return res.send(makeWritable(req.serverCtx.settings.ffmpegSettings()));
       } catch (err) {
         logger.error(err);
         await res.status(500).send('error');

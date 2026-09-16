@@ -1,16 +1,8 @@
 import type { PlexApiClient } from '@/external/plex/PlexApiClient.js';
-import { flatMapAsyncSeq } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
-import type { ProgramLike } from '@tunarr/types';
-import {
-  isTerminalItemType,
-  type Library,
-  type ProgramOrFolder,
-  type TerminalProgram,
-} from '@tunarr/types';
-import { flatten, flattenDeep, map, uniqBy } from 'lodash-es';
+import type { ProgramLike, TerminalProgram } from '@tunarr/types';
 import { match, P } from 'ts-pattern';
 import { asyncPool, unfurlPool } from '../util/asyncPool.ts';
 
@@ -20,60 +12,6 @@ export class PlexHierarchyTraversal {
   });
 
   constructor(private plex: PlexApiClient) {}
-
-  async expandDescendants(initialItems: (ProgramOrFolder | Library)[]) {
-    this.#logger.debug(
-      'enumerating items: %O',
-      map(initialItems, (item) => item.externalId),
-    );
-    const allItems = await flatMapAsyncSeq(initialItems, (item) =>
-      this.expandItemDescendants(item),
-    );
-    return uniqBy(allItems, (item) => item.externalId);
-  }
-
-  async expandItemDescendants(
-    item: ProgramOrFolder | Library,
-    parent?: ProgramOrFolder | Library,
-    acc: TerminalProgram[] = [],
-  ): Promise<TerminalProgram[]> {
-    if (isTerminalItemType(item)) {
-      if ((item.duration ?? 0) <= 0) {
-        return acc;
-      }
-
-      if (item.type === 'episode' && parent?.type === 'season') {
-        item.season = parent;
-      } else if (item.type === 'track' && parent?.type === 'album') {
-        item.album = parent;
-      }
-
-      acc.push(item);
-      return acc;
-    } else {
-      if (item.type === 'season' && parent?.type === 'show') {
-        item.show = parent;
-      }
-
-      const parentType = match(item.type)
-        .returnType<'item' | 'collection' | 'playlist'>()
-        .with('collection', () => 'collection')
-        .with('playlist', () => 'playlist')
-        .with(P._, () => 'item')
-        .exhaustive();
-      return this.plex
-        .getItemChildren(item.externalId, parentType)
-        .then(async (result) => {
-          const pool = asyncPool(
-            result.getOrThrow(),
-            (nextItem) => this.expandItemDescendants(nextItem, item, acc),
-            { concurrency: 3 },
-          );
-          return flatten(await unfurlPool(pool));
-        })
-        .then((allResults) => flattenDeep(allResults));
-    }
-  }
 
   async expandAncestors(items: TerminalProgram[]): Promise<TerminalProgram[]> {
     const seenItems = new Map<string, ProgramLike>();

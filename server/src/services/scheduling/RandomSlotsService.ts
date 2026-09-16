@@ -161,6 +161,13 @@ class ScheduleContext {
     return this.#slotLastPlayed.get(slotIndex);
   }
 
+  // Indexed into the sorted slots array. Recorded when a slot actually places
+  // programs, not when it is picked: a slot that yields nothing and is skipped
+  // has not played, and must stay eligible.
+  recordSlotPlayed(slotIndex: number, timeMs: number) {
+    this.#slotLastPlayed.set(slotIndex, timeMs);
+  }
+
   getNextSequentialSlot() {
     const slot = this.#sortedSlots[this.#currentSlotIndex]!;
     this.#currentSlotIndex =
@@ -205,6 +212,7 @@ export class RandomSlotScheduler {
 
     while (context.timeCursor.isBefore(upperLimit)) {
       let currSlot: RandomSlotImpl | null = null;
+      let currSlotIndex: number | null = null;
 
       let minNextTime = context.timeCursor.add(24, 'days');
       // Pad time
@@ -219,6 +227,7 @@ export class RandomSlotScheduler {
         case 'weighted': {
           const result = this.getRandomSlot(context);
           currSlot = result.currSlot;
+          currSlotIndex = result.currSlotIndex;
           minNextTime = result.minNextTime;
           break;
         }
@@ -258,6 +267,15 @@ export class RandomSlotScheduler {
           continue;
         }
         paddedPrograms = maybePrograms;
+      }
+
+      // The slot has committed programs, so it counts as played from the point
+      // the cursor is at now -- the slot's start, before its programs advance
+      // it. getRandomSlot compares this against timeCursor to apply cooldownMs.
+      // Only the random distributions consult it; 'none' walks the slots in
+      // order and ignores cooldown entirely.
+      if (currSlotIndex !== null) {
+        context.recordSlotPlayed(currSlotIndex, +context.timeCursor);
       }
 
       let midRollOffset = 0;
@@ -399,8 +417,6 @@ export class RandomSlotScheduler {
       );
     }
 
-    const { padStyle, padMs } = this.schedule;
-
     const slotDuration = currSlot.durationSpec.durationMs;
 
     let program = context.getNextProgramForSlot(currSlot);
@@ -423,10 +439,7 @@ export class RandomSlotScheduler {
       return;
     }
 
-    const paddedProgram = createPaddedProgram(
-      program,
-      padStyle === 'slot' ? 1 : padMs,
-    );
+    const paddedProgram = this.createPaddedProgram(program);
 
     maybeAddPrePostFiller(
       currSlot,
@@ -557,6 +570,7 @@ export class RandomSlotScheduler {
   private getRandomSlot(context: ScheduleContext) {
     let n = 0;
     let currSlot: RandomSlotImpl | null = null;
+    let currSlotIndex: number | null = null;
     let minNextTime = context.timeCursor.add(24, 'days');
     for (const [slot, i] of zipWithIndex(context.sortedSlots)) {
       const slotLastPlayed = context.getSlotLastPlayedTime(i);
@@ -576,11 +590,13 @@ export class RandomSlotScheduler {
 
       if (random.bool(slot.weight, n)) {
         currSlot = slot;
+        currSlotIndex = i;
       }
     }
 
     return {
       currSlot,
+      currSlotIndex,
       minNextTime,
     };
   }
