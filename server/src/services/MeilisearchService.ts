@@ -1,21 +1,23 @@
 import { nullToUndefined, seq } from '@tunarr/shared/util';
-import {
+import type {
   Episode,
   FindChild,
   MediaStream,
   MusicTrack as MusicTrackType,
   MusicVideo,
-  tag,
   Tag,
   TerminalProgram,
   TupleToUnion,
 } from '@tunarr/types';
-import {
+import { tag } from '@tunarr/types';
+import type {
   ExternalIdType,
-  isValidMultiExternalIdType,
-  isValidSingleExternalIdType,
   SearchFilter,
   StringOperators,
+} from '@tunarr/types/schemas';
+import {
+  isValidMultiExternalIdType,
+  isValidSingleExternalIdType,
 } from '@tunarr/types/schemas';
 import { Mutex } from 'async-mutex';
 import retry from 'async-retry';
@@ -25,33 +27,32 @@ import type { ProcessInfo } from 'find-process';
 import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
 import { compact, find, isEmpty, uniq } from 'lodash-es';
-import {
+import type {
   DocumentsQuery,
   EnqueuedTask,
   FacetDistribution,
   FacetStats,
-  MeiliSearch,
-  MeiliSearchApiError,
   ResourceResults,
   SearchParams,
   Settings,
   Task,
 } from 'meilisearch';
+import { MeiliSearch, MeiliSearchApiError } from 'meilisearch';
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { isMainThread } from 'node:worker_threads';
-import { MarkRequired, Paths } from 'ts-essentials';
+import type { MarkRequired, Paths } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import serverPackage from '../../package.json' with { type: 'json' };
-import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
-import { ProgramState } from '../db/schema/base.ts';
-import { ProgramType } from '../db/schema/Program.ts';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import type { ProgramState } from '../db/schema/base.ts';
+import type { ProgramType } from '../db/schema/Program.ts';
 import { ProgramGroupingType } from '../db/schema/ProgramGrouping.ts';
-import { ServerOptions } from '../globals.ts';
+import type { ServerOptions } from '../globals.ts';
 import { KEYS } from '../types/inject.ts';
-import {
+import type {
   AlbumWithArtist,
   EpisodeWithAncestors2,
   HasMediaSourceAndLibraryId,
@@ -68,13 +69,11 @@ import {
   SeasonWithShow,
   Show,
 } from '../types/Media.ts';
-import { Path } from '../types/path.ts';
+import type { Path } from '../types/path.ts';
 import { Result } from '../types/result.ts';
-import { Maybe, Nilable, Nullable } from '../types/util.ts';
-import {
-  ChildProcessHelper,
-  ChildProcessWrapper,
-} from '../util/ChildProcessHelper.ts';
+import type { Maybe, Nilable, Nullable } from '../types/util.ts';
+import type { ChildProcessWrapper } from '../util/ChildProcessHelper.ts';
+import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
 import {
   getBooleanEnvVar,
   getEnvVar,
@@ -84,10 +83,10 @@ import {
 import { fileExists } from '../util/fsUtil.ts';
 import { isNonEmptyString, isWindows, wait } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { getAvailablePort } from '../util/net.ts';
 import { FileSystemService } from './FileSystemService.ts';
-import { ISearchService } from './ISearchService.ts';
+import type { ISearchService } from './ISearchService.ts';
 import { SearchParser } from './search/SearchParser.ts';
 
 type FlattenArrayTypes<T> = {
@@ -136,6 +135,7 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'originalReleaseDate',
     'originalReleaseYear',
     'addedAt',
+    'seasonIndex',
     'externalIdsMerged',
     'grandparent.id',
     'grandparent.type',
@@ -188,7 +188,6 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
   ],
 } satisfies TunarrSearchIndex<ProgramSearchDocument>;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const AllIndexes = [ProgramsIndex] as const;
 
 const IndexesByName = {
@@ -275,6 +274,7 @@ type BaseProgramSearchDocument = {
   originalReleaseDate: Nullable<number>;
   originalReleaseYear: Nullable<number>;
   index?: number;
+  seasonIndex?: number;
   genres: StringName[];
   actors: Actor[];
   writer: Writer[];
@@ -440,30 +440,7 @@ export class MeilisearchService implements ISearchService {
       if (isMainThread) {
         this.logger.info('Starting Meilisearch service...');
 
-        const processInfo: ProcessInfo[] = await findProcess.default(
-          'port',
-          this.port,
-        );
-
-        // There should really only be one, but OK.
-        if (processInfo.length > 0 && processInfo[0]!.name === 'meilisearch') {
-          const matchingProcess = processInfo[0]!;
-          this.logger.debug(
-            'Killing existing Meilisearch service on port %d',
-            this.port,
-          );
-          process.kill(matchingProcess.pid);
-
-          await retry(async () => {
-            const results = await findProcess.default(
-              'pid',
-              matchingProcess.pid,
-            );
-            if (results.length > 0) {
-              throw new Error('Meilisearch process is not dead yet...');
-            }
-          });
-        }
+        await this.killOrphanedProcess();
 
         const args = [
           '--http-addr',
@@ -588,6 +565,7 @@ export class MeilisearchService implements ISearchService {
           },
         });
         this.logger.info('Meilisearch service started on port %d', this.port);
+        await this.writePidFile(this.proc.process?.pid);
         const outStream = createWriteStream(searchServerLogFile);
         this.proc.process?.stdout.pipe(outStream);
         this.proc.process?.stderr.pipe(outStream);
@@ -611,6 +589,151 @@ export class MeilisearchService implements ISearchService {
 
   stop() {
     this.proc?.kill();
+    // Best effort: if this shutdown is graceful the process is going away, so
+    // the recorded pid is stale and should not be killed by the next start.
+    void this.clearPidFile();
+  }
+
+  private get pidFilePath(): string {
+    return path.join(this.serverOptions.databaseDirectory, 'meilisearch.pid');
+  }
+
+  /**
+   * True if `name` looks like the Meilisearch binary.
+   *
+   * The binary is shipped per-platform as meilisearch-linux-x64,
+   * meilisearch-darwin-arm64, meilisearch.exe and so on, so an equality test
+   * against 'meilisearch' never matches. It used to be one, which is why the
+   * stale process cleanup here has never actually fired.
+   */
+  private static looksLikeMeilisearch(name: string | undefined): boolean {
+    return name !== undefined && name.toLowerCase().startsWith('meilisearch');
+  }
+
+  private async writePidFile(pid: number | undefined) {
+    if (pid === undefined) {
+      return;
+    }
+    try {
+      await fs.writeFile(this.pidFilePath, String(pid), 'utf-8');
+    } catch (e) {
+      this.logger.warn(e, 'Could not record the Meilisearch pid');
+    }
+  }
+
+  private async clearPidFile() {
+    try {
+      await fs.rm(this.pidFilePath, { force: true });
+    } catch {
+      // Nothing useful to do; a stale file is handled on the next start.
+    }
+  }
+
+  /**
+   * Kills a Meilisearch left behind by a previous run.
+   *
+   * Meilisearch is spawned as a child, and a child does not die with its
+   * parent. On a clean shutdown `stop()` signals it, but a hard kill — OOM,
+   * `docker kill`, a crash — leaves it running, reparented to init, holding its
+   * port and its database directory forever.
+   *
+   * Two lookups are needed. The port lookup only finds an orphan if the new
+   * process happens to pick the same port, which it usually does not: the port
+   * is chosen by getAvailablePort() unless configured, and an orphan is still
+   * holding the old one. So the pid recorded at spawn time is the reliable
+   * handle, and the port lookup remains as a fallback for orphans predating the
+   * pid file.
+   */
+  private async killOrphanedProcess() {
+    const candidates: number[] = [];
+
+    const recordedPid = await this.readRecordedPid();
+    if (recordedPid !== undefined) {
+      candidates.push(recordedPid);
+    }
+
+    if (this.port !== undefined) {
+      const onPort: ProcessInfo[] = await findProcess.default(
+        'port',
+        this.port,
+      );
+      for (const proc of onPort) {
+        if (
+          MeilisearchService.looksLikeMeilisearch(proc.name) &&
+          !candidates.includes(proc.pid)
+        ) {
+          candidates.push(proc.pid);
+        }
+      }
+    }
+
+    for (const pid of candidates) {
+      await this.killIfMeilisearch(pid);
+    }
+
+    await this.clearPidFile();
+  }
+
+  private async readRecordedPid(): Promise<Maybe<number>> {
+    try {
+      const raw = await fs.readFile(this.pidFilePath, 'utf-8');
+      const pid = Number.parseInt(raw.trim(), 10);
+      return Number.isSafeInteger(pid) && pid > 0 ? pid : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Kills `pid`, but only after confirming it is actually Meilisearch.
+   *
+   * Pids are recycled. A recorded pid from a previous boot may by now belong to
+   * something else entirely, and killing that would be considerably worse than
+   * leaving an orphan alive.
+   */
+  private async killIfMeilisearch(pid: number) {
+    const found: ProcessInfo[] = await findProcess.default('pid', pid);
+    const proc = found[0];
+    if (
+      proc === undefined ||
+      !MeilisearchService.looksLikeMeilisearch(proc.name)
+    ) {
+      return;
+    }
+
+    this.logger.info(
+      'Killing orphaned Meilisearch process %d left by a previous run',
+      pid,
+    );
+
+    try {
+      process.kill(pid);
+    } catch (e) {
+      this.logger.warn(e, 'Could not signal orphaned Meilisearch %d', pid);
+      return;
+    }
+
+    try {
+      await retry(
+        async () => {
+          const results = await findProcess.default('pid', pid);
+          if (results.length > 0) {
+            throw new Error('Meilisearch process is not dead yet...');
+          }
+        },
+        { retries: 5, minTimeout: 200 },
+      );
+    } catch {
+      this.logger.warn(
+        'Orphaned Meilisearch %d did not exit after SIGTERM; escalating',
+        pid,
+      );
+      try {
+        process.kill(pid, 'SIGKILL');
+      } catch {
+        // It exited between the check and the signal.
+      }
+    }
   }
 
   async getMeilisearchVersion(): Promise<Maybe<string>> {
@@ -884,6 +1007,7 @@ export class MeilisearchService implements ISearchService {
       writer: [],
       externalIds,
       index: season.index,
+      seasonIndex: season.index,
       externalIdsMerged: season.identifiers.map(
         (eid) =>
           `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
@@ -1780,6 +1904,8 @@ export class MeilisearchService implements ISearchService {
           : program.type === 'track'
             ? program.trackNumber
             : undefined,
+      seasonIndex:
+        program.type === 'episode' ? program.season?.index : undefined,
       rating,
       genres: program.genres ?? [],
       actors: program.actors ?? [],
@@ -1911,6 +2037,8 @@ export class MeilisearchService implements ISearchService {
           : program.type === 'track'
             ? program.trackNumber
             : undefined,
+      seasonIndex:
+        program.type === 'episode' ? program.season?.index : undefined,
       rating,
       genres: program.genres ?? [],
       actors: program.actors ?? [],

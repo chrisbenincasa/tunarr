@@ -4,17 +4,16 @@ import { parentPort } from 'worker_threads';
 
 import { TypedError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
-import {
+import type {
   WorkerReply,
-  WorkerRequest,
   WorkerScheduleSlotsRequest,
   WorkerScheduleTimeSlotsRequest,
   WorkerSuccessReply,
   WorkerTimeSlotScheduleReply,
-  type WorkerEvent,
 } from '../types/worker_schemas.ts';
+import { WorkerRequest, type WorkerEvent } from '../types/worker_schemas.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { SlotSchedulerService } from './scheduling/RandomSlotSchedulerService.ts';
 import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.ts';
 

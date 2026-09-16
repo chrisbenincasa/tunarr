@@ -1,4 +1,5 @@
 import type { SettingsDB } from '@/db/SettingsDB.js';
+import { globalOptions } from '@/globals.js';
 import type { Maybe, TupleToUnion } from '@/types/util.js';
 import { getDefaultLogLevel } from '@/util/defaults.js';
 import { inConstArr, isNonEmptyString, isTest } from '@/util/index.js';
@@ -230,16 +231,26 @@ class LoggerFactoryImpl {
 
   private get logLevel(): {
     level: LogLevels;
-    source: 'env' | 'settings';
+    source: 'cli' | 'env' | 'settings';
   } {
-    if (this.settingsDB?.systemSettings().logging.useEnvVarLevel) {
-      const envLevel = getEnvironmentLogLevel();
-      if (!isUndefined(envLevel)) {
-        return { source: 'env', level: envLevel };
-      }
+    // The CLI flags are honored via globalOptions().log_level, which is
+    // undefined unless --log_level/-v was passed (see setGlobalOptionsUnchecked)
+    // so a yargs default never clobbers a saved settings.json level (#1992).
+    let cliLogLevel: LogLevels | undefined;
+    try {
+      cliLogLevel = globalOptions().log_level;
+    } catch {
+      // globalOptions() throws before setGlobalOptions() runs (logger is
+      // constructed at import); fall through to settings/env in that window.
+      cliLogLevel = undefined;
     }
 
-    return { level: this.systemSettingsLogLevel, source: 'settings' };
+    return resolveBaseLogLevel({
+      cliLogLevel,
+      envLogLevel: getEnvironmentLogLevel(),
+      useEnvVarLevel: this.settingsDB?.systemSettings().logging.useEnvVarLevel,
+      settingsLogLevel: this.systemSettingsLogLevel,
+    });
   }
 
   private get perCategoryLogLevel(): Record<string, LogLevels> {
@@ -331,5 +342,30 @@ class LoggerFactoryImpl {
 }
 
 export const LoggerFactory = new LoggerFactoryImpl();
+
+/**
+ * Pure resolution of the base log level, in priority order. The CLI flags
+ * (`--log_level` / `-v`) are the most explicit override; `cliLogLevel` is the
+ * value in `globalOptions().log_level`, which is `undefined` when neither flag
+ * was passed (so a yargs default never clobbers settings). Env applies only
+ * when the `useEnvVarLevel` setting is on; otherwise settings win.
+ */
+export function resolveBaseLogLevel(p: {
+  cliLogLevel: LogLevels | undefined;
+  envLogLevel: Maybe<LogLevels>;
+  useEnvVarLevel: boolean | undefined;
+  settingsLogLevel: LogLevels;
+}): { level: LogLevels; source: 'cli' | 'env' | 'settings' } {
+  if (!isUndefined(p.cliLogLevel)) {
+    return { source: 'cli', level: p.cliLogLevel };
+  }
+  if (p.useEnvVarLevel) {
+    const envLevel = p.envLogLevel;
+    if (!isUndefined(envLevel)) {
+      return { source: 'env', level: envLevel };
+    }
+  }
+  return { source: 'settings', level: p.settingsLogLevel };
+}
 
 export const RootLogger = LoggerFactory.root;

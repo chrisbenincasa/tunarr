@@ -8,9 +8,11 @@ import { createFakeProgramOrm } from '../../testing/fakes/entityCreators.ts';
 import { groupByUniq } from '../../util/index.ts';
 import type { SlotSchedulerProgram } from './slotSchedulerUtil.js';
 import {
+  createFillerIterators,
   createProgramMap,
   createSlotIterators,
   deduplicateSlotIds,
+  getFillerIteratorsForSlot,
 } from './slotSchedulerUtil.js';
 import { scheduleTimeSlots } from './TimeSlotService.ts';
 import { MersenneTwister19937, Random } from 'random-js';
@@ -635,6 +637,71 @@ describe('createSlotIterators unit', () => {
 
     // Rerun now sees ep3 from fresh buffer
     expect(itRerun.current(state)?.id).toBe('ep3');
+  });
+
+  test('one filler list at two orders builds an iterator for each', () => {
+    const fillerListId = randomUUID();
+    const fillerPrograms: SlotSchedulerProgram[] = Array.from(
+      { length: 6 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `bumper-${i}`,
+          title: `Bumper ${i}`,
+          type: 'movie',
+          duration: 2 * 60 * 1000,
+        }),
+        parentFillerLists: [fillerListId],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const uniformSlot = {
+      id: randomUUID(),
+      startTime: 0,
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      filler: [
+        {
+          types: ['tail' as const],
+          fillerListId,
+          fillerOrder: 'uniform' as const,
+        },
+      ],
+    };
+    const weightedSlot = {
+      ...uniformSlot,
+      id: randomUUID(),
+      startTime: 12 * 60 * 60 * 1000,
+      showId: 'show2',
+      filler: [
+        {
+          types: ['tail' as const],
+          fillerListId,
+          fillerOrder: 'shuffle_prefer_short' as const,
+        },
+      ],
+    };
+
+    const random = new Random(MersenneTwister19937.seed(42));
+    const iterators = createFillerIterators(
+      [uniformSlot, weightedSlot],
+      createProgramMap(fillerPrograms),
+      random,
+    );
+
+    expect(Object.keys(iterators)).toHaveLength(2);
+    expect(
+      Object.keys(getFillerIteratorsForSlot(uniformSlot, iterators, new Set())),
+    ).toEqual([fillerListId]);
+    expect(
+      Object.keys(
+        getFillerIteratorsForSlot(weightedSlot, iterators, new Set()),
+      ),
+    ).toEqual([fillerListId]);
   });
 });
 

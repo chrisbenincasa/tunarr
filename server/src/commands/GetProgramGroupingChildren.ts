@@ -1,4 +1,4 @@
-import {
+import type {
   Episode,
   MusicAlbum,
   MusicTrack,
@@ -7,11 +7,9 @@ import {
   TerminalProgram,
 } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
-import {
-  ProgramGroupingType,
-  type ProgramGroupingTypes,
-} from '../db/schema/ProgramGrouping.ts';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { ProgramGroupingType } from '../db/schema/ProgramGrouping.ts';
+import { type ProgramGroupingTypes } from '../db/schema/ProgramGrouping.ts';
 import { KEYS } from '../types/inject.ts';
 import { MaterializeProgramGroupings } from './MaterializeProgramGroupings.ts';
 import { MaterializeProgramsCommand } from './MaterializeProgramsCommand.ts';

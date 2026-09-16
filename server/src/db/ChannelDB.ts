@@ -8,17 +8,21 @@ import { KEYS } from '@/types/inject.js';
 import type { Maybe, Nullable, PagedResult } from '@/types/util.js';
 import type {
   CondensedChannelProgramming,
+  ContentProgram,
   SaveableChannel,
 } from '@tunarr/types';
 import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import type { ContentProgramType } from '@tunarr/types/schemas';
 import { inject, injectable } from 'inversify';
 import type { MarkRequired } from 'ts-essentials';
-import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
-import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
-import { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
-import { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts';
-import { LineupRepository } from './channel/LineupRepository.ts';
+import type { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
+import type { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
+import type { ChannelProgramRepository } from './channel/ChannelProgramRepository.ts';
+import type { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts';
+import type {
+  LineupRepository,
+  UpdateLineupResult,
+} from './channel/LineupRepository.ts';
 import type {
   Lineup,
   LineupConfig,
@@ -248,8 +252,18 @@ export class ChannelDB implements IChannelDB {
   updateLineup(
     id: string,
     req: UpdateChannelProgrammingRequest,
-  ): Promise<Nullable<{ channel: ChannelOrm; newLineup: LineupItem[] }>> {
+  ): Promise<Nullable<UpdateLineupResult>> {
     return this.lineup.updateLineup(id, req);
+  }
+
+  condensedLineupFromMaterialized(
+    channelId: string,
+    materializedPrograms: Record<string, ContentProgram>,
+  ): Promise<CondensedChannelProgramming | null> {
+    return this.lineup.condensedLineupFromMaterialized(
+      channelId,
+      materializedPrograms,
+    );
   }
 
   updateLineupConfig<

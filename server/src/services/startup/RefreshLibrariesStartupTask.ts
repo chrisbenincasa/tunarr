@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import { RefreshMediaSourceLibraryTask } from '../../tasks/RefreshMediaSourceLibraryTask.ts';
 
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { SimpleStartupTask } from './IStartupTask.ts';
 
 @injectable()
@@ -10,7 +10,7 @@ export class RefreshLibrariesStartupTask extends SimpleStartupTask {
   id = RefreshLibrariesStartupTask.name;
   dependencies = [];
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(RefreshMediaSourceLibraryTask)

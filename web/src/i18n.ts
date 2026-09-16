@@ -1,5 +1,5 @@
 import { i18n } from '@lingui/core';
-import { messages as enMessages } from './locales/en/messages';
+import { messages as enMessages } from './locales/en/messages.po';
 
 /**
  * Loads and activates a Lingui message catalog for the given locale.
@@ -10,7 +10,7 @@ export async function loadCatalog(locale: string) {
   if (i18n.locale === locale) return;
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const { messages } = await import(`./locales/${locale}/messages.ts`);
+    const { messages } = await import(`./locales/${locale}/messages.po`);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     i18n.loadAndActivate({ locale, messages });
   } catch (e) {

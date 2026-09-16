@@ -3,6 +3,7 @@ import en from '@cospired/i18n-iso-languages/langs/en.json' with { type: 'json' 
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { isMainThread } from 'node:worker_threads';
 import type { DeepPartial } from 'ts-essentials';
 import { DBAccess } from './db/DBAccess.ts';
 import type { SettingsFile } from './db/SettingsDB.ts';
@@ -78,26 +79,31 @@ export async function bootstrapTunarr(
   await initDbDirectories(opts);
   const conn = DBAccess.init(dbName);
 
-  // not the first run, use the copy migrator
-  if (hasTunarrDb) {
-    await DBAccess.instance.migrateExistingDatabase(conn.name);
-  } else {
-    await conn.syncMigrationTablesIfNecessary();
-    await conn.runDBMigrations();
+  // Workers attach to a database the parent has already migrated. Running the
+  // migrator here too would mean one concurrent migration per worker against a
+  // single SQLite file, each copying the database to a temp location first.
+  if (isMainThread) {
+    // not the first run, use the copy migrator
+    if (hasTunarrDb) {
+      await DBAccess.instance.migrateExistingDatabase(conn.name);
+    } else {
+      await conn.syncMigrationTablesIfNecessary();
+      await conn.runDBMigrations();
+    }
+
+    const dbDirContents = await fs.readdir(opts.databaseDirectory);
+    const migrationBackups = dbDirContents
+      .filter((entry) => entry.match(/db-(\d+)\.bak/))
+      .sort();
+    // Keep all but last 3
+    const backupsToDelete = migrationBackups.slice(0, -3);
+
+    await Promise.all(
+      backupsToDelete.map((backup) =>
+        fs.unlink(path.join(opts.databaseDirectory, backup)),
+      ),
+    );
   }
-
-  const dbDirContents = await fs.readdir(opts.databaseDirectory);
-  const migrationBackups = dbDirContents
-    .filter((entry) => entry.match(/db-(\d+)\.bak/))
-    .sort();
-  // Keep all but last 3
-  const backupsToDelete = migrationBackups.slice(0, -3);
-
-  await Promise.all(
-    backupsToDelete.map((backup) =>
-      fs.unlink(path.join(opts.databaseDirectory, backup)),
-    ),
-  );
 
   LoggerFactory.initialize(settingsDb);
 }

@@ -4,17 +4,15 @@ import { KEYS } from '@/types/inject.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import { head, isEmpty, map, reject } from 'lodash-es';
-import { DB } from '../../db/schema/db.ts';
+import type { DB } from '../../db/schema/db.ts';
 
 @injectable()
 export class EnsureTranscodeConfigIds extends Fixer {
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
-  constructor(
-    @inject(KEYS.Database) private db: Kysely<DB>,
-  ) {
+  constructor(@inject(KEYS.Database) private db: Kysely<DB>) {
     super();
   }
 

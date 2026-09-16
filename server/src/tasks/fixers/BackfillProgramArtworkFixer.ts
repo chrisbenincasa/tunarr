@@ -11,7 +11,7 @@ import { Program } from '../../db/schema/Program.ts';
 import { ProgramGrouping } from '../../db/schema/ProgramGrouping.ts';
 import { ProgramGroupingExternalId } from '../../db/schema/ProgramGroupingExternalId.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import Fixer from './fixer.ts';
 
 @injectable()
