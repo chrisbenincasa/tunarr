@@ -23,7 +23,7 @@ import {
   SearchSnapshotsFolderName,
   SettingsJsonFilename,
 } from '../../util/constants.ts';
-import { run } from '../../util/index.ts';
+import { isNodeError, run } from '../../util/index.ts';
 import type { ISettingsDB } from '../interfaces/ISettingsDB.ts';
 import type { BackupResult } from './DatabaseBackup.ts';
 import { DatabaseBackup } from './DatabaseBackup.ts';
@@ -111,6 +111,10 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       );
     });
 
+    // The destination can fail while the SQLite backup below is still running.
+    // Mark the rejection handled now; it is still observed by `await written`.
+    written.catch(() => void 0);
+
     const sqlBackup = new SqliteDatabaseBackup();
     const sqlBackupFilePromise = sqlBackup.backup(
       dbOptions().dbName,
@@ -148,12 +152,33 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
         SearchSnapshotsFolderName,
       )
       .glob('*.xml', { cwd: getDatabasePath('') });
+
+    // Wait on the destination, not on finalize(). finalize() resolves on the
+    // archiver's 'end', which never fires once a failed destination unpipes it.
+    // Archive errors reject `written` too, so nothing is lost by ignoring them here.
+    const finalized = archive.finalize().catch(() => void 0);
     try {
-      await archive.finalize();
       await written;
+      await finalized;
     } catch (e) {
       this.logger.error(e, 'Error creating backup at %s', backupFileName);
-      await fs.rm(tempDir, { recursive: true, force: true });
+
+      // The partial archive matches the retention pattern, so leaving it would
+      // count toward maxBackups and prune a good backup on the next run.
+      const cleanups = await Promise.allSettled([
+        fs.rm(backupFileName, { force: true }),
+        fs.rm(tempDir, { recursive: true, force: true }),
+      ]);
+      for (const cleanup of cleanups) {
+        // ENOTDIR means the path could never have been created, so there is
+        // nothing to remove.
+        if (
+          cleanup.status === 'rejected' &&
+          !(isNodeError(cleanup.reason) && cleanup.reason.code === 'ENOTDIR')
+        ) {
+          this.logger.warn(cleanup.reason, 'Unable to clean up failed backup');
+        }
+      }
       return { type: 'error' };
     }
 
