@@ -33,8 +33,8 @@ This is a monorepo with four main packages:
 
 ### Version Control
 
-- The `main` branch creates "stable" releases. It receives everything that is backwards compatible: fixes, chores, build/CI changes, docs, and refactors.
-- The `dev` branch receives new features and changes that aren't backwards compatible, such as fixes that require a database migration.
+- The `main` branch creates "stable" releases. It receives everything that is backwards compatible: fixes, chores, build/CI changes, docs, refactors, and small to medium features.
+- The `dev` branch receives large features and changes that aren't backwards compatible, such as fixes that require a database migration.
 
 ### Common Commands
 

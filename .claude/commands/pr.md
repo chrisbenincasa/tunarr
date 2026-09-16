@@ -18,11 +18,11 @@ Create a pull request following Tunarr's branching conventions:
 
 **Branch targeting rules:**
 - Target `dev` for:
-  - New features (`feat` commits)
+  - Large features, meaning a new subsystem, a change spanning many packages, or one that lands over several PRs
   - Changes that aren't backwards compatible, such as fixes that require a database migration
-- Target `main` for everything else: backwards-compatible fixes, `chore`, `build`, `ci`, `docs`, `refactor`, `test`, etc.
-- Decide from what the change does, not just the commit prefix. For example, a `fix` that adds a migration under `server/src/migration/` goes to `dev`.
-- If the commits are mixed or ambiguous, ask the user which branch to target before proceeding
+- Target `main` for everything else: small to medium features, backwards-compatible fixes, `chore`, `build`, `ci`, `docs`, `refactor`, `test`, etc.
+- Decide from what the change does, not just the commit prefix. A `feat` commit is not automatically `dev`; a `fix` that adds a migration under `server/src/migration/` is `dev`.
+- If the commits are mixed, or the feature's size is ambiguous, ask the user which branch to target before proceeding
 
 **Steps:**
 1. Determine the correct target branch using the rules above
