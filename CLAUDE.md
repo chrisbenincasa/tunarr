@@ -33,8 +33,9 @@ This is a monorepo with four main packages:
 
 ### Version Control
 
-- The `main` branch creates "stable" releases. It receives everything that is backwards compatible: fixes, chores, build/CI changes, docs, and refactors.
-- The `dev` branch receives new features and changes that aren't backwards compatible, such as fixes that require a database migration.
+- Releases use CalVer (`YYYY.M.PATCH`), so the version says when a release shipped, not what changed.
+- The `main` branch creates "stable" releases. It receives fixes, chores, build/CI changes, docs, refactors, and small to medium features, including those with database migrations.
+- The `dev` branch creates prereleases. It is reserved for large features that need many prerelease iterations before they reach stable, such as infinite schedules or remote streaming sources.
 
 ### Common Commands
 
