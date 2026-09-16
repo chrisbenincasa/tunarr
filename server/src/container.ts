@@ -151,7 +151,7 @@ const RootModule = new ContainerModule(({ bind }) => {
   bind(KEYS.StartupTask).to(GenerateGuideStartupTask).inSingletonScope();
   bind(KEYS.StartupTask).to(RefreshLibrariesStartupTask).inSingletonScope();
 
-  if (getBooleanEnvVar(USE_WORKER_POOL_ENV_VAR, false)) {
+  if (getBooleanEnvVar(USE_WORKER_POOL_ENV_VAR, true)) {
     bind(KEYS.WorkerPool).toService(TunarrWorkerPool);
   } else {
     bind(KEYS.WorkerPool).to(NoopWorkerPool).inSingletonScope();
