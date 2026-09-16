@@ -32,14 +32,21 @@ export class TunarrSubprocessService {
  */
 function workerArgv(): string[] {
   const opts = globalOptions();
-  return [
+  const argv = [
     '--hide_banner',
     'start-worker',
     '--database',
     opts.databaseDirectory,
-    '--log_level',
-    opts.log_level,
   ];
+
+  // Omitted when unset. The worker then resolves the level the same way the
+  // server did, from the environment or the logger default. Forwarding a
+  // concrete level here would override that.
+  if (opts.log_level !== undefined) {
+    argv.push('--log_level', opts.log_level);
+  }
+
+  return argv;
 }
 
 /**
