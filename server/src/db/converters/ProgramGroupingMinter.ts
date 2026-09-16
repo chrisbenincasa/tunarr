@@ -4,12 +4,9 @@ import { seq } from '@tunarr/shared/util';
 import type {
   Actor,
   EpisodeWithHierarchy,
-  MusicTrackWithHierarchy} from '@tunarr/types';
-import {
-  type Identifier,
-  type Season,
-  type Show,
+  MusicTrackWithHierarchy,
 } from '@tunarr/types';
+import { type Identifier, type Season, type Show } from '@tunarr/types';
 import {
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,

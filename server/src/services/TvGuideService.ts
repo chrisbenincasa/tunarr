@@ -2,13 +2,11 @@ import { Mutex } from 'async-mutex';
 import type { ChannelDB } from '@/db/ChannelDB.js';
 import type { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
-import type {
-  Lineup,
-  LineupItem} from '@/db/derived_types/Lineup.js';
+import type { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
 import {
   isContentItem,
   isOfflineItem,
-  isRedirectItem
+  isRedirectItem,
 } from '@/db/derived_types/Lineup.js';
 import type { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import { KEYS } from '@/types/inject.js';

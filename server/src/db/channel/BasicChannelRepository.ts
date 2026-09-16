@@ -20,11 +20,8 @@ import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
 import type { DB } from '../schema/db.ts';
 import type { ChannelOrmWithRelations } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
-import type {
-  NewChannelSubtitlePreferenceOrm} from '../schema/SubtitlePreferences.ts';
-import {
-  ChannelSubtitlePreferences
-} from '../schema/SubtitlePreferences.ts';
+import type { NewChannelSubtitlePreferenceOrm } from '../schema/SubtitlePreferences.ts';
+import { ChannelSubtitlePreferences } from '../schema/SubtitlePreferences.ts';
 import type { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
 import type { LineupRepository } from './LineupRepository.ts';
 

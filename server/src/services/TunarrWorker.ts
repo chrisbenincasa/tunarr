@@ -2,17 +2,16 @@ import { inject, injectable } from 'inversify';
 import PQueue from 'p-queue';
 import { parentPort } from 'worker_threads';
 
+import { TypedError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import type {
   WorkerReply,
   WorkerScheduleSlotsRequest,
   WorkerScheduleTimeSlotsRequest,
   WorkerSuccessReply,
-  WorkerTimeSlotScheduleReply} from '../types/worker_schemas.ts';
-import {
-  WorkerRequest,
-  type WorkerEvent,
+  WorkerTimeSlotScheduleReply,
 } from '../types/worker_schemas.ts';
+import { WorkerRequest, type WorkerEvent } from '../types/worker_schemas.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { SlotSchedulerService } from './scheduling/RandomSlotSchedulerService.ts';
@@ -22,7 +21,7 @@ import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.
 export class TunarrWorker {
   #queue: PQueue;
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(TimeSlotSchedulerService)
@@ -86,6 +85,10 @@ export class TunarrWorker {
         type: 'error',
         requestId: req.requestId,
         message: result.error.message,
+        httpCode:
+          result.error instanceof TypedError
+            ? result.error.httpCode
+            : undefined,
       });
       return;
     }
@@ -107,6 +110,10 @@ export class TunarrWorker {
         type: 'error',
         requestId: req.requestId,
         message: result.error.message,
+        httpCode:
+          result.error instanceof TypedError
+            ? result.error.httpCode
+            : undefined,
       });
       return;
     }

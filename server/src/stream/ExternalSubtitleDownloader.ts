@@ -31,7 +31,7 @@ type ExternalItem = {
 
 @injectable()
 export class ExternalSubtitleDownloader {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(FileSystemService) private fileSystemService: FileSystemService,

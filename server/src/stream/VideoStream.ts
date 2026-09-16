@@ -1,11 +1,10 @@
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import type {
-  OutputFormat} from '@/ffmpeg/builder/constants.js';
+import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import {
   MkvOutputFormat,
   Mp4OutputFormat,
-  MpegTsOutputFormat
+  MpegTsOutputFormat,
 } from '@/ffmpeg/builder/constants.js';
 import type { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.js';
 import { SessionManager } from '@/stream/SessionManager.js';

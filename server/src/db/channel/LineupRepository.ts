@@ -53,6 +53,7 @@ import { match } from 'ts-pattern';
 import { MaterializeLineupCommand } from '../../commands/MaterializeLineupCommand.ts';
 import { MaterializeProgramsCommand } from '../../commands/MaterializeProgramsCommand.ts';
 import type { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
+import { ScheduleValidationError } from '../../types/errors.ts';
 import {
   asyncMapToRecord,
   groupByUniqProp,
@@ -963,6 +964,11 @@ export class LineupRepository {
         }
       });
 
+      await this.assertProgramsExist(
+        req.lineup.map(channelProgramToLineupItemFunc),
+      );
+      this.assertValidLineup(lineup, newLineupItems, lineup.schedule);
+
       const updatedChannel = this.timer.timeSync('updateChannel', () =>
         updateChannel(newLineupItems),
       );
@@ -997,6 +1003,7 @@ export class LineupRepository {
             schedule: req.schedule,
             seed: req.seed,
             startTime: channel.startTime,
+            validateReferences: true,
           },
         });
 
@@ -1016,6 +1023,7 @@ export class LineupRepository {
             startTime: channel.startTime,
             schedule: req.schedule,
             seed: req.seed,
+            validateReferences: true,
           },
         });
         materializedPrograms = await this.materializeLineupCommand.execute({
@@ -1028,6 +1036,7 @@ export class LineupRepository {
       }
 
       const newLineup = createNewLineup(programs);
+      this.assertValidLineup(lineup, newLineup, req.schedule);
 
       const updatedChannel = updateChannel(newLineup);
       await this.saveLineup(id, {
@@ -1043,6 +1052,52 @@ export class LineupRepository {
     }
 
     return null;
+  }
+
+  // The saved-lineup schema also runs on write, but by then channel SQL has
+  // changed and the cached lineup is already mutated. Check first.
+  private assertValidLineup(
+    current: Lineup,
+    items: LineupItem[],
+    schedule: Lineup['schedule'],
+  ) {
+    const result = LineupSchema.safeParse({
+      ...current,
+      items,
+      startTimeOffsets: calculateStartTimeOffsets(items),
+      schedule,
+    });
+
+    if (!result.success) {
+      const details = result.error.issues
+        .slice(0, 5)
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('; ');
+      throw new ScheduleValidationError(
+        `The new lineup is invalid: ${details}`,
+      );
+    }
+  }
+
+  private async assertProgramsExist(items: readonly LineupItem[]) {
+    const ids = uniq(map(filter(items, isContentItem), (item) => item.id));
+    const found = new Set<string>();
+    for (const idChunk of chunk(ids, 500)) {
+      const rows = await this.drizzleDB.query.program.findMany({
+        where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
+        columns: { uuid: true },
+      });
+      for (const row of rows) {
+        found.add(row.uuid);
+      }
+    }
+
+    const missing = ids.filter((id) => !found.has(id));
+    if (missing.length > 0) {
+      throw new ScheduleValidationError(
+        `The lineup references ${missing.length} program(s) that do not exist: ${missing.slice(0, 10).join(', ')}`,
+      );
+    }
   }
 
   private async buildCondensedLineup(

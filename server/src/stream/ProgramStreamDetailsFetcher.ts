@@ -28,10 +28,9 @@ import type {
   StreamDetails,
   StreamSource,
   SubtitleStreamDetails,
-  VideoStreamDetails} from './types.ts';
-import {
-  HttpStreamSource
+  VideoStreamDetails,
 } from './types.ts';
+import { HttpStreamSource } from './types.ts';
 import { extractIsAnamorphic } from './util.ts';
 
 @injectable()
@@ -132,8 +131,7 @@ export class ProgramStreamDetailsFetcher {
     const usableSubtitles = await Promise.all(
       (program.subtitles ?? []).map(async (subtitle) => {
         const pathOnDisk =
-          isNonEmptyString(subtitle.path) &&
-          (await fileExists(subtitle.path));
+          isNonEmptyString(subtitle.path) && (await fileExists(subtitle.path));
         if (subtitle.subtitleType === 'sidecar') {
           return pathOnDisk ? subtitle : null;
         }
@@ -160,8 +158,7 @@ export class ProgramStreamDetailsFetcher {
         return {
           ...subtitle,
           index: nullToUndefined(subtitle.streamIndex),
-          type:
-            subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
+          type: subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
           languageCodeISO6392: subtitle.language,
           sdh: subtitle.sdh,
           path: nullToUndefined(subtitle.path),

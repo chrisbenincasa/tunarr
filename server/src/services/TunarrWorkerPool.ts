@@ -10,13 +10,13 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import type z from 'zod/v4';
 import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import { ScheduleValidationError } from '../types/errors.ts';
 
 import type {
   WorkerRequest,
-  WorkerRequestToResponse} from '../types/worker_schemas.ts';
-import {
-  WorkerMessage
+  WorkerRequestToResponse,
 } from '../types/worker_schemas.ts';
+import { WorkerMessage } from '../types/worker_schemas.ts';
 import { getNumericEnvVar, WORKER_POOL_SIZE_ENV_VAR } from '../util/env.ts';
 import { timeoutPromise } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
@@ -309,7 +309,11 @@ export class TunarrWorkerPool implements IWorkerPool {
             if (reply.type === 'success') {
               fut.resolve(reply.data);
             } else {
-              fut.reject(new Error(reply.message));
+              fut.reject(
+                reply.httpCode === 400
+                  ? new ScheduleValidationError(reply.message)
+                  : new Error(reply.message),
+              );
             }
           } else {
             this.logger.error(

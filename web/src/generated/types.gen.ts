@@ -4837,6 +4837,10 @@ export type PostApiChannelsByIdProgrammingErrors = {
     /**
      * Default Response
      */
+    400: string;
+    /**
+     * Default Response
+     */
     404: unknown;
     /**
      * Default Response
@@ -4847,6 +4851,8 @@ export type PostApiChannelsByIdProgrammingErrors = {
      */
     501: unknown;
 };
+
+export type PostApiChannelsByIdProgrammingError = PostApiChannelsByIdProgrammingErrors[keyof PostApiChannelsByIdProgrammingErrors];
 
 export type PostApiChannelsByIdProgrammingResponses = {
     /**
@@ -7563,8 +7569,14 @@ export type PutApiCustomShowsByIdErrors = {
     /**
      * Default Response
      */
+    400: string;
+    /**
+     * Default Response
+     */
     404: unknown;
 };
+
+export type PutApiCustomShowsByIdError = PutApiCustomShowsByIdErrors[keyof PutApiCustomShowsByIdErrors];
 
 export type PutApiCustomShowsByIdResponses = {
     /**

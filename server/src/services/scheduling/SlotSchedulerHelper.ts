@@ -18,6 +18,7 @@ import type { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
 import { SmartCollectionsDB } from '../../db/SmartCollectionsDB.ts';
 import { KEYS } from '../../types/inject.ts';
 import { zipWithIndex } from '../../util/index.ts';
+import { ScheduleValidationError } from '../../types/errors.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import {
@@ -34,7 +35,7 @@ import type { TimeSlotScheduleServiceRequest } from './TimeSlotSchedulerService.
 
 @injectable()
 export class SlotSchedulerHelper {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(CustomShowDB) private customShowDB: CustomShowDB,
@@ -112,6 +113,37 @@ export class SlotSchedulerHelper {
     }
 
     return slotPrograms;
+  }
+
+  // New requests must not reference a custom show with nothing to schedule.
+  // Saved schedules skip this check so regeneration can fall back to flex.
+  assertCustomShowReferences(
+    slots: BaseSlot[],
+    slotPrograms: SlotSchedulerProgram[],
+  ) {
+    const schedulableShowIds = new Set<string>();
+    for (const program of slotPrograms) {
+      if (!Number.isFinite(program.duration) || program.duration <= 0) {
+        continue;
+      }
+      for (const { customShowId } of program.parentCustomShows) {
+        schedulableShowIds.add(customShowId);
+      }
+    }
+
+    const problems = seq.collect([...zipWithIndex(slots)], ([slot, index]) => {
+      if (
+        slot.type !== 'custom-show' ||
+        schedulableShowIds.has(slot.customShowId)
+      ) {
+        return;
+      }
+      return `Slot ${index} references custom show ${slot.customShowId}, which has no content to schedule`;
+    });
+
+    if (problems.length > 0) {
+      throw new ScheduleValidationError(problems.join('; '));
+    }
   }
 
   async materializeCustomShowPrograms(slots: BaseSlot[]) {

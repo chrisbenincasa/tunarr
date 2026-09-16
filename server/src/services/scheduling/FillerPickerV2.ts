@@ -18,7 +18,8 @@ import { loggingDef } from '../../util/logging/loggingDef.ts';
 import { random } from '../../util/random.ts';
 import type {
   FillerPickResult,
-  IFillerPicker} from '../interfaces/IFillerPicker.ts';
+  IFillerPicker,
+} from '../interfaces/IFillerPicker.ts';
 import {
   DefaultFillerCooldownMillis,
   EmptyFillerPickResult,

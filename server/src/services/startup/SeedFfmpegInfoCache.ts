@@ -12,7 +12,7 @@ export class SeedFfmpegInfoCache extends SimpleStartupTask {
   id = SeedFfmpegInfoCache.name;
   dependencies: string[] = [];
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,

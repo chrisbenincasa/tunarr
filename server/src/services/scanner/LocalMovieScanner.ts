@@ -16,7 +16,7 @@ import type {
 } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { Artwork, ArtworkType } from '../../db/schema/Artwork.ts';
-import type { ProgramOrm} from '../../db/schema/Program.ts';
+import type { ProgramOrm } from '../../db/schema/Program.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import { MovieNfoParser } from '../../nfo/MovieNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
@@ -49,7 +49,7 @@ export class LocalMovieScanner extends FileSystemScanner {
   #pathsComplete: number = 0;
   #pathCount: number = 0;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.LocalFolderCanonicalizer)
