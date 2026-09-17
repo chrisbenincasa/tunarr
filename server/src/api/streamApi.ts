@@ -36,6 +36,29 @@ export function injectTimestampMap(vttContent: string): string {
   );
 }
 
+/**
+ * Whether a fragment-route request should refresh the session heartbeat for
+ * its client IP.
+ *
+ * A poll of the variant playlist (`stream.m3u8`) for the HLS stream modes is
+ * NOT a sign the client is consuming media: a paused player / backgrounded tab
+ * keeps the manifest alive without ever requesting a new segment. If that poll
+ * refreshed the heartbeat, such a client would stay "alive" indefinitely while
+ * its `_minByIp` entry stayed pinned at its last (low) requested segment —
+ * holding the playlist window open for every other viewer (issue #2045). So a
+ * playlist poll must NOT refresh the heartbeat; segment / subtitle / other
+ * file requests do.
+ */
+export function shouldRefreshHeartbeatForFragment(
+  file: string,
+  sessionType: string,
+): boolean {
+  const isHlsPlaylistPoll =
+    file === 'stream.m3u8' &&
+    (sessionType === 'hls' || sessionType === 'hls_direct_v2');
+  return !isHlsPlaylistPoll;
+}
+
 export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({
     caller: import.meta,
@@ -303,7 +326,12 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           userAgent: req.headers['user-agent'],
         });
       }
-      session.recordHeartbeat(req.ip);
+
+      // A playlist-only poll must not keep the client "alive" — see
+      // shouldRefreshHeartbeatForFragment (issue #2045).
+      if (shouldRefreshHeartbeatForFragment(req.params.file, req.params.sessionType)) {
+        session.recordHeartbeat(req.ip);
+      }
 
       if (
         req.params.file === 'stream.m3u8' &&
