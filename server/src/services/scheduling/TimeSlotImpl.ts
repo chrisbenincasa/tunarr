@@ -31,4 +31,12 @@ export class TimeSlotImpl<
     }
     return pad > 0 ? pad : undefined;
   }
+
+  get overflow() {
+    return this.slot.overflow;
+  }
+
+  get latenessMs() {
+    return this.slot.latenessMs;
+  }
 }
