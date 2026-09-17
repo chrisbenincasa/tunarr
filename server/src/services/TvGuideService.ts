@@ -2,13 +2,11 @@ import { Mutex } from 'async-mutex';
 import type { ChannelDB } from '@/db/ChannelDB.js';
 import type { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
-import type {
-  Lineup,
-  LineupItem} from '@/db/derived_types/Lineup.js';
+import type { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
 import {
   isContentItem,
   isOfflineItem,
-  isRedirectItem
+  isRedirectItem,
 } from '@/db/derived_types/Lineup.js';
 import type { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import { KEYS } from '@/types/inject.js';
@@ -128,6 +126,11 @@ type ChannelWithLineup = {
 type ChannelId = string;
 
 const PlaceholderChannelId = v4();
+
+// How close a lookup must be to the end of a program to be treated as landing
+// on the boundary after it. Well above floating point error for epoch
+// timestamps, well below the length of any real program.
+const BOUNDARY_TOLERANCE_MS = 1;
 
 @injectable()
 @loggingDef({ category: 'scheduling' })
@@ -566,11 +569,33 @@ export class TVGuideService {
         );
       }
 
+      // Timestamps this far from the epoch can't hold fractional milliseconds
+      // exactly, so a lookup made at the moment a program ends can land just
+      // short of that end and pick the program that already finished. Treat a
+      // lookup that close to the next boundary as being on it.
+      let cycleStart = startOfCycle;
+      const nextBoundary = accumulate[targetIndex + 1];
+      if (
+        nextBoundary !== undefined &&
+        nextBoundary - channelProgress < BOUNDARY_TOLERANCE_MS
+      ) {
+        targetIndex += 1;
+        if (targetIndex === lineup.items.length) {
+          targetIndex = 0;
+          cycleStart += nextBoundary;
+        }
+      }
+
       const anchorIndex = findMidRollAnchorIndex(lineup.items, targetIndex);
       const lineupItem = lineup.items[anchorIndex]!;
       return {
         index: anchorIndex,
-        startTimeMs: startOfCycle + accumulate[anchorIndex]!,
+        // A snapped boundary can sit a fraction of a millisecond after the
+        // lookup time; never report a program as starting in the future.
+        startTimeMs: Math.min(
+          cycleStart + accumulate[anchorIndex]!,
+          currentUpdateTimeMs,
+        ),
         lineupItem,
       };
     }
@@ -685,19 +710,20 @@ export class TVGuideService {
             targetChannelProgram.startTimeMs,
           );
 
-          // Cap the program at the lowest duration
-          // Either the redirect slot will cut off before the program is
-          // finished, or the program itself will end.
-          // Rounding is not a perfect solution here, we should normalize
-          // fractional durations in channels
+          // End at whichever comes first: the redirect slot or the program on
+          // the target channel. Comparing end times, rather than durations,
+          // accounts for a target program that began before the slot did.
+          // The result is deliberately not rounded: a duration rounded down
+          // ends the item just inside the slot, so the next lookup finds the
+          // same slot again and trims it to a zero-length program.
+          const end = Math.min(
+            playing.startTimeMs + playing.lineupItem.durationMs,
+            targetChannelProgram.startTimeMs +
+              targetChannelProgram.lineupItem.durationMs,
+          );
           const program2 = {
             ...deepCopy(targetChannelProgram.lineupItem),
-            durationMs: Math.round(
-              Math.min(
-                playing.lineupItem.durationMs,
-                targetChannelProgram.lineupItem.durationMs,
-              ),
-            ),
+            durationMs: end - start,
           };
 
           playing = {

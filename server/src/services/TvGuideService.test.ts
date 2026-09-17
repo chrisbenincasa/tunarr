@@ -1,7 +1,8 @@
+import { zip } from 'lodash-es';
 import { describe, expect, it, vi } from 'vitest';
 import { v4 } from 'uuid';
 import type { ChannelOrm } from '../db/schema/Channel.ts';
-import type { Lineup } from '../db/derived_types/Lineup.ts';
+import type { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
 import type { MaterializedChannelPrograms } from './XmlTvWriter.ts';
 import type { ChannelPrograms } from './TvGuideService.ts';
 import dayjsBase from 'dayjs';
@@ -613,6 +614,164 @@ describe('TVGuideService', () => {
       ).map((entry) => entry.channel.uuid);
       expect(written).toContain(healthy.channel.uuid);
       expect(written).not.toContain(broken.channel.uuid);
+    });
+  });
+
+  describe('redirect slots', () => {
+    const T0 = new Date('2024-01-01T00:00:00Z').getTime();
+    const MIN = 60_000;
+    const HOUR = 60 * MIN;
+
+    type ServiceDeps = ConstructorParameters<typeof TVGuideService>;
+
+    function makeChannel(items: LineupItem[]) {
+      let total = 0;
+      const offsets = [total];
+      for (const item of items) {
+        total += item.durationMs;
+        offsets.push(total);
+      }
+      const channel = makeChannelOrm({ startTime: T0, duration: total });
+      const lineup: Lineup = {
+        version: 4,
+        lastUpdated: T0,
+        items,
+        startTimeOffsets: offsets,
+      };
+      return { channel, lineup };
+    }
+
+    const content = (id: string, durationMs: number): LineupItem => ({
+      type: 'content',
+      id,
+      durationMs,
+    });
+
+    const redirect = (channel: string, durationMs: number): LineupItem => ({
+      type: 'redirect',
+      channel,
+      durationMs,
+    });
+
+    /**
+     * Builds a 12 hour guide from T0 for both channels and returns the source
+     * channel's guide as (start offset from T0, duration, program id) tuples.
+     * Fails if the guide has gaps or overlaps.
+     */
+    async function buildGuide(
+      source: ReturnType<typeof makeChannel>,
+      target: ReturnType<typeof makeChannel>,
+    ) {
+      const channels = {
+        [source.channel.uuid]: source,
+        [target.channel.uuid]: target,
+      };
+      const service = new TVGuideService(
+        {
+          write: vi.fn().mockResolvedValue(undefined),
+        } as unknown as ServiceDeps[0],
+        { push: vi.fn() } as unknown as ServiceDeps[1],
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(channels),
+        } as unknown as ServiceDeps[2],
+        {
+          getProgramsByIds: vi.fn().mockResolvedValue([]),
+        } as unknown as ServiceDeps[3],
+        {} as ServiceDeps[4],
+        {} as ServiceDeps[5],
+        {} as ServiceDeps[6],
+        {} as ServiceDeps[7],
+        {} as ServiceDeps[8],
+      );
+      // The logger is shared across instances, so drop calls from other tests
+      const errorSpy = vi.spyOn(service['logger'], 'error');
+      errorSpy.mockClear();
+
+      await service.buildAllChannels(dayjs.duration({ hours: 12 }), true, T0);
+
+      const guide = service['cachedGuide'][source.channel.uuid];
+      if (!guide) {
+        throw new Error('Guide was not built for the source channel');
+      }
+      // Each program must start exactly where the previous one ended
+      for (const [prev, next] of zip(guide.programs, guide.programs.slice(1))) {
+        if (prev && next) {
+          expect(next.startTimeMs).toBe(
+            prev.startTimeMs + prev.lineupItem.durationMs,
+          );
+        }
+      }
+
+      // Epoch timestamps only hold fractional milliseconds to about 1e-4, so
+      // compare offsets at microsecond precision.
+      const toMicros = (ms: number) => Math.round(ms * 1000) / 1000;
+      const programs = guide.programs.map((p) => [
+        toMicros(p.startTimeMs - T0),
+        toMicros(p.lineupItem.durationMs),
+        p.lineupItem.type === 'content' ? p.lineupItem.id : p.lineupItem.type,
+      ]);
+      return { programs, errorSpy };
+    }
+
+    // Rounding the capped duration to a whole millisecond ended the item just
+    // short of the slot, so the next lookup found the same slot again and
+    // trimmed it to a zero-length program.
+    it('ends a fractional redirect slot exactly where the slot ends', async () => {
+      const target = makeChannel([content('target', 8 * HOUR)]);
+      const source = makeChannel([
+        redirect(target.channel.uuid, HOUR + 0.4),
+        content('after', 11 * HOUR),
+      ]);
+
+      const { programs, errorSpy } = await buildGuide(source, target);
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(programs.slice(0, 2)).toEqual([
+        [0, HOUR + 0.4, 'target'],
+        [HOUR + 0.4, 11 * HOUR, 'after'],
+      ]);
+    });
+
+    it('ends a redirected program with a fractional duration exactly where it ends', async () => {
+      const target = makeChannel([
+        content('first', 30 * MIN + 0.3),
+        content('second', 12 * HOUR),
+      ]);
+      const source = makeChannel([
+        redirect(target.channel.uuid, 3 * HOUR),
+        content('after', 10 * HOUR),
+      ]);
+
+      const { programs, errorSpy } = await buildGuide(source, target);
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(programs.slice(0, 3)).toEqual([
+        [0, 30 * MIN + 0.3, 'first'],
+        [30 * MIN + 0.3, 3 * HOUR - (30 * MIN + 0.3), 'second'],
+        [3 * HOUR, 10 * HOUR, 'after'],
+      ]);
+    });
+
+    it('ends a redirected program that began before the slot when the program ends', async () => {
+      const target = makeChannel([
+        content('first', 45 * MIN),
+        content('second', 12 * HOUR),
+      ]);
+      const source = makeChannel([
+        content('before', 30 * MIN),
+        redirect(target.channel.uuid, HOUR),
+        content('after', 11 * HOUR),
+      ]);
+
+      const { programs, errorSpy } = await buildGuide(source, target);
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(programs.slice(0, 4)).toEqual([
+        [0, 30 * MIN, 'before'],
+        [30 * MIN, 15 * MIN, 'first'],
+        [45 * MIN, 45 * MIN, 'second'],
+        [90 * MIN, 11 * HOUR, 'after'],
+      ]);
     });
   });
 });
