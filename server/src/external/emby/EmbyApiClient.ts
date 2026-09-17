@@ -1221,7 +1221,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       ),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
-      duration: movie.RunTimeTicks / 10_000,
+      duration: Math.round(movie.RunTimeTicks / 10_000),
       externalId: movie.Id,
       artwork: compact([
         this.embyArtworkProjection('poster', movie, 'Primary'),
@@ -1566,7 +1566,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         episode,
         this.options.mediaSource.uuid,
       ),
-      duration: episode.RunTimeTicks / 10_000,
+      duration: Math.round(episode.RunTimeTicks / 10_000),
       artwork: compact([
         this.embyArtworkProjection('poster', episode, 'Primary'),
         this.embyArtworkProjection('banner', episode, 'Banner'),
@@ -1736,7 +1736,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
               }
             : null,
         ) ?? [],
-      duration: track.RunTimeTicks / 10_000,
+      duration: Math.round(track.RunTimeTicks / 10_000),
       externalId: track.Id,
       artwork: compact([
         this.embyArtworkProjection('poster', track, 'Primary'),
@@ -1808,7 +1808,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       ),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
-      duration: video.RunTimeTicks / 10_000,
+      duration: Math.round(video.RunTimeTicks / 10_000),
       externalId: video.Id,
       artwork: compact([
         this.embyArtworkProjection('poster', video, 'Primary'),
@@ -1880,7 +1880,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       ),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
-      duration: video.RunTimeTicks / 10_000,
+      duration: Math.round(video.RunTimeTicks / 10_000),
       externalId: video.Id,
       artwork: compact([
         this.embyArtworkProjection('poster', video, 'Primary'),

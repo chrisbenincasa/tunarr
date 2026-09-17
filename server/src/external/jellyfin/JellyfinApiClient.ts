@@ -1161,7 +1161,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       ),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
-      duration: movie.RunTimeTicks / 10_000,
+      duration: Math.round(movie.RunTimeTicks / 10_000),
       externalId: movie.Id,
       artwork: compact([
         this.jellyfinArtworkProjection('poster', movie, 'Primary'),
@@ -1540,7 +1540,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         episode,
         this.options.mediaSource.uuid,
       ),
-      duration: episode.RunTimeTicks / 10_000,
+      duration: Math.round(episode.RunTimeTicks / 10_000),
       artwork: compact([
         this.jellyfinArtworkProjection('poster', episode, 'Primary'),
         this.jellyfinArtworkProjection('banner', episode, 'Banner'),
@@ -1710,7 +1710,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
               }
             : null,
         ) ?? [],
-      duration: track.RunTimeTicks / 10_000,
+      duration: Math.round(track.RunTimeTicks / 10_000),
       externalId: track.Id,
       artwork: compact([
         this.jellyfinArtworkProjection('poster', track, 'Primary'),
@@ -1786,7 +1786,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       ),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
-      duration: video.RunTimeTicks / 10_000,
+      duration: Math.round(video.RunTimeTicks / 10_000),
       externalId: video.Id,
       artwork: compact([
         this.jellyfinArtworkProjection('poster', video, 'Primary'),
@@ -1858,7 +1858,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       ),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
-      duration: video.RunTimeTicks / 10_000,
+      duration: Math.round(video.RunTimeTicks / 10_000),
       externalId: video.Id,
       artwork: compact([
         this.jellyfinArtworkProjection('poster', video, 'Primary'),
