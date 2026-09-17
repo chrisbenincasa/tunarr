@@ -216,6 +216,10 @@ export class BasicChannelRepository {
     this.drizzleDB.transaction((tx) => {
       tx.update(Channel).set(update).where(eq(Channel.uuid, id)).run();
 
+      tx.delete(ChannelFillerShow)
+        .where(eq(ChannelFillerShow.channelUuid, channel.uuid))
+        .run();
+
       if (!isEmpty(updateReq.fillerCollections)) {
         const channelFillerShows = map(
           updateReq.fillerCollections,
@@ -227,9 +231,6 @@ export class BasicChannelRepository {
           }),
         );
 
-        tx.delete(ChannelFillerShow)
-          .where(eq(ChannelFillerShow.channelUuid, channel.uuid))
-          .run();
         tx.insert(ChannelFillerShow).values(channelFillerShows).run();
       }
       const subtitlePreferences = updateReq.subtitlePreferences?.map(
