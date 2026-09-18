@@ -71,6 +71,7 @@ pnpm debug            # Start server with debugger
 pnpm kysely           # Run Kysely CLI for database operations
 pnpm tunarr           # Run CLI commands (see src/cli/commands.ts)
 pnpm generate-openapi # Generate OpenAPI spec
+pnpm resolve-migrations # Regenerate this branch's migration after a merge/rebase conflict
 
 # Web-specific commands
 cd web

@@ -23,6 +23,7 @@
     "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
     "kysely": "dotenv -e .env.development -- kysely",
     "preinstall": "npx only-allow pnpm",
+    "resolve-migrations": "tsx scripts/resolve-migrations.ts",
     "run-fixer": "dotenv -e .env.development -- tsx src/index.ts fixer",
     "test:watch": "vitest --typecheck.tsconfig tsconfig.test.json --watch",
     "test": "vitest --typecheck.tsconfig tsconfig.test.json --run",
