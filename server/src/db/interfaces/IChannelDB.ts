@@ -18,8 +18,10 @@ import type {
   Nullable,
   PagedResult,
 } from '@/types/util.js';
+import type { UpdateLineupResult } from '@/db/channel/LineupRepository.js';
 import type {
   CondensedChannelProgramming,
+  ContentProgram,
   SaveableChannel,
 } from '@tunarr/types';
 import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
@@ -135,7 +137,17 @@ export interface IChannelDB {
   updateLineup(
     id: string,
     req: UpdateChannelProgrammingRequest,
-  ): Promise<Nullable<{ channel: ChannelOrm; newLineup: LineupItem[] }>>;
+  ): Promise<Nullable<UpdateLineupResult>>;
+
+  /**
+   * Builds a condensed lineup from programs the caller already materialized,
+   * skipping the program query and materialization that dominate
+   * `loadCondensedLineup`.
+   */
+  condensedLineupFromMaterialized(
+    channelId: string,
+    materializedPrograms: Record<string, ContentProgram>,
+  ): Promise<CondensedChannelProgramming | null>;
 
   saveLineup(
     channelId: string,

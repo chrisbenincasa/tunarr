@@ -5,8 +5,8 @@ Written from `main`. Every claim below was verified by reading the repo; file:li
 references are given so each can be re-checked.
 
 **Status:** Phase 3 done (`faee0050`, branch `feat/pre-migration-snapshot`).
-Phase 1 built as a pilot (`ed3bd9aa`, branch `ci/calver-release-pilot`), unmerged
-and unpushed. Phases 2 and 4 not started.
+Phase 1 built in PR #2051 (branch `ci/calver-release-flow`), including release comments
+and removal of the old release tooling. Phases 2 and 4 not started.
 
 ## Decision
 
@@ -17,8 +17,8 @@ Conventional commits and commitlint stay. Auto-generated changelogs stay. What g
 is the `feat → minor` mapping, and with it the incentive to bundle features into larger
 releases to keep the numbers calm.
 
-**The changelog lives in GitHub Releases only.** `CHANGELOG.md` is retired — it stops at
-`1.1.3` (2026-01-20) while tags are at `v1.3.13`, because semantic-release deliberately
+**The changelog lives in GitHub Releases only.** `CHANGELOG.md` is deleted — it stopped at
+`1.1.3` (2026-01-20) while tags reached `v1.3.15`, because semantic-release deliberately
 does not commit generated files back. Release notes are generated per release and posted
 to the GitHub release body.
 
@@ -104,33 +104,41 @@ workflow. Teaching semantic-release CalVer would have meant a third-party plugin
 `@semantic-release/exec` shim computing `nextRelease.version` — new machinery to keep a
 tool whose remaining job is a `gh release create`.
 
-**Built (`ed3bd9aa`, branch `ci/calver-release-pilot`, unmerged):**
+**Built (PR #2051, branch `ci/calver-release-flow`):**
 
 1. New `.github/workflows/release.yml`. Computes the version by scanning git tags:
    `YYYY.M` from the UTC date, patch from the count of existing stable tags in that month.
    Prereleases are excluded from the stable count; `dev` produces `-dev.N`. Refuses to
-   reuse an existing tag. Notes come from `conventional-changelog-cli -p conventionalcommits`.
-   `dry_run` defaults to true.
+   reuse an existing tag. Notes come from `conventional-changelog -p conventionalcommits`,
+   ranged from the previous stable tag. `dry_run` defaults to true.
 2. The release is created with `secrets.RELEASE_PLEASE_TOKEN`, **not** `GITHUB_TOKEN` —
    tags pushed by the default token do not trigger the Docker build workflow.
-3. Deleted `.release-it.json`, `release-it.yml`, `release-please.yml`.
-4. Release stays manual (`workflow_dispatch`). It is the one thing standing between a bad
+3. New `.github/workflows/release-comment.yml` and `.github/scripts/release-comment.sh`.
+   When a stable release publishes, it comments on every merged PR in the range and every
+   issue those PRs close. Closing keywords in commit messages count; `Refs #N` does not.
+   Prereleases are skipped. A hidden per-tag marker makes reruns safe, and
+   `workflow_dispatch` takes a tag and a `dry_run` flag.
+4. The comment job posts with `GITHUB_TOKEN`, because `RELEASE_PLEASE_TOKEN` lacks comment
+   access. Every semantic-release comment on `v1.3.15` failed with "Not allowed to add a
+   comment", so semantic-release never actually commented.
+5. Deleted `.release-it.json`, `release-it.yml`, `release-please.yml`, `release/`,
+   `semantic-release.yml` and `release.config.mjs`. `v1.3.15` (2026-09-15) is the last
+   semantic-release release.
+6. Release stays manual (`workflow_dispatch`). It is the one thing standing between a bad
    merge and a published Docker image, and CalVer removes the pressure to batch anyway.
+7. Dropped the seven release dev dependencies (`release-it`, `release-it-pnpm`,
+   `@release-it/bumper`, `@release-it/conventional-changelog`, `semantic-release`,
+   `@semantic-release/changelog`, `should-semantic-release`) and the
+   `should-semantic-release` script.
+8. Deleted `CHANGELOG.md`, its `Dockerfile` copy and its `.prettierignore` entry. Nothing
+   read it at runtime.
 
 **Verified before commit** against a fake tag set in a throwaway repo: `2026.8.2` with
 prereleases present, `2026.8.2-dev.1` on `dev`, `2026.9.0` for an empty month, and
 `2026.7.10` from `v2026.7.9` (the lexical-vs-numeric sort trap).
 
-**Remaining:**
-
-- `semantic-release.yml` and `release.config.mjs` stay until the new flow has cut one real
-  release. Delete them after that, not before.
-- The four release-it dev dependencies (`release-it`, `release-it-pnpm`,
-  `@release-it/bumper`, `@release-it/conventional-changelog`) plus
-  `should-semantic-release` are now unreferenced in `package.json`. Removing them is a
-  separate, deliberate call.
-- Decide what happens to `CHANGELOG.md`: delete it, or leave it frozen with a header
-  pointing at GitHub Releases.
+The comment script, dry-run locally against `v1.3.15`, targets the same 36 PRs and issues
+that semantic-release tried and failed to comment on. `v1.4.0-dev.1` is skipped.
 
 ---
 
@@ -216,7 +224,7 @@ rolling back.
 | # | Phase | Status |
 |---|---|---|
 | 1 | Phase 3 — rollback safety | **Done** (`faee0050`), unmerged |
-| 2 | Phase 1 — CalVer release workflow | **Piloted** (`ed3bd9aa`), unmerged, needs one real dry run in CI |
+| 2 | Phase 1 — CalVer release workflow | **Built** (PR #2051), needs a CI dry run on `main` after merge |
 | 3 | Phase 2 — spec naming | Blocked on Phase 1 landing |
 | 4 | Phase 4 — contract docs | Ready; Phase 3 is done |
 
@@ -225,5 +233,3 @@ rolling back.
 1. Backfill the missing `1.3.9`–`1.3.13` specs, or start the record clean?
 2. Does the first CalVer release get a `2.0.0`-style announcement, given the number jumps from
    `1.3.13` to `2026.8.0` and will look alarming in a Docker tag list?
-3. Delete `CHANGELOG.md`, or freeze it with a pointer to GitHub Releases?
-4. Drop the five now-unreferenced release dev dependencies from `package.json`?

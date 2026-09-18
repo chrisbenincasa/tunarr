@@ -43,10 +43,7 @@ import type { DeepPartial, DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod/v4';
 import type { Maybe } from '../types/util.ts';
-import {
-  getDefaultLogDirectory,
-  getDefaultLogLevel,
-} from '../util/defaults.ts';
+import { getDefaultLogLevel } from '../util/defaults.ts';
 
 // Version 1 -> 2: slot show ids changed to be the program_grouping ID
 //   rather than the show name.
@@ -115,7 +112,11 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     },
     logging: {
       logLevel: getDefaultLogLevel(),
-      logsDirectory: getDefaultLogDirectory(),
+      // Must derive from dbBasePath, not from getDefaultDatabaseDirectory().
+      // The latter re-reads TUNARR_DATABASE_PATH, so starting with
+      // `--database <dir>` while that variable points elsewhere sent the
+      // database to one directory and the logs to another.
+      logsDirectory: path.join(dbBasePath, 'logs'),
       useEnvVarLevel: true,
       logRollConfig: {
         enabled: false,

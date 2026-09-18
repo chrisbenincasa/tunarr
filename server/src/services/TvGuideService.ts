@@ -79,7 +79,6 @@ import {
   isDefined,
   isNonEmptyString,
   run,
-  wait,
 } from '../util/index.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
 import { EventService } from './EventService.ts';
@@ -744,7 +743,20 @@ export class TVGuideService {
     let melded = 0;
 
     const push = (program: GuideItem) => {
-      const currentProgram = program.lineupItem;
+      // Normalize filler items to offline so they always participate
+      // in offline melding and never appear as content in the EPG.
+      let currentProgram = program.lineupItem;
+      if (
+        currentProgram.type === 'content' &&
+        isNonEmptyString(currentProgram.fillerListId)
+      ) {
+        currentProgram = {
+          type: 'offline',
+          durationMs: currentProgram.durationMs,
+        };
+        program = { ...program, lineupItem: currentProgram };
+      }
+
       const previousProgramIndex =
         !isUndefined(program.index) &&
         inRange(program.index - 1, 0, programs.length)
@@ -961,7 +973,7 @@ export class TVGuideService {
 
     result.programs = [];
     for (const program of programs) {
-      await wait();
+      await throttle();
       if (isProgramOffline(program.lineupItem, channelWithLineup.channel)) {
         let start = program.startTimeMs;
         let duration = program.lineupItem.durationMs;
@@ -1065,13 +1077,15 @@ export class TVGuideService {
   }
 
   private async writeXmlTv() {
-    const allProgramsById: Record<string, ProgramWithRelationsOrm> = {};
-    for (const { programs } of Object.values(this.cachedGuide)) {
-      const programsById = await this.getAllCurrentGuidePrograms(programs);
-      for (const [id, program] of Object.entries(programsById)) {
-        allProgramsById[id] = program;
-      }
-    }
+    // Every channel's programs are fetched in one pass rather than one query
+    // per channel. The results were being merged into a single flat map
+    // regardless, so the per-channel split bought nothing and cost plenty:
+    // deduplication was scoped to a channel, so a program scheduled on several
+    // channels had its whole relation graph fetched and rebuilt once per
+    // channel. getProgramsByIds dedupes and chunks internally.
+    const allProgramsById = await this.getAllCurrentGuidePrograms(
+      Object.values(this.cachedGuide).flatMap(({ programs }) => programs),
+    );
 
     const materializedGuide = Object.values(this.cachedGuide).map(
       ({ channel, programs }) => {

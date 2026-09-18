@@ -9,7 +9,6 @@
     "bundle": "vite build",
     "dev": "vite",
     "extract-messages": "lingui extract",
-    "extract-template": "lingui extract-template",
     "regen-routes": "tsr generate",
     "generate-client": "openapi-ts",
     "lint": "oxlint src/ --max-warnings 0",

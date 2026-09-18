@@ -110,7 +110,7 @@ msgstr "{0} Info"
 
 #. placeholder {0}: warning.programs.length
 #. placeholder {1}: slot.programCount
-#. placeholder {2}: import { betterHumanize } from '@/helpers/dayjs.ts'; import { alternateColors } from '@/helpers/util.ts'; import { plural } from '@lingui/core/macro'; import { Trans } from '@lingui/react/macro'; import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts'; import type { ProgramTooLongWarning, SlotTableWarnings, } from '@/model/CommonSlotModels'; import { removeChannelProgramsById } from '@/store/entityEditor/util.ts'; import { useStoreProgramLookup } from '@/store/selectors.ts'; import { Delete, Error, ExpandMore, WarningAmber } from '@mui/icons-material'; import { Accordion, AccordionDetails, AccordionSummary, Box, Button, IconButton, ListItem, ListItemText, Stack, Typography, } from '@mui/material'; import { seq } from '@tunarr/shared/util'; import type { BaseSlot } from '@tunarr/types/api'; import dayjs from 'dayjs'; import { map, uniqBy, values } from 'lodash-es'; import { averageProgramDurationMs } from '@/helpers/slots.ts'; import type { ListChildComponentProps } from 'react-window'; import { FixedSizeList } from 'react-window'; type Props = { slot: BaseSlot & SlotTableWarnings; slotType: 'time' | 'random'; warning: ProgramTooLongWarning; }; export const SlotProgrammingTooLongWarningDetails = ({ slot, warning, slotType, }: Props) => { const formatter = useProgramTitleFormatter(); const programLookup = useStoreProgramLookup(); const longPrograms = seq.collect( uniqBy(warning.programs, (p) => p.id), ({ id }) => { return programLookup[id]; }, ); const renderLongProgramRow = (props: ListChildComponentProps) => { const program = longPrograms[props.index]; if (!program.id) { return null; } const programId = program.id; return ( <ListItem style={props.style} sx={{ backgroundColor: (theme) => alternateColors(props.index, theme.palette.mode), }} key={programId} component="div" > <ListItemText primary={formatter(program)} /> <IconButton onClick={() => removeChannelProgramsById(programId)} edge="end" aria-label="delete" size="small" > <Delete fontSize="small" /> </IconButton> </ListItem> ); }; const averageLengthMs = averageProgramDurationMs(slot, values(programLookup)); return ( <Accordion defaultExpanded={slot.warnings.length === 1} key={warning.type} elevation={5} > <AccordionSummary expandIcon={<ExpandMore />}> {warning.programs.length === slot.programCount ? ( <Error sx={{ mr: 1, color: (theme) => theme.palette.error.main }} /> ) : ( <WarningAmber sx={{ mr: 1, color: (theme) => theme.palette.warning.main }} /> )} <Typography> <Trans>Programs Too Long</Trans> </Typography> </AccordionSummary> <AccordionDetails> <Stack> <Stack direction="row"> <Button onClick={() => removeChannelProgramsById( new Set(map(warning.programs, (p) => p.id)), ) } > <Trans>Remove All</Trans> </Button> </Stack> <div> <p> <Trans> {warning.programs.length} of {slot.programCount}{' '} {plural(slot.programCount, { one: 'program', other: 'programs', })}{' '} exceed the length of this slot ( {betterHumanize(dayjs.duration(slot.durationMs ?? 0))}). </Trans> {averageLengthMs !== undefined && ( <> {' '} <Trans> Average program length:{' '} {betterHumanize(dayjs.duration(averageLengthMs))} </Trans> </> )} <br /> <Trans> This could cause the following slot's programs to go unscheduled. Possible solutions include: </Trans> </p> <ul> {} {slotType === 'time' && ( <li> <Trans>Increasing "Max Lateness" for the schedule.</Trans> </li> )} <li> <Trans>Increasing the slot duration.</Trans> </li> <li> <Trans>Removing overrun programs from the channel.</Trans> </li> </ul> </div> <Box sx={{ width: '100%', height: 400 }}> <FixedSizeList height={400} width={'100%'} itemSize={46} itemCount={longPrograms.length} overscanCount={5} > {renderLongProgramRow} </FixedSizeList> </Box> </Stack> </AccordionDetails> </Accordion> ); }; 
+#. placeholder {2}: import { betterHumanize } from '@/helpers/dayjs.ts'; import { alternateColors } from '@/helpers/util.ts'; import { plural } from '@lingui/core/macro'; import { Trans } from '@lingui/react/macro'; import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts'; import type { ProgramTooLongWarning, SlotTableWarnings, } from '@/model/CommonSlotModels'; import { removeChannelProgramsById } from '@/store/entityEditor/util.ts'; import { useStoreProgramLookup } from '@/store/selectors.ts'; import { Delete, Error, ExpandMore, WarningAmber } from '@mui/icons-material'; import { Accordion, AccordionDetails, AccordionSummary, Box, Button, IconButton, ListItem, ListItemText, Stack, Typography, } from '@mui/material'; import { seq } from '@tunarr/shared/util'; import type { BaseSlot } from '@tunarr/types/api'; import dayjs from 'dayjs'; import { map, uniqBy, values } from 'lodash-es'; import { averageProgramDurationMs } from '@/helpers/slots.ts'; import type { ListChildComponentProps } from 'react-window'; import { FixedSizeList } from 'react-window'; type Props = { slot: BaseSlot & SlotTableWarnings; slotType: 'time' | 'random'; warning: ProgramTooLongWarning; }; export const SlotProgrammingTooLongWarningDetails = ({ slot, warning, slotType, }: Props) => { const formatter = useProgramTitleFormatter(); const programLookup = useStoreProgramLookup(); const longPrograms = seq.collect( uniqBy(warning.programs, (p) => p.id), ({ id }) => { return programLookup[id]; }, ); const renderLongProgramRow = (props: ListChildComponentProps) => { const program = longPrograms[props.index]; if (!program.id) { return null; } const programId = program.id; return ( <ListItem style={props.style} sx={{ backgroundColor: (theme) => alternateColors(props.index, theme.palette.mode), }} key={programId} component="div" > <ListItemText primary={formatter(program)} /> <IconButton onClick={() => removeChannelProgramsById(programId)} edge="end" aria-label="delete" size="small" > <Delete fontSize="small" /> </IconButton> </ListItem> ); }; const averageLengthMs = averageProgramDurationMs(slot, values(programLookup)); return ( <Accordion defaultExpanded={slot.warnings.length === 1} key={warning.type} elevation={5} > <AccordionSummary expandIcon={<ExpandMore />}> {warning.programs.length === slot.programCount ? ( <Error sx={{ mr: 1, color: (theme) => theme.palette.error.main }} /> ) : ( <WarningAmber sx={{ mr: 1, color: (theme) => theme.palette.warning.main }} /> )} <Typography> <Trans>Programs Too Long</Trans> </Typography> </AccordionSummary> <AccordionDetails> <Stack> <Stack direction="row"> <Button onClick={() => removeChannelProgramsById( new Set(map(warning.programs, (p) => p.id)), ) } > <Trans>Remove All</Trans> </Button> </Stack> <div> <p> <Trans> {warning.programs.length} of {slot.programCount}{' '} {plural(slot.programCount, { one: 'program', other: 'programs', })}{' '} exceed the length of this slot ( {betterHumanize(dayjs.duration(slot.durationMs ?? 0))}). </Trans> {averageLengthMs !== undefined && ( <> {' '} <Trans> Average program length:{' '} {betterHumanize(dayjs.duration(averageLengthMs))} </Trans> </> )} <br /> <Trans> This could cause the following slot's programs to go unscheduled. Possible solutions include: </Trans> </p> <ul> {} {slotType === 'time' && ( <li> <Trans>Increasing "Max Overflow" for the schedule.</Trans> </li> )} <li> <Trans>Increasing the slot duration.</Trans> </li> <li> <Trans>Removing overrun programs from the channel.</Trans> </li> </ul> </div> <Box sx={{ width: '100%', height: 400 }}> <FixedSizeList height={400} width={'100%'} itemSize={46} itemCount={longPrograms.length} overscanCount={5} > {renderLongProgramRow} </FixedSizeList> </Box> </Stack> </AccordionDetails> </Accordion> ); }; 
 #. placeholder {3}: betterHumanize(dayjs.duration(slot.durationMs ?? 0))
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "{0} of {1} {2} exceed the length of this slot ({3})."
@@ -516,8 +516,8 @@ msgid "Allow Image Based"
 msgstr "Allow Image Based"
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
-msgid "Allows programs to play a bit late if the previous program took longer than usual. If a program is too late, Flex is scheduled instead."
-msgstr "Allows programs to play a bit late if the previous program took longer than usual. If a program is too late, Flex is scheduled instead."
+#~ msgid "Allows programs to play a bit late if the previous program took longer than usual. If a program is too late, Flex is scheduled instead."
+#~ msgstr "Allows programs to play a bit late if the previous program took longer than usual. If a program is too late, Flex is scheduled instead."
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Allows you to pick specific programming to remove from the channel."
@@ -2063,6 +2063,10 @@ msgstr "HLS Direct Output Format"
 msgid "HLS not supported in this browser!"
 msgstr "HLS not supported in this browser!"
 
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "How far past its boundary can a slot's content extend? 'One extra item' allows exactly one more program that crosses the boundary."
+msgstr "How far past its boundary can a slot's content extend? 'One extra item' allows exactly one more program that crosses the boundary."
+
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "How frequently libraries should be scanned (starting from midnight)."
 msgstr "How frequently libraries should be scanned (starting from midnight)."
@@ -2090,6 +2094,10 @@ msgstr "HW Acceleration"
 #: src/pages/channels/ChannelsPage.tsx
 msgid "Icon"
 msgstr "Icon"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "If a previous slot ran long, should this slot still play? Controls how late a slot can start."
+msgstr "If a previous slot ran long, should this slot still play? Controls how late a slot can start."
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "If enabled, TV show episodes will use the poster of their show, instead of the individual episode poster."
@@ -2137,8 +2145,12 @@ msgid "Include Seasons"
 msgstr "Include Seasons"
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
-msgid "Increasing \"Max Lateness\" for the schedule."
-msgstr "Increasing \"Max Lateness\" for the schedule."
+#~ msgid "Increasing \"Max Lateness\" for the schedule."
+#~ msgstr "Increasing \"Max Lateness\" for the schedule."
+
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+msgid "Increasing \"Max Overflow\" for the schedule."
+msgstr "Increasing \"Max Overflow\" for the schedule."
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "Increasing the slot duration."
@@ -2441,10 +2453,19 @@ msgstr "Max Duration (minutes)"
 msgid "Max file size (bytes)"
 msgstr "Max file size (bytes)"
 
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Max Lateness"
 msgstr "Max Lateness<<<<<<< HEAD"
+
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Max Overflow"
+msgstr "Max Overflow"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Max True Peak"
@@ -2832,6 +2853,14 @@ msgstr "Overflow Behavior"
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Override global audio and subtitle settings for this channel."
 msgstr "Override global audio and subtitle settings for this channel."
+
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+msgid "Override how far past its boundary this slot's content can extend."
+msgstr "Override how far past its boundary this slot's content can extend."
+
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+msgid "Override how late this slot can start if a previous slot ran long."
+msgstr "Override how late this slot can start if a previous slot ran long."
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Override how programs within this slot are padded."
@@ -4166,6 +4195,11 @@ msgstr "URL"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Use channel default"
 msgstr "Use channel default"
+
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+msgid "Use schedule default"
+msgstr "Use schedule default"
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "Use Show Poster"
