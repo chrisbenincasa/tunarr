@@ -299,7 +299,7 @@ msgstr "A-Z (desc)"
 
 #: src/helpers/dayjs.ts
 msgid "about "
-msgstr "about "
+msgstr "about <<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
@@ -445,7 +445,7 @@ msgstr "Adds Flex breaks after each TV episode or movie to ensure that the progr
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes."
-msgstr "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes."
+msgstr "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes.<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Adjust the output volume (not recommended). Values higher than 100 will boost the audio."
@@ -459,7 +459,7 @@ msgstr "Adjust Weights"
 
 #: src/components/channel_config/plex/PlexProgrammingFilterToolbar.tsx
 #~ msgid "Advanced"
-#~ msgstr "Advanced"
+#~ msgstr "Advanced<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Advanced options relating to audio. In general, do not change these unless you know what you are doing!"
@@ -467,7 +467,7 @@ msgstr "Advanced options relating to audio. In general, do not change these unle
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Advanced options relating to transcoding. In general, do not change these unless you know what you are doing! These settings exist in order to leave some parity with the old dizqueTV transcode pipeline as well as to provide mechanisms to aid in debugging streaming issues."
-msgstr "Advanced options relating to transcoding. In general, do not change these unless you know what you are doing! These settings exist in order to leave some parity with the old dizqueTV transcode pipeline as well as to provide mechanisms to aid in debugging streaming issues."
+msgstr "Advanced options relating to transcoding. In general, do not change these unless you know what you are doing! These settings exist in order to leave some parity with the old dizqueTV transcode pipeline as well as to provide mechanisms to aid in debugging streaming issues.<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
@@ -597,7 +597,7 @@ msgstr "Audio & Subtitles"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Audio Action"
-msgstr "Audio Action"
+msgstr "Audio Action<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Bitrate"
@@ -618,7 +618,7 @@ msgstr "Audio Format"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Audio Language Preferences"
-msgstr "Audio Language Preferences"
+msgstr "Audio Language Preferences<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
@@ -627,7 +627,7 @@ msgstr "Audio Loudness Normalization"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Audio Options"
-msgstr "Audio Options"
+msgstr "Audio Options<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Sample Rate"
@@ -635,7 +635,7 @@ msgstr "Audio Sample Rate"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Audio Streams"
-msgstr "Audio Streams"
+msgstr "Audio Streams<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Volume"
@@ -651,7 +651,7 @@ msgstr "Auto Deinterlace Video"
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Auto uses the time convention for the selected language."
-msgstr "Auto uses the time convention for the selected language."
+msgstr "Auto uses the time convention for the selected language.<<<<<<< HEAD"
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Auto-Update Guide"
@@ -709,7 +709,7 @@ msgstr "Basic button group"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Bit Depth"
-msgstr "Bit Depth"
+msgstr "Bit Depth<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Bitrate cannot be changed when copying input audio"
@@ -742,7 +742,7 @@ msgstr "Break Interval (minutes)"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Break Positioning"
-msgstr "Break Positioning"
+msgstr "Break Positioning<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Buffer size cannot be changed when copying input audio"
@@ -778,7 +778,7 @@ msgstr "Calculates a schedule where all programs end at the same time, creating 
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 msgid "Calculating Slots..."
-msgstr "Calculating Slots..."
+msgstr "Calculating Slots...<<<<<<< HEAD"
 
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/components/DeleteConfirmationDialog.tsx
@@ -1297,7 +1297,7 @@ msgstr "Description"
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
 msgid "Details"
-msgstr "Details"
+msgstr "Details<<<<<<< HEAD"
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Did not receive an accessToken or userId from Jellyfin server."
@@ -1321,7 +1321,7 @@ msgstr "Disable Image Scaling"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Disable Watermarks"
-msgstr "Disable Watermarks"
+msgstr "Disable Watermarks<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -1503,7 +1503,7 @@ msgstr "Emby"
 
 #: src/pages/library/TrashPage.tsx
 msgid "Empty Trash"
-msgstr "Empty Trash"
+msgstr "Empty Trash<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enable <0>EBU R 128</0> loudness normalization via the <1>loudnorm</1> FFmpeg filter. May increase CPU usage during streaming."
@@ -1560,7 +1560,7 @@ msgstr "Enable Watermark"
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/pages/system/StatusPage.tsx
 msgid "Enabled"
-msgstr "Enabled"
+msgstr "Enabled<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enabled (loudnorm)"
@@ -1584,7 +1584,7 @@ msgstr "Ensures programs have a nice-looking start time, it will add Flex time t
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
-msgstr "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
+msgstr "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate.<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter a name for your Emby Server"
@@ -1596,7 +1596,7 @@ msgstr "Enter a name for your Jellyfin Server"
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "Enter a name for your Local Media Source"
-msgstr "Enter a name for your Local Media Source"
+msgstr "Enter a name for your Local Media Source<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter your Emby password to generate a new access token."
@@ -1642,7 +1642,7 @@ msgstr "Error Options"
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Error querying Plex. Check console log and consider reporting a bug!"
-msgstr "Error querying Plex. Check console log and consider reporting a bug!"
+msgstr "Error querying Plex. Check console log and consider reporting a bug!<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Error saving new Emby server. See browser console and server logs for details"
@@ -1956,7 +1956,7 @@ msgstr "Flex"
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Flex Style"
-msgstr "Flex Style"
+msgstr "Flex Style<<<<<<< HEAD"
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
@@ -2386,7 +2386,7 @@ msgstr "Looks like something went wrong."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Loop Short Programs"
-msgstr "Loop Short Programs"
+msgstr "Loop Short Programs<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Loudness Range Target"
@@ -2414,7 +2414,7 @@ msgstr "Manage Libraries"
 
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 msgid "Manual"
-msgstr "Manual"
+msgstr "Manual<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Manually add an access token from your Emby server"
@@ -2458,7 +2458,7 @@ msgstr "Max file size (bytes)"
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Max Lateness"
-msgstr "Max Lateness"
+msgstr "Max Lateness<<<<<<< HEAD"
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
@@ -2594,7 +2594,7 @@ msgstr "Must define at least one language preference"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Must use a valid URL, or empty."
-msgstr "Must use a valid URL, or empty."
+msgstr "Must use a valid URL, or empty.<<<<<<< HEAD"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
@@ -2650,7 +2650,7 @@ msgstr "New Channel"
 #: src/pages/library/EditCustomShowPage.tsx
 #: src/pages/library/NewCustomShowPage.tsx
 msgid "New Custom Show"
-msgstr "New Custom Show"
+msgstr "New Custom Show<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "New Emby Media Source"
@@ -2662,7 +2662,7 @@ msgstr "New Filler List"
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "New Local Media Source"
-msgstr "New Local Media Source"
+msgstr "New Local Media Source<<<<<<< HEAD"
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "New Media Source"
@@ -2738,7 +2738,7 @@ msgstr "Normalize Frame Rate"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Not a valid number"
-msgstr "Not a valid number"
+msgstr "Not a valid number<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -2808,7 +2808,7 @@ msgstr "Operator"
 
 #: src/components/channels/ChannelOptionsButton.tsx
 msgid "Options"
-msgstr "Options"
+msgstr "Options<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -2893,7 +2893,7 @@ msgstr "Pad Style"
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Pad Times"
-msgstr "Pad Times"
+msgstr "Pad Times<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Passthrough audio unchanged. Other settings will not apply."
@@ -3067,7 +3067,7 @@ msgstr "Programs Too Long"
 
 #: src/components/channel_config/EditChannelForm.tsx
 msgid "Properties"
-msgstr "Properties"
+msgstr "Properties<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -3351,7 +3351,7 @@ msgstr "Run Troubleshooter"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Running..."
-msgstr "Running..."
+msgstr "Running...<<<<<<< HEAD"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Sample rate cannot be changed when copying input audio"
@@ -3486,7 +3486,7 @@ msgstr "Selected Audio"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Selected Subtitle"
-msgstr "Selected Subtitle"
+msgstr "Selected Subtitle<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -4043,7 +4043,7 @@ msgstr "To use Tunarr, you need to first connect a media source. This will allow
 
 #: src/components/slot_scheduler/ProgramWeekCalendarView.tsx
 msgid "Today"
-msgstr "Today"
+msgstr "Today<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
@@ -4122,7 +4122,19 @@ msgstr "Tunarr is currently configured to use the AC3 audio encoder. This audio 
 
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
-msgstr "Tunarr runs various tasks, sometimes on a schedule, for background operations."
+msgstr "Tunarr runs various tasks, sometimes on a schedule, for background operations.<<<<<<< HEAD"
+
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Tunarr will attempt to get Plex to pull Tunarr's updated XMLTV upon regeneration"
+msgstr "Tunarr will attempt to get Plex to pull Tunarr's updated XMLTV upon regeneration"
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "Tunarr will update Jellyfin's \"now playing\" state while channels are active."
+msgstr "Tunarr will update Jellyfin's \"now playing\" state while channels are active."
+
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Tunarr will update Plex's \"now playing\" state while channels are active."
+msgstr "Tunarr will update Plex's \"now playing\" state while channels are active."
 
 #: src/pages/settings/HdhrSettingsPage.tsx
 #: src/pages/settings/HdhrSettingsPage.tsx
@@ -4159,7 +4171,7 @@ msgstr "Unlink"
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 #~ msgid "Unlink from group"
-#~ msgstr "Unlink from group"
+#~ msgstr "Unlink from group<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -4167,6 +4179,11 @@ msgstr "Unlink"
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Update"
 msgstr "Update"
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Update Play Status"
+msgstr "Update Play Status"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -4190,7 +4207,7 @@ msgstr "Use Show Poster"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Use these settings to override global ffmpeg settings for this channel."
-msgstr "Use these settings to override global ffmpeg settings for this channel."
+msgstr "Use these settings to override global ffmpeg settings for this channel.<<<<<<< HEAD"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx

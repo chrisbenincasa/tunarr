@@ -42,6 +42,13 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
     className: 'StreamApi',
   });
 
+  fastify.addHook('onRoute', (routeOpts) => {
+    if (!routeOpts.config) {
+      routeOpts.config = {};
+    }
+    routeOpts.config.authRequired = false;
+  });
+
   fastify.addHook('onError', (req, _, error, done) => {
     logger.error(
       error,

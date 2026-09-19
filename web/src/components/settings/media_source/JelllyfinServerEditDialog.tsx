@@ -2,9 +2,9 @@ import { isNonEmptyString, isValidUrlWithError, toggle } from '@/helpers/util';
 
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
 import { jellyfinLogin } from '@/hooks/jellyfin/useJellyfinLogin.ts';
+import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
-import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import {
   CloudDoneOutlined,
   CloudOff,
@@ -14,12 +14,14 @@ import {
 import {
   Box,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
   FormControl,
+  FormControlLabel,
   FormHelperText,
   IconButton,
   InputAdornment,
@@ -30,10 +32,10 @@ import {
   Typography,
 } from '@mui/material';
 import { type JellyfinServerSettings } from '@tunarr/types';
-import { isEmpty, isUndefined } from 'lodash-es';
+import { every, isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState, type FormEvent } from 'react';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
+import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
 import type { StrictOmit } from 'ts-essentials';
 import { type MarkOptional } from 'ts-essentials';
 import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
@@ -65,6 +67,7 @@ const emptyDefaults: JellyfinServerSettingsForm = {
   password: '',
   userId: '',
   pathReplacements: [],
+  sendPlayStatusUpdates: false,
 };
 
 export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
@@ -87,12 +90,16 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     control,
     watch,
     reset,
-    formState: { isDirty, isValid, defaultValues, errors },
+    formState: { isDirty, isValid, defaultValues, errors, dirtyFields },
     handleSubmit,
     setError,
     clearErrors,
     getValues,
   } = form;
+  const [accessToken, username, password] = useWatch({
+    control,
+    name: ['accessToken', 'username', 'password'],
+  });
 
   useEffect(() => {
     if (open) {
@@ -201,6 +208,25 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
       } catch (e) {
         showErrorSnack(e);
       }
+    } else if (isNonEmptyString(server?.id)) {
+      await handleSubmit((data) => {
+        console.log(data);
+        updateMediaSourceMut.mutate({
+          path: {
+            id: data.id!,
+          },
+          body: {
+            ...data,
+            id: data.id!,
+            accessToken: undefined,
+          },
+        });
+      }, showErrorSnack)(e).catch((err) => {
+        console.error(err);
+        showErrorSnack(err);
+      });
+
+      handleClose();
     }
   };
 
@@ -208,7 +234,16 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
 
   const [serverStatusDetails, updateServerStatusDetails] = useDebounceValue(
     {
-      id: server?.id && !isDirty ? server.id : undefined,
+      id:
+        server?.id &&
+        (!(
+          dirtyFields.accessToken ||
+          dirtyFields.username ||
+          dirtyFields.password
+        ) ||
+          every([password, accessToken, username], isEmpty))
+          ? server.id
+          : undefined,
       accessToken: defaultValues?.accessToken ?? '',
       uri: defaultValues?.uri ?? '',
     },
@@ -232,20 +267,30 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
   // or URI changes, but the status query will only fire every 500ms
   useEffect(() => {
     const sub = watch((value, { name }) => {
-      if (
-        isNonEmptyString(value.accessToken) ||
-        (isNonEmptyString(value.username) && isNonEmptyString(value.password))
-      ) {
-        debounceClearError('root.auth');
-      } else {
-        debounceSetError('root.auth', {
-          message: 'Must provide either access token or username/password',
-        });
+      if (isEmpty(server?.id)) {
+        if (
+          isNonEmptyString(value.accessToken) ||
+          (isNonEmptyString(value.username) && isNonEmptyString(value.password))
+        ) {
+          debounceClearError('root.auth');
+        } else {
+          debounceSetError('root.auth', {
+            message: 'Must provide either access token or username/password',
+          });
+        }
       }
 
       if (name === 'uri' || name === 'accessToken') {
         updateServerStatusDetails({
-          id: server?.id && !isDirty ? server.id : undefined,
+          id:
+            server?.id &&
+            !(
+              dirtyFields.accessToken ||
+              dirtyFields.username ||
+              dirtyFields.password
+            )
+              ? server.id
+              : undefined,
           accessToken: value.accessToken ?? '',
           uri: value.uri ?? '',
         });
@@ -261,6 +306,9 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     debounceClearError,
     debounceSetError,
     errors,
+    dirtyFields.accessToken,
+    dirtyFields.username,
+    dirtyFields.password,
   ]);
 
   const { data: serverStatus, isLoading: serverStatusLoading } =
@@ -316,7 +364,9 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                       !serverStatus.healthy &&
                       isNonEmptyString(field.value) ? (
                       <>
-                        <span><Trans>Server is unreachable</Trans></span>
+                        <span>
+                          <Trans>Server is unreachable</Trans>
+                        </span>
                         <br />
                       </>
                     ) : null
@@ -436,16 +486,20 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                 )}
               />
               <FormHelperText sx={{ ml: '14px', mt: -1, flexBasis: '100%' }}>
-                <Trans>Enter your Jellyfin password to generate a new access token.
-                <br />
-                <strong>NOTE:</strong> These are never saved to the Tunarr DB.
-                Instead they are sent to Jellyfin to exchange for a session
-                token.</Trans>
+                <Trans>
+                  Enter your Jellyfin password to generate a new access token.
+                  <br />
+                  <strong>NOTE:</strong> These are never saved to the Tunarr DB.
+                  Instead they are sent to Jellyfin to exchange for a session
+                  token.
+                </Trans>
               </FormHelperText>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Divider sx={{ flex: 1 }} />
-              <Typography variant="caption"><Trans>OR</Trans></Typography>
+              <Typography variant="caption">
+                <Trans>OR</Trans>
+              </Typography>
               <Divider sx={{ flex: 1 }} />
             </Box>
             <Controller
@@ -453,7 +507,9 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
               name="accessToken"
               render={({ field, fieldState: { error } }) => (
                 <FormControl sx={{ m: 1 }} fullWidth variant="outlined">
-                  <InputLabel htmlFor="access-token"><Trans>Access Token</Trans> </InputLabel>
+                  <InputLabel htmlFor="access-token">
+                    <Trans>Access Token</Trans>{' '}
+                  </InputLabel>
                   <OutlinedInput
                     id="access-token"
                     type={showAccessToken ? 'text' : 'password'}
@@ -481,7 +537,9 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                         </>
                       )}
                       <span>
-                        <Trans>Manually add an access token from your Jellyfin server</Trans>
+                        <Trans>
+                          Manually add an access token from your Jellyfin server
+                        </Trans>
                       </span>
                     </>
                   </FormHelperText>
@@ -495,6 +553,28 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
               </FormProvider>
             </Box>
             <Divider />
+            <Stack direction={'row'}>
+              <FormControl sx={{ flexGrow: 0.5 }}>
+                <FormControlLabel
+                  control={
+                    <Controller
+                      control={control}
+                      name="sendPlayStatusUpdates"
+                      render={({ field }) => (
+                        <Checkbox {...field} checked={field.value} />
+                      )}
+                    />
+                  }
+                  label={t`Update Play Status`}
+                />
+                <FormHelperText>
+                  <Trans>
+                    Tunarr will update Jellyfin's "now playing" state while
+                    channels are active.
+                  </Trans>
+                </FormHelperText>
+              </FormControl>
+            </Stack>
           </Stack>
         </Box>
       </DialogContent>
