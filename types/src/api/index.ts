@@ -538,6 +538,7 @@ export const UpdateFeatureFlagsRequestSchema = z.object({
   disableVulkan: z.boolean().optional(),
   disableVaapiPad: z.boolean().optional(),
   xmltvCreditImagesEnabled: z.boolean().optional(),
+  ersatzTvNextEnabled: z.boolean().optional(),
 });
 
 export type UpdateFeatureFlagsRequest = z.infer<

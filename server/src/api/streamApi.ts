@@ -100,6 +100,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         case 'hls_slower':
         case 'hls_direct':
         case 'hls_direct_v2':
+        case 'etv_next':
           return res.redirect(
             `/stream/channels/${channel.uuid}.m3u8?${params.toString()}`,
           );
@@ -470,6 +471,10 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         }
         case 'mpegts':
           return res.status(400).send();
+        case 'etv_next':
+          return res
+            .status(501)
+            .send('The ErsatzTV next streaming backend is not yet available.');
       }
 
       if (sessionResult.isFailure()) {

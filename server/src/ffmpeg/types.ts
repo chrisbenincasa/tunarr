@@ -36,6 +36,7 @@ export const ConcatStreamModeToChildMode: Record<
   mpegts_concat: 'mpegts',
   hls_direct_concat: 'hls_direct',
   hls_direct_v2_concat: 'hls_direct_v2',
+  etv_next_concat: 'etv_next',
 } as const;
 
 export type StreamSessionCreateArgs = {
