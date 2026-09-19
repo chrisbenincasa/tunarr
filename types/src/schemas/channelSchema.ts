@@ -101,6 +101,8 @@ export const HlsDirectStreamMode = 'hls_direct';
 export const HlsDirectConcatStreamMode = 'hls_direct_concat';
 export const HlsDirectV2StreamMode = 'hls_direct_v2';
 export const HlsDirectV2ConcatStreamMode = 'hls_direct_v2_concat';
+export const EtvNextStreamMode = 'etv_next';
+export const EtvNextConcatStreamMode = 'etv_next_concat';
 
 export const ChannelStreamMode = {
   Hls: HlsChannelStreamMode,
@@ -108,6 +110,7 @@ export const ChannelStreamMode = {
   MpegTs: MpegTsChannelStreamMode,
   HlsDirect: HlsDirectStreamMode,
   HlsDirectV2: HlsDirectV2StreamMode,
+  EtvNext: EtvNextStreamMode,
 } as const;
 
 export const ChannelConcatStreamMode = {
@@ -116,6 +119,7 @@ export const ChannelConcatStreamMode = {
   MpegTs: MpegTsConcatChannelStreamMode,
   HlsDirect: HlsDirectConcatStreamMode,
   HlsDirectV2: HlsDirectV2ConcatStreamMode,
+  EtvNext: EtvNextConcatStreamMode,
 } as const;
 
 export const ChannelStreamModes = [
@@ -124,6 +128,7 @@ export const ChannelStreamModes = [
   ChannelStreamMode.MpegTs,
   ChannelStreamMode.HlsDirect,
   ChannelStreamMode.HlsDirectV2,
+  ChannelStreamMode.EtvNext,
 ] as const;
 
 export const ChannelConcatStreamModes = [
@@ -132,6 +137,7 @@ export const ChannelConcatStreamModes = [
   ChannelConcatStreamMode.MpegTs,
   ChannelConcatStreamMode.HlsDirect,
   ChannelConcatStreamMode.HlsDirectV2,
+  ChannelConcatStreamMode.EtvNext,
 ] as const;
 
 export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;
