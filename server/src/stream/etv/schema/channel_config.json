@@ -1,0 +1,633 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ChannelConfig",
+  "type": "object",
+  "properties": {
+    "fallback": {
+      "$ref": "#/$defs/FallbackConfig",
+      "default": {
+        "show_error": false
+      }
+    },
+    "ffmpeg": {
+      "$ref": "#/$defs/FfmpegConfig"
+    },
+    "normalization": {
+      "$ref": "#/$defs/NormalizationConfig"
+    },
+    "playout": {
+      "$ref": "#/$defs/PlayoutConfig"
+    }
+  },
+  "required": [
+    "playout",
+    "ffmpeg",
+    "normalization"
+  ],
+  "$defs": {
+    "AudioFormat": {
+      "type": "string",
+      "enum": [
+        "aac",
+        "ac3"
+      ]
+    },
+    "AudioLoudnessConfig": {
+      "type": "object",
+      "properties": {
+        "integrated_target": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "range_target": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "true_peak": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      }
+    },
+    "AudioNormalizationConfig": {
+      "type": "object",
+      "properties": {
+        "bitrate_kbps": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "buffer_kbps": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "channels": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "format": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AudioFormat"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "loudness": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AudioLoudnessConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "normalize_loudness": {
+          "type": "boolean",
+          "default": false
+        },
+        "sample_rate_hz": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "BwdifCudaOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BwdifOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DeinterlaceQsvOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DeinterlaceVaapiOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "FallbackConfig": {
+      "description": "Controls the content that replaces scheduled content when there is nothing to play\n(a gap in the playout) or when the scheduled item fails",
+      "type": "object",
+      "properties": {
+        "show_error": {
+          "description": "Burn the reason for the fallback into the fallback video; this is always burned,\nregardless of the normalization subtitle mode",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "FfmpegConfig": {
+      "type": "object",
+      "properties": {
+        "disabled_filters": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "ffmpeg_path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "ffprobe_path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "preferred_filters": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "reports_folder": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      }
+    },
+    "HardwareAccel": {
+      "type": "string",
+      "enum": [
+        "amf",
+        "cuda",
+        "qsv",
+        "rkmpp",
+        "vaapi",
+        "videotoolbox",
+        "vulkan"
+      ]
+    },
+    "LibplaceboOptions": {
+      "type": "object",
+      "properties": {
+        "tonemapping": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "NormalizationConfig": {
+      "type": "object",
+      "properties": {
+        "audio": {
+          "$ref": "#/$defs/AudioNormalizationConfig"
+        },
+        "subtitle": {
+          "$ref": "#/$defs/SubtitleNormalizationConfig",
+          "default": {
+            "fonts_folder": null,
+            "force_style": null,
+            "mode": "burn"
+          }
+        },
+        "video": {
+          "$ref": "#/$defs/VideoNormalizationConfig"
+        }
+      },
+      "required": [
+        "audio",
+        "video"
+      ]
+    },
+    "PlayoutConfig": {
+      "type": "object",
+      "properties": {
+        "folder": {
+          "type": "string"
+        },
+        "virtual_start": {
+          "description": "RFC3339 formatted date/time, e.g. 2026-04-13T00:24:21.527-05:00",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "folder"
+      ]
+    },
+    "ScalingMode": {
+      "type": "string",
+      "enum": [
+        "scale_and_pad",
+        "stretch",
+        "crop"
+      ]
+    },
+    "SubtitleMode": {
+      "type": "string",
+      "enum": [
+        "burn",
+        "convert"
+      ]
+    },
+    "SubtitleNormalizationConfig": {
+      "type": "object",
+      "properties": {
+        "fonts_folder": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "force_style": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "mode": {
+          "$ref": "#/$defs/SubtitleMode",
+          "default": "burn"
+        }
+      }
+    },
+    "TonemapOpenclOptions": {
+      "type": "object",
+      "properties": {
+        "tonemap": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "TonemapOptions": {
+      "type": "object",
+      "properties": {
+        "tonemap": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "VaapiDriver": {
+      "type": "string",
+      "enum": [
+        "ihd",
+        "i965",
+        "radeonsi"
+      ]
+    },
+    "VideoFilterOptionsConfig": {
+      "type": "object",
+      "properties": {
+        "bwdif": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BwdifOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bwdif_cuda": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BwdifCudaOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "deinterlace_qsv": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeinterlaceQsvOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "deinterlace_vaapi": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeinterlaceVaapiOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "libplacebo": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LibplaceboOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tonemap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TonemapOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tonemap_opencl": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TonemapOpenclOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "w3fdif": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/W3fdifOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "yadif": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/YadifOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "yadif_cuda": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/YadifCudaOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false
+    },
+    "VideoFormat": {
+      "type": "string",
+      "enum": [
+        "h264",
+        "hevc"
+      ]
+    },
+    "VideoNormalizationConfig": {
+      "type": "object",
+      "properties": {
+        "accel": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HardwareAccel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "amf_device": {
+          "description": "Windows only. Unset picks the discrete AMD adapter.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "bit_depth": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint8",
+          "default": null,
+          "maximum": 255,
+          "minimum": 0
+        },
+        "bitrate_kbps": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "buffer_kbps": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "deinterlace": {
+          "type": "boolean",
+          "default": false
+        },
+        "filters": {
+          "$ref": "#/$defs/VideoFilterOptionsConfig",
+          "default": {
+            "bwdif": null,
+            "bwdif_cuda": null,
+            "deinterlace_qsv": null,
+            "deinterlace_vaapi": null,
+            "libplacebo": null,
+            "tonemap": null,
+            "tonemap_opencl": null,
+            "w3fdif": null,
+            "yadif": null,
+            "yadif_cuda": null
+          }
+        },
+        "format": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VideoFormat"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "height": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "scaling_mode": {
+          "$ref": "#/$defs/ScalingMode",
+          "default": "scale_and_pad"
+        },
+        "vaapi_device": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "vaapi_driver": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VaapiDriver"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "W3fdifOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "YadifCudaOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "YadifOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

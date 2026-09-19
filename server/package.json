@@ -18,6 +18,7 @@
     "predev": "tsx scripts/generateEnvModule.ts",
     "dev": "cross-env NODE_ENV=development dotenvx run -f .env.development -- tsx watch --heap-snapshot-on-oom --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' --ignore 'src/**/*.test.ts' ./src/index.ts",
     "generate-env": "tsx scripts/generateEnvModule.ts",
+    "generate-etv-schemas": "tsx scripts/generate-etv-schemas.ts",
     "generate-openapi": "tsx src/index.ts generate-openapi",
     "install-meilisearch": "tsx scripts/download-meilisearch.ts",
     "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
@@ -142,5 +143,9 @@
   },
   "meilisearch": {
     "version": "1.30.0"
+  },
+  "ersatztvNext": {
+    "commit": "ed9507757fa8a36eb85d60fa015da27d8257da6c",
+    "note": "No tagged releases upstream yet; schemas under src/stream/etv/schema are vendored from this commit."
   }
 }

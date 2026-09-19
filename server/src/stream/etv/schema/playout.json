@@ -1,0 +1,857 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ersatztv.org/playout/version/0.0.4",
+  "title": "Playout",
+  "description": "A playout schedule for a single time window.\n\nFiles should be named `{start}_{finish}.json` using compact ISO 8601 (no separators), e.g. `20260413T000000.000000000-0500_20260414T002131.620000000-0500.json`, so that the channel can locate the correct file for the current time.",
+  "type": "object",
+  "required": [
+    "version",
+    "items"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "URI identifying the schema version, e.g. \"https://ersatztv.org/playout/version/0.0.1\"."
+    },
+    "items": {
+      "type": "array",
+      "description": "Ordered list of scheduled items for this window.",
+      "items": {
+        "$ref": "#/definitions/PlayoutItem"
+      }
+    }
+  },
+  "definitions": {
+    "PlayoutItem": {
+      "type": "object",
+      "description": "A single scheduled item in the playout.\n\nAn item must supply media for its tracks. You can do this two ways, and they can be combined:\n\n1. Set `source` to use one shared source for every track. Track details (which stream, etc.) are chosen naively, or may be refined via `tracks`.\n2. Set `tracks` to specify each track (video, audio) individually. A track may provide its own `source`; if it doesn't, the item's top-level `source` is used.\n\nAt least one of `source` or `tracks` must be present, and every track that is selected must have an effective source (either its own or the item's).",
+      "required": [
+        "id",
+        "start",
+        "finish"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable identifier for this item, unique within the playout."
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "RFC3339 formatted start time, e.g. 2026-04-13T00:24:21.527-05:00."
+        },
+        "finish": {
+          "type": "string",
+          "format": "date-time",
+          "description": "RFC3339 formatted finish time, e.g. 2026-04-13T00:54:21.527-05:00."
+        },
+        "source": {
+          "description": "The default source shared by any track that doesn't specify its own. Required unless every selected track in `tracks` provides its own `source`.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/PlayoutItemSource"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tracks": {
+          "description": "Per-track selection. Omit to let the server pick the first video and first audio track of the item's `source`.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/PlayoutItemTracks"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "watermark": {
+          "description": "Compatibility graphics layer composited below every entry in `graphics`. Omit for no legacy watermark.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/GraphicsLayer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "graphics": {
+          "type": "array",
+          "description": "Ordered media-backed graphics layers. The first entry is lowest and the last entry is highest; a compatibility `watermark` is always below this array.",
+          "items": {
+            "$ref": "#/definitions/GraphicsLayer"
+          }
+        }
+      }
+    },
+    "PlayoutItemTracks": {
+      "type": "object",
+      "description": "Per-track overrides for a playout item. Omit a field to use the server default for that track kind (first stream of that kind in the item's `source`, if any).",
+      "properties": {
+        "video": {
+          "description": "Video track selection.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/TrackSelection"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "audio": {
+          "description": "Audio track selection.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/TrackSelection"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "subtitle": {
+          "description": "Subtitle track selection.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/TrackSelection"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "TrackSelection": {
+      "type": "object",
+      "description": "Selects a single track (video or audio).\n\n- `source` absent: inherit the parent `PlayoutItem.source`.\n- `source` present: use this source for this track, overriding the parent.\n- `stream_index` absent: server picks the first stream of the track's kind in the effective source.\n- `stream_index` present: use this specific stream within the effective source.",
+      "properties": {
+        "source": {
+          "description": "Source to pull this track from. If omitted, inherits from the parent `PlayoutItem.source`.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/PlayoutItemSource"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stream_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Zero-based stream index within the effective source. If omitted, the server picks the first stream of this track's kind."
+        }
+      }
+    },
+    "GraphicsLayer": {
+      "type": "object",
+      "description": "An image or video graphics layer composited on top of the primary content. Sized and positioned relative to the primary content's frame.",
+      "required": [
+        "source",
+        "location"
+      ],
+      "properties": {
+        "source": {
+          "description": "The source providing the graphics media (typically an image, but any `PlayoutItemSource` is accepted).",
+          "$ref": "#/definitions/PlayoutItemSource"
+        },
+        "stream_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Zero-based stream index within the source. If omitted, the server picks the first video stream."
+        },
+        "kind": {
+          "description": "Graphics layer kind.",
+          "$ref": "#/definitions/GraphicsLayerKind"
+        },
+        "location": {
+          "description": "Anchor position within the primary content frame.",
+          "$ref": "#/definitions/GraphicsLocation"
+        },
+        "width_percent": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Scale the graphics layer to this percent of the primary content width (0–100). Omit to use its actual size."
+        },
+        "horizontal_margin_percent": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Horizontal offset from the anchor `location`, as a percent of primary content width (0–100). Omit for 0."
+        },
+        "vertical_margin_percent": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Vertical offset from the anchor `location`, as a percent of primary content height (0–100). Omit for 0."
+        },
+        "opacity_percent": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Opacity as a percent (0–100). Omit for fully opaque (100)."
+        },
+        "within_source_content": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "When true, position margins are measured from the edges of the source content rather than the padded output frame, so letterbox/pillarbox bars push the graphics layer inward and keep it inside the visible content. When false, margins are relative to the full padded frame, so a 0% margin can land inside the bars. Has no effect when the primary content fills the output (crop/stretch). Omit for false."
+        },
+        "timing": {
+          "description": "Visibility schedule for the graphics layer. Omit for an always-on layer.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/GraphicsTiming"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "GraphicsTiming": {
+      "description": "Controls when the graphics layer is shown. Exactly one variant, distinguished by `timing_type`.",
+      "discriminator": {
+        "propertyName": "timing_type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/definitions/PeriodicTiming"
+        }
+      ]
+    },
+    "PeriodicTiming": {
+      "type": "object",
+      "description": "Cyclical visibility: the graphics layer fades in, holds, and fades out once every `frequency_ms`. Cycle length is start-to-start, so `2 * fade_ms + hold_ms` must be ≤ `frequency_ms`, and `fade_ms` must be ≤ `hold_ms`.",
+      "required": [
+        "timing_type",
+        "clock",
+        "frequency_ms",
+        "hold_ms"
+      ],
+      "properties": {
+        "timing_type": {
+          "type": "string",
+          "const": "periodic"
+        },
+        "clock": {
+          "description": "Reference clock used to position cycles.",
+          "$ref": "#/definitions/PeriodicClock"
+        },
+        "frequency_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Period of the cycle, start-to-start, in milliseconds."
+        },
+        "phase_offset_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Shift the cycle by this many milliseconds. With `clock: wall` and `frequency_ms: 300000`, an offset of 0 puts an appearance start at every wall-clock 5-minute boundary; 120000 shifts to :02, :07, :12, etc. Omit for 0."
+        },
+        "disable_after_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "Cap on the time, measured from the start of the playout item in milliseconds, during which new appearances are allowed to begin. An appearance already in progress at the cap is allowed to fade out cleanly. Omit for no cap."
+        },
+        "fade_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Fade-in and fade-out duration in milliseconds (symmetric). Must be ≤ `hold_ms`. Omit for 1000; set to 0 for hard cuts."
+        },
+        "hold_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Time held fully visible between fade-in and fade-out, in milliseconds."
+        }
+      }
+    },
+    "PeriodicClock": {
+      "type": "string",
+      "description": "Reference clock for periodic timing. `wall` aligns cycles to wall-clock time (so a viewer tuning in at any moment sees the same phase). `content` measures from the start of the containing playout item.",
+      "enum": [
+        "wall",
+        "content"
+      ]
+    },
+    "GraphicsLayerKind": {
+      "type": "string",
+      "description": "canvas: a full-frame layer whose frames are already the output size and carry alpha. It is composited at (0,0) and is content-locked: the channel seeks it to its own position in the item. `location`, margins, `width_percent`, `within_source_content`, `opacity_percent` and `timing` are ignored (a warning is logged if present). HTTP canvas sources receive `x-etv-channel`, `x-etv-offset-ms`, `x-etv-duration-ms` and `x-etv-frame-rate` headers.",
+      "enum": [
+        "media",
+        "canvas"
+      ]
+    },
+    "GraphicsLocation": {
+      "type": "string",
+      "description": "Nine-position anchor within the primary content frame. Read like a 3×3 grid: rows top/center/bottom, columns left/center/right; the dead center is `center`.",
+      "enum": [
+        "top_left",
+        "top_center",
+        "top_right",
+        "center_left",
+        "center",
+        "center_right",
+        "bottom_left",
+        "bottom_center",
+        "bottom_right"
+      ]
+    },
+    "PlayoutItemSource": {
+      "description": "A media source. Exactly one variant, distinguished by `source_type`.",
+      "discriminator": {
+        "propertyName": "source_type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/definitions/LocalSource"
+        },
+        {
+          "$ref": "#/definitions/LavfiSource"
+        },
+        {
+          "$ref": "#/definitions/HttpSource"
+        },
+        {
+          "$ref": "#/definitions/RtspSource"
+        },
+        {
+          "$ref": "#/definitions/ScriptSource"
+        },
+        {
+          "$ref": "#/definitions/DynamicSource"
+        }
+      ]
+    },
+    "LocalSource": {
+      "type": "object",
+      "description": "A file on the local filesystem reachable by the server.",
+      "required": [
+        "source_type",
+        "path"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "const": "local"
+        },
+        "path": {
+          "type": "string",
+          "description": "Absolute path to the media file."
+        },
+        "in_point_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Optional start offset into the source, in milliseconds."
+        },
+        "out_point_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Optional end offset into the source, in milliseconds."
+        },
+        "probe_hint": {
+          "description": "Optional pre-supplied probe metadata. When present, ffprobe is skipped and the source is read only once (at playback). See `ProbeHint`.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ProbeHint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "LavfiSource": {
+      "type": "object",
+      "description": "A synthetic source produced by an ffmpeg lavfi filter graph.",
+      "required": [
+        "source_type",
+        "params"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "const": "lavfi"
+        },
+        "params": {
+          "type": "string",
+          "description": "The lavfi filter graph parameters, passed verbatim to ffmpeg's `-f lavfi -i`."
+        },
+        "probe_hint": {
+          "description": "Optional pre-supplied probe metadata. When present, ffprobe is skipped and the source is read only once (at playback). See `ProbeHint`.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ProbeHint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "HttpSource": {
+      "type": "object",
+      "description": "A remote source fetched over HTTP(S).",
+      "required": [
+        "source_type",
+        "uri"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "const": "http"
+        },
+        "uri": {
+          "type": "string",
+          "description": "URI template, e.g. \"https://example.com/file.mkv?token={{MY_SECRET}}\"."
+        },
+        "is_live": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the content is live and therefore cannot seek or work ahead. Default: false."
+        },
+        "in_point_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Optional start offset into the source, in milliseconds."
+        },
+        "out_point_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Optional end offset into the source, in milliseconds."
+        },
+        "headers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Custom HTTP headers, e.g. [\"Authorization: Bearer {{TOKEN}}\"]."
+        },
+        "user_agent": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Custom User-Agent string."
+        },
+        "timeout_us": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Socket timeout in microseconds."
+        },
+        "reconnect": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Enable reconnect on failure. Default: true."
+        },
+        "reconnect_delay_max": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Maximum reconnect delay in seconds. Maps to ffmpeg's `reconnect_delay_max`."
+        },
+        "keep_alive": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Enable persistent connections in ffmpeg. Default: false."
+        },
+        "probe_hint": {
+          "description": "Optional pre-supplied probe metadata. When present, ffprobe is skipped and the source is read only once (at playback). See `ProbeHint`.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ProbeHint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "RtspSource": {
+      "type": "object",
+      "description": "A live stream pulled from an RTSP server (e.g. an IP camera). Always treated as live: it is never seeked and cannot work ahead.",
+      "required": [
+        "source_type",
+        "uri"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "const": "rtsp"
+        },
+        "uri": {
+          "type": "string",
+          "description": "RTSP URI template, e.g. \"rtsp://user:{{PASSWORD}}@camera.lan:554/stream\"."
+        },
+        "timeout_us": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Socket timeout in microseconds."
+        },
+        "probe_hint": {
+          "description": "Optional pre-supplied probe metadata. When present, ffprobe is skipped and the source is read only once (at playback). See `ProbeHint`.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ProbeHint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ScriptSource": {
+      "type": "object",
+      "description": "An external command whose stdout is an MPEG-TS stream, proxied to ffmpeg over loopback HTTP.",
+      "required": [
+        "source_type",
+        "command"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "const": "script"
+        },
+        "command": {
+          "type": "string",
+          "description": "Command that writes an MPEG-TS stream to its stdout. Supports {{TEMPLATE}} expansion."
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Optional arguments for the command. Supports {{TEMPLATE}} expansion. Defaults to []."
+        },
+        "is_live": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the content is live and therefore cannot work ahead. Default: false."
+        },
+        "probe_hint": {
+          "description": "Optional pre-supplied probe metadata. When present, ffprobe is skipped and the source is read only once (at playback). Especially useful here: a scripted source (e.g. a yt-dlp pipeline) is otherwise opened twice, once to probe and once to play. See `ProbeHint`.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ProbeHint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "DynamicSource": {
+      "type": "object",
+      "description": "A placeholder source resolved at playback time by fetching a `PlayoutItem` JSON document over HTTP(S). The returned item replaces this one; its `start` is forced to the current transcode position and its `finish` is clamped to the placeholder's `finish`. Because `start` advances each tick, the resolver is re-hit while the transcode position remains inside the placeholder window, allowing a sequence of distinct items to be returned for a single placeholder. The resolved item's `source` may not itself be `dynamic`, but it may carry its own `probe_hint`, which is honored exactly as for a directly-specified source.\n\nThe channel automatically injects the following request headers (in addition to any configured via `headers`), all formatted per RFC 3339 for timestamps:\n\n- `x-etv-channel` — the channel number this request is for.\n- `x-etv-dynamic-id` — a stable identifier for the placeholder; resolvers can use it to coalesce or cache decisions across the multiple calls that occur while transcoding stays inside one placeholder window.\n- `x-etv-now` — the current transcode position; this is the `start` that will be forced onto the resolved item.\n- `x-etv-until` — the placeholder's `finish`; the resolver should not return an item that extends beyond this (it will be clamped if it does).",
+      "required": [
+        "source_type",
+        "uri"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "const": "dynamic"
+        },
+        "uri": {
+          "type": "string",
+          "description": "URI template for the resolver endpoint, e.g. \"http://localhost:8409/fallback?channel=5&token={{MY_SECRET}}\". Must respond with a JSON `PlayoutItem`."
+        },
+        "headers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Custom HTTP headers, e.g. [\"Authorization: Bearer {{TOKEN}}\"]. Supports {{TEMPLATE}} expansion."
+        },
+        "user_agent": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Custom User-Agent string. Supports {{TEMPLATE}} expansion."
+        },
+        "timeout_us": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Request timeout in microseconds. Defaults to 10 seconds."
+        }
+      }
+    },
+    "ProbeHint": {
+      "type": "object",
+      "description": "Pre-supplied probe metadata for a source. When present, the server trusts these values and skips running ffprobe entirely, so the source is opened only once (at playback) instead of twice. This matters most for slow or expensive inputs such as scripted yt-dlp pipelines.\n\nThe hint fully replaces probing: values are not validated up front, so incorrect metadata surfaces as an ffmpeg error during playback rather than a probe failure. Provide an entry for every stream the pipeline needs to select — typically one video and one audio, plus any subtitle stream a track selects.",
+      "properties": {
+        "video": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VideoHint"
+          },
+          "description": "Video (and still-image) streams in the source. Omit (or use `[]`) for audio-only sources; defaults to empty."
+        },
+        "audio": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AudioHint"
+          },
+          "description": "Audio streams in the source. Omit (or use `[]`) for video-only sources; defaults to empty."
+        },
+        "subtitle": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SubtitleHint"
+          },
+          "description": "Subtitle streams in the source. Omit (or use `[]`) for sources without subtitles; defaults to empty. Provide an entry for any subtitle stream a track selects, otherwise the requested subtitle stream cannot be located and subtitles are dropped."
+        },
+        "format_name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Container format name as reported by ffprobe's `format_name` (e.g. \"mpegts\", \"image2\", \"png_pipe\"). Used to detect still images (a single video stream in an `image2` or `*_pipe` container). Defaults to \"mpegts\" when omitted."
+        },
+        "duration_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Source duration in milliseconds. Omit for live or unbounded sources."
+        }
+      }
+    },
+    "VideoHint": {
+      "type": "object",
+      "description": "Probe metadata for a single video (or still-image) stream. Optional fields left out assume progressive, square-pixel, SDR content at 24 fps — the same fallbacks used when ffprobe omits a field.",
+      "required": [
+        "stream_index",
+        "codec",
+        "width",
+        "height",
+        "pix_fmt"
+      ],
+      "properties": {
+        "stream_index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based index of this stream within the source."
+        },
+        "codec": {
+          "type": "string",
+          "description": "Codec name as reported by ffprobe (e.g. \"h264\", \"hevc\", \"mpeg2video\", \"png\"). Compared case-insensitively."
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Coded frame width in pixels."
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Coded frame height in pixels."
+        },
+        "pix_fmt": {
+          "type": "string",
+          "description": "Pixel format (e.g. \"yuv420p\", \"yuv420p10le\")."
+        },
+        "frame_rate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Frame rate as a number or rational string (e.g. \"24\", \"30000/1001\"). Defaults to 24 when omitted."
+        },
+        "profile": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Codec profile (e.g. \"high\", \"main 10\"). Compared case-insensitively. Omit if unknown."
+        },
+        "field_order": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Interlacing field order as reported by ffprobe (\"progressive\", \"tt\", \"bb\", \"tb\", \"bt\"). Omit for progressive."
+        },
+        "sample_aspect_ratio": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Sample (pixel) aspect ratio, e.g. \"1:1\". Omit for square pixels."
+        },
+        "display_aspect_ratio": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Display aspect ratio, e.g. \"16:9\". Omit if unknown."
+        },
+        "color_range": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Color range (e.g. \"tv\", \"pc\"). Omit if unknown."
+        },
+        "color_space": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Color space / matrix coefficients (e.g. \"bt709\", \"bt2020nc\"). Omit if unknown."
+        },
+        "color_transfer": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Color transfer characteristics (e.g. \"bt709\", \"smpte2084\", \"arib-std-b67\"). The values \"smpte2084\" and \"arib-std-b67\" mark the stream as HDR. Omit for SDR."
+        },
+        "color_primaries": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Color primaries (e.g. \"bt709\", \"bt2020\"). Omit if unknown."
+        },
+        "dv_profile": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Dolby Vision profile from the stream's DOVI configuration record (e.g. 5, 7, 8). Profile 5 has no backward-compatible base layer and is not described by the color_* fields; profiles 4, 7 and 8 do, so those are handled from color_transfer alone. Omit for non-Dolby Vision streams."
+        },
+        "has_hdr10_metadata": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the stream carries HDR10 static metadata (mastering display colour volume or content light level), at the container level or in per-frame SEI. Hardware tonemappers that read that metadata (Intel vpp_qsv) are only used when this is true; omitting it is treated as false and falls back to software tonemapping for \"smpte2084\" content."
+        }
+      }
+    },
+    "AudioHint": {
+      "type": "object",
+      "description": "Probe metadata for a single audio stream.",
+      "required": [
+        "stream_index",
+        "codec",
+        "channels"
+      ],
+      "properties": {
+        "stream_index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based index of this stream within the source."
+        },
+        "codec": {
+          "type": "string",
+          "description": "Codec name as reported by ffprobe (e.g. \"aac\", \"ac3\", \"mp2\"). Compared case-insensitively."
+        },
+        "channels": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of audio channels."
+        }
+      }
+    },
+    "SubtitleHint": {
+      "type": "object",
+      "description": "Probe metadata for a single subtitle stream.",
+      "required": [
+        "stream_index",
+        "codec"
+      ],
+      "properties": {
+        "stream_index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based index of this stream within the source."
+        },
+        "codec": {
+          "type": "string",
+          "description": "Codec name as reported by ffprobe (e.g. \"subrip\", \"ass\", \"hdmv_pgs_subtitle\", \"dvd_subtitle\"). Compared case-insensitively; image-based codecs are handled differently from text-based ones."
+        }
+      }
+    }
+  }
+}
