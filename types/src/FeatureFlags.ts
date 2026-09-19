@@ -8,6 +8,7 @@ export const FeatureFlagsSchema = z.object({
   disableSearchSnapshotInBackup: z.boolean().default(false),
   disableVulkan: z.boolean().default(false),
   disableVaapiPad: z.boolean().default(false),
+  ersatzTvNextEnabled: z.boolean().default(false),
 });
 
 export type FeatureFlags = z.infer<typeof FeatureFlagsSchema>;
@@ -77,5 +78,13 @@ export const FeatureFlagMetadata: FeatureFlagMeta[] = [
       'Disable hardware-accelerated padding in the VAAPI video pipeline.',
     envVar: 'TUNARR_DISABLE_VAAPI_PAD',
     category: 'escape-hatch',
+  },
+  {
+    key: 'ersatzTvNextEnabled',
+    displayName: 'ErsatzTV next Streaming Backend',
+    description:
+      'Expose the ErsatzTV next streaming backend as a per-channel stream mode. Channels must opt in individually.',
+    envVar: 'TUNARR_ERSATZTV_NEXT_ENABLED',
+    category: 'experimental',
   },
 ];
