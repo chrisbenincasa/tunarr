@@ -4,12 +4,9 @@ import { seq } from '@tunarr/shared/util';
 import type {
   Actor,
   EpisodeWithHierarchy,
-  MusicTrackWithHierarchy} from '@tunarr/types';
-import {
-  type Identifier,
-  type Season,
-  type Show,
+  MusicTrackWithHierarchy,
 } from '@tunarr/types';
+import { type Identifier, type Season, type Show } from '@tunarr/types';
 import {
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,
@@ -319,7 +316,10 @@ export class ProgramGroupingMinter {
         year:
           album.year ??
           (album.releaseDate ? dayjs(album.releaseDate).year() : null),
-        artistUuid: album.artist?.uuid,
+        // NOTE: artistUuid is intentionally not set here. `album.artist` is a
+        // partially-populated object from the media source API client, and its
+        // `uuid` is ephemeral (see PlexApiClient.plexAlbumInjection). Callers
+        // must set artistUuid to the persisted artist's uuid after upserting it.
         state: 'ok',
       },
       externalIds: this.mintExternalIdsFromIdentifiers(
