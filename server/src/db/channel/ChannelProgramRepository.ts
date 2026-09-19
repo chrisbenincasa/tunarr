@@ -33,6 +33,10 @@ import type {
   TvShowOrm,
 } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
+import {
+  MaterializedProgramRelations,
+  ProgramStreamRelations,
+} from '../program/programRelations.ts';
 
 @injectable()
 export class ChannelProgramRepository {
@@ -47,6 +51,12 @@ export class ChannelProgramRepository {
   ): Promise<Maybe<MarkRequired<ChannelOrmWithRelations, 'programs'>>> {
     const channelsAndPrograms = await this.drizzleDB.query.channels.findFirst({
       where: (fields, { eq }) => eq(fields.uuid, uuid),
+      // Deliberately narrower than MaterializedProgramRelations: these programs
+      // feed slot scheduling, which reads only show.uuid/title,
+      // season.index and artist.uuid/title, and the debug endpoints. Nothing
+      // here reaches ApiProgramConverters — the slot-schedule response
+      // re-fetches its programs through getProgramsByIds. Load the shared
+      // relations instead if that ever stops being true.
       with: {
         channelPrograms: {
           with: {
@@ -319,21 +329,8 @@ export class ChannelProgramRepository {
         ...(await this.drizzleDB.query.program.findMany({
           where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
           with: {
-            externalIds: true,
-            album: { with: { externalIds: true } },
-            artist: { with: { externalIds: true } },
-            season: { with: { externalIds: true } },
-            show: { with: { externalIds: true } },
-            artwork: true,
-            subtitles: true,
-            credits: true,
-            versions: {
-              with: {
-                mediaStreams: true,
-                mediaFiles: true,
-                chapters: true,
-              },
-            },
+            ...MaterializedProgramRelations,
+            ...ProgramStreamRelations,
           },
           orderBy: (fields, { asc }) => asc(fields.uuid),
         })),
