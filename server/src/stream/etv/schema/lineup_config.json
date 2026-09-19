@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LineupConfig",
+  "type": "object",
+  "properties": {
+    "channels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ChannelConfig"
+      }
+    },
+    "output": {
+      "$ref": "#/$defs/OutputConfig"
+    },
+    "server": {
+      "$ref": "#/$defs/ServerConfig",
+      "default": {
+        "bind_address": "0.0.0.0",
+        "port": 8409
+      }
+    },
+    "xmltv": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/XmltvConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "output",
+    "channels"
+  ],
+  "$defs": {
+    "ChannelConfig": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "description": "Base configuration path",
+          "type": "string"
+        },
+        "group": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "logo": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "overlays": {
+          "description": "Optional configuration overlay paths; values will be merged with base config, nulls will remove keys from base config",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tvg_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "number",
+        "name",
+        "config"
+      ]
+    },
+    "OutputConfig": {
+      "type": "object",
+      "properties": {
+        "folder": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "folder"
+      ]
+    },
+    "ServerConfig": {
+      "type": "object",
+      "properties": {
+        "bind_address": {
+          "type": "string",
+          "default": "0.0.0.0"
+        },
+        "port": {
+          "type": "integer",
+          "format": "uint16",
+          "default": 8409,
+          "maximum": 65535,
+          "minimum": 0
+        }
+      }
+    },
+    "XmltvConfig": {
+      "type": "object",
+      "properties": {
+        "folder": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "folder"
+      ]
+    }
+  }
+}
