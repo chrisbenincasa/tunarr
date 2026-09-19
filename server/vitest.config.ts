@@ -29,6 +29,7 @@ export default defineConfig({
       provider: 'v8',
     },
     typecheck: {
+      checker: 'tsgo',
       tsconfig: 'tsconfig.test.json',
     },
     silent: true,
