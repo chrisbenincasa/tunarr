@@ -22,7 +22,9 @@ export const ProgramPlayHistory = sqliteTable(
     // How long the program was played in milliseconds (useful for tracking partial plays)
     playedDuration: integer(),
     createdAt: integer({ mode: 'timestamp_ms' }).notNull(),
-    fillerListId: text().references(() => FillerShow.uuid),
+    fillerListId: text().references(() => FillerShow.uuid, {
+      onDelete: 'set null',
+    }),
   },
   (table) => [
     index('program_play_history_program_uuid_index').on(table.programUuid),
