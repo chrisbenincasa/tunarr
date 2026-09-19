@@ -541,17 +541,83 @@ Three real issues sit underneath it, and they are pre-existing rather than new. 
 
 ---
 
-## 14. Upstream asks
+## 14. `next` work list
 
-Worth raising in `#ersatztv-dev` **now**, not before phase 2 — item 1 gates shipping and is on upstream's schedule, so the conversation should run in parallel with the design review. The project explicitly invites early feedback, and items 1, 2 and 5 are all things it costs them little to answer.
+Every change needed on the `next` side, consolidated from the register in §15 so it can be worked independently of the Tunarr scaffolding. Register IDs are the cross-reference; go there for evidence and file:line.
 
-1. **Cut tagged releases.** The blocker, detailed with the specifics in §12: it is not that versions are missing, it is that the `develop` release deletes each target's previous asset on every push to `main`, so nothing stays pinnable. Running the existing `artifacts.yml` against a version tag skips that delete step entirely — no new pipeline, no new signing setup. The two supporting asks are a `version` field on `channel_config` and a `--describe` capability handshake (§12).
-2. **A documented stability contract for the output folder** — `live.m3u8`, `live_sub.m3u8`, `live%06d.ts`, `.ready`, `.heartbeat`. Option B depends on these names. They are internal today.
-3. **Encoder tuning in `channel.json`** — `preset`, `profile`, thread count, scaling algorithm, and an audio volume filter. These are the §9 gaps that are pure config surface rather than new capability.
-4. **A `PlayoutItem` field for "do not probe, this is live/unbounded"** on `LocalSource`, matching `is_live` on `HttpSource`.
-5. **Clarification on dynamic-source re-resolution** — Tunarr's design leans on a long-window placeholder being re-resolved each transcode tick. That behaviour follows from `get_current_item` + `rfind`, but it is emergent rather than documented, and worth confirming as intended before building on it.
-6. **A roster-reload or channel-registration endpoint on the `ersatztv` server.** Today the channel list is fixed at boot and a restart wipes the shared output folder, which is the single reason Tunarr cannot host the server process (§3). A `POST /channels` / `DELETE /channels/{n}` pair, or even a `SIGHUP` that re-reads `lineup.json` without emptying the output root, would make the hosted-server model viable for dynamic lineups — likely useful to other downstreams too.
-7. **A public library surface on `ersatztv-channel`**, if in-process embedding is ever a goal. Currently `lib.rs` exports only `config` and `error`; `ChannelSession` and friends are private to the binary. Low priority — the process boundary is a feature for hardware-accel code (§3) — but worth flagging as a design question rather than an accident.
+Ordered by what to do first. Items in tiers 1 and 2 need no agreement with Tunarr and can start immediately.
+
+### Tier 1 — independent, small, no design discussion
+
+Start here. Each is self-contained, wrong for ErsatzTV regardless of Tunarr, and cheap enough to demonstrate the collaboration works before anything structural depends on it.
+
+| ID | Change |
+| -- | -------- |
+| B1 + C8 | Make work-ahead configurable. The depth is `SEGMENT_SECONDS * 11` with `11` a bare literal at one site; the 1-minute refill, 30-second realtime and 5-second idle-sleep thresholds are literals in the same loop. Fold in `SEGMENT_SECONDS`/`KEYFRAME_INTERVAL_SECONDS`. |
+| A1 | Fix the `.heartbeat` self-reap hole — staleness is evaluated only when the file already exists, so a worker that never receives a segment request transcodes forever. |
+| A5 + C4 | Hoist the output filenames into shared constants in `ersatztv-core` beside `READY_FILE_NAME`. They are inline literals in one crate and hardcoded again in another. |
+| A2 | Stop swallowing mid-scan `read_dir` errors in the window-file search; an IO fault currently reports as a scheduling gap. |
+| A6 | Reconcile `#EXT-X-VERSION:6` in the multivariant against `:7` in the media playlist. |
+| A7 | Skip binding the `local_proxy` loopback socket for sessions with no `ScriptCommand`. |
+| A8 | Add a `license` key to the workspace `Cargo.toml` files. |
+| A9 | Run tests for `linux-musl-x64` and `linux-arm`, which currently compile them and never execute them. |
+| A3 | Distinguish epoch seconds from milliseconds by magnitude rather than string length in `parse_playout_filename`. |
+
+### Tier 2 — blockers, independent
+
+Required before `etv_next` can ship, and none of them needs Tunarr to exist first.
+
+| ID | Change |
+| -- | -------- |
+| B6 | Add a scaling-algorithm config field. `flags=fast_bilinear` is hardcoded at both scale sites with no configuration anywhere. **The most user-visible item on this list** — it degrades every scaled frame for every viewer. |
+| B7 | Rewrite DTS and TrueHD to AC-3 under copy. Neither muxes for AVPlayer, so Apple clients currently lose audio outright. |
+| B8 | Synthesize `anullsrc` when a source has no audio stream, instead of erroring to the fallback card. The primitive already exists in the fallback path. |
+| B2 | Retry with backoff on a failed dynamic callback, a configurable fallback quantum instead of a hard-coded 60 seconds, and a **failure budget that exits non-zero** after N consecutive failures or M seconds of continuous fallback. |
+| B5 | Read `in_point_ms`/`out_point_ms` from every source variant, not only `Local` and `Http`. A resolved dynamic item returning Lavfi silently seeks to zero. |
+| G7 | Restore four implicit FFmpeg behaviours Tunarr applies today: `-preset veryfast` (needs D3's preset surface), `-sc_threshold 0`, `-muxdelay 0 -muxpreload 0`, and the QSV-specific `aresample=async=1000`. |
+| G5 | Infer a default VAAPI device rather than silently dropping hardware acceleration when `vaapi_device` and `vaapi_driver` are not both set. |
+| G4 | Emit `service_provider` / `service_name` output metadata. Players that surface it currently show blank. |
+| B3 | Cut tagged releases. The `develop` release deletes each target's previous asset on every push to `main`; the delete step is already gated on the tag being `develop`, so a version tag fixes it with no new pipeline. **Repo/CI work, not code.** |
+
+### Tier 3 — contract and schema, needs shape agreed first
+
+These define the seam between the projects, so settle the shape before implementing.
+
+| ID | Change |
+| -- | -------- |
+| C9 | A `--describe` capability handshake emitting JSON: supported formats and accel modes, playout schema range, channel-config schema version, output filenames, callback contract version, timing constants and their bounds — plus a runtime layer reporting what this machine can actually do. **Highest leverage item in the register**; it subsumes C3, C4, C5 and C8 as negotiable rather than implicit. |
+| C1 + C2 | Add `deny_unknown_fields` at the `ChannelConfig` root and across the playout model. Both files currently swallow typos in silence. |
+| C3 | Add a `version` field and accepted range to the channel config, mirroring the playout schema. |
+| C5 | Document and version the dynamic callback contract — the four `x-etv-*` headers, the shift-then-clamp rule, the no-recursion rule. Confirm that re-resolving a long-window placeholder is intended rather than incidental; the behaviour is verified but undocumented. |
+| C6 | Derive `schema/playout.json` with `schemars`, or take Tunarr's drift-check script. **It must live here** — Tunarr vendors the schemas, not the Rust source, so it cannot run the check in its own CI. |
+| C7 | Make `debug` a real validator, or retire the claim. It currently uses the identical load path as `run` and validates nothing extra. |
+| E.1 | Widen `PlayoutItemTracks.audio` to accept either a single `TrackSelection` or a list, via an untagged serde enum. **Do this early even though multi-audio ships later** — done later it is a breaking schema change forcing a lockstep release. |
+
+### Tier 4 — parity features, larger
+
+| ID | Change |
+| -- | -------- |
+| D3 | Encoder tuning surface: preset, profile, thread count, audio volume filter. Pure config, no new capability. Thread count is currently hardcoded to 0 or 1. |
+| D6 | Error-screen types (`static`, `pic`, `testsrc`, `text`) and error-screen audio (`sine`, `whitenoise`) beyond the single `show_error` boolean over a fixed black-and-silence card. Plus a custom offline/flex picture. |
+| — | Per-mode hardware disable switches for decoder, encoder and filters. Acceleration is all-or-nothing today, and these are the standard escape hatch when a vendor driver is broken. |
+| — | Configurable FFmpeg log level; currently hardcoded to `Error`. |
+| D2 | Add `mpeg2video` and `mp3` output formats. Two enum variants and two `as_arg` arms each. |
+| D1 | The `hls_direct_v2` equivalent: container choice (mkv/mpegts/mp4) and a per-item playlist model. Copy codecs already work, so this is the container and playlist layer, not codec passthrough. |
+| D5 | Measure `BANDWIDTH` for the multivariant rather than estimating it from config. |
+
+### Tier 5 — deferred
+
+| ID | Change |
+| -- | -------- |
+| D4 + E.1 | Multi-audio renditions: `AudioNormalizationConfig` from one triple to a list of declared renditions, `PlayoutItemTracks.audio` to a positional list, N media playlists, N `#EXT-X-MEDIA` lines. Design recorded in §15.E.1. Only the field-shape change belongs in tier 3. |
+| B4 | Roster reload or channel-registration endpoint. **Only blocks Option A, which this design does not use.** Worth doing for other downstreams; not needed here. Pair with A4. |
+| A4 | Stop `empty_folder` recursing the shared output root on startup, which deletes every channel's live segments on any restart. Pairs with B4. |
+| C-ext | A public library surface on `ersatztv-channel`, if in-process embedding ever becomes a goal. Currently `lib.rs` exports only `config` and `error`. Low priority — the process boundary is a feature for hardware-accel code (§3). |
+| — | A `PlayoutItem` field meaning "do not probe, this is live or unbounded" on `LocalSource`, matching `is_live` on `HttpSource`. |
+
+### Not `next` work
+
+Recorded so they are not picked up by mistake. **G6** (channel-icon-as-watermark and logo fallbacks) is Tunarr-side — the mapper resolves the icon and emits a graphics layer. The **stream-selection profile engine**, **on-demand channels**, **connection tracking** and **idle teardown** all stay in Tunarr and are unaffected by which backend encodes.
 
 ---
 
@@ -559,7 +625,7 @@ Worth raising in `#ersatztv-dev` **now**, not before phase 2 — item 1 gates sh
 
 Every row below was verified by source inspection against `next` at `ed95077`. This is the working list for the onboarding — the things to fix, upstream or locally, as part of adopting the project rather than after it.
 
-The register supersedes §14's framing. §14 was written as a list of asks to a third party. Under a co-development arrangement these are joint work items, and the ordering below reflects what to contribute first rather than what to request.
+This is the evidence. §14 is the same material reorganized as an ordered work list for the `next` side alone — go there to start work, come here for the file:line that justifies each item. Earlier drafts framed these as asks to a third party; under a co-development arrangement they are joint work items, and the ordering in §14 reflects what to contribute first rather than what to request.
 
 ### A. Upstream bugs
 
