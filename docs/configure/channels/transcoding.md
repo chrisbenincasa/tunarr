@@ -65,3 +65,34 @@ It consists of two FFMPEG processes, one which performs the per-program transcod
 #### Things to consider
 
 If this mode was "good enough" we probably wouldn't have spent time implementing the other modes! There are a lot of potential issues with this mode; too many to list here.
+
+## ErsatzTV next backend (experimental)
+
+The modes above all run Tunarr's own FFmpeg pipeline. Tunarr can instead hand a channel to `ersatztv-channel`, a standalone worker from the [ErsatzTV next](https://ersatztv.org/) project that does the scheduling, transcoding and segmenting itself.
+
+!!! warning "Experimental"
+
+    Upstream publishes no tagged release, so Tunarr builds against a pinned commit. A worker built from a different commit still runs, but Tunarr logs a warning and streams may fail in ways its schema checks cannot catch.
+
+Set `TUNARR_ERSATZTV_NEXT_ENABLED=true` to turn it on (see [Environment Variables](../../getting-started/run.md#transcoding)). It replaces the pipeline for channels set to **HLS**, **HLS Direct v2** and **MPEG-TS**. HLS alt and HLS Direct keep using Tunarr's pipeline. Channel settings do not change, and the mode you pick in the UI still means what it did.
+
+MPEG-TS clients still get MPEG-TS. Tunarr concatenates the worker's HLS output rather than running its own per-program transcode.
+
+### How does it work?
+
+Tunarr runs one worker per channel being watched, and gives each a directory under the transcode directory:
+
+| Path | Contents |
+| ---- | -------- |
+| `channel.json` | Transcode settings, translated from the channel's transcode config and the global FFmpeg settings. |
+| `playout/<start>_<finish>.json` | The schedule the worker plays, materialized two hours ahead and rebuilt on a timer while the channel is watched. |
+| `out/` | The worker's HLS playlist and segments, plus the `.ready` and `.heartbeat` files it signals with. |
+
+Tunarr synthesizes the multivariant playlist clients are handed and serves the worker's segments. No ErsatzTV server is involved. Tunarr spawns the worker, feeds its heartbeat file while viewers are connected, and kills it when the last one leaves.
+
+### Things to consider
+
+- **The binary has to be findable.** The Docker images ship it. Elsewhere, put `ersatztv-channel` in `bin/` next to the Tunarr server or in the working directory, or point `TUNARR_ERSATZTV_NEXT_PATH` at the binary or the directory holding it. Tunarr does not search `PATH`.
+- **Programming edits land within half an hour.** The schedule is materialized ahead of playback rather than chosen program by program, so an edit does not reach a running stream immediately. Tunarr rebuilds the unplayed part of the window on a timer and leaves the program currently airing alone, so an edit takes effect at the first program boundary after the next rebuild.
+- **Some settings do not survive the translation.** The worker's configuration does not cover everything a Tunarr transcode config can express. Whatever does not map is logged once when the channel starts.
+- **A dead worker ends the session.** If the worker exits on its own, Tunarr tears the session down rather than serving a playlist that has stopped advancing. The next viewer starts a fresh worker.

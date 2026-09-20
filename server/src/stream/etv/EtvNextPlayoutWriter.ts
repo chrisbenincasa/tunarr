@@ -15,8 +15,14 @@ import type { StreamDetails, StreamSource } from '../types.ts';
 import { toPlayoutItem } from './EtvNextPlayoutItemMapper.ts';
 import type { PlayoutItem } from './generated/playout.ts';
 
-/** How far ahead a window is materialized. */
-export const DefaultWindowMs = 12 * 60 * 60 * 1000;
+/**
+ * How far ahead a window is materialized.
+ *
+ * This is how far the worker is committed to a schedule Tunarr may since have
+ * changed, and how much work each rebuild costs, so it is kept short. The
+ * session rebuilds the window well before it drains, so depth buys nothing.
+ */
+export const DefaultWindowMs = 2 * 60 * 60 * 1000;
 
 /**
  * A ceiling on items per window, so a channel of very short programs cannot
@@ -66,15 +72,21 @@ export class EtvNextPlayoutWriter {
    * Stops early at the first item the schedule cannot answer for rather than
    * emitting a gap, because a covered-but-empty moment degrades to black
    * upstream with nothing logged.
+   *
+   * `idSeed` starts the item numbering. Item ids must be unique within a
+   * playout and stable across rewrites, so a caller extending an existing
+   * window passes the number of items it has already emitted.
    */
   async materializeWindow({
     channel,
     startMs,
     windowMs = DefaultWindowMs,
+    idSeed = 0,
   }: {
     channel: ChannelOrmWithTranscodeConfig;
     startMs: number;
     windowMs?: number;
+    idSeed?: number;
   }): Promise<MaterializedWindow> {
     const endMs = startMs + windowMs;
     const resolution = channel.transcodeConfig.resolution;
@@ -96,6 +108,9 @@ export class EtvNextPlayoutWriter {
         channelId: channel.uuid,
         startTime: scheduleNowMs,
         allowSkip: true,
+
+        // Every call here is about a moment that has not played yet.
+        recordPlayHistory: false,
       });
 
       if (lineupResult.isFailure()) {
@@ -125,7 +140,7 @@ export class EtvNextPlayoutWriter {
       }
 
       const stream = await this.resolveStream(lineupItem);
-      const id = `${channel.uuid}-${items.length}`;
+      const id = `${channel.uuid}-${idSeed + items.length}`;
       const mapping = this.mapOrDegrade({
         id,
         startMs: cursorMs,

@@ -115,6 +115,22 @@ describe('materializeWindow', () => {
     expect(Date.parse(window.items[2].start)).toBe(startMs + 900_000);
   });
 
+  // Play history is stamped with the requested time, and the filler cooldown
+  // reads history with an open upper bound, so a read-ahead that recorded
+  // plays would put the channel on cooldown for programs it has not aired.
+  test('never records a play for a moment that has not aired', async () => {
+    const { writer, programCalculator } = makeWriter({
+      items: [programItem(600_000), programItem(600_000)],
+    });
+
+    await writer.materializeWindow({ channel, startMs, windowMs: 1_200_000 });
+
+    expect(programCalculator.getCurrentLineupItem).toHaveBeenCalled();
+    for (const [request] of programCalculator.getCurrentLineupItem.mock.calls) {
+      expect(request).toMatchObject({ recordPlayHistory: false });
+    }
+  });
+
   test('leaves no gap between one item finishing and the next starting', async () => {
     const { writer } = makeWriter({
       items: [programItem(600_000), programItem(600_000)],

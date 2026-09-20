@@ -15,10 +15,11 @@ import type {
   CommercialStreamLineupItem,
   FallbackStreamLineupItem,
   ProgramStreamLineupItem,
-  StreamLineupItem} from '../db/derived_types/StreamLineup.ts';
+  StreamLineupItem,
+} from '../db/derived_types/StreamLineup.ts';
 import {
   createOfflineStreamLineupItem,
-  isContentBackedLineupItem
+  isContentBackedLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
@@ -52,6 +53,16 @@ export type GetCurrentLineupItemRequest = {
   startTime: number;
   allowSkip: boolean;
   sessionToken?: string;
+
+  /**
+   * Whether to record the returned item as played. Defaults to true.
+   *
+   * A caller materializing a schedule ahead of playback passes false. Play
+   * history is stamped with `startTime`, so a read-ahead would otherwise write
+   * rows dated in the future, and the filler cooldown reads history with an
+   * open upper bound — it would treat those as already played.
+   */
+  recordPlayHistory?: boolean;
 };
 
 export class StreamProgramCalculatorError extends WrappedError {
@@ -235,6 +246,7 @@ export class StreamProgramCalculator {
     // Record play history for content-backed items (programs and commercials/fillers)
     // Only record if this is a new playback (not a duplicate request for an already-playing program)
     if (
+      req.recordPlayHistory !== false &&
       isContentBackedLineupItem(lineupItem) &&
       lineupItem.type !== 'fallback'
     ) {

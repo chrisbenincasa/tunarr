@@ -16,11 +16,30 @@ import { createMultivariantPlaylist } from './EtvNextPlaylistCreator.ts';
 import type { EtvNextPlayoutWriter } from './EtvNextPlayoutWriter.ts';
 import { DefaultWindowMs } from './EtvNextPlayoutWriter.ts';
 import { DefaultStalenessMs, EtvNextWorkspace } from './EtvNextWorkspace.ts';
+import type { PlayoutItem } from './generated/playout.ts';
+
+/**
+ * How often the window is rebuilt, as a fraction of its length.
+ *
+ * This sets how long a programming edit takes to reach a running stream, and
+ * it has to stay well under the window itself so three rebuilds can fail
+ * before the worker reaches the end of what it holds.
+ */
+const RefreshFraction = 0.25;
+
+/** A floor on the rebuild cadence, so a very short window cannot spin. */
+const MinRefreshIntervalMs = 60_000;
 
 export type EtvNextSessionOptions = SessionOptions & {
   transcodeDirectory?: string;
 
-  /** How far ahead to materialize. Lowered to one item by the troubleshoot path. */
+  /**
+   * How far ahead the schedule stays materialized.
+   *
+   * A standing lead rather than a one-time depth — the window is rebuilt on a
+   * timer. Raising it commits the worker further ahead to a schedule Tunarr
+   * may since have changed, and makes each rebuild cost more.
+   */
   windowMs?: number;
 };
 
@@ -51,6 +70,12 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
   #workspace: EtvNextWorkspace;
   #process?: ChildProcessWrapper;
   #ignoredSettings: string[] = [];
+
+  #windowItems: PlayoutItem[] = [];
+  #itemsEmitted = 0;
+  #refreshTimer?: NodeJS.Timeout;
+  #refreshing = false;
+  #stopping = false;
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -104,6 +129,9 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
   protected async startInternal(): Promise<void> {
     const executablePath = await this.binaryResolver.resolveChecked();
 
+    this.#stopping = false;
+    this.#ignoredSettings = [];
+
     await this.#workspace.initialize();
 
     const { config, ignored } = toChannelConfig({
@@ -113,11 +141,12 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     });
     await this.#workspace.writeChannelConfig(config);
 
-    const startMs = Date.now();
+    this.#recordIgnored(ignored.map((i) => `${i.field}: ${i.reason}`));
+
     const window = await this.playoutWriter.materializeWindow({
       channel: this.channel,
-      startMs,
-      windowMs: this.sessionOptions.windowMs ?? DefaultWindowMs,
+      startMs: Date.now(),
+      windowMs: this.#windowMs,
     });
 
     if (window.items.length === 0) {
@@ -132,16 +161,9 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
       window.items,
     );
 
-    this.#ignoredSettings = [
-      ...ignored.map((i) => `${i.field}: ${i.reason}`),
-      ...window.ignored,
-    ];
-    if (this.#ignoredSettings.length > 0) {
-      this.logger.info(
-        'Some settings do not map onto the ErsatzTV next backend: %s',
-        this.#ignoredSettings.join('; '),
-      );
-    }
+    this.#windowItems = window.items;
+    this.#itemsEmitted = window.items.length;
+    this.#recordIgnored(window.ignored);
 
     // The worker reaps itself on a stale heartbeat, so the file has to exist
     // before it starts counting.
@@ -167,6 +189,12 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
         maxAttempts: 1,
       },
     );
+
+    this.#process.process?.once('exit', (code, signal) =>
+      this.#onWorkerExit(code, signal),
+    );
+
+    this.#startWindowRefresh();
   }
 
   protected override async waitForStreamReady(): Promise<Result<void>> {
@@ -176,12 +204,22 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
   }
 
   protected async stopInternal(): Promise<void> {
-    this.#process?.kill();
-    this.#process = undefined;
+    // Set before the kill so the exit listener knows this one was deliberate.
+    this.#stopping = true;
+    this.#stopWindowRefresh();
 
-    await this.#workspace.cleanup().catch((e: unknown) => {
+    try {
+      this.#process?.kill();
+      this.#process = undefined;
+
+      await this.#workspace.cleanup();
+    } catch (e) {
       this.logger.warn(e, 'Could not clean up the ErsatzTV next workspace');
-    });
+    } finally {
+      this.#windowItems = [];
+      this.state = 'stopped';
+      this.emit('stop');
+    }
   }
 
   /**
@@ -218,5 +256,153 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
   #isProcessAlive(): boolean {
     const underlying = this.#process?.process;
     return underlying !== undefined && underlying.exitCode === null;
+  }
+
+  get #windowMs(): number {
+    return this.sessionOptions.windowMs ?? DefaultWindowMs;
+  }
+
+  /**
+   * Ends the session when the worker goes away on its own.
+   *
+   * Nothing else would notice. The output directory keeps its last segments,
+   * so clients would poll a playlist that never advances, and those very polls
+   * keep the connection tracker from ever calling the session idle. Stopping
+   * emits `stop`, which drops the session from the manager's map, so the next
+   * viewer gets a fresh worker rather than a frozen one.
+   */
+  #onWorkerExit(code: number | null, signal: NodeJS.Signals | null): void {
+    if (this.#stopping || this.state === 'stopped') {
+      return;
+    }
+
+    this.logger.warn(
+      'The ErsatzTV next worker exited on its own (code = %s, signal = %s). Ending the session.',
+      code ?? 'none',
+      signal ?? 'none',
+    );
+
+    this.stop().catch((e: unknown) => {
+      this.logger.error(
+        e,
+        'Could not stop the session after the worker exited',
+      );
+    });
+  }
+
+  #startWindowRefresh(): void {
+    const intervalMs = Math.max(
+      MinRefreshIntervalMs,
+      Math.floor(this.#windowMs * RefreshFraction),
+    );
+
+    this.#refreshTimer = setInterval(() => {
+      void this.refreshWindow();
+    }, intervalMs);
+
+    // A pending refresh must not hold the event loop open at shutdown.
+    this.#refreshTimer.unref();
+  }
+
+  #stopWindowRefresh(): void {
+    if (this.#refreshTimer !== undefined) {
+      clearInterval(this.#refreshTimer);
+      this.#refreshTimer = undefined;
+    }
+  }
+
+  /**
+   * Rebuilds the playout window from the currently-playing item forward.
+   *
+   * The worker plays what the single window file covers and shows black past
+   * its finish, so a session outliving one window would go dark. Appending to
+   * the window would cover that, but it can never correct what it already
+   * wrote — a programming edit reaches Tunarr's own pipeline at the next
+   * program, and the worker would keep playing the superseded schedule until
+   * the materialized items ran out. So the unplayed tail is rebuilt instead.
+   *
+   * The playing item is carried over untouched. Its id has to stay stable or
+   * the worker treats it as a new item and restarts it mid-program, and
+   * rebuilding from its finish means no seam is introduced at the join.
+   *
+   * Driven by the refresh timer, and by tests directly.
+   */
+  private async refreshWindow(): Promise<void> {
+    if (this.#refreshing || this.state !== 'started') {
+      return;
+    }
+
+    this.#refreshing = true;
+    try {
+      const nowMs = Date.now();
+      const playing = this.#windowItems.find(
+        (item) =>
+          Date.parse(item.start) <= nowMs && Date.parse(item.finish) > nowMs,
+      );
+      const rebuildFromMs =
+        playing !== undefined ? Date.parse(playing.finish) : nowMs;
+      const targetFinishMs = nowMs + this.#windowMs;
+
+      // A program longer than the window covers the lead on its own. There is
+      // no tail to rebuild until it ends.
+      if (rebuildFromMs >= targetFinishMs) {
+        return;
+      }
+
+      const window = await this.playoutWriter.materializeWindow({
+        channel: this.channel,
+        startMs: rebuildFromMs,
+        windowMs: targetFinishMs - rebuildFromMs,
+        idSeed: this.#itemsEmitted,
+      });
+
+      if (window.items.length === 0) {
+        this.logger.warn(
+          'The schedule produced nothing past %d; channel %s will go dark when its window ends',
+          rebuildFromMs,
+          this.channel.uuid,
+        );
+        return;
+      }
+
+      const items =
+        playing !== undefined ? [playing, ...window.items] : window.items;
+
+      await this.#workspace.writePlayoutWindow(
+        playing !== undefined ? Date.parse(playing.start) : window.startMs,
+        window.finishMs,
+        items,
+      );
+
+      this.#windowItems = items;
+
+      // Never reused, so a rebuilt item cannot collide with the carried-over
+      // playing item.
+      this.#itemsEmitted += window.items.length;
+      this.#recordIgnored(window.ignored);
+    } catch (e) {
+      this.logger.error(
+        e,
+        'Could not rebuild the ErsatzTV next playout window',
+      );
+    } finally {
+      this.#refreshing = false;
+    }
+  }
+
+  /** Logs and keeps reasons not seen before, so a refresh cannot re-log a list. */
+  #recordIgnored(reasons: readonly string[]): void {
+    const fresh = reasons.filter(
+      (reason) => !this.#ignoredSettings.includes(reason),
+    );
+    if (fresh.length === 0) {
+      return;
+    }
+
+    this.#ignoredSettings = [...this.#ignoredSettings, ...fresh];
+    this.logger.info(
+      'Some settings do not map onto the ErsatzTV next backend: %s',
+      fresh.join('; '),
+    );
   }
 }

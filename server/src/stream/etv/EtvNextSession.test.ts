@@ -1,7 +1,8 @@
+import { EventEmitter } from 'node:events';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { ChannelOrmWithTranscodeConfig } from '../../db/schema/derivedTypes.ts';
 import type { PlayoutItem } from './generated/playout.ts';
 import { EtvNextSession } from './EtvNextSession.ts';
@@ -38,8 +39,12 @@ const channel = {
   },
 } as unknown as ChannelOrmWithTranscodeConfig;
 
-const playoutItem = (startMs: number, finishMs: number): PlayoutItem => ({
-  id: 'item-1',
+const playoutItem = (
+  startMs: number,
+  finishMs: number,
+  id = 'item-0',
+): PlayoutItem => ({
+  id,
   start: new Date(startMs).toISOString(),
   finish: new Date(finishMs).toISOString(),
   tracks: {
@@ -67,6 +72,7 @@ async function makeSession({
   publishesReady = true,
   processExitCode = null,
   webvttEnabled = false,
+  windowMs,
 }: {
   items?: PlayoutItem[];
   publishesReady?: boolean;
@@ -74,6 +80,7 @@ async function makeSession({
   /** Non-null stands for a worker that died instead of becoming ready. */
   processExitCode?: number | null;
   webvttEnabled?: boolean;
+  windowMs?: number;
 } = {}) {
   const transcodeDirectory = await makeTempDir();
   const outputDirectory = path.join(
@@ -87,18 +94,36 @@ async function makeSession({
   };
 
   const startMs = Date.now();
+
+  // One item filling whatever span was asked for, so a window's shape follows
+  // from its arguments and a refresh can be told apart from the first write.
   const playoutWriter = {
-    materializeWindow: vi.fn(() =>
-      Promise.resolve({
-        startMs,
-        finishMs: startMs + 600_000,
-        items: items ?? [playoutItem(startMs, startMs + 600_000)],
-        ignored: [],
-      }),
+    materializeWindow: vi.fn(
+      (request: { startMs: number; windowMs: number; idSeed?: number }) => {
+        const finishMs = request.startMs + request.windowMs;
+        return Promise.resolve({
+          startMs: request.startMs,
+          finishMs,
+          items: items ?? [
+            playoutItem(
+              request.startMs,
+              finishMs,
+              `item-${request.idSeed ?? 0}`,
+            ),
+          ],
+          ignored: [],
+        });
+      },
     ),
   };
 
   const killed = vi.fn();
+
+  // The session listens for 'exit', so the stand-in has to be a real emitter.
+  const workerProcess = Object.assign(new EventEmitter(), {
+    exitCode: processExitCode,
+  });
+
   const childProcessHelper = {
     spawn: vi.fn(async () => {
       if (publishesReady) {
@@ -106,7 +131,7 @@ async function makeSession({
       }
       return {
         kill: killed,
-        process: { exitCode: processExitCode },
+        process: workerProcess,
       };
     }),
   };
@@ -126,7 +151,7 @@ async function makeSession({
 
   const session = new EtvNextSession(
     channel,
-    { transcodeDirectory },
+    { transcodeDirectory, windowMs },
     binaryResolver as never,
     playoutWriter as never,
     childProcessHelper as never,
@@ -145,7 +170,9 @@ async function makeSession({
     binaryResolver,
     playoutWriter,
     childProcessHelper,
+    workerProcess,
     killed,
+    startMs,
   };
 }
 
@@ -290,6 +317,196 @@ describe('teardown', () => {
     await expect(
       fs.stat(path.join(transcodeDirectory, `etv_${channelUuid}`)),
     ).rejects.toThrow();
+  });
+
+  // SessionManager drops the session from its map on 'stop', and reads state
+  // to decide whether to serve it.
+  test('reaches a terminal state and announces it', async () => {
+    const { session } = await makeSession();
+    await session.start();
+    const stopped = vi.fn();
+    session.on('stop', stopped);
+
+    await session.stop();
+
+    expect(session.state).toBe('stopped');
+    expect(stopped).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('worker lifetime', () => {
+  // Without this the output directory keeps its last segments, clients poll a
+  // playlist that never advances, and those polls keep the session alive.
+  test('ends the session when the worker exits on its own', async () => {
+    const { session, workerProcess } = await makeSession();
+    await session.start();
+    const stopped = vi.fn();
+    session.on('stop', stopped);
+
+    workerProcess.exitCode = 1;
+    workerProcess.emit('exit', 1, null);
+
+    await vi.waitFor(() => {
+      expect(session.state).toBe('stopped');
+    });
+    expect(stopped).toHaveBeenCalledTimes(1);
+  });
+
+  test('a deliberate stop does not end the session twice', async () => {
+    const { session, workerProcess } = await makeSession();
+    await session.start();
+    const stopped = vi.fn();
+    session.on('stop', stopped);
+
+    await session.stop();
+    workerProcess.emit('exit', 0, 'SIGTERM');
+
+    expect(stopped).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the playout window', () => {
+  // Every test here reasons about wall-clock positions inside the window.
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  async function readWindow(transcodeDirectory: string) {
+    const playoutDirectory = path.join(
+      transcodeDirectory,
+      `etv_${channelUuid}`,
+      'playout',
+    );
+    const [name] = await fs.readdir(playoutDirectory);
+    if (name === undefined) {
+      throw new Error('no playout window on disk');
+    }
+
+    return JSON.parse(
+      await fs.readFile(path.join(playoutDirectory, name), 'utf-8'),
+    ) as { items: { id: string; start: string; finish: string }[] };
+  }
+
+  const windowMs = 600_000;
+
+  /**
+   * Runs one refresh at a chosen moment.
+   *
+   * The timer is covered separately; driving the refresh directly keeps the
+   * window arithmetic free of the fake clock's interaction with real file I/O.
+   */
+  function refreshAt(session: EtvNextSession, nowMs: number) {
+    vi.setSystemTime(nowMs);
+    return (
+      session as unknown as { refreshWindow(): Promise<void> }
+    ).refreshWindow();
+  }
+
+  // The worker plays what the single window file covers and shows black past
+  // its finish, so a session outliving one window would go dark.
+  test('is rebuilt from the finish of the playing item', async () => {
+    const { session, playoutWriter, transcodeDirectory, startMs } =
+      await makeSession({ windowMs });
+    await session.start();
+
+    await refreshAt(session, startMs + windowMs / 4);
+
+    expect(playoutWriter.materializeWindow.mock.calls[1]?.[0]).toMatchObject({
+      startMs: startMs + windowMs,
+      idSeed: 1,
+    });
+
+    const { items } = await readWindow(transcodeDirectory);
+    expect(items.map((i) => i.id)).toEqual(['item-0', 'item-1']);
+  });
+
+  test('drops an item once it has finished playing', async () => {
+    const { session, transcodeDirectory, startMs } = await makeSession({
+      windowMs,
+    });
+    await session.start();
+
+    await refreshAt(session, startMs + windowMs / 4);
+    await refreshAt(session, startMs + windowMs);
+
+    const { items } = await readWindow(transcodeDirectory);
+    expect(items.map((i) => i.id)).not.toContain('item-0');
+    expect(items.every((i) => Date.parse(i.finish) > startMs + windowMs)).toBe(
+      true,
+    );
+  });
+
+  // Appending could never correct what it had already written, so a
+  // programming edit would not reach the worker until the window ran out.
+  test('replaces a tail it wrote earlier', async () => {
+    const { session, transcodeDirectory, startMs } = await makeSession({
+      windowMs,
+    });
+    await session.start();
+
+    await refreshAt(session, startMs + windowMs / 4);
+    const afterFirst = await readWindow(transcodeDirectory);
+    expect(afterFirst.items.map((i) => i.id)).toEqual(['item-0', 'item-1']);
+
+    await refreshAt(session, startMs + windowMs / 2);
+    const afterSecond = await readWindow(transcodeDirectory);
+
+    expect(afterSecond.items.map((i) => i.id)).toEqual(['item-0', 'item-2']);
+  });
+
+  test('is left alone while one long program still covers the lead', async () => {
+    const { session, playoutWriter, startMs } = await makeSession({ windowMs });
+    playoutWriter.materializeWindow.mockImplementation(
+      (request: { startMs: number }) =>
+        Promise.resolve({
+          startMs: request.startMs,
+          finishMs: request.startMs + windowMs * 3,
+          items: [playoutItem(request.startMs, request.startMs + windowMs * 3)],
+          ignored: [],
+        }),
+    );
+    await session.start();
+
+    await refreshAt(session, startMs + windowMs / 4);
+
+    expect(playoutWriter.materializeWindow).toHaveBeenCalledTimes(1);
+  });
+
+  // A changed id makes the worker treat it as a new item and restart it.
+  test('carries the playing item over untouched', async () => {
+    const { session, transcodeDirectory, startMs } = await makeSession({
+      windowMs,
+    });
+    await session.start();
+    const before = await readWindow(transcodeDirectory);
+
+    await refreshAt(session, startMs + windowMs / 4);
+    const after = await readWindow(transcodeDirectory);
+
+    expect(after.items[0]).toEqual(before.items[0]);
+  });
+
+  test('is topped up on a timer', async () => {
+    const { session, playoutWriter } = await makeSession({ windowMs });
+    await session.start();
+
+    await vi.advanceTimersByTimeAsync(windowMs / 4);
+
+    expect(playoutWriter.materializeWindow).toHaveBeenCalledTimes(2);
+  });
+
+  test('stops being topped up once the session stops', async () => {
+    const { session, playoutWriter } = await makeSession({ windowMs });
+    await session.start();
+    await session.stop();
+
+    await vi.advanceTimersByTimeAsync(windowMs);
+
+    expect(playoutWriter.materializeWindow).toHaveBeenCalledTimes(1);
   });
 });
 
