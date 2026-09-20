@@ -45,6 +45,9 @@
     "*.{ts,tsx}": [
       "prettier --write",
       "oxlint --fix --no-error-on-unmatched-pattern"
+    ],
+    "*.{md,css,yaml,yml}": [
+      "prettier --write"
     ]
   }
 }
