@@ -38,10 +38,7 @@ export default defineConfig({
       plugins: [['@lingui/swc-plugin', {}]],
     }),
     lingui({ failOnMissing: true, failOnCompileError: true }),
-    tanstackRouter({
-      semicolons: true,
-      routesDirectory: path.resolve(__dirname, './src/routes'),
-    }),
+    tanstackRouter(),
     svgr(),
   ],
   build: {
