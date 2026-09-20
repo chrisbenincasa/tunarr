@@ -1,4 +1,5 @@
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
+import { TypedError } from '@/types/errors.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
@@ -136,11 +137,15 @@ export abstract class Session<
         this.state = 'starting';
         this.emit('start');
         await this.startInternal();
+
+        // waitForStreamReadyInternal sets the terminal state itself. Setting
+        // 'started' here as well would mask a readiness failure, and callers
+        // read that state to decide whether the session is servable.
         await this.waitForStreamReadyInternal();
-        this.state = 'started';
       } catch (e) {
         this.logger.error(e);
         this.state = 'error';
+        this.error = TypedError.fromAny(e);
         this.emit('error', e);
       }
     });
@@ -167,6 +172,11 @@ export abstract class Session<
         case 'error':
           this.logger.debug('Session already in error state. Cleaning it up.');
           await this.stopInternal();
+
+          // stopInternal implementations set 'stopped'. Restore the error so a
+          // caller still deciding whether to serve this session can see that it
+          // failed rather than that it ended.
+          this.state = 'error';
           return;
         default:
           this.logger.debug(

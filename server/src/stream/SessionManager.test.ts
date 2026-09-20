@@ -73,6 +73,22 @@ class StubHlsSession extends BaseHlsSession<HlsSessionOptions> {
   // tests exercise the actual threshold logic.
 }
 
+/** A session whose stream never becomes ready. */
+class NeverReadySession extends StubHlsSession {
+  protected override async waitForStreamReady() {
+    const { Result } = await import('@/types/result.js');
+    const { GenericError } = await import('@/types/errors.js');
+    return Result.failure<void>(new GenericError('stream never became ready'));
+  }
+}
+
+/** A session that throws out of startInternal. */
+class FailingStartSession extends StubHlsSession {
+  protected override async startInternal() {
+    throw new Error('ffmpeg could not be spawned');
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Mock logger
 // ---------------------------------------------------------------------------
@@ -155,6 +171,43 @@ describe('SessionManager', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  // A session that never became ready must not be handed to a client. Both
+  // failure paths have to leave the session in 'error', because that is what
+  // getOrCreateSession reads to decide whether to serve it.
+  describe('readiness and startup failures', () => {
+    it('does not report a session started when the stream never becomes ready', async () => {
+      const manager = makeSessionManager(
+        (channel, options) => new NeverReadySession(channel, options),
+      );
+
+      const result = await manager.getOrCreateHlsSession(
+        channelUuid,
+        'token-a',
+        connection,
+        { streamMode: 'hls' },
+      );
+
+      expect(result.isFailure()).toBe(true);
+      expect(result.error.message).toContain('stream never became ready');
+    });
+
+    it('surfaces the error a session threw while starting', async () => {
+      const manager = makeSessionManager(
+        (channel, options) => new FailingStartSession(channel, options),
+      );
+
+      const result = await manager.getOrCreateHlsSession(
+        channelUuid,
+        'token-a',
+        connection,
+        { streamMode: 'hls' },
+      );
+
+      expect(result.isFailure()).toBe(true);
+      expect(result.error.message).toContain('ffmpeg could not be spawned');
+    });
   });
 
   describe('session replacement race condition', () => {
