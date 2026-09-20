@@ -97,6 +97,7 @@ async function buildApp(sessionManager: unknown) {
         }),
       },
       sessionManager,
+      featureFlagService: { get: () => false },
     };
     done();
   });

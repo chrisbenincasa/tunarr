@@ -83,7 +83,7 @@ export const FeatureFlagMetadata: FeatureFlagMeta[] = [
     key: 'ersatzTvNextEnabled',
     displayName: 'ErsatzTV next Streaming Backend',
     description:
-      'Expose the ErsatzTV next streaming backend as a per-channel stream mode. Channels must opt in individually.',
+      'Stream channels through the ErsatzTV next backend instead of Tunarr’s own pipeline. Applies to the HLS, HLS Direct v2 and MPEG-TS stream modes; channel settings are unchanged.',
     envVar: 'TUNARR_ERSATZTV_NEXT_ENABLED',
     category: 'experimental',
   },
