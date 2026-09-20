@@ -19,6 +19,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import serverPackage from '../package.json' with { type: 'json' };
 import { fileExists } from '../src/util/fsUtil.ts';
+import { grabEtvNext } from './download-ersatztv-next.ts';
 import { grabMeilisearch } from './download-meilisearch.ts';
 
 const NODE_VERSION = '22.20.0';
@@ -159,6 +160,20 @@ for (const arch of args.target) {
         console.log(`Meilisearch found at ${meilisearchBinaryPath}`);
       }
 
+      console.log(
+        `Downloading ersatztv-channel (platform ${osString}, arch ${archString})`,
+      );
+      const etvNextBinaryPath = await grabEtvNext(
+        `./bin/ersatztv-channel-${arch}`,
+        osString,
+        archString,
+      );
+      if (!etvNextBinaryPath) {
+        throw new Error('Could not download ersatztv-channel binary');
+      } else {
+        console.log(`ersatztv-channel found at ${etvNextBinaryPath}`);
+      }
+
       // Untar
       await new Promise((resolve, reject) => {
         const outstream = betterSqliteDlStream.data.pipe(
@@ -254,6 +269,9 @@ for (const arch of args.target) {
         archive.file(`./bin/${execName}`, { name: execName });
         archive.file(`./bin/meilisearch-${arch}`, {
           name: 'meilisearch' + (targetIsWindows ? '.exe' : ''),
+        });
+        archive.file(`./bin/ersatztv-channel-${arch}`, {
+          name: 'ersatztv-channel' + (targetIsWindows ? '.exe' : ''),
         });
         await archive.finalize();
         await finishedPromise;
