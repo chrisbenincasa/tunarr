@@ -44,7 +44,6 @@ export const ChannelStreamModes = [
   'mpegts',
   'hls_direct',
   'hls_direct_v2',
-  'etv_next',
 ] as const;
 export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;
 

@@ -4,16 +4,16 @@ import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { ConcatStreamModeToChildMode } from '@/ffmpeg/types.js';
 import { makeFfmpegPlaylistUrl, makeLocalUrl } from '@/util/serverUtil.js';
-import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
+import type { SessionConcatStreamMode } from '@tunarr/types/schemas';
 
 export type ConcatStreamFactory = (
   channel: ChannelOrmWithTranscodeConfig,
-  streamMode: ChannelConcatStreamMode,
+  streamMode: SessionConcatStreamMode,
 ) => ConcatStream;
 export class ConcatStream {
   constructor(
     private channel: ChannelOrmWithTranscodeConfig,
-    private streamMode: ChannelConcatStreamMode,
+    private streamMode: SessionConcatStreamMode,
     private ffmpegFactory: FFmpegAssistedFactory,
   ) {}
 
