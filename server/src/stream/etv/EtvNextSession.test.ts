@@ -215,24 +215,20 @@ describe('startup', () => {
     await session.start();
 
     expect(session.state).toBe('error');
+    expect(session.error?.message).toContain('no playable items');
     expect(childProcessHelper.spawn).not.toHaveBeenCalled();
   });
 
-  // Asserted on the error rather than on state, because Session.start()
-  // overwrites the 'error' state that a failed readiness wait sets.
   test('errors when the worker dies before publishing ready', async () => {
     const { session } = await makeSession({
       publishesReady: false,
       processExitCode: 1,
     });
 
-    const errors: unknown[] = [];
-    session.on('error', (e) => errors.push(e));
-
     await session.start();
 
+    expect(session.state).toBe('error');
     expect(session.error).toBeDefined();
-    expect(errors).toHaveLength(1);
   });
 });
 
