@@ -243,9 +243,13 @@ export function toChannelConfig({
         bitrate_kbps: transcodeConfig.videoBitRate,
         buffer_kbps: transcodeConfig.videoBufferSize,
         deinterlace,
-        ...(transcodeConfig.videoBitDepth !== null
-          ? { bit_depth: transcodeConfig.videoBitDepth }
-          : {}),
+
+        // The backend rejects a config at spawn when a video format is set and
+        // bit_depth is not, an invariant its JSON Schema leaves optional. Tunarr
+        // allows null, so fall back to 8 rather than emitting a config that
+        // parses here and fails there.
+        bit_depth: transcodeConfig.videoBitDepth ?? 8,
+
         ...(usesAccel ? { accel } : {}),
         ...(usesAccel && transcodeConfig.vaapiDevice !== null
           ? { vaapi_device: transcodeConfig.vaapiDevice }
@@ -260,7 +264,10 @@ export function toChannelConfig({
         bitrate_kbps: transcodeConfig.audioBitRate,
         buffer_kbps: transcodeConfig.audioBufferSize,
         channels: transcodeConfig.audioChannels,
-        sample_rate_hz: transcodeConfig.audioSampleRate,
+
+        // Tunarr stores kilohertz and emits `-ar 48k`; the backend passes this
+        // field to ffmpeg as a raw hertz value.
+        sample_rate_hz: transcodeConfig.audioSampleRate * 1000,
         ...(transcodeConfig.audioLoudnormConfig !== null
           ? {
               normalize_loudness: true,
