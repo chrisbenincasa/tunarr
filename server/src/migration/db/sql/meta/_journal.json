@@ -337,13 +337,6 @@
       "when": 1789851681310,
       "tag": "0047_eac3_audio_format_constraint",
       "breakpoints": true
-    },
-    {
-      "idx": 48,
-      "version": "6",
-      "when": 1789851682310,
-      "tag": "0048_etv_next_stream_mode",
-      "breakpoints": true
     }
   ]
 }

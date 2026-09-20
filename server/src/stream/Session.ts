@@ -6,7 +6,10 @@ import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import type { ChannelStreamMode } from '@tunarr/types';
 import type { StreamConnectionDetails } from '@tunarr/types/api';
-import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
+import type {
+  SessionConcatStreamMode,
+  SessionStreamMode,
+} from '@tunarr/types/schemas';
 import { Mutex } from 'async-mutex';
 import dayjs from 'dayjs';
 import { forEach, isEmpty, isNull, keys, partition } from 'lodash-es';
@@ -33,7 +36,7 @@ export type HlsSessionType = StrictExtract<
 export type HlsConcatSessionType =
   `${HlsSessionType}${typeof ConcatSessionSuffix}`;
 
-export type SessionType = ChannelStreamMode | ChannelConcatStreamMode;
+export type SessionType = SessionStreamMode | SessionConcatStreamMode;
 
 // TODO: sort these all out.... and write docs
 type StreamSessionEvents = {
@@ -225,7 +228,7 @@ export abstract class Session<
   }
 
   isConcatSession(): this is Omit<Session, 'sessionType'> & {
-    sessionType: ChannelConcatStreamMode;
+    sessionType: SessionConcatStreamMode;
   } {
     return this.sessionType.endsWith(ConcatSessionSuffix);
   }

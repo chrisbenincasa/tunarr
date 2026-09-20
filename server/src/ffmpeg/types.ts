@@ -1,5 +1,8 @@
 import type { ChannelStreamMode, Watermark } from '@tunarr/types';
-import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
+import type {
+  SessionConcatStreamMode,
+  SessionStreamMode,
+} from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import type {
@@ -16,7 +19,7 @@ export type TranscodeSessionResult = {
 };
 
 export type ConcatOptions = {
-  mode: ChannelConcatStreamMode;
+  mode: SessionConcatStreamMode;
   outputFormat: OutputFormat;
 };
 
@@ -28,8 +31,8 @@ export type PlaceholderSessionOpts = {
 } & ({ kind: 'error'; title: string; subtitle?: string } | { kind: 'offline' });
 
 export const ConcatStreamModeToChildMode: Record<
-  ChannelConcatStreamMode,
-  ChannelStreamMode
+  SessionConcatStreamMode,
+  SessionStreamMode
 > = {
   hls_concat: 'hls',
   hls_slower_concat: 'hls_slower',

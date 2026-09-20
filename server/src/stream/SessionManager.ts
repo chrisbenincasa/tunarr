@@ -44,7 +44,7 @@ import { KEYS } from '@/types/inject.js';
 import { ifDefined } from '@/util/index.js';
 import type { ChannelStreamMode } from '@tunarr/types';
 import type { StreamConnectionDetails } from '@tunarr/types/api';
-import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
+import type { SessionConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import type { Dictionary } from 'ts-essentials';
@@ -550,15 +550,15 @@ export class SessionManager {
 }
 
 function sessionTypeFromConcatType(
-  typ: ChannelConcatStreamMode,
+  typ: SessionConcatStreamMode,
 ): ChannelStreamMode {
   return initial(typ.split('_')).join('_') as ChannelStreamMode;
 }
 
 function concatSessionTypeForSessionType(
   typ: SessionType,
-): ChannelConcatStreamMode {
-  return `${typ}_concat` as ChannelConcatStreamMode;
+): SessionConcatStreamMode {
+  return `${typ}_concat` as SessionConcatStreamMode;
 }
 
 function sessionCacheKey(id: string, sessionType: SessionType): SessionKey {

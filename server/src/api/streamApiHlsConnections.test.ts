@@ -109,6 +109,7 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
           }),
         },
         sessionManager,
+        featureFlagService: { get: () => false },
       };
       done();
     });
