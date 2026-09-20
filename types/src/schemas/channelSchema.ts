@@ -110,7 +110,6 @@ export const ChannelStreamMode = {
   MpegTs: MpegTsChannelStreamMode,
   HlsDirect: HlsDirectStreamMode,
   HlsDirectV2: HlsDirectV2StreamMode,
-  EtvNext: EtvNextStreamMode,
 } as const;
 
 export const ChannelConcatStreamMode = {
@@ -119,7 +118,6 @@ export const ChannelConcatStreamMode = {
   MpegTs: MpegTsConcatChannelStreamMode,
   HlsDirect: HlsDirectConcatStreamMode,
   HlsDirectV2: HlsDirectV2ConcatStreamMode,
-  EtvNext: EtvNextConcatStreamMode,
 } as const;
 
 export const ChannelStreamModes = [
@@ -128,7 +126,6 @@ export const ChannelStreamModes = [
   ChannelStreamMode.MpegTs,
   ChannelStreamMode.HlsDirect,
   ChannelStreamMode.HlsDirectV2,
-  ChannelStreamMode.EtvNext,
 ] as const;
 
 export const ChannelConcatStreamModes = [
@@ -137,7 +134,6 @@ export const ChannelConcatStreamModes = [
   ChannelConcatStreamMode.MpegTs,
   ChannelConcatStreamMode.HlsDirect,
   ChannelConcatStreamMode.HlsDirectV2,
-  ChannelConcatStreamMode.EtvNext,
 ] as const;
 
 export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;
@@ -148,6 +144,30 @@ export type ChannelConcatStreamMode = TupleToUnion<
 >;
 export const ChannelConcatStreamModeSchema = z.enum(ChannelConcatStreamModes);
 
+/**
+ * Stream modes a running session can have, as opposed to the modes a channel
+ * can be saved as. `etv_next` is a backend the feature flag routes to, not a
+ * setting, so it appears in session keys and stream URLs but never on a
+ * channel or in the database.
+ */
+export const SessionStreamModes = [
+  ...ChannelStreamModes,
+  EtvNextStreamMode,
+] as const;
+
+export const SessionConcatStreamModes = [
+  ...ChannelConcatStreamModes,
+  EtvNextConcatStreamMode,
+] as const;
+
+export type SessionStreamMode = TupleToUnion<typeof SessionStreamModes>;
+export const SessionStreamModeSchema = z.enum(SessionStreamModes);
+
+export type SessionConcatStreamMode = TupleToUnion<
+  typeof SessionConcatStreamModes
+>;
+export const SessionConcatStreamModeSchema = z.enum(SessionConcatStreamModes);
+
 export const StreamConnectionDetailsSchema = z.object({
   ip: z.ipv4().or(z.ipv6()),
   userAgent: z.string().optional(),
@@ -156,7 +176,7 @@ export const StreamConnectionDetailsSchema = z.object({
 });
 
 export const ChannelSessionSchema = z.object({
-  type: z.enum([...ChannelStreamModes, ...ChannelConcatStreamModes]),
+  type: z.enum([...SessionStreamModes, ...SessionConcatStreamModes]),
   state: z.string(),
   numConnections: z.number().nonnegative(),
   connections: z.array(StreamConnectionDetailsSchema),
