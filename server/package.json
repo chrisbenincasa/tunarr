@@ -9,29 +9,30 @@
   "main": "src/index.ts",
   "bin": "dist/bundle.cjs",
   "scripts": {
-    "build-dev": "cross-env NODE_ENV=development NODE_OPTIONS=--max-old-space-size=8192 tsgo -p tsconfig.build.json --noEmit --watch",
+    "bench:worker-boundary": "cross-env NODE_ENV=development tsx scripts/worker-boundary-bench.ts",
+    "bench:worker-pool": "cross-env NODE_ENV=development tsx scripts/worker-pool-ab.ts",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsgo -p tsconfig.build.json",
+    "build-dev": "cross-env NODE_ENV=development NODE_OPTIONS=--max-old-space-size=8192 tsgo -p tsconfig.build.json --noEmit --watch",
     "bundle": "dotenvx run -- tsx scripts/bundle.ts",
-    "make-bin": "dotenvx run -- tsx scripts/make-bin.ts",
     "clean": "rimraf --glob ./build/ ./dist/ ./bin/*",
     "debug": "cross-env NODE_ENV=development dotenvx run -f .env.development -- tsx watch --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-wait ./src",
-    "predev": "tsx scripts/generateEnvModule.ts",
     "dev": "cross-env NODE_ENV=development dotenvx run -f .env.development -- tsx watch --heap-snapshot-on-oom --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' --ignore 'src/**/*.test.ts' ./src/index.ts",
+    "download-ersatztv-next": "tsx scripts/download-ersatztv-next.ts",
     "generate-env": "tsx scripts/generateEnvModule.ts",
     "generate-etv-schemas": "tsx scripts/generate-etv-schemas.ts",
     "generate-openapi": "tsx src/index.ts generate-openapi",
     "install-meilisearch": "tsx scripts/download-meilisearch.ts",
-    "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
     "kysely": "dotenv -e .env.development -- kysely",
+    "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
+    "make-bin": "dotenvx run -- tsx scripts/make-bin.ts",
+    "predev": "tsx scripts/generateEnvModule.ts",
     "preinstall": "npx only-allow pnpm",
     "resolve-migrations": "tsx scripts/resolve-migrations.ts",
     "run-fixer": "dotenv -e .env.development -- tsx src/index.ts fixer",
-    "test:watch": "vitest --typecheck.tsconfig tsconfig.test.json --watch",
     "test": "vitest --typecheck.tsconfig tsconfig.test.json --run",
     "test:local": "vitest --config vitest.local.config.ts --typecheck.tsconfig tsconfig.test.json --run",
+    "test:watch": "vitest --typecheck.tsconfig tsconfig.test.json --watch",
     "test:worker-smoke": "cross-env NODE_ENV=development tsx scripts/worker-smoke-test.ts",
-    "bench:worker-pool": "cross-env NODE_ENV=development tsx scripts/worker-pool-ab.ts",
-    "bench:worker-boundary": "cross-env NODE_ENV=development tsx scripts/worker-boundary-bench.ts",
     "tunarr": "dotenv -e .env.development -- tsx src/index.ts",
     "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsgo -p tsconfig.build.json --noEmit --diagnostics"
   },
@@ -111,6 +112,7 @@
     "@types/split2": "^4.2.3",
     "@types/tmp": "^0.2.6",
     "@types/unzip-stream": "^0.3.4",
+    "@types/unzipper": "^0.10.11",
     "@types/uuid": "^9.0.8",
     "@types/yargs": "^17.0.33",
     "@typescript/native-preview": "catalog:",
@@ -139,13 +141,16 @@
     "tsx": "^4.20.5",
     "typed-emitter": "^2.1.0",
     "typescript": "catalog:",
+    "unzipper": "^0.12.5",
     "vitest": "catalog:vitest"
   },
   "meilisearch": {
     "version": "1.30.0"
   },
   "ersatztvNext": {
+    "releaseTag": "develop",
+    "assetVersion": "v0.1.0-ed95077",
     "commit": "ed9507757fa8a36eb85d60fa015da27d8257da6c",
-    "note": "No tagged releases upstream yet; schemas under src/stream/etv/schema are vendored from this commit."
+    "note": "Upstream cuts no tags; the develop pre-release replaces its assets on every push to main, so assetVersion is detectable drift, not a durable pin. Schemas under src/stream/etv/schema are vendored from this commit."
   }
 }
