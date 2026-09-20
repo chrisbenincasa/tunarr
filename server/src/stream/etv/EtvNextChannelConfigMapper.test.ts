@@ -85,7 +85,7 @@ describe('toChannelConfig', () => {
       bitrate_kbps: 192,
       buffer_kbps: 384,
       channels: 2,
-      sample_rate_hz: 48,
+      sample_rate_hz: 48000,
     });
     expect(config.playout.folder).toBe(
       '/var/lib/tunarr/transcode/etv_abc/playout',
@@ -224,6 +224,28 @@ describe('toChannelConfig', () => {
 
   test('reports nothing ignored for a config that maps cleanly', () => {
     expect(map().ignored).toEqual([]);
+  });
+
+  // The backend rejects a spawn on a missing bit_depth even though its schema
+  // marks the field optional, so the mapper must always emit one.
+  // Tunarr stores kHz and the backend wants Hz. Getting this wrong produces a
+  // config that parses cleanly and then kills ffmpeg's aac encoder at runtime.
+  test('converts the sample rate from kilohertz to hertz', () => {
+    expect(
+      map({ audioSampleRate: 48 }).config.normalization.audio.sample_rate_hz,
+    ).toBe(48000);
+    expect(
+      map({ audioSampleRate: 44 }).config.normalization.audio.sample_rate_hz,
+    ).toBe(44000);
+  });
+
+  test('always emits a bit depth, defaulting to 8 when Tunarr has none', () => {
+    expect(
+      map({ videoBitDepth: null }).config.normalization.video.bit_depth,
+    ).toBe(8);
+    expect(
+      map({ videoBitDepth: 10 }).config.normalization.video.bit_depth,
+    ).toBe(10);
   });
 });
 
