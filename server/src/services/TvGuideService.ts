@@ -2,13 +2,11 @@ import { Mutex } from 'async-mutex';
 import type { ChannelDB } from '@/db/ChannelDB.js';
 import type { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
-import type {
-  Lineup,
-  LineupItem} from '@/db/derived_types/Lineup.js';
+import type { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
 import {
   isContentItem,
   isOfflineItem,
-  isRedirectItem
+  isRedirectItem,
 } from '@/db/derived_types/Lineup.js';
 import type { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import { KEYS } from '@/types/inject.js';
@@ -743,12 +741,24 @@ export class TVGuideService {
     let melded = 0;
 
     const push = (program: GuideItem) => {
-      const currentProgram = program.lineupItem;
-      const previousProgramIndex =
-        !isUndefined(program.index) &&
-        inRange(program.index - 1, 0, programs.length)
-          ? (program.index - 1) % programs.length
-          : programs.length - 1;
+      // Normalize filler items to offline so they always participate
+      // in offline melding and never appear as content in the EPG.
+      let currentProgram = program.lineupItem;
+      if (
+        currentProgram.type === 'content' &&
+        isNonEmptyString(currentProgram.fillerListId)
+      ) {
+        currentProgram = {
+          type: 'offline',
+          durationMs: currentProgram.durationMs,
+        };
+        program = { ...program, lineupItem: currentProgram };
+      }
+
+      // program.index is a position in the channel lineup, not in the guide
+      // output being accumulated here, so it can never pick the entry to meld
+      // into. The preceding entry is always the last one pushed.
+      const previousProgramIndex = programs.length - 1;
 
       const previousProgram = nth(programs, previousProgramIndex);
 
