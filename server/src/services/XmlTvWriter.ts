@@ -5,8 +5,7 @@ import { getChannelId } from '@/util/channels.js';
 import { firstDefined, groupByFunc, isNonEmptyString } from '@/util/index.js';
 import { resolveIconUrl } from '@/util/iconUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import type {
-  Xmltv} from '@iptv/xmltv';
+import type { Xmltv } from '@iptv/xmltv';
 import {
   writeXmltv,
   type XmltvChannel,

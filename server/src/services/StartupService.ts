@@ -16,7 +16,7 @@ export class StartupService {
   #hasRun = false;
   #taskPromisesById: Record<string, Promise<void>> = {};
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.WorkerPool)

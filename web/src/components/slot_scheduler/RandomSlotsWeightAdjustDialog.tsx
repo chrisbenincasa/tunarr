@@ -146,14 +146,18 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
 
   return (
     <Dialog maxWidth="md" fullWidth open={open} onClose={onClose}>
-      <DialogTitle><Trans>Adjust Weights</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Adjust Weights</Trans>
+      </DialogTitle>
       <DialogContent>
         <Stack spacing={2} alignItems="center" sx={{ mt: 1 }}>
           {renderSliders()}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button onClick={() => onCommit()} variant="contained">
           <Trans>Commit</Trans>
         </Button>

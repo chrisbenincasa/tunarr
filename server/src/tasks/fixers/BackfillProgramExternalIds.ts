@@ -42,7 +42,7 @@ import Fixer from './fixer.ts';
 @injectable()
 export class BackfillProgramExternalIds extends Fixer {
   private timer: Timer;
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(MediaSourceApiFactory)

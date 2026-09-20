@@ -2,10 +2,9 @@ import type {
   Bind,
   BindWhenOnFluentSyntax,
   Factory,
-  ServiceIdentifier} from 'inversify';
-import {
-  inject
+  ServiceIdentifier,
 } from 'inversify';
+import { inject } from 'inversify';
 import 'reflect-metadata';
 
 const INJECT_META = Symbol('assistedInject:inject');

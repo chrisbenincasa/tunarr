@@ -65,7 +65,7 @@ export abstract class FileSystemScanner {
   protected state: RunState = 'starting';
   private mediaSourceId: Maybe<string>;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     protected ffprobeStreamDetails: FfprobeStreamDetails,

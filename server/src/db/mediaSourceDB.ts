@@ -36,10 +36,9 @@ import type { DrizzleDBAccess } from './schema/index.ts';
 import { MediaSource } from './schema/MediaSource.ts';
 import type {
   MediaSourceLibraryUpdate,
-  NewMediaSourceLibrary} from './schema/MediaSourceLibrary.ts';
-import {
-  MediaSourceLibrary
+  NewMediaSourceLibrary,
 } from './schema/MediaSourceLibrary.ts';
+import { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
 import { MediaSourceLibraryReplacePath } from './schema/MediaSourceLibraryReplacePath.ts';
 import { Program } from './schema/Program.ts';
 

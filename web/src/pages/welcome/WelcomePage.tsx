@@ -54,7 +54,9 @@ export default function WelcomePage() {
         }}
       />
 
-      <Typography variant="h3"><Trans>Welcome to Tunarr!</Trans></Typography>
+      <Typography variant="h3">
+        <Trans>Welcome to Tunarr!</Trans>
+      </Typography>
     </>
   );
 
@@ -87,7 +89,9 @@ export default function WelcomePage() {
 
   const getStarted = (
     <>
-      <Typography variant="body1"><Trans>Let's get started...</Trans></Typography>
+      <Typography variant="body1">
+        <Trans>Let's get started...</Trans>
+      </Typography>
       <Box sx={{ width: '100%', maxWidth: '750px', margin: '0 auto', mt: 4 }}>
         <Stepper alternativeLabel activeStep={activeStep}>
           {steps.map((label, index) => {
@@ -116,9 +120,9 @@ export default function WelcomePage() {
               </Typography>
               <Typography sx={{ mb: 3 }} align="left">
                 <Trans>
-                  To use Tunarr, you must first connect at least one media source.
-                  Media sources provide all content used to create channels in
-                  Tunarr. Plex and Jellyfin are currently supported.
+                  To use Tunarr, you must first connect at least one media
+                  source. Media sources provide all content used to create
+                  channels in Tunarr. Plex and Jellyfin are currently supported.
                 </Trans>
               </Typography>
 
@@ -139,11 +143,17 @@ export default function WelcomePage() {
                     />
                   }
                 >
-                  <Typography><Trans>No media sources connected.</Trans></Typography>
+                  <Typography>
+                    <Trans>No media sources connected.</Trans>
+                  </Typography>
                 </Alert>
               ) : (
                 <Alert variant="filled" severity="success">
-                  <Plural value={mediaSources.length} one="# source connected." other="# sources connected." />
+                  <Plural
+                    value={mediaSources.length}
+                    one="# source connected."
+                    other="# sources connected."
+                  />
                 </Alert>
               )}
               {hasMediaSource && <ConnectMediaSources />}
@@ -169,7 +179,9 @@ export default function WelcomePage() {
 
               {isFfmpegInstalled ? (
                 <Alert variant="filled" severity="success">
-                  <Trans>FFMPEG is installed. Detected version {version?.ffmpeg}</Trans>
+                  <Trans>
+                    FFMPEG is installed. Detected version {version?.ffmpeg}
+                  </Trans>
                 </Alert>
               ) : (
                 <>
@@ -190,9 +202,9 @@ export default function WelcomePage() {
                   </Alert>
                   <Typography sx={{ my: 3 }} align="left">
                     <Trans>
-                      If you are confident FFMPEG is installed, you may just need
-                      to update the executable path in the settings. To do so,
-                      simply click Edit above to update the path.
+                      If you are confident FFMPEG is installed, you may just
+                      need to update the executable path in the settings. To do
+                      so, simply click Edit above to update the path.
                     </Trans>
                   </Typography>
                 </>

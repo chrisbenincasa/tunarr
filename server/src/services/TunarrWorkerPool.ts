@@ -13,10 +13,9 @@ import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 
 import type {
   WorkerRequest,
-  WorkerRequestToResponse} from '../types/worker_schemas.ts';
-import {
-  WorkerMessage
+  WorkerRequestToResponse,
 } from '../types/worker_schemas.ts';
+import { WorkerMessage } from '../types/worker_schemas.ts';
 import { getNumericEnvVar, WORKER_POOL_SIZE_ENV_VAR } from '../util/env.ts';
 import { timeoutPromise } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';

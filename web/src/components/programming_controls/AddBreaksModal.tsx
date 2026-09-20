@@ -62,11 +62,15 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
       component="form"
       onSubmit={handleSubmit(doSubmit, console.error)}
     >
-      <DialogTitle><Trans>Add Breaks</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Add Breaks</Trans>
+      </DialogTitle>
       <DialogContent>
         <DialogContentText>
-          <Trans>Adds Flex breaks between programs, attempting to avoid groups of
-          consecutive programs that exceed the specified number of minutes.</Trans>
+          <Trans>
+            Adds Flex breaks between programs, attempting to avoid groups of
+            consecutive programs that exceed the specified number of minutes.
+          </Trans>
         </DialogContentText>
         <Box sx={{ mt: 2 }}>
           <Stack flex={1} gap={1}>
@@ -204,7 +208,9 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button variant="contained" type="submit">
           <Trans>Save</Trans>
         </Button>

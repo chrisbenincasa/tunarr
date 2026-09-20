@@ -26,7 +26,6 @@ import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
 import { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts';
 import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
 
-
 type Fixture = {
   db: string;
   channelDb: IChannelDB;
@@ -322,17 +321,17 @@ describe('ChannelDB', () => {
         ],
       });
 
-    const created = await channelDb.saveChannel(channelData);
+      const created = await channelDb.saveChannel(channelData);
 
-    expect(created.channel.fillerShows).toHaveLength(1);
+      expect(created.channel.fillerShows).toHaveLength(1);
 
-    const updated = await channelDb.updateChannel(created.channel.uuid, {
-      ...channelData,
-      fillerCollections: [],
-    });
-
-    expect(updated.channel.fillerShows).toHaveLength(0);
+      const updated = await channelDb.updateChannel(created.channel.uuid, {
+        ...channelData,
+        fillerCollections: [],
       });
+
+      expect(updated.channel.fillerShows).toHaveLength(0);
+    });
   });
 
   describe('Channel Lineup Operations', () => {

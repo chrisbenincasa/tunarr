@@ -6,7 +6,7 @@ import { timeNamedAsync, timeNamedSync } from './perf.ts';
 
 @injectable()
 export class Timer implements ITimer {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(private defaultLevel: LogLevels = 'debug') {}
 

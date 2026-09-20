@@ -32,7 +32,11 @@ export function SettingsLayout({ currentTab = '/general' }: Props) {
               value="/general"
               to="/settings/general"
             />
-            <RouterTabLink label={t`XMLTV`} value="/xmltv" to="/settings/xmltv" />
+            <RouterTabLink
+              label={t`XMLTV`}
+              value="/xmltv"
+              to="/settings/xmltv"
+            />
             <RouterTabLink
               label={t`FFMPEG`}
               value="/ffmpeg"

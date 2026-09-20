@@ -12,15 +12,7 @@ import { and, isNull as dbIsNull, eq, or, sql } from 'drizzle-orm';
 import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core';
 import { inject, injectable } from 'inversify';
 import type { InsertResult, Kysely } from 'kysely';
-import {
-  chunk,
-  compact,
-  isNil,
-  keys,
-  omit,
-  partition,
-  uniq,
-} from 'lodash-es';
+import { chunk, compact, isNil, keys, omit, partition, uniq } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { groupByUniq, isDefined } from '../../util/index.ts';
 import {
@@ -150,10 +142,7 @@ export class ProgramGroupingUpsertRepository {
         const insertedExternalIds: ProgramGroupingExternalIdOrm[] = [];
         if (externalIds.length > 0) {
           insertedExternalIds.push(
-            ...this.upsertProgramGroupingExternalIdsChunkOrm(
-              externalIds,
-              tx,
-            ),
+            ...this.upsertProgramGroupingExternalIdsChunkOrm(externalIds, tx),
           );
         }
 
@@ -343,8 +332,7 @@ export class ProgramGroupingUpsertRepository {
         ),
       );
 
-      tx
-        .delete(ProgramGroupingExternalId)
+      tx.delete(ProgramGroupingExternalId)
         .where(or(...clauses))
         .run();
     }

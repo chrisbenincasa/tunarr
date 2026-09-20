@@ -6,28 +6,28 @@ This is a research and source-inspection audit of checkout `bed4ffb7`, not an up
 
 The companion [inventory](dependency-audit-2026-09-16-inventory.md) records all 136 distinct outdated direct dependency names returned by `pnpm outdated -r --format json`. Some packages have multiple workspace versions; the appendix preserves the command's representative current version. Release dates below describe the age of the installed release, not how long Tunarr has used it.
 
-| Major area | Resolved → latest | Installed release age | Benefit and recommendation |
-| --- | --- | --- | --- |
-| React / React DOM | 18.2.0 → 19.3.0 | June 2022; over 4 years | Significant feature gap. Upgrade deliberately after a React 18.3 warning pass and UI compatibility checks. Medium–high risk. |
-| TanStack Query | 5.20.5 → 5.103.1 | February 2024; 31 months | Large same-major gap. Strong near-term candidate; pair with Query devtools. Medium risk because generated hooks depend on it. |
-| TanStack Router | 1.133.13 → 1.170.38 | Many minor releases behind | Refresh router, generator, Vite plugin, Zod adapter, and devtools as a compatible set. Medium risk. |
-| HLS.js | 1.6.15 → 1.7.3 | November 2025; 10 months | Particularly relevant playback improvements. High benefit, low–medium migration risk. |
-| Fastify | 5.6.1 → 5.12.5 | Same major | Validation/security fixes justify early work. Keep plugins on Fastify-5-compatible versions. Low–medium risk. |
-| Axios | 1.12.2 → 1.20.0 | Same major | Numerous HTTP/proxy/form fixes and advisories. Early update, with streaming and authentication checks. |
-| better-sqlite3 | 11.8.1 → 13.0.3 | January 2025; 20 months | New SQLite and N-API distribution. High packaging risk; not a manifest-only update. |
-| Kysely | 0.27.6 → 0.29.6 | March 2025; 18 months | Security fixes, controlled transactions/savepoints. High integration risk from local patch and shared database types. |
-| Drizzle ORM / Kit | 0.39.3 / 0.30.6 → 0.45.2 / 0.31.10 | ORM: February 2025; 19 months | Identifier-escaping security fix; worthwhile targeted migration. Medium–high risk. |
-| Meilisearch JS | 0.50.0 → 0.62.0 | April 2025; 17 months | Better timeout error redaction, newer API coverage. Coordinate with bundled engine 1.30.0; medium risk. |
-| Material UI / icons | 7.0.2 → 9.4.0 | April 2025; 17 months | Accessibility, consistency, new components. High UI regression surface. Material UI skipped v8. |
-| MUI date pickers | 8.4.0 → 9.13.0 | May 2025; 16 months | Plan with MUI compatibility; v9 accepts Material UI ^7.3.0 or ^9.0.0, not the installed 7.0.2. |
-| Zustand | 4.4.6 → 5.0.15 | November 2023; 34 months | Maintenance and React compatibility work; inspect selectors/persistence. Medium risk; modest immediate product benefit. |
-| react-window / auto-sizer | 1.8.9 / 1.0.26 → 2.3.1 / 2.0.3 | react-window: April 2023; 41 months | Component API migration in core lineup UI. High regression surface; schedule with virtualization work. |
-| Vite | 7.1.10 → 8.3.0 | October 2025; 11 months | Rolldown/Oxc build pipeline. Patch the 7.x line first; benchmark an independent v8 migration. |
-| TypeScript | 5.9.3 + native preview 7.0.0-dev.20260421.2 → stable 7.0.2 | Mixed stable/preview toolchain | Replace the preview thoughtfully. Builds already use native `tsgo`, so do not promise another 10× speedup. |
-| Vitest / coverage-v8 | 4.1.5 → 5.0.1 | April 2026; 5 months | Patch v4 first. v5.0.1 was published September 15; no need to combine a brand-new major with application upgrades. |
-| Lingui | 5.9.0; SWC plugin 5.10.1 → 6.7.0 | Core: January 2026; 8 months | Smaller ESM distribution and maintained toolchain; message-ID migration makes this medium risk. |
-| Zod | 4.3.6 → 4.6.5 | Already v4 | Same-major update candidate, but shared API schemas give it broad impact. Validate OpenAPI and generated client output. |
-| esbuild | 0.21.5 → 0.28.2 | June 2024; 27 months | Old build dependency and advisory exposure. Server plugins and CommonJS executable output require bundle validation. |
+| Major area                | Resolved → latest                                          | Installed release age               | Benefit and recommendation                                                                                                    |
+| ------------------------- | ---------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| React / React DOM         | 18.2.0 → 19.3.0                                            | June 2022; over 4 years             | Significant feature gap. Upgrade deliberately after a React 18.3 warning pass and UI compatibility checks. Medium–high risk.  |
+| TanStack Query            | 5.20.5 → 5.103.1                                           | February 2024; 31 months            | Large same-major gap. Strong near-term candidate; pair with Query devtools. Medium risk because generated hooks depend on it. |
+| TanStack Router           | 1.133.13 → 1.170.38                                        | Many minor releases behind          | Refresh router, generator, Vite plugin, Zod adapter, and devtools as a compatible set. Medium risk.                           |
+| HLS.js                    | 1.6.15 → 1.7.3                                             | November 2025; 10 months            | Particularly relevant playback improvements. High benefit, low–medium migration risk.                                         |
+| Fastify                   | 5.6.1 → 5.12.5                                             | Same major                          | Validation/security fixes justify early work. Keep plugins on Fastify-5-compatible versions. Low–medium risk.                 |
+| Axios                     | 1.12.2 → 1.20.0                                            | Same major                          | Numerous HTTP/proxy/form fixes and advisories. Early update, with streaming and authentication checks.                        |
+| better-sqlite3            | 11.8.1 → 13.0.3                                            | January 2025; 20 months             | New SQLite and N-API distribution. High packaging risk; not a manifest-only update.                                           |
+| Kysely                    | 0.27.6 → 0.29.6                                            | March 2025; 18 months               | Security fixes, controlled transactions/savepoints. High integration risk from local patch and shared database types.         |
+| Drizzle ORM / Kit         | 0.39.3 / 0.30.6 → 0.45.2 / 0.31.10                         | ORM: February 2025; 19 months       | Identifier-escaping security fix; worthwhile targeted migration. Medium–high risk.                                            |
+| Meilisearch JS            | 0.50.0 → 0.62.0                                            | April 2025; 17 months               | Better timeout error redaction, newer API coverage. Coordinate with bundled engine 1.30.0; medium risk.                       |
+| Material UI / icons       | 7.0.2 → 9.4.0                                              | April 2025; 17 months               | Accessibility, consistency, new components. High UI regression surface. Material UI skipped v8.                               |
+| MUI date pickers          | 8.4.0 → 9.13.0                                             | May 2025; 16 months                 | Plan with MUI compatibility; v9 accepts Material UI ^7.3.0 or ^9.0.0, not the installed 7.0.2.                                |
+| Zustand                   | 4.4.6 → 5.0.15                                             | November 2023; 34 months            | Maintenance and React compatibility work; inspect selectors/persistence. Medium risk; modest immediate product benefit.       |
+| react-window / auto-sizer | 1.8.9 / 1.0.26 → 2.3.1 / 2.0.3                             | react-window: April 2023; 41 months | Component API migration in core lineup UI. High regression surface; schedule with virtualization work.                        |
+| Vite                      | 7.1.10 → 8.3.0                                             | October 2025; 11 months             | Rolldown/Oxc build pipeline. Patch the 7.x line first; benchmark an independent v8 migration.                                 |
+| TypeScript                | 5.9.3 + native preview 7.0.0-dev.20260421.2 → stable 7.0.2 | Mixed stable/preview toolchain      | Replace the preview thoughtfully. Builds already use native `tsgo`, so do not promise another 10× speedup.                    |
+| Vitest / coverage-v8      | 4.1.5 → 5.0.1                                              | April 2026; 5 months                | Patch v4 first. v5.0.1 was published September 15; no need to combine a brand-new major with application upgrades.            |
+| Lingui                    | 5.9.0; SWC plugin 5.10.1 → 6.7.0                           | Core: January 2026; 8 months        | Smaller ESM distribution and maintained toolchain; message-ID migration makes this medium risk.                               |
+| Zod                       | 4.3.6 → 4.6.5                                              | Already v4                          | Same-major update candidate, but shared API schemas give it broad impact. Validate OpenAPI and generated client output.       |
+| esbuild                   | 0.21.5 → 0.28.2                                            | June 2024; 27 months                | Old build dependency and advisory exposure. Server plugins and CommonJS executable output require bundle validation.          |
 
 Version evidence comes from the npm registry, queried directly; examples: [React](https://registry.npmjs.org/react), [Query](https://registry.npmjs.org/@tanstack%2Freact-query), [better-sqlite3](https://registry.npmjs.org/better-sqlite3), [TypeScript](https://registry.npmjs.org/typescript). Feature and migration evidence is linked below.
 

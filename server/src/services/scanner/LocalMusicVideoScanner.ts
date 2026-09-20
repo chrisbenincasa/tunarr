@@ -48,7 +48,7 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
   private nfoParser = new MusicVideoNfoParser();
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.LocalFolderCanonicalizer)

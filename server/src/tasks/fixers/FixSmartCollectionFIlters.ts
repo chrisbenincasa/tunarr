@@ -8,7 +8,7 @@ import Fixer from './fixer.ts';
 
 @injectable()
 export class FixSmartCollectionFilters extends Fixer {
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(SmartCollectionsDB) private smartCollectionDB: SmartCollectionsDB,

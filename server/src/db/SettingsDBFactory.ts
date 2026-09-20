@@ -9,8 +9,7 @@ import path from 'node:path';
 import type { DeepPartial } from 'ts-essentials';
 import { SchemaBackedDbAdapter } from './json/SchemaBackedJsonDBAdapter.ts';
 import { SyncSchemaBackedDbAdapter } from './json/SyncSchemaBackedJSONDBAdapter.ts';
-import type {
-  SettingsFile} from './SettingsDB.ts';
+import type { SettingsFile } from './SettingsDB.ts';
 import {
   CURRENT_VERSION,
   SettingsDB,

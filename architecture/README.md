@@ -4,14 +4,14 @@ Durable records for the six architecture candidates surfaced in the web-package 
 
 ## Candidates
 
-| # | Candidate | Status | Record |
-|---|-----------|--------|--------|
-| 1 | Collapse the three editors into one **Lineup** module | Deep dive complete · plan recorded · **not implemented** | [01-editor-collapse.md](./01-editor-collapse.md) |
-| 2 | Own the **API seam** — one client, one query-key scheme | Grilling in progress (3 branches open) | — |
-| 3 | Own the **form seam** — decouple the model from react-hook-form | Pending | — |
-| 4 | Extract the deep **lineup transforms** from behind their hooks | Pending | — |
-| 5 | Split **server cache** from UI state; prune dead/derived state | Pending | — |
-| 6 | Break the **pages ↔ routes** cycle; centralize navigation | Pending | — |
+| #   | Candidate                                                       | Status                                                   | Record                                           |
+| --- | --------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------ |
+| 1   | Collapse the three editors into one **Lineup** module           | Deep dive complete · plan recorded · **not implemented** | [01-editor-collapse.md](./01-editor-collapse.md) |
+| 2   | Own the **API seam** — one client, one query-key scheme         | Grilling in progress (3 branches open)                   | —                                                |
+| 3   | Own the **form seam** — decouple the model from react-hook-form | Pending                                                  | —                                                |
+| 4   | Extract the deep **lineup transforms** from behind their hooks  | Pending                                                  | —                                                |
+| 5   | Split **server cache** from UI state; prune dead/derived state  | Pending                                                  | —                                                |
+| 6   | Break the **pages ↔ routes** cycle; centralize navigation      | Pending                                                  | —                                                |
 
 ## Domain language
 

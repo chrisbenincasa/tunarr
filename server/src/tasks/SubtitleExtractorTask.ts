@@ -1,5 +1,5 @@
 import { seq } from '@tunarr/shared/util';
-import type { ContentGuideProgram} from '@tunarr/types';
+import type { ContentGuideProgram } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
@@ -333,7 +333,10 @@ export class SubtitleExtractorTask extends Task2<
           createReadStream(tmpPath),
           new Transform({
             transform(chunk: Buffer, _encoding, cb) {
-              cb(null, chunk.filter((byte) => byte !== 0x00));
+              cb(
+                null,
+                chunk.filter((byte) => byte !== 0x00),
+              );
             },
           }),
           createWriteStream(outPath),

@@ -125,7 +125,7 @@ export const SlotProgrammingTooLongWarningDetails = ({
                 })}{' '}
                 exceed the length of this slot (
                 {betterHumanize(dayjs.duration(slot.durationMs ?? 0))}).
-</Trans>
+              </Trans>
               {averageLengthMs !== undefined && (
                 <>
                   {' '}
