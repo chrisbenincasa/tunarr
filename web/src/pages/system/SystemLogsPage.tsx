@@ -160,8 +160,10 @@ export function SystemLogsPage() {
           component="a"
           href={`${backendUri}/api/system/debug/logs?download=true&pretty=true&lineLimit=${table.getRowCount()}`}
         >
-          <Trans>Download last {table.getRowCount()}{' '}
-          <Plural value={table.getRowCount()} one="# row" other="# rows" /></Trans>
+          <Trans>
+            Download last {table.getRowCount()}{' '}
+            <Plural value={table.getRowCount()} one="# row" other="# rows" />
+          </Trans>
         </Button>
         <Button
           startIcon={<Download />}

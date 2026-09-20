@@ -4,11 +4,8 @@ import { and, eq, gt, gte, lt, lte } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { v4 } from 'uuid';
 import type { OpenDateTimeRange } from '../types/OpenDateTimeRange.ts';
-import type {
-  NewProgramPlayHistoryDrizzle} from './schema/ProgramPlayHistory.ts';
-import {
-  ProgramPlayHistory,
-} from './schema/ProgramPlayHistory.ts';
+import type { NewProgramPlayHistoryDrizzle } from './schema/ProgramPlayHistory.ts';
+import { ProgramPlayHistory } from './schema/ProgramPlayHistory.ts';
 import type { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()

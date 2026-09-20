@@ -24,7 +24,7 @@ export class SystemDevicesService {
     stdTTL: 0,
   });
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   getDevices(): Maybe<string[]> {
     return SystemDevicesService.CACHE.get(SystemDevicesService.DEVICES_KEY);

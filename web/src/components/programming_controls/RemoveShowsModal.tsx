@@ -211,14 +211,18 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
     }
 
     const count = details.totalPrograms;
-    const programLabel = type === 'episode'
-      ? plural(count, { one: 'episode', other: 'episodes' })
-      : type === 'track'
-        ? plural(count, { one: 'track', other: 'tracks' })
-        : plural(count, { one: 'program', other: 'programs' });
-    return t`${count} ${programLabel}, ${betterHumanize(dayjs.duration(details.totalDuration), {
-      style: 'short',
-    })}`;
+    const programLabel =
+      type === 'episode'
+        ? plural(count, { one: 'episode', other: 'episodes' })
+        : type === 'track'
+          ? plural(count, { one: 'track', other: 'tracks' })
+          : plural(count, { one: 'program', other: 'programs' });
+    return t`${count} ${programLabel}, ${betterHumanize(
+      dayjs.duration(details.totalDuration),
+      {
+        style: 'short',
+      },
+    )}`;
   };
 
   const getArtistIds = (options: FilmOptionType[]) => map(options, 'id');
@@ -226,7 +230,9 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
   return (
     <>
       <Dialog open={open} scroll={'paper'}>
-        <DialogTitle><Trans>Remove Programming</Trans></DialogTitle>
+        <DialogTitle>
+          <Trans>Remove Programming</Trans>
+        </DialogTitle>
         <DialogContent>
           <DialogContentText>
             <Trans>Pick specific programming to remove from the channel.</Trans>
@@ -426,13 +432,18 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+          <Button onClick={() => onClose()}>
+            <Trans>Cancel</Trans>
+          </Button>
           <Button
             variant="contained"
             onClick={() => removeShowsProgramming()}
             disabled={isEmptyRemoveRequest}
           >
-            <Trans>Remove {count} {plural(count, { one: 'program', other: 'programs' })}</Trans>
+            <Trans>
+              Remove {count}{' '}
+              {plural(count, { one: 'program', other: 'programs' })}
+            </Trans>
           </Button>
         </DialogActions>
       </Dialog>

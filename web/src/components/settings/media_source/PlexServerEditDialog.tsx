@@ -236,7 +236,9 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                       !serverStatus.healthy &&
                       isNonEmptyString(field.value) ? (
                       <>
-                        <span><Trans>Server is unreachable</Trans></span>
+                        <span>
+                          <Trans>Server is unreachable</Trans>
+                        </span>
                         <br />
                       </>
                     ) : null
@@ -262,7 +264,9 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
               }}
               render={({ field, formState: { errors } }) => (
                 <FormControl sx={{ m: 1 }} fullWidth variant="outlined">
-                  <InputLabel htmlFor="access-token"><Trans>Access Token</Trans> </InputLabel>
+                  <InputLabel htmlFor="access-token">
+                    <Trans>Access Token</Trans>{' '}
+                  </InputLabel>
                   <OutlinedInput
                     id="access-token"
                     type={showAccessToken ? 'text' : 'password'}
@@ -289,13 +293,16 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                       </>
                     )}
                     <span>
-                      <Trans>For more details on manually retrieving a Plex token, see{' '}
-                      <Link
-                        href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
-                        target="_blank"
-                      >
-                        here
-                      </Link></Trans>
+                      <Trans>
+                        For more details on manually retrieving a Plex token,
+                        see{' '}
+                        <Link
+                          href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
+                          target="_blank"
+                        >
+                          here
+                        </Link>
+                      </Trans>
                     </span>
                   </FormHelperText>
                 </FormControl>

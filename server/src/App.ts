@@ -9,7 +9,7 @@ import { getTunarrVersion } from './util/version.ts';
 
 @injectable()
 export class App {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,

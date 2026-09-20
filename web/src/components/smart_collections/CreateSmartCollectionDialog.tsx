@@ -113,7 +113,9 @@ export const CreateSmartCollectionDialog = ({
 
   return (
     <>
-      <DialogTitle><Trans>Save Smart Collection</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Save Smart Collection</Trans>
+      </DialogTitle>
       <DialogContent>
         <Stack gap={2} sx={{ pt: 1 }}>
           <Controller
@@ -186,7 +188,9 @@ export const CreateSmartCollectionDialog = ({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button
           variant="contained"
           disabled={!isValid}

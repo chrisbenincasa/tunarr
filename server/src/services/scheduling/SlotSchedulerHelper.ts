@@ -34,7 +34,7 @@ import type { TimeSlotScheduleServiceRequest } from './TimeSlotSchedulerService.
 
 @injectable()
 export class SlotSchedulerHelper {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(CustomShowDB) private customShowDB: CustomShowDB,

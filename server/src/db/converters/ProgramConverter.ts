@@ -20,10 +20,9 @@ import type {
   RedirectProgram,
   TerminalProgram,
   TvSeasonContentProgram,
-  TvShowContentProgram} from '@tunarr/types';
-import {
-  untag,
+  TvShowContentProgram,
 } from '@tunarr/types';
+import { untag } from '@tunarr/types';
 import {
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,

@@ -91,7 +91,7 @@ export class NvidiaHardwareCapabilitiesFactory
 
 @injectable()
 export class NvidiaGpuDetectionHelper {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   async getGpuFromFfmpeg(
     ffmpegExecutablePath: string,

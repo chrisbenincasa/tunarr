@@ -68,12 +68,26 @@ const ImportedProgramListItem = ({
     case 'show':
       secondary = (
         <Trans>
-          <Plural value={media.childCount ?? 0} one="# season" other="# seasons" />, <Plural value={media.grandchildCount ?? 0} one="# total episode" other="# total episodes" />
+          <Plural
+            value={media.childCount ?? 0}
+            one="# season"
+            other="# seasons"
+          />
+          ,{' '}
+          <Plural
+            value={media.grandchildCount ?? 0}
+            one="# total episode"
+            other="# total episodes"
+          />
         </Trans>
       );
       break;
     case 'movie':
-      secondary = media.year ? <Trans>Movie, {media.year}</Trans> : <Trans>Movie</Trans>;
+      secondary = media.year ? (
+        <Trans>Movie, {media.year}</Trans>
+      ) : (
+        <Trans>Movie</Trans>
+      );
       break;
     default:
       break;
@@ -177,7 +191,13 @@ export default function SelectedProgrammingList({
             >
               <ListItemText
                 primary={t`Custom Show - ${customShow.name}`}
-                secondary={<Plural value={customShow.contentCount} one="# item" other="# items" />}
+                secondary={
+                  <Plural
+                    value={customShow.contentCount}
+                    one="# item"
+                    other="# items"
+                  />
+                }
               />
               <ListItemIcon sx={{ minWidth: 40 }}>
                 <IconButton onClick={() => removeSelectedMedia([selected])}>
@@ -264,7 +284,12 @@ export default function SelectedProgrammingList({
             }}
           ></Toolbar>
           <Typography textAlign={'left'} sx={{ my: 2, ml: 1, fontWeight: 600 }}>
-            <Plural value={selectedMedia.length} one="Selected Item" other="Selected Items" /> ({selectedMedia.length}):
+            <Plural
+              value={selectedMedia.length}
+              one="Selected Item"
+              other="Selected Items"
+            />{' '}
+            ({selectedMedia.length}):
           </Typography>
           {selectedMedia.length > 0 && renderSelectedItems()}
         </Drawer>

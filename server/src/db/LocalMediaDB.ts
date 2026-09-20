@@ -11,10 +11,9 @@ import { Artwork } from './schema/Artwork.ts';
 import type { DrizzleDBAccess } from './schema/index.ts';
 import type {
   LocalMediaFolderOrm,
-  NewLocalMediaFolderOrm} from './schema/LocalMediaFolder.ts';
-import {
-  LocalMediaFolder
+  NewLocalMediaFolderOrm,
 } from './schema/LocalMediaFolder.ts';
+import { LocalMediaFolder } from './schema/LocalMediaFolder.ts';
 import type { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
 import type { ProgramType } from './schema/Program.ts';
 

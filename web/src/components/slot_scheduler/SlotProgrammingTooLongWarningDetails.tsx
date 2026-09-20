@@ -145,7 +145,7 @@ export const SlotProgrammingTooLongWarningDetails = ({
               {}
               {slotType === 'time' && (
                 <li>
-                  <Trans>Increasing "Max Lateness" for the schedule.</Trans>
+                  <Trans>Increasing "Max Overflow" for the schedule.</Trans>
                 </li>
               )}
               <li>

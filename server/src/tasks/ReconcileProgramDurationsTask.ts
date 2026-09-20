@@ -68,7 +68,7 @@ export class ReconcileProgramDurationsTask extends Task2<
 
   // Optionally provide the channel ID that was updated on the triggering
   // operation, since theoretically we don't have to check it.
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,

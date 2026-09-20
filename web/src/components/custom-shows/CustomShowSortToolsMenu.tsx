@@ -77,7 +77,11 @@ export const CustomShowSortToolsMenu = () => {
       case 'random':
         button.unshift(
           <Button startIcon={<Shuffle />} onClick={() => shuffler(shuffleType)}>
-            {shuffleType === 'show' ? <Trans>Random (by show)</Trans> : <Trans>Random</Trans>}
+            {shuffleType === 'show' ? (
+              <Trans>Random (by show)</Trans>
+            ) : (
+              <Trans>Random</Trans>
+            )}
           </Button>,
         );
         break;
@@ -93,7 +97,11 @@ export const CustomShowSortToolsMenu = () => {
               );
             }}
           >
-            {selectedSort === 'release-asc' ? <Trans>Release Date (asc)</Trans> : <Trans>Release Date (desc)</Trans>}
+            {selectedSort === 'release-asc' ? (
+              <Trans>Release Date (asc)</Trans>
+            ) : (
+              <Trans>Release Date (desc)</Trans>
+            )}
           </Button>,
         );
         break;
@@ -141,7 +149,9 @@ export const CustomShowSortToolsMenu = () => {
             <ListItemIcon>
               <Shuffle />
             </ListItemIcon>
-            <ListItemText><Trans>Random&hellip;</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Random&hellip;</Trans>
+            </ListItemText>
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip
@@ -160,7 +170,9 @@ export const CustomShowSortToolsMenu = () => {
             <ListItemIcon>
               <CalendarMonth />
             </ListItemIcon>
-            <ListItemText><Trans>Release Date</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Release Date</Trans>
+            </ListItemText>
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip
@@ -179,7 +191,9 @@ export const CustomShowSortToolsMenu = () => {
             <ListItemIcon>
               <Widgets />
             </ListItemIcon>
-            <ListItemText><Trans>Block Shuffle</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Block Shuffle</Trans>
+            </ListItemText>
           </MenuItem>
         </ElevatedTooltip>
         <MenuItem divider disabled>

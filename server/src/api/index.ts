@@ -260,7 +260,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   // Force an XMLTV refresh
   fastify.post('/xmltv/refresh', async (_, res) => {
     await GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID).runNow(false);
-    return res.status(200);
+    return res.status(200).send();
   });
 
   // CHANNELS.M3U Download

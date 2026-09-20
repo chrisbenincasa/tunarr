@@ -20,7 +20,7 @@ export class ScanLibrariesTask extends SimpleTask {
     TaskMetadata
   >;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,

@@ -10,8 +10,7 @@ import { Result } from '../types/result.ts';
 import type { Maybe } from '../types/util.ts';
 import type { ITranscodeConfigDB } from './ITranscodeConfigDB.ts';
 import { Channel } from './schema/Channel.ts';
-import type {
-  NewTranscodeConfigOrm} from './schema/TranscodeConfig.ts';
+import type { NewTranscodeConfigOrm } from './schema/TranscodeConfig.ts';
 import {
   defaultTranscodeConfig,
   TranscodeConfig as TranscodeConfigTable,

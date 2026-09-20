@@ -24,7 +24,9 @@ export default function DarkModeButton(props: DarkModeProps) {
   return (
     <>
       {iconOnly ? (
-        <Tooltip title={isDarkMode ? t`Enable light Mode` : t`Enable dark Mode`}>
+        <Tooltip
+          title={isDarkMode ? t`Enable light Mode` : t`Enable dark Mode`}
+        >
           <IconButton
             color="inherit"
             onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
