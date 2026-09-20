@@ -279,6 +279,46 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
+      // The worker owns its output directory, so there is no playlist to trim
+      // and no segment accounting to keep — files are served as found. Its
+      // WebVTT already carries an X-TIMESTAMP-MAP computed against its own
+      // output offset, so Tunarr must not inject a second one.
+      if (req.params.sessionType === 'etv_next') {
+        const etvSession = req.serverCtx.sessionManager.getEtvNextSession(
+          req.params.id,
+        );
+
+        if (isUndefined(etvSession)) {
+          return res.status(404).send('No session found');
+        }
+
+        if (!etvSession.isKnownConnection(req.ip)) {
+          etvSession.addConnection(req.ip, {
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+          });
+        }
+        etvSession.recordHeartbeat(req.ip);
+
+        const { workingDirectory } = etvSession;
+        const filePath = resolve(workingDirectory, req.params.file);
+        if (!filePath.startsWith(workingDirectory + sep)) {
+          return res.status(400).send('Invalid file path');
+        }
+
+        if (req.params.file.endsWith('.m3u8')) {
+          const content = await fs.readFile(filePath);
+          return res.type('application/vnd.apple.mpegurl').send(content);
+        }
+
+        if (req.params.file.endsWith('.vtt')) {
+          const content = await fs.readFile(filePath, 'utf-8');
+          return res.type('text/vtt').send(content);
+        }
+
+        return res.sendFile(req.params.file, workingDirectory);
+      }
+
       let session: Maybe<BaseHlsSession>;
       switch (req.params.sessionType) {
         case 'hls':
@@ -472,9 +512,17 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         case 'mpegts':
           return res.status(400).send();
         case 'etv_next':
-          return res
-            .status(501)
-            .send('The ErsatzTV next streaming backend is not yet available.');
+          sessionResult = await req.serverCtx.sessionManager
+            .getOrCreateEtvNextSession(channelId, req.ip, connectionDetails)
+            .then((result) =>
+              result.map((session) => {
+                session.recordHeartbeat(req.ip);
+                return res
+                  .type('application/vnd.apple.mpegurl')
+                  .send(session.getMasterPlaylist());
+              }),
+            );
+          break;
       }
 
       if (sessionResult.isFailure()) {

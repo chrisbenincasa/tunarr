@@ -23,6 +23,11 @@ import {
   type ConcatSessionFactory,
   type ConcatSessionOptions,
 } from './ConcatSession.js';
+import type {
+  EtvNextSession,
+  EtvNextSessionOptions,
+  EtvNextSessionProvider,
+} from './etv/EtvNextSession.js';
 import type { HlsConcatSessionType } from './Session.js';
 import { Session } from './Session.js';
 import type { HlsSession, HlsSessionOptions } from './hls/HlsSession.js';
@@ -68,6 +73,8 @@ export class SessionManager {
     private hlsSlowerSessionFactory: HlsSlowerSessionProvider,
     @inject(KEYS.ConcatSession)
     private concatSessionFactory: ConcatSessionFactory,
+    @inject(KEYS.EtvNextSession)
+    private etvNextSessionFactory: EtvNextSessionProvider,
     @inject(EventService) private eventService: EventService,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
   ) {}
@@ -100,6 +107,10 @@ export class SessionManager {
     mode: 'hls' | 'hls_direct_v2' = 'hls',
   ): Maybe<HlsSession> {
     return this.getSession(id, mode) as Maybe<HlsSession>;
+  }
+
+  getEtvNextSession(id: string): Maybe<EtvNextSession> {
+    return this.getSession(id, 'etv_next') as Maybe<EtvNextSession>;
   }
 
   getConcatSession(id: string): Maybe<ConcatSession> {
@@ -213,6 +224,34 @@ export class SessionManager {
 
   // TODO Consider using a builder pattern here with generics to control
   // the returned session type
+  /**
+   * Gets or starts the `ersatztv-channel` worker session for a channel.
+   *
+   * Staleness deliberately does not read SESSION_STALENESS_MS the way the HLS
+   * factories do. The worker reaps itself on a stale heartbeat file at 90s, so
+   * a larger value set for the other backends would let the file clock end
+   * sessions first. An explicit option still wins.
+   */
+  async getOrCreateEtvNextSession(
+    channelId: string,
+    token: string,
+    connection: StreamConnectionDetails,
+    options?: Partial<EtvNextSessionOptions>,
+  ) {
+    return this.getOrCreateSession(
+      channelId,
+      token,
+      connection,
+      'etv_next',
+      (channel) =>
+        this.etvNextSessionFactory(channel, {
+          transcodeDirectory:
+            this.settingsDB.ffmpegSettings().transcodeDirectory,
+          ...options,
+        }),
+    );
+  }
+
   async getOrCreateHlsSlowerSession(
     channelId: string,
     token: string,

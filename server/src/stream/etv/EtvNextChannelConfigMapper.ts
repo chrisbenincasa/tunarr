@@ -17,6 +17,25 @@ import {
 } from './generated/channelConfig.ts';
 
 /**
+ * The ffmpeg settings this mapper reads, as a readonly view.
+ *
+ * Narrowed rather than taking the whole settings object so the dependency is
+ * visible, and readonly because `settingsDB.ffmpegSettings()` hands back a
+ * frozen view.
+ */
+export type MappedFfmpegSettings = Readonly<
+  Pick<
+    FfmpegSettings,
+    | 'ffmpegExecutablePath'
+    | 'ffprobeExecutablePath'
+    | 'scalingAlgorithm'
+    | 'deinterlaceFilter'
+    | 'enableFileLogging'
+    | 'transcodeDirectory'
+  >
+>;
+
+/**
  * A transcode config setting that `etv_next` cannot express. Channels are
  * refused at assign time rather than silently substituted, so the message names
  * the field the user has to change.
@@ -172,7 +191,7 @@ export function toChannelConfig({
   playoutFolder,
 }: {
   transcodeConfig: TranscodeConfigOrm;
-  ffmpegSettings: FfmpegSettings;
+  ffmpegSettings: MappedFfmpegSettings;
   playoutFolder: string;
 }): ChannelConfigMapping {
   const check = checkSupport(transcodeConfig);
