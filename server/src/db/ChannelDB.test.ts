@@ -16,6 +16,7 @@ import { DBAccess } from './DBAccess.ts';
 import { ContentItem } from './derived_types/Lineup.ts';
 import type { IChannelDB } from './interfaces/IChannelDB.ts';
 import { ChannelPrograms } from './schema/ChannelPrograms.ts';
+import { FillerShow } from './schema/FillerShow.ts';
 import { Program } from './schema/Program.ts';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
 import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
@@ -24,6 +25,7 @@ import { LineupRepository } from './channel/LineupRepository.ts';
 import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
 import { ChannelReadOpsRepository } from './channel/ChannelReadOpsRepository.ts';
 import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
+
 
 type Fixture = {
   db: string;
@@ -296,6 +298,41 @@ describe('ChannelDB', () => {
       const channels = await channelDb.getAllChannels();
       expect(channels.length).toBeGreaterThanOrEqual(3);
     });
+
+    test('should clear filler collections when updating with an empty list', async ({
+      channelDb,
+      drizzle,
+      defaultTranscodeConfigId,
+    }) => {
+      const fillerShowId = v4();
+
+      await drizzle.insert(FillerShow).values({
+        uuid: fillerShowId,
+        name: 'Test Filler',
+      });
+
+      const channelData = createSaveableChannel(defaultTranscodeConfigId, {
+        name: 'Filler Clear Test Channel',
+        fillerCollections: [
+          {
+            id: fillerShowId,
+            weight: 1,
+            cooldownSeconds: 0,
+          },
+        ],
+      });
+
+    const created = await channelDb.saveChannel(channelData);
+
+    expect(created.channel.fillerShows).toHaveLength(1);
+
+    const updated = await channelDb.updateChannel(created.channel.uuid, {
+      ...channelData,
+      fillerCollections: [],
+    });
+
+    expect(updated.channel.fillerShows).toHaveLength(0);
+      });
   });
 
   describe('Channel Lineup Operations', () => {
