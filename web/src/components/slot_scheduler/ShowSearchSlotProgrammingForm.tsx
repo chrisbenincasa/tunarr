@@ -31,6 +31,7 @@ export const ShowSearchSlotProgrammingForm = () => {
   const showChildrenQuery = useQuery({
     ...getApiProgramsByIdChildrenOptions({
       path: { id: show?.uuid ?? '' },
+      query: { limit: -1, offset: 0 },
     }),
     enabled: !!show,
   });

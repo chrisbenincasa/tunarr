@@ -2860,7 +2860,7 @@ export type PostApiTasksByIdRunData = {
         id: string;
     };
     query?: {
-        background?: boolean | string;
+        background?: boolean | 'true' | 'false' | number;
     };
     url: '/api/tasks/{id}/run';
 };
@@ -2996,10 +2996,10 @@ export type GetChannelsResponses = {
             enabled: boolean;
         };
         programCount: number;
-        streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
         transcodeConfigId: string;
         sessions?: Array<{
-            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
             state: string;
             numConnections: number;
             connections: Array<{
@@ -3038,10 +3038,10 @@ export type CreateChannelV2Data = {
             guideFlexTitle?: string;
             guideMinimumDuration: number;
             icon: {
-                path: string;
-                width: number;
-                duration: number;
-                position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                path?: string;
+                width?: number;
+                duration?: number;
+                position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
                 useDefaultIconFallback?: boolean;
             };
             id: string;
@@ -3074,7 +3074,7 @@ export type CreateChannelV2Data = {
             onDemand?: {
                 enabled: boolean;
             };
-            streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+            streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
             transcodeConfigId: string;
             subtitlesEnabled: boolean;
             subtitlePreferences?: Array<{
@@ -3202,10 +3202,10 @@ export type CreateChannelV2Responses = {
             enabled: boolean;
         };
         programCount: number;
-        streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
         transcodeConfigId: string;
         sessions?: Array<{
-            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
             state: string;
             numConnections: number;
             connections: Array<{
@@ -3362,10 +3362,10 @@ export type GetChannelsByNumberV2Responses = {
             enabled: boolean;
         };
         programCount: number;
-        streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
         transcodeConfigId: string;
         sessions?: Array<{
-            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
             state: string;
             numConnections: number;
             connections: Array<{
@@ -3402,10 +3402,10 @@ export type PutApiChannelsByIdData = {
         guideFlexTitle?: string;
         guideMinimumDuration: number;
         icon: {
-            path: string;
-            width: number;
-            duration: number;
-            position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            path?: string;
+            width?: number;
+            duration?: number;
+            position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
             useDefaultIconFallback?: boolean;
         };
         id: string;
@@ -3438,7 +3438,7 @@ export type PutApiChannelsByIdData = {
         onDemand?: {
             enabled: boolean;
         };
-        streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
         transcodeConfigId: string;
         subtitlesEnabled: boolean;
         subtitlePreferences?: Array<{
@@ -3568,10 +3568,10 @@ export type PutApiChannelsByIdResponses = {
             enabled: boolean;
         };
         programCount: number;
-        streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
         transcodeConfigId: string;
         sessions?: Array<{
-            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
             state: string;
             numConnections: number;
             connections: Array<{
@@ -3599,9 +3599,9 @@ export type GetApiChannelsByIdProgramsData = {
     path: {
         id: string;
     };
-    query?: {
-        limit?: number;
-        offset?: number;
+    query: {
+        limit: number;
+        offset: number;
         type?: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
     };
     url: '/api/channels/{id}/programs';
@@ -3633,9 +3633,9 @@ export type GetApiChannelsByIdShowsData = {
     path: {
         id: string;
     };
-    query?: {
-        limit?: number;
-        offset?: number;
+    query: {
+        limit: number;
+        offset: number;
     };
     url: '/api/channels/{id}/shows';
 };
@@ -3659,9 +3659,9 @@ export type GetApiChannelsByIdArtistsData = {
     path: {
         id: string;
     };
-    query?: {
-        limit?: number;
-        offset?: number;
+    query: {
+        limit: number;
+        offset: number;
     };
     url: '/api/channels/{id}/artists';
 };
@@ -4955,6 +4955,10 @@ export type PostApiChannelsByIdProgrammingErrors = {
     /**
      * Default Response
      */
+    400: string;
+    /**
+     * Default Response
+     */
     404: unknown;
     /**
      * Default Response
@@ -4965,6 +4969,8 @@ export type PostApiChannelsByIdProgrammingErrors = {
      */
     501: unknown;
 };
+
+export type PostApiChannelsByIdProgrammingError = PostApiChannelsByIdProgrammingErrors[keyof PostApiChannelsByIdProgrammingErrors];
 
 export type PostApiChannelsByIdProgrammingResponses = {
     /**
@@ -5613,7 +5619,7 @@ export type GetChannelFallbacksData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/{id}/fallbacks';
 };
@@ -5651,7 +5657,7 @@ export type GetApiChannelsAllLineupsData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/all/lineups';
 };
@@ -5752,7 +5758,7 @@ export type GetApiChannelsByIdLineupData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/{id}/lineup';
 };
@@ -6969,10 +6975,10 @@ export type GetApiChannelsByIdScheduleResponses = {
                         enabled: boolean;
                     };
                     programCount: number;
-                    streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+                    streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
                     transcodeConfigId: string;
                     sessions?: Array<{
-                        type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+                        type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
                         state: string;
                         numConnections: number;
                         connections: Array<{
@@ -7380,10 +7386,10 @@ export type GetApiChannelsByIdScheduleResponses = {
                         enabled: boolean;
                     };
                     programCount: number;
-                    streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+                    streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
                     transcodeConfigId: string;
                     sessions?: Array<{
-                        type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+                        type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
                         state: string;
                         numConnections: number;
                         connections: Array<{
@@ -8533,9 +8539,9 @@ export type GetApiProgramsByIdChildrenData = {
     path: {
         id: string;
     };
-    query?: {
-        limit?: number;
-        offset?: number;
+    query: {
+        limit: number;
+        offset: number;
         channelId?: string;
     };
     url: '/api/programs/{id}/children';
@@ -8584,7 +8590,7 @@ export type GetApiProgramsByIdExternalLinkData = {
         id: string;
     };
     query?: {
-        forward?: boolean;
+        forward?: boolean | 'true' | 'false' | number;
     };
     url: '/api/programs/{id}/external-link';
 };
@@ -10997,9 +11003,11 @@ export type GetApiSystemFeatureFlagsResponses = {
             proxyArtwork: boolean;
             tonemapEnabled: boolean;
             webvttSidecarEnabled: boolean;
+            xmltvCreditImagesEnabled: boolean;
             disableSearchSnapshotInBackup: boolean;
             disableVulkan: boolean;
             disableVaapiPad: boolean;
+            ersatzTvNextEnabled: boolean;
         };
         metadata: Array<{
             key: string;
@@ -11021,6 +11029,8 @@ export type PutApiSystemFeatureFlagsData = {
         disableSearchSnapshotInBackup?: boolean;
         disableVulkan?: boolean;
         disableVaapiPad?: boolean;
+        xmltvCreditImagesEnabled?: boolean;
+        ersatzTvNextEnabled?: boolean;
     };
     path?: never;
     query?: never;
@@ -11036,9 +11046,11 @@ export type PutApiSystemFeatureFlagsResponses = {
             proxyArtwork: boolean;
             tonemapEnabled: boolean;
             webvttSidecarEnabled: boolean;
+            xmltvCreditImagesEnabled: boolean;
             disableSearchSnapshotInBackup: boolean;
             disableVulkan: boolean;
             disableVaapiPad: boolean;
+            ersatzTvNextEnabled: boolean;
         };
         metadata: Array<{
             key: string;
@@ -12063,6 +12075,23 @@ export type JellyfinLoginData = {
     url: '/api/jellyfin/login';
 };
 
+export type JellyfinLoginErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        reason: 'blocked-address';
+    };
+    /**
+     * Default Response
+     */
+    502: {
+        reason: 'unreachable' | 'auth' | 'timeout' | 'bad_response' | 'unknown';
+    };
+};
+
+export type JellyfinLoginError = JellyfinLoginErrors[keyof JellyfinLoginErrors];
+
 export type JellyfinLoginResponses = {
     /**
      * Default Response
@@ -12625,7 +12654,7 @@ export type GetApiSessionsResponses = {
      */
     200: {
         [key: string]: Array<{
-            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
             state: string;
             numConnections: number;
             connections: Array<{
@@ -12662,7 +12691,7 @@ export type DeleteApiChannelsByIdSessionsResponses = {
      * Default Response
      */
     200: {
-        type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+        type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
         state: string;
         numConnections: number;
         connections: Array<{
@@ -12702,7 +12731,7 @@ export type GetApiChannelsByIdSessionsResponses = {
      * Default Response
      */
     200: Array<{
-        type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+        type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
         state: string;
         numConnections: number;
         connections: Array<{
@@ -12725,6 +12754,23 @@ export type PostApiEmbyLoginData = {
     query?: never;
     url: '/api/emby/login';
 };
+
+export type PostApiEmbyLoginErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        reason: 'blocked-address';
+    };
+    /**
+     * Default Response
+     */
+    502: {
+        reason: 'unreachable' | 'auth' | 'timeout' | 'bad_response' | 'unknown';
+    };
+};
+
+export type PostApiEmbyLoginError = PostApiEmbyLoginErrors[keyof PostApiEmbyLoginErrors];
 
 export type PostApiEmbyLoginResponses = {
     /**
@@ -13403,10 +13449,10 @@ export type PostApiTroubleshootResponses = {
                 enabled: boolean;
             };
             programCount: number;
-            streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+            streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
             transcodeConfigId: string;
             sessions?: Array<{
-                type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+                type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
                 state: string;
                 numConnections: number;
                 connections: Array<{
@@ -13999,7 +14045,7 @@ export type GetFfmpegPlaylistData = {
     query: {
         channel: string;
         audioOnly?: boolean | 'true' | 'false' | number;
-        mode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        mode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
         token?: string;
     };
     url: '/ffmpeg/playlist';
@@ -14018,7 +14064,7 @@ export type GetStreamChannelsByIdData = {
         id: number | string;
     };
     query?: {
-        streamMode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        streamMode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
         token?: string;
         audioOnly?: boolean | 'true' | 'false' | number;
     };
@@ -14038,7 +14084,7 @@ export type GetStreamChannelsByIdTsData = {
         id: number | string;
     };
     query?: {
-        streamMode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        streamMode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
         token?: string;
         audioOnly?: boolean | 'true' | 'false' | number;
     };
@@ -14058,7 +14104,7 @@ export type GetStreamChannelsByIdM3U8Data = {
         id: string | number;
     };
     query?: {
-        mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
     };
     url: '/stream/channels/{id}.m3u8';
 };
@@ -14076,7 +14122,7 @@ export type HeadStreamChannelsByIdM3U8Data = {
         id: string | number;
     };
     query?: {
-        mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
     };
     url: '/stream/channels/{id}.m3u8';
 };

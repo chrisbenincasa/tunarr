@@ -18,6 +18,7 @@ const ChannelStreamModeToPrettyString: Record<ChannelStreamMode, string> = {
   hls_direct_v2: 'HLS Direct v2',
   hls_slower: 'HLS (alt)',
   mpegts: 'MPEG-TS',
+  etv_next: 'ErsatzTV Next',
 };
 
 type Props = {
