@@ -22,6 +22,7 @@ export default defineConfig({
       '**/*.local.test.ts',
     ],
     setupFiles: [
+      'zod/compile',
       'src/testing/matchers/PixelFormatMatcher.ts',
       'src/testing/matchers/FrameSizeMatcher.ts',
     ],
@@ -29,6 +30,7 @@ export default defineConfig({
       provider: 'v8',
     },
     typecheck: {
+      checker: 'tsgo',
       tsconfig: 'tsconfig.test.json',
     },
     silent: true,

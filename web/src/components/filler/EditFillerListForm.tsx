@@ -172,7 +172,10 @@ export function EditFillerListForm({
                 <Trans>Reset</Trans>
               </Button>
             )}
-            <Tooltip title={t`Add TV Shows or Movies to filler`} placement="right">
+            <Tooltip
+              title={t`Add TV Shows or Movies to filler`}
+              placement="right"
+            >
               <Button
                 disableRipple
                 component="button"

@@ -21,7 +21,7 @@ type OutTypes = typeof WorkerRequestToResponse;
  */
 @injectable()
 export class NoopWorkerPool implements IWorkerPool {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(TimeSlotSchedulerService)

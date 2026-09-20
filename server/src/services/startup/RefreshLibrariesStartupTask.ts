@@ -10,7 +10,7 @@ export class RefreshLibrariesStartupTask extends SimpleStartupTask {
   id = RefreshLibrariesStartupTask.name;
   dependencies = [];
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(RefreshMediaSourceLibraryTask)

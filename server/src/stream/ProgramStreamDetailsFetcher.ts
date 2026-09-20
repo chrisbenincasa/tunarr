@@ -28,10 +28,9 @@ import type {
   StreamDetails,
   StreamSource,
   SubtitleStreamDetails,
-  VideoStreamDetails} from './types.ts';
-import {
-  HttpStreamSource
+  VideoStreamDetails,
 } from './types.ts';
+import { HttpStreamSource } from './types.ts';
 import { extractIsAnamorphic } from './util.ts';
 
 @injectable()

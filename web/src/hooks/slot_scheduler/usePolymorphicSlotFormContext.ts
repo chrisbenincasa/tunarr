@@ -1,14 +1,8 @@
 import { useContext } from 'react';
-import type {
-  RandomSlotFormContextType} from '../../components/slot_scheduler/RandomSlotFormContext.tsx';
-import {
-  RandomSlotFormContext
-} from '../../components/slot_scheduler/RandomSlotFormContext.tsx';
-import type {
-  TimeSlotFormContextType} from '../../components/slot_scheduler/TimeSlotFormContext.tsx';
-import {
-  TimeSlotFormContext
-} from '../../components/slot_scheduler/TimeSlotFormContext.tsx';
+import type { RandomSlotFormContextType } from '../../components/slot_scheduler/RandomSlotFormContext.tsx';
+import { RandomSlotFormContext } from '../../components/slot_scheduler/RandomSlotFormContext.tsx';
+import type { TimeSlotFormContextType } from '../../components/slot_scheduler/TimeSlotFormContext.tsx';
+import { TimeSlotFormContext } from '../../components/slot_scheduler/TimeSlotFormContext.tsx';
 
 type PolymorphicFormContext =
   | {

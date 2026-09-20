@@ -2,11 +2,8 @@ import { FfprobeMediaInfoSchema } from '@/types/ffmpeg.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import type { Nullable } from '@/types/util.js';
-import type {
-  GetStdoutOptions} from '@/util/ChildProcessHelper.js';
-import {
-  ChildProcessHelper
-} from '@/util/ChildProcessHelper.js';
+import type { GetStdoutOptions } from '@/util/ChildProcessHelper.js';
+import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
 import { InjectLogger } from '@/util/inject.js';
@@ -75,7 +72,7 @@ export class FfmpegInfo {
 
   private childProcessHelper = new ChildProcessHelper();
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.FFmpegPath) private ffmpegPath: string,

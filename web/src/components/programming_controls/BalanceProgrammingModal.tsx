@@ -41,17 +41,23 @@ export const BalanceProgrammingModal = ({ open, onClose }: Props) => {
 
   return (
     <Dialog open={open}>
-      <DialogTitle><Trans>Balance Programming</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Balance Programming</Trans>
+      </DialogTitle>
       <DialogContent>
         <DialogContentText>
-          <Trans>Attempts to balance programming groups by either total lineup duration
-          or number of unique programs. For instance, for a channel with many
-          seasons of one show and few seasons of another, balancing will attempt
-          to create an even mix of both shows by inserting repeats of the show
-          with fewer episodes.</Trans>
+          <Trans>
+            Attempts to balance programming groups by either total lineup
+            duration or number of unique programs. For instance, for a channel
+            with many seasons of one show and few seasons of another, balancing
+            will attempt to create an even mix of both shows by inserting
+            repeats of the show with fewer episodes.
+          </Trans>
         </DialogContentText>
         <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column' }}>
-          <Typography sx={{ mb: 1 }}><Trans>Balance By:</Trans></Typography>
+          <Typography sx={{ mb: 1 }}>
+            <Trans>Balance By:</Trans>
+          </Typography>
           <ToggleButtonGroup
             color="primary"
             value={balanceType}
@@ -59,13 +65,19 @@ export const BalanceProgrammingModal = ({ open, onClose }: Props) => {
             onChange={handleChange}
             sx={{ flex: 1, alignSelf: 'center' }}
           >
-            <ToggleButton value="duration"><Trans>Duration</Trans></ToggleButton>
-            <ToggleButton value="programCount"><Trans>Program Count</Trans></ToggleButton>
+            <ToggleButton value="duration">
+              <Trans>Duration</Trans>
+            </ToggleButton>
+            <ToggleButton value="programCount">
+              <Trans>Program Count</Trans>
+            </ToggleButton>
           </ToggleButtonGroup>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button variant="contained" onClick={() => runBalance()}>
           <Trans>Balance</Trans>
         </Button>

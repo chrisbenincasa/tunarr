@@ -93,11 +93,15 @@ const AddRestrictHoursModal = ({
 
   return (
     <Dialog open={open}>
-      <DialogTitle><Trans>Restrict Hours</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Restrict Hours</Trans>
+      </DialogTitle>
       <DialogContent>
         <DialogContentText>
-          <Trans>The channel's regular programming between the specified hours. Flex
-          time will fill up the remaining hours.</Trans>
+          <Trans>
+            The channel's regular programming between the specified hours. Flex
+            time will fill up the remaining hours.
+          </Trans>
         </DialogContentText>
         <Stack
           direction="row"
@@ -117,7 +121,9 @@ const AddRestrictHoursModal = ({
               },
             }}
           />
-          <Typography><Trans>TO</Trans></Typography>
+          <Typography>
+            <Trans>TO</Trans>
+          </Typography>
           <TimePicker
             sx={{ flex: 1 }}
             value={end}
@@ -136,7 +142,9 @@ const AddRestrictHoursModal = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button variant="contained" onClick={() => handleClick()}>
           <Trans>Save</Trans>
         </Button>

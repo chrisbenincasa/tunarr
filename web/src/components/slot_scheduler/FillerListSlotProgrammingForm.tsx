@@ -44,7 +44,10 @@ export const FillerListSlotProgrammingForm = () => {
                 <TextField
                   {...params}
                   label={t`Filler`}
-                  helperText={plural(value?.programCount ?? 0, { one: '# program', other: '# programs' })}
+                  helperText={plural(value?.programCount ?? 0, {
+                    one: '# program',
+                    other: '# programs',
+                  })}
                 />
               )}
             />

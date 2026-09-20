@@ -10,11 +10,8 @@ import NodeCache from 'node-cache';
 import type { StrictOmit } from 'ts-essentials';
 import { v4 } from 'uuid';
 import type { SearchClause } from '../../../shared/dist/src/util/searchUtil.js';
-import type {
-  ProgramSearchDocument} from '../services/MeilisearchService.ts';
-import {
-  MeilisearchService
-} from '../services/MeilisearchService.ts';
+import type { ProgramSearchDocument } from '../services/MeilisearchService.ts';
+import { MeilisearchService } from '../services/MeilisearchService.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import type { Maybe } from '../types/util.ts';
@@ -32,7 +29,7 @@ export class SmartCollectionsDB {
   });
   private mu: Mutex = new Mutex();
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.DrizzleDB) private db: DrizzleDBAccess,

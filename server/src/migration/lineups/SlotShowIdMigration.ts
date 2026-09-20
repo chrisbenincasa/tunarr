@@ -13,14 +13,12 @@ export const uuidRegex =
 
 @injectable()
 export class SlotShowIdMigration extends ChannelLineupMigration<1, 2> {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   readonly from = 1;
   readonly to = 2;
 
-  constructor(
-    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
-  ) {
+  constructor(@inject(KEYS.ProgramDB) private programDB: IProgramDB) {
     super();
   }
 

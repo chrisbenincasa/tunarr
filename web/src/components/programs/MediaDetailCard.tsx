@@ -231,7 +231,11 @@ export default function MediaDetailCard({ program }: Props) {
             <Typography>{displayText}</Typography>
             {isLongDescription && (
               <Button variant="contained" onClick={toggleExpanded}>
-                {isExpanded ? <Trans>Read Less</Trans> : <Trans>Read More</Trans>}
+                {isExpanded ? (
+                  <Trans>Read Less</Trans>
+                ) : (
+                  <Trans>Read More</Trans>
+                )}
               </Button>
             )}
           </Stack>

@@ -30,7 +30,6 @@ import { type Path, type PathValue } from 'react-hook-form';
 import { type SelectedMedia } from '../store/programmingSelector/store';
 import { type UIIndex } from '../types';
 
-
 dayjs.extend(duration);
 
 export async function sequentialPromises<T, U>(

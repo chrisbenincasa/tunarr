@@ -48,7 +48,7 @@ import type { ProgramMetadataRepository } from './ProgramMetadataRepository.ts';
 
 @injectable()
 export class ProgramUpsertRepository {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,

@@ -12,11 +12,9 @@ import { simpleTaskDef } from './TaskRegistry.ts';
 export class ClearM3uCacheTask extends SimpleTask {
   ID = ClearM3uCacheTask.name;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
-  constructor(
-    @inject(M3uService) private m3uService: M3uService,
-  ) {
+  constructor(@inject(M3uService) private m3uService: M3uService) {
     super();
   }
 

@@ -24,11 +24,9 @@ export class CacheImageService {
   private cacheService!: FileCacheService;
   private imageCacheFolder: string;
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
-  constructor(
-    @inject(KEYS.Database) private db: Kysely<DB>,
-  ) {
+  constructor(@inject(KEYS.Database) private db: Kysely<DB>) {
     this.cacheService = new FileCacheService();
     this.imageCacheFolder = 'images';
   }

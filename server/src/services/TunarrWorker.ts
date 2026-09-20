@@ -8,11 +8,9 @@ import type {
   WorkerScheduleSlotsRequest,
   WorkerScheduleTimeSlotsRequest,
   WorkerSuccessReply,
-  WorkerTimeSlotScheduleReply} from '../types/worker_schemas.ts';
-import {
-  WorkerRequest,
-  type WorkerEvent,
+  WorkerTimeSlotScheduleReply,
 } from '../types/worker_schemas.ts';
+import { WorkerRequest, type WorkerEvent } from '../types/worker_schemas.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { SlotSchedulerService } from './scheduling/RandomSlotSchedulerService.ts';
@@ -22,7 +20,7 @@ import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.
 export class TunarrWorker {
   #queue: PQueue;
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(TimeSlotSchedulerService)

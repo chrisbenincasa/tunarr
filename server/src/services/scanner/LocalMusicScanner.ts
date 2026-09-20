@@ -10,7 +10,7 @@ import type {
 import glob from 'fast-glob';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { chunk, compact, head, isNil, uniq, uniqBy, uniqWith } from 'lodash-es';
-import type { IAudioMetadata} from 'music-metadata';
+import type { IAudioMetadata } from 'music-metadata';
 import { parseFile } from 'music-metadata';
 import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
@@ -69,7 +69,7 @@ export class LocalMusicScanner extends FileSystemScanner {
   private artistNfoParser = new MusicArtistNfoParser();
   private albumNfoParser = new MusicAlbumNfoParser();
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.LocalFolderCanonicalizer)
@@ -530,7 +530,9 @@ export class LocalMusicScanner extends FileSystemScanner {
     trackDirent: Dirent,
   ): Promise<Maybe<TrackParseResult>> {
     const trackPath = path.join(trackDirent.parentPath, trackDirent.name);
-    const { mediaItem: fileDetails } = (await this.getMediaItem(trackPath)).getOrThrow();
+    const { mediaItem: fileDetails } = (
+      await this.getMediaItem(trackPath)
+    ).getOrThrow();
     const parsedTrackMetadataResult = await Result.attemptAsync(() =>
       parseFile(trackPath, {
         skipCovers: true,

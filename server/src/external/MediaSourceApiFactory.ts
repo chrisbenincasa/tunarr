@@ -40,7 +40,7 @@ export class MediaSourceApiFactory {
 
   #requestCacheEnabled: boolean | Record<string, boolean> = false;
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(new LazyServiceIdentifier(() => MediaSourceDB))
@@ -113,10 +113,7 @@ export class MediaSourceApiFactory {
           username,
         })
         .catch((e) => {
-          this.logger.error(
-            e,
-            'Error updating Emby media source user info',
-          );
+          this.logger.error(e, 'Error updating Emby media source user info');
         });
     }
 

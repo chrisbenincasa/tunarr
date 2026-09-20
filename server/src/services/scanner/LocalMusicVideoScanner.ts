@@ -48,7 +48,7 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
   private nfoParser = new MusicVideoNfoParser();
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.LocalFolderCanonicalizer)
@@ -319,13 +319,17 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
     await wait();
 
-    const { mediaItem, formatTags } = (await this.getMediaItem(fullFilePath)).getOrThrow();
+    const { mediaItem, formatTags } = (
+      await this.getMediaItem(fullFilePath)
+    ).getOrThrow();
 
     if (isNil(mediaItem.duration)) {
       throw new Error(`Could not derive duration for item: ${fullFilePath}`);
     }
 
-    const metadata = (await this.loadVideoMetadata(fullFilePath, formatTags)).getOrThrow();
+    const metadata = (
+      await this.loadVideoMetadata(fullFilePath, formatTags)
+    ).getOrThrow();
 
     metadata.tags.push(file.parentPath);
 
@@ -419,9 +423,7 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
     });
   }
 
-  private extractMetadataFromFormatTags(
-    formatTags?: Record<string, string>,
-  ): {
+  private extractMetadataFromFormatTags(formatTags?: Record<string, string>): {
     title?: string;
     artistName?: string;
     albumName?: string;
@@ -453,12 +455,7 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
     return {
       title: getTag('title', 'TITLE'),
-      artistName: getTag(
-        'artist',
-        'ARTIST',
-        'album_artist',
-        'ALBUM_ARTIST',
-      ),
+      artistName: getTag('artist', 'ARTIST', 'album_artist', 'ALBUM_ARTIST'),
       albumName: getTag('album', 'ALBUM'),
       year,
     };
