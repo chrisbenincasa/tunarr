@@ -211,7 +211,9 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
     [getValues, setValue, trigger],
   );
 
-  const title = source ? t`Editing "${source.name}"` : t`New Local Media Source`;
+  const title = source
+    ? t`Editing "${source.name}"`
+    : t`New Local Media Source`;
   return (
     <>
       <DialogTitle>{title}</DialogTitle>
@@ -252,7 +254,9 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
               name="mediaType"
               render={({ field, fieldState: { error } }) => (
                 <FormControl fullWidth>
-                  <InputLabel><Trans>Media Type</Trans></InputLabel>
+                  <InputLabel>
+                    <Trans>Media Type</Trans>
+                  </InputLabel>
                   <Select label={t`Media Type`} {...field} error={!!error}>
                     {Object.values(MediaSourceContentTypeSchema.enum)
                       .filter((val) =>

@@ -1,10 +1,10 @@
 import { seq } from '@tunarr/shared/util';
-import type { BaseSlot} from '@tunarr/types/api';
+import type { BaseSlot } from '@tunarr/types/api';
 import { slotIsLinkable } from '@tunarr/types/api';
 import { injectable } from 'inversify';
 import { isArray } from 'lodash-es';
 import { v4 } from 'uuid';
-import type { Json, JsonObject} from '../../types/schemas.ts';
+import type { Json, JsonObject } from '../../types/schemas.ts';
 import { isJsonObject } from '../../types/schemas.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';

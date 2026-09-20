@@ -39,17 +39,17 @@ Other smells:
 
 ## Design tree (decisions)
 
-| # | Branch | Chosen | Rejected | Why |
-|---|--------|--------|----------|-----|
-| 1 | Module shape | Pure domain module + thin store adapter | Store slice factory | Tests hit the pure functions directly; no fresh-store-per-test. Zustand stays but shrinks to `editor.lineup = append(...)`. |
-| 2 | Editor multiplicity | Three `Lineup` values, one transition set | One polymorphic `currentEditor` | Least disruption; keeps channel's extra fields (`schedule`, `dynamicContentConfiguration`) editor-level; `currentEntityType` stays. |
-| 3 | Offset scope | Uniform — every Lineup computes offsets | Channel-only, parameterized | One index+offset algorithm; custom-show/filler gain a harmless field; no per-editor branch. |
-| 4 | Lineup boundary | Program list only | Include the entity | Entity metadata (name, startTime, config) has its own edit lifecycle; mixing it is what made `ProgrammingEditorState` shallow. |
-| 5 | Lookup ownership | External single lookup, passed to `materialize` | Inside the Lineup | Lookup is server data (a cache); `materializedProgramListSelector` already takes it as a param; dovetails with candidate #5. |
-| 6 | `addMedia` conversion | `convertAddedMedia` inside the Lineup module | Sibling module | Only used in the add-to-lineup path; split later if a second caller appears. |
-| 7 | Scope vs candidate #4 | CRUD core now; transforms stay for #4 | Fold transforms in now | Clean separation; #4 rewrites the sort/shuffle/balance hooks to emit `items[]` that `set()` consumes. |
-| 8 | File location | `web/src/model/Lineup.ts` | `web/src/lineup/` directory | `model/` is where domain value types live; provisional — `model/` is under review in candidate #3. |
-| 9 | Migration order | Incremental, channel-first | Big-bang | Zero store tests today; channel is the biggest and most-duplicated; green at each step. |
+| #   | Branch                | Chosen                                          | Rejected                        | Why                                                                                                                                 |
+| --- | --------------------- | ----------------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Module shape          | Pure domain module + thin store adapter         | Store slice factory             | Tests hit the pure functions directly; no fresh-store-per-test. Zustand stays but shrinks to `editor.lineup = append(...)`.         |
+| 2   | Editor multiplicity   | Three `Lineup` values, one transition set       | One polymorphic `currentEditor` | Least disruption; keeps channel's extra fields (`schedule`, `dynamicContentConfiguration`) editor-level; `currentEntityType` stays. |
+| 3   | Offset scope          | Uniform — every Lineup computes offsets         | Channel-only, parameterized     | One index+offset algorithm; custom-show/filler gain a harmless field; no per-editor branch.                                         |
+| 4   | Lineup boundary       | Program list only                               | Include the entity              | Entity metadata (name, startTime, config) has its own edit lifecycle; mixing it is what made `ProgrammingEditorState` shallow.      |
+| 5   | Lookup ownership      | External single lookup, passed to `materialize` | Inside the Lineup               | Lookup is server data (a cache); `materializedProgramListSelector` already takes it as a param; dovetails with candidate #5.        |
+| 6   | `addMedia` conversion | `convertAddedMedia` inside the Lineup module    | Sibling module                  | Only used in the add-to-lineup path; split later if a second caller appears.                                                        |
+| 7   | Scope vs candidate #4 | CRUD core now; transforms stay for #4           | Fold transforms in now          | Clean separation; #4 rewrites the sort/shuffle/balance hooks to emit `items[]` that `set()` consumes.                               |
+| 8   | File location         | `web/src/model/Lineup.ts`                       | `web/src/lineup/` directory     | `model/` is where domain value types live; provisional — `model/` is under review in candidate #3.                                  |
+| 9   | Migration order       | Incremental, channel-first                      | Big-bang                        | Zero store tests today; channel is the biggest and most-duplicated; green at each step.                                             |
 
 ## Settled interface
 

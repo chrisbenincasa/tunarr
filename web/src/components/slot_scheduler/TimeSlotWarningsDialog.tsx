@@ -37,7 +37,9 @@ export const TimeSlotWarningsDialog = ({ slot, onClose }: Props) => {
 
   return (
     <Dialog open={!!slot} onClose={() => onClose()} fullWidth maxWidth="md">
-      <DialogTitle><Trans>Slot Warnings</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Slot Warnings</Trans>
+      </DialogTitle>
       <DialogContent>{renderWarnings()}</DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()} variant="contained">

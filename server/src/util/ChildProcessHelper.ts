@@ -133,7 +133,7 @@ export type GetStdoutOptions = {
 export class ChildProcessHelper {
   private execQueue = new PQueue({ concurrency: 3 });
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   getStdout(
     executable: string,

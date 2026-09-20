@@ -21,7 +21,7 @@ import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
 export class MediaSourceLibraryRefresher {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,

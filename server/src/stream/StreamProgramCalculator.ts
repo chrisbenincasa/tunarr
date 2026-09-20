@@ -15,10 +15,11 @@ import type {
   CommercialStreamLineupItem,
   FallbackStreamLineupItem,
   ProgramStreamLineupItem,
-  StreamLineupItem} from '../db/derived_types/StreamLineup.ts';
+  StreamLineupItem,
+} from '../db/derived_types/StreamLineup.ts';
 import {
   createOfflineStreamLineupItem,
-  isContentBackedLineupItem
+  isContentBackedLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';

@@ -7,10 +7,9 @@ import type {
   NamedEntity,
   ProgramLike,
   Resolution,
-  TerminalProgram} from '@tunarr/types';
-import {
-  isTerminalItemType
+  TerminalProgram,
 } from '@tunarr/types';
+import { isTerminalItemType } from '@tunarr/types';
 import {
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,

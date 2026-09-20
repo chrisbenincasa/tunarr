@@ -11,7 +11,8 @@ import type {
   HdhrSettings,
   PlexStreamSettings,
   SystemSettings,
-  XmlTvSettings} from '@tunarr/types';
+  XmlTvSettings,
+} from '@tunarr/types';
 import {
   DefaultServerSettings,
   FeatureFlagsSchema,
@@ -25,7 +26,8 @@ import {
 } from '@tunarr/types';
 import type {
   BackupSettings,
-  GlobalMediaSourceSettings} from '@tunarr/types/schemas';
+  GlobalMediaSourceSettings,
+} from '@tunarr/types/schemas';
 import {
   FfmpegSettingsSchema,
   GlobalMediaSourceSettingsSchema,

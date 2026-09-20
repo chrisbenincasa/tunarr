@@ -1,3 +1,6 @@
+// Must stay first. Zod only compiles schemas constructed after this loads.
+import 'zod/compile';
+
 import dotenv from '@dotenvx/dotenvx';
 dotenv.config({ debug: false, quiet: true, ignore: ['MISSING_ENV_FILE'] });
 

@@ -76,21 +76,35 @@ const AddBlockShuffleModal = ({
 
   return (
     <Dialog open={open}>
-      <DialogTitle><Trans>Block Shuffle</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Block Shuffle</Trans>
+      </DialogTitle>
       <DialogContent sx={{ py: 0 }}>
         <DialogContentText sx={{ mb: 1 }}>
-          <Trans>Alternate programs in blocks. You can pick the number of programs
-          per-type in each block and if the order of shows in each block should
-          be randomized.</Trans>
+          <Trans>
+            Alternate programs in blocks. You can pick the number of programs
+            per-type in each block and if the order of shows in each block
+            should be randomized.
+          </Trans>
           <br />
         </DialogContentText>
         <DialogContentText variant="body2" component="div">
           <Trans>Grouping works as follows:</Trans>
           <ul>
-            <li><Trans>TV shows are grouped by show</Trans></li>
-            <li><Trans>Music tracks are grouped by artist</Trans></li>
-            <li><Trans>Movies are grouped altogether</Trans></li>
-            <li><Trans>Custom show programs are grouped by their parent show</Trans></li>
+            <li>
+              <Trans>TV shows are grouped by show</Trans>
+            </li>
+            <li>
+              <Trans>Music tracks are grouped by artist</Trans>
+            </li>
+            <li>
+              <Trans>Movies are grouped altogether</Trans>
+            </li>
+            <li>
+              <Trans>
+                Custom show programs are grouped by their parent show
+              </Trans>
+            </li>
           </ul>
         </DialogContentText>
         <Stack spacing={2} sx={{ my: 2 }} divider={<Divider />}>
@@ -110,7 +124,9 @@ const AddBlockShuffleModal = ({
                   width: ['100%', '50%'],
                 }}
               >
-                <InputLabel id="sort-block-shuffle-type"><Trans>Type</Trans></InputLabel>
+                <InputLabel id="sort-block-shuffle-type">
+                  <Trans>Type</Trans>
+                </InputLabel>
                 <Controller
                   control={control}
                   name="shuffleType"
@@ -121,8 +137,12 @@ const AddBlockShuffleModal = ({
                       label={t`Type`}
                       onChange={(e) => field.onChange(e.target.value)}
                     >
-                      <MenuItem value={'Fixed'}><Trans>Fixed</Trans></MenuItem>
-                      <MenuItem value={'Random'}><Trans>Random</Trans></MenuItem>
+                      <MenuItem value={'Fixed'}>
+                        <Trans>Fixed</Trans>
+                      </MenuItem>
+                      <MenuItem value={'Random'}>
+                        <Trans>Random</Trans>
+                      </MenuItem>
                     </Select>
                   )}
                 />
@@ -132,7 +152,9 @@ const AddBlockShuffleModal = ({
           <Box sx={{ display: isRandom ? 'none' : undefined }}>
             <Stack direction={['column', 'row']} spacing={2} useFlexGap>
               <FormControl sx={{ width: ['100%', '50%'] }}>
-                <InputLabel><Trans>Movie Sort</Trans></InputLabel>
+                <InputLabel>
+                  <Trans>Movie Sort</Trans>
+                </InputLabel>
                 <Controller
                   control={control}
                   name="sortOptions.movies.sort"
@@ -169,7 +191,9 @@ const AddBlockShuffleModal = ({
                 />
               </FormControl>
               <FormControl sx={{ width: ['100%', '50%'] }}>
-                <InputLabel><Trans>Movie Sort Order</Trans></InputLabel>
+                <InputLabel>
+                  <Trans>Movie Sort Order</Trans>
+                </InputLabel>
                 <Controller
                   control={control}
                   name="sortOptions.movies.order"
@@ -218,8 +242,10 @@ const AddBlockShuffleModal = ({
               label={t`Loop Short Programs`}
             />
             <FormHelperText>
-              <Trans>If set, any programming group with fewer episodes will be looped
-              in order to make perfectly even blocks.</Trans>
+              <Trans>
+                If set, any programming group with fewer episodes will be looped
+                in order to make perfectly even blocks.
+              </Trans>
             </FormHelperText>
           </FormControl>
           <FormControl fullWidth>
@@ -231,8 +257,10 @@ const AddBlockShuffleModal = ({
               label={t`Experimental: Make perfect schedule loop`}
             />
             <FormHelperText>
-              <Trans>Calculates a schedule where all programs end at the same time,
-              creating a perfectly looping schedule.</Trans>
+              <Trans>
+                Calculates a schedule where all programs end at the same time,
+                creating a perfectly looping schedule.
+              </Trans>
               <br />
               {usePerfectSyncDisabled &&
                 t`This option is disabled because it would calculate a schedule that is too long.`}
@@ -241,7 +269,9 @@ const AddBlockShuffleModal = ({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button
           onClick={() => handleBlockShuffle()}
           startIcon={<ShuffleIcon />}

@@ -26,7 +26,9 @@ export const EditPathReplacementsForm = () => {
   return (
     <Stack gap={1}>
       <Stack direction="row" flexWrap={'wrap'} alignItems={'center'}>
-        <Typography><Trans>Path Replacements</Trans></Typography>
+        <Typography>
+          <Trans>Path Replacements</Trans>
+        </Typography>
         <Button
           onClick={() => arr.append({ localPath: '', serverPath: '' })}
           sx={{ marginLeft: 'auto' }}
@@ -35,9 +37,11 @@ export const EditPathReplacementsForm = () => {
         </Button>
         <Box sx={{ width: '100%' }} />
         <Typography variant="subtitle2">
-          <Trans>When file paths on the remote server differ from the paths Tunarr can
-          see, use Path Replacements to instruct Tunarr how to stream media from
-          disk.</Trans>
+          <Trans>
+            When file paths on the remote server differ from the paths Tunarr
+            can see, use Path Replacements to instruct Tunarr how to stream
+            media from disk.
+          </Trans>
         </Typography>
       </Stack>
       <Stack gap={1}>
@@ -52,7 +56,11 @@ export const EditPathReplacementsForm = () => {
                   minLength: 1,
                 }}
                 render={({ field }) => (
-                  <TextField sx={{ flex: 1 }} label={t`Server Path`} {...field} />
+                  <TextField
+                    sx={{ flex: 1 }}
+                    label={t`Server Path`}
+                    {...field}
+                  />
                 )}
               />
               <ArrowRightAlt fontSize="large" sx={{ alignSelf: 'center' }} />
@@ -64,7 +72,11 @@ export const EditPathReplacementsForm = () => {
                   minLength: 1,
                 }}
                 render={({ field }) => (
-                  <TextField sx={{ flex: 1 }} label={t`Local Path`} {...field} />
+                  <TextField
+                    sx={{ flex: 1 }}
+                    label={t`Local Path`}
+                    {...field}
+                  />
                 )}
               />
               <Box alignSelf={'center'} pl={1}>

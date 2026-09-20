@@ -11,7 +11,7 @@ export class RandomSlotDurationSpecMigration extends ChannelLineupMigration<
   2,
   3
 > {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   readonly from = 2;
   readonly to = 3;

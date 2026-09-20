@@ -30,7 +30,7 @@ type GetMaterializedChannelScheduleRequest = {
 
 @injectable()
 export class GetMaterializedChannelScheduleCommand {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(ServerContext) private serverContext: ServerContext,

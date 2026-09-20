@@ -73,7 +73,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
   private tvShowNfoParser = new TvShowNfoParser();
   private tvEpisodeNfoParser = new TvEpisodeNfoParser();
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.LocalFolderCanonicalizer)

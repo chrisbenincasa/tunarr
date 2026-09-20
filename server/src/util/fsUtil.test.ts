@@ -36,7 +36,9 @@ describe('fsUtil', () => {
     });
 
     test('propagates errors from fs.unlink', async () => {
-      vi.mocked(fs.unlink).mockRejectedValue(new Error('EACCES: permission denied'));
+      vi.mocked(fs.unlink).mockRejectedValue(
+        new Error('EACCES: permission denied'),
+      );
       await expect(
         deleteUploadedFile('/data/tunarr/images/uploads/icon.png'),
       ).rejects.toThrow('EACCES: permission denied');

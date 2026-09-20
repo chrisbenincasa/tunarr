@@ -1,5 +1,5 @@
 import type { MediaSourceId } from '@tunarr/shared';
-import type { TerminalProgram} from '@tunarr/types';
+import type { TerminalProgram } from '@tunarr/types';
 import { untag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { match } from 'ts-pattern';
@@ -13,11 +13,9 @@ import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
 export class MaterializeProgramsCommand {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
-  constructor(
-    @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
-  ) {}
+  constructor(@inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB) {}
 
   async execute(
     programs: ProgramWithRelationsOrm[],

@@ -66,8 +66,10 @@ export const SmartCollectionsTable = () => {
         <Typography
           sx={{ py: '2rem', textAlign: 'center', fontStyle: 'italic' }}
         >
-          <Trans>You have no smart collections. Smart collections can be created on the{' '}
-          <RouterLink to="/search">search</RouterLink> page.</Trans>
+          <Trans>
+            You have no smart collections. Smart collections can be created on
+            the <RouterLink to="/search">search</RouterLink> page.
+          </Trans>
         </Typography>
       );
     },

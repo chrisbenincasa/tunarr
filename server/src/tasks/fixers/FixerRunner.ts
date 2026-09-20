@@ -10,14 +10,12 @@ import type Fixer from './fixer.js';
 
 @injectable()
 export class FixerRunner extends SimpleStartupTask {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   id = FixerRunner.name;
   dependencies = [ScheduleJobsStartupTask.name];
 
-  constructor(
-    @multiInject(KEYS.Fixer) private fixers: Fixer[],
-  ) {
+  constructor(@multiInject(KEYS.Fixer) private fixers: Fixer[]) {
     super();
   }
 

@@ -52,7 +52,9 @@ export const ShowSlotProgrammingForm = ({ programOptions }: Props) => {
             onChange={(_, value) =>
               value ? field.onChange(value.showId) : void 0
             }
-            renderInput={(params) => <TextField {...params} label={t`Program`} />}
+            renderInput={(params) => (
+              <TextField {...params} label={t`Program`} />
+            )}
           />
         )}
       />

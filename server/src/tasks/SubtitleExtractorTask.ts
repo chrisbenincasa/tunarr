@@ -1,5 +1,5 @@
 import { seq } from '@tunarr/shared/util';
-import type { ContentGuideProgram} from '@tunarr/types';
+import type { ContentGuideProgram } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';

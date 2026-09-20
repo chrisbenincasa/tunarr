@@ -230,10 +230,12 @@ export const LibraryProgramGrid = ({
     <Box sx={{ mt: 1 }}>
       {depth === 0 && !isUndefined(totalHits) && (
         <Typography textAlign="right" variant="subtitle2">
-          <Trans>Total hits:{' '}
-          {isNonEmptyString(query.query) && totalHits >= 1000
-            ? '>1000'
-            : totalHits}</Trans>
+          <Trans>
+            Total hits:{' '}
+            {isNonEmptyString(query.query) && totalHits >= 1000
+              ? '>1000'
+              : totalHits}
+          </Trans>
         </Typography>
       )}
       {search.isLoading && <LinearProgress />}

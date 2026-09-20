@@ -28,7 +28,9 @@ describe('iconUtil', () => {
 
     test('returns null for a server URL not under /images/uploads/', () => {
       expect(
-        extractLocalUploadFilename('http://localhost:8000/images/other/icon.png'),
+        extractLocalUploadFilename(
+          'http://localhost:8000/images/other/icon.png',
+        ),
       ).toBeNull();
     });
 
@@ -122,11 +124,7 @@ describe('iconUtil', () => {
     });
 
     test('does nothing when old icon is an external URL', async () => {
-      await deleteIfLocalAndCleared(
-        'https://example.com/image.png',
-        '',
-        dbDir,
-      );
+      await deleteIfLocalAndCleared('https://example.com/image.png', '', dbDir);
       expect(fsUtil.deleteUploadedFile).not.toHaveBeenCalled();
     });
 
