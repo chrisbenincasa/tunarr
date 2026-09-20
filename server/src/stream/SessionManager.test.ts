@@ -134,6 +134,7 @@ function makeSessionManager(
     hlsFactory,
     vi.fn(), // hlsSlowerSessionFactory — not used in these tests
     vi.fn(), // concatSessionFactory
+    vi.fn(), // etvNextSessionFactory
     eventService,
     settingsDB,
   ) as SessionManager;
