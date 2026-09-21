@@ -2808,6 +2808,7 @@ describe('slot filler placement', () => {
     id?: string;
     duration: number;
     fillerType?: string;
+    fillerConfig?: { origin?: string };
   };
 
   test('head/tail filler is emitted even when every program is padded', async () => {
@@ -3152,6 +3153,94 @@ describe('slot filler placement', () => {
     expect(midItems.reduce((acc, p) => acc + p.duration, 0)).toBe(
       breaks * breakMs,
     );
+  });
+
+  test('flex left over by a partially filled break is marked as break time', async () => {
+    const midList = randomUUID();
+    const breakMs = 30 * 1000;
+    // Nothing in the list divides the break evenly, so every break ends with a
+    // few seconds of flex.
+    const fillerMs = 7 * 1000;
+    const leftoverMs = breakMs % fillerMs;
+
+    const episodes: SlotSchedulerProgram[] = Array.from(
+      { length: 6 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `show1-ep${i + 1}`,
+          title: `Episode ${i + 1}`,
+          type: 'episode',
+          duration: 20 * oneMin,
+          episode: i + 1,
+          tvShowUuid: 'show1',
+          show: { uuid: 'show1' },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: 30 * oneMin,
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+      slots: [
+        {
+          id: randomUUID(),
+          startTime: 0,
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+          filler: [
+            {
+              types: ['mid'],
+              fillerListId: midList,
+              fillerOrder: 'uniform',
+            },
+          ],
+          midRoll: {
+            strategy: 'eager',
+            breakRule: { type: 'fixed_interval', intervalMs: 8 * oneMin },
+            breakDurationMs: breakMs,
+            maxBreaks: 2,
+            minProgramDurationMs: 0,
+            tailBufferMs: 0,
+          },
+        },
+      ],
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [...episodes, ...makeFillers(midList, 'mid', 6, fillerMs)],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const lineup = result.lineup as LineupItem[];
+    const leftovers = lineup.filter(
+      (p) => p.type === 'flex' && p.duration === leftoverMs,
+    );
+    expect(leftovers.length).toBeGreaterThan(0);
+    expect(leftovers.every((p) => p.fillerConfig?.origin === 'midroll')).toBe(
+      true,
+    );
+
+    // Flex that pads out the block, rather than a break, stays unmarked.
+    const blockFlex = lineup.filter(
+      (p) => p.type === 'flex' && p.duration !== leftoverMs,
+    );
+    expect(blockFlex.length).toBeGreaterThan(0);
+    expect(blockFlex.every((p) => p.fillerConfig === undefined)).toBe(true);
   });
 
   test('uniform-ordered filler never exceeds the time available to it', async () => {
