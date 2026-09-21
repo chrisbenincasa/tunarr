@@ -18,7 +18,6 @@ import {
   GenericError,
   TypedError,
 } from '../types/errors.js';
-import type { ConcatSession } from './ConcatSession.js';
 import {
   type ConcatSessionFactory,
   type ConcatSessionOptions,
@@ -28,7 +27,6 @@ import type {
   EtvNextSessionOptions,
   EtvNextSessionProvider,
 } from './etv/EtvNextSession.js';
-import type { HlsConcatSessionType } from './Session.js';
 import { Session } from './Session.js';
 import type { HlsSession, HlsSessionOptions } from './hls/HlsSession.js';
 import {
@@ -45,6 +43,7 @@ import { ifDefined } from '@/util/index.js';
 import type { ChannelStreamMode } from '@tunarr/types';
 import type { StreamConnectionDetails } from '@tunarr/types/api';
 import type { SessionConcatStreamMode } from '@tunarr/types/schemas';
+import { SessionConcatStreamModes } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import type { Dictionary } from 'ts-essentials';
@@ -113,23 +112,16 @@ export class SessionManager {
     return this.getSession(id, 'etv_next') as Maybe<EtvNextSession>;
   }
 
-  getConcatSession(id: string): Maybe<ConcatSession> {
-    return this.getSession(id, 'mpegts') as Maybe<ConcatSession>;
-  }
-
-  getHlsWrapperSession(
-    id: string,
-    typ: HlsConcatSessionType,
-  ): Maybe<ConcatSession> {
-    return this.getSession(id, typ) as Maybe<ConcatSession>;
-  }
-
+  /**
+   * Every concat session a channel has open.
+   *
+   * Derived from `SessionConcatStreamModes` rather than listed, so a new concat
+   * mode reports itself without a second edit here.
+   */
   getAllConcatSessions(id: string): Session[] {
-    return compact([
-      this.getConcatSession(id),
-      this.getHlsWrapperSession(id, 'hls_concat'),
-      this.getHlsWrapperSession(id, 'hls_slower_concat'),
-    ]);
+    return compact(
+      SessionConcatStreamModes.map((mode) => this.getSession(id, mode)),
+    );
   }
 
   getSession(id: string, sessionType: SessionType): Maybe<Session> {
