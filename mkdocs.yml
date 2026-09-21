@@ -79,6 +79,7 @@ nav:
       - Library:
           - configure/library/index.md
           - Filler: configure/library/filler.md
+          - How Filler Is Chosen: configure/library/filler-selection.md
           - Custom Shows: configure/library/custom-shows.md
           - Smart Collections: configure/library/smart-collections.md
       - Scheduling:
