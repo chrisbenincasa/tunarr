@@ -2,22 +2,57 @@
 
 When a channel reaches [Flex](/configure/channels/flex) time, Tunarr fills the gap one clip at a time. It picks a filler list, then picks a clip from that list, plays it, and repeats until the gap is full or nothing else fits.
 
-## Settings that affect the choice
+## The four dials
 
-| Setting | Where to find it | What it controls |
+| Dial | Where to find it | What it controls |
 |---|---|---|
-| **Weight** | Channel → Flex → each filler list | Relative chance of picking that list. A list with weight 75 is chosen three times as often as one with weight 25. |
-| **Cooldown (s)** | Channel → Flex → each filler list | How long after playing something from that list before the list can be chosen again. |
-| **Filler List Cooldown (seconds)** | Channel → Flex → Filler Options | How long before the *same clip* can play again on this channel. Despite the name, this applies per clip, not per list. |
-| **Clip length** | The media itself | Longer clips carry more weight per draw, and they can only be used in gaps large enough to hold them. |
+| **Weight** | Channel → Flex → each filler list | Relative chance of drawing from that list. A list at 75 is picked three times as often as one at 25. |
+| **Cooldown (s)** | Channel → Flex → each filler list | How long that whole list sits out after anything from it plays. |
+| **Filler List Cooldown (seconds)** | Channel → Flex → Filler Options | How long before the *same clip* can play again. The name says list, but it applies per clip. |
+| **Clip length** | The media itself | Adds weight to a clip on every draw, and decides which gaps the clip can fit into at all. |
 
-## How one pick works
+Nothing else feeds the decision. When filler is not behaving the way you want, one of these four is the reason.
 
-**Step 1 — choose a list.** Lists still inside their own cooldown are skipped. So are lists with no clip that both fits the remaining gap and is off cooldown. Tunarr then picks from what remains, in proportion to weight.
+## How the pick works
 
-**Step 2 — choose a clip.** From the chosen list, Tunarr collects every clip that fits the remaining gap and is past the repeat cooldown, then orders them by how long ago each one last played. The clip that has waited longest gets the most weight, and a clip that has never played sits at the top of that order. Clip length multiplies that weight, so a longer clip beats a shorter one of equal staleness.
+Think of each draw as a raffle. Tunarr decides who is allowed to enter, hands out tickets, and pulls one.
 
-The winner plays. Tunarr subtracts its length from the gap and runs the whole process again for whatever time is left.
+### 1. Rule out the lists that cannot play
+
+A list is out if it played something recently enough to still be inside its own **Cooldown (s)**. A list is also out if none of its clips can play right now, either because every clip is too long for the time left or because every clip is still inside the repeat cooldown.
+
+### 2. Pick one of the remaining lists
+
+Each surviving list gets tickets equal to its **Weight**. Tunarr pulls one. A list with weight 75 wins three times as often as a list with weight 25, however many clips each one holds.
+
+### 3. Rule out the clips that cannot play
+
+Inside the winning list, a clip is out if it runs longer than the time left in the gap. A clip is also out if it played more recently than the **Filler List Cooldown** allows.
+
+### 4. Hand out tickets by how long each clip has waited
+
+Tunarr lines the survivors up freshest first and numbers them. The clip that played most recently is number 1, the next is number 2, and so on up to the clip that has waited longest. A clip that has never played goes to the back of the line, which is the best place to be.
+
+Tickets go up with the square of that number. Number 2 gets four times the tickets of number 1, number 5 gets twenty-five times, number 10 gets a hundred times. The payoff for waiting climbs steeply, and that steepness is what keeps the rotation moving.
+
+Clip length then multiplies the ticket count, so a longer clip edges out a shorter one that has waited exactly as long.
+
+### 5. Pull a ticket and play the winner
+
+Tunarr subtracts the winning clip's length from the gap, then starts again at step 1 with whatever time is left.
+
+### A worked example
+
+Ten thirty-second clips, all eligible, none on cooldown. A thirty-second clip is worth 7 length points, so the tickets come out like this.
+
+| Position in line | Tickets | Chance of winning |
+|---|---|---|
+| 1 (played most recently) | 7 | 0.3% |
+| 5 | 175 | 6.5% |
+| 9 | 567 | 21% |
+| 10 (waited longest) | 700 | 26% |
+
+The clip that has waited longest is a hundred times more likely to play than the one that just came off cooldown. Nothing is guaranteed, though, so an occasional near-repeat is normal.
 
 ## Cooldowns are absolute
 
