@@ -187,6 +187,42 @@ export class EtvNextPlayoutWriter {
    * playout and stable across rewrites, so a caller extending an existing
    * window passes the number of items it has already emitted.
    */
+  /**
+   * A one-item window holding a single program, for a diagnostic transcode.
+   *
+   * The schedule is not consulted. A troubleshoot run names the program and the
+   * offset to seek to, so the walk `materializeWindow` does would answer a
+   * different question — what is on air now — and play the wrong thing.
+   *
+   * @throws StreamTerminationRequestedError when the channel's error screen is
+   *   `kill` and the item degrades, which the caller reports rather than acts on.
+   */
+  async materializeProgram({
+    channel,
+    lineupItem,
+    startMs,
+  }: {
+    channel: ChannelOrmWithTranscodeConfig;
+    lineupItem: StreamLineupItem;
+    startMs: number;
+  }): Promise<MaterializedWindow> {
+    const stream = await this.resolveStream(lineupItem);
+    const { item, ignored } = this.mapOrDegrade({
+      ...this.screenOptions(channel),
+      id: `${channel.uuid}-troubleshoot`,
+      startMs,
+      lineupItem,
+      stream,
+    });
+
+    return {
+      startMs,
+      finishMs: startMs + lineupItem.streamDuration,
+      items: [item],
+      ignored,
+    };
+  }
+
   async materializeWindow({
     channel,
     startMs,

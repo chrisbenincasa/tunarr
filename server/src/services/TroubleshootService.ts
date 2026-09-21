@@ -1,6 +1,7 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 
 import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { LanguageTaggedStream } from '@/ffmpeg/StreamSelectionEvaluator.js';
 import {
   buildCelContext,
@@ -13,6 +14,8 @@ import {
 } from '@/ffmpeg/builder/constants.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { ProgramStreamDetailsFetcher } from '@/stream/ProgramStreamDetailsFetcher.js';
+import { routesToEtvNext } from '@/stream/etv/EtvNextRouting.js';
+import type { EtvNextTroubleshootRunner } from '@/stream/etv/EtvNextTroubleshootRunner.js';
 import type { ProgramStreamResult } from '@/stream/types.js';
 import { isNonEmptyArray } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -46,10 +49,19 @@ import type {
 } from '../stream/types.js';
 import { KEYS } from '../types/inject.js';
 import { TroubleshootSessionFolderName } from '../util/constants.ts';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { CelEvaluationService } from './CelEvaluationService.js';
+import { FeatureFlagService } from './FeatureFlagService.js';
 import { StreamSelectionProfileResolver } from './StreamSelectionProfileResolver.js';
 
 dayjs.extend(duration);
+
+type TroubleshootProgram = NonNullable<
+  Awaited<ReturnType<IProgramDB['getProgramById']>>
+>;
+
+/** How long a finished troubleshoot session's output stays servable. */
+const SessionRetentionMs = 5 * 60 * 1000;
 
 /**
  * Find the first subtitle stream matching any of the requested languages, in
@@ -100,6 +112,10 @@ export class TroubleshootService {
     @inject(TranscodeConfigDB) private transcodeConfigDB: TranscodeConfigDB,
     @inject(KEYS.ProgramStreamFactory)
     private programStreamFactory: ProgramStreamFactory,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(FeatureFlagService) private featureFlagService: FeatureFlagService,
+    @inject(KEYS.EtvNextTroubleshootRunner)
+    private etvNextRunner: EtvNextTroubleshootRunner,
   ) {}
 
   getSessionDirectory(sessionId: string): string | undefined {
@@ -271,6 +287,24 @@ export class TroubleshootService {
 
     result.transcodeConfig = transcodeConfigOrmToDto(transcodeConfig);
     result.channelConfig = ormChannelToApiChannel({ channel, lineup });
+
+    // The worker builds its own pipeline from channel.json, so everything
+    // below — the CEL trace and Tunarr's FFmpeg session — would describe work
+    // that never happens on this channel.
+    if (
+      routesToEtvNext(
+        channel.streamMode,
+        this.featureFlagService.get('ersatzTvNextEnabled'),
+      )
+    ) {
+      return await this.troubleshootEtvNext({
+        request,
+        result,
+        errors,
+        channel: { ...channel, transcodeConfig },
+        program,
+      });
+    }
 
     // Stage 4: Stream Selection Trace (diagnostic only — the real stream
     // session will perform its own selection through the same code path)
@@ -576,14 +610,116 @@ export class TroubleshootService {
       errors.push(`Pipeline/transcode: ${String(err)}`);
     }
 
-    // Schedule cleanup of the temp directory after 5 minutes
-    setTimeout(
-      () => {
-        this.activeSessions.delete(sessionId);
-        fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
-      },
-      5 * 60 * 1000,
+    this.scheduleSessionCleanup(sessionId, tempDir);
+
+    return result;
+  }
+
+  private scheduleSessionCleanup(sessionId: string, tempDir: string) {
+    setTimeout(() => {
+      this.activeSessions.delete(sessionId);
+      fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    }, SessionRetentionMs);
+  }
+
+  /**
+   * Runs the diagnostic transcode through the ErsatzTV next worker instead of
+   * Tunarr's own pipeline.
+   *
+   * The result keeps the same shape the page already renders. `pipeline` holds
+   * the command the worker resolved rather than one Tunarr built, and the
+   * settings the backend drops are reported as errors so a config that streams
+   * differently than it reads says so.
+   *
+   * No stream-selection trace is produced. The playout contract carries no
+   * track indices, so Tunarr's audio and subtitle selection does not reach the
+   * worker and tracing it here would report a choice nothing acts on.
+   */
+  private async troubleshootEtvNext({
+    request,
+    result,
+    errors,
+    channel,
+    program,
+  }: {
+    request: TroubleshootRequest;
+    result: TroubleshootResult;
+    errors: string[];
+    channel: ChannelOrmWithTranscodeConfig;
+    program: TroubleshootProgram;
+  }): Promise<TroubleshootResult> {
+    errors.push(
+      'Audio and subtitle track selection is not applied on the ErsatzTV next backend, so this run transcodes the file\u2019s default tracks.',
     );
+
+    const { mediaSourceId } = program;
+    if (mediaSourceId === null) {
+      errors.push(
+        `Program ${program.uuid} has no media source, so there is nothing to stream.`,
+      );
+      return result;
+    }
+
+    const sessionId = uuidv4();
+    const tempDir = path.join(
+      os.tmpdir(),
+      TroubleshootSessionFolderName,
+      sessionId,
+    );
+    await fs.mkdir(tempDir, { recursive: true });
+
+    const testDurationMs = request.testDurationSeconds * 1000;
+    const maxStartMs = Math.max(0, program.duration - testDurationMs - 5000);
+
+    const lineupItem: StreamLineupItem = {
+      type: 'program',
+      program: { ...program, mediaSourceId },
+      duration: program.duration,
+      infiniteLoop: false,
+      programBeginMs: +dayjs(),
+      streamDuration: testDurationMs,
+      startOffset: maxStartMs > 0 ? random(0, maxStartMs) : 0,
+    };
+
+    try {
+      const run = await this.etvNextRunner.run({
+        channel,
+        lineupItem,
+        ffmpegSettings: this.settingsDB.ffmpegSettings(),
+        baseDirectory: tempDir,
+        sessionId,
+        timeoutMs: request.testDurationSeconds * 2 * 1000 + 30000,
+      });
+
+      this.activeSessions.set(sessionId, run.outputDirectory);
+      errors.push(...run.notes);
+
+      const args = run.ffmpegCommand?.split(/\s+/) ?? [];
+      result.pipeline = {
+        hardwareAccelMode: channel.transcodeConfig.hardwareAccelerationMode,
+        builderType: 'ErsatzTvNext',
+        pipelineSteps: [],
+        ffmpegArgs: args,
+        ffmpegArgsString: run.ffmpegCommand ?? '',
+        environmentVariables: {},
+      };
+
+      result.testTranscode = {
+        exitCode: run.exitCode,
+        signal: run.signal,
+        success: run.success,
+        stderrOutput: run.stderr,
+        hlsSessionId: sessionId,
+      };
+
+      if (isNonEmptyString(run.report)) {
+        result.ffmpegLog = run.report;
+      }
+    } catch (err) {
+      errors.push(`ErsatzTV next transcode: ${String(err)}`);
+    }
+
+    this.scheduleSessionCleanup(sessionId, tempDir);
 
     return result;
   }
