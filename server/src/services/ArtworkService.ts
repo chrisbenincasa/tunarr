@@ -18,6 +18,7 @@ import { KEYS } from '../types/inject.ts';
 import { extractAxiosHeaders } from '../util/axios.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
+import { buildArtworkSourcePath } from './artworkSourcePath.ts';
 import { FeatureFlagService } from './FeatureFlagService.ts';
 import { ImageCache } from './ImageCache.ts';
 
@@ -117,6 +118,8 @@ export class ArtworkService {
       type?: string;
       tvShowUuid?: string | null;
       albumUuid?: string | null;
+      externalKey?: string | null;
+      sourceType?: string | null;
     }> = await this.programDB.getProgramById(entityId);
 
     if (!entity) {
@@ -138,10 +141,67 @@ export class ArtworkService {
     }
 
     if (!art) {
-      return { kind: 'not-found' };
+      return this.deriveArtworkFromSource(entity, artworkType);
     }
 
     return this.artworkToResult(art, entity.mediaSourceId);
+  }
+
+  /**
+   * Builds the remote artwork URL from the item's own media source when no
+   * artwork row is stored.
+   *
+   * Without this an item that has never been through
+   * `BackfillProgramArtworkFixer` resolves to 404, and `XmlTvWriter` drops its
+   * `<icon>` and `<image>` entirely. The backfill stays useful as a way to
+   * persist and cache these paths, but nothing depends on it having finished.
+   */
+  private async deriveArtworkFromSource(
+    entity: {
+      mediaSourceId: MediaSourceId | null;
+      externalKey?: string | null;
+      sourceType?: string | null;
+    },
+    artworkType: ArtworkType,
+  ): Promise<ArtworkResult> {
+    const { mediaSourceId, externalKey, sourceType } = entity;
+
+    if (!mediaSourceId || !externalKey || !sourceType) {
+      return { kind: 'not-found' };
+    }
+
+    const mediaSource = await this.mediaSourceDB.getById(mediaSourceId);
+    if (!mediaSource) {
+      return { kind: 'not-found' };
+    }
+
+    const sourcePath = buildArtworkSourcePath(
+      mediaSource.uri,
+      externalKey,
+      sourceType,
+      this.logger,
+    );
+
+    if (sourcePath === undefined) {
+      return { kind: 'not-found' };
+    }
+
+    return this.artworkToResult(
+      {
+        uuid: '',
+        sourcePath,
+        artworkType,
+        programId: null,
+        groupingId: null,
+        cachePath: null,
+        creditId: null,
+        createdAt: null,
+        updatedAt: null,
+        blurHash43: null,
+        blurHash64: null,
+      },
+      mediaSourceId,
+    );
   }
 
   private async resolveCreditArtwork(
