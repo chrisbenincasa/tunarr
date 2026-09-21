@@ -2065,7 +2065,7 @@ msgstr "当前浏览器不支持 HLS！"
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "How far past its boundary can a slot's content extend? 'One extra item' allows exactly one more program that crosses the boundary."
-msgstr ""
+msgstr "时段的内容最多可以超出其边界多少？「One extra item」表示最多再允许一个跨越边界的节目。"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "How frequently libraries should be scanned (starting from midnight)."
@@ -2097,7 +2097,7 @@ msgstr "图标"
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "If a previous slot ran long, should this slot still play? Controls how late a slot can start."
-msgstr ""
+msgstr "若前一个时段超时，此时段是否仍要播出？用于控制时段最晚可以延后多久开始。"
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "If enabled, TV show episodes will use the poster of their show, instead of the individual episode poster."
@@ -2150,7 +2150,7 @@ msgstr "包含季"
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "Increasing \"Max Overflow\" for the schedule."
-msgstr ""
+msgstr "增大排期的「最大溢出」。"
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "Increasing the slot duration."
@@ -2465,7 +2465,7 @@ msgstr "最大延迟"
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Max Overflow"
-msgstr ""
+msgstr "最大溢出"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Max True Peak"
@@ -2521,7 +2521,7 @@ msgstr "消息"
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Mid"
-msgstr ""
+msgstr "中"
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
@@ -2860,11 +2860,11 @@ msgstr "为此频道覆盖全局音频与字幕设置。"
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Override how far past its boundary this slot's content can extend."
-msgstr ""
+msgstr "覆盖此时段的内容最多可超出其边界的程度。"
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Override how late this slot can start if a previous slot ran long."
-msgstr ""
+msgstr "覆盖前一个时段超时时，此时段最晚可以延后多久开始。"
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Override how programs within this slot are padded."
@@ -4186,7 +4186,7 @@ msgstr "使用频道默认设置"
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Use schedule default"
-msgstr ""
+msgstr "使用排期默认值"
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "Use Show Poster"
