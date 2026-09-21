@@ -105,6 +105,18 @@ Shows whether the short test transcode succeeded or failed:
 
 The full FFmpeg report log from the test transcode. This contains detailed information about codec initialization, filter graph construction, encoding performance, and any warnings or errors FFmpeg encountered.
 
+### Channels on the ErsatzTV next backend
+
+When the [ErsatzTV next backend](../configure/ffmpeg/ersatztv-next.md) is enabled and the selected channel uses it, the test transcode runs through the `ersatztv-channel` worker rather than Tunarr's own pipeline, so the report describes what actually plays.
+
+Three sections read differently:
+
+- **Pipeline** holds the FFmpeg command the worker resolved, not one Tunarr built.
+- **FFmpeg Log** comes from the dossier the worker leaves behind.
+- **Stream Selection** is absent, because track selection does not reach the worker. The test transcodes the file's default tracks.
+
+Settings the backend refuses or drops are listed under Errors, so a channel that streams differently than its transcode config reads says why.
+
 ## Producing a Troubleshoot Report for Bug Reports
 
 When reporting a streaming issue, include the troubleshooter output so the developer can reproduce and diagnose the problem. Follow these steps:
