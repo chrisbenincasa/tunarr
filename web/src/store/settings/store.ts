@@ -3,7 +3,7 @@ import type { DeepPartial } from 'ts-essentials';
 import { z } from 'zod';
 import type { StateCreator } from 'zustand';
 
-export const SupportedLocales = ['en', 'es', 'pseudo-LOCALE'] as const;
+export const SupportedLocales = ['en', 'es', 'zh-CN', 'pseudo-LOCALE'] as const;
 export type SupportedLocales = TupleToUnion<typeof SupportedLocales>;
 export type TimeFormat = '12h' | '24h' | 'auto';
 

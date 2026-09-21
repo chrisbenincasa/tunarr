@@ -1,7 +1,12 @@
 import { faker } from '@faker-js/faker';
+import { tag } from '@tunarr/types';
 import { v4 } from 'uuid';
 import type { Artwork } from '../db/schema/Artwork.ts';
-import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
+import type { MediaSourceId } from '../db/schema/base.ts';
+import type {
+  ProgramGroupingOrmWithRelations,
+  ProgramWithRelationsOrm,
+} from '../db/schema/derivedTypes.ts';
 import {
   createChannel,
   createFakeProgram,
@@ -73,6 +78,21 @@ function makeProgram(
     grandparentExternalKey: null,
     ...overrides,
   } as ProgramWithRelationsOrm;
+}
+
+function makeGrouping(
+  overrides: Partial<ProgramGroupingOrmWithRelations>,
+): ProgramGroupingOrmWithRelations {
+  return {
+    uuid: v4(),
+    type: 'show',
+    title: faker.music.songName(),
+    artwork: [],
+    sourceType: null,
+    externalKey: null,
+    mediaSourceId: null,
+    ...overrides,
+  } as ProgramGroupingOrmWithRelations;
 }
 
 describe('XmlTvWriter', () => {
@@ -558,6 +578,143 @@ describe('XmlTvWriter', () => {
 
         const url = resolveArtworkUrl(program, { useShowPoster: false });
         expect(url).toBeUndefined();
+      });
+    });
+
+    // The backfill may not have reached an item, and never reaches one whose
+    // artwork was never scanned. The artwork endpoint derives the remote URL
+    // from the item's own media source, so the guide emits a URL it can answer
+    // rather than dropping the <icon> entirely. See #2129.
+    describe('derivation fallback when nothing is stored', () => {
+      const derivable = {
+        sourceType: 'plex',
+        externalKey: 'ext-key-1',
+        mediaSourceId: tag<MediaSourceId>(v4()),
+      } satisfies Partial<ProgramWithRelationsOrm>;
+
+      test('derives a poster URL for a program with no artwork rows', () => {
+        const programId = v4();
+        const program = makeProgram({
+          ...derivable,
+          uuid: programId,
+          type: 'movie',
+          artwork: [],
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: false });
+        expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
+      });
+
+      test('derives for a jellyfin program too', () => {
+        const programId = v4();
+        const program = makeProgram({
+          ...derivable,
+          sourceType: 'jellyfin' as const,
+          uuid: programId,
+          type: 'movie',
+          artwork: [],
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: false });
+        expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
+      });
+
+      test('a stored artwork row still wins over derivation', () => {
+        const programId = v4();
+        const program = makeProgram({
+          ...derivable,
+          uuid: programId,
+          type: 'movie',
+          artwork: [makeArtwork('poster')],
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: false });
+        expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
+      });
+
+      test('returns undefined for a local source, which has no remote URL', () => {
+        const program = makeProgram({
+          ...derivable,
+          sourceType: 'local' as const,
+          type: 'movie',
+          artwork: [],
+        });
+
+        expect(
+          resolveArtworkUrl(program, { useShowPoster: false }),
+        ).toBeUndefined();
+      });
+
+      // `externalKey` is NOT NULL on `program`, so empty is its degenerate
+      // state; `mediaSourceId` is genuinely nullable.
+      test.each([
+        ['externalKey', { externalKey: '' }],
+        ['mediaSourceId', { mediaSourceId: null }],
+      ] as const)(
+        'returns undefined when %s is missing, since the endpoint would 404',
+        (_name, missing) => {
+          const program = makeProgram({
+            ...derivable,
+            ...missing,
+            type: 'movie',
+            artwork: [],
+          });
+
+          expect(
+            resolveArtworkUrl(program, { useShowPoster: false }),
+          ).toBeUndefined();
+        },
+      );
+
+      test('derives from the show when useShowPoster is set', () => {
+        const showId = v4();
+        const program = makeProgram({
+          ...derivable,
+          type: 'episode',
+          artwork: [],
+          show: makeGrouping({
+            ...derivable,
+            uuid: showId,
+            externalKey: 'show-key-1',
+          }),
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: true });
+        expect(url).toBe(`{{host}}/api/programs/${showId}/artwork/poster`);
+      });
+
+      test('falls back to the episode when the show is not derivable', () => {
+        const programId = v4();
+        const program = makeProgram({
+          ...derivable,
+          uuid: programId,
+          type: 'episode',
+          artwork: [],
+          show: makeGrouping({ uuid: v4(), sourceType: 'plex' }),
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: true });
+        expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
+      });
+
+      // The old /thumb fallback redirected a track to its album uuid; nothing
+      // replaced it when artwork moved to stored rows.
+      test('derives a track poster from its album', () => {
+        const albumId = v4();
+        const program = makeProgram({
+          ...derivable,
+          type: 'track',
+          artwork: [],
+          album: makeGrouping({
+            ...derivable,
+            type: 'album',
+            uuid: albumId,
+            externalKey: 'album-key-1',
+          }),
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: false });
+        expect(url).toBe(`{{host}}/api/programs/${albumId}/artwork/poster`);
       });
     });
 

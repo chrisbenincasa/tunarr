@@ -26,6 +26,38 @@ import { loggingDef } from '../util/logging/loggingDef.ts';
 
 const lock = new Mutex();
 
+/**
+ * The fields `ArtworkService` needs to build a remote artwork URL for an item
+ * that has no stored `artwork` row. Both `Program` and `ProgramGrouping` carry
+ * them, so a program, its show and its album are all checked the same way.
+ */
+type ArtworkSourceRef = {
+  sourceType?: string | null;
+  externalKey?: string | null;
+  mediaSourceId?: string | null;
+};
+
+// The source types `buildArtworkSourcePath` knows how to build a URL for.
+// Anything else (`local`, or a source type added later) derives to nothing.
+const DERIVABLE_SOURCE_TYPES: readonly string[] = ['plex', 'jellyfin', 'emby'];
+
+/**
+ * Mirrors the guard in `ArtworkService.deriveArtworkFromSource`. If these are
+ * present the endpoint can build the URL, so emitting one here is safe; if they
+ * are not, the endpoint would 404 and dropping the <icon> is honest.
+ */
+function isDerivableArtworkSource(
+  source: ArtworkSourceRef | null | undefined,
+): boolean {
+  return (
+    !isNil(source) &&
+    isNonEmptyString(source.sourceType) &&
+    DERIVABLE_SOURCE_TYPES.includes(source.sourceType) &&
+    isNonEmptyString(source.externalKey) &&
+    isNonEmptyString(source.mediaSourceId)
+  );
+}
+
 export type MaterializedChannelPrograms = {
   channel: ChannelOrm;
   programs: MaterializedGuideItem[];
@@ -343,6 +375,9 @@ export class XmlTvWriter {
       id: string | null | undefined;
       artwork: { artworkType: ArtworkType | null }[] | undefined;
       types: ArtworkType[];
+      // The item the id points at, so a candidate with no stored artwork row
+      // can still be checked for a derivable one.
+      source: ArtworkSourceRef | null | undefined;
     };
 
     const candidates: ArtworkCandidate[] = [];
@@ -353,12 +388,14 @@ export class XmlTvWriter {
           id: program.show?.uuid ?? program.tvShowUuid,
           artwork: program.show?.artwork ?? undefined,
           types: ['poster'],
+          source: program.show,
         });
       }
       candidates.push({
         id: program.uuid,
         artwork: program.artwork,
         types: ['poster', 'thumbnail'],
+        source: program,
       });
     }
 
@@ -367,6 +404,7 @@ export class XmlTvWriter {
         id: program.album?.uuid ?? program.albumUuid,
         artwork: program.album?.artwork ?? undefined,
         types: ['poster'],
+        source: program.album,
       });
     }
 
@@ -375,6 +413,7 @@ export class XmlTvWriter {
       id: program.uuid,
       artwork: program.artwork,
       types: ['poster'],
+      source: program,
     });
 
     for (const candidate of candidates) {
@@ -385,6 +424,18 @@ export class XmlTvWriter {
       if (art?.artworkType) {
         return `{{host}}/api/programs/${candidate.id}/artwork/${art.artworkType}`;
       }
+    }
+
+    // Nothing stored yet. `BackfillProgramArtworkFixer` may not have reached
+    // this item, and it never reaches one whose artwork was never scanned at
+    // all. The artwork endpoint derives the remote URL from the item's own
+    // media source on request, so emit the URL it can answer rather than
+    // dropping the <icon> — the same precedence, one layer later.
+    for (const candidate of candidates) {
+      if (!candidate.id || !isDerivableArtworkSource(candidate.source)) {
+        continue;
+      }
+      return `{{host}}/api/programs/${candidate.id}/artwork/poster`;
     }
 
     return undefined;
