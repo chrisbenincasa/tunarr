@@ -960,9 +960,15 @@ function buildEagerBreaks(
 
     const remainder = breakDuration - fillers.totalDuration;
     if (remainder > 0) {
+      // Whatever the mid filler could not cover is still break time, so it is
+      // marked as such: the guide titles it as a break and the lineup editor
+      // keeps it inside the program's mid-roll group. No filler list is
+      // attached — the break was already resolved from those lists here, and
+      // pinning them would only narrow what the stream can fall back to.
       const flex: FlexProgram = {
         type: 'flex',
         duration: remainder,
+        fillerConfig: { origin: 'midroll' },
       };
       result.push(new PaddedProgram(flex, 0, {}));
     }
@@ -1078,13 +1084,20 @@ function fillDurationWithFiller(
   slot: SlotImpl<BaseSlot>,
   targetDurationMs: number,
   timeCursor: number,
-  maxAttempts: number = 10,
+  maxConsecutiveMisses: number = 10,
 ): { fillers: FillerProgram[]; totalDuration: number } {
   const fillers: FillerProgram[] = [];
   let totalDuration = 0;
-  let attempts = 0;
+  let consecutiveMisses = 0;
 
-  while (totalDuration < targetDurationMs && attempts < maxAttempts) {
+  // The budget is spent on candidates that cannot be used, not on the ones
+  // that can: a pick that fits resets it. Counting every pick instead caps a
+  // break at `maxConsecutiveMisses` items, which leaves most of a long break
+  // as flex whenever the mid filler list holds short bumpers.
+  while (
+    totalDuration < targetDurationMs &&
+    consecutiveMisses < maxConsecutiveMisses
+  ) {
     const remaining = targetDurationMs - totalDuration;
     const filler = slot.getFillerOfType('mid', {
       slotDuration: remaining,
@@ -1093,17 +1106,17 @@ function fillDurationWithFiller(
 
     // A null pick means this candidate didn't fit the remaining break time,
     // not that the list is exhausted. The iterator has already advanced, so
-    // burn an attempt and let the next candidate try.
-    if (!filler) {
-      attempts++;
+    // burn an attempt and let the next candidate try. A zero-length program
+    // would fit forever without ever filling the break, so it counts as a
+    // miss too.
+    if (!filler || filler.duration <= 0 || filler.duration > remaining) {
+      consecutiveMisses++;
       continue;
     }
 
-    if (totalDuration + filler.duration <= targetDurationMs) {
-      fillers.push({ ...filler, fillerType: 'mid' });
-      totalDuration += filler.duration;
-    }
-    attempts++;
+    fillers.push({ ...filler, fillerType: 'mid' });
+    totalDuration += filler.duration;
+    consecutiveMisses = 0;
   }
 
   return { fillers, totalDuration };

@@ -42,6 +42,30 @@ export function formatSlotOrder(
 }
 
 /**
+ * Durations, in milliseconds, of the programs a slot of this type would
+ * actually draw from. Empty for a slot whose pool cannot be resolved from the
+ * channel's own programs, such as a smart collection.
+ */
+export function slotProgramDurationsMs(
+  slot: Pick<BaseSlot, 'type'> & { showId?: string },
+  programs: ContentProgram[],
+): number[] {
+  return seq.collect(programs, ({ program, duration }) => {
+    switch (slot.type) {
+      case 'movie':
+        return program.type === 'movie' ? duration : undefined;
+      case 'show':
+        return program.type === 'episode' &&
+          getEpisodeShowId(program) === slot.showId
+          ? duration
+          : undefined;
+      default:
+        return undefined;
+    }
+  });
+}
+
+/**
  * Mean duration, in milliseconds, of the programs a slot of this type would
  * actually draw from.
  *
@@ -55,19 +79,7 @@ export function averageProgramDurationMs(
   slot: BaseSlot,
   programs: ContentProgram[],
 ): number | undefined {
-  const durations = seq.collect(programs, ({ program, duration }) => {
-    switch (slot.type) {
-      case 'movie':
-        return program.type === 'movie' ? duration : undefined;
-      case 'show':
-        return program.type === 'episode' &&
-          getEpisodeShowId(program) === slot.showId
-          ? duration
-          : undefined;
-      default:
-        return undefined;
-    }
-  });
+  const durations = slotProgramDurationsMs(slot, programs);
 
   if (durations.length === 0) {
     return undefined;

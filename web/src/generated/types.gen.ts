@@ -103,7 +103,7 @@ export type TerminalProgramInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -121,7 +121,7 @@ export type TerminalProgramInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -142,7 +142,7 @@ export type TerminalProgramInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -245,7 +245,7 @@ export type TerminalProgramInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -263,7 +263,7 @@ export type TerminalProgramInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -284,7 +284,7 @@ export type TerminalProgramInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -389,7 +389,7 @@ export type TerminalProgramInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -407,7 +407,7 @@ export type TerminalProgramInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -428,7 +428,7 @@ export type TerminalProgramInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -699,7 +699,7 @@ export type SeasonInput = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -717,7 +717,7 @@ export type SeasonInput = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -738,7 +738,7 @@ export type SeasonInput = {
                 title?: string | null;
                 chapterType?: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -847,7 +847,7 @@ export type EpisodeInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -865,7 +865,7 @@ export type EpisodeInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -886,7 +886,7 @@ export type EpisodeInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1129,7 +1129,7 @@ export type MusicAlbumInput = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -1147,7 +1147,7 @@ export type MusicAlbumInput = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -1168,7 +1168,7 @@ export type MusicAlbumInput = {
                 title?: string | null;
                 chapterType?: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -1286,7 +1286,7 @@ export type MusicTrackInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1304,7 +1304,7 @@ export type MusicTrackInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1325,7 +1325,7 @@ export type MusicTrackInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1515,7 +1515,7 @@ export type TerminalProgram = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1533,7 +1533,7 @@ export type TerminalProgram = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1554,7 +1554,7 @@ export type TerminalProgram = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1657,7 +1657,7 @@ export type TerminalProgram = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1675,7 +1675,7 @@ export type TerminalProgram = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1696,7 +1696,7 @@ export type TerminalProgram = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1801,7 +1801,7 @@ export type TerminalProgram = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1819,7 +1819,7 @@ export type TerminalProgram = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1840,7 +1840,7 @@ export type TerminalProgram = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -2111,7 +2111,7 @@ export type Season = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -2129,7 +2129,7 @@ export type Season = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -2150,7 +2150,7 @@ export type Season = {
                 title?: string | null;
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -2259,7 +2259,7 @@ export type Episode = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -2277,7 +2277,7 @@ export type Episode = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -2298,7 +2298,7 @@ export type Episode = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -2541,7 +2541,7 @@ export type MusicAlbum = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -2559,7 +2559,7 @@ export type MusicAlbum = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -2580,7 +2580,7 @@ export type MusicAlbum = {
                 title?: string | null;
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -2698,7 +2698,7 @@ export type MusicTrack = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -2716,7 +2716,7 @@ export type MusicTrack = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -2737,7 +2737,7 @@ export type MusicTrack = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -3599,9 +3599,9 @@ export type GetApiChannelsByIdProgramsData = {
     path: {
         id: string;
     };
-    query: {
-        limit: number;
-        offset: number;
+    query?: {
+        limit?: number;
+        offset?: number;
         type?: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
     };
     url: '/api/channels/{id}/programs';
@@ -3633,9 +3633,9 @@ export type GetApiChannelsByIdShowsData = {
     path: {
         id: string;
     };
-    query: {
-        limit: number;
-        offset: number;
+    query?: {
+        limit?: number;
+        offset?: number;
     };
     url: '/api/channels/{id}/shows';
 };
@@ -3659,9 +3659,9 @@ export type GetApiChannelsByIdArtistsData = {
     path: {
         id: string;
     };
-    query: {
-        limit: number;
-        offset: number;
+    query?: {
+        limit?: number;
+        offset?: number;
     };
     url: '/api/channels/{id}/artists';
 };
@@ -5979,7 +5979,7 @@ export type GetApiChannelsByIdTranscodeConfigResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -8539,9 +8539,9 @@ export type GetApiProgramsByIdChildrenData = {
     path: {
         id: string;
     };
-    query: {
-        limit: number;
-        offset: number;
+    query?: {
+        limit?: number;
+        offset?: number;
         channelId?: string;
     };
     url: '/api/programs/{id}/children';
@@ -9905,7 +9905,7 @@ export type GetApiTranscodeConfigsResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -9960,7 +9960,7 @@ export type PostApiTranscodeConfigsData = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10020,7 +10020,7 @@ export type PostApiTranscodeConfigsResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10118,7 +10118,7 @@ export type GetApiTranscodeConfigsByIdResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10174,7 +10174,7 @@ export type PutApiTranscodeConfigsByIdData = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10236,7 +10236,7 @@ export type PutApiTranscodeConfigsByIdResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10315,7 +10315,7 @@ export type PostApiTranscodeConfigsByIdCopyResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10762,7 +10762,7 @@ export type PutApiSystemSettingsData = {
                 };
             };
             categoryLogLevel?: {
-                [key: string]: ('silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace') | unknown;
+                [key: string]: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace' | null;
             };
         };
         backup?: {
@@ -11442,7 +11442,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     hasAttachedPicture?: boolean | null;
                     fileName?: string | null;
                     mimeType?: string | null;
-                    frameRate?: (string | number) | null;
+                    frameRate?: string | number | null;
                     pixelFormat?: string | null;
                     bitDepth?: number | null;
                     colorRange?: string | null;
@@ -11460,7 +11460,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 duration: number;
                 sampleAspectRatio?: string | null;
                 displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
+                frameRate?: number | string | null;
                 resolution?: {
                     widthPx: number;
                     heightPx: number;
@@ -11481,7 +11481,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     title?: string | null;
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
                 externalKey?: string | null;
             };
             duration: number;
@@ -11586,7 +11586,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     hasAttachedPicture?: boolean | null;
                     fileName?: string | null;
                     mimeType?: string | null;
-                    frameRate?: (string | number) | null;
+                    frameRate?: string | number | null;
                     pixelFormat?: string | null;
                     bitDepth?: number | null;
                     colorRange?: string | null;
@@ -11604,7 +11604,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 duration: number;
                 sampleAspectRatio?: string | null;
                 displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
+                frameRate?: number | string | null;
                 resolution?: {
                     widthPx: number;
                     heightPx: number;
@@ -11625,7 +11625,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     title?: string | null;
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
                 externalKey?: string | null;
             };
             duration: number;
@@ -11728,7 +11728,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     hasAttachedPicture?: boolean | null;
                     fileName?: string | null;
                     mimeType?: string | null;
-                    frameRate?: (string | number) | null;
+                    frameRate?: string | number | null;
                     pixelFormat?: string | null;
                     bitDepth?: number | null;
                     colorRange?: string | null;
@@ -11746,7 +11746,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 duration: number;
                 sampleAspectRatio?: string | null;
                 displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
+                frameRate?: number | string | null;
                 resolution?: {
                     widthPx: number;
                     heightPx: number;
@@ -11767,7 +11767,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     title?: string | null;
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
                 externalKey?: string | null;
             };
             duration: number;
@@ -12167,7 +12167,7 @@ export type GetJellyfinLibraryGenresResponses = {
             PlaylistItemId?: string | null;
             DateCreated?: string | null;
             DateLastMediaAdded?: string | null;
-            ExtraType?: ('Unknown' | 'Clip' | 'Trailer' | 'BehindTheScenes' | 'DeletedScene' | 'Interview' | 'Scene' | 'Sample' | 'ThemeSong' | 'ThemeVideo' | 'Featurette' | 'Short') | null;
+            ExtraType?: 'Unknown' | 'Clip' | 'Trailer' | 'BehindTheScenes' | 'DeletedScene' | 'Interview' | 'Scene' | 'Sample' | 'ThemeSong' | 'ThemeVideo' | 'Featurette' | 'Short' | null;
             AirsBeforeSeasonNumber?: number | null;
             AirsAfterSeasonNumber?: number | null;
             AirsBeforeEpisodeNumber?: number | null;
@@ -12180,7 +12180,7 @@ export type GetJellyfinLibraryGenresResponses = {
             Container?: string | null;
             SortName?: string | null;
             ForcedSortName?: string | null;
-            Video3DFormat?: ('HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC') | null;
+            Video3DFormat?: 'HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC' | null;
             PremiereDate?: string | null;
             ExternalUrls?: Array<{
                 Name?: string | null;
@@ -12191,7 +12191,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Id?: string | null;
                 Path?: string | null;
                 EncoderPath?: string | null;
-                EncoderProtocol?: ('File' | 'Http' | 'Rtmp' | 'Rtsp' | 'Udp' | 'Rtp' | 'Ftp') | null;
+                EncoderProtocol?: 'File' | 'Http' | 'Rtmp' | 'Rtsp' | 'Udp' | 'Rtp' | 'Ftp' | null;
                 Type?: 'Default' | 'Grouping' | 'Placeholder';
                 Container?: string | null;
                 Size?: number | null;
@@ -12214,9 +12214,9 @@ export type GetJellyfinLibraryGenresResponses = {
                 BufferMs?: number | null;
                 RequiresLooping?: boolean;
                 SupportsProbing?: boolean;
-                VideoType?: ('VideoFile' | 'Iso' | 'Dvd' | 'BluRay') | null;
-                IsoType?: ('Dvd' | 'BluRay') | null;
-                Video3DFormat?: ('HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC') | null;
+                VideoType?: 'VideoFile' | 'Iso' | 'Dvd' | 'BluRay' | null;
+                IsoType?: 'Dvd' | 'BluRay' | null;
+                Video3DFormat?: 'HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC' | null;
                 MediaStreams?: Array<{
                     Codec?: string | null;
                     CodecTag?: string | null;
@@ -12269,7 +12269,7 @@ export type GetJellyfinLibraryGenresResponses = {
                     Index?: number;
                     Score?: number | null;
                     IsExternal?: boolean;
-                    DeliveryMethod?: ('Encode' | 'Embed' | 'External' | 'Hls' | 'Drop') | null;
+                    DeliveryMethod?: 'Encode' | 'Embed' | 'External' | 'Hls' | 'Drop' | null;
                     DeliveryUrl?: string | null;
                     IsExternalUrl?: boolean | null;
                     IsTextSubtitleStream?: boolean;
@@ -12378,7 +12378,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Id?: string;
             }> | null;
             Album?: string | null;
-            CollectionType?: ('unknown' | 'movies' | 'tvshows' | 'music' | 'musicvideos' | 'trailers' | 'homevideos' | 'boxsets' | 'books' | 'photos' | 'livetv' | 'playlists' | 'folders') | null;
+            CollectionType?: 'unknown' | 'movies' | 'tvshows' | 'music' | 'musicvideos' | 'trailers' | 'homevideos' | 'boxsets' | 'books' | 'photos' | 'livetv' | 'playlists' | 'folders' | null;
             DisplayOrder?: string | null;
             AlbumId?: string | null;
             AlbumPrimaryImageTag?: string | null;
@@ -12441,7 +12441,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Index?: number;
                 Score?: number | null;
                 IsExternal?: boolean;
-                DeliveryMethod?: ('Encode' | 'Embed' | 'External' | 'Hls' | 'Drop') | null;
+                DeliveryMethod?: 'Encode' | 'Embed' | 'External' | 'Hls' | 'Drop' | null;
                 DeliveryUrl?: string | null;
                 IsExternalUrl?: boolean | null;
                 IsTextSubtitleStream?: boolean;
@@ -12451,7 +12451,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Level?: number | null;
                 IsAnamorphic?: boolean | null;
             }> | null;
-            VideoType?: ('VideoFile' | 'Iso' | 'Dvd' | 'BluRay') | null;
+            VideoType?: 'VideoFile' | 'Iso' | 'Dvd' | 'BluRay' | null;
             PartCount?: number | null;
             MediaSourceCount?: number | null;
             ImageTags?: {
@@ -12516,7 +12516,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 ImageDateModified?: string;
                 ImageTag?: string | null;
             }> | null;
-            IsoType?: ('Dvd' | 'BluRay') | null;
+            IsoType?: 'Dvd' | 'BluRay' | null;
             MediaType: 'Unknown' | 'Video' | 'Audio' | 'Photo' | 'Book';
             EndDate?: string | null;
             TrailerCount?: number | null;
@@ -13325,7 +13325,7 @@ export type PostApiTroubleshootResponses = {
             videoFormat: 'h264' | 'hevc' | 'mpeg2video';
             videoProfile: string | null;
             videoPreset: string | null;
-            videoBitDepth: (8 | 10) | null;
+            videoBitDepth: 8 | 10 | null;
             videoBitRate: number;
             videoBufferSize: number;
             audioChannels: number;
@@ -13749,6 +13749,1236 @@ export type PutApiSmartCollectionsByIdResponses = {
 };
 
 export type PutApiSmartCollectionsByIdResponse = PutApiSmartCollectionsByIdResponses[keyof PutApiSmartCollectionsByIdResponses];
+
+export type GetApiEtvPlayoutItemData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/etv/playout-item';
+};
+
+export type GetApiEtvPlayoutItemErrors = {
+    /**
+     * Default Response
+     */
+    401: unknown;
+    /**
+     * Default Response
+     */
+    404: unknown;
+    /**
+     * Default Response
+     */
+    503: unknown;
+};
+
+export type GetApiEtvPlayoutItemResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        id: string;
+        start: string;
+        finish: string;
+        source?: {
+            source_type: 'local';
+            path: string;
+            in_point_ms?: number | null;
+            out_point_ms?: number | null;
+            probe_hint?: {
+                video?: Array<{
+                    stream_index: number;
+                    codec: string;
+                    width: number;
+                    height: number;
+                    pix_fmt: string;
+                    frame_rate?: string | null;
+                    profile?: string | null;
+                    field_order?: string | null;
+                    sample_aspect_ratio?: string | null;
+                    display_aspect_ratio?: string | null;
+                    color_range?: string | null;
+                    color_space?: string | null;
+                    color_transfer?: string | null;
+                    color_primaries?: string | null;
+                    dv_profile?: number | null;
+                    has_hdr10_metadata?: boolean | null;
+                }>;
+                audio?: Array<{
+                    stream_index: number;
+                    codec: string;
+                    channels: number;
+                }>;
+                subtitle?: Array<{
+                    stream_index: number;
+                    codec: string;
+                }>;
+                format_name?: string | null;
+                duration_ms?: number | null;
+            } | null;
+        } | {
+            source_type: 'lavfi';
+            params: string;
+            probe_hint?: {
+                video?: Array<{
+                    stream_index: number;
+                    codec: string;
+                    width: number;
+                    height: number;
+                    pix_fmt: string;
+                    frame_rate?: string | null;
+                    profile?: string | null;
+                    field_order?: string | null;
+                    sample_aspect_ratio?: string | null;
+                    display_aspect_ratio?: string | null;
+                    color_range?: string | null;
+                    color_space?: string | null;
+                    color_transfer?: string | null;
+                    color_primaries?: string | null;
+                    dv_profile?: number | null;
+                    has_hdr10_metadata?: boolean | null;
+                }>;
+                audio?: Array<{
+                    stream_index: number;
+                    codec: string;
+                    channels: number;
+                }>;
+                subtitle?: Array<{
+                    stream_index: number;
+                    codec: string;
+                }>;
+                format_name?: string | null;
+                duration_ms?: number | null;
+            } | null;
+        } | {
+            source_type: 'http';
+            uri: string;
+            is_live?: boolean | null;
+            in_point_ms?: number | null;
+            out_point_ms?: number | null;
+            headers?: Array<string> | null;
+            user_agent?: string | null;
+            timeout_us?: number | null;
+            reconnect?: boolean | null;
+            reconnect_delay_max?: number | null;
+            keep_alive?: boolean | null;
+            probe_hint?: {
+                video?: Array<{
+                    stream_index: number;
+                    codec: string;
+                    width: number;
+                    height: number;
+                    pix_fmt: string;
+                    frame_rate?: string | null;
+                    profile?: string | null;
+                    field_order?: string | null;
+                    sample_aspect_ratio?: string | null;
+                    display_aspect_ratio?: string | null;
+                    color_range?: string | null;
+                    color_space?: string | null;
+                    color_transfer?: string | null;
+                    color_primaries?: string | null;
+                    dv_profile?: number | null;
+                    has_hdr10_metadata?: boolean | null;
+                }>;
+                audio?: Array<{
+                    stream_index: number;
+                    codec: string;
+                    channels: number;
+                }>;
+                subtitle?: Array<{
+                    stream_index: number;
+                    codec: string;
+                }>;
+                format_name?: string | null;
+                duration_ms?: number | null;
+            } | null;
+        } | {
+            source_type: 'rtsp';
+            uri: string;
+            timeout_us?: number | null;
+            probe_hint?: {
+                video?: Array<{
+                    stream_index: number;
+                    codec: string;
+                    width: number;
+                    height: number;
+                    pix_fmt: string;
+                    frame_rate?: string | null;
+                    profile?: string | null;
+                    field_order?: string | null;
+                    sample_aspect_ratio?: string | null;
+                    display_aspect_ratio?: string | null;
+                    color_range?: string | null;
+                    color_space?: string | null;
+                    color_transfer?: string | null;
+                    color_primaries?: string | null;
+                    dv_profile?: number | null;
+                    has_hdr10_metadata?: boolean | null;
+                }>;
+                audio?: Array<{
+                    stream_index: number;
+                    codec: string;
+                    channels: number;
+                }>;
+                subtitle?: Array<{
+                    stream_index: number;
+                    codec: string;
+                }>;
+                format_name?: string | null;
+                duration_ms?: number | null;
+            } | null;
+        } | {
+            source_type: 'script';
+            command: string;
+            args?: Array<string>;
+            is_live?: boolean | null;
+            probe_hint?: {
+                video?: Array<{
+                    stream_index: number;
+                    codec: string;
+                    width: number;
+                    height: number;
+                    pix_fmt: string;
+                    frame_rate?: string | null;
+                    profile?: string | null;
+                    field_order?: string | null;
+                    sample_aspect_ratio?: string | null;
+                    display_aspect_ratio?: string | null;
+                    color_range?: string | null;
+                    color_space?: string | null;
+                    color_transfer?: string | null;
+                    color_primaries?: string | null;
+                    dv_profile?: number | null;
+                    has_hdr10_metadata?: boolean | null;
+                }>;
+                audio?: Array<{
+                    stream_index: number;
+                    codec: string;
+                    channels: number;
+                }>;
+                subtitle?: Array<{
+                    stream_index: number;
+                    codec: string;
+                }>;
+                format_name?: string | null;
+                duration_ms?: number | null;
+            } | null;
+        } | {
+            source_type: 'dynamic';
+            uri: string;
+            headers?: Array<string> | null;
+            user_agent?: string | null;
+            timeout_us?: number | null;
+        } | null;
+        tracks?: {
+            video?: {
+                source?: {
+                    source_type: 'local';
+                    path: string;
+                    in_point_ms?: number | null;
+                    out_point_ms?: number | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'lavfi';
+                    params: string;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'http';
+                    uri: string;
+                    is_live?: boolean | null;
+                    in_point_ms?: number | null;
+                    out_point_ms?: number | null;
+                    headers?: Array<string> | null;
+                    user_agent?: string | null;
+                    timeout_us?: number | null;
+                    reconnect?: boolean | null;
+                    reconnect_delay_max?: number | null;
+                    keep_alive?: boolean | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'rtsp';
+                    uri: string;
+                    timeout_us?: number | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'script';
+                    command: string;
+                    args?: Array<string>;
+                    is_live?: boolean | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'dynamic';
+                    uri: string;
+                    headers?: Array<string> | null;
+                    user_agent?: string | null;
+                    timeout_us?: number | null;
+                } | null;
+                stream_index?: number | null;
+            } | null;
+            audio?: {
+                source?: {
+                    source_type: 'local';
+                    path: string;
+                    in_point_ms?: number | null;
+                    out_point_ms?: number | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'lavfi';
+                    params: string;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'http';
+                    uri: string;
+                    is_live?: boolean | null;
+                    in_point_ms?: number | null;
+                    out_point_ms?: number | null;
+                    headers?: Array<string> | null;
+                    user_agent?: string | null;
+                    timeout_us?: number | null;
+                    reconnect?: boolean | null;
+                    reconnect_delay_max?: number | null;
+                    keep_alive?: boolean | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'rtsp';
+                    uri: string;
+                    timeout_us?: number | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'script';
+                    command: string;
+                    args?: Array<string>;
+                    is_live?: boolean | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'dynamic';
+                    uri: string;
+                    headers?: Array<string> | null;
+                    user_agent?: string | null;
+                    timeout_us?: number | null;
+                } | null;
+                stream_index?: number | null;
+            } | null;
+            subtitle?: {
+                source?: {
+                    source_type: 'local';
+                    path: string;
+                    in_point_ms?: number | null;
+                    out_point_ms?: number | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'lavfi';
+                    params: string;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'http';
+                    uri: string;
+                    is_live?: boolean | null;
+                    in_point_ms?: number | null;
+                    out_point_ms?: number | null;
+                    headers?: Array<string> | null;
+                    user_agent?: string | null;
+                    timeout_us?: number | null;
+                    reconnect?: boolean | null;
+                    reconnect_delay_max?: number | null;
+                    keep_alive?: boolean | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'rtsp';
+                    uri: string;
+                    timeout_us?: number | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'script';
+                    command: string;
+                    args?: Array<string>;
+                    is_live?: boolean | null;
+                    probe_hint?: {
+                        video?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            width: number;
+                            height: number;
+                            pix_fmt: string;
+                            frame_rate?: string | null;
+                            profile?: string | null;
+                            field_order?: string | null;
+                            sample_aspect_ratio?: string | null;
+                            display_aspect_ratio?: string | null;
+                            color_range?: string | null;
+                            color_space?: string | null;
+                            color_transfer?: string | null;
+                            color_primaries?: string | null;
+                            dv_profile?: number | null;
+                            has_hdr10_metadata?: boolean | null;
+                        }>;
+                        audio?: Array<{
+                            stream_index: number;
+                            codec: string;
+                            channels: number;
+                        }>;
+                        subtitle?: Array<{
+                            stream_index: number;
+                            codec: string;
+                        }>;
+                        format_name?: string | null;
+                        duration_ms?: number | null;
+                    } | null;
+                } | {
+                    source_type: 'dynamic';
+                    uri: string;
+                    headers?: Array<string> | null;
+                    user_agent?: string | null;
+                    timeout_us?: number | null;
+                } | null;
+                stream_index?: number | null;
+            } | null;
+        } | null;
+        watermark?: {
+            source: {
+                source_type: 'local';
+                path: string;
+                in_point_ms?: number | null;
+                out_point_ms?: number | null;
+                probe_hint?: {
+                    video?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        width: number;
+                        height: number;
+                        pix_fmt: string;
+                        frame_rate?: string | null;
+                        profile?: string | null;
+                        field_order?: string | null;
+                        sample_aspect_ratio?: string | null;
+                        display_aspect_ratio?: string | null;
+                        color_range?: string | null;
+                        color_space?: string | null;
+                        color_transfer?: string | null;
+                        color_primaries?: string | null;
+                        dv_profile?: number | null;
+                        has_hdr10_metadata?: boolean | null;
+                    }>;
+                    audio?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        channels: number;
+                    }>;
+                    subtitle?: Array<{
+                        stream_index: number;
+                        codec: string;
+                    }>;
+                    format_name?: string | null;
+                    duration_ms?: number | null;
+                } | null;
+            } | {
+                source_type: 'lavfi';
+                params: string;
+                probe_hint?: {
+                    video?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        width: number;
+                        height: number;
+                        pix_fmt: string;
+                        frame_rate?: string | null;
+                        profile?: string | null;
+                        field_order?: string | null;
+                        sample_aspect_ratio?: string | null;
+                        display_aspect_ratio?: string | null;
+                        color_range?: string | null;
+                        color_space?: string | null;
+                        color_transfer?: string | null;
+                        color_primaries?: string | null;
+                        dv_profile?: number | null;
+                        has_hdr10_metadata?: boolean | null;
+                    }>;
+                    audio?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        channels: number;
+                    }>;
+                    subtitle?: Array<{
+                        stream_index: number;
+                        codec: string;
+                    }>;
+                    format_name?: string | null;
+                    duration_ms?: number | null;
+                } | null;
+            } | {
+                source_type: 'http';
+                uri: string;
+                is_live?: boolean | null;
+                in_point_ms?: number | null;
+                out_point_ms?: number | null;
+                headers?: Array<string> | null;
+                user_agent?: string | null;
+                timeout_us?: number | null;
+                reconnect?: boolean | null;
+                reconnect_delay_max?: number | null;
+                keep_alive?: boolean | null;
+                probe_hint?: {
+                    video?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        width: number;
+                        height: number;
+                        pix_fmt: string;
+                        frame_rate?: string | null;
+                        profile?: string | null;
+                        field_order?: string | null;
+                        sample_aspect_ratio?: string | null;
+                        display_aspect_ratio?: string | null;
+                        color_range?: string | null;
+                        color_space?: string | null;
+                        color_transfer?: string | null;
+                        color_primaries?: string | null;
+                        dv_profile?: number | null;
+                        has_hdr10_metadata?: boolean | null;
+                    }>;
+                    audio?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        channels: number;
+                    }>;
+                    subtitle?: Array<{
+                        stream_index: number;
+                        codec: string;
+                    }>;
+                    format_name?: string | null;
+                    duration_ms?: number | null;
+                } | null;
+            } | {
+                source_type: 'rtsp';
+                uri: string;
+                timeout_us?: number | null;
+                probe_hint?: {
+                    video?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        width: number;
+                        height: number;
+                        pix_fmt: string;
+                        frame_rate?: string | null;
+                        profile?: string | null;
+                        field_order?: string | null;
+                        sample_aspect_ratio?: string | null;
+                        display_aspect_ratio?: string | null;
+                        color_range?: string | null;
+                        color_space?: string | null;
+                        color_transfer?: string | null;
+                        color_primaries?: string | null;
+                        dv_profile?: number | null;
+                        has_hdr10_metadata?: boolean | null;
+                    }>;
+                    audio?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        channels: number;
+                    }>;
+                    subtitle?: Array<{
+                        stream_index: number;
+                        codec: string;
+                    }>;
+                    format_name?: string | null;
+                    duration_ms?: number | null;
+                } | null;
+            } | {
+                source_type: 'script';
+                command: string;
+                args?: Array<string>;
+                is_live?: boolean | null;
+                probe_hint?: {
+                    video?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        width: number;
+                        height: number;
+                        pix_fmt: string;
+                        frame_rate?: string | null;
+                        profile?: string | null;
+                        field_order?: string | null;
+                        sample_aspect_ratio?: string | null;
+                        display_aspect_ratio?: string | null;
+                        color_range?: string | null;
+                        color_space?: string | null;
+                        color_transfer?: string | null;
+                        color_primaries?: string | null;
+                        dv_profile?: number | null;
+                        has_hdr10_metadata?: boolean | null;
+                    }>;
+                    audio?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        channels: number;
+                    }>;
+                    subtitle?: Array<{
+                        stream_index: number;
+                        codec: string;
+                    }>;
+                    format_name?: string | null;
+                    duration_ms?: number | null;
+                } | null;
+            } | {
+                source_type: 'dynamic';
+                uri: string;
+                headers?: Array<string> | null;
+                user_agent?: string | null;
+                timeout_us?: number | null;
+            };
+            stream_index?: number | null;
+            kind?: 'media' | 'canvas';
+            location: 'top_left' | 'top_center' | 'top_right' | 'center_left' | 'center' | 'center_right' | 'bottom_left' | 'bottom_center' | 'bottom_right';
+            width_percent?: number | null;
+            horizontal_margin_percent?: number | null;
+            vertical_margin_percent?: number | null;
+            opacity_percent?: number | null;
+            within_source_content?: boolean | null;
+            timing?: {
+                timing_type: 'periodic';
+                clock: 'wall' | 'content';
+                frequency_ms: number;
+                phase_offset_ms?: number | null;
+                disable_after_ms?: number | null;
+                fade_ms?: number | null;
+                hold_ms: number;
+            } | null;
+        } | null;
+        graphics?: Array<{
+            source: {
+                source_type: 'local';
+                path: string;
+                in_point_ms?: number | null;
+                out_point_ms?: number | null;
+                probe_hint?: {
+                    video?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        width: number;
+                        height: number;
+                        pix_fmt: string;
+                        frame_rate?: string | null;
+                        profile?: string | null;
+                        field_order?: string | null;
+                        sample_aspect_ratio?: string | null;
+                        display_aspect_ratio?: string | null;
+                        color_range?: string | null;
+                        color_space?: string | null;
+                        color_transfer?: string | null;
+                        color_primaries?: string | null;
+                        dv_profile?: number | null;
+                        has_hdr10_metadata?: boolean | null;
+                    }>;
+                    audio?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        channels: number;
+                    }>;
+                    subtitle?: Array<{
+                        stream_index: number;
+                        codec: string;
+                    }>;
+                    format_name?: string | null;
+                    duration_ms?: number | null;
+                } | null;
+            } | {
+                source_type: 'lavfi';
+                params: string;
+                probe_hint?: {
+                    video?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        width: number;
+                        height: number;
+                        pix_fmt: string;
+                        frame_rate?: string | null;
+                        profile?: string | null;
+                        field_order?: string | null;
+                        sample_aspect_ratio?: string | null;
+                        display_aspect_ratio?: string | null;
+                        color_range?: string | null;
+                        color_space?: string | null;
+                        color_transfer?: string | null;
+                        color_primaries?: string | null;
+                        dv_profile?: number | null;
+                        has_hdr10_metadata?: boolean | null;
+                    }>;
+                    audio?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        channels: number;
+                    }>;
+                    subtitle?: Array<{
+                        stream_index: number;
+                        codec: string;
+                    }>;
+                    format_name?: string | null;
+                    duration_ms?: number | null;
+                } | null;
+            } | {
+                source_type: 'http';
+                uri: string;
+                is_live?: boolean | null;
+                in_point_ms?: number | null;
+                out_point_ms?: number | null;
+                headers?: Array<string> | null;
+                user_agent?: string | null;
+                timeout_us?: number | null;
+                reconnect?: boolean | null;
+                reconnect_delay_max?: number | null;
+                keep_alive?: boolean | null;
+                probe_hint?: {
+                    video?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        width: number;
+                        height: number;
+                        pix_fmt: string;
+                        frame_rate?: string | null;
+                        profile?: string | null;
+                        field_order?: string | null;
+                        sample_aspect_ratio?: string | null;
+                        display_aspect_ratio?: string | null;
+                        color_range?: string | null;
+                        color_space?: string | null;
+                        color_transfer?: string | null;
+                        color_primaries?: string | null;
+                        dv_profile?: number | null;
+                        has_hdr10_metadata?: boolean | null;
+                    }>;
+                    audio?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        channels: number;
+                    }>;
+                    subtitle?: Array<{
+                        stream_index: number;
+                        codec: string;
+                    }>;
+                    format_name?: string | null;
+                    duration_ms?: number | null;
+                } | null;
+            } | {
+                source_type: 'rtsp';
+                uri: string;
+                timeout_us?: number | null;
+                probe_hint?: {
+                    video?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        width: number;
+                        height: number;
+                        pix_fmt: string;
+                        frame_rate?: string | null;
+                        profile?: string | null;
+                        field_order?: string | null;
+                        sample_aspect_ratio?: string | null;
+                        display_aspect_ratio?: string | null;
+                        color_range?: string | null;
+                        color_space?: string | null;
+                        color_transfer?: string | null;
+                        color_primaries?: string | null;
+                        dv_profile?: number | null;
+                        has_hdr10_metadata?: boolean | null;
+                    }>;
+                    audio?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        channels: number;
+                    }>;
+                    subtitle?: Array<{
+                        stream_index: number;
+                        codec: string;
+                    }>;
+                    format_name?: string | null;
+                    duration_ms?: number | null;
+                } | null;
+            } | {
+                source_type: 'script';
+                command: string;
+                args?: Array<string>;
+                is_live?: boolean | null;
+                probe_hint?: {
+                    video?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        width: number;
+                        height: number;
+                        pix_fmt: string;
+                        frame_rate?: string | null;
+                        profile?: string | null;
+                        field_order?: string | null;
+                        sample_aspect_ratio?: string | null;
+                        display_aspect_ratio?: string | null;
+                        color_range?: string | null;
+                        color_space?: string | null;
+                        color_transfer?: string | null;
+                        color_primaries?: string | null;
+                        dv_profile?: number | null;
+                        has_hdr10_metadata?: boolean | null;
+                    }>;
+                    audio?: Array<{
+                        stream_index: number;
+                        codec: string;
+                        channels: number;
+                    }>;
+                    subtitle?: Array<{
+                        stream_index: number;
+                        codec: string;
+                    }>;
+                    format_name?: string | null;
+                    duration_ms?: number | null;
+                } | null;
+            } | {
+                source_type: 'dynamic';
+                uri: string;
+                headers?: Array<string> | null;
+                user_agent?: string | null;
+                timeout_us?: number | null;
+            };
+            stream_index?: number | null;
+            kind?: 'media' | 'canvas';
+            location: 'top_left' | 'top_center' | 'top_right' | 'center_left' | 'center' | 'center_right' | 'bottom_left' | 'bottom_center' | 'bottom_right';
+            width_percent?: number | null;
+            horizontal_margin_percent?: number | null;
+            vertical_margin_percent?: number | null;
+            opacity_percent?: number | null;
+            within_source_content?: boolean | null;
+            timing?: {
+                timing_type: 'periodic';
+                clock: 'wall' | 'content';
+                frequency_ms: number;
+                phase_offset_ms?: number | null;
+                disable_after_ms?: number | null;
+                fade_ms?: number | null;
+                hold_ms: number;
+            } | null;
+        }>;
+    };
+};
+
+export type GetApiEtvPlayoutItemResponse = GetApiEtvPlayoutItemResponses[keyof GetApiEtvPlayoutItemResponses];
 
 export type GetApiEtvTranscodeConfigsByIdCompatibilityData = {
     body?: never;
