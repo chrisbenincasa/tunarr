@@ -56,3 +56,4 @@ web/.tanstack
 .review*
 .pr-*
 plans/pr-*
+.orchestra/
