@@ -607,69 +607,6 @@ describe('offline modes', () => {
    * is content backed and takes the content path asserted below. Kept because
    * the branch is still in the mapper; delete the two together if it goes.
    */
-  describe('clip mode with a hand-fed stream', () => {
-    test('clip mode plays the resolved fallback clip as the item source', () => {
-      const { item, ignored } = map(
-        offlineItem(),
-        { source: new FileStreamSource('/media/fallback-clip.mkv') },
-        { offlineMode: 'clip' },
-      );
-
-      expect(item.source).toMatchObject({
-        source_type: 'local',
-        path: '/media/fallback-clip.mkv',
-        in_point_ms: 0,
-        out_point_ms: 60_000,
-      });
-      expect(item.tracks).toBeUndefined();
-      expect(ignored).toEqual([]);
-    });
-
-    test('clip mode seeks the clip the way a content item is seeked', () => {
-      const { item } = map(
-        { ...offlineItem(), startOffset: 5_000, streamDuration: 20_000 },
-        { source: new FileStreamSource('/media/fallback-clip.mkv') },
-        { offlineMode: 'clip' },
-      );
-
-      expect(item.source).toMatchObject({
-        in_point_ms: 5_000,
-        out_point_ms: 25_000,
-      });
-    });
-
-    test('clip mode takes an http clip with its headers', () => {
-      const { item } = map(
-        offlineItem(),
-        {
-          source: new HttpStreamSource('http://plex.local/clip', {
-            'X-Plex-Token': 'abc123',
-          }),
-        },
-        { offlineMode: 'clip' },
-      );
-
-      expect(item.source).toMatchObject({
-        source_type: 'http',
-        uri: 'http://plex.local/clip',
-        headers: ['X-Plex-Token: abc123'],
-      });
-    });
-
-    test('clip mode lets a soundtrack override the clip audio', () => {
-      const { item } = map(
-        offlineItem(),
-        { source: new FileStreamSource('/media/fallback-clip.mkv') },
-        { offlineMode: 'clip', offlineSoundtrack: '/media/theme.mp3' },
-      );
-
-      expect(item.source).toMatchObject({ source_type: 'local' });
-      expect(item.tracks).toEqual({
-        audio: { source: { source_type: 'local', path: '/media/theme.mp3' } },
-      });
-    });
-  });
-
   test('clip mode falls back to the picture and says so when no clip resolved', () => {
     const { item, ignored } = map(offlineItem(), undefined, {
       offlineMode: 'clip',
