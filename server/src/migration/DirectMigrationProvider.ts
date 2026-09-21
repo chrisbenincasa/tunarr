@@ -233,6 +233,9 @@ export class DirectMigrationProvider implements MigrationProvider {
         migration1782772646: makeMigrationFromSqlFile(
           './sql/0046_melted_captain_flint.sql',
         ),
+        migration1789851695: makeMigrationFromSqlFile(
+          './sql/0047_eac3_audio_format_constraint.sql',
+        ),
       } satisfies Record<string, TunarrDatabaseMigration>,
       wrapWithTransaction,
     );
