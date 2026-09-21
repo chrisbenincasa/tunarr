@@ -7,6 +7,7 @@ import {
   findUnsupportedSettings,
   toChannelConfig,
 } from './EtvNextChannelConfigMapper.ts';
+import type { VaapiDriverResolver } from './EtvNextVaapi.ts';
 import { ChannelConfigSchema } from './generated/channelConfig.ts';
 
 const transcodeConfig = (
@@ -56,14 +57,23 @@ const ffmpegSettings = (
     ...overrides,
   });
 
+/**
+ * Stands in for reading the render node's PCI vendor id, so these stay
+ * deterministic on a machine with no GPU.
+ */
+const noGpu = () => undefined;
+const intelGpu = () => 'ihd' as const;
+
 const map = (
   tc: Partial<TranscodeConfigOrm> = {},
   fs: Partial<FfmpegSettings> = {},
+  resolveVaapiDriver: VaapiDriverResolver = noGpu,
 ) =>
   toChannelConfig({
     transcodeConfig: transcodeConfig(tc),
     ffmpegSettings: ffmpegSettings(fs),
     playoutFolder: '/var/lib/tunarr/transcode/etv_abc/playout',
+    resolveVaapiDriver,
   });
 
 describe('toChannelConfig', () => {
@@ -113,14 +123,60 @@ describe('toChannelConfig', () => {
     });
   });
 
-  test('drops the system vaapi driver silently, since it means "let the driver decide"', () => {
-    const { config, ignored } = map({
-      hardwareAccelerationMode: 'vaapi',
-      vaapiDriver: 'system',
-    });
+  test('names a driver for `system`, which the backend needs to accelerate at all', () => {
+    const { config, ignored } = map(
+      {
+        hardwareAccelerationMode: 'vaapi',
+        vaapiDriver: 'system',
+        vaapiDevice: '/dev/dri/renderD128',
+      },
+      {},
+      intelGpu,
+    );
 
+    expect(config.normalization.video).toMatchObject({
+      accel: 'vaapi',
+      vaapi_driver: 'ihd',
+      vaapi_device: '/dev/dri/renderD128',
+    });
+    expect(ignored.map((i) => i.field)).not.toContain(
+      'hardwareAccelerationMode',
+    );
+  });
+
+  test('fills in the default render node when the config names none', () => {
+    const { config } = map(
+      {
+        hardwareAccelerationMode: 'vaapi',
+        vaapiDriver: 'system',
+        vaapiDevice: null,
+      },
+      {},
+      intelGpu,
+    );
+
+    expect(config.normalization.video.vaapi_device).toBe('/dev/dri/renderD128');
+  });
+
+  test('warns that accel is lost when no driver can be determined', () => {
+    const { config, ignored } = map(
+      {
+        hardwareAccelerationMode: 'vaapi',
+        vaapiDriver: 'system',
+        vaapiDevice: '/dev/dri/renderD128',
+      },
+      {},
+      noGpu,
+    );
+
+    // Emitted without a driver the backend ignores `accel` entirely, so the
+    // user is told rather than left with a channel that quietly uses the CPU.
     expect(config.normalization.video.vaapi_driver).toBeUndefined();
-    expect(ignored.map((i) => i.field)).not.toContain('vaapiDriver');
+    expect(ignored).toContainEqual({
+      field: 'hardwareAccelerationMode',
+      reason:
+        'the backend needs both a VAAPI device and driver, and neither could be determined here, so this channel will transcode in software',
+    });
   });
 
   test('reports nouveau as dropped rather than substituting a different driver', () => {
@@ -134,6 +190,7 @@ describe('toChannelConfig', () => {
       field: 'vaapiDriver',
       reason: 'nouveau has no counterpart in the backend',
     });
+    expect(ignored.map((i) => i.field)).toContain('hardwareAccelerationMode');
   });
 
   test.each([
