@@ -90,6 +90,13 @@ function makePrograms(
   }
 }
 
+const BUDGET = 50;
+
+// The real cap is 5k rows; overriding it keeps the budget tests small.
+class BoundedFixer extends BackfillProgramArtworkFixer {
+  protected override readonly maxRowsReadPerRun = BUDGET;
+}
+
 function artworkCount(drizzle: DrizzleDBAccess): number {
   return drizzle.select().from(Artwork).all().length;
 }
@@ -155,6 +162,49 @@ describe('BackfillProgramArtworkFixer', () => {
     await fixer.run();
 
     expect(artworkCount(drizzle)).toBe(501);
+  });
+
+  // The per-run cap has to count rows *read*, not rows written. A run that
+  // derives nothing from what it reads would otherwise leave the budget at zero
+  // and walk the rest of the table, which is the #2128 symptom.
+  test('stops at the read budget even when nothing is written', async ({
+    drizzle,
+  }) => {
+    const unusableId = makeMediaSource(drizzle, '');
+    makePrograms(drizzle, unusableId, 120);
+
+    // Sorts last by uuid, so it is only reached by a scan that reads past the
+    // budget. It is backfillable, so reaching it would insert a row.
+    const mediaSourceId = makeMediaSource(drizzle);
+    drizzle
+      .insert(Program)
+      .values({
+        uuid: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+        duration: 30_000,
+        type: 'movie',
+        sourceType: 'plex',
+        externalKey: 'tail-program',
+        externalSourceId: tag<MediaSourceName>('test-source'),
+        title: 'Tail Movie',
+        mediaSourceId,
+      })
+      .run();
+
+    await new BoundedFixer(drizzle).run();
+
+    expect(artworkCount(drizzle)).toBe(0);
+  });
+
+  test('spends one budget across both scans, not one each', async ({
+    drizzle,
+  }) => {
+    const mediaSourceId = makeMediaSource(drizzle);
+    makePrograms(drizzle, mediaSourceId, 80);
+
+    await new BoundedFixer(drizzle).run();
+
+    // 50, not 80: the program scan alone exhausts the run's allowance.
+    expect(artworkCount(drizzle)).toBe(BUDGET);
   });
 
   test('skips programs whose media source has an unusable uri', async ({

@@ -24,14 +24,25 @@ const SELECT_BATCH_SIZE = 500;
 // never holds the single SQLite write lock for its whole duration.
 const INSERT_CHUNK_SIZE = 100;
 
-// Upper bound on rows written per server start. A backfill larger than this
-// finishes over several restarts; the XMLTV writer falls back to a derived
-// artwork URL in the meantime, so a partial backfill is not user-visible.
-const MAX_ROWS_PER_RUN = 5_000;
+// Upper bound on rows *read* per server start, shared by both scans. Counting
+// reads rather than writes is what makes this a bound: a row whose media source
+// has no usable uri never produces an insert, so a write counter would let a
+// table full of them page on to the end while the budget sat at zero.
+//
+// A backfill larger than this finishes over several restarts; the XMLTV writer
+// emits a derived artwork URL in the meantime, so a partial backfill is not
+// user-visible.
+const MAX_ROWS_READ_PER_RUN = 5_000;
+
+// Mutable so both scans draw down the same allowance.
+type ReadBudget = { remaining: number };
 
 @injectable()
 export class BackfillProgramArtworkFixer extends Fixer {
   canRunInBackground = true;
+
+  // Overridable so a test can exercise the budget without inserting 5k rows.
+  protected readonly maxRowsReadPerRun: number = MAX_ROWS_READ_PER_RUN;
 
   @InjectLogger() declare protected readonly logger: Logger;
 
@@ -40,8 +51,12 @@ export class BackfillProgramArtworkFixer extends Fixer {
   }
 
   protected async runInternal(): Promise<void> {
-    const programCount = await this.backfillProgramArtwork();
-    const groupingCount = await this.backfillGroupingArtwork();
+    // One budget for the run, not one per scan, so a boot reads at most
+    // `maxRowsReadPerRun` rows in total.
+    const budget = { remaining: this.maxRowsReadPerRun };
+
+    const programCount = await this.backfillProgramArtwork(budget);
+    const groupingCount = await this.backfillGroupingArtwork(budget);
 
     if (programCount > 0 || groupingCount > 0) {
       this.logger.info(
@@ -54,11 +69,11 @@ export class BackfillProgramArtworkFixer extends Fixer {
     }
   }
 
-  private async backfillProgramArtwork(): Promise<number> {
+  private async backfillProgramArtwork(budget: ReadBudget): Promise<number> {
     let cursor: string | undefined;
     let written = 0;
 
-    while (written < MAX_ROWS_PER_RUN) {
+    while (budget.remaining > 0) {
       // Programs that already have artwork drop out of this predicate, so the
       // backfill resumes across restarts without storing a cursor. The uuid
       // cursor only has to step past rows this run cannot build a path for.
@@ -80,7 +95,7 @@ export class BackfillProgramArtworkFixer extends Fixer {
           ),
         )
         .orderBy(Program.uuid)
-        .limit(SELECT_BATCH_SIZE)
+        .limit(Math.min(SELECT_BATCH_SIZE, budget.remaining))
         .all();
 
       if (batch.length === 0) {
@@ -88,6 +103,7 @@ export class BackfillProgramArtworkFixer extends Fixer {
       }
 
       cursor = batch[batch.length - 1]!.uuid;
+      budget.remaining -= batch.length;
 
       const artworkRecords = this.buildProgramArtwork(batch);
       written += this.insertArtwork(artworkRecords);
@@ -102,11 +118,11 @@ export class BackfillProgramArtworkFixer extends Fixer {
     return written;
   }
 
-  private async backfillGroupingArtwork(): Promise<number> {
+  private async backfillGroupingArtwork(budget: ReadBudget): Promise<number> {
     let cursor: string | undefined;
     let written = 0;
 
-    while (written < MAX_ROWS_PER_RUN) {
+    while (budget.remaining > 0) {
       const batch = this.drizzleDB
         .select({
           uuid: ProgramGrouping.uuid,
@@ -134,7 +150,7 @@ export class BackfillProgramArtworkFixer extends Fixer {
           ),
         )
         .orderBy(ProgramGrouping.uuid)
-        .limit(SELECT_BATCH_SIZE)
+        .limit(Math.min(SELECT_BATCH_SIZE, budget.remaining))
         .all();
 
       if (batch.length === 0) {
@@ -142,6 +158,7 @@ export class BackfillProgramArtworkFixer extends Fixer {
       }
 
       cursor = batch[batch.length - 1]!.uuid;
+      budget.remaining -= batch.length;
 
       // A grouping can carry several external ids; one artwork row per grouping
       // is enough, and a duplicate would violate nothing but is wasted work.
