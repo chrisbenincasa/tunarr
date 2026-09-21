@@ -18,7 +18,7 @@ import {
   Tabs,
   Tooltip,
 } from '@mui/material';
-import { blue, green, orange, pink, purple } from '@mui/material/colors';
+import { blue, green, orange, pink, purple, red } from '@mui/material/colors';
 import { type SlotFiller } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -80,6 +80,7 @@ const SmallCircle = styled(Box, {
 const fillerKindToColor = {
   head: blue['A100'],
   pre: purple['A100'],
+  mid: red['A100'],
   post: green['200'],
   tail: orange['A100'],
   fallback: pink['A100'],
@@ -319,28 +320,24 @@ export const TimeSlotTable = () => {
 
           return (
             <Stack direction="row" spacing={1}>
-              {(['head', 'pre', 'post', 'tail', 'fallback'] as const).map(
-                (type) => {
-                  return (
-                    <Tooltip
-                      placement="top"
-                      title={capitalize(type)}
-                      key={type}
-                    >
-                      <SmallCircle
-                        color={fillerKindToColor[type]}
-                        sx={{
-                          width: '10px',
-                          height: '10px',
-                          visibility: fillerKinds.includes(type)
-                            ? 'visible'
-                            : 'hidden',
-                        }}
-                      />
-                    </Tooltip>
-                  );
-                },
-              )}
+              {(
+                ['head', 'pre', 'mid', 'post', 'tail', 'fallback'] as const
+              ).map((type) => {
+                return (
+                  <Tooltip placement="top" title={capitalize(type)} key={type}>
+                    <SmallCircle
+                      color={fillerKindToColor[type]}
+                      sx={{
+                        width: '10px',
+                        height: '10px',
+                        visibility: fillerKinds.includes(type)
+                          ? 'visible'
+                          : 'hidden',
+                      }}
+                    />
+                  </Tooltip>
+                );
+              })}
             </Stack>
           );
         },
