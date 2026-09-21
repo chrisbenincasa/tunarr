@@ -1,5 +1,5 @@
 import { KEYS } from '@/types/inject.js';
-import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { chunk } from 'lodash-es';
 import { v4 } from 'uuid';
@@ -10,9 +10,24 @@ import { MediaSource } from '../../db/schema/MediaSource.ts';
 import { Program } from '../../db/schema/Program.ts';
 import { ProgramGrouping } from '../../db/schema/ProgramGrouping.ts';
 import { ProgramGroupingExternalId } from '../../db/schema/ProgramGroupingExternalId.ts';
+import { buildArtworkSourcePath } from '../../services/artworkSourcePath.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
+import throttle from '../../util/throttle.ts';
 import Fixer from './fixer.ts';
+
+// Rows read per query. Each batch is resolved and inserted before the next is
+// read, so this bounds peak memory rather than total work.
+const SELECT_BATCH_SIZE = 500;
+
+// Rows inserted per transaction. One transaction per chunk, so a long backfill
+// never holds the single SQLite write lock for its whole duration.
+const INSERT_CHUNK_SIZE = 100;
+
+// Upper bound on rows written per server start. A backfill larger than this
+// finishes over several restarts; the XMLTV writer falls back to a derived
+// artwork URL in the meantime, so a partial backfill is not user-visible.
+const MAX_ROWS_PER_RUN = 5_000;
 
 @injectable()
 export class BackfillProgramArtworkFixer extends Fixer {
@@ -24,9 +39,9 @@ export class BackfillProgramArtworkFixer extends Fixer {
     super();
   }
 
-  protected runInternal(): Promise<void> {
-    const programCount = this.backfillProgramArtwork();
-    const groupingCount = this.backfillGroupingArtwork();
+  protected async runInternal(): Promise<void> {
+    const programCount = await this.backfillProgramArtwork();
+    const groupingCount = await this.backfillGroupingArtwork();
 
     if (programCount > 0 || groupingCount > 0) {
       this.logger.info(
@@ -37,220 +52,253 @@ export class BackfillProgramArtworkFixer extends Fixer {
     } else {
       this.logger.debug('No programs or groupings needed artwork backfill');
     }
-
-    return Promise.resolve(void 0);
   }
 
-  private backfillProgramArtwork(): number {
-    // Find programs that have no artwork records, have a remote media source,
-    // and have the data needed to construct an artwork URL.
-    const programsWithoutArtwork = this.drizzleDB
-      .select({
-        uuid: Program.uuid,
-        externalKey: Program.externalKey,
-        sourceType: Program.sourceType,
-        mediaSourceId: Program.mediaSourceId,
-      })
-      .from(Program)
-      .leftJoin(Artwork, eq(Artwork.programId, Program.uuid))
-      .where(
-        and(
-          isNull(Artwork.uuid),
-          inArray(Program.sourceType, ['plex', 'jellyfin', 'emby']),
-          isNotNull(Program.mediaSourceId),
-        ),
-      )
-      .all();
+  private async backfillProgramArtwork(): Promise<number> {
+    let cursor: string | undefined;
+    let written = 0;
 
-    if (programsWithoutArtwork.length === 0) {
-      return 0;
-    }
+    while (written < MAX_ROWS_PER_RUN) {
+      // Programs that already have artwork drop out of this predicate, so the
+      // backfill resumes across restarts without storing a cursor. The uuid
+      // cursor only has to step past rows this run cannot build a path for.
+      const batch = this.drizzleDB
+        .select({
+          uuid: Program.uuid,
+          externalKey: Program.externalKey,
+          sourceType: Program.sourceType,
+          mediaSourceId: Program.mediaSourceId,
+        })
+        .from(Program)
+        .leftJoin(Artwork, eq(Artwork.programId, Program.uuid))
+        .where(
+          and(
+            isNull(Artwork.uuid),
+            inArray(Program.sourceType, ['plex', 'jellyfin', 'emby']),
+            isNotNull(Program.mediaSourceId),
+            cursor === undefined ? undefined : gt(Program.uuid, cursor),
+          ),
+        )
+        .orderBy(Program.uuid)
+        .limit(SELECT_BATCH_SIZE)
+        .all();
 
-    // Collect all unique media source IDs and fetch their URIs in one query
-    const mediaSourceIds = [
-      ...new Set(
-        programsWithoutArtwork
-          .map((p) => p.mediaSourceId)
-          .filter((id): id is MediaSourceId => id !== null),
-      ),
-    ];
-
-    if (mediaSourceIds.length === 0) {
-      return 0;
-    }
-
-    const mediaSources = this.drizzleDB
-      .select({
-        uuid: MediaSource.uuid,
-        uri: MediaSource.uri,
-        type: MediaSource.type,
-      })
-      .from(MediaSource)
-      .where(inArray(MediaSource.uuid, mediaSourceIds))
-      .all();
-
-    const mediaSourceMap = new Map(mediaSources.map((ms) => [ms.uuid, ms]));
-
-    const artworkRecords: NewArtwork[] = [];
-
-    for (const program of programsWithoutArtwork) {
-      if (program.mediaSourceId === null) {
-        continue;
+      if (batch.length === 0) {
+        break;
       }
 
-      const mediaSource = mediaSourceMap.get(program.mediaSourceId);
-      if (mediaSource === undefined) {
-        continue;
+      cursor = batch[batch.length - 1]!.uuid;
+
+      const artworkRecords = this.buildProgramArtwork(batch);
+      written += this.insertArtwork(artworkRecords);
+
+      if (batch.length < SELECT_BATCH_SIZE) {
+        break;
       }
 
-      const sourcePath = this.buildArtworkSourcePath(
-        mediaSource.uri,
-        program.externalKey,
-        mediaSource.type,
-      );
+      await throttle();
+    }
 
+    return written;
+  }
+
+  private async backfillGroupingArtwork(): Promise<number> {
+    let cursor: string | undefined;
+    let written = 0;
+
+    while (written < MAX_ROWS_PER_RUN) {
+      const batch = this.drizzleDB
+        .select({
+          uuid: ProgramGrouping.uuid,
+          externalKey: ProgramGroupingExternalId.externalKey,
+          sourceType: ProgramGroupingExternalId.sourceType,
+          mediaSourceId: ProgramGroupingExternalId.mediaSourceId,
+        })
+        .from(ProgramGrouping)
+        .innerJoin(
+          ProgramGroupingExternalId,
+          eq(ProgramGroupingExternalId.groupUuid, ProgramGrouping.uuid),
+        )
+        .leftJoin(Artwork, eq(Artwork.groupingId, ProgramGrouping.uuid))
+        .where(
+          and(
+            isNull(Artwork.uuid),
+            inArray(ProgramGroupingExternalId.sourceType, [
+              'plex',
+              'jellyfin',
+              'emby',
+            ]),
+            isNotNull(ProgramGroupingExternalId.externalKey),
+            isNotNull(ProgramGroupingExternalId.mediaSourceId),
+            cursor === undefined ? undefined : gt(ProgramGrouping.uuid, cursor),
+          ),
+        )
+        .orderBy(ProgramGrouping.uuid)
+        .limit(SELECT_BATCH_SIZE)
+        .all();
+
+      if (batch.length === 0) {
+        break;
+      }
+
+      cursor = batch[batch.length - 1]!.uuid;
+
+      // A grouping can carry several external ids; one artwork row per grouping
+      // is enough, and a duplicate would violate nothing but is wasted work.
+      const seen = new Set<string>();
+      const unique = batch.filter((grouping) => {
+        if (seen.has(grouping.uuid)) {
+          return false;
+        }
+        seen.add(grouping.uuid);
+        return true;
+      });
+
+      const artworkRecords = this.buildGroupingArtwork(unique);
+      written += this.insertArtwork(artworkRecords);
+
+      if (batch.length < SELECT_BATCH_SIZE) {
+        break;
+      }
+
+      await throttle();
+    }
+
+    return written;
+  }
+
+  private buildProgramArtwork(
+    rows: {
+      uuid: string;
+      externalKey: string;
+      sourceType: string;
+      mediaSourceId: MediaSourceId | null;
+    }[],
+  ): NewArtwork[] {
+    const mediaSources = this.loadMediaSources(rows);
+    const records: NewArtwork[] = [];
+
+    for (const row of rows) {
+      const sourcePath = this.resolveSourcePath(row, mediaSources);
       if (sourcePath === undefined) {
         continue;
       }
 
-      artworkRecords.push({
+      records.push({
         uuid: v4(),
         sourcePath,
         artworkType: 'poster',
-        programId: program.uuid,
+        programId: row.uuid,
         groupingId: null,
         cachePath: null,
         creditId: null,
       });
     }
 
-    if (artworkRecords.length === 0) {
-      return 0;
-    }
-
-    this.drizzleDB.transaction((tx) => {
-      for (const batch of chunk(artworkRecords, 100)) {
-        tx.insert(Artwork).values(batch).run();
-      }
-    });
-
-    return artworkRecords.length;
+    return records;
   }
 
-  private backfillGroupingArtwork(): number {
-    // Find program groupings that have no artwork records, joined with their
-    // external IDs to get source type and external key.
-    const groupingsWithoutArtwork = this.drizzleDB
-      .select({
-        uuid: ProgramGrouping.uuid,
-        externalKey: ProgramGroupingExternalId.externalKey,
-        sourceType: ProgramGroupingExternalId.sourceType,
-        mediaSourceId: ProgramGroupingExternalId.mediaSourceId,
-      })
-      .from(ProgramGrouping)
-      .innerJoin(
-        ProgramGroupingExternalId,
-        eq(ProgramGroupingExternalId.groupUuid, ProgramGrouping.uuid),
-      )
-      .leftJoin(Artwork, eq(Artwork.groupingId, ProgramGrouping.uuid))
-      .where(
-        and(
-          isNull(Artwork.uuid),
-          inArray(ProgramGroupingExternalId.sourceType, [
-            'plex',
-            'jellyfin',
-            'emby',
-          ]),
-          isNotNull(ProgramGroupingExternalId.externalKey),
-          isNotNull(ProgramGroupingExternalId.mediaSourceId),
-        ),
-      )
-      .all();
+  private buildGroupingArtwork(
+    rows: {
+      uuid: string;
+      externalKey: string;
+      sourceType: string;
+      mediaSourceId: MediaSourceId | null;
+    }[],
+  ): NewArtwork[] {
+    const mediaSources = this.loadMediaSources(rows);
+    const records: NewArtwork[] = [];
 
-    if (groupingsWithoutArtwork.length === 0) {
-      return 0;
+    for (const row of rows) {
+      const sourcePath = this.resolveSourcePath(row, mediaSources);
+      if (sourcePath === undefined) {
+        continue;
+      }
+
+      records.push({
+        uuid: v4(),
+        sourcePath,
+        artworkType: 'poster',
+        programId: null,
+        groupingId: row.uuid,
+        cachePath: null,
+        creditId: null,
+      });
     }
 
-    // Deduplicate by grouping UUID -- a grouping might have multiple external IDs
-    // and we only need one artwork record per grouping.
-    const seenGroupings = new Set<string>();
-    const uniqueGroupings = groupingsWithoutArtwork.filter((g) => {
-      if (seenGroupings.has(g.uuid)) {
-        return false;
-      }
-      seenGroupings.add(g.uuid);
-      return true;
-    });
+    return records;
+  }
 
-    // Collect all unique media source IDs and fetch their URIs
-    const mediaSourceIds = [
+  private loadMediaSources(
+    rows: { mediaSourceId: MediaSourceId | null }[],
+  ): Map<MediaSourceId, { uri: string; type: string }> {
+    const ids = [
       ...new Set(
-        uniqueGroupings
-          .map((g) => g.mediaSourceId)
+        rows
+          .map((row) => row.mediaSourceId)
           .filter((id): id is MediaSourceId => id !== null),
       ),
     ];
 
-    if (mediaSourceIds.length === 0) {
-      return 0;
+    if (ids.length === 0) {
+      return new Map();
     }
 
-    const mediaSources = this.drizzleDB
+    const sources = this.drizzleDB
       .select({
         uuid: MediaSource.uuid,
         uri: MediaSource.uri,
         type: MediaSource.type,
       })
       .from(MediaSource)
-      .where(inArray(MediaSource.uuid, mediaSourceIds))
+      .where(inArray(MediaSource.uuid, ids))
       .all();
 
-    const mediaSourceMap = new Map(mediaSources.map((ms) => [ms.uuid, ms]));
+    return new Map(
+      sources.map((source) => [
+        source.uuid,
+        { uri: source.uri, type: source.type },
+      ]),
+    );
+  }
 
-    const artworkRecords: NewArtwork[] = [];
-
-    for (const grouping of uniqueGroupings) {
-      if (grouping.mediaSourceId === null) {
-        continue;
-      }
-
-      const mediaSource = mediaSourceMap.get(grouping.mediaSourceId);
-      if (mediaSource === undefined) {
-        continue;
-      }
-
-      const sourcePath = this.buildArtworkSourcePath(
-        mediaSource.uri,
-        grouping.externalKey,
-        mediaSource.type,
-      );
-
-      if (sourcePath === undefined) {
-        continue;
-      }
-
-      artworkRecords.push({
-        uuid: v4(),
-        sourcePath,
-        artworkType: 'poster',
-        programId: null,
-        groupingId: grouping.uuid,
-        cachePath: null,
-        creditId: null,
-      });
+  private resolveSourcePath(
+    row: { externalKey: string; mediaSourceId: MediaSourceId | null },
+    mediaSources: Map<MediaSourceId, { uri: string; type: string }>,
+  ): string | undefined {
+    if (row.mediaSourceId === null) {
+      return undefined;
     }
 
-    if (artworkRecords.length === 0) {
+    const mediaSource = mediaSources.get(row.mediaSourceId);
+    if (mediaSource === undefined) {
+      return undefined;
+    }
+
+    return this.buildArtworkSourcePath(
+      mediaSource.uri,
+      row.externalKey,
+      mediaSource.type,
+    );
+  }
+
+  private insertArtwork(records: NewArtwork[]): number {
+    if (records.length === 0) {
       return 0;
     }
 
-    this.drizzleDB.transaction((tx) => {
-      for (const batch of chunk(artworkRecords, 100)) {
-        tx.insert(Artwork).values(batch).run();
-      }
-    });
+    // One transaction per chunk. Wrapping the whole loop in a single
+    // transaction would hold the write lock for the length of the backfill.
+    for (const batch of chunk(records, INSERT_CHUNK_SIZE)) {
+      this.drizzleDB.transaction(
+        (tx) => {
+          tx.insert(Artwork).values(batch).run();
+        },
+        { behavior: 'immediate' },
+      );
+    }
 
-    return artworkRecords.length;
+    return records.length;
   }
 
   private buildArtworkSourcePath(
@@ -258,28 +306,11 @@ export class BackfillProgramArtworkFixer extends Fixer {
     externalKey: string,
     sourceType: string,
   ): string | undefined {
-    try {
-      switch (sourceType) {
-        case 'plex':
-          return new URL(
-            `/library/metadata/${externalKey}/thumb`,
-            mediaSourceUri,
-          ).href;
-        case 'jellyfin':
-        case 'emby':
-          return new URL(`/Items/${externalKey}/Images/Primary`, mediaSourceUri)
-            .href;
-        default:
-          return undefined;
-      }
-    } catch {
-      this.logger.warn(
-        'Failed to construct artwork URL for source type %s, key %s, uri %s',
-        sourceType,
-        externalKey,
-        mediaSourceUri,
-      );
-      return undefined;
-    }
+    return buildArtworkSourcePath(
+      mediaSourceUri,
+      externalKey,
+      sourceType,
+      this.logger,
+    );
   }
 }
