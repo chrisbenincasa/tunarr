@@ -147,6 +147,20 @@ export class FfmpegState {
     return;
   }
 
+  get hlsSubtitlePlaylistPath(): Maybe<string> {
+    if (
+      this.outputFormat.type === OutputFormatTypes.Hls ||
+      this.outputFormat.type === OutputFormatTypes.HlsDirectV2
+    ) {
+      return path.join(
+        this.outputFormat.hlsOptions.segmentBaseDirectory,
+        this.outputFormat.hlsOptions.streamBasePath,
+        this.outputFormat.hlsOptions.subtitleStreamNameFormat,
+      );
+    }
+    return;
+  }
+
   get hlsBaseStreamUrl() {
     if (
       this.outputFormat.type === OutputFormatTypes.Hls ||

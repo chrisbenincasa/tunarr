@@ -151,6 +151,12 @@ export type PipelineAudioFunctionArgs = {
   pipelineSteps: IPipelineStep[];
 };
 
+/**
+ * WebVTT segment names for converted subtitles. Fixed, unlike the subtitle
+ * playlist name, which the HLS options let callers set.
+ */
+const SubtitleSegmentNameFormat = 'sub%06d.vtt';
+
 type PipelineBuilderContextProps = DataProps<PipelineBuilderContext>;
 
 export class PipelineBuilderContext {
@@ -918,16 +924,17 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
               this.ffmpegState.emitEndList,
             ),
           );
-          if (this.subtitleInputSource?.method === SubtitleMethods.Convert) {
+          const subtitlePlaylistPath = this.ffmpegState.hlsSubtitlePlaylistPath;
+          if (
+            this.subtitleInputSource?.method === SubtitleMethods.Convert &&
+            isNonEmptyString(subtitlePlaylistPath)
+          ) {
             this.pipelineSteps.push(
               new HlsSubtitleOutputFormat(
-                path.join(
-                  path.dirname(this.ffmpegState.hlsPlaylistPath),
-                  'subs.m3u8',
-                ),
+                subtitlePlaylistPath,
                 path.join(
                   path.dirname(this.ffmpegState.hlsSegmentTemplate),
-                  'sub%06d.vtt',
+                  SubtitleSegmentNameFormat,
                 ),
                 this.ffmpegState.hlsBaseStreamUrl,
                 this.computeSubtitleMapRef(),
@@ -957,16 +964,17 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
               this.ffmpegState.emitEndList,
             ),
           );
-          if (this.subtitleInputSource?.method === SubtitleMethods.Convert) {
+          const subtitlePlaylistPath = this.ffmpegState.hlsSubtitlePlaylistPath;
+          if (
+            this.subtitleInputSource?.method === SubtitleMethods.Convert &&
+            isNonEmptyString(subtitlePlaylistPath)
+          ) {
             this.pipelineSteps.push(
               new HlsSubtitleOutputFormat(
-                path.join(
-                  path.dirname(this.ffmpegState.hlsPlaylistPath),
-                  'subs.m3u8',
-                ),
+                subtitlePlaylistPath,
                 path.join(
                   path.dirname(this.ffmpegState.hlsSegmentTemplate),
-                  'sub%06d.vtt',
+                  SubtitleSegmentNameFormat,
                 ),
                 this.ffmpegState.hlsBaseStreamUrl,
                 this.computeSubtitleMapRef(),

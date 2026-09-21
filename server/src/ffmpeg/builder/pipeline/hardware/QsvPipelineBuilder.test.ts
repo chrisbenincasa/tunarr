@@ -1277,6 +1277,7 @@ describe('QsvPipelineBuilder', () => {
           hlsOptions: {
             hlsDeleteThreshold: 3,
             streamNameFormat: 'stream.m3u8',
+            subtitleStreamNameFormat: 'subs.m3u8',
             segmentNameFormat: 'data%06d.ts',
             segmentBaseDirectory:
               'C:\\Users\\plex-svc\\AppData\\Roaming\\tunarr\\streams',
