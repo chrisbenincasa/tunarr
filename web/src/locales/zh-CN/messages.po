@@ -4128,6 +4128,18 @@ msgstr "Tunarr 当前配置为使用 AC3 音频编码器。浏览器不支持该
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 msgstr "Tunarr 会运行各类后台任务，其中一些按计划定时执行。"
 
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Tunarr will attempt to get Plex to pull Tunarr's updated XMLTV upon regeneration"
+msgstr ""
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "Tunarr will update Jellyfin's \"now playing\" state while channels are active."
+msgstr ""
+
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Tunarr will update Plex's \"now playing\" state while channels are active."
+msgstr ""
+
 #: src/pages/settings/HdhrSettingsPage.tsx
 #: src/pages/settings/HdhrSettingsPage.tsx
 msgid "Tuner Count"
@@ -4171,6 +4183,11 @@ msgstr "解除关联"
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Update"
 msgstr "更新"
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Update Play Status"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
