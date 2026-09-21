@@ -22,6 +22,7 @@ import type z from 'zod';
 import useStore from '../../../store/index.ts';
 import { setShowAdvancedSettings } from '../../../store/settings/actions.ts';
 import Breadcrumbs from '../../Breadcrumbs.tsx';
+import { EtvNextCompatibilityNotice } from './EtvNextCompatibilityNotice.tsx';
 import { TranscodeConfigAdvancedOptions } from './TranscodeConfigAdvancedOptions.tsx';
 import { TranscodeConfigAudioSettingsForm } from './TranscodeConfigAudioSettingsForm.tsx';
 import { TranscodeConfigErrorOptions } from './TranscodeConfigErrorOptions.tsx';
@@ -87,6 +88,9 @@ export const TranscodeConfigSettingsForm = ({
               )}
             </ToggleButton>
           </Stack>
+          {isNew !== true && (
+            <EtvNextCompatibilityNotice configId={initialConfig.id} />
+          )}
           <Box>
             <Typography variant="h5" sx={{ mb: 2 }}>
               <Trans>General</Trans>

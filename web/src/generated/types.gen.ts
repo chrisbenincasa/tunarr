@@ -13750,6 +13750,42 @@ export type PutApiSmartCollectionsByIdResponses = {
 
 export type PutApiSmartCollectionsByIdResponse = PutApiSmartCollectionsByIdResponses[keyof PutApiSmartCollectionsByIdResponses];
 
+export type GetApiEtvTranscodeConfigsByIdCompatibilityData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/etv/transcode_configs/{id}/compatibility';
+};
+
+export type GetApiEtvTranscodeConfigsByIdCompatibilityErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type GetApiEtvTranscodeConfigsByIdCompatibilityResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        supported: boolean;
+        unsupported: Array<{
+            field: string;
+            value: string;
+            reason: string;
+        }>;
+        ignored: Array<{
+            field: string;
+            reason: string;
+        }>;
+    };
+};
+
+export type GetApiEtvTranscodeConfigsByIdCompatibilityResponse = GetApiEtvTranscodeConfigsByIdCompatibilityResponses[keyof GetApiEtvTranscodeConfigsByIdCompatibilityResponses];
+
 export type GetApiCreditsByIdData = {
     body?: never;
     path: {

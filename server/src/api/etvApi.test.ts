@@ -6,6 +6,7 @@ import {
 import { describe, expect, test, vi } from 'vitest';
 import type { StreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import type { ChannelOrmWithTranscodeConfig } from '../db/schema/derivedTypes.ts';
+import type { TranscodeConfigOrm } from '../db/schema/TranscodeConfig.ts';
 import { EtvNextDynamicTokenRegistry } from '../stream/etv/EtvNextDynamicTokenRegistry.ts';
 import {
   EtvNextPlayoutWriter,
@@ -34,6 +35,19 @@ const makeChannel = (errorScreen?: string) =>
     },
   }) as unknown as ChannelOrmWithTranscodeConfig;
 
+/** A config the backend takes as-is, which each compatibility case perturbs. */
+const supportedTranscodeConfig = {
+  videoFormat: 'h264',
+  audioFormat: 'aac',
+  hardwareAccelerationMode: 'none',
+  vaapiDriver: 'system',
+  threadCount: 0,
+  videoPreset: null,
+  videoProfile: null,
+  audioVolumePercent: 100,
+  normalizeFrameRate: false,
+} as unknown as TranscodeConfigOrm;
+
 const programItem = (streamDuration: number): StreamLineupItem =>
   ({
     type: 'program',
@@ -54,11 +68,15 @@ async function makeApp({
   scheduleFails = false,
   channelExists = true,
   errorScreen,
+  transcodeConfig,
+  scalingAlgorithm = 'fast_bilinear',
 }: {
   lineupItem?: StreamLineupItem;
   scheduleFails?: boolean;
   channelExists?: boolean;
   errorScreen?: string;
+  transcodeConfig?: Partial<TranscodeConfigOrm>;
+  scalingAlgorithm?: string;
 } = {}) {
   const programCalculator = {
     getCurrentLineupItem: vi.fn(() =>
@@ -105,6 +123,17 @@ async function makeApp({
   const etvSession = { stop: vi.fn(() => Promise.resolve()) };
   const sessionManager = { getEtvNextSession: vi.fn(() => etvSession) };
 
+  const transcodeConfigDB = {
+    getById: vi.fn(() =>
+      Promise.resolve(
+        transcodeConfig === undefined
+          ? undefined
+          : { ...supportedTranscodeConfig, ...transcodeConfig },
+      ),
+    ),
+  };
+  const settings = { ffmpegSettings: vi.fn(() => ({ scalingAlgorithm })) };
+
   const tokenRegistry = new EtvNextDynamicTokenRegistry();
   const token = tokenRegistry.issue(channelUuid, channelNumber);
 
@@ -119,7 +148,11 @@ async function makeApp({
   app.setSerializerCompiler(serializerCompiler);
   app.decorateRequest('serverCtx', null);
   app.addHook('onRequest', (req, _res, done) => {
-    (req as unknown as { serverCtx: unknown }).serverCtx = { sessionManager };
+    (req as unknown as { serverCtx: unknown }).serverCtx = {
+      sessionManager,
+      transcodeConfigDB,
+      settings,
+    };
     done();
   });
   await app.register(controller.mount);
@@ -134,6 +167,7 @@ async function makeApp({
     sessionManager,
     etvSession,
     playoutWriter,
+    transcodeConfigDB,
   };
 }
 
@@ -436,5 +470,77 @@ describe('callback rate', () => {
     expect(programCalculator.getCurrentLineupItem.mock.calls.length).toBe(
       MaxCallbacksPerWindow,
     );
+  });
+});
+
+describe('transcode config compatibility', () => {
+  const compatibility = (
+    app: Awaited<ReturnType<typeof makeApp>>['app'],
+    id = '11111111-2222-4333-8444-555555555555',
+  ) =>
+    app.inject({
+      method: 'GET',
+      url: `/etv/transcode_configs/${id}/compatibility`,
+    });
+
+  test('passes a config the backend can encode', async () => {
+    const { app } = await makeApp({ transcodeConfig: {} });
+
+    const response = await compatibility(app);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      supported: true,
+      unsupported: [],
+      ignored: [],
+    });
+  });
+
+  test('refuses a codec the backend cannot encode, naming the field', async () => {
+    const { app } = await makeApp({
+      transcodeConfig: {
+        videoFormat: 'mpeg2video',
+      } as Partial<TranscodeConfigOrm>,
+    });
+
+    const response = await compatibility(app);
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json<{
+      supported: boolean;
+      unsupported: { field: string; value: string }[];
+    }>();
+    expect(body.supported).toBe(false);
+    expect(body.unsupported).toEqual([
+      expect.objectContaining({ field: 'videoFormat', value: 'mpeg2video' }),
+    ]);
+  });
+
+  test('reports a dropped setting without refusing the config', async () => {
+    const { app } = await makeApp({
+      transcodeConfig: { videoPreset: 'slow' } as Partial<TranscodeConfigOrm>,
+      scalingAlgorithm: 'bicubic',
+    });
+
+    const response = await compatibility(app);
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json<{
+      supported: boolean;
+      ignored: { field: string }[];
+    }>();
+    expect(body.supported).toBe(true);
+    expect(body.ignored.map((i) => i.field)).toEqual([
+      'videoPreset',
+      'scalingAlgorithm',
+    ]);
+  });
+
+  test('answers 404 for a config that does not exist', async () => {
+    const { app } = await makeApp();
+
+    const response = await compatibility(app);
+
+    expect(response.statusCode).toBe(404);
   });
 });

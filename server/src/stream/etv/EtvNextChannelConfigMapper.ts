@@ -172,6 +172,69 @@ export function findUnsupportedSettings(
 }
 
 /**
+ * Reports the settings a config carries that the backend has nowhere to put.
+ *
+ * These do not refuse the config. The channel still streams; it streams
+ * without them, so a user who tuned a preset or a volume trim is told rather
+ * than left to wonder why it stopped mattering.
+ *
+ * Reads the same two sources `toChannelConfig` does, because whether scaling
+ * is ignored is a global ffmpeg setting rather than a per-config one.
+ */
+export function findIgnoredSettings({
+  transcodeConfig,
+  ffmpegSettings,
+}: {
+  transcodeConfig: TranscodeConfigOrm;
+  ffmpegSettings: Pick<MappedFfmpegSettings, 'scalingAlgorithm'>;
+}): IgnoredSetting[] {
+  const ignored: IgnoredSetting[] = [];
+  const note = (field: string, reason: string) =>
+    ignored.push({ field, reason });
+
+  if (transcodeConfig.threadCount !== 0) {
+    note('threadCount', 'the backend does not expose a thread count');
+  }
+  if (transcodeConfig.videoPreset !== null) {
+    note('videoPreset', 'the backend has no encoder preset surface yet');
+  }
+  if (transcodeConfig.videoProfile !== null) {
+    note('videoProfile', 'the backend has no encoder profile surface yet');
+  }
+  if (transcodeConfig.audioVolumePercent !== 100) {
+    note('audioVolumePercent', 'the backend has no volume filter');
+  }
+  if (transcodeConfig.normalizeFrameRate === true) {
+    note('normalizeFrameRate', 'the backend does not normalize frame rate');
+  }
+  if (ffmpegSettings.scalingAlgorithm !== 'fast_bilinear') {
+    note(
+      'scalingAlgorithm',
+      'the backend hardcodes fast_bilinear for software scaling',
+    );
+  }
+
+  // Only meaningful under an accel mode the backend understands; a driver
+  // named beside software encoding was never going to be read.
+  const usesAccel =
+    transcodeConfig.hardwareAccelerationMode !== 'none' &&
+    isSupportedAccel(transcodeConfig.hardwareAccelerationMode);
+
+  if (
+    usesAccel &&
+    !isSupportedVaapiDriver(transcodeConfig.vaapiDriver) &&
+    transcodeConfig.vaapiDriver !== 'system'
+  ) {
+    note(
+      'vaapiDriver',
+      `${transcodeConfig.vaapiDriver} has no counterpart in the backend`,
+    );
+  }
+
+  return ignored;
+}
+
+/**
  * Builds the `channel.json` a worker is spawned with.
  *
  * Tunarr has no per-channel config deltas — `channel.transcodeConfigId` points
@@ -200,32 +263,7 @@ export function toChannelConfig({
   }
   const { videoFormat, audioFormat, accel } = check.codecs;
 
-  const ignored: IgnoredSetting[] = [];
-  const note = (field: string, reason: string) =>
-    ignored.push({ field, reason });
-
-  if (transcodeConfig.threadCount !== 0) {
-    note('threadCount', 'the backend does not expose a thread count');
-  }
-  if (transcodeConfig.videoPreset !== null) {
-    note('videoPreset', 'the backend has no encoder preset surface yet');
-  }
-  if (transcodeConfig.videoProfile !== null) {
-    note('videoProfile', 'the backend has no encoder profile surface yet');
-  }
-  if (transcodeConfig.audioVolumePercent !== 100) {
-    note('audioVolumePercent', 'the backend has no volume filter');
-  }
-  if (transcodeConfig.normalizeFrameRate === true) {
-    note('normalizeFrameRate', 'the backend does not normalize frame rate');
-  }
-  if (ffmpegSettings.scalingAlgorithm !== 'fast_bilinear') {
-    note(
-      'scalingAlgorithm',
-      'the backend hardcodes fast_bilinear for software scaling',
-    );
-  }
-
+  const ignored = findIgnoredSettings({ transcodeConfig, ffmpegSettings });
   const usesAccel = accel !== undefined;
 
   // `system` means "let the driver decide", which is the same as omitting it.
@@ -233,16 +271,6 @@ export function toChannelConfig({
   const vaapiDriver = isSupportedVaapiDriver(transcodeConfig.vaapiDriver)
     ? transcodeConfig.vaapiDriver
     : undefined;
-  if (
-    usesAccel &&
-    vaapiDriver === undefined &&
-    transcodeConfig.vaapiDriver !== 'system'
-  ) {
-    note(
-      'vaapiDriver',
-      `${transcodeConfig.vaapiDriver} has no counterpart in the backend`,
-    );
-  }
 
   const deinterlace = transcodeConfig.deinterlaceVideo === true;
   const filters = deinterlace
