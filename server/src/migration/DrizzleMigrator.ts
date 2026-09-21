@@ -151,6 +151,22 @@ export class DrizzleMigrator {
     return { results };
   }
 
+  /**
+   * Migration names recorded in the database that this build has never heard
+   * of. Non-empty means the database was migrated by a newer Tunarr, so this
+   * build cannot safely read it. Legacy mikro-orm migrations are fast-forwarded
+   * into this table under their new names, so they are known here too.
+   */
+  getUnknownAppliedMigrations(): string[] {
+    const knownMigrations = new Set(
+      Object.keys(this.migrationProvider.getMigrationsSync()),
+    );
+
+    return this.getExistingMigrations()
+      .map(([name]) => name)
+      .filter((name) => !knownMigrations.has(name));
+  }
+
   private getExistingMigrations() {
     return this.db.values<[string, string]>(
       sql`SELECT name, timestamp FROM ${sql.identifier(MigrationTableName)} ORDER BY timestamp ASC`,
