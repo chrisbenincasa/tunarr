@@ -35,6 +35,34 @@ const test = baseTest.extend<{ db: Kysely<DB> }>({
   },
 });
 
+async function rowOf(db: Kysely<DB>, uuid: string) {
+  return db
+    .selectFrom('programGroupingExternalId')
+    .where('uuid', '=', uuid)
+    .select(['sourceType', 'mediaSourceId'])
+    .executeTakeFirstOrThrow();
+}
+
+async function insertNamedMediaSource(
+  db: Kysely<DB>,
+  type: MediaSourceType,
+  name: string,
+) {
+  const uuid = tag<MediaSourceId>(v4());
+  await db
+    .insertInto('mediaSource')
+    .values({
+      uuid,
+      name: tag<MediaSourceName>(name),
+      type,
+      uri: `http://localhost/${uuid}`,
+      index: 0,
+      accessToken: '',
+    })
+    .execute();
+  return uuid;
+}
+
 async function insertMediaSource(db: Kysely<DB>, type: MediaSourceType) {
   const uuid = tag<MediaSourceId>(v4());
   await db
@@ -238,5 +266,70 @@ describe('FixMislabeledGroupingExternalIdSourceType', () => {
 
     expect(await sourceTypeOf(db, withSource)).toBe('jellyfin');
     expect(await sourceTypeOf(db, withoutSource)).toBe('jellyfin');
+  });
+  test('sets the media source id in the same pass as the label', async ({ db }) => {
+    const jellyfin = await insertMediaSource(db, 'jellyfin');
+    const row = await insertExternalId(
+      db,
+      await insertShow(db, jellyfin),
+      null,
+      'plex',
+      await nameOf(db, jellyfin),
+    );
+
+    await new FixMislabeledGroupingExternalIdSourceType(db).run();
+
+    expect(await rowOf(db, row)).toEqual({
+      sourceType: 'jellyfin',
+      mediaSourceId: jellyfin,
+    });
+  });
+
+  test('leaves a row alone when a Plex source shares the name', async ({ db }) => {
+    // media_source is unique on (type, name, uri), so a name is not an identity.
+    const plex = await insertNamedMediaSource(db, 'plex', 'Shared Name');
+    await insertNamedMediaSource(db, 'jellyfin', 'Shared Name');
+    const row = await insertExternalId(
+      db,
+      await insertShow(db, plex),
+      null,
+      'plex',
+      tag<MediaSourceName>('Shared Name'),
+    );
+
+    await new FixMislabeledGroupingExternalIdSourceType(db).run();
+
+    expect(await rowOf(db, row)).toEqual({ sourceType: 'plex', mediaSourceId: null });
+  });
+
+  test('leaves a row alone when Jellyfin and Emby share the name', async ({ db }) => {
+    const jellyfin = await insertNamedMediaSource(db, 'jellyfin', 'Both');
+    await insertNamedMediaSource(db, 'emby', 'Both');
+    const row = await insertExternalId(
+      db,
+      await insertShow(db, jellyfin),
+      null,
+      'plex',
+      tag<MediaSourceName>('Both'),
+    );
+
+    await new FixMislabeledGroupingExternalIdSourceType(db).run();
+
+    expect(await rowOf(db, row)).toEqual({ sourceType: 'plex', mediaSourceId: null });
+  });
+
+  test('skips a null-media-source row when a correct row with an id exists', async ({
+    db,
+  }) => {
+    const jellyfin = await insertMediaSource(db, 'jellyfin');
+    const name = await nameOf(db, jellyfin);
+    const show = await insertShow(db, jellyfin);
+    const correct = await insertExternalId(db, show, jellyfin, 'jellyfin');
+    const mislabelled = await insertExternalId(db, show, null, 'plex', name);
+
+    await new FixMislabeledGroupingExternalIdSourceType(db).run();
+
+    expect(await sourceTypeOf(db, correct)).toBe('jellyfin');
+    expect(await sourceTypeOf(db, mislabelled)).toBe('plex');
   });
 });
