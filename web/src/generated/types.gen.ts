@@ -103,7 +103,7 @@ export type TerminalProgramInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -121,7 +121,7 @@ export type TerminalProgramInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -142,7 +142,7 @@ export type TerminalProgramInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -245,7 +245,7 @@ export type TerminalProgramInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -263,7 +263,7 @@ export type TerminalProgramInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -284,7 +284,7 @@ export type TerminalProgramInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -387,7 +387,7 @@ export type TerminalProgramInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -405,7 +405,7 @@ export type TerminalProgramInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -426,7 +426,7 @@ export type TerminalProgramInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -697,7 +697,7 @@ export type SeasonInput = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -715,7 +715,7 @@ export type SeasonInput = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -736,7 +736,7 @@ export type SeasonInput = {
                 title?: string | null;
                 chapterType?: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -845,7 +845,7 @@ export type EpisodeInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -863,7 +863,7 @@ export type EpisodeInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -884,7 +884,7 @@ export type EpisodeInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1127,7 +1127,7 @@ export type MusicAlbumInput = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -1145,7 +1145,7 @@ export type MusicAlbumInput = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -1166,7 +1166,7 @@ export type MusicAlbumInput = {
                 title?: string | null;
                 chapterType?: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -1284,7 +1284,7 @@ export type MusicTrackInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1302,7 +1302,7 @@ export type MusicTrackInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1323,7 +1323,7 @@ export type MusicTrackInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1513,7 +1513,7 @@ export type TerminalProgram = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1531,7 +1531,7 @@ export type TerminalProgram = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1552,7 +1552,7 @@ export type TerminalProgram = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1655,7 +1655,7 @@ export type TerminalProgram = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1673,7 +1673,7 @@ export type TerminalProgram = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1694,7 +1694,7 @@ export type TerminalProgram = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1797,7 +1797,7 @@ export type TerminalProgram = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1815,7 +1815,7 @@ export type TerminalProgram = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1836,7 +1836,7 @@ export type TerminalProgram = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -2107,7 +2107,7 @@ export type Season = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -2125,7 +2125,7 @@ export type Season = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -2146,7 +2146,7 @@ export type Season = {
                 title?: string | null;
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -2255,7 +2255,7 @@ export type Episode = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -2273,7 +2273,7 @@ export type Episode = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -2294,7 +2294,7 @@ export type Episode = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -2537,7 +2537,7 @@ export type MusicAlbum = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -2555,7 +2555,7 @@ export type MusicAlbum = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -2576,7 +2576,7 @@ export type MusicAlbum = {
                 title?: string | null;
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -2694,7 +2694,7 @@ export type MusicTrack = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -2712,7 +2712,7 @@ export type MusicTrack = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -2733,7 +2733,7 @@ export type MusicTrack = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -2856,7 +2856,7 @@ export type PostApiTasksByIdRunData = {
         id: string;
     };
     query?: {
-        background?: boolean | string;
+        background?: boolean | 'true' | 'false' | number;
     };
     url: '/api/tasks/{id}/run';
 };
@@ -3034,10 +3034,10 @@ export type CreateChannelV2Data = {
             guideFlexTitle?: string;
             guideMinimumDuration: number;
             icon: {
-                path: string;
-                width: number;
-                duration: number;
-                position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                path?: string;
+                width?: number;
+                duration?: number;
+                position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
                 useDefaultIconFallback?: boolean;
             };
             id: string;
@@ -3398,10 +3398,10 @@ export type PutApiChannelsByIdData = {
         guideFlexTitle?: string;
         guideMinimumDuration: number;
         icon: {
-            path: string;
-            width: number;
-            duration: number;
-            position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            path?: string;
+            width?: number;
+            duration?: number;
+            position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
             useDefaultIconFallback?: boolean;
         };
         id: string;
@@ -4951,6 +4951,10 @@ export type PostApiChannelsByIdProgrammingErrors = {
     /**
      * Default Response
      */
+    400: string;
+    /**
+     * Default Response
+     */
     404: unknown;
     /**
      * Default Response
@@ -4961,6 +4965,8 @@ export type PostApiChannelsByIdProgrammingErrors = {
      */
     501: unknown;
 };
+
+export type PostApiChannelsByIdProgrammingError = PostApiChannelsByIdProgrammingErrors[keyof PostApiChannelsByIdProgrammingErrors];
 
 export type PostApiChannelsByIdProgrammingResponses = {
     /**
@@ -5609,7 +5615,7 @@ export type GetChannelFallbacksData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/{id}/fallbacks';
 };
@@ -5647,7 +5653,7 @@ export type GetApiChannelsAllLineupsData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/all/lineups';
 };
@@ -5748,7 +5754,7 @@ export type GetApiChannelsByIdLineupData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/{id}/lineup';
 };
@@ -5969,7 +5975,7 @@ export type GetApiChannelsByIdTranscodeConfigResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -8580,7 +8586,7 @@ export type GetApiProgramsByIdExternalLinkData = {
         id: string;
     };
     query?: {
-        forward?: boolean;
+        forward?: boolean | 'true' | 'false' | number;
     };
     url: '/api/programs/{id}/external-link';
 };
@@ -9874,7 +9880,7 @@ export type GetApiTranscodeConfigsResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -9929,7 +9935,7 @@ export type PostApiTranscodeConfigsData = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -9989,7 +9995,7 @@ export type PostApiTranscodeConfigsResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10087,7 +10093,7 @@ export type GetApiTranscodeConfigsByIdResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10143,7 +10149,7 @@ export type PutApiTranscodeConfigsByIdData = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10205,7 +10211,7 @@ export type PutApiTranscodeConfigsByIdResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10284,7 +10290,7 @@ export type PostApiTranscodeConfigsByIdCopyResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
@@ -10731,7 +10737,7 @@ export type PutApiSystemSettingsData = {
                 };
             };
             categoryLogLevel?: {
-                [key: string]: ('silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace') | unknown;
+                [key: string]: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace' | null;
             };
         };
         backup?: {
@@ -11405,7 +11411,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     hasAttachedPicture?: boolean | null;
                     fileName?: string | null;
                     mimeType?: string | null;
-                    frameRate?: (string | number) | null;
+                    frameRate?: string | number | null;
                     pixelFormat?: string | null;
                     bitDepth?: number | null;
                     colorRange?: string | null;
@@ -11423,7 +11429,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 duration: number;
                 sampleAspectRatio?: string | null;
                 displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
+                frameRate?: number | string | null;
                 resolution?: {
                     widthPx: number;
                     heightPx: number;
@@ -11444,7 +11450,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     title?: string | null;
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
                 externalKey?: string | null;
             };
             duration: number;
@@ -11547,7 +11553,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     hasAttachedPicture?: boolean | null;
                     fileName?: string | null;
                     mimeType?: string | null;
-                    frameRate?: (string | number) | null;
+                    frameRate?: string | number | null;
                     pixelFormat?: string | null;
                     bitDepth?: number | null;
                     colorRange?: string | null;
@@ -11565,7 +11571,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 duration: number;
                 sampleAspectRatio?: string | null;
                 displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
+                frameRate?: number | string | null;
                 resolution?: {
                     widthPx: number;
                     heightPx: number;
@@ -11586,7 +11592,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     title?: string | null;
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
                 externalKey?: string | null;
             };
             duration: number;
@@ -11689,7 +11695,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     hasAttachedPicture?: boolean | null;
                     fileName?: string | null;
                     mimeType?: string | null;
-                    frameRate?: (string | number) | null;
+                    frameRate?: string | number | null;
                     pixelFormat?: string | null;
                     bitDepth?: number | null;
                     colorRange?: string | null;
@@ -11707,7 +11713,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 duration: number;
                 sampleAspectRatio?: string | null;
                 displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
+                frameRate?: number | string | null;
                 resolution?: {
                     widthPx: number;
                     heightPx: number;
@@ -11728,7 +11734,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     title?: string | null;
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
                 externalKey?: string | null;
             };
             duration: number;
@@ -12036,6 +12042,23 @@ export type JellyfinLoginData = {
     url: '/api/jellyfin/login';
 };
 
+export type JellyfinLoginErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        reason: 'blocked-address';
+    };
+    /**
+     * Default Response
+     */
+    502: {
+        reason: 'unreachable' | 'auth' | 'timeout' | 'bad_response' | 'unknown';
+    };
+};
+
+export type JellyfinLoginError = JellyfinLoginErrors[keyof JellyfinLoginErrors];
+
 export type JellyfinLoginResponses = {
     /**
      * Default Response
@@ -12111,7 +12134,7 @@ export type GetJellyfinLibraryGenresResponses = {
             PlaylistItemId?: string | null;
             DateCreated?: string | null;
             DateLastMediaAdded?: string | null;
-            ExtraType?: ('Unknown' | 'Clip' | 'Trailer' | 'BehindTheScenes' | 'DeletedScene' | 'Interview' | 'Scene' | 'Sample' | 'ThemeSong' | 'ThemeVideo' | 'Featurette' | 'Short') | null;
+            ExtraType?: 'Unknown' | 'Clip' | 'Trailer' | 'BehindTheScenes' | 'DeletedScene' | 'Interview' | 'Scene' | 'Sample' | 'ThemeSong' | 'ThemeVideo' | 'Featurette' | 'Short' | null;
             AirsBeforeSeasonNumber?: number | null;
             AirsAfterSeasonNumber?: number | null;
             AirsBeforeEpisodeNumber?: number | null;
@@ -12124,7 +12147,7 @@ export type GetJellyfinLibraryGenresResponses = {
             Container?: string | null;
             SortName?: string | null;
             ForcedSortName?: string | null;
-            Video3DFormat?: ('HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC') | null;
+            Video3DFormat?: 'HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC' | null;
             PremiereDate?: string | null;
             ExternalUrls?: Array<{
                 Name?: string | null;
@@ -12135,7 +12158,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Id?: string | null;
                 Path?: string | null;
                 EncoderPath?: string | null;
-                EncoderProtocol?: ('File' | 'Http' | 'Rtmp' | 'Rtsp' | 'Udp' | 'Rtp' | 'Ftp') | null;
+                EncoderProtocol?: 'File' | 'Http' | 'Rtmp' | 'Rtsp' | 'Udp' | 'Rtp' | 'Ftp' | null;
                 Type?: 'Default' | 'Grouping' | 'Placeholder';
                 Container?: string | null;
                 Size?: number | null;
@@ -12158,9 +12181,9 @@ export type GetJellyfinLibraryGenresResponses = {
                 BufferMs?: number | null;
                 RequiresLooping?: boolean;
                 SupportsProbing?: boolean;
-                VideoType?: ('VideoFile' | 'Iso' | 'Dvd' | 'BluRay') | null;
-                IsoType?: ('Dvd' | 'BluRay') | null;
-                Video3DFormat?: ('HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC') | null;
+                VideoType?: 'VideoFile' | 'Iso' | 'Dvd' | 'BluRay' | null;
+                IsoType?: 'Dvd' | 'BluRay' | null;
+                Video3DFormat?: 'HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC' | null;
                 MediaStreams?: Array<{
                     Codec?: string | null;
                     CodecTag?: string | null;
@@ -12213,7 +12236,7 @@ export type GetJellyfinLibraryGenresResponses = {
                     Index?: number;
                     Score?: number | null;
                     IsExternal?: boolean;
-                    DeliveryMethod?: ('Encode' | 'Embed' | 'External' | 'Hls' | 'Drop') | null;
+                    DeliveryMethod?: 'Encode' | 'Embed' | 'External' | 'Hls' | 'Drop' | null;
                     DeliveryUrl?: string | null;
                     IsExternalUrl?: boolean | null;
                     IsTextSubtitleStream?: boolean;
@@ -12322,7 +12345,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Id?: string;
             }> | null;
             Album?: string | null;
-            CollectionType?: ('unknown' | 'movies' | 'tvshows' | 'music' | 'musicvideos' | 'trailers' | 'homevideos' | 'boxsets' | 'books' | 'photos' | 'livetv' | 'playlists' | 'folders') | null;
+            CollectionType?: 'unknown' | 'movies' | 'tvshows' | 'music' | 'musicvideos' | 'trailers' | 'homevideos' | 'boxsets' | 'books' | 'photos' | 'livetv' | 'playlists' | 'folders' | null;
             DisplayOrder?: string | null;
             AlbumId?: string | null;
             AlbumPrimaryImageTag?: string | null;
@@ -12385,7 +12408,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Index?: number;
                 Score?: number | null;
                 IsExternal?: boolean;
-                DeliveryMethod?: ('Encode' | 'Embed' | 'External' | 'Hls' | 'Drop') | null;
+                DeliveryMethod?: 'Encode' | 'Embed' | 'External' | 'Hls' | 'Drop' | null;
                 DeliveryUrl?: string | null;
                 IsExternalUrl?: boolean | null;
                 IsTextSubtitleStream?: boolean;
@@ -12395,7 +12418,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Level?: number | null;
                 IsAnamorphic?: boolean | null;
             }> | null;
-            VideoType?: ('VideoFile' | 'Iso' | 'Dvd' | 'BluRay') | null;
+            VideoType?: 'VideoFile' | 'Iso' | 'Dvd' | 'BluRay' | null;
             PartCount?: number | null;
             MediaSourceCount?: number | null;
             ImageTags?: {
@@ -12460,7 +12483,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 ImageDateModified?: string;
                 ImageTag?: string | null;
             }> | null;
-            IsoType?: ('Dvd' | 'BluRay') | null;
+            IsoType?: 'Dvd' | 'BluRay' | null;
             MediaType: 'Unknown' | 'Video' | 'Audio' | 'Photo' | 'Book';
             EndDate?: string | null;
             TrailerCount?: number | null;
@@ -12698,6 +12721,23 @@ export type PostApiEmbyLoginData = {
     query?: never;
     url: '/api/emby/login';
 };
+
+export type PostApiEmbyLoginErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        reason: 'blocked-address';
+    };
+    /**
+     * Default Response
+     */
+    502: {
+        reason: 'unreachable' | 'auth' | 'timeout' | 'bad_response' | 'unknown';
+    };
+};
+
+export type PostApiEmbyLoginError = PostApiEmbyLoginErrors[keyof PostApiEmbyLoginErrors];
 
 export type PostApiEmbyLoginResponses = {
     /**
@@ -13252,7 +13292,7 @@ export type PostApiTroubleshootResponses = {
             videoFormat: 'h264' | 'hevc' | 'mpeg2video';
             videoProfile: string | null;
             videoPreset: string | null;
-            videoBitDepth: (8 | 10) | null;
+            videoBitDepth: 8 | 10 | null;
             videoBitRate: number;
             videoBufferSize: number;
             audioChannels: number;
