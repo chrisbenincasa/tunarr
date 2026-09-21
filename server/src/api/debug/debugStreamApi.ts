@@ -158,7 +158,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     const firstChannel = channels?.[0]!.channel;
 
     if (!firstChannel) {
-      return res.status(404);
+      return res.status(404).send();
     }
 
     const out = await initStream(

@@ -17,9 +17,18 @@ import {
 //
 // Time slots
 //
+export const OverflowConfig = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('duration'), maxMs: z.number().nonnegative() }),
+  z.object({ type: z.literal('oneExtra') }),
+]);
+
+export type OverflowConfig = z.infer<typeof OverflowConfig>;
+
 const BaseTimeSlot = z.object({
   startTime: z.number(), // Offset from midnight in millis
   padMs: z.number().optional(),
+  overflow: OverflowConfig.optional(),
+  latenessMs: z.number().optional(),
 });
 
 export const MovieProgrammingTimeSlotSchema = z.object({
@@ -158,6 +167,7 @@ export const TimeSlotScheduleSchema = z.object({
   flexPreference: z.enum(['distribute', 'end']),
   latenessMs: z.number(), // max lateness in millis
   maxDays: z.number(), // days to pregenerate schedule for
+  overflow: OverflowConfig.default({ type: 'duration', maxMs: 0 }),
   padMs: z.number(), // Pad time in millis
   period: z.enum(['day', 'week']),
   slots: z.array(TimeSlotSchema),
@@ -166,3 +176,53 @@ export const TimeSlotScheduleSchema = z.object({
 });
 
 export type TimeSlotSchedule = z.infer<typeof TimeSlotScheduleSchema>;
+
+const OneDayMs = 24 * 60 * 60 * 1000;
+const OneWeekMs = 7 * OneDayMs;
+
+/**
+ * Request-body variant of {@link TimeSlotScheduleSchema}.
+ *
+ * The permissive schema above also parses lineups already on disk and is used
+ * to serialize channel responses, so it cannot be tightened: a channel holding
+ * a value written by an older build would stop loading entirely. Validate
+ * incoming schedules with this instead.
+ *
+ * Every bound here corresponds to a state the scheduler mishandles rather than
+ * rejects: a fractional `startTime` spins it in a loop that no timeout can
+ * interrupt, `padMs` of zero yields a lineup of NaN durations, a non-positive
+ * `maxDays` returns an empty schedule, and a `startTime` at or beyond the
+ * period matches no cursor position, so the schedule either throws or collapses
+ * into one flex block.
+ */
+export const StrictTimeSlotScheduleSchema = TimeSlotScheduleSchema.extend({
+  latenessMs: z.number().int().nonnegative(),
+  maxDays: z.number().int().positive(),
+  padMs: z.number().int().positive(),
+  slots: z.array(TimeSlotSchema).min(1),
+}).superRefine((schedule, ctx) => {
+  const periodMs = schedule.period === 'week' ? OneWeekMs : OneDayMs;
+
+  schedule.slots.forEach((slot, index) => {
+    if (!Number.isInteger(slot.startTime)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['slots', index, 'startTime'],
+        message: `startTime must be a whole number of milliseconds, got ${slot.startTime}`,
+      });
+      return;
+    }
+
+    if (slot.startTime < 0 || slot.startTime >= periodMs) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['slots', index, 'startTime'],
+        message: `startTime must be an offset within the ${schedule.period} period (0 to ${periodMs - 1} ms), got ${slot.startTime}`,
+      });
+    }
+  });
+});
+
+export type StrictTimeSlotSchedule = z.infer<
+  typeof StrictTimeSlotScheduleSchema
+>;

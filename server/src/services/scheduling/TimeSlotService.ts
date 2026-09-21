@@ -237,9 +237,10 @@ export async function scheduleTimeSlots(
       slotDuration: slotDuration,
     });
 
+    const effectiveLateness = currSlot.latenessMs ?? schedule.latenessMs;
     if (
       !isNull(lateMillis) &&
-      lateMillis >= schedule.latenessMs + constants.SLACK
+      lateMillis >= effectiveLateness + constants.SLACK
     ) {
       pushFlex(slotDuration);
       continue;
@@ -269,10 +270,8 @@ export async function scheduleTimeSlots(
       continue;
     }
 
-    const paddedProgram = createPaddedProgram(
-      program,
-      currSlot.padMs ?? schedule.padMs,
-    );
+    const slotPadMs = currSlot.padMs ?? schedule.padMs;
+    const paddedProgram = createPaddedProgram(program, slotPadMs);
     currSlot.advanceIterator();
     const paddedPrograms: NonEmptyArray<PaddedProgram> = [paddedProgram];
     maybeAddPrePostFiller(
@@ -283,19 +282,25 @@ export async function scheduleTimeSlots(
     );
     let totalAddedDuration = paddedProgram.totalDuration;
 
+    const effectiveOverflow = currSlot.overflow ?? schedule.overflow;
+
     for (;;) {
       const nextProgram = currSlot.getNextProgram({
         timeCursor: +timeCursor + totalAddedDuration,
         slotDuration: slotDuration,
       });
       if (isNull(nextProgram)) break;
-      if (
+
+      if (effectiveOverflow.type === 'oneExtra') {
+        if (totalAddedDuration >= slotDuration) break;
+      } else if (
         totalAddedDuration + nextProgram.duration >
-        slotDuration + schedule.latenessMs
+        slotDuration + effectiveOverflow.maxMs
       ) {
         break;
       }
-      const nextPadded = createPaddedProgram(nextProgram, schedule.padMs);
+
+      const nextPadded = createPaddedProgram(nextProgram, slotPadMs);
       paddedPrograms.push(nextPadded);
       currSlot.advanceIterator();
       maybeAddPrePostFiller(
@@ -343,7 +348,7 @@ export async function scheduleTimeSlots(
     ) {
       distributeFlex(
         finalPrograms,
-        schedule.padMs,
+        slotPadMs,
         Math.max(
           0,
           slotDuration - sumBy(finalPrograms, (p) => p.totalDuration),

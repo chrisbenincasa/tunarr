@@ -17,12 +17,20 @@ argument-hint: Optional PR title or description hint
 Create a pull request following Tunarr's branching conventions:
 
 **Branch targeting rules:**
-- `fix` commits → target `main`
-- `feat` commits and large changes → target `dev`
-- If the commits are mixed or ambiguous, ask the user which branch to target before proceeding
+
+Tunarr uses CalVer, so a release number says when it shipped, not what changed. Small and medium features ship on stable as soon as they're ready, and `dev` holds only work that needs several prereleases before it's ready.
+
+- Target `main` by default. This covers fixes, `chore`, `build`, `ci`, `docs`, `refactor`, `test`, and small to medium `feat` work.
+- A database migration does not by itself send a PR to `dev`. Target the branch the change would go to without it.
+- Target `dev` only for large features that will likely need many prerelease iterations before they debut on stable. Examples are infinite schedules and remote streaming sources. Signs of this kind of work:
+  - it spans many PRs or lands in stages
+  - it changes core subsystems like scheduling, streaming, or the media source model
+  - it would be half-finished or unstable if released on its own
+- If the branch was cut from `dev`, target `dev`. The branch sits on `dev` when "Commits ahead of main" lists commits that "Commits ahead of dev" does not. A PR from it to `main` would pull unreleased `dev` work into stable. If the change belongs on `main`, tell the user to rebase onto `main` instead.
+- If a `feat` PR's size is unclear, ask the user which branch to target before proceeding.
 
 **Steps:**
-1. Determine the correct target branch from the commit types above
+1. Determine the correct target branch using the rules above
 2. If there are uncommitted changes, stop and tell the user to commit first
 3. Push the current branch to origin if not already pushed
 4. Draft a PR title and body based on the commits and diff:

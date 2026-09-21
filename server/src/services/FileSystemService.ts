@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import path from 'path';
-import { GlobalOptions } from '../globals.ts';
+import type { GlobalOptions } from '../globals.ts';
 import { KEYS } from '../types/inject.ts';
 import {
   CacheFolderName,

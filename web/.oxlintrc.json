@@ -1,0 +1,55 @@
+{
+  "$schema": "../node_modules/oxlint/configuration_schema.json",
+  "extends": [
+    "../.oxlintrc.json"
+  ],
+  "plugins": [
+    "typescript",
+    "react"
+  ],
+  "env": {
+    "browser": true,
+    "es2020": true
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ],
+    "typescript/no-misused-promises": [
+      "error",
+      {
+        "checksVoidReturn": {
+          "attributes": false
+        }
+      }
+    ],
+    "typescript/only-throw-error": [
+      "error",
+      {
+        "allow": [
+          "Redirect",
+          "NotFoundError"
+        ],
+        "allowThrowingAny": false,
+        "allowThrowingUnknown": false
+      }
+    ]
+  },
+  "ignorePatterns": [
+    "**/.tsup/*",
+    "**/dist/*",
+    "**/build/*",
+    "**/scripts/*",
+    "**/*.config.ts",
+    "**/*.ignore.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/generated/*"
+  ]
+}

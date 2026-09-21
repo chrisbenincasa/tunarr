@@ -234,7 +234,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       }
 
       LoggerFactory.root.error(
-        { error: e as unknown, className: JellyfinApiClient.name },
+        { error: e, className: JellyfinApiClient.name },
         'Error logging into Jellyfin',
       );
       throw e;
@@ -1778,6 +1778,8 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       // tagline: find(video.Taglines, isNonEmptyString) ?? null,
       tags: video.Tags?.filter(isNonEmptyString) ?? [],
       // summary: null,
+      artistName: video.Artists?.join(', ') ?? video.AlbumArtist ?? null,
+      albumName: video.Album ?? null,
       type: 'music_video',
       mediaItem,
       identifiers: collectJellyfinItemIdentifiers(

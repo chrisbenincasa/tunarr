@@ -19,7 +19,7 @@ This is a monorepo with four main packages:
 
 - Never cast types using `as any`
 - Never use inline `import()` type annotations — use top-level `import type` statements instead
-- All edits must comply with the project's ESLint rules. Run `pnpm lint-changed` to verify before considering work complete
+- All edits must comply with the project's oxlint rules. Run `pnpm lint-changed` to verify before considering work complete
 - **Nullability checks**: For values typed `T | undefined` (not `T | null`), always use `!== undefined` — never `!= null`. The loose equality `!= null` catches both `null` and `undefined`, which is misleading when `null` is not a possible value. Reserve `!= null` for values that are genuinely `T | null | undefined`.
 - **No unguarded non-null assertions (`!`)**: Never use `!` to assert a value is non-null/non-undefined without first narrowing its type via a conditional check, early return, or explicit throw. If a value is optional, either guard it with an `if` check that narrows the type, or throw an explicit error explaining the invariant. The `!` operator silently crashes at runtime when the assumption is wrong.
 
@@ -33,8 +33,9 @@ This is a monorepo with four main packages:
 
 ### Version Control
 
-- The `main` branch creates "stable" releases. It should receive mainly receive `fix` commits.
-- The `dev` branch is for feature development. It receives `feat` commits and other large changes
+- Releases use CalVer (`YYYY.M.PATCH`), so the version says when a release shipped, not what changed.
+- The `main` branch creates "stable" releases. It receives fixes, chores, build/CI changes, docs, refactors, and small to medium features, including those with database migrations.
+- The `dev` branch creates prereleases. It is reserved for large features that need many prerelease iterations before they reach stable, such as infinite schedules or remote streaming sources.
 
 ### Common Commands
 
@@ -70,6 +71,7 @@ pnpm debug            # Start server with debugger
 pnpm kysely           # Run Kysely CLI for database operations
 pnpm tunarr           # Run CLI commands (see src/cli/commands.ts)
 pnpm generate-openapi # Generate OpenAPI spec
+pnpm resolve-migrations # Regenerate this branch's migration after a merge/rebase conflict
 
 # Web-specific commands
 cd web
@@ -180,7 +182,7 @@ The web app uses a generated API client (`generated/`) created from the server's
 ## Code Style
 
 - Prettier for formatting (config in root `package.json`)
-- ESLint for linting (eslint 9.x with flat config)
+- oxlint for linting (config in `.oxlintrc.json` at the root, extended per package)
 - Husky + lint-staged for pre-commit hooks
 - Import aliases: Use `@/` for server, web has configured path aliases
 

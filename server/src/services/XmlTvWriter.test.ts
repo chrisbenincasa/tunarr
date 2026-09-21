@@ -1,10 +1,16 @@
 import { faker } from '@faker-js/faker';
+import { tag } from '@tunarr/types';
 import { v4 } from 'uuid';
 import type { Artwork } from '../db/schema/Artwork.ts';
-import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
+import type { MediaSourceId } from '../db/schema/base.ts';
+import type {
+  ProgramGroupingOrmWithRelations,
+  ProgramWithRelationsOrm,
+} from '../db/schema/derivedTypes.ts';
 import {
   createChannel,
   createFakeProgram,
+  createFakeShow,
 } from '../testing/fakes/entityCreators.ts';
 import {
   inMemorySettingsDB,
@@ -74,6 +80,21 @@ function makeProgram(
   } as ProgramWithRelationsOrm;
 }
 
+function makeGrouping(
+  overrides: Partial<ProgramGroupingOrmWithRelations>,
+): ProgramGroupingOrmWithRelations {
+  return {
+    uuid: v4(),
+    type: 'show',
+    title: faker.music.songName(),
+    artwork: [],
+    sourceType: null,
+    externalKey: null,
+    mediaSourceId: null,
+    ...overrides,
+  } as ProgramGroupingOrmWithRelations;
+}
+
 describe('XmlTvWriter', () => {
   describe('television', () => {
     const channels: MaterializedChannelPrograms[] = [
@@ -88,7 +109,10 @@ describe('XmlTvWriter', () => {
               program: {
                 ...createFakeProgram({
                   summary: `The family's trip to Itchy & Scratchy Land takes an unexpected turn when high-tech robots malfunction and become violent.`,
+                  type: 'episode',
                 }),
+                seasonNumber: 6,
+                episode: 4,
                 genres: [
                   {
                     genre: { uuid: v4(), name: 'Comedy' },
@@ -103,6 +127,61 @@ describe('XmlTvWriter', () => {
                     programId: '',
                   },
                 ],
+                tags: [
+                  {
+                    tag: { uuid: v4(), tag: 'Theme Park' },
+                    tagId: v4(),
+                    programId: null,
+                    source: 'media',
+                    groupingId: null,
+                  },
+                  {
+                    tag: { uuid: v4(), tag: 'Itchy & Scratchy' },
+                    tagId: v4(),
+                    programId: null,
+                    source: 'media',
+                    groupingId: null,
+                  },
+                ],
+                show: {
+                  ...createFakeShow({
+                    genres: [
+                      {
+                        genre: { uuid: v4(), name: 'Comedy' },
+                        genreId: '',
+                        groupId: '',
+                        programId: '',
+                      },
+                      {
+                        genre: { uuid: v4(), name: 'Animated' },
+                        genreId: '',
+                        groupId: '',
+                        programId: '',
+                      },
+                      {
+                        genre: { uuid: v4(), name: 'Long-Running' },
+                        genreId: '',
+                        groupId: '',
+                        programId: '',
+                      },
+                      {
+                        genre: { uuid: v4(), name: '< 30 min' },
+                        genreId: '',
+                        groupId: '',
+                        programId: '',
+                      },
+                    ],
+                    tags: [
+                      {
+                        tag: { uuid: v4(), tag: 'Dysfunctional Family' },
+                        tagId: v4(),
+                        programId: null,
+                        source: 'media',
+                        groupingId: null,
+                      },
+                    ],
+                  }),
+                },
               },
             },
           },
@@ -116,13 +195,103 @@ describe('XmlTvWriter', () => {
       expect(output.programmes[0]?.desc?.[0]?._value).includes('&amp;');
     });
 
-    test('adds genres', () => {
+    test('adds and escapes genres as categories', () => {
       const writer = new XmlTvWriter(inMemorySettingsDB());
       const output = writer.generateXmltv(channels);
       expect(output.programmes[0]?.category?.map((c) => c._value)).toEqual([
         'Comedy',
         'Animated',
+        'Long-Running',
+        '&lt; 30 min',
       ]);
+    });
+
+    test('adds and escapes tags as keywords', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const output = writer.generateXmltv(channels);
+      expect(output.programmes[0]?.keyword?.map((c) => c._value)).toEqual([
+        'Theme Park',
+        'Itchy &amp; Scratchy',
+        'Dysfunctional Family',
+      ]);
+    });
+
+    test('zero-pads single digit onscreen season and episode numbers', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const output = writer.generateXmltv(channels);
+      const onscreenEpisodeNum = output.programmes[0]?.episodeNum?.find(
+        (e) => e.system === 'onscreen',
+      );
+      expect(onscreenEpisodeNum?._value).toBe('S06E04');
+    });
+
+    test('generates xmltv_ns format with 0-based indices', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const output = writer.generateXmltv(channels);
+      const xmltvNs = output.programmes[0]?.episodeNum?.find(
+        (e) => e.system === 'xmltv_ns',
+      );
+      expect(xmltvNs?._value).toBe('5.3.');
+    });
+
+    test('handles double digit season and episode numbers', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    type: 'episode',
+                    seasonNumber: 12,
+                    episode: 25,
+                  }),
+                },
+              },
+              title: 'Test Episode',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      const onscreenEpisodeNum = output.programmes[0]?.episodeNum?.find(
+        (e) => e.system === 'onscreen',
+      );
+      expect(onscreenEpisodeNum?._value).toBe('S12E25');
+    });
+
+    test('omits season number for season 0 (specials) in xmltv_ns', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    type: 'episode',
+                    seasonNumber: 0,
+                    episode: 1,
+                  }),
+                },
+              },
+              title: 'Test Special',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      const xmltvNs = output.programmes[0]?.episodeNum?.find(
+        (e) => e.system === 'xmltv_ns',
+      );
+      expect(xmltvNs?._value).toBe('.0.');
     });
   });
 
@@ -412,6 +581,143 @@ describe('XmlTvWriter', () => {
       });
     });
 
+    // The backfill may not have reached an item, and never reaches one whose
+    // artwork was never scanned. The artwork endpoint derives the remote URL
+    // from the item's own media source, so the guide emits a URL it can answer
+    // rather than dropping the <icon> entirely. See #2129.
+    describe('derivation fallback when nothing is stored', () => {
+      const derivable = {
+        sourceType: 'plex',
+        externalKey: 'ext-key-1',
+        mediaSourceId: tag<MediaSourceId>(v4()),
+      } satisfies Partial<ProgramWithRelationsOrm>;
+
+      test('derives a poster URL for a program with no artwork rows', () => {
+        const programId = v4();
+        const program = makeProgram({
+          ...derivable,
+          uuid: programId,
+          type: 'movie',
+          artwork: [],
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: false });
+        expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
+      });
+
+      test('derives for a jellyfin program too', () => {
+        const programId = v4();
+        const program = makeProgram({
+          ...derivable,
+          sourceType: 'jellyfin' as const,
+          uuid: programId,
+          type: 'movie',
+          artwork: [],
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: false });
+        expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
+      });
+
+      test('a stored artwork row still wins over derivation', () => {
+        const programId = v4();
+        const program = makeProgram({
+          ...derivable,
+          uuid: programId,
+          type: 'movie',
+          artwork: [makeArtwork('poster')],
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: false });
+        expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
+      });
+
+      test('returns undefined for a local source, which has no remote URL', () => {
+        const program = makeProgram({
+          ...derivable,
+          sourceType: 'local' as const,
+          type: 'movie',
+          artwork: [],
+        });
+
+        expect(
+          resolveArtworkUrl(program, { useShowPoster: false }),
+        ).toBeUndefined();
+      });
+
+      // `externalKey` is NOT NULL on `program`, so empty is its degenerate
+      // state; `mediaSourceId` is genuinely nullable.
+      test.each([
+        ['externalKey', { externalKey: '' }],
+        ['mediaSourceId', { mediaSourceId: null }],
+      ] as const)(
+        'returns undefined when %s is missing, since the endpoint would 404',
+        (_name, missing) => {
+          const program = makeProgram({
+            ...derivable,
+            ...missing,
+            type: 'movie',
+            artwork: [],
+          });
+
+          expect(
+            resolveArtworkUrl(program, { useShowPoster: false }),
+          ).toBeUndefined();
+        },
+      );
+
+      test('derives from the show when useShowPoster is set', () => {
+        const showId = v4();
+        const program = makeProgram({
+          ...derivable,
+          type: 'episode',
+          artwork: [],
+          show: makeGrouping({
+            ...derivable,
+            uuid: showId,
+            externalKey: 'show-key-1',
+          }),
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: true });
+        expect(url).toBe(`{{host}}/api/programs/${showId}/artwork/poster`);
+      });
+
+      test('falls back to the episode when the show is not derivable', () => {
+        const programId = v4();
+        const program = makeProgram({
+          ...derivable,
+          uuid: programId,
+          type: 'episode',
+          artwork: [],
+          show: makeGrouping({ uuid: v4(), sourceType: 'plex' }),
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: true });
+        expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
+      });
+
+      // The old /thumb fallback redirected a track to its album uuid; nothing
+      // replaced it when artwork moved to stored rows.
+      test('derives a track poster from its album', () => {
+        const albumId = v4();
+        const program = makeProgram({
+          ...derivable,
+          type: 'track',
+          artwork: [],
+          album: makeGrouping({
+            ...derivable,
+            type: 'album',
+            uuid: albumId,
+            externalKey: 'album-key-1',
+          }),
+        });
+
+        const url = resolveArtworkUrl(program, { useShowPoster: false });
+        expect(url).toBe(`{{host}}/api/programs/${albumId}/artwork/poster`);
+      });
+    });
+
     describe('edge cases', () => {
       test('skips candidates with null entity IDs', () => {
         const programId = v4();
@@ -448,6 +754,150 @@ describe('XmlTvWriter', () => {
         const url = resolveArtworkUrl(program, { useShowPoster: false });
         expect(url).toBeUndefined();
       });
+    });
+  });
+
+  describe('credits', () => {
+    test('maps cast type to actor credits', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    type: 'movie',
+                    credits: [
+                      {
+                        uuid: v4(),
+                        name: 'Alan Smithee',
+                        type: 'cast',
+                        role: 'Himself',
+                        artwork: [],
+                      },
+                    ],
+                  }),
+                },
+              },
+              start: Date.now(),
+              stop: Date.now() + 3600000,
+              title: 'See You Next Wednesday',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      const credits = output.programmes[0]?.credits;
+      expect(credits?.actor).toBeDefined();
+      expect(credits?.actor?.[0]?._value).toBe('Alan Smithee');
+      expect(credits?.actor?.[0]?.role).toBe('Himself');
+    });
+
+    test('maps director, writer, and producer credits correctly', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    type: 'movie',
+                    credits: [
+                      {
+                        uuid: v4(),
+                        name: 'Alan Smithee',
+                        type: 'director',
+                      },
+                      {
+                        uuid: v4(),
+                        name: 'Cordwainer Bird',
+                        type: 'writer',
+                      },
+                      {
+                        uuid: v4(),
+                        name: 'John Doe',
+                        type: 'producer',
+                      },
+                    ],
+                  }),
+                },
+              },
+              start: Date.now(),
+              stop: Date.now() + 3600000,
+              title: 'See You Next Wednesday',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      const credits = output.programmes[0]?.credits;
+      expect(credits?.director?.[0]?._value).toBe('Alan Smithee');
+      expect(credits?.writer?.[0]?._value).toBe('Cordwainer Bird');
+      expect(credits?.producer?.[0]?._value).toBe('John Doe');
+    });
+  });
+
+  describe('duration and metadata', () => {
+    test('omits length when duration is zero or negative', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    duration: 0,
+                  }),
+                },
+              },
+              start: Date.now(),
+              stop: Date.now() + 3600000,
+              title: 'Test',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      expect(output.programmes[0]?.length).toBeUndefined();
+    });
+
+    test('adds video present: false for tracks', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const channels: MaterializedChannelPrograms[] = [
+        {
+          channel: createChannel(),
+          programs: [
+            {
+              programming: {
+                type: 'program',
+                program: {
+                  ...createFakeProgram({
+                    type: 'track',
+                  }),
+                },
+              },
+              start: Date.now(),
+              stop: Date.now() + 3600000,
+              title: 'Test Track',
+            },
+          ],
+        },
+      ];
+
+      const output = writer.generateXmltv(channels);
+      expect(output.programmes[0]?.video?.present).toBe(false);
     });
   });
 });

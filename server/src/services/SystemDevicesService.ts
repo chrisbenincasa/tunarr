@@ -6,7 +6,7 @@ import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import { Result } from '../types/result.ts';
-import { Maybe } from '../types/util.ts';
+import type { Maybe } from '../types/util.ts';
 import { cacheGetOrSet } from '../util/cache.ts';
 import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
 import { isDocker } from '../util/containerUtil.ts';
@@ -24,7 +24,7 @@ export class SystemDevicesService {
     stdTTL: 0,
   });
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   getDevices(): Maybe<string[]> {
     return SystemDevicesService.CACHE.get(SystemDevicesService.DEVICES_KEY);

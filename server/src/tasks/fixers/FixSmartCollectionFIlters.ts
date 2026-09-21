@@ -1,14 +1,14 @@
 import { isNonEmptyString, search } from '@tunarr/shared/util';
-import { SmartCollection } from '@tunarr/types';
+import type { SmartCollection } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { SmartCollectionsDB } from '../../db/SmartCollectionsDB.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import Fixer from './fixer.ts';
 
 @injectable()
 export class FixSmartCollectionFilters extends Fixer {
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(SmartCollectionsDB) private smartCollectionDB: SmartCollectionsDB,

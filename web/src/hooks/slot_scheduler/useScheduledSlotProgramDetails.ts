@@ -102,7 +102,7 @@ export const useScheduledSlotProgramDetails = (slotIds: SlotId[]) => {
             seq.collect(programs, (p) =>
               p.type === 'content' ||
               (p.type === 'custom' && isNonEmptyString(p.id))
-                ? { id: p.id!, duration: p.duration }
+                ? { id: p.id, duration: p.duration }
                 : null,
             ),
         )

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { v4 } from 'uuid';
 import type { ChannelOrm } from '../db/schema/Channel.ts';
-import type { Lineup } from '../db/derived_types/Lineup.ts';
+import type { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
 import type { MaterializedChannelPrograms } from './XmlTvWriter.ts';
 import type { ChannelPrograms } from './TvGuideService.ts';
 import dayjsBase from 'dayjs';
@@ -40,6 +40,14 @@ function makeChannelOrm(overrides?: Partial<ChannelOrm>): ChannelOrm {
     subtitlesEnabled: false,
     ...overrides,
   };
+}
+
+function makeLineup(items: LineupItem[]): Lineup {
+  const startTimeOffsets = [0];
+  for (const item of items) {
+    startTimeOffsets.push(startTimeOffsets.at(-1)! + item.durationMs);
+  }
+  return { version: 6, lastUpdated: Date.now(), items, startTimeOffsets };
 }
 
 function makeEmptyLineup(): Lineup {
@@ -613,6 +621,122 @@ describe('TVGuideService', () => {
       ).map((entry) => entry.channel.uuid);
       expect(written).toContain(healthy.channel.uuid);
       expect(written).not.toContain(broken.channel.uuid);
+    });
+  });
+
+  describe('channel redirects', () => {
+    const MIN = 60_000;
+    // Fixed so the lineup grids line up the same way on every run.
+    const BASE = new Date('2024-01-01T00:00:00Z').getTime();
+
+    function makeService(channels: Record<string, unknown>) {
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(channels),
+          syncChannelDuration: vi.fn().mockResolvedValue(false),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+      return { service, mockWrite };
+    }
+
+    /**
+     * A time-slot schedule with padded starts: each 22 minute episode is
+     * followed by an 8 minute pad onto the next half hour.
+     */
+    function makePaddedSlotChannel(name: string, number: number) {
+      const items: LineupItem[] = [];
+      for (let i = 0; i < 400; i++) {
+        items.push({
+          type: 'content',
+          id: `${name}-${i}`,
+          durationMs: 22 * MIN,
+        });
+        items.push({ type: 'offline', durationMs: 8 * MIN });
+      }
+      return {
+        channel: makeChannelOrm({ number, name, startTime: BASE }),
+        lineup: makeLineup(items),
+      };
+    }
+
+    /**
+     * Flex melding folds a short offline block into the entry before it. It
+     * used to pick that entry by the item's position in the *channel lineup*,
+     * which is a different index space from the guide output being built. On a
+     * redirecting channel every entry inside one redirect block carries the
+     * same lineup index, so each pad inside the block was folded into one
+     * arbitrary early entry: that entry ran long and the pad's time vanished
+     * from the guide, leaving holes that grew with the EPG window. See #1798.
+     */
+    it('produces a gap-free guide for a channel that redirects', async () => {
+      const target = makePaddedSlotChannel('Target', 2);
+
+      // Redirect slots deliberately offset from the target's half hour grid,
+      // so slot boundaries land in the middle of the target's programs.
+      const mainItems: LineupItem[] = [];
+      for (let i = 0; i < 100; i++) {
+        mainItems.push({ type: 'offline', durationMs: 10 * MIN });
+        mainItems.push({
+          type: 'redirect',
+          channel: target.channel.uuid,
+          durationMs: 110 * MIN,
+        });
+      }
+      const main = {
+        channel: makeChannelOrm({ number: 1, name: 'Main', startTime: BASE }),
+        lineup: makeLineup(mainItems),
+      };
+
+      const { service, mockWrite } = makeService({
+        [main.channel.uuid]: main,
+        [target.channel.uuid]: target,
+      });
+
+      // The reporter's EPG setting. A longer window folds in more pads, so
+      // the shorter default hides how bad the drift gets.
+      await service.buildAllChannels(
+        dayjs.duration({ hours: 192 }),
+        true,
+        BASE,
+      );
+
+      const written = mockWrite.mock.calls.at(
+        -1,
+      )![0] as MaterializedChannelPrograms[];
+      const programs = written.find(
+        (entry) => entry.channel.uuid === main.channel.uuid,
+      )!.programs;
+
+      expect(programs.length).toBeGreaterThan(0);
+
+      const discontinuities = programs
+        .slice(1)
+        .map((program, i) => ({ previous: programs[i]!, program }))
+        .filter(({ previous, program }) => previous.stop !== program.start)
+        .map(
+          ({ previous, program }) =>
+            `entry ends ${new Date(previous.stop).toISOString()} but the next starts ${new Date(program.start).toISOString()}`,
+        );
+
+      expect(discontinuities).toEqual([]);
     });
   });
 });

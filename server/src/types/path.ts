@@ -31,18 +31,19 @@ type PathImpl<
 > = V extends Primitive
   ? `${K}`
   : true extends AnyIsEqual<TraversedTypes, V>
-  ? `${K}`
-  : `${K}` | `${K}.${PathInternal<V, TraversedTypes | V>}`;
+    ? `${K}`
+    : `${K}` | `${K}.${PathInternal<V, TraversedTypes | V>}`;
 
-type PathInternal<T, TraversedTypes = T> = T extends ReadonlyArray<infer V>
-  ? IsTuple<T> extends true
-    ? {
-        [K in TupleKeys<T>]-?: PathImpl<K & string, T[K], TraversedTypes>;
-      }[TupleKeys<T>]
-    : PathImpl<ArrayKey, V, TraversedTypes>
-  : {
-      [K in keyof T]-?: PathImpl<K & string, T[K], TraversedTypes>;
-    }[keyof T];
+type PathInternal<T, TraversedTypes = T> =
+  T extends ReadonlyArray<infer V>
+    ? IsTuple<T> extends true
+      ? {
+          [K in TupleKeys<T>]-?: PathImpl<K & string, T[K], TraversedTypes>;
+        }[TupleKeys<T>]
+      : PathImpl<ArrayKey, V, TraversedTypes>
+    : {
+        [K in keyof T]-?: PathImpl<K & string, T[K], TraversedTypes>;
+      }[keyof T];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Path<T> = T extends any ? PathInternal<T> : never;
@@ -55,17 +56,17 @@ export type PathValue<T, P extends Path<T>> = T extends any
         ? PathValue<T[K], R>
         : never
       : K extends `${ArrayKey}`
-      ? T extends ReadonlyArray<infer V>
-        ? PathValue<V, R & Path<V>>
+        ? T extends ReadonlyArray<infer V>
+          ? PathValue<V, R & Path<V>>
+          : never
         : never
-      : never
     : P extends keyof T
-    ? T[P]
-    : P extends `${ArrayKey}`
-    ? T extends ReadonlyArray<infer V>
-      ? V
-      : never
-    : never
+      ? T[P]
+      : P extends `${ArrayKey}`
+        ? T extends ReadonlyArray<infer V>
+          ? V
+          : never
+        : never
   : never;
 
 export function typedProperty<T, TPath extends Path<T> = Path<T>>(path: TPath) {

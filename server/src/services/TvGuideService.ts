@@ -1,17 +1,16 @@
 import { Mutex } from 'async-mutex';
-import { ChannelDB } from '@/db/ChannelDB.js';
-import { ProgramDB } from '@/db/ProgramDB.js';
+import type { ChannelDB } from '@/db/ChannelDB.js';
+import type { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
+import type { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
 import {
   isContentItem,
   isOfflineItem,
   isRedirectItem,
-  Lineup,
-  LineupItem,
 } from '@/db/derived_types/Lineup.js';
-import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
+import type { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
 import { devAssert } from '@/util/debug.js';
@@ -23,16 +22,16 @@ import { makeLocalUrl } from '@/util/serverUtil.js';
 import throttle from '@/util/throttle.js';
 import constants from '@tunarr/shared/constants';
 import { seq } from '@tunarr/shared/util';
-import {
+import type {
   ChannelIcon,
   ChannelLineup,
   ChannelProgram,
   TvGuideProgram,
 } from '@tunarr/types';
 import retry from 'async-retry';
-import { Duration } from 'dayjs/plugin/duration.js';
+import type { Duration } from 'dayjs/plugin/duration.js';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import {
   compact,
   filter,
@@ -55,17 +54,17 @@ import {
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
-import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
-import { ChannelOrm } from '../db/schema/Channel.ts';
-import { ProgramOrm } from '../db/schema/Program.ts';
-import { DB } from '../db/schema/db.ts';
+import type { ChannelOrm } from '../db/schema/Channel.ts';
+import type { ProgramOrm } from '../db/schema/Program.ts';
+import type { DB } from '../db/schema/db.ts';
 import type {
   ChannelOrmWithPrograms,
   ChannelOrmWithRelations,
   ProgramWithRelationsOrm,
 } from '../db/schema/derivedTypes.ts';
-import {
+import type {
   FlexGuideItem,
   MaterializedGuideItem,
   ProgramGuideItem,
@@ -78,7 +77,6 @@ import {
   isDefined,
   isNonEmptyString,
   run,
-  wait,
 } from '../util/index.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
 import { EventService } from './EventService.ts';
@@ -743,12 +741,24 @@ export class TVGuideService {
     let melded = 0;
 
     const push = (program: GuideItem) => {
-      const currentProgram = program.lineupItem;
-      const previousProgramIndex =
-        !isUndefined(program.index) &&
-        inRange(program.index - 1, 0, programs.length)
-          ? (program.index - 1) % programs.length
-          : programs.length - 1;
+      // Normalize filler items to offline so they always participate
+      // in offline melding and never appear as content in the EPG.
+      let currentProgram = program.lineupItem;
+      if (
+        currentProgram.type === 'content' &&
+        isNonEmptyString(currentProgram.fillerListId)
+      ) {
+        currentProgram = {
+          type: 'offline',
+          durationMs: currentProgram.durationMs,
+        };
+        program = { ...program, lineupItem: currentProgram };
+      }
+
+      // program.index is a position in the channel lineup, not in the guide
+      // output being accumulated here, so it can never pick the entry to meld
+      // into. The preceding entry is always the last one pushed.
+      const previousProgramIndex = programs.length - 1;
 
       const previousProgram = nth(programs, previousProgramIndex);
 
@@ -960,7 +970,7 @@ export class TVGuideService {
 
     result.programs = [];
     for (const program of programs) {
-      await wait();
+      await throttle();
       if (isProgramOffline(program.lineupItem, channelWithLineup.channel)) {
         let start = program.startTimeMs;
         let duration = program.lineupItem.durationMs;
@@ -1064,13 +1074,15 @@ export class TVGuideService {
   }
 
   private async writeXmlTv() {
-    const allProgramsById: Record<string, ProgramWithRelationsOrm> = {};
-    for (const { programs } of Object.values(this.cachedGuide)) {
-      const programsById = await this.getAllCurrentGuidePrograms(programs);
-      for (const [id, program] of Object.entries(programsById)) {
-        allProgramsById[id] = program;
-      }
-    }
+    // Every channel's programs are fetched in one pass rather than one query
+    // per channel. The results were being merged into a single flat map
+    // regardless, so the per-channel split bought nothing and cost plenty:
+    // deduplication was scoped to a channel, so a program scheduled on several
+    // channels had its whole relation graph fetched and rebuilt once per
+    // channel. getProgramsByIds dedupes and chunks internally.
+    const allProgramsById = await this.getAllCurrentGuidePrograms(
+      Object.values(this.cachedGuide).flatMap(({ programs }) => programs),
+    );
 
     const materializedGuide = Object.values(this.cachedGuide).map(
       ({ channel, programs }) => {

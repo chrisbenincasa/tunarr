@@ -8,9 +8,11 @@ import { createFakeProgramOrm } from '../../testing/fakes/entityCreators.ts';
 import { groupByUniq } from '../../util/index.ts';
 import type { SlotSchedulerProgram } from './slotSchedulerUtil.js';
 import {
+  createFillerIterators,
   createProgramMap,
   createSlotIterators,
   deduplicateSlotIds,
+  getFillerIteratorsForSlot,
 } from './slotSchedulerUtil.js';
 import { scheduleTimeSlots } from './TimeSlotService.ts';
 import { MersenneTwister19937, Random } from 'random-js';
@@ -636,6 +638,71 @@ describe('createSlotIterators unit', () => {
     // Rerun now sees ep3 from fresh buffer
     expect(itRerun.current(state)?.id).toBe('ep3');
   });
+
+  test('one filler list at two orders builds an iterator for each', () => {
+    const fillerListId = randomUUID();
+    const fillerPrograms: SlotSchedulerProgram[] = Array.from(
+      { length: 6 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `bumper-${i}`,
+          title: `Bumper ${i}`,
+          type: 'movie',
+          duration: 2 * 60 * 1000,
+        }),
+        parentFillerLists: [fillerListId],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const uniformSlot = {
+      id: randomUUID(),
+      startTime: 0,
+      type: 'show' as const,
+      showId: 'show1',
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      filler: [
+        {
+          types: ['tail' as const],
+          fillerListId,
+          fillerOrder: 'uniform' as const,
+        },
+      ],
+    };
+    const weightedSlot = {
+      ...uniformSlot,
+      id: randomUUID(),
+      startTime: 12 * 60 * 60 * 1000,
+      showId: 'show2',
+      filler: [
+        {
+          types: ['tail' as const],
+          fillerListId,
+          fillerOrder: 'shuffle_prefer_short' as const,
+        },
+      ],
+    };
+
+    const random = new Random(MersenneTwister19937.seed(42));
+    const iterators = createFillerIterators(
+      [uniformSlot, weightedSlot],
+      createProgramMap(fillerPrograms),
+      random,
+    );
+
+    expect(Object.keys(iterators)).toHaveLength(2);
+    expect(
+      Object.keys(getFillerIteratorsForSlot(uniformSlot, iterators, new Set())),
+    ).toEqual([fillerListId]);
+    expect(
+      Object.keys(
+        getFillerIteratorsForSlot(weightedSlot, iterators, new Set()),
+      ),
+    ).toEqual([fillerListId]);
+  });
 });
 
 describe('TimeSlotService', () => {
@@ -661,6 +728,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -712,6 +780,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -738,6 +807,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -801,6 +871,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -854,6 +925,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -874,6 +946,109 @@ describe('TimeSlotService', () => {
           // Content always starts on the 30m mark.
           expect(t % (30 * 60 * 1000)).toBe(0);
           t += item.duration;
+        }
+      });
+
+      test('per-slot pad override does not starve the following slot', async () => {
+        // Regression: a slot with a pad override only applied that override to
+        // the first program in the slot. Subsequent programs were padded with
+        // the schedule-level padMs, overrunning the slot and pushing the next
+        // slot past maxLateness, so it was never scheduled.
+        const mkEpisodes = (show: string, durationMs: number) =>
+          Array.from({ length: 10 }, (_, i) => ({
+            ...createFakeProgramOrm({
+              uuid: `${show}-ep${i + 1}`,
+              type: 'episode' as const,
+              duration: durationMs,
+              episode: i + 1,
+              tvShowUuid: show,
+              show: { uuid: show },
+            }),
+            parentFillerLists: [],
+            parentCustomShows: [],
+            parentSmartCollections: [],
+          }));
+
+        const programs: SlotSchedulerProgram[] = [
+          ...mkEpisodes('shortShow', 7 * 60 * 1000),
+          ...mkEpisodes('longShow', 25 * 60 * 1000),
+        ];
+
+        const schedule: TimeSlotSchedule = {
+          type: 'time',
+          flexPreference: 'distribute',
+          maxDays: 1,
+          padMs: 30 * 60 * 1000,
+          latenessMs: 5 * 60 * 1000,
+          overflow: { type: 'duration', maxMs: 0 },
+          period: 'day',
+          timeZoneOffset: 0,
+          slots: [
+            {
+              id: randomUUID(),
+              startTime: 6 * 60 * 60 * 1000,
+              type: 'show',
+              showId: 'shortShow',
+              order: 'next',
+              direction: 'asc',
+              seasonFilter: [],
+              seasonExcludeFilter: [],
+              padMs: 5 * 60 * 1000,
+            },
+            {
+              id: randomUUID(),
+              startTime: 6.5 * 60 * 60 * 1000,
+              type: 'show',
+              showId: 'longShow',
+              order: 'next',
+              direction: 'asc',
+              seasonFilter: [],
+              seasonExcludeFilter: [],
+            },
+          ],
+        };
+
+        const result = await scheduleTimeSlots(schedule, programs);
+
+        const contentStarts: { id: string; offset: number }[] = [];
+        let t = result.startTime;
+        for (const item of result.lineup) {
+          if (item.type === 'content') {
+            contentStarts.push({ id: item.id, offset: t });
+          }
+          t += item.duration;
+        }
+
+        const shortEntries = contentStarts.filter((c) =>
+          c.id.startsWith('shortShow'),
+        );
+        const longEntries = contentStarts.filter((c) =>
+          c.id.startsWith('longShow'),
+        );
+
+        // The second slot must actually be scheduled.
+        expect(shortEntries.length).toBeGreaterThan(0);
+        expect(longEntries.length).toBeGreaterThan(0);
+
+        // Every program in the overridden slot starts on a 5m mark, and the
+        // slot does not run past its 30m boundary.
+        const slotStart = dayjs(result.startTime)
+          .startOf('day')
+          .add(6, 'hour')
+          .valueOf();
+        for (const { offset } of shortEntries) {
+          expect(offset % (5 * 60 * 1000)).toBe(0);
+        }
+        expect(
+          shortEntries.every(({ offset }) => {
+            const intoDay = offset - slotStart;
+            return intoDay % (24 * 60 * 60 * 1000) < 30 * 60 * 1000;
+          }),
+        ).toBe(true);
+
+        // The un-overridden slot keeps the schedule-level 30m grid.
+        for (const { offset } of longEntries) {
+          expect(offset % (30 * 60 * 1000)).toBe(0);
         }
       });
 
@@ -913,6 +1088,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -964,6 +1140,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1043,6 +1220,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1114,6 +1292,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1158,6 +1337,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1217,6 +1397,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1267,6 +1448,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1321,6 +1503,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
           startTomorrow: true,
         };
@@ -1370,6 +1553,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'week',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1414,6 +1598,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1470,6 +1655,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1514,6 +1700,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1568,6 +1755,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1617,6 +1805,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -1627,12 +1816,13 @@ describe('TimeSlotService', () => {
     });
   });
 
-  describe('max lateness', () => {
-    test('inner loop allows programs to overflow into the lateness buffer', async () => {
+  describe('max overflow', () => {
+    test('inner loop allows programs to overflow into the overflow buffer', async () => {
       // Slot A (movie) at 0, Slot B (show) at 2h — bounds Slot A to 2 hours.
       // Movies are 28 min each → padded to 30 min (padMs=30min).
-      // With latenessMs=0:    4 × 30min = 120min fills the slot exactly.
-      // With latenessMs=30min: a 5th movie should fit (150min = 120 + 30).
+      // With overflow maxMs=0:    4 × 30min = 120min fills the slot exactly.
+      // With overflow maxMs=30min: a 5th movie should fit (150min = 120 + 30).
+      // Lateness alone no longer lets the slot overflow.
       const HOUR_MS = 60 * 60 * 1000;
       const THIRTY_MIN = 30 * 60 * 1000;
       const TWENTY_EIGHT_MIN = 28 * 60 * 1000;
@@ -1652,7 +1842,10 @@ describe('TimeSlotService', () => {
         }),
       );
 
-      const makeSchedule = (latenessMs: number): TimeSlotSchedule => ({
+      const makeSchedule = (
+        overflowMs: number,
+        latenessMs: number = 0,
+      ): TimeSlotSchedule => ({
         type: 'time',
         flexPreference: 'end',
         maxDays: 1,
@@ -1675,6 +1868,7 @@ describe('TimeSlotService', () => {
         ],
         period: 'day',
         latenessMs,
+        overflow: { type: 'duration', maxMs: overflowMs },
         timeZoneOffset: 0,
       });
 
@@ -1695,25 +1889,35 @@ describe('TimeSlotService', () => {
         return count;
       };
 
-      // Baseline: latenessMs=0 → exactly 4 movies fit in the 2h slot
-      const resultNoLateness = await scheduleTimeSlots(
+      // Baseline: no overflow → exactly 4 movies fit in the 2h slot
+      const resultNoOverflow = await scheduleTimeSlots(
         makeSchedule(0),
         movies,
         seed,
         undefined,
         startTime,
       );
-      expect(countFirstSlotContent(resultNoLateness)).toBe(4);
+      expect(countFirstSlotContent(resultNoOverflow)).toBe(4);
 
-      // With latenessMs=30min → 5 movies should fit (overflows by 30min)
-      const resultWithLateness = await scheduleTimeSlots(
+      // Lateness without overflow → still 4 movies
+      const resultLatenessOnly = await scheduleTimeSlots(
+        makeSchedule(0, THIRTY_MIN),
+        movies,
+        seed,
+        undefined,
+        startTime,
+      );
+      expect(countFirstSlotContent(resultLatenessOnly)).toBe(4);
+
+      // With overflow maxMs=30min → 5 movies should fit (overflows by 30min)
+      const resultWithOverflow = await scheduleTimeSlots(
         makeSchedule(THIRTY_MIN),
         movies,
         seed,
         undefined,
         startTime,
       );
-      expect(countFirstSlotContent(resultWithLateness)).toBe(5);
+      expect(countFirstSlotContent(resultWithOverflow)).toBe(5);
     });
   });
 
@@ -1807,6 +2011,7 @@ describe('TimeSlotService', () => {
       ],
       period: 'day',
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       ...overrides,
     });
@@ -2105,6 +2310,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -2157,6 +2363,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -2213,6 +2420,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -2269,6 +2477,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -2320,6 +2529,7 @@ describe('TimeSlotService', () => {
           flexPreference: 'end',
           padMs: oneHour,
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
           slots: [
             {
@@ -2453,6 +2663,7 @@ describe('TimeSlotService', () => {
           flexPreference: 'end',
           padMs: oneHour,
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
           slots: [
             {
@@ -2527,6 +2738,7 @@ describe('TimeSlotService', () => {
           ],
           period: 'day',
           latenessMs: 0,
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
         };
 
@@ -2596,6 +2808,7 @@ describe('slot filler placement', () => {
     id?: string;
     duration: number;
     fillerType?: string;
+    fillerConfig?: { origin?: string };
   };
 
   test('head/tail filler is emitted even when every program is padded', async () => {
@@ -2613,6 +2826,7 @@ describe('slot filler placement', () => {
       // used to make the slot look "full" and starve head/tail filler.
       padMs: 15 * oneMin,
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       slots: shows.map((showId, i) => ({
         id: randomUUID(),
@@ -2678,6 +2892,7 @@ describe('slot filler placement', () => {
       flexPreference: 'end',
       padMs: 5 * oneMin,
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       slots: shows.map((showId, i) => ({
         id: randomUUID(),
@@ -2771,6 +2986,7 @@ describe('slot filler placement', () => {
         flexPreference: 'end',
         padMs: 30 * oneMin,
         latenessMs: 0,
+        overflow: { type: 'duration', maxMs: 0 },
         timeZoneOffset: 0,
         slots: [
           {
@@ -2881,6 +3097,7 @@ describe('slot filler placement', () => {
       flexPreference: 'end',
       padMs: 30 * oneMin,
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       slots: [
         {
@@ -2938,6 +3155,94 @@ describe('slot filler placement', () => {
     );
   });
 
+  test('flex left over by a partially filled break is marked as break time', async () => {
+    const midList = randomUUID();
+    const breakMs = 30 * 1000;
+    // Nothing in the list divides the break evenly, so every break ends with a
+    // few seconds of flex.
+    const fillerMs = 7 * 1000;
+    const leftoverMs = breakMs % fillerMs;
+
+    const episodes: SlotSchedulerProgram[] = Array.from(
+      { length: 6 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `show1-ep${i + 1}`,
+          title: `Episode ${i + 1}`,
+          type: 'episode',
+          duration: 20 * oneMin,
+          episode: i + 1,
+          tvShowUuid: 'show1',
+          show: { uuid: 'show1' },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: 30 * oneMin,
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+      slots: [
+        {
+          id: randomUUID(),
+          startTime: 0,
+          type: 'show',
+          showId: 'show1',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+          filler: [
+            {
+              types: ['mid'],
+              fillerListId: midList,
+              fillerOrder: 'uniform',
+            },
+          ],
+          midRoll: {
+            strategy: 'eager',
+            breakRule: { type: 'fixed_interval', intervalMs: 8 * oneMin },
+            breakDurationMs: breakMs,
+            maxBreaks: 2,
+            minProgramDurationMs: 0,
+            tailBufferMs: 0,
+          },
+        },
+      ],
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [...episodes, ...makeFillers(midList, 'mid', 6, fillerMs)],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const lineup = result.lineup as LineupItem[];
+    const leftovers = lineup.filter(
+      (p) => p.type === 'flex' && p.duration === leftoverMs,
+    );
+    expect(leftovers.length).toBeGreaterThan(0);
+    expect(leftovers.every((p) => p.fillerConfig?.origin === 'midroll')).toBe(
+      true,
+    );
+
+    // Flex that pads out the block, rather than a break, stays unmarked.
+    const blockFlex = lineup.filter(
+      (p) => p.type === 'flex' && p.duration !== leftoverMs,
+    );
+    expect(blockFlex.length).toBeGreaterThan(0);
+    expect(blockFlex.every((p) => p.fillerConfig === undefined)).toBe(true);
+  });
+
   test('uniform-ordered filler never exceeds the time available to it', async () => {
     const bumperList = randomUUID();
 
@@ -2948,6 +3253,7 @@ describe('slot filler placement', () => {
       flexPreference: 'end',
       padMs: oneMin,
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       // 30 minute slots covering the whole day, so that no slot is wide
       // enough for the oversized filler to legitimately fit.
@@ -3067,6 +3373,7 @@ describe('slot filler budgeting', () => {
       flexPreference: 'end',
       padMs: oneMin,
       latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
       timeZoneOffset: 0,
       slots: Array.from({ length: 48 }, (_, i) => ({
         id: randomUUID(),

@@ -227,10 +227,17 @@ export class DirectMigrationProvider implements MigrationProvider {
         migration1777908252: makeMigrationFromSqlFile(
           './sql/0044_useful_groot.sql',
         ),
-        // Make program_play_history.filler_list_id ON DELETE SET NULL so that
-        // playback history no longer blocks deleting a filler list.
-        migration1789079837: makeMigrationFromSqlFile(
-          './sql/0045_fix_filler_list_play_history_fk.sql',
+        migration1779655043: makeMigrationFromSqlFile(
+          './sql/0045_lean_violations.sql',
+        ),
+        migration1782772646: makeMigrationFromSqlFile(
+          './sql/0046_melted_captain_flint.sql',
+        ),
+        migration1789851695: makeMigrationFromSqlFile(
+          './sql/0047_eac3_audio_format_constraint.sql',
+        ),
+        migration1790033149: makeMigrationFromSqlFile(
+          './sql/0048_old_firestar.sql',
         ),
       } satisfies Record<string, TunarrDatabaseMigration>,
       wrapWithTransaction,

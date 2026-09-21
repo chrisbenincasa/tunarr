@@ -1,9 +1,6 @@
 import DarkModeButton from '@/components/settings/DarkModeButton.tsx';
 import useStore from '@/store/index.ts';
-import {
-  setTimeFormat,
-  setUiLocale,
-} from '@/store/settings/actions.ts';
+import { setTimeFormat, setUiLocale } from '@/store/settings/actions.ts';
 import type { SupportedLocales, TimeFormat } from '@/store/settings/store.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
@@ -29,14 +26,11 @@ export const WebSettings = () => {
     void setUiLocale(value);
   }, []);
 
-  const handleTimeFormatChange = useCallback(
-    (value: Nullable<TimeFormat>) => {
-      if (value) {
-        void setTimeFormat(value);
-      }
-    },
-    [],
-  );
+  const handleTimeFormatChange = useCallback((value: Nullable<TimeFormat>) => {
+    if (value) {
+      void setTimeFormat(value);
+    }
+  }, []);
 
   return (
     <Stack spacing={2}>
@@ -70,6 +64,7 @@ export const WebSettings = () => {
           >
             <MenuItem value="en">English</MenuItem>
             <MenuItem value="es">Español</MenuItem>
+            <MenuItem value="zh-CN">简体中文</MenuItem>
             {import.meta.env.DEV && (
               <MenuItem value="pseudo-LOCALE">pseudo-LOCALE (dev)</MenuItem>
             )}

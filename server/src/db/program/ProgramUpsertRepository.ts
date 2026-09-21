@@ -43,12 +43,12 @@ import type {
   ProgramWithExternalIds,
 } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
-import { ProgramExternalIdRepository } from './ProgramExternalIdRepository.ts';
-import { ProgramMetadataRepository } from './ProgramMetadataRepository.ts';
+import type { ProgramExternalIdRepository } from './ProgramExternalIdRepository.ts';
+import type { ProgramMetadataRepository } from './ProgramMetadataRepository.ts';
 
 @injectable()
 export class ProgramUpsertRepository {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,

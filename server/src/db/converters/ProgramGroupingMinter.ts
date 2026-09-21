@@ -1,14 +1,12 @@
 import type { NewSingleOrMultiProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
-import {
+import type {
   Actor,
   EpisodeWithHierarchy,
   MusicTrackWithHierarchy,
-  type Identifier,
-  type Season,
-  type Show,
 } from '@tunarr/types';
+import { type Identifier, type Season, type Show } from '@tunarr/types';
 import {
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,
@@ -16,19 +14,19 @@ import {
 import dayjs from 'dayjs';
 import { injectable } from 'inversify';
 import { v4 } from 'uuid';
-import {
+import type {
   MediaSourceMusicAlbum,
   MediaSourceMusicArtist,
 } from '../../types/Media.ts';
 import type { Nilable, Nullable } from '../../types/util.ts';
-import { NewArtwork } from '../schema/Artwork.ts';
-import { NewCredit } from '../schema/Credit.ts';
-import {
+import type { NewArtwork } from '../schema/Artwork.ts';
+import type { NewCredit } from '../schema/Credit.ts';
+import type {
   NewCreditWithArtwork,
   NewProgramGroupingWithRelations,
 } from '../schema/derivedTypes.js';
-import { MediaSourceOrm } from '../schema/MediaSource.ts';
-import { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
+import type { MediaSourceOrm } from '../schema/MediaSource.ts';
+import type { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
 import { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
 import { CommonDaoMinter } from './CommonDaoMinter.ts';
 
@@ -318,7 +316,10 @@ export class ProgramGroupingMinter {
         year:
           album.year ??
           (album.releaseDate ? dayjs(album.releaseDate).year() : null),
-        artistUuid: album.artist?.uuid,
+        // NOTE: artistUuid is intentionally not set here. `album.artist` is a
+        // partially-populated object from the media source API client, and its
+        // `uuid` is ephemeral (see PlexApiClient.plexAlbumInjection). Callers
+        // must set artistUuid to the persisted artist's uuid after upserting it.
         state: 'ok',
       },
       externalIds: this.mintExternalIdsFromIdentifiers(

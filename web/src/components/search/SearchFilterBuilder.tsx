@@ -75,14 +75,16 @@ export function SearchFilterBuilder({
                       helperText={
                         fieldState.error?.type === 'validExpression' ? (
                           <span>
-                            <Trans>Could not parse this filter expression. Check the{' '}
-                            <Link
-                              href="https://tunarr.com/misc/search"
-                              target="_blank"
-                            >
-                              documentation
-                            </Link>{' '}
-                            for information about filter expressions.</Trans>
+                            <Trans>
+                              Could not parse this filter expression. Check the{' '}
+                              <Link
+                                href="https://tunarr.com/misc/search"
+                                target="_blank"
+                              >
+                                documentation
+                              </Link>{' '}
+                              for information about filter expressions.
+                            </Trans>
                           </span>
                         ) : (
                           <span> </span>

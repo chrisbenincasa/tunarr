@@ -88,10 +88,15 @@ export class SubtitleStreamPicker {
 
       // Try to find a match
       for (const stream of orderedStreams) {
+        // Both sides go through codesMatch so a preference stored as an
+        // ISO 639-2/B code ("ger") still matches a stream tagged with the
+        // equivalent /T code ("deu"), and vice versa.
         if (
           stream.languageCodeISO6392 &&
-          LanguageService.getAlpha3TCode(stream.languageCodeISO6392) !==
-            pref.languageCode
+          !LanguageService.codesMatch(
+            stream.languageCodeISO6392,
+            pref.languageCode,
+          )
         ) {
           this.logger.debug(
             'Skipping subtitle index %d, not a language match',

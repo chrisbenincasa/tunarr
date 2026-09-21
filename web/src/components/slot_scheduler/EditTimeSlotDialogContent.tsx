@@ -21,14 +21,16 @@ import {
 import { TimePicker } from '@mui/x-date-pickers';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { find, isNil, map } from 'lodash-es';
+import { find, isNil, map, values } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { deriveMidRollDefaults } from '../../helpers/midRollDefaults.ts';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import { useTimeSlotFormContext } from '../../hooks/slot_scheduler/useTimeSlotFormContext.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
+import useStore from '../../store/index.ts';
 import { slotIsLinkable, type LinkMode } from '../../model/CommonSlotModels.ts';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
@@ -130,6 +132,8 @@ export const EditTimeSlotDialogContent = ({
 
   const { data: fillerLists } = useFillerLists();
   const programOptions = useSlotProgramOptionsContext();
+  const programLookup = useStore((s) => s.programLookup);
+  const channelPrograms = useMemo(() => values(programLookup), [programLookup]);
 
   const formMethods = useForm<TimeSlotViewModel>({
     defaultValues: slot,
@@ -179,18 +183,12 @@ export const EditTimeSlotDialogContent = ({
       setTab(0);
     }
     if (hasMidFiller && !formMethods.getValues('midRoll')) {
-      formMethods.setValue('midRoll', {
-        intervalMs: 30 * 60 * 1000,
-        breakRule: { type: 'fixed_interval', intervalMs: 30 * 60 * 1000 },
-        breakDurationMs: 3 * 60 * 1000,
-        maxBreaks: 0,
-        minProgramDurationMs: 60 * 60 * 1000,
-        tailBufferMs: 0,
-        programTypes: [],
-        strategy: 'eager',
-      });
+      formMethods.setValue(
+        'midRoll',
+        deriveMidRollDefaults(formMethods.getValues(), channelPrograms),
+      );
     }
-  }, [hasMidFiller, tab, formMethods]);
+  }, [hasMidFiller, tab, formMethods, channelPrograms]);
 
   const newSlotForType = useCallback(
     (type: TimeSlotViewModel['type']) => {

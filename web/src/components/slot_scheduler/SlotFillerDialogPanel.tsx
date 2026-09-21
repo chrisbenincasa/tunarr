@@ -188,10 +188,7 @@ export const SlotFillerDialogPanel = () => {
                       <Trans>Pre</Trans>
                     </ToggleButton>
                     <ToggleButton value="mid">
-                      <VerticalAlignCenter sx={{ mr: 1 }} /> Mid
-                    </ToggleButton>
-                    <ToggleButton value="mid">
-                      <VerticalAlignCenter sx={{ mr: 1 }} /> Mid
+                      <VerticalAlignCenter sx={{ mr: 1 }} /> <Trans>Mid</Trans>
                     </ToggleButton>
                     <ToggleButton value="post">
                       <LowPriority sx={{ mr: 1 }} /> <Trans>Post</Trans>

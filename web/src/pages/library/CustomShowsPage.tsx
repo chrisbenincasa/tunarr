@@ -90,7 +90,10 @@ export default function CustomShowsPage() {
         aria-describedby="delete-custom-show-description"
       >
         <DialogTitle id="delete-custom-show-title">
-          <Trans>Delete Custom Show "{find(customShows, { id: deleteConfirmationId })?.name}"?</Trans>
+          <Trans>
+            Delete Custom Show "
+            {find(customShows, { id: deleteConfirmationId })?.name}"?
+          </Trans>
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-custom-show-description">
@@ -204,13 +207,16 @@ export default function CustomShowsPage() {
         flexDirection={{ xs: 'column', md: 'row' }}
       >
         <Box flexDirection={'column'} flexGrow={1}>
-          <Typography variant="h4"><Trans>Custom Shows</Trans></Typography>
+          <Typography variant="h4">
+            <Trans>Custom Shows</Trans>
+          </Typography>
 
           <Typography maxWidth={'800px'}>
             <Trans>
-              Custom Shows are sequences of videos that represent a episodes of a
-              virtual TV show. When you add these shows to a channel, the schedule
-              tools will treat the videos as if they belonged to a single TV show.
+              Custom Shows are sequences of videos that represent a episodes of
+              a virtual TV show. When you add these shows to a channel, the
+              schedule tools will treat the videos as if they belonged to a
+              single TV show.
             </Trans>
           </Typography>
         </Box>

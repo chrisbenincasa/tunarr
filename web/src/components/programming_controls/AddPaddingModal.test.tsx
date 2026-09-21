@@ -25,7 +25,9 @@ describe('AddPaddingModal', () => {
     renderWithProviders(<AddPaddingModal open={true} onClose={() => {}} />);
 
     // Use getByRole to specifically get the dialog title
-    expect(screen.getByRole('heading', { name: 'Pad Start Times' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Pad Start Times' }),
+    ).toBeInTheDocument();
   });
 
   test('renders description text', () => {
@@ -118,7 +120,9 @@ describe('AddPaddingModal', () => {
   test('does not render when open is false', () => {
     renderWithProviders(<AddPaddingModal open={false} onClose={() => {}} />);
 
-    expect(screen.queryByRole('heading', { name: 'Pad Start Times' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Pad Start Times' }),
+    ).not.toBeInTheDocument();
   });
 
   test('allows selecting None option', async () => {

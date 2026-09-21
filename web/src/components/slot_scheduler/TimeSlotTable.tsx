@@ -18,7 +18,7 @@ import {
   Tabs,
   Tooltip,
 } from '@mui/material';
-import { blue, green, orange, pink, purple } from '@mui/material/colors';
+import { blue, green, orange, pink, purple, red } from '@mui/material/colors';
 import { type SlotFiller } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -80,6 +80,7 @@ const SmallCircle = styled(Box, {
 const fillerKindToColor = {
   head: blue['A100'],
   pre: purple['A100'],
+  mid: red['A100'],
   post: green['200'],
   tail: orange['A100'],
   fallback: pink['A100'],
@@ -101,7 +102,7 @@ export const TimeSlotTable = () => {
   const providedDjs = useDayjs();
   const localeData = useMemo(() => providedDjs().localeData(), [providedDjs]);
   const { watch, slotArray, setValue, getValues } = useTimeSlotFormContext();
-  const [currentPeriod, latenessMs] = watch(['period', 'latenessMs']);
+  const [currentPeriod, overflow] = watch(['period', 'overflow']);
   const programOptions = useSlotProgramOptionsContext();
   const startOfPeriod = dayjs().startOf(currentPeriod);
   const slotIds = useMemo(
@@ -156,10 +157,15 @@ export const TimeSlotTable = () => {
         const slotDetails = detailsBySlotId[slotId];
         let programCount = 0;
         if (slotDetails) {
-          const overDuration = filter(
-            slotDetails.programDurations,
-            ({ duration }) => duration > slotDuration + latenessMs,
-          );
+          const effectiveOverflow = slot.overflow ?? overflow;
+          const overDuration =
+            effectiveOverflow.type === 'oneExtra'
+              ? []
+              : filter(
+                  slotDetails.programDurations,
+                  ({ duration }) =>
+                    duration > slotDuration + effectiveOverflow.maxMs,
+                );
 
           if (overDuration.length > 0) {
             warnings.push({
@@ -179,13 +185,7 @@ export const TimeSlotTable = () => {
         } satisfies TimeSlotTableRowType;
       },
     );
-  }, [
-    currentPeriod,
-    detailsBySlotId,
-    latenessMs,
-    selectedDay,
-    slotArray.fields,
-  ]);
+  }, [currentPeriod, detailsBySlotId, overflow, selectedDay, slotArray.fields]);
 
   const columns = useMemo<MRT_ColumnDef<TimeSlotTableRowType>[]>(() => {
     return [
@@ -320,28 +320,24 @@ export const TimeSlotTable = () => {
 
           return (
             <Stack direction="row" spacing={1}>
-              {(['head', 'pre', 'post', 'tail', 'fallback'] as const).map(
-                (type) => {
-                  return (
-                    <Tooltip
-                      placement="top"
-                      title={capitalize(type)}
-                      key={type}
-                    >
-                      <SmallCircle
-                        color={fillerKindToColor[type]}
-                        sx={{
-                          width: '10px',
-                          height: '10px',
-                          visibility: fillerKinds.includes(type)
-                            ? 'visible'
-                            : 'hidden',
-                        }}
-                      />
-                    </Tooltip>
-                  );
-                },
-              )}
+              {(
+                ['head', 'pre', 'mid', 'post', 'tail', 'fallback'] as const
+              ).map((type) => {
+                return (
+                  <Tooltip placement="top" title={capitalize(type)} key={type}>
+                    <SmallCircle
+                      color={fillerKindToColor[type]}
+                      sx={{
+                        width: '10px',
+                        height: '10px',
+                        visibility: fillerKinds.includes(type)
+                          ? 'visible'
+                          : 'hidden',
+                      }}
+                    />
+                  </Tooltip>
+                );
+              })}
             </Stack>
           );
         },

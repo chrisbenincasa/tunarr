@@ -92,7 +92,9 @@ export const EditMediaSourceLibrariesDialog = ({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle><Trans>Manage Libraries</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Manage Libraries</Trans>
+      </DialogTitle>
       <DialogContent>
         <List
           sx={{ width: '100%' }}

@@ -42,7 +42,7 @@ import type { DrizzleDBAccess } from '../schema/index.ts';
 
 @injectable()
 export class ProgramExternalIdRepository {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.Database) private db: Kysely<DB>,

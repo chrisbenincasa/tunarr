@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a67ce501-885d-4987-b3cf-4af3ab0634c5",
+  "id": "882cf990-bbce-46d7-91ba-c2227a3f2098",
   "prevId": "7fc76602-2332-46b5-aab6-c41eacbdad68",
   "tables": {
     "artwork": {
@@ -1504,6 +1504,14 @@
         },
         "send_guide_updates": {
           "name": "send_guide_updates",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "send_play_status_updates": {
+          "name": "send_play_status_updates",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -3153,7 +3161,7 @@
           "columnsTo": [
             "uuid"
           ],
-          "onDelete": "set null",
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },

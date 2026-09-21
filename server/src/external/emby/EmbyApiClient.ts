@@ -207,7 +207,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
 
       if (!errorExpected) {
         LoggerFactory.root.error(
-          { error: error as unknown, caller: EmbyApiClient.name },
+          { error: error, caller: EmbyApiClient.name },
           'Error retrieving Emby self user',
         );
       }
@@ -279,7 +279,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       }
 
       LoggerFactory.root.error(
-        { error: e as unknown, className: EmbyApiClient.name },
+        { error: e, className: EmbyApiClient.name },
         'Error logging into Emby',
       );
       throw e;
@@ -949,7 +949,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       for (const item of data.Items ?? []) {
         const converted = this.embyApiItemInjection(item);
         if (converted) {
-          yield converted as ProgramOrFolder;
+          yield converted;
         }
       }
 
@@ -1800,6 +1800,8 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         video.TagItems?.map((item) => item.Name).filter(isNonEmptyString) ?? [],
       ),
       // summary: null,
+      artistName: video.Artists?.join(', ') ?? video.AlbumArtist ?? null,
+      albumName: video.Album ?? null,
       type: 'music_video',
       mediaItem,
       identifiers: collectEmbyItemIdentifiers(

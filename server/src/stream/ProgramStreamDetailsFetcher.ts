@@ -11,26 +11,26 @@ import {
   trimStart,
 } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
-import { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
-import { Nilable } from '../types/util.ts';
+import type { Nilable } from '../types/util.ts';
 import { fileExists } from '../util/fsUtil.ts';
 import { isNonEmptyArray, isNonEmptyString } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
-import { StreamFetchRequest } from './ExternalStreamDetailsFetcher.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
+import type { StreamFetchRequest } from './ExternalStreamDetailsFetcher.ts';
 import { PathCalculator } from './PathCalculator.ts';
-import {
+import type {
   AudioStreamDetails,
-  HttpStreamSource,
   ProgramStreamResult,
   StreamDetails,
   StreamSource,
   SubtitleStreamDetails,
   VideoStreamDetails,
 } from './types.ts';
+import { HttpStreamSource } from './types.ts';
 import { extractIsAnamorphic } from './util.ts';
 
 @injectable()
@@ -131,8 +131,7 @@ export class ProgramStreamDetailsFetcher {
     const usableSubtitles = await Promise.all(
       (program.subtitles ?? []).map(async (subtitle) => {
         const pathOnDisk =
-          isNonEmptyString(subtitle.path) &&
-          (await fileExists(subtitle.path));
+          isNonEmptyString(subtitle.path) && (await fileExists(subtitle.path));
         if (subtitle.subtitleType === 'sidecar') {
           return pathOnDisk ? subtitle : null;
         }
@@ -159,8 +158,7 @@ export class ProgramStreamDetailsFetcher {
         return {
           ...subtitle,
           index: nullToUndefined(subtitle.streamIndex),
-          type:
-            subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
+          type: subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
           languageCodeISO6392: subtitle.language,
           sdh: subtitle.sdh,
           path: nullToUndefined(subtitle.path),
