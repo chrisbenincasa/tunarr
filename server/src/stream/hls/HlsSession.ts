@@ -43,6 +43,20 @@ export type HlsSlowerSessionProvider = (
   options: BaseHlsSessionOptions,
 ) => HlsSlowerSession;
 
+/**
+ * Extensions of the segments this session prunes.
+ *
+ * WebVTT segments are left out on purpose. They come from a second ffmpeg
+ * output that segments at its own cadence and restarts its counter at zero for
+ * every program, so the video playlist's media sequence says nothing about
+ * which of them are still live. Pruning them by that number deletes segments
+ * the subtitle playlist is still serving.
+ */
+const SegmentExtensions = new Set(['.ts', '.mp4']);
+
+/** Pulls the sequence number out of a segment name, e.g. `data000123.ts`. */
+const SegmentSequencePattern = /(\d+)\.[^.]+$/;
+
 export interface HlsSessionOptions extends BaseHlsSessionOptions {
   streamMode: 'hls' | 'hls_direct_v2';
 }
@@ -425,19 +439,14 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     const workingDirectoryFiles = await fs.readdir(this._workingDirectory);
     const segments = filter(
       seq.collect(
-        filter(workingDirectoryFiles, (f) => {
-          const ext = extname(f);
-          return ext === '.ts' || ext === '.mp4' || ext === '.vtt';
-        }),
+        filter(workingDirectoryFiles, (f) => SegmentExtensions.has(extname(f))),
         (file) => {
-          const matches = file.match(/[A-z/]+(\d+)\.[ts|mp4]/);
-          if (matches && matches.length > 0) {
-            return {
-              file,
-              seq: parseInt(matches[1]!),
-            };
+          const sequence = SegmentSequencePattern.exec(file)?.[1];
+          if (sequence === undefined) {
+            return;
           }
-          return;
+
+          return { file, seq: parseInt(sequence) };
         },
       ),
       ({ seq }) => seq < sequenceNum,
