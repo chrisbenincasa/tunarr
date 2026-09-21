@@ -12,6 +12,16 @@ import type { SessionOptions } from '../Session.ts';
 import { Session } from '../Session.ts';
 import type { EtvNextBinaryResolver } from './EtvNextBinaryResolver.ts';
 import { toChannelConfig } from './EtvNextChannelConfigMapper.ts';
+import {
+  createDynamicPlaceholder,
+  DynamicRollCheckIntervalMs,
+  DynamicRollThresholdMs,
+  DynamicTokenEnvVar,
+  DynamicWindowMs,
+  dynamicResolverUri,
+} from './EtvNextDynamicPlayout.ts';
+import type { EtvNextDynamicTokenRegistry } from './EtvNextDynamicTokenRegistry.ts';
+import { StreamTerminationRequestedError } from './EtvNextPlayoutItemMapper.ts';
 import { createMultivariantPlaylist } from './EtvNextPlaylistCreator.ts';
 import type { EtvNextPlayoutWriter } from './EtvNextPlayoutWriter.ts';
 import { DefaultWindowMs } from './EtvNextPlayoutWriter.ts';
@@ -34,6 +44,22 @@ export type EtvNextSessionOptions = SessionOptions & {
   transcodeDirectory?: string;
 
   /**
+   * How the worker learns what to play.
+   *
+   * `dynamic` writes one placeholder the worker resolves against Tunarr for
+   * every item, so a programming edit lands at the next item. `materialized`
+   * writes the schedule out ahead of time, which is what a diagnostic
+   * transcode wants and what the channel falls back to.
+   */
+  playoutMode?: EtvNextPlayoutMode;
+
+  /**
+   * The port the worker calls Tunarr back on. Defaults to the port Tunarr
+   * listens on.
+   */
+  tunarrPort?: number;
+
+  /**
    * How far ahead the schedule stays materialized.
    *
    * A standing lead rather than a one-time depth — the window is rebuilt on a
@@ -42,6 +68,8 @@ export type EtvNextSessionOptions = SessionOptions & {
    */
   windowMs?: number;
 };
+
+export type EtvNextPlayoutMode = 'dynamic' | 'materialized';
 
 export type EtvNextSessionProvider = (
   channel: ChannelOrmWithTranscodeConfig,
@@ -73,9 +101,18 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
 
   #windowItems: PlayoutItem[] = [];
   #itemsEmitted = 0;
+  #dynamicWindowFinishMs?: number;
   #refreshTimer?: NodeJS.Timeout;
   #refreshing = false;
   #stopping = false;
+
+  /**
+   * The window write currently running, so teardown can wait it out.
+   *
+   * A write racing `cleanup()` otherwise fails on a directory that is already
+   * gone and logs it as a window that could not be rolled.
+   */
+  #inFlightWindowWrite?: Promise<unknown>;
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -85,6 +122,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     private childProcessHelper: ChildProcessHelper,
     private settingsDB: ISettingsDB,
     private featureFlagService: FeatureFlagService,
+    private tokenRegistry: EtvNextDynamicTokenRegistry,
   ) {
     super(channel, {
       // Tunarr's global default is longer than the worker's own reap window,
@@ -143,6 +181,68 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
 
     this.#recordIgnored(ignored.map((i) => `${i.field}: ${i.reason}`));
 
+    try {
+      const workerEnv = await this.#writeInitialPlayout();
+
+      // The worker reaps itself on a stale heartbeat, so the file has to exist
+      // before it starts counting.
+      await this.#workspace.recordHeartbeat();
+
+      this.#process = await this.childProcessHelper.spawn(
+        executablePath,
+        [
+          'run',
+          this.#workspace.channelConfigPath,
+          '--output-folder',
+          this.#workspace.outputDirectory,
+          '--number',
+          `${this.channel.number}`,
+        ],
+        {
+          name: `etv-next-${this.channel.uuid}`,
+
+          // An idle reap exits zero and is not a failure, and a genuine crash
+          // should surface as a dead session rather than a restart loop against
+          // a config that will fail again the same way.
+          restartOnFailure: false,
+          maxAttempts: 1,
+        },
+        workerEnv,
+      );
+    } catch (e) {
+      // A token outliving the worker it was minted for would keep granting
+      // this channel's programming to nothing.
+      this.tokenRegistry.revoke(this.channel.uuid);
+      throw e;
+    }
+
+    this.#process.process?.once('exit', (code, signal) =>
+      this.#onWorkerExit(code, signal),
+    );
+
+    this.#startWindowRefresh();
+  }
+
+  /**
+   * Writes the playout the worker starts against, and the environment it needs
+   * to read it.
+   *
+   * The dynamic placeholder carries no secret itself. The worker expands
+   * `{{TUNARR_ETV_TOKEN}}` from its own environment when it builds the
+   * request, so the token never lands in a file.
+   */
+  async #writeInitialPlayout(): Promise<NodeJS.ProcessEnv | undefined> {
+    if (this.#playoutMode === 'dynamic') {
+      const token = this.tokenRegistry.issue(
+        this.channel.uuid,
+        this.channel.number,
+      );
+
+      await this.#writeDynamicWindow(Date.now());
+
+      return { ...process.env, [DynamicTokenEnvVar]: token };
+    }
+
     const window = await this.playoutWriter.materializeWindow({
       channel: this.channel,
       startMs: Date.now(),
@@ -165,36 +265,23 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     this.#itemsEmitted = window.items.length;
     this.#recordIgnored(window.ignored);
 
-    // The worker reaps itself on a stale heartbeat, so the file has to exist
-    // before it starts counting.
-    await this.#workspace.recordHeartbeat();
+    return undefined;
+  }
 
-    this.#process = await this.childProcessHelper.spawn(
-      executablePath,
-      [
-        'run',
-        this.#workspace.channelConfigPath,
-        '--output-folder',
-        this.#workspace.outputDirectory,
-        '--number',
-        `${this.channel.number}`,
-      ],
-      {
-        name: `etv-next-${this.channel.uuid}`,
+  /** Replaces the window with one placeholder covering the next 12 hours. */
+  async #writeDynamicWindow(startMs: number): Promise<void> {
+    const finishMs = startMs + DynamicWindowMs;
 
-        // An idle reap exits zero and is not a failure, and a genuine crash
-        // should surface as a dead session rather than a restart loop against
-        // a config that will fail again the same way.
-        restartOnFailure: false,
-        maxAttempts: 1,
-      },
-    );
+    await this.#workspace.writePlayoutWindow(startMs, finishMs, [
+      createDynamicPlaceholder({
+        channelUuid: this.channel.uuid,
+        startMs,
+        finishMs,
+        resolverUri: dynamicResolverUri(this.#tunarrPort),
+      }),
+    ]);
 
-    this.#process.process?.once('exit', (code, signal) =>
-      this.#onWorkerExit(code, signal),
-    );
-
-    this.#startWindowRefresh();
+    this.#dynamicWindowFinishMs = finishMs;
   }
 
   protected override async waitForStreamReady(): Promise<Result<void>> {
@@ -207,6 +294,13 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     // Set before the kill so the exit listener knows this one was deliberate.
     this.#stopping = true;
     this.#stopWindowRefresh();
+
+    // The token dies with the session, so a worker that outlives its kill
+    // cannot keep resolving items.
+    this.tokenRegistry.revoke(this.channel.uuid);
+
+    // Let a write that is already running finish before the directory goes.
+    await this.#inFlightWindowWrite?.catch(() => undefined);
 
     try {
       this.#process?.kill();
@@ -262,6 +356,14 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     return this.sessionOptions.windowMs ?? DefaultWindowMs;
   }
 
+  get #playoutMode(): EtvNextPlayoutMode {
+    return this.sessionOptions.playoutMode ?? 'dynamic';
+  }
+
+  get #tunarrPort(): number {
+    return this.sessionOptions.tunarrPort ?? serverOptions().port;
+  }
+
   /**
    * Ends the session when the worker goes away on its own.
    *
@@ -291,13 +393,16 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
   }
 
   #startWindowRefresh(): void {
-    const intervalMs = Math.max(
-      MinRefreshIntervalMs,
-      Math.floor(this.#windowMs * RefreshFraction),
-    );
+    const dynamic = this.#playoutMode === 'dynamic';
+    const intervalMs = dynamic
+      ? DynamicRollCheckIntervalMs
+      : Math.max(
+          MinRefreshIntervalMs,
+          Math.floor(this.#windowMs * RefreshFraction),
+        );
 
     this.#refreshTimer = setInterval(() => {
-      void this.refreshWindow();
+      void (dynamic ? this.rollDynamicWindow() : this.refreshWindow());
     }, intervalMs);
 
     // A pending refresh must not hold the event loop open at shutdown.
@@ -308,6 +413,53 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     if (this.#refreshTimer !== undefined) {
       clearInterval(this.#refreshTimer);
       this.#refreshTimer = undefined;
+    }
+  }
+
+  /**
+   * Moves the dynamic placeholder forward before it runs out.
+   *
+   * The worker clamps every resolved item's `finish` to the placeholder's, so
+   * a window nearing its end starts truncating programs, and past it the
+   * channel goes black. Rolling early leaves the whole threshold's worth of
+   * attempts to succeed in.
+   *
+   * Driven by the refresh timer, and by tests directly.
+   */
+  private async rollDynamicWindow(): Promise<void> {
+    const finishMs = this.#dynamicWindowFinishMs;
+
+    // `#stopping` is raised before teardown starts; `state` only afterwards.
+    if (
+      this.#refreshing ||
+      this.#stopping ||
+      this.state !== 'started' ||
+      finishMs === undefined
+    ) {
+      return;
+    }
+
+    const nowMs = Date.now();
+    if (finishMs - nowMs > DynamicRollThresholdMs) {
+      return;
+    }
+
+    this.#refreshing = true;
+    try {
+      this.#inFlightWindowWrite = this.#writeDynamicWindow(nowMs);
+      await this.#inFlightWindowWrite;
+    } catch (e) {
+      // Upstream degrades a missing window to black and logs nothing, so this
+      // is the only warning anyone gets.
+      this.logger.error(
+        e,
+        'Could not roll the ErsatzTV next playout window for channel %s. The channel goes black at %s unless a later attempt succeeds.',
+        this.channel.uuid,
+        new Date(finishMs).toISOString(),
+      );
+    } finally {
+      this.#inFlightWindowWrite = undefined;
+      this.#refreshing = false;
     }
   }
 
@@ -328,7 +480,8 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
    * Driven by the refresh timer, and by tests directly.
    */
   private async refreshWindow(): Promise<void> {
-    if (this.#refreshing || this.state !== 'started') {
+    // `#stopping` is raised before teardown starts; `state` only afterwards.
+    if (this.#refreshing || this.#stopping || this.state !== 'started') {
       return;
     }
 
@@ -368,11 +521,12 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
       const items =
         playing !== undefined ? [playing, ...window.items] : window.items;
 
-      await this.#workspace.writePlayoutWindow(
+      this.#inFlightWindowWrite = this.#workspace.writePlayoutWindow(
         playing !== undefined ? Date.parse(playing.start) : window.startMs,
         window.finishMs,
         items,
       );
+      await this.#inFlightWindowWrite;
 
       this.#windowItems = items;
 
@@ -381,11 +535,31 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
       this.#itemsEmitted += window.items.length;
       this.#recordIgnored(window.ignored);
     } catch (e) {
+      if (e instanceof StreamTerminationRequestedError) {
+        // The channel's error screen is 'kill', which asks for the stream to
+        // end rather than for a picture.
+        this.logger.error(
+          'Channel %s asked for its stream to end (%s). Stopping the worker.',
+          this.channel.uuid,
+          e.reason,
+        );
+
+        this.stop().catch((stopError: unknown) => {
+          this.logger.error(
+            stopError,
+            'Could not stop the session after the channel asked for termination',
+          );
+        });
+
+        return;
+      }
+
       this.logger.error(
         e,
         'Could not rebuild the ErsatzTV next playout window',
       );
     } finally {
+      this.#inFlightWindowWrite = undefined;
       this.#refreshing = false;
     }
   }
