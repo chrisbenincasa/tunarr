@@ -3,6 +3,10 @@ import { z } from 'zod/v4';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { EtvNextDynamicTokenRegistry } from '../stream/etv/EtvNextDynamicTokenRegistry.ts';
 import { parseBearerToken } from '../stream/etv/EtvNextDynamicTokenRegistry.ts';
+import {
+  findIgnoredSettings,
+  findUnsupportedSettings,
+} from '../stream/etv/EtvNextChannelConfigMapper.ts';
 import { StreamTerminationRequestedError } from '../stream/etv/EtvNextPlayoutItemMapper.ts';
 import { EtvNextPlayoutWriter } from '../stream/etv/EtvNextPlayoutWriter.ts';
 import { PlayoutItemSchema } from '../stream/etv/generated/playout.ts';
@@ -51,6 +55,29 @@ function parseInstant(value: Maybe<string>, nowMs: number): Maybe<number> {
 
   return parsed;
 }
+
+/**
+ * What a transcode config costs under the ErsatzTV next backend.
+ *
+ * `unsupported` refuses the config outright, because the backend cannot encode
+ * what it names. `ignored` still streams, minus those settings.
+ */
+const TranscodeConfigCompatibilitySchema = z.object({
+  supported: z.boolean(),
+  unsupported: z.array(
+    z.object({
+      field: z.string(),
+      value: z.string(),
+      reason: z.string(),
+    }),
+  ),
+  ignored: z.array(
+    z.object({
+      field: z.string(),
+      reason: z.string(),
+    }),
+  ),
+});
 
 /**
  * The callback an `ersatztv-channel` worker resolves its dynamic placeholder
@@ -202,6 +229,44 @@ export class EtvNextApiController implements ApiController {
 
           return res.status(503).send();
         }
+      },
+    );
+
+    fastify.get(
+      '/etv/transcode_configs/:id/compatibility',
+      {
+        schema: {
+          tags: ['Streaming', 'Transcode Configs'],
+          description:
+            "Reports which of a transcode config's settings the ErsatzTV next backend refuses and which it drops.",
+          params: z.object({
+            id: z.string().uuid(),
+          }),
+          response: {
+            200: TranscodeConfigCompatibilitySchema,
+            404: z.void(),
+          },
+        },
+      },
+      async (req, res) => {
+        const transcodeConfig = await req.serverCtx.transcodeConfigDB.getById(
+          req.params.id,
+        );
+
+        if (transcodeConfig === undefined) {
+          return res.status(404).send();
+        }
+
+        const unsupported = findUnsupportedSettings(transcodeConfig);
+
+        return res.send({
+          supported: unsupported.length === 0,
+          unsupported,
+          ignored: findIgnoredSettings({
+            transcodeConfig,
+            ffmpegSettings: req.serverCtx.settings.ffmpegSettings(),
+          }),
+        });
       },
     );
   };
