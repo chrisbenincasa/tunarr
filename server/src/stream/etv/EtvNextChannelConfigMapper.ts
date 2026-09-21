@@ -15,6 +15,8 @@ import {
   VaapiDriverSchema,
   VideoFormatSchema,
 } from './generated/channelConfig.ts';
+import type { VaapiDriverResolver } from './EtvNextVaapi.ts';
+import { resolveVaapi } from './EtvNextVaapi.ts';
 
 /**
  * The ffmpeg settings this mapper reads, as a readonly view.
@@ -184,9 +186,13 @@ export function findUnsupportedSettings(
 export function findIgnoredSettings({
   transcodeConfig,
   ffmpegSettings,
+  resolveVaapiDriver,
 }: {
   transcodeConfig: TranscodeConfigOrm;
   ffmpegSettings: Pick<MappedFfmpegSettings, 'scalingAlgorithm'>;
+
+  /** Overridden in tests; production reads the render node's PCI vendor id. */
+  resolveVaapiDriver?: VaapiDriverResolver;
 }): IgnoredSetting[] {
   const ignored: IgnoredSetting[] = [];
   const note = (field: string, reason: string) =>
@@ -231,6 +237,24 @@ export function findIgnoredSettings({
     );
   }
 
+  // The backend accelerates only when it is handed both a device and a driver,
+  // so anything it cannot resolve means the channel transcodes on the CPU.
+  // Worth saying out loud, because the stream plays either way.
+  if (usesAccel && transcodeConfig.hardwareAccelerationMode === 'vaapi') {
+    const { device, driver } = resolveVaapi({
+      ...transcodeConfig,
+      isSupportedDriver: isSupportedVaapiDriver,
+      resolveDriver: resolveVaapiDriver,
+    });
+
+    if (device === undefined || driver === undefined) {
+      note(
+        'hardwareAccelerationMode',
+        'the backend needs both a VAAPI device and driver, and neither could be determined here, so this channel will transcode in software',
+      );
+    }
+  }
+
   return ignored;
 }
 
@@ -253,10 +277,14 @@ export function toChannelConfig({
   ffmpegSettings,
   playoutFolder,
   reportsFolder,
+  resolveVaapiDriver,
 }: {
   transcodeConfig: TranscodeConfigOrm;
   ffmpegSettings: MappedFfmpegSettings;
   playoutFolder: string;
+
+  /** Overridden in tests; production reads the render node's PCI vendor id. */
+  resolveVaapiDriver?: VaapiDriverResolver;
 
   /**
    * Where the worker writes its FFmpeg report, overriding the transcode
@@ -271,14 +299,25 @@ export function toChannelConfig({
   }
   const { videoFormat, audioFormat, accel } = check.codecs;
 
-  const ignored = findIgnoredSettings({ transcodeConfig, ffmpegSettings });
+  const ignored = findIgnoredSettings({
+    transcodeConfig,
+    ffmpegSettings,
+    resolveVaapiDriver,
+  });
   const usesAccel = accel !== undefined;
 
-  // `system` means "let the driver decide", which is the same as omitting it.
-  // `nouveau` has no counterpart, so it is dropped rather than substituted.
-  const vaapiDriver = isSupportedVaapiDriver(transcodeConfig.vaapiDriver)
-    ? transcodeConfig.vaapiDriver
-    : undefined;
+  // The backend ignores `accel: vaapi` outright unless both the device and the
+  // driver are named (ErsatzTV/next#246), and Tunarr's defaults supply neither
+  // - the device column is nullable and the driver defaults to `system`. So
+  // both are filled in here rather than passed through.
+  const vaapi =
+    accel === 'vaapi'
+      ? resolveVaapi({
+          ...transcodeConfig,
+          isSupportedDriver: isSupportedVaapiDriver,
+          resolveDriver: resolveVaapiDriver,
+        })
+      : { device: undefined, driver: undefined };
 
   const deinterlace = transcodeConfig.deinterlaceVideo === true;
   const filters = deinterlace
@@ -306,11 +345,11 @@ export function toChannelConfig({
         bit_depth: transcodeConfig.videoBitDepth ?? 8,
 
         ...(usesAccel ? { accel } : {}),
-        ...(usesAccel && transcodeConfig.vaapiDevice !== null
-          ? { vaapi_device: transcodeConfig.vaapiDevice }
+        ...(usesAccel && vaapi.device !== undefined
+          ? { vaapi_device: vaapi.device }
           : {}),
-        ...(usesAccel && vaapiDriver !== undefined
-          ? { vaapi_driver: vaapiDriver }
+        ...(usesAccel && vaapi.driver !== undefined
+          ? { vaapi_driver: vaapi.driver }
           : {}),
         ...(filters !== undefined ? { filters } : {}),
       },

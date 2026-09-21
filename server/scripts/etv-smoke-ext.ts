@@ -164,6 +164,19 @@ const scenarios: Scenario[] = [
     },
     items: repeat(h264, H264DurationMs),
   },
+  {
+    // The stock configuration: the device column is nullable and the driver
+    // defaults to `system`, so this is what most VAAPI users actually send.
+    name: 'vaapi-defaults',
+    what: 'accel survives a config that names neither device nor driver',
+    transcode: {
+      ...baseTranscode,
+      hardwareAccelerationMode: 'vaapi',
+      vaapiDevice: null,
+      vaapiDriver: 'system',
+    },
+    items: repeat(h264, H264DurationMs),
+  },
 ];
 
 /**
