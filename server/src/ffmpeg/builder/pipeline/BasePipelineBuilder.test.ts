@@ -1,11 +1,25 @@
+import path from 'node:path';
 import { FileStreamSource } from '../../../stream/types.ts';
 import { EmptyFfmpegCapabilities } from '../capabilities/FfmpegCapabilities.ts';
+import type { HlsOptions, OutputFormat } from '../constants.ts';
+import {
+  defaultHlsOptions,
+  HlsDirectOutputFormat,
+  HlsOutputFormat,
+} from '../constants.ts';
 import { AudioVolumeFilter } from '../filter/AudioVolumeFilter.ts';
 import { LoudnormFilter } from '../filter/LoudnormFilter.ts';
 import { PixelFormatYuv420P } from '../format/PixelFormat.ts';
 import { AudioInputSource } from '../input/AudioInputSource.ts';
+import { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
 import { VideoInputSource } from '../input/VideoInputSource.ts';
-import { AudioStream, VideoStream } from '../MediaStream.ts';
+import {
+  AudioStream,
+  EmbeddedSubtitleStream,
+  SubtitleMethods,
+  VideoStream,
+} from '../MediaStream.ts';
+import { HlsSubtitleOutputFormat } from '../options/HlsSubtitleOutputFormat.ts';
 import { AudioState } from '../state/AudioState.ts';
 import { DefaultPipelineOptions, FfmpegState } from '../state/FfmpegState.ts';
 import { FrameState } from '../state/FrameState.ts';
@@ -386,5 +400,73 @@ describe('BasePipelineBuilder', () => {
     );
 
     expect(loudnormFilter).toBeUndefined();
+  });
+  describe('HLS subtitle output', () => {
+    const subtitles = new SubtitlesInputSource(
+      new FileStreamSource('/path/to/video.mkv'),
+      [new EmbeddedSubtitleStream('subrip', 2, SubtitleMethods.Convert)],
+      SubtitleMethods.Convert,
+    );
+
+    function buildSubtitleOutput(
+      makeOutputFormat: (opts: HlsOptions) => OutputFormat,
+      hlsOptions: Partial<HlsOptions> = {},
+    ) {
+      const pipeline = new NoopPipelineBuilder(
+        video,
+        audio,
+        null,
+        subtitles,
+        null,
+        EmptyFfmpegCapabilities,
+      );
+
+      const result = pipeline.build(
+        FfmpegState.create({
+          version: state.version,
+          outputFormat: makeOutputFormat({
+            ...defaultHlsOptions,
+            ...hlsOptions,
+          }),
+        }),
+        frameState,
+        DefaultPipelineOptions,
+      );
+
+      return result.steps.find(
+        (step) => step instanceof HlsSubtitleOutputFormat,
+      );
+    }
+
+    test.each([
+      ['hls', HlsOutputFormat],
+      ['hls_direct_v2', HlsDirectOutputFormat],
+    ] as const)(
+      'names the %s subtitle playlist from the HLS options',
+      (_mode, makeOutputFormat) => {
+        const step = buildSubtitleOutput(makeOutputFormat, {
+          subtitleStreamNameFormat: 'captions.m3u8',
+        });
+
+        expect(step).toBeDefined();
+        expect(step?.options()).toContain(
+          path.join('streams', 'stream_%v', 'captions.m3u8'),
+        );
+      },
+    );
+
+    test.each([
+      ['hls', HlsOutputFormat],
+      ['hls_direct_v2', HlsDirectOutputFormat],
+    ] as const)(
+      'defaults the %s subtitle playlist to subs.m3u8',
+      (_mode, makeOutputFormat) => {
+        const step = buildSubtitleOutput(makeOutputFormat);
+
+        expect(step?.options()).toContain(
+          path.join('streams', 'stream_%v', 'subs.m3u8'),
+        );
+      },
+    );
   });
 });
