@@ -332,22 +332,10 @@ export function toPlayoutItem({
       ? fileOrHttpSource(offlineSoundtrack)
       : undefined;
 
-    // Clip mode fills flex with a fallback program, which the caller resolves
-    // like any other content. Its own audio plays unless a soundtrack overrides
-    // it.
+    // A clip reaches the mapper as a `fallback` program and takes the content
+    // path below, so an offline item under clip mode means the scheduler found
+    // no filler to play.
     if (offlineMode === 'clip') {
-      if (stream !== undefined) {
-        const item = PlayoutItemSchema.parse({
-          ...base,
-          source: toSource(stream.source, { inPointMs, outPointMs }),
-          ...(soundtrack !== undefined
-            ? { tracks: { audio: { source: soundtrack } } }
-            : {}),
-        });
-
-        return { item, ignored };
-      }
-
       ignored.push(
         'the channel fills flex with a clip, but none was resolved, so the item plays as a still or black',
       );
