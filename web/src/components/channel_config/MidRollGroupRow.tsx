@@ -44,12 +44,12 @@ export function MidRollGroupRow({
 
   const icon = useChannelListItemIcon(parentProgram);
 
-  const displayProgram = {
+  // The header stands in for the whole program, breaks included, so it is
+  // titled with the group's total duration rather than the first segment's.
+  const title = titleFormatter({
     ...parentProgram,
     duration: group.totalDuration,
-    startOffsetMs: undefined,
-  } as ChannelProgram;
-  const title = titleFormatter(displayProgram);
+  });
 
   const startTimeDate = !isUndefined(group.startTimeOffset)
     ? dayjs(channel.startTime + group.startTimeOffset)
@@ -101,32 +101,29 @@ export function MidRollGroupRow({
   const bgDarker = new Color(backgroundColor.clone().darken(0.1));
 
   const segmentBarParts = useMemo(() => {
+    // Everything in the group that is not a segment of the program itself is
+    // break time, including the plain flex that pads out a partially filled
+    // break.
     const isBreak = (p: ChannelProgram) =>
-      (p.type === 'filler' && p.fillerType === 'mid') ||
-      (p.type === 'flex' && p.fillerConfig?.origin === 'midroll');
+      p.type !== 'content' && p.type !== 'custom';
 
     const segmentBarParts: Array<{ fraction: number; isFiller: boolean }> = [];
-    for (let i = 0; i < group.items.length; i++) {
+    let i = 0;
+    while (i < group.items.length) {
       const item = group.items[i];
-      let totalFraction = 0;
       if (isBreak(item)) {
-        for (let j = i; j < group.items.length; j++) {
-          const nextItem = group.items[j];
-          if (!isBreak(nextItem)) {
-            i = j - 1;
-            break;
-          }
-          totalFraction += nextItem.duration / group.totalDuration;
+        let totalFraction = 0;
+        while (i < group.items.length && isBreak(group.items[i])) {
+          totalFraction += group.items[i].duration / group.totalDuration;
+          i++;
         }
-        segmentBarParts.push({
-          fraction: totalFraction,
-          isFiller: true,
-        });
+        segmentBarParts.push({ fraction: totalFraction, isFiller: true });
       } else {
         segmentBarParts.push({
           fraction: item.duration / group.totalDuration,
           isFiller: false,
         });
+        i++;
       }
     }
     return segmentBarParts;
