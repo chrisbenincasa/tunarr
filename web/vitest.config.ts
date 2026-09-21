@@ -20,6 +20,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     includeSource: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+
+    // Component tests mount the full provider tree per test, and pickers like
+    // LanguagePreferencesList render every ISO 639 language. That lands within
+    // ~2.5s of the 5s default on a cold CI runner, so whichever test runs
+    // first absorbs module init and times out.
+    testTimeout: 15_000,
   },
   define: {
     'import.meta.vitest': false,
