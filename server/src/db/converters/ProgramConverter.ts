@@ -311,6 +311,10 @@ export class ProgramConverter {
       type: 'flex',
       icon: channel.icon?.path,
       duration: program.durationMs,
+      // Carries the mid-roll marker (and any filler list restrictions) through
+      // to the API. Without it, a lazy mid-roll break is indistinguishable
+      // from ordinary flex once it leaves the lineup file.
+      fillerConfig: program.fillerConfig,
     };
   }
 
