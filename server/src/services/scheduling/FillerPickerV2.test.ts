@@ -9,7 +9,7 @@ import type {
   ProgramWithRelations,
 } from '../../db/schema/derivedTypes.ts';
 import { type ProgramPlayHistoryOrm } from '../../db/schema/ProgramPlayHistory.ts';
-import { OneDayMillis } from '../../ffmpeg/builder/constants.ts';
+import { OneWeekMillis } from '../../ffmpeg/builder/constants.ts';
 import {
   DefaultFillerCooldownMillis,
   EmptyFillerPickResult,
@@ -250,9 +250,9 @@ describe('FillerPickerV2', () => {
       expect(result.filler).not.toBeNull();
     });
 
-    it('treats never-played filler as having OneDayMillis time since played', async () => {
+    it('treats never-played filler as having OneWeekMillis time since played', async () => {
       const filler = createFiller({
-        cooldown: Math.floor(OneDayMillis / 1000) + 1, // Just over 1 day cooldown (in seconds)
+        cooldown: Math.floor(OneWeekMillis / 1000) + 1, // Just over 1 week cooldown (in seconds)
       }); // Cooldown longer than default "never played" time
 
       // No play history
@@ -262,7 +262,7 @@ describe('FillerPickerV2', () => {
 
       const result = await picker.pickFiller(mockChannel, [filler], 60000);
 
-      // Should not pick because cooldown > OneDayMillis (default for never played)
+      // Should not pick because cooldown > OneWeekMillis (default for never played)
       expect(result.filler).toBeNull();
     });
 
@@ -836,7 +836,7 @@ describe('FillerPickerV2', () => {
       // Regression test: previously, the code used timeSincePlayed (for the program)
       // instead of timeSincePlayedFiller (for the list) when calculating timeUntilListIsCandidate.
       // This caused a large negative minimumWait when the program never played
-      // (timeSincePlayed defaults to OneDayMillis) but the filler list was in cooldown.
+      // (timeSincePlayed defaults to OneWeekMillis) but the filler list was in cooldown.
       const now = Date.now();
       const programUuid = v4();
       const listCooldown = dayjs.duration({ minutes: 1 }).asSeconds();

@@ -8,7 +8,7 @@ import type {
   ChannelFillerShowWithContent,
   ProgramOrmWithExternalIds,
 } from '../../db/schema/derivedTypes.ts';
-import { OneDayMillis } from '../../ffmpeg/builder/constants.ts';
+import { OneWeekMillis } from '../../ffmpeg/builder/constants.ts';
 
 import { OpenDateTimeRange } from '../../types/OpenDateTimeRange.ts';
 import type { Maybe, Nullable } from '../../types/util.ts';
@@ -94,7 +94,7 @@ export class FillerPickerV2 implements IFillerPicker {
       );
       const timeSincePlayedFiller = lastPlay
         ? now - dayjs(lastPlay.playedAt).valueOf()
-        : OneDayMillis;
+        : OneWeekMillis;
       const listCooldownOverride =
         options?.fillerListCooldownOverrides?.[fillerShow.uuid];
       const fillerCooldownMs =
@@ -115,7 +115,7 @@ export class FillerPickerV2 implements IFillerPicker {
           );
           const timeSincePlayed = programLastPlayed
             ? now - dayjs(programLastPlayed.playedAt).valueOf()
-            : OneDayMillis;
+            : OneWeekMillis;
           if (timeSincePlayed >= fillerRepeatCooldownMs) {
             hasEligibleProgram = true;
           } else {
@@ -207,7 +207,7 @@ export class FillerPickerV2 implements IFillerPicker {
       );
       const timeSincePlayed = programLastPlayed
         ? now - dayjs(programLastPlayed.playedAt).valueOf()
-        : OneDayMillis;
+        : OneWeekMillis;
 
       // Channel level cooldown in effect for this program
       if (timeSincePlayed < fillerRepeatCooldownMs) {
