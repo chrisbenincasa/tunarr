@@ -7,6 +7,8 @@ import type { OnDemandChannelService } from '@/services/OnDemandChannelService.j
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import type { DeepRequired } from 'ts-essentials';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SessionConcatStreamMode } from '@tunarr/types/schemas';
+import { SessionConcatStreamModes } from '@tunarr/types/schemas';
 import type { HlsSessionOptions } from './hls/HlsSession.ts';
 
 // Mock modules that create circular dependency chains through Inversify
@@ -453,6 +455,64 @@ describe('SessionManager', () => {
       // Session should still be in the manager — cleanup was aborted
       // because #connections is non-empty when the timer fires
       expect(manager.getHlsSession(channelUuid)).toBe(session);
+    });
+  });
+  // The route behind GET /channels/:id/sessions reads this. Concat sessions are
+  // keyed `${mode}_concat`, so a list that named three of them by hand reported
+  // neither MPEG-TS nor the two newest modes.
+  describe('getAllConcatSessions', () => {
+    const putSession = (
+      manager: SessionManager,
+      sessionType: SessionConcatStreamMode,
+    ) => {
+      const session = { sessionType };
+      (
+        manager as unknown as {
+          addSession: (id: string, t: string, s: unknown) => void;
+        }
+      ).addSession(channelUuid, sessionType, session);
+      return session;
+    };
+
+    it('reports a concat session for every concat mode', () => {
+      const manager = makeSessionManager(
+        (channel, options) => new StubHlsSession(channel, options),
+      );
+
+      const sessions = SessionConcatStreamModes.map((mode) =>
+        putSession(manager, mode),
+      );
+
+      expect(manager.getAllConcatSessions(channelUuid)).toEqual(
+        expect.arrayContaining(sessions),
+      );
+      expect(manager.getAllConcatSessions(channelUuid)).toHaveLength(
+        SessionConcatStreamModes.length,
+      );
+    });
+
+    it('reports an etv_next_concat session', () => {
+      const manager = makeSessionManager(
+        (channel, options) => new StubHlsSession(channel, options),
+      );
+
+      const session = putSession(manager, 'etv_next_concat');
+
+      expect(manager.getAllConcatSessions(channelUuid)).toEqual([session]);
+    });
+
+    it('ignores a non-concat session on the same channel', () => {
+      const manager = makeSessionManager(
+        (channel, options) => new StubHlsSession(channel, options),
+      );
+
+      (
+        manager as unknown as {
+          addSession: (id: string, t: string, s: unknown) => void;
+        }
+      ).addSession(channelUuid, 'etv_next', { sessionType: 'etv_next' });
+
+      expect(manager.getAllConcatSessions(channelUuid)).toEqual([]);
     });
   });
 });
