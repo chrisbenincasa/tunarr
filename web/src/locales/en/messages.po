@@ -2519,6 +2519,10 @@ msgstr "Media Type"
 msgid "Message"
 msgstr "Message"
 
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "Mid"
+msgstr "Mid"
+
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Mid-Roll"

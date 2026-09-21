@@ -2519,6 +2519,10 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "Mid"
+msgstr ""
+
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Mid-Roll"
