@@ -46,11 +46,19 @@ type UpdateJellyfinPlayStatusTaskInvocation = z.infer<
   typeof UpdateJellyfinPlayStatusTaskInvocation
 >;
 
+export type UpdateJellyfinPlayStatusScheduledTaskFactory = (
+  server: MediaSourceWithRelations,
+  request: UpdateJellyfinPlayStatusScheduleRequest,
+  sessionId: string,
+) => UpdateJellyfinPlayStatusScheduledTask;
+
 @injectable()
 export class UpdateJellyfinPlayStatusScheduledTask extends ScheduledTask<
   typeof UpdateJellyfinPlayStatusTaskInvocation,
   boolean
 > {
+  static KEY = Symbol.for(UpdateJellyfinPlayStatusScheduledTask.name);
+
   private playState: PlayState = 'playing';
   private first: boolean = true;
   private start = dayjs();

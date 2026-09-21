@@ -227,6 +227,15 @@ export class DirectMigrationProvider implements MigrationProvider {
         migration1777908252: makeMigrationFromSqlFile(
           './sql/0044_useful_groot.sql',
         ),
+        migration1779655043: makeMigrationFromSqlFile(
+          './sql/0045_lean_violations.sql',
+        ),
+        migration1782772646: makeMigrationFromSqlFile(
+          './sql/0046_melted_captain_flint.sql',
+        ),
+        migration1789851695: makeMigrationFromSqlFile(
+          './sql/0047_eac3_audio_format_constraint.sql',
+        ),
       } satisfies Record<string, TunarrDatabaseMigration>,
       wrapWithTransaction,
     );

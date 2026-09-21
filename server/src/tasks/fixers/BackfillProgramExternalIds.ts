@@ -179,7 +179,7 @@ export class BackfillProgramExternalIds extends Fixer {
       throw new Error('Plex server is not a saved media source');
     }
 
-    const metadataResult = await plex.getItemMetadata(program.externalKey);
+    const metadataResult = await plex.getItemMetadataRaw(program.externalKey);
 
     if (metadataResult.isFailure()) {
       throw new Error(

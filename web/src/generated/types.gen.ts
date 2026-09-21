@@ -370,6 +370,8 @@ export type TerminalProgramInput = {
         path?: string | null;
     }>;
     state: 'ok' | 'missing';
+    artistName?: string | null;
+    albumName?: string | null;
     mediaSourceId: string;
     libraryId: string;
     canonicalId: string;
@@ -1780,6 +1782,8 @@ export type TerminalProgram = {
         path?: string | null;
     }>;
     state: 'ok' | 'missing';
+    artistName?: string | null;
+    albumName?: string | null;
     mediaSourceId: string;
     libraryId: string;
     canonicalId: string;
@@ -5979,7 +5983,7 @@ export type GetApiChannelsByIdTranscodeConfigResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -8778,10 +8782,6 @@ export type GetApiMediaSourcesResponses = {
     200: Array<{
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -8796,6 +8796,11 @@ export type GetApiMediaSourcesResponses = {
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'plex';
         sendGuideUpdates: boolean;
         index: number;
@@ -8803,10 +8808,6 @@ export type GetApiMediaSourcesResponses = {
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -8821,14 +8822,15 @@ export type GetApiMediaSourcesResponses = {
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'jellyfin';
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -8843,6 +8845,11 @@ export type GetApiMediaSourcesResponses = {
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'emby';
     } | {
         id: string;
@@ -8872,39 +8879,42 @@ export type GetApiMediaSourcesResponse = GetApiMediaSourcesResponses[keyof GetAp
 export type PostApiMediaSourcesData = {
     body?: {
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'plex';
         sendGuideUpdates?: boolean;
         index?: number;
         clientIdentifier?: string;
     } | {
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'jellyfin';
     } | {
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'emby';
     } | {
         name: string;
@@ -8974,10 +8984,6 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
     200: {
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -8992,6 +8998,11 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'plex';
         sendGuideUpdates: boolean;
         index: number;
@@ -8999,10 +9010,6 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -9017,14 +9024,15 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'jellyfin';
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -9039,6 +9047,11 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'emby';
     } | {
         id: string;
@@ -9107,14 +9120,15 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
         mediaSource?: {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'plex';
             sendGuideUpdates: boolean;
             index: number;
@@ -9122,26 +9136,28 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'jellyfin';
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'emby';
         } | {
             id: string;
@@ -9203,14 +9219,15 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
         mediaSource?: {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'plex';
             sendGuideUpdates: boolean;
             index: number;
@@ -9218,26 +9235,28 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'jellyfin';
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'emby';
         } | {
             id: string;
@@ -9286,10 +9305,6 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
         mediaSource: {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             libraries: Array<{
                 id: string;
                 name: string;
@@ -9304,6 +9319,11 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'plex';
             sendGuideUpdates: boolean;
             index: number;
@@ -9311,10 +9331,6 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             libraries: Array<{
                 id: string;
                 name: string;
@@ -9329,14 +9345,15 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'jellyfin';
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             libraries: Array<{
                 id: string;
                 name: string;
@@ -9351,6 +9368,11 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'emby';
         } | {
             id: string;
@@ -9630,14 +9652,15 @@ export type PutApiMediaSourcesByIdData = {
     body?: {
         id: string;
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'plex';
         sendGuideUpdates?: boolean;
         index: number;
@@ -9645,26 +9668,28 @@ export type PutApiMediaSourcesByIdData = {
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'jellyfin';
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'emby';
     } | {
         id: string;
@@ -9884,7 +9909,7 @@ export type GetApiTranscodeConfigsResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9939,7 +9964,7 @@ export type PostApiTranscodeConfigsData = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9999,7 +10024,7 @@ export type PostApiTranscodeConfigsResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -10097,7 +10122,7 @@ export type GetApiTranscodeConfigsByIdResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -10153,7 +10178,7 @@ export type PutApiTranscodeConfigsByIdData = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -10215,7 +10240,7 @@ export type PutApiTranscodeConfigsByIdResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -10294,7 +10319,7 @@ export type PostApiTranscodeConfigsByIdCopyResponses = {
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -11536,6 +11561,8 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 path?: string | null;
             }>;
             state: 'ok' | 'missing';
+            artistName?: string | null;
+            albumName?: string | null;
             mediaSourceId: string;
             libraryId: string;
             canonicalId: string;
@@ -13296,7 +13323,7 @@ export type PostApiTroubleshootResponses = {
             videoBitRate: number;
             videoBufferSize: number;
             audioChannels: number;
-            audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+            audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
             audioBitRate: number;
             audioBufferSize: number;
             audioSampleRate: number;

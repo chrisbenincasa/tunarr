@@ -656,6 +656,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 paths: [],
                 mediaType: null,
                 replacePaths: [],
+                sendPlayStatusUpdates: false,
               },
             });
 
@@ -676,6 +677,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 paths: [],
                 mediaType: null,
                 replacePaths: [],
+                sendPlayStatusUpdates: false,
               },
             });
 
@@ -696,6 +698,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 paths: [],
                 mediaType: null,
                 replacePaths: [],
+                sendPlayStatusUpdates: false,
               },
             });
 
@@ -946,6 +949,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
               localPath: replace.localPath,
               serverPath: replace.serverPath,
             })),
+            sendPlayStatusUpdates: source.sendPlayStatusUpdates ?? false,
           }) satisfies StrictExtract<
             MediaSourceSettings,
             { type: 'plex' | 'jellyfin' | 'emby' }

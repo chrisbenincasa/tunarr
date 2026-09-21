@@ -67,6 +67,7 @@ const emptyDefaults: EmbyServerSettingsForm = {
   password: '',
   userId: '',
   pathReplacements: [],
+  sendPlayStatusUpdates: false,
 };
 
 export function EmbyServerEditDialog({ open, onClose, server }: Props) {

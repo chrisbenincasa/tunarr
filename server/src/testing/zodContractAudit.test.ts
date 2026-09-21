@@ -76,6 +76,13 @@ const KNOWN: Record<string, string> = {
   'UpdateChannelProgrammingRequestSchema.schedule.slots.seasonExcludeFilter':
     'silent widening to no-filter; slot scheduling review',
 
+  // Full-replace body. `MediaSourceDB.updateMediaSource` writes every column
+  // from the request and already coalesces this one with `?? false`, so an
+  // omitted key and an explicit `false` reach the database identically. The
+  // Plex and Jellyfin members of the union both report it under this path.
+  'UpdateMediaSourceRequestSchema.sendPlayStatusUpdates':
+    'PUT /media-sources/:id replaces the whole object',
+
   // Reaches the handler as `programs: []`, but saveShow guards on
   // `programs.length > 0`, so it is inert. Means programs cannot be cleared
   // through this route, which is a separate question.

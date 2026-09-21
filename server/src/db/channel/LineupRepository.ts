@@ -62,6 +62,7 @@ import {
   run,
 } from '../../util/index.ts';
 import { ProgramConverter } from '../converters/ProgramConverter.ts';
+import { MaterializedProgramRelations } from '../program/programRelations.ts';
 import type {
   ContentItem,
   Lineup,
@@ -710,13 +711,7 @@ export class LineupRepository {
           where: (fields, { eq }) => eq(fields.channelUuid, channelId),
           with: {
             program: {
-              with: {
-                show: { with: { externalIds: true } },
-                season: { with: { externalIds: true } },
-                album: { with: { externalIds: true } },
-                artist: { with: { externalIds: true } },
-                externalIds: true,
-              },
+              with: MaterializedProgramRelations,
             },
           },
         }),
