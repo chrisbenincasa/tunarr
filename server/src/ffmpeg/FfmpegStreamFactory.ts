@@ -96,6 +96,7 @@ import type {
   StreamSessionCreateArgs,
   TranscodeSessionResult,
 } from './types.ts';
+import { ConcatStreamModeRemuxes } from './types.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
 
 @injectable()
@@ -124,11 +125,7 @@ export class FfmpegStreamFactory {
     streamUrl: string,
     opts: DeepReadonly<ConcatOptions>,
   ): Promise<FfmpegTranscodeSession> {
-    if (
-      opts.mode === 'hls_concat' ||
-      opts.mode === 'hls_direct_concat' ||
-      opts.mode === 'hls_direct_v2_concat'
-    ) {
+    if (ConcatStreamModeRemuxes[opts.mode]) {
       return this.createHlsWrapperSession(streamUrl, opts);
     }
 

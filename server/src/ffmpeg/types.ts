@@ -30,6 +30,31 @@ export type PlaceholderSessionOpts = {
   ptsOffset?: number;
 } & ({ kind: 'error'; title: string; subtitle?: string } | { kind: 'offline' });
 
+/**
+ * Whether a concat mode's child already emits normalized HLS, so the concat
+ * process can remux it instead of encoding it a second time.
+ *
+ * Exhaustive by type rather than a list to check against, because a mode
+ * missing from a list falls through to a full transcode silently — the output
+ * still plays, it just costs a second encode and the quality loss that brings.
+ */
+export const ConcatStreamModeRemuxes: Record<SessionConcatStreamMode, boolean> =
+  {
+    hls_concat: true,
+    hls_direct_concat: true,
+    hls_direct_v2_concat: true,
+
+    // The worker normalizes and encodes every item, so its playlist arrives in
+    // the same shape Tunarr's own HLS sessions produce.
+    etv_next_concat: true,
+
+    // Has its own concat path.
+    hls_slower_concat: false,
+
+    // Its child emits MPEG-TS, so there is no HLS to wrap.
+    mpegts_concat: false,
+  } as const;
+
 export const ConcatStreamModeToChildMode: Record<
   SessionConcatStreamMode,
   SessionStreamMode
