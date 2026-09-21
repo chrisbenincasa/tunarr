@@ -12,6 +12,7 @@ import type {
 import { HlsSession } from '@/stream/hls/HlsSession.js';
 import { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
 import { EtvNextBinaryResolver } from '@/stream/etv/EtvNextBinaryResolver.js';
+import { EtvNextDynamicTokenRegistry } from '@/stream/etv/EtvNextDynamicTokenRegistry.js';
 import { EtvNextPlayoutWriter } from '@/stream/etv/EtvNextPlayoutWriter.js';
 import type { EtvNextSessionProvider } from '@/stream/etv/EtvNextSession.js';
 import { EtvNextSession } from '@/stream/etv/EtvNextSession.js';
@@ -83,6 +84,7 @@ const configure = ({ bind }: ContainerModuleLoadOptions) => {
         ctx.get(ChildProcessHelper),
         ctx.get<ISettingsDB>(KEYS.SettingsDB),
         ctx.get(FeatureFlagService),
+        ctx.get(EtvNextDynamicTokenRegistry),
       );
     };
   });

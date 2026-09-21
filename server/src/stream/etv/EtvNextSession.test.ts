@@ -5,6 +5,13 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { ChannelOrmWithTranscodeConfig } from '../../db/schema/derivedTypes.ts';
 import type { PlayoutItem } from './generated/playout.ts';
+import {
+  DynamicRollThresholdMs,
+  DynamicTokenEnvVar,
+  DynamicWindowMs,
+} from './EtvNextDynamicPlayout.ts';
+import { EtvNextDynamicTokenRegistry } from './EtvNextDynamicTokenRegistry.ts';
+import type { EtvNextPlayoutMode } from './EtvNextSession.ts';
 import { EtvNextSession } from './EtvNextSession.ts';
 import { DefaultStalenessMs } from './EtvNextWorkspace.ts';
 
@@ -61,11 +68,17 @@ async function makeTempDir() {
   return dir;
 }
 
+const tunarrPort = 8123;
+
 /**
- * Builds a session whose five collaborators are fakes.
+ * Builds a session whose collaborators are fakes.
  *
  * `spawn` stands in for the worker: by default it publishes `.ready` the way a
  * healthy worker does, so `start()` runs end to end without a binary.
+ *
+ * The playout mode defaults to the materialized path here, since that is the
+ * one whose window arithmetic these tests reason about. Production defaults to
+ * the dynamic path, which has its own block below.
  */
 async function makeSession({
   items,
@@ -73,14 +86,20 @@ async function makeSession({
   processExitCode = null,
   webvttEnabled = false,
   windowMs,
+  playoutMode = 'materialized',
+  spawnFails = false,
 }: {
   items?: PlayoutItem[];
   publishesReady?: boolean;
+  spawnFails?: boolean;
 
   /** Non-null stands for a worker that died instead of becoming ready. */
   processExitCode?: number | null;
   webvttEnabled?: boolean;
   windowMs?: number;
+
+  /** `null` leaves the option unset, so the session's own default applies. */
+  playoutMode?: EtvNextPlayoutMode | null;
 } = {}) {
   const transcodeDirectory = await makeTempDir();
   const outputDirectory = path.join(
@@ -125,15 +144,26 @@ async function makeSession({
   });
 
   const childProcessHelper = {
-    spawn: vi.fn(async () => {
-      if (publishesReady) {
-        await fs.writeFile(path.join(outputDirectory, '.ready'), '');
-      }
-      return {
-        kill: killed,
-        process: workerProcess,
-      };
-    }),
+    spawn: vi.fn(
+      async (
+        _executable: string,
+        _args: string[],
+        _opts: unknown,
+        _env?: NodeJS.ProcessEnv,
+      ) => {
+        if (spawnFails) {
+          throw new Error('no binary here');
+        }
+
+        if (publishesReady) {
+          await fs.writeFile(path.join(outputDirectory, '.ready'), '');
+        }
+        return {
+          kill: killed,
+          process: workerProcess,
+        };
+      },
+    ),
   };
 
   const settingsDB = {
@@ -148,15 +178,22 @@ async function makeSession({
   };
 
   const featureFlagService = { get: vi.fn(() => webvttEnabled) };
+  const tokenRegistry = new EtvNextDynamicTokenRegistry();
 
   const session = new EtvNextSession(
     channel,
-    { transcodeDirectory, windowMs },
+    {
+      transcodeDirectory,
+      windowMs,
+      tunarrPort,
+      ...(playoutMode !== null ? { playoutMode } : {}),
+    },
     binaryResolver as never,
     playoutWriter as never,
     childProcessHelper as never,
     settingsDB as never,
     featureFlagService as never,
+    tokenRegistry,
   );
 
   // SessionManager attaches one in production; without a listener an emitted
@@ -173,6 +210,7 @@ async function makeSession({
     workerProcess,
     killed,
     startMs,
+    tokenRegistry,
   };
 }
 
@@ -209,10 +247,7 @@ describe('startup', () => {
 
     await session.start();
 
-    const [executable, args] = childProcessHelper.spawn.mock.calls[0] as [
-      string,
-      string[],
-    ];
+    const [executable, args] = childProcessHelper.spawn.mock.calls[0] ?? [];
     expect(executable).toBe('/opt/ersatztv-channel');
     expect(args).toEqual([
       'run',
@@ -274,6 +309,7 @@ describe('staleness', () => {
     const session = new EtvNextSession(
       channel,
       { transcodeDirectory, stalenessMs: 15_000 },
+      {} as never,
       {} as never,
       {} as never,
       {} as never,
@@ -528,5 +564,212 @@ describe('the playlist clients are handed', () => {
 
     const on = await makeSession({ webvttEnabled: true });
     expect(on.session.getMasterPlaylist()).toContain('live_sub.m3u8');
+  });
+});
+
+describe('the dynamic playout window', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function playoutDirectory(transcodeDirectory: string) {
+    return path.join(transcodeDirectory, `etv_${channelUuid}`, 'playout');
+  }
+
+  async function readWindow(transcodeDirectory: string) {
+    const directory = playoutDirectory(transcodeDirectory);
+    const names = await fs.readdir(directory);
+    const [name] = names;
+    if (name === undefined) {
+      throw new Error('no playout window on disk');
+    }
+
+    const contents = JSON.parse(
+      await fs.readFile(path.join(directory, name), 'utf-8'),
+    ) as { items: PlayoutItem[] };
+
+    return { names, name, items: contents.items };
+  }
+
+  function rollAt(session: EtvNextSession, nowMs: number) {
+    vi.setSystemTime(nowMs);
+    return (
+      session as unknown as { rollDynamicWindow(): Promise<void> }
+    ).rollDynamicWindow();
+  }
+
+  test('is what a channel gets by default', async () => {
+    const { session, transcodeDirectory, playoutWriter } = await makeSession({
+      playoutMode: null,
+    });
+
+    await session.start();
+
+    const { items } = await readWindow(transcodeDirectory);
+    expect(items[0]?.source).toMatchObject({ source_type: 'dynamic' });
+    expect(playoutWriter.materializeWindow).not.toHaveBeenCalled();
+  });
+
+  test('holds one placeholder covering the next twelve hours', async () => {
+    const { session, transcodeDirectory, startMs } = await makeSession({
+      playoutMode: 'dynamic',
+    });
+    vi.setSystemTime(startMs);
+
+    await session.start();
+
+    const { items, names } = await readWindow(transcodeDirectory);
+    expect(names).toHaveLength(1);
+    expect(items).toHaveLength(1);
+    expect(Date.parse(items[0].finish) - Date.parse(items[0].start)).toBe(
+      DynamicWindowMs,
+    );
+  });
+
+  // The secret reaches the worker through its environment, so it is never
+  // written to a file the way the rest of the playout is.
+  test('hands the worker a token no file carries', async () => {
+    const { session, transcodeDirectory, childProcessHelper, tokenRegistry } =
+      await makeSession({ playoutMode: 'dynamic' });
+
+    await session.start();
+
+    const env = childProcessHelper.spawn.mock.calls[0]?.[3];
+    const token = env?.[DynamicTokenEnvVar];
+    expect(token).toBeDefined();
+    expect(tokenRegistry.resolve(token)).toEqual({
+      channelUuid,
+      channelNumber: 7,
+    });
+
+    const { items } = await readWindow(transcodeDirectory);
+    expect(JSON.stringify(items)).not.toContain(token);
+  });
+
+  // The worker clamps every resolved item's finish to the placeholder's, so a
+  // window running low starts truncating programs.
+  test('rolls once less than the threshold is left', async () => {
+    const { session, transcodeDirectory, startMs } = await makeSession({
+      playoutMode: 'dynamic',
+    });
+    vi.setSystemTime(startMs);
+    await session.start();
+    const before = await readWindow(transcodeDirectory);
+
+    await rollAt(session, startMs + DynamicWindowMs - DynamicRollThresholdMs);
+    const after = await readWindow(transcodeDirectory);
+
+    expect(after.name).not.toBe(before.name);
+    expect(Date.parse(after.items[0].finish)).toBeGreaterThan(
+      Date.parse(before.items[0].finish),
+    );
+  });
+
+  // Upstream picks the window file by unsorted read_dir first match, so two
+  // of them would be chosen between nondeterministically.
+  test('leaves exactly one window file behind', async () => {
+    const { session, transcodeDirectory, startMs } = await makeSession({
+      playoutMode: 'dynamic',
+    });
+    vi.setSystemTime(startMs);
+    await session.start();
+
+    await rollAt(session, startMs + DynamicWindowMs - DynamicRollThresholdMs);
+    await rollAt(
+      session,
+      startMs + 2 * (DynamicWindowMs - DynamicRollThresholdMs),
+    );
+
+    expect((await readWindow(transcodeDirectory)).names).toHaveLength(1);
+  });
+
+  test('is left alone while it still has depth', async () => {
+    const { session, transcodeDirectory, startMs } = await makeSession({
+      playoutMode: 'dynamic',
+    });
+    vi.setSystemTime(startMs);
+    await session.start();
+    const before = await readWindow(transcodeDirectory);
+
+    await rollAt(session, startMs + 60_000);
+
+    expect((await readWindow(transcodeDirectory)).name).toBe(before.name);
+  });
+
+  test('is rolled on a timer', async () => {
+    const { session, transcodeDirectory, startMs } = await makeSession({
+      playoutMode: 'dynamic',
+    });
+    vi.setSystemTime(startMs);
+    await session.start();
+    const before = await readWindow(transcodeDirectory);
+
+    await vi.advanceTimersByTimeAsync(
+      DynamicWindowMs - DynamicRollThresholdMs + 60_000,
+    );
+
+    // The roll writes to disk after the timer returns, so the file lands a
+    // moment later than the tick that asked for it.
+    await vi.waitFor(async () => {
+      expect((await readWindow(transcodeDirectory)).name).not.toBe(before.name);
+    });
+  });
+
+  // A token outliving the worker it was minted for would keep granting this
+  // channel's programming to nothing.
+  test('takes the token back when the worker will not start', async () => {
+    const { session, tokenRegistry } = await makeSession({
+      playoutMode: 'dynamic',
+      spawnFails: true,
+    });
+
+    await session.start();
+
+    expect(session.state).toBe('error');
+    expect(tokenRegistry.size).toBe(0);
+  });
+
+  // Teardown raises `stopping` before it touches the workspace and only sets
+  // `state` after, so a roll gated on `state` alone runs into a teardown
+  // already under way.
+  test('leaves nothing behind when a roll and a stop overlap', async () => {
+    const { session, transcodeDirectory, startMs, tokenRegistry } =
+      await makeSession({ playoutMode: 'dynamic' });
+    vi.setSystemTime(startMs);
+    await session.start();
+
+    const stopping = session.stop();
+
+    // Teardown revokes the token before it touches the workspace, so an empty
+    // registry means it is under way with `state` still 'started'.
+    for (let i = 0; i < 100 && tokenRegistry.size > 0; i++) {
+      await vi.advanceTimersByTimeAsync(0);
+    }
+    expect(tokenRegistry.size).toBe(0);
+
+    vi.setSystemTime(startMs + DynamicWindowMs - DynamicRollThresholdMs);
+    const rolling = (
+      session as unknown as { rollDynamicWindow(): Promise<void> }
+    ).rollDynamicWindow();
+    await Promise.all([rolling, stopping]);
+
+    const root = path.join(transcodeDirectory, `etv_${channelUuid}`);
+    await expect(fs.stat(root)).rejects.toThrow();
+  });
+
+  test('takes the token with it when the session stops', async () => {
+    const { session, tokenRegistry } = await makeSession({
+      playoutMode: 'dynamic',
+    });
+    await session.start();
+    expect(tokenRegistry.size).toBe(1);
+
+    await session.stop();
+
+    expect(tokenRegistry.size).toBe(0);
   });
 });
