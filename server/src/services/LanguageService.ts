@@ -70,6 +70,21 @@ export class LanguageService {
    * Falls back to a case-insensitive exact comparison when either side cannot
    * be resolved, which keeps private-use codes (e.g. "qaa") working.
    */
+  /**
+   * Normalize a stored language code to ISO 639-2/T, keeping the raw value when
+   * it can't be resolved (e.g. an unknown provider code, or the 'unknown'
+   * sentinel on subtitles). Without this, ingest paths that write a provider's
+   * code verbatim mix ISO 639-2 /B ("ger") and /T ("deu") in the database and in
+   * the search index built from it, so a language filter matches half the
+   * library depending on which source a program came from (#2044). Plain
+   * 2-letter and already-/T codes pass through unchanged.
+   */
+  static normalizeLanguageCode(
+    code: string | null | undefined,
+  ): string | undefined {
+    return code ? (this.normalizeToAlpha3T(code) ?? code) : (code ?? undefined);
+  }
+
   static codesMatch(a: string | undefined, b: string | undefined): boolean {
     if (a === undefined || b === undefined) {
       return false;
