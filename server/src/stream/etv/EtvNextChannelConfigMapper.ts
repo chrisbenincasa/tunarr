@@ -252,10 +252,18 @@ export function toChannelConfig({
   transcodeConfig,
   ffmpegSettings,
   playoutFolder,
+  reportsFolder,
 }: {
   transcodeConfig: TranscodeConfigOrm;
   ffmpegSettings: MappedFfmpegSettings;
   playoutFolder: string;
+
+  /**
+   * Where the worker writes its FFmpeg report, overriding the transcode
+   * directory. A diagnostic run wants the dossier whether or not the user
+   * turned on file logging.
+   */
+  reportsFolder?: string;
 }): ChannelConfigMapping {
   const check = checkSupport(transcodeConfig);
   if (!check.supported) {
@@ -339,7 +347,12 @@ export function toChannelConfig({
   };
 
   const { transcodeDirectory } = ffmpegSettings;
-  if (ffmpegSettings.enableFileLogging && transcodeDirectory !== undefined) {
+  if (reportsFolder !== undefined) {
+    config.ffmpeg.reports_folder = reportsFolder;
+  } else if (
+    ffmpegSettings.enableFileLogging &&
+    transcodeDirectory !== undefined
+  ) {
     config.ffmpeg.reports_folder = transcodeDirectory;
   }
 
