@@ -66,6 +66,7 @@ nav:
       - FFmpeg:
           - configure/ffmpeg/index.md
           - Transcode Configs: configure/ffmpeg/transcode_config.md
+          - ErsatzTV next: configure/ffmpeg/ersatztv-next.md
       - Search:
           - misc/search/index.md
       - Channels:
