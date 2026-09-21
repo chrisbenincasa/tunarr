@@ -395,6 +395,10 @@ export class MeilisearchService implements ISearchService {
   private proc?: ChildProcessWrapper;
   private port?: number;
   #client?: MeiliSearch;
+  private resolveReady: () => void = () => {};
+  private readonly ready = new Promise<void>((resolve) => {
+    this.resolveReady = resolve;
+  });
 
   @InjectLogger() declare private readonly logger: Logger;
 
@@ -408,6 +412,10 @@ export class MeilisearchService implements ISearchService {
 
   getPort() {
     return this.port;
+  }
+
+  waitUntilReady() {
+    return this.ready;
   }
 
   async start() {
@@ -803,6 +811,7 @@ export class MeilisearchService implements ISearchService {
     }
 
     await Promise.all(processes);
+    this.resolveReady();
   }
 
   async getProgram(id: string) {
