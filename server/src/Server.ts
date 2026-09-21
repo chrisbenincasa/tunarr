@@ -1,6 +1,7 @@
 import { container } from '@/container.js';
 import { KEYS } from '@/types/inject.js';
 import type { ServerType } from '@/types/serverType.js';
+import { allowNullInEnums } from '@/util/openapiUtil.js';
 import { getTunarrVersion } from '@/util/version.js';
 import cors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
@@ -196,9 +197,10 @@ export class Server {
           if (schema && schema.body && schema.body['anyOf']) {
             schema.body['required'] = ['true'];
           }
-          return { schema, url };
+          return { schema: allowNullInEnums(schema), url };
         },
-        transformObject: jsonSchemaTransformObject,
+        transformObject: (input) =>
+          allowNullInEnums(jsonSchemaTransformObject(input)),
       })
       // .register(fastifySwaggerUi, {
       //   routePrefix: '/docs',

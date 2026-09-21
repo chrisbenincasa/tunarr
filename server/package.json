@@ -66,7 +66,7 @@
     "fastify-graceful-shutdown": "^4.0.1",
     "fastify-plugin": "^5.0.1",
     "fastify-print-routes": "^3.2.0",
-    "fastify-type-provider-zod": "^5.0.3",
+    "fastify-type-provider-zod": "^7.0.0",
     "file-type": "^19.6.0",
     "find-process": "^2.0.0",
     "graphology": "^0.26.0",
