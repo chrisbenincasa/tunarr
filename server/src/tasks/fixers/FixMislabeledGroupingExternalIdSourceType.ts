@@ -82,11 +82,19 @@ export class FixMislabeledGroupingExternalIdSourceType extends Fixer {
       )
       .execute();
 
-    // Rows minted between #910 (2025-01-21) and #1106 have no media_source_id at all,
-    // only the media source name in external_source_id. BackfillMediaSourceIdFixer cannot
-    // repair them because it matches mediaSource.type against the (wrong) 'plex' label, so
-    // match on the name instead. It runs before this fixer, so once the label is right the
-    // next startup fills in the media source id.
+    // Rows minted between #910 (2025-01-21) and #1106 (2025-02-28) have no
+    // media_source_id at all, only the media source name in external_source_id.
+    // BackfillMediaSourceIdFixer cannot repair them either: it matches
+    // mediaSource.type against the (wrong) 'plex' label. So match on the name, and
+    // set the media source id in the same statement rather than leaving a second
+    // pass to infer it.
+    //
+    // A name identifies a media source only by convention: media_source is unique on
+    // (type, name, uri), so a Plex source and a Jellyfin source may share a name, and
+    // so may a Jellyfin and an Emby one. Relabelling from an ambiguous name would move
+    // a row to a type its grouping never had, which is worse than leaving it. Hence the
+    // "exactly one media source carries this name" guard below; anything ambiguous is
+    // left for a human.
     const byMediaSourceName = await this.db
       .updateTable('programGroupingExternalId')
       .set({
@@ -101,6 +109,17 @@ export class FixMislabeledGroupingExternalIdSourceType extends Fixer {
             .where('mediaSource.type', 'in', ['jellyfin', 'emby'])
             .select('mediaSource.type')
             .$narrowType<{ type: 'jellyfin' | 'emby' }>()
+            .limit(1),
+        mediaSourceId: (eb) =>
+          eb
+            .selectFrom('mediaSource')
+            .whereRef(
+              'mediaSource.name',
+              '=',
+              'programGroupingExternalId.externalSourceId',
+            )
+            .where('mediaSource.type', 'in', ['jellyfin', 'emby'])
+            .select('mediaSource.uuid')
             .limit(1),
       })
       .where('programGroupingExternalId.sourceType', '=', 'plex')
@@ -118,6 +137,31 @@ export class FixMislabeledGroupingExternalIdSourceType extends Fixer {
             .select('mediaSource.uuid'),
         ),
       )
+      // Exactly one media source may carry the name: a second one of any type (a Plex
+      // source sharing it, or a Jellyfin and an Emby source sharing it) makes the
+      // relabel a guess.
+      .where((eb) =>
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom(['mediaSource as candidate', 'mediaSource as other'])
+              .whereRef(
+                'candidate.name',
+                '=',
+                'programGroupingExternalId.externalSourceId',
+              )
+              .whereRef('other.name', '=', 'candidate.name')
+              .whereRef('other.uuid', '!=', 'candidate.uuid')
+              .select('candidate.uuid'),
+          ),
+        ),
+      )
+      // Leave the row alone when the grouping already carries a jellyfin/emby external
+      // id, whatever its media source id: relabelling would duplicate it rather than
+      // repair anything. This is about ambiguity, not about a constraint - the partial
+      // index on (group_uuid, source_type, media_source_id) WHERE media_source_id IS
+      // NULL does not enforce uniqueness in SQLite, because every indexed row has NULL
+      // in the key column.
       .where((eb) =>
         eb.not(
           eb.exists(
@@ -128,7 +172,6 @@ export class FixMislabeledGroupingExternalIdSourceType extends Fixer {
                 '=',
                 'programGroupingExternalId.groupUuid',
               )
-              .where('existing.mediaSourceId', 'is', null)
               .where('existing.sourceType', 'in', ['jellyfin', 'emby'])
               .select('existing.uuid'),
           ),
