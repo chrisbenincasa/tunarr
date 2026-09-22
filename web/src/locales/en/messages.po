@@ -3879,7 +3879,7 @@ msgstr "The image will be rendered at its actual size without any scaling applie
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 msgstr "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 
-#: src/components/UnavailableLibraryChip.tsx
+#: src/components/UnavailableLibraryIndicator.tsx
 msgid "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
 msgstr "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
 
@@ -4168,7 +4168,8 @@ msgstr "TV shows are grouped by show"
 msgid "Type"
 msgstr "Type"
 
-#: src/components/UnavailableLibraryChip.tsx
+#: src/components/UnavailableLibraryIndicator.tsx
+#: src/components/UnavailableLibraryIndicator.tsx
 msgid "Unavailable"
 msgstr "Unavailable"
 
