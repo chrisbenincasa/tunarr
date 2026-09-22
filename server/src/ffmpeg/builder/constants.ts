@@ -237,5 +237,4 @@ export type OutputFormat =
   | Mp4OutputFormat
   | MpegTsOutputFormat;
 
-export const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
-export const FiveMinutesMillis = 5 * 60 * 60 * 1000;
+export const OneWeekMillis = 7 * 24 * 60 * 60 * 1000;
