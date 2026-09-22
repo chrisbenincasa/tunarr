@@ -3953,6 +3953,10 @@ msgstr "This custom show is synced with an external playlist. Content is updated
 msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
 msgstr "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
 
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "This filler list has no programs and will be ignored."
+msgstr "This filler list has no programs and will be ignored."
+
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled."
 msgstr "This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled."

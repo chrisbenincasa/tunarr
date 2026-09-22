@@ -3953,6 +3953,10 @@ msgstr "此自定义剧集已与外部播放列表同步，内容会自动更新
 msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
 msgstr "此功能目前为实验性，请谨慎使用。如遇到问题，可尝试关闭缓存。"
 
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "This filler list has no programs and will be ignored."
+msgstr ""
+
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled."
 msgstr "当某个时段没有节目可显示时（例如安排了较长的弹性时间块），节目单中显示的虚拟节目名称。"
