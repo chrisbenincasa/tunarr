@@ -37,6 +37,10 @@ export const MediaSource = sqliteTable(
     username: text(),
     userId: text(),
     mediaType: text({ enum: MediaLibraryTypes }), // Only present for local media sources
+
+    // Consecutive refreshes whose credentials the server rejected. Any
+    // successful library fetch resets it.
+    consecutiveAuthFailures: integer().default(0).notNull(),
   },
   (table) => [
     check(

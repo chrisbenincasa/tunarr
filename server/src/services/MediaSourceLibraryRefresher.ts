@@ -1,23 +1,28 @@
-import type {
-  MediaSourceLibraryUpdate,
-  NewMediaSourceLibrary,
-} from '@/db/schema/MediaSourceLibrary.js';
 import type { EmbyItem } from '@tunarr/types/emby';
 import type { JellyfinItem } from '@tunarr/types/jellyfin';
 import type { PlexLibrarySection } from '@tunarr/types/plex';
 import { inject, injectable } from 'inversify';
 import { isString } from 'lodash-es';
-import { v4 } from 'uuid';
 import { MediaSourceDB } from '../db/mediaSourceDB.js';
 import type { MediaSourceId } from '../db/schema/base.js';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import type { MediaLibraryType } from '../db/schema/MediaSource.ts';
+import type { QueryError } from '../external/BaseApiClient.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 
 import type { Maybe } from '../types/util.ts';
-import { groupByUniq, isDefined } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
+import {
+  markLibrariesUnavailable,
+  reconcileLibraries,
+  type ReportedLibrary,
+} from './reconcileLibraries.ts';
+
+// Consecutive rejected refreshes before a source's libraries are marked
+// unavailable. A revoked token keeps failing; a server rejecting tokens while
+// it restarts recovers well inside this.
+const AuthFailuresBeforeUnavailable = 3;
 
 @injectable()
 export class MediaSourceLibraryRefresher {
@@ -33,7 +38,16 @@ export class MediaSourceLibraryRefresher {
     const mediaSources = await this.mediaSourceDB.getAll();
 
     for (const mediaSource of mediaSources) {
-      await this.refreshMediaSource(mediaSource);
+      // One unreachable source must not strand the sources behind it.
+      try {
+        await this.refreshMediaSource(mediaSource);
+      } catch (error) {
+        this.logger.error(
+          error,
+          'Unhandled error refreshing media source %s; continuing with the remaining sources',
+          mediaSource.uuid,
+        );
+      }
     }
 
     return;
@@ -80,79 +94,241 @@ export class MediaSourceLibraryRefresher {
     const plexLibrariesResult = await client.getLibrariesRaw();
 
     if (plexLibrariesResult.isFailure()) {
-      this.logger.error(
+      await this.handleFetchFailure(
+        mediaSource,
+        'Plex',
         plexLibrariesResult.error,
-        'Failure fetching Plex libraries',
       );
       return;
     }
 
-    const plexLibraries = plexLibrariesResult
+    const reported = plexLibrariesResult
       .get()
-      .MediaContainer.Directory.filter((lib) =>
-        isDefined(this.plexLibraryTypeToTunarrType(lib)),
-      );
-    const plexLibraryKeys = new Set(plexLibraries.map((lib) => lib.key));
-    const existingLibraries = new Set(
-      mediaSource.libraries.map((lib) => lib.externalKey),
-    );
-    const incomingLibrariesById = groupByUniq(plexLibraries, (lib) => lib.key);
-
-    const newLibraries = plexLibraryKeys.difference(existingLibraries);
-    const removedLibraries = existingLibraries.difference(plexLibraryKeys);
-    const updatedLibraries = plexLibraryKeys.intersection(existingLibraries);
-
-    const librariesToAdd: NewMediaSourceLibrary[] = [];
-    for (const newLibraryKey of newLibraries) {
-      const plexLibrary = plexLibraries.find(
-        (lib) => lib.key === newLibraryKey,
-      );
-      if (!plexLibrary) {
-        // Don't know why this would happen
-        continue;
-      }
-
-      librariesToAdd.push({
-        mediaSourceId: mediaSource.uuid,
-        externalKey: plexLibrary.key,
-        // Checked above
-        mediaType: this.plexLibraryTypeToTunarrType(plexLibrary)!,
-        uuid: v4(),
-        enabled: false,
-        name: plexLibrary.title,
-      } satisfies NewMediaSourceLibrary);
-    }
-
-    const librariesToRemove = mediaSource.libraries.filter((existing) =>
-      removedLibraries.has(existing.externalKey),
-    );
-
-    const librariesToUpdate = mediaSource.libraries
-      .filter((existing) => updatedLibraries.has(existing.externalKey))
-      .map((existing) => {
-        const updatedApiLibrary = incomingLibrariesById[existing.externalKey];
-        return {
-          externalKey: existing.externalKey,
-          name: updatedApiLibrary?.title ?? existing.name,
-          mediaType: updatedApiLibrary
-            ? this.plexLibraryTypeToTunarrType(updatedApiLibrary)
-            : existing.mediaType,
-          uuid: existing.uuid,
-        } satisfies MediaSourceLibraryUpdate;
+      .MediaContainer.Directory.flatMap((lib): ReportedLibrary[] => {
+        const mediaType = this.plexLibraryTypeToTunarrType(lib);
+        return mediaType
+          ? [{ externalKey: lib.key, name: lib.title, mediaType }]
+          : [];
       });
 
-    this.logger.debug(
-      'Found %d new Plex libraries, %d removed libraries for media source %s',
-      librariesToAdd.length,
-      librariesToRemove.length,
+    await this.reconcile(mediaSource, 'Plex', reported);
+  }
+
+  private async handleJellyfin(mediaSource: MediaSourceWithRelations) {
+    const client =
+      await this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
+        mediaSource,
+      );
+    const jellyfinLibrariesResult = await client.getUserViewsRaw();
+
+    if (jellyfinLibrariesResult.isFailure()) {
+      await this.handleFetchFailure(
+        mediaSource,
+        'Jellyfin',
+        jellyfinLibrariesResult.error,
+      );
+      return;
+    }
+
+    const reported = jellyfinLibrariesResult
+      .get()
+      .flatMap((lib): ReportedLibrary[] => {
+        const mediaType = this.jellyfinLibraryTypeToTunarrType(
+          lib.CollectionType,
+        );
+        return mediaType
+          ? [{ externalKey: lib.ItemId, name: lib.Name ?? '', mediaType }]
+          : [];
+      });
+
+    await this.reconcile(mediaSource, 'Jellyfin', reported);
+  }
+
+  private async handleEmby(mediaSource: MediaSourceWithRelations) {
+    if (mediaSource.type !== 'emby') {
+      return;
+    }
+
+    const client =
+      await this.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
+        mediaSource,
+      );
+    const embyLibrariesResult = await client.getUserViewsRaw();
+
+    if (embyLibrariesResult.isFailure()) {
+      await this.handleFetchFailure(
+        mediaSource,
+        'Emby',
+        embyLibrariesResult.error,
+      );
+      return;
+    }
+
+    const reported = embyLibrariesResult
+      .get()
+      .Items.flatMap((lib): ReportedLibrary[] => {
+        const mediaType = this.embyLibraryTypeToTunarrType(lib.CollectionType);
+        return mediaType
+          ? [{ externalKey: lib.Id, name: lib.Name ?? '', mediaType }]
+          : [];
+      });
+
+    await this.reconcile(mediaSource, 'Emby', reported);
+  }
+
+  /**
+   * A rejected credential is the one failure that says something about the
+   * libraries themselves. Every other failure (server down, timeout, bad
+   * payload) leaves them alone, because it carries no information about them.
+   */
+  private async handleFetchFailure(
+    mediaSource: MediaSourceWithRelations,
+    backend: string,
+    error: QueryError,
+  ) {
+    if (error.type !== 'auth_error' && error.type !== 'no_access_token') {
+      this.logger.error(error, 'Failure fetching %s libraries', backend);
+      return;
+    }
+
+    const failures = await this.mediaSourceDB.recordAuthFailure(
       mediaSource.uuid,
     );
 
-    this.mediaSourceDB.updateLibraries({
-      addedLibraries: librariesToAdd,
-      deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
-      updatedLibraries: librariesToUpdate,
-    });
+    if (failures < AuthFailuresBeforeUnavailable) {
+      this.logger.warn(
+        error,
+        '%s media source %s rejected our credentials (%d of %d consecutive). Leaving its libraries alone until the count is reached.',
+        backend,
+        mediaSource.uuid,
+        failures,
+        AuthFailuresBeforeUnavailable,
+      );
+      return;
+    }
+
+    const update = markLibrariesUnavailable(mediaSource, new Date());
+
+    if (update.unavailableLibraries.length === 0) {
+      return;
+    }
+
+    this.logger.error(
+      error,
+      '%s media source %s has rejected our credentials %d times running. Marking %d libraries unavailable; they come back on the first successful refresh.',
+      backend,
+      mediaSource.uuid,
+      failures,
+      update.unavailableLibraries.length,
+    );
+
+    await this.logNewlyUnavailable(
+      mediaSource,
+      backend,
+      update.unavailableLibraries,
+      'was not reachable with the stored credentials',
+    );
+
+    this.mediaSourceDB.updateLibraries(update);
+  }
+
+  private async reconcile(
+    mediaSource: MediaSourceWithRelations,
+    backend: string,
+    reported: ReportedLibrary[],
+  ) {
+    // The fetch succeeded, so whatever credentials we hold currently work.
+    if (mediaSource.consecutiveAuthFailures > 0) {
+      await this.mediaSourceDB.clearAuthFailures(mediaSource.uuid);
+    }
+
+    const result = reconcileLibraries(mediaSource, reported, new Date());
+
+    if (result.type === 'empty_response') {
+      this.logger.error(
+        '%s media source %s reported no supported libraries but %d are stored. The access token may be restricted or the server may still be starting. Stored libraries were left untouched.',
+        backend,
+        mediaSource.uuid,
+        mediaSource.libraries.length,
+      );
+      return;
+    }
+
+    const storedById = new Map(
+      mediaSource.libraries.map((library) => [library.uuid, library]),
+    );
+
+    await this.logNewlyUnavailable(
+      mediaSource,
+      backend,
+      result.unavailableLibraries,
+      'is missing from the response',
+    );
+
+    for (const uuid of result.availableLibraries) {
+      this.logger.info(
+        "Library '%s' (key '%s') of media source '%s' is back in the %s response; marking available",
+        storedById.get(uuid)?.name,
+        storedById.get(uuid)?.externalKey,
+        mediaSource.uuid,
+        backend,
+      );
+    }
+
+    for (const { keepUuid, duplicateUuids } of result.duplicateLibraries) {
+      this.logger.warn(
+        'Deleting duplicate libraries %O of media source %s after moving their programs to library %s',
+        duplicateUuids,
+        mediaSource.uuid,
+        keepUuid,
+      );
+    }
+
+    this.logger.debug(
+      'Found %d new %s libraries for media source %s',
+      result.addedLibraries.length,
+      backend,
+      mediaSource.uuid,
+    );
+
+    this.mediaSourceDB.updateLibraries(result);
+  }
+
+  // Counts are only queried on the transition to unavailable, so a library that
+  // stays gone costs nothing on later runs.
+  private async logNewlyUnavailable(
+    mediaSource: MediaSourceWithRelations,
+    backend: string,
+    unavailable: { uuid: string }[],
+    reason: string,
+  ) {
+    if (unavailable.length === 0) {
+      return;
+    }
+
+    const storedById = new Map(
+      mediaSource.libraries.map((library) => [library.uuid, library]),
+    );
+    const counts = new Map(
+      (
+        await this.mediaSourceDB.getLibraryReferenceCounts(
+          unavailable.map(({ uuid }) => uuid),
+        )
+      ).map((count) => [count.libraryId, count]),
+    );
+
+    for (const { uuid } of unavailable) {
+      this.logger.warn(
+        "Library '%s' (key '%s') of %s media source '%s' %s; marking unavailable (%d programs, %d channel schedule entries preserved)",
+        storedById.get(uuid)?.name,
+        storedById.get(uuid)?.externalKey,
+        backend,
+        mediaSource.uuid,
+        reason,
+        counts.get(uuid)?.programCount ?? 0,
+        counts.get(uuid)?.channelProgramCount ?? 0,
+      );
+    }
   }
 
   private plexLibraryTypeToTunarrType(
@@ -171,172 +347,6 @@ export class MediaSourceLibraryRefresher {
       case 'photo':
         return;
     }
-  }
-
-  private async handleJellyfin(mediaSource: MediaSourceWithRelations) {
-    const client =
-      await this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
-        mediaSource,
-      );
-    const jellyfinLibrariesResult = await client.getUserViewsRaw();
-
-    if (jellyfinLibrariesResult.isFailure()) {
-      this.logger.error(
-        jellyfinLibrariesResult.error,
-        'Failure fetching Jellyfin libraries',
-      );
-      return;
-    }
-
-    const jellyfinLibraries = jellyfinLibrariesResult
-      .get()
-      .filter(
-        (lib) =>
-          lib.CollectionType &&
-          isDefined(this.jellyfinLibraryTypeToTunarrType(lib.CollectionType)),
-      );
-    this.logger.trace('Existing Jellyfin libraries: %O', mediaSource.libraries);
-    const jellyfinLibraryKeys = new Set(
-      jellyfinLibraries.map((lib) => lib.ItemId),
-    );
-    const existingLibraries = new Set(
-      mediaSource.libraries.map((lib) => lib.externalKey),
-    );
-
-    const newLibraries = jellyfinLibraryKeys.difference(existingLibraries);
-    const removedLibraries = existingLibraries.difference(jellyfinLibraryKeys);
-    // const updatedLibraries =
-    //   jellyfinLibraryKeys.intersection(existingLibraries);
-
-    const librariesToAdd: NewMediaSourceLibrary[] = [];
-    for (const newLibraryKey of newLibraries) {
-      const jellyfinLibrary = jellyfinLibraries.find(
-        (lib) => lib.ItemId === newLibraryKey,
-      );
-      if (!jellyfinLibrary) {
-        // Don't know why this would happen
-        continue;
-      }
-
-      librariesToAdd.push({
-        mediaSourceId: mediaSource.uuid,
-        externalKey: jellyfinLibrary.ItemId,
-        // Checked above
-        mediaType: this.jellyfinLibraryTypeToTunarrType(
-          jellyfinLibrary.CollectionType,
-        )!,
-        uuid: v4(),
-        enabled: false,
-        name: jellyfinLibrary.Name ?? '',
-      } satisfies NewMediaSourceLibrary);
-    }
-
-    const seenExternalIds = new Set<string>();
-    const dupeLibrariesToRemove: string[] = [];
-    for (const library of mediaSource.libraries) {
-      if (seenExternalIds.has(library.externalKey)) {
-        dupeLibrariesToRemove.push(library.uuid);
-      } else {
-        seenExternalIds.add(library.externalKey);
-      }
-    }
-
-    const librariesToRemove = mediaSource.libraries.filter(
-      (existing) =>
-        removedLibraries.has(existing.externalKey) ||
-        dupeLibrariesToRemove.includes(existing.uuid),
-    );
-
-    this.logger.debug(
-      'Found %d new Jellyfin libraries, %d removed libraries for media source %s',
-      librariesToAdd.length,
-      librariesToRemove.length,
-      mediaSource.uuid,
-    );
-
-    this.mediaSourceDB.updateLibraries({
-      addedLibraries: librariesToAdd,
-      deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
-      updatedLibraries: [],
-    });
-  }
-
-  private async handleEmby(mediaSource: MediaSourceWithRelations) {
-    if (mediaSource.type !== 'emby') {
-      return;
-    }
-
-    const client =
-      await this.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
-        mediaSource,
-      );
-    const embyLibrariesResult = await client.getUserViewsRaw();
-
-    if (embyLibrariesResult.isFailure()) {
-      this.logger.error(
-        embyLibrariesResult.error,
-        'Failure fetching Emby libraries',
-      );
-      return;
-    }
-
-    if (embyLibrariesResult.get().Items.length === 0) {
-      this.logger.error('Got no libraries from Emby server: %O', mediaSource);
-      return;
-    }
-
-    const embyLibraries = embyLibrariesResult
-      .get()
-      .Items.filter(
-        (lib) =>
-          lib.CollectionType &&
-          isDefined(this.embyLibraryTypeToTunarrType(lib.CollectionType)),
-      );
-    const embyLibraryKeys = new Set(embyLibraries.map((lib) => lib.Id));
-    const existingLibraries = new Set(
-      mediaSource.libraries.map((lib) => lib.externalKey),
-    );
-
-    const newLibraries = embyLibraryKeys.difference(existingLibraries);
-    const removedLibraries = existingLibraries.difference(embyLibraryKeys);
-
-    const librariesToAdd: NewMediaSourceLibrary[] = [];
-    for (const newLibraryKey of newLibraries) {
-      const embyLibrary = embyLibraries.find((lib) => lib.Id === newLibraryKey);
-      if (!embyLibrary) {
-        // Don't know why this would happen
-        continue;
-      }
-
-      librariesToAdd.push({
-        mediaSourceId: mediaSource.uuid,
-        externalKey: embyLibrary.Id,
-        // Checked above
-        mediaType: this.embyLibraryTypeToTunarrType(
-          embyLibrary.CollectionType,
-        )!,
-        uuid: v4(),
-        enabled: false,
-        name: embyLibrary.Name ?? '',
-      } satisfies NewMediaSourceLibrary);
-    }
-
-    const librariesToRemove = mediaSource.libraries.filter((existing) =>
-      removedLibraries.has(existing.externalKey),
-    );
-
-    this.logger.debug(
-      'Found %d new Emby libraries, %d removed libraries for media source %s',
-      librariesToAdd.length,
-      librariesToRemove.length,
-      mediaSource.uuid,
-    );
-
-    this.mediaSourceDB.updateLibraries({
-      addedLibraries: librariesToAdd,
-      deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
-      updatedLibraries: [],
-    });
   }
 
   private jellyfinLibraryTypeToTunarrType(

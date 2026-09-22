@@ -49,6 +49,7 @@ export type RemoteMediaSourceOptions = ApiClientOptions & {
 const QueryErrorCodes = [
   'not_found',
   'no_access_token',
+  'auth_error',
   'parse_error',
   'generic_request_error',
 ] as const;
@@ -132,13 +133,11 @@ export abstract class BaseApiClient<
       url: path,
     };
 
-    const response = await this.doRequest<unknown>(req);
-
-    if (isError(response)) {
-      if (isAxiosError(response) && response.response?.status === 404) {
-        return this.makeErrorResult('not_found');
-      }
-      return this.makeErrorResult('generic_request_error', response.message);
+    let response: unknown;
+    try {
+      response = await this.doRequest<unknown>(req);
+    } catch (error) {
+      return this.requestErrorResult<Out>(error);
     }
 
     const parsed = await schema.safeParseAsync(response, {
@@ -158,6 +157,25 @@ export abstract class BaseApiClient<
     );
 
     return this.makeErrorResult('parse_error');
+  }
+
+  // `doRequest` throws on any transport or status error, so every failure the
+  // declared QueryResult can carry is classified here.
+  protected requestErrorResult<T>(error: unknown): QueryResult<T> {
+    if (isAxiosError(error)) {
+      const status = error.response?.status ?? error.status;
+      if (status === 404) {
+        return this.makeErrorResult('not_found', error.message);
+      }
+      if (status === 401 || status === 403) {
+        return this.makeErrorResult('auth_error', error.message);
+      }
+    }
+
+    return this.makeErrorResult(
+      'generic_request_error',
+      isError(error) ? error.message : String(error),
+    );
   }
 
   protected preRequestValidate<T>(

@@ -3879,6 +3879,10 @@ msgstr "图片将按实际尺寸渲染，不做任何缩放。"
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 msgstr "当前加载的 Tunarr 界面版本与服务器不匹配。请刷新浏览器以获取最新版本。若此提示持续出现，请清除浏览器缓存后重新加载。"
 
+#: src/components/UnavailableLibraryChip.tsx
+msgid "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
+msgstr ""
+
 #: src/components/LanguagePreferencesList.tsx
 msgid "The selected languages will be considered in order they are selected."
 msgstr "所选语言将按选择的先后顺序依次生效。"
@@ -4163,6 +4167,10 @@ msgstr "剧集按剧名分组"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Type"
 msgstr "类型"
+
+#: src/components/UnavailableLibraryChip.tsx
+msgid "Unavailable"
+msgstr ""
 
 #: src/components/search/DateSearchValueNode.tsx
 #: src/components/search/DateSearchValueNode.tsx

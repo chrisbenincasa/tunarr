@@ -242,6 +242,12 @@ export class DirectMigrationProvider implements MigrationProvider {
         migration1790034899: makeMigrationFromSqlFile(
           './sql/0049_slim_toad_men.sql',
         ),
+        migration1790035117: makeMigrationFromSqlFile(
+          './sql/0050_whole_molly_hayes.sql',
+        ),
+        migration1790105123: makeMigrationFromSqlFile(
+          './sql/0051_striped_marvel_apes.sql',
+        ),
       } satisfies Record<string, TunarrDatabaseMigration>,
       wrapWithTransaction,
     );
