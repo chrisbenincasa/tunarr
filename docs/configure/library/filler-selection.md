@@ -17,6 +17,21 @@ Nothing else feeds the decision. When filler is not behaving the way you want, o
 
 Think of each draw as a raffle. Tunarr decides who is allowed to enter, hands out tickets, and pulls one.
 
+```mermaid
+flowchart TD
+    A["Flex gap opens"] --> B{"Any list off its own cooldown,<br>holding a clip that fits and is<br>off the repeat cooldown?"}
+    B -- no --> W["Shorten the flex block and wait<br>for the earliest clip to be ready"]
+    B -- yes --> D["Draw one of those lists,<br>weighted by Weight"]
+    D --> E["Drop clips longer than the time left"]
+    E --> F["Drop clips still inside<br>the Filler List Cooldown"]
+    F --> G["Line the rest up, freshest first"]
+    G --> H["Tickets = position squared,<br>times a length factor"]
+    H --> I["Draw a ticket, play the winner,<br>subtract its length from the gap"]
+    I --> J{"Time left in the gap?"}
+    J -- yes --> B
+    J -- no --> K["Break is full"]
+```
+
 ### 1. Rule out the lists that cannot play
 
 A list is out if it played something recently enough to still be inside its own **Cooldown (s)**. A list is also out if none of its clips can play right now, either because every clip is too long for the time left or because every clip is still inside the repeat cooldown.
@@ -44,6 +59,11 @@ Tunarr subtracts the winning clip's length from the gap, then starts again at st
 ### A worked example
 
 Ten thirty-second clips, all eligible, none on cooldown. A thirty-second clip is worth 7 length points, so the tickets come out like this.
+
+![Raffle tickets by position in line](../../assets/filler-weights-light.svg#only-light)
+![Raffle tickets by position in line](../../assets/filler-weights-dark.svg#only-dark)
+
+The same ten positions, with a 60-second clip shown alongside for comparison. Length lifts the whole curve by about 1.7x without changing its shape, so a long clip still has to wait its turn.
 
 | Position in line | Tickets | Chance of winning |
 |---|---|---|
