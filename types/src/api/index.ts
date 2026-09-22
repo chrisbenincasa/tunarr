@@ -109,9 +109,13 @@ export type UpdateCustomShowRequest = z.infer<
 
 export const CreateFillerListRequestSchema = z.object({
   name: z.string(),
-  programs: z.array(
-    z.discriminatedUnion('type', [ContentProgramSchema, CustomProgramSchema]),
-  ),
+  // A filler list with no programs can't contribute anything to a channel or
+  // a slot schedule, so don't let one be persisted.
+  programs: z
+    .array(
+      z.discriminatedUnion('type', [ContentProgramSchema, CustomProgramSchema]),
+    )
+    .min(1, 'A filler list must have at least one program.'),
 });
 
 export type CreateFillerListRequest = z.infer<

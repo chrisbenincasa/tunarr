@@ -11018,6 +11018,7 @@ export type GetApiSystemFeatureFlagsResponses = {
             proxyArtwork: boolean;
             tonemapEnabled: boolean;
             webvttSidecarEnabled: boolean;
+            xmltvCreditImagesEnabled: boolean;
             disableSearchSnapshotInBackup: boolean;
             disableVulkan: boolean;
             disableVaapiPad: boolean;
@@ -11042,6 +11043,7 @@ export type PutApiSystemFeatureFlagsData = {
         disableSearchSnapshotInBackup?: boolean;
         disableVulkan?: boolean;
         disableVaapiPad?: boolean;
+        xmltvCreditImagesEnabled?: boolean;
     };
     path?: never;
     query?: never;
@@ -11057,6 +11059,7 @@ export type PutApiSystemFeatureFlagsResponses = {
             proxyArtwork: boolean;
             tonemapEnabled: boolean;
             webvttSidecarEnabled: boolean;
+            xmltvCreditImagesEnabled: boolean;
             disableSearchSnapshotInBackup: boolean;
             disableVulkan: boolean;
             disableVaapiPad: boolean;

@@ -31,6 +31,7 @@ import {
   map,
   reduce,
   reject,
+  some,
   sortBy,
   sumBy,
   toPairs,
@@ -49,6 +50,7 @@ import { v4 } from 'uuid';
 import type { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
 import type { Nullable } from '../../types/util.ts';
 import { isNonEmptyArray, retrySimple } from '../../util/index.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { FlexProgramIterator } from './FlexProgramIterator.ts';
 import {
   resolveBreakDuration,
@@ -79,6 +81,11 @@ import {
 import type { SlotImpl } from './SlotImpl.ts';
 import { StaticProgramIterator } from './StaticProgramIterator.ts';
 import { WeightedFillerProgramIterator } from './WeightedFillerProgramIterator.ts';
+
+const logger = LoggerFactory.child({
+  className: 'SlotScheduler',
+  category: 'scheduling',
+});
 
 type ProgramMapping = {
   content: Record<ContentSlotId, SlotSchedulerProgram[]>;
@@ -263,7 +270,22 @@ export function createFillerIterators(
 
     const programs = programBySlotType.filler[slotId] ?? [];
     if (!isNonEmptyArray(programs)) {
-      throw new Error('Cannot schedule an empty filler list slot.');
+      // A filler list with no content can't produce an iterator. Skipping it
+      // leaves the slots that reference it without filler of that type, which
+      // is much better than failing the entire schedule. Callers already
+      // tolerate a missing iterator (see getFillerIteratorsForSlot).
+      logEmptyFillerList(
+        fillerDef.fillerListId,
+        slots.filter(
+          (slot) =>
+            slotHasFiller(slot) &&
+            some(
+              slot.filler,
+              ({ fillerListId }) => fillerListId === fillerDef.fillerListId,
+            ),
+        ),
+      );
+      continue;
     }
 
     const iterator =
@@ -280,6 +302,48 @@ export function createFillerIterators(
     fillerIterators[iteratorKey] = iterator;
   }
   return fillerIterators;
+}
+
+function describeSlot(slot: BaseSlot) {
+  return {
+    slotId: 'id' in slot ? slot.id : undefined,
+    slotType: slot.type,
+  };
+}
+
+/**
+ * A filler list that has no content can't be scheduled, but it also shouldn't
+ * break the entire schedule -- slots referencing it simply get no filler and
+ * dedicated filler slots flex. Warn with enough detail to track down which
+ * list and which slots are involved.
+ */
+function logEmptyFillerList(fillerListId: string, referencedBy: BaseSlot[]) {
+  logger.warn(
+    {
+      fillerListId,
+      referencedBy: map(referencedBy, describeSlot),
+    },
+    'Filler list %s resolved to zero programs and will be ignored. Either the list is empty, its programs were removed (e.g. by emptying the trash or deleting a media source), or the list itself was deleted while slots still referenced it.',
+    fillerListId,
+  );
+}
+
+function createFillerShuffleIterator(
+  programs: SlotSchedulerProgram[],
+  fillerListId: string,
+  random: Random,
+) {
+  return new ProgramShuffleIteratorImpl<FillerProgram>(
+    programs,
+    random,
+    (program) => ({
+      type: 'filler',
+      duration: program.duration,
+      fillerListId,
+      id: program.uuid,
+      persisted: true,
+    }),
+  );
 }
 
 export function createSlotProgramIterator(
@@ -339,7 +403,15 @@ export function createSlotProgramIterator(
         const programs =
           programBySlotType.filler[fillerSlotId(slot.fillerListId)] ?? [];
         if (!isNonEmptyArray(programs)) {
-          throw new Error('Cannot schedule an empty filler list slot.');
+          // The weighted iterator requires content to weigh. Fall back to the
+          // (empty) shuffle iterator, which yields nothing and flexes the slot
+          // instead of failing the whole schedule.
+          logEmptyFillerList(slot.fillerListId, [slot]);
+          return createFillerShuffleIterator(
+            programs,
+            slot.fillerListId,
+            random,
+          );
         }
         return new WeightedFillerProgramIterator(programs, slot, random);
       },
@@ -348,15 +420,9 @@ export function createSlotProgramIterator(
       const programs =
         programBySlotType.filler[fillerSlotId(slot.fillerListId)] ?? [];
       if (isEmpty(programs)) {
-        throw new Error('Cannot schedule an empty filler list slot.');
+        logEmptyFillerList(slot.fillerListId, [slot]);
       }
-      return new ProgramShuffleIteratorImpl(programs, random, (program) => ({
-        type: 'filler',
-        duration: program.duration,
-        fillerListId: slot.fillerListId,
-        id: program.uuid,
-        persisted: true,
-      }));
+      return createFillerShuffleIterator(programs, slot.fillerListId, random);
     })
     .with({ type: P.union('movie', 'show') }, (slot) => {
       const slotId = match(slot)

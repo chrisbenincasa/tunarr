@@ -3416,3 +3416,146 @@ describe('slot filler budgeting', () => {
     expect(straddlers).toEqual([]);
   });
 });
+
+describe('empty filler lists', () => {
+  const makeFillerPrograms = (fillerListId: string, count: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `${fillerListId}-filler-${i}`,
+        title: `Filler ${i}`,
+        type: 'movie' as const,
+        duration: 2 * 60 * 1000,
+      }),
+      parentFillerLists: [fillerListId],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  test('a filler list with no programs is skipped, not fatal', () => {
+    const populatedList = randomUUID();
+    const emptyList = randomUUID();
+
+    const slot = {
+      id: randomUUID(),
+      startTime: 0,
+      type: 'movie' as const,
+      order: 'next' as const,
+      direction: 'asc' as const,
+      filler: [
+        {
+          types: ['pre' as const],
+          fillerListId: populatedList,
+          fillerOrder: 'shuffle_prefer_short' as const,
+        },
+        {
+          types: ['fallback' as const],
+          fillerListId: emptyList,
+          fillerOrder: 'shuffle_prefer_short' as const,
+        },
+      ],
+    };
+
+    const random = new Random(MersenneTwister19937.seed(42));
+    // Note that no programs exist for emptyList.
+    const programMap = createProgramMap(makeFillerPrograms(populatedList, 5));
+
+    const iterators = createFillerIterators([slot], programMap, random);
+
+    expect(Object.keys(iterators)).toHaveLength(1);
+    expect(
+      Object.keys(getFillerIteratorsForSlot(slot, iterators, new Set())),
+    ).toEqual([populatedList]);
+  });
+
+  test('scheduling a slot that references an empty filler list succeeds', async () => {
+    const populatedList = randomUUID();
+    const emptyList = randomUUID();
+
+    const programs: SlotSchedulerProgram[] = [
+      {
+        ...createFakeProgramOrm({
+          uuid: 'movie1',
+          title: 'Movie 1',
+          type: 'movie',
+          duration: 60 * 60 * 1000,
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      },
+      ...makeFillerPrograms(populatedList, 5),
+    ];
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      flexPreference: 'distribute',
+      maxDays: 1,
+      padMs: 120 * 60 * 1000,
+      slots: [
+        {
+          id: randomUUID(),
+          startTime: 0,
+          type: 'movie',
+          order: 'next',
+          direction: 'asc',
+          filler: [
+            {
+              types: ['pre'],
+              fillerListId: populatedList,
+              fillerOrder: 'shuffle_prefer_short',
+            },
+            {
+              types: ['fallback'],
+              fillerListId: emptyList,
+              fillerOrder: 'shuffle_prefer_short',
+            },
+          ],
+        },
+      ],
+      period: 'day',
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+    };
+
+    const result = await scheduleTimeSlots(schedule, programs);
+
+    expect(result.lineup.length).toBeGreaterThan(0);
+    expect(
+      result.lineup.some(
+        (item) => item.type === 'content' && item.id === 'movie1',
+      ),
+    ).toBe(true);
+  });
+
+  test('a dedicated filler slot with an empty list flexes instead of throwing', async () => {
+    const emptyList = randomUUID();
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      flexPreference: 'distribute',
+      maxDays: 1,
+      padMs: 30 * 60 * 1000,
+      slots: [
+        {
+          id: randomUUID(),
+          startTime: 0,
+          type: 'filler',
+          fillerListId: emptyList,
+          order: 'shuffle_prefer_short',
+          decayFactor: 0.5,
+          recoveryFactor: 0.05,
+          durationWeighting: 'linear',
+        },
+      ],
+      period: 'day',
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+    };
+
+    const result = await scheduleTimeSlots(schedule, []);
+
+    expect(result.lineup.every((item) => item.type === 'flex')).toBe(true);
+  });
+});

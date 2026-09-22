@@ -101,3 +101,84 @@ describe('FillerDB.deleteFiller', () => {
     }
   });
 });
+
+describe('FillerDB content resolution', () => {
+  test('content rows whose program is gone are not reported as programs', async () => {
+    const dir = await tmp.dir({ unsafeCleanup: true });
+    try {
+      await copyPreMigratedDb(dir.path);
+      setGlobalOptions({ database: dir.path, log_level: 'error', verbose: 0 });
+      await bootstrapTunarr();
+
+      const conn = DBAccess.instance.getConnection();
+      if (!conn) {
+        throw new Error('Expected a DB connection for the test');
+      }
+
+      const fillerUuid = v4();
+      const programUuid = v4();
+      const danglingProgramUuid = v4();
+
+      conn.sqlite
+        .prepare(
+          'INSERT INTO filler_show (uuid, created_at, updated_at, name) VALUES (?, ?, ?, ?)',
+        )
+        .run(fillerUuid, 0, 0, 'Test Filler');
+
+      conn.sqlite
+        .prepare(
+          `INSERT INTO program (uuid, duration, external_key, external_source_id, source_type, title, type)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          programUuid,
+          1000,
+          'test-key',
+          'test-source',
+          'plex',
+          'Test Program',
+          'movie',
+        );
+
+      conn.sqlite
+        .prepare(
+          'INSERT INTO filler_show_content (filler_show_uuid, program_uuid, "index") VALUES (?, ?, ?)',
+        )
+        .run(fillerUuid, programUuid, 0);
+
+      // A content row left behind by a program that no longer exists. Writes
+      // like this are only possible with foreign keys off, which several
+      // historical migrations did.
+      conn.sqlite.pragma('foreign_keys = OFF');
+      conn.sqlite
+        .prepare(
+          'INSERT INTO filler_show_content (filler_show_uuid, program_uuid, "index") VALUES (?, ?, ?)',
+        )
+        .run(fillerUuid, danglingProgramUuid, 1);
+      conn.sqlite.pragma('foreign_keys = ON');
+
+      const db = DBAccess.instance.db;
+      const drizzle = DBAccess.instance.drizzle;
+      if (!db || !drizzle) {
+        throw new Error('Expected DB handles for the test');
+      }
+      const fillerDb = new FillerDB(db, drizzle);
+
+      const programs = await fillerDb.getFillerPrograms(fillerUuid);
+      expect(programs).toHaveLength(1);
+      expect(programs[0]?.uuid).toBe(programUuid);
+
+      const filler = await fillerDb.getFiller(fillerUuid);
+      expect(filler?.fillerContent).toHaveLength(1);
+
+      // contentCount only counts content that actually resolves.
+      const allFillers = await fillerDb.getAllFillers();
+      const thisFiller = allFillers.find((f) => f.uuid === fillerUuid);
+      expect(thisFiller?.content).toHaveLength(1);
+
+      await DBAccess.instance.closeConnection(`${dir.path}/db.db`);
+    } finally {
+      await dir.cleanup();
+    }
+  });
+});
