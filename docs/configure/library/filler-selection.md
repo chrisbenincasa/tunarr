@@ -18,18 +18,15 @@ Nothing else feeds the decision. When filler is not behaving the way you want, o
 Think of each draw as a raffle. Tunarr decides who is allowed to enter, hands out tickets, and pulls one.
 
 ```mermaid
-flowchart TD
-    A["Flex gap opens"] --> B{"Any list off its own cooldown,<br>holding a clip that fits and is<br>off the repeat cooldown?"}
-    B -- no --> W["Shorten the flex block and wait<br>for the earliest clip to be ready"]
-    B -- yes --> D["Draw one of those lists,<br>weighted by Weight"]
-    D --> E["Drop clips longer than the time left"]
-    E --> F["Drop clips still inside<br>the Filler List Cooldown"]
-    F --> G["Line the rest up, freshest first"]
-    G --> H["Tickets = position squared,<br>times a length factor"]
-    H --> I["Draw a ticket, play the winner,<br>subtract its length from the gap"]
-    I --> J{"Time left in the gap?"}
-    J -- yes --> B
-    J -- no --> K["Break is full"]
+flowchart LR
+    A["Flex gap<br>opens"] --> B{"Any list with a<br>playable clip?"}
+    B -- no --> W["Shorten the flex<br>block and wait"]
+    B -- yes --> C["Pick a list,<br>weighted by Weight"]
+    C --> D["Rank eligible clips<br>by time waited"]
+    D --> E["Draw one. Longer waits<br>and longer clips<br>carry more tickets."]
+    E --> F{"Time left<br>in the gap?"}
+    F -- yes --> B
+    F -- no --> G["Break is full"]
 ```
 
 ### 1. Rule out the lists that cannot play
