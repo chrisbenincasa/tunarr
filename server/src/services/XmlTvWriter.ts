@@ -199,6 +199,8 @@ export class XmlTvWriter {
       // )
       .otherwise(() => undefined);
 
+    // @iptv/xmltv emits children in property insertion order. Keep direct
+    // program children in DTD order: icon before episode-num, image last.
     const partial: XmltvProgramme = {
       start: new Date(guideItem.start),
       stop: new Date(guideItem.stop),
@@ -270,26 +272,6 @@ export class XmlTvWriter {
         });
       }
 
-      if (program.duration > 0) {
-        // length only supports seconds minutes or hours so convert duration from ms to seconds
-        partial.length = { _value: program.duration * 0.001, units: 'seconds' };
-      }
-
-      const rating = firstDefined(program.rating, program.show?.rating);
-      if (rating) {
-        partial.rating ??= [
-          {
-            system:
-              program.type === 'movie'
-                ? 'MPAA'
-                : program.type === 'track'
-                  ? 'RIAA'
-                  : 'VCHIP',
-            value: escape(rating),
-          },
-        ];
-      }
-
       const airDate = parseAirDate(program.originalAirDate);
       if (airDate) {
         partial.date ??= airDate.toDate();
@@ -316,6 +298,21 @@ export class XmlTvWriter {
       partial.keyword = Array.from(uniqueKeywords).map((k) => ({
         _value: escape(k),
       }));
+
+      if (program.duration > 0) {
+        // length only supports seconds minutes or hours so convert duration from ms to seconds
+        partial.length = { _value: program.duration * 0.001, units: 'seconds' };
+      }
+
+      const useShowPoster =
+        this.settingsDB.xmlTvSettings().useShowPoster ?? false;
+      const url = XmlTvWriter.resolveArtworkUrl(program, {
+        useShowPoster,
+      });
+
+      if (url) {
+        partial.icon = [{ src: url }];
+      }
 
       const [seasonNumber, episodeNumber] = match(program)
         .with({ type: 'episode' }, (ep) => {
@@ -352,15 +349,23 @@ export class XmlTvWriter {
         partial.video = { present: false };
       }
 
-      const useShowPoster =
-        this.settingsDB.xmlTvSettings().useShowPoster ?? false;
-      const url = XmlTvWriter.resolveArtworkUrl(program, {
-        useShowPoster,
-      });
+      const rating = firstDefined(program.rating, program.show?.rating);
+      if (rating) {
+        partial.rating ??= [
+          {
+            system:
+              program.type === 'movie'
+                ? 'MPAA'
+                : program.type === 'track'
+                  ? 'RIAA'
+                  : 'VCHIP',
+            value: escape(rating),
+          },
+        ];
+      }
 
       if (url) {
         partial.image = [{ _value: url, size: 3, type: 'poster' }];
-        partial.icon = [{ src: url }];
       }
     }
 
