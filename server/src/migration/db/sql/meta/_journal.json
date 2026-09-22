@@ -344,6 +344,13 @@
       "when": 1790033149560,
       "tag": "0048_old_firestar",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1790034899981,
+      "tag": "0049_slim_toad_men",
+      "breakpoints": true
     }
   ]
 }

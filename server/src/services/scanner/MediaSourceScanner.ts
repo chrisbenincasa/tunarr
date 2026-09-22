@@ -2,7 +2,6 @@ import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
 import { InjectLogger } from '@/util/inject.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
-import { isEmpty } from 'lodash-es';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type {
   MediaSourceWithRelations,
@@ -10,11 +9,12 @@ import type {
 } from '../../db/schema/derivedTypes.js';
 import type {
   MediaLibraryType,
-  MediaSourceOrm,
   RemoteMediaSourceType,
 } from '../../db/schema/MediaSource.ts';
+import type { MediaSourceLibraryReplacePath } from '../../db/schema/MediaSourceLibraryReplacePath.ts';
 import type { QueryResult } from '../../external/BaseApiClient.ts';
 import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
+import { PathCalculator } from '../../stream/PathCalculator.ts';
 import { Result } from '../../types/result.ts';
 import { devAssert } from '../../util/debug.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
@@ -33,7 +33,7 @@ export type ScanSingleRequest = {
 
 export type ScanContext<ApiClientTypeT> = {
   library: MediaSourceLibrary;
-  mediaSource: MediaSourceOrm;
+  mediaSource: MediaSourceWithRelations;
   apiClient: ApiClientTypeT;
   force: boolean;
   pathFilter?: string;
@@ -171,6 +171,7 @@ export abstract class MediaSourceScanner<
 
   protected async downloadExternalSubtitleStreams(
     { program, subtitles }: NewProgramWithRelations,
+    replacePaths: MediaSourceLibraryReplacePath[],
     getSubtitlesCallback: (
       args: GetSubtitlesRequest,
     ) => Promise<QueryResult<string>>,
@@ -179,7 +180,28 @@ export abstract class MediaSourceScanner<
       subtitles.filter((stream) => stream.subtitleType === 'sidecar') ?? [];
 
     for (const stream of externalSubtitleStreams) {
-      if (isEmpty(stream.path)) {
+      if (isNonEmptyString(stream.path)) {
+        continue;
+      }
+
+      // If Tunarr can see the same storage the media source is reading from,
+      // the sidecar is just a file: no download, and no HTTP at playback time.
+      const localPath = await PathCalculator.findLocalPath(
+        stream.sourcePath,
+        replacePaths,
+      );
+      if (localPath) {
+        this.logger.debug(
+          'Found external subtitle on local storage, skipping download. Source path: %s Local path: %s',
+          stream.sourcePath ?? '',
+          localPath,
+        );
+        stream.path = localPath;
+        continue;
+      }
+
+      const subtitleKey = stream.sourceKey;
+      if (!isNonEmptyString(subtitleKey)) {
         continue;
       }
 
@@ -191,11 +213,17 @@ export abstract class MediaSourceScanner<
             sourceType: program.sourceType,
             uuid: program.uuid,
           },
-          { streamIndex: stream.streamIndex ?? undefined, codec: stream.codec },
+          {
+            streamIndex: stream.streamIndex ?? undefined,
+            codec: stream.codec,
+            // External subtitles have no stream index, so the source-relative
+            // location is what keeps their cache entries distinct.
+            key: subtitleKey,
+          },
           (args) =>
             getSubtitlesCallback({
               ...args,
-              key: stream.path!,
+              key: subtitleKey,
               externalItemId: program.externalKey,
               streamIndex: stream.streamIndex ?? 0,
             }),
@@ -215,8 +243,8 @@ export abstract class MediaSourceScanner<
 
       if (isNonEmptyString(fullPath)) {
         this.logger.debug(
-          'Overwriting subtitle stream path to local cached path: original = %s, local cache = %s',
-          stream.path ?? '',
+          'Downloaded external subtitle to local cache: source = %s, local cache = %s',
+          subtitleKey,
           fullPath,
         );
         stream.path = fullPath;
