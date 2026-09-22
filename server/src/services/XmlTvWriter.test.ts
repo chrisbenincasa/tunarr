@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { parseXmltv, writeXmltv } from '@iptv/xmltv';
 import { tag } from '@tunarr/types';
 import { v4 } from 'uuid';
 import type { Artwork } from '../db/schema/Artwork.ts';
@@ -9,6 +10,7 @@ import type {
 } from '../db/schema/derivedTypes.ts';
 import {
   createChannel,
+  createChannelOrm,
   createFakeProgram,
   createFakeShow,
 } from '../testing/fakes/entityCreators.ts';
@@ -96,6 +98,156 @@ function makeGrouping(
 }
 
 describe('XmlTvWriter', () => {
+  describe('serialized program order', () => {
+    function serializeProgram(program: ProgramWithRelationsOrm) {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const xml = writeXmltv(
+        writer.generateXmltv([
+          {
+            channel: createChannelOrm({ number: 1, name: 'Test Channel' }),
+            programs: [
+              {
+                programming: { type: 'program', program },
+                title: program.title,
+                start: Date.parse('2026-09-22T00:00:00Z'),
+                stop: Date.parse('2026-09-22T00:30:00Z'),
+                durationMs: 1_800_000,
+              },
+            ],
+          },
+        ]),
+      );
+
+      // Parse the serialized document as a DOM to retain sibling order.
+      const tv = parseXmltv(xml, { asDom: true }).find(
+        (node) => typeof node !== 'string' && node.tagName === 'tv',
+      );
+      if (!tv || typeof tv === 'string') throw new Error('Missing tv element');
+      const programElement = tv.children.find(
+        (node) => typeof node !== 'string' && node.tagName === 'programme',
+      );
+      if (!programElement || typeof programElement === 'string') {
+        throw new Error('Missing <programme> element');
+      }
+      const children = programElement.children.filter(
+        (node) => typeof node !== 'string',
+      );
+      return { xml, children };
+    }
+
+    describe.each(['episode', 'movie', 'track'] as const)('%s', (type) => {
+      test.each([true, false])(
+        'serializes metadata in XMLTV order (artwork: %s)',
+        (hasArtwork) => {
+          const program = makeProgram({
+            uuid: 'test-program',
+            type,
+            title: 'Test Title',
+            showTitle: type === 'episode' ? 'Test Show' : null,
+            tagline: type === 'movie' ? 'Test Tagline' : null,
+            summary: 'Test summary & description',
+            duration: 1_800_000,
+            originalAirDate: '2020-05-04T00:00:00Z',
+            rating: 'PG',
+            seasonNumber: type === 'episode' ? 6 : null,
+            episode: type === 'movie' ? null : 4,
+            sourceType: 'local',
+            artwork: hasArtwork ? [makeArtwork('poster')] : [],
+            credits: [
+              {
+                uuid: 'test-director',
+                name: 'Test Director',
+                type: 'director',
+                role: null,
+                index: 0,
+                createdAt: null,
+                updatedAt: null,
+                programId: 'test-program',
+                groupingId: null,
+              },
+            ],
+            genres: [
+              {
+                genre: { uuid: 'test-genre', name: 'Comedy' },
+                genreId: 'test-genre',
+                groupId: null,
+                programId: 'test-program',
+              },
+            ],
+            tags: [
+              {
+                tag: { uuid: 'test-tag', tag: 'Test Keyword' },
+                tagId: 'test-tag',
+                programId: 'test-program',
+                source: 'media',
+                groupingId: null,
+              },
+            ],
+          });
+          const { xml, children } = serializeProgram(program);
+
+          expect(children.map((node) => node.tagName)).toEqual([
+            'title',
+            'sub-title',
+            'desc',
+            'credits',
+            'date',
+            'category',
+            'keyword',
+            'length',
+            ...(hasArtwork ? ['icon'] : []),
+            ...(type === 'movie' ? [] : ['episode-num', 'episode-num']),
+            ...(type === 'track' ? ['video'] : []),
+            'rating',
+            ...(hasArtwork ? ['image'] : []),
+          ]);
+          expect(xml).toContain('<desc>Test summary &amp; description</desc>');
+          expect(xml).toContain('<length units="seconds">1800</length>');
+
+          const icons = children.filter((node) => node.tagName === 'icon');
+          const images = children.filter((node) => node.tagName === 'image');
+          if (hasArtwork) {
+            const url = '{{host}}/api/programs/test-program/artwork/poster';
+            expect(icons).toEqual([
+              { tagName: 'icon', attributes: { src: url }, children: [] },
+            ]);
+            expect(images).toEqual([
+              {
+                tagName: 'image',
+                attributes: { size: '3', type: 'poster' },
+                children: [url],
+              },
+            ]);
+            expect(xml).toContain(`<icon src="${url}"/>`);
+            expect(xml).toContain('</image></programme>');
+          } else {
+            expect(icons).toEqual([]);
+            expect(images).toEqual([]);
+          }
+        },
+      );
+    });
+
+    test.each([true, false])(
+      'omits absent optional metadata (artwork: %s)',
+      (hasArtwork) => {
+        const { children } = serializeProgram(
+          makeProgram({
+            title: 'Minimal Movie',
+            type: 'movie',
+            sourceType: 'local',
+            duration: 0,
+            artwork: hasArtwork ? [makeArtwork('poster')] : [],
+          }),
+        );
+        expect(children.map((node) => node.tagName)).toEqual([
+          'title',
+          ...(hasArtwork ? ['icon', 'image'] : []),
+        ]);
+      },
+    );
+  });
+
   describe('television', () => {
     const channels: MaterializedChannelPrograms[] = [
       {
