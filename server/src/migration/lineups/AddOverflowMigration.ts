@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { JsonObject } from '../../types/schemas.ts';
+import type { JsonObject } from '../../types/schemas.ts';
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 
 @injectable()
