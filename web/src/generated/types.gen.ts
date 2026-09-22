@@ -3010,6 +3010,7 @@ export type GetChannelsResponses = {
             }>;
         }>;
         subtitlesEnabled: boolean;
+        useEtvNext: boolean;
         subtitlePreferences?: Array<{
             langugeCode: string;
             priority: number;
@@ -3077,6 +3078,7 @@ export type CreateChannelV2Data = {
             streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
             transcodeConfigId: string;
             subtitlesEnabled: boolean;
+            useEtvNext?: boolean;
             subtitlePreferences?: Array<{
                 langugeCode: string;
                 priority: number;
@@ -3216,6 +3218,7 @@ export type CreateChannelV2Responses = {
             }>;
         }>;
         subtitlesEnabled: boolean;
+        useEtvNext: boolean;
         subtitlePreferences?: Array<{
             langugeCode: string;
             priority: number;
@@ -3376,6 +3379,7 @@ export type GetChannelsByNumberV2Responses = {
             }>;
         }>;
         subtitlesEnabled: boolean;
+        useEtvNext: boolean;
         subtitlePreferences?: Array<{
             langugeCode: string;
             priority: number;
@@ -3441,6 +3445,7 @@ export type PutApiChannelsByIdData = {
         streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
         transcodeConfigId: string;
         subtitlesEnabled: boolean;
+        useEtvNext?: boolean;
         subtitlePreferences?: Array<{
             langugeCode: string;
             priority: number;
@@ -3582,6 +3587,7 @@ export type PutApiChannelsByIdResponses = {
             }>;
         }>;
         subtitlesEnabled: boolean;
+        useEtvNext: boolean;
         subtitlePreferences?: Array<{
             langugeCode: string;
             priority: number;
@@ -6593,6 +6599,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         }>;
                     }>;
                     subtitlesEnabled: boolean;
+                    useEtvNext: boolean;
                     subtitlePreferences?: Array<{
                         langugeCode: string;
                         priority: number;
@@ -6958,6 +6965,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         }>;
                     }>;
                     subtitlesEnabled: boolean;
+                    useEtvNext: boolean;
                     subtitlePreferences?: Array<{
                         langugeCode: string;
                         priority: number;
@@ -13049,6 +13057,7 @@ export type PostApiTroubleshootResponses = {
                 }>;
             }>;
             subtitlesEnabled: boolean;
+            useEtvNext: boolean;
             subtitlePreferences?: Array<{
                 langugeCode: string;
                 priority: number;
