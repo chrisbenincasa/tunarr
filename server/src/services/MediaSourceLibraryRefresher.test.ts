@@ -38,8 +38,10 @@ function storedLibrary(
 function makeMediaSource(
   type: 'plex' | 'jellyfin' | 'emby',
   libraries: MediaSourceLibrary[],
+  overrides: Partial<MediaSourceWithRelations> = {},
 ): MediaSourceWithRelations {
   return {
+    consecutiveAuthFailures: 0,
     uuid: mediaSourceId,
     createdAt: null,
     updatedAt: null,
@@ -57,6 +59,7 @@ function makeMediaSource(
     libraries,
     paths: [],
     replacePaths: [],
+    ...overrides,
   };
 }
 
@@ -115,6 +118,24 @@ function fakeJellyfinClient(
   return {
     getUserViewsRaw: () => Promise.resolve(result),
   } as unknown as JellyfinApiClient;
+}
+
+function authFailure<T>() {
+  return Result.failure<T, QueryError>(
+    QueryError.create('auth_error', 'Request failed with status code 401'),
+  );
+}
+
+function failingPlexClient(error: QueryError) {
+  return {
+    getLibrariesRaw: () =>
+      Promise.resolve(
+        Result.failure<
+          { MediaContainer: { size: number; Directory: PlexLibrarySection[] } },
+          QueryError
+        >(error),
+      ),
+  } as unknown as PlexApiClient;
 }
 
 function fakeEmbyClient(items: EmbyItem[]) {
@@ -210,6 +231,121 @@ describe('MediaSourceLibraryRefresher', () => {
     const [update] = capture(db.updateLibraries).last();
     expect(update.updatedLibraries).toEqual([
       { uuid: library.uuid, name: 'New Name', mediaType: 'movies' },
+    ]);
+  });
+
+  test('Plex: leaves libraries alone until auth failures reach the threshold', async () => {
+    const { db, factory, refresher } = setup();
+    when(db.recordAuthFailure(anything())).thenResolve(2);
+    when(factory.getPlexApiClientForMediaSource(anything())).thenResolve(
+      failingPlexClient(
+        QueryError.create('auth_error', 'Request failed with status code 401'),
+      ),
+    );
+
+    await refresher.refreshMediaSource(
+      makeMediaSource('plex', [storedLibrary()]),
+    );
+
+    verify(db.recordAuthFailure(mediaSourceId)).once();
+    verify(db.updateLibraries(anything())).never();
+  });
+
+  test('Plex: marks every library unavailable once auth failures reach the threshold', async () => {
+    const { db, factory, refresher } = setup();
+    const movies = storedLibrary({ externalKey: '1' });
+    const shows = storedLibrary({ externalKey: '2', name: 'Shows' });
+    when(db.recordAuthFailure(anything())).thenResolve(3);
+    when(factory.getPlexApiClientForMediaSource(anything())).thenResolve(
+      failingPlexClient(
+        QueryError.create('auth_error', 'Request failed with status code 401'),
+      ),
+    );
+
+    await refresher.refreshMediaSource(
+      makeMediaSource('plex', [movies, shows]),
+    );
+
+    const [update] = capture(db.updateLibraries).last();
+    expect(update.unavailableLibraries).toEqual([
+      { uuid: movies.uuid, unavailableSince: expect.any(Date) },
+      { uuid: shows.uuid, unavailableSince: expect.any(Date) },
+    ]);
+    // An auth failure says nothing about which rows are redundant.
+    expect(update.duplicateLibraries).toEqual([]);
+    expect(update.addedLibraries).toEqual([]);
+  });
+
+  test('Plex: skips libraries already marked unavailable by a previous auth failure', async () => {
+    const { db, factory, refresher } = setup();
+    const library = storedLibrary({
+      unavailableSince: new Date('2026-09-01T00:00:00Z'),
+    });
+    when(db.recordAuthFailure(anything())).thenResolve(9);
+    when(factory.getPlexApiClientForMediaSource(anything())).thenResolve(
+      failingPlexClient(
+        QueryError.create('auth_error', 'Request failed with status code 401'),
+      ),
+    );
+
+    await refresher.refreshMediaSource(makeMediaSource('plex', [library]));
+
+    verify(db.updateLibraries(anything())).never();
+  });
+
+  test('Jellyfin: an unreachable server is not counted as an auth failure', async () => {
+    const { db, factory, refresher } = setup();
+    when(factory.getJellyfinApiClientForMediaSource(anything())).thenResolve(
+      fakeJellyfinClient(
+        Result.failure<JellyfinVirtualFolder[], QueryError>(
+          QueryError.genericQueryError('Connection refused'),
+        ),
+      ),
+    );
+
+    await refresher.refreshMediaSource(
+      makeMediaSource('jellyfin', [storedLibrary()]),
+    );
+
+    verify(db.recordAuthFailure(anything())).never();
+    verify(db.updateLibraries(anything())).never();
+  });
+
+  test('Jellyfin: a successful fetch clears a pending auth failure count', async () => {
+    const { db, factory, refresher } = setup();
+    when(factory.getJellyfinApiClientForMediaSource(anything())).thenResolve(
+      fakeJellyfinClient(Result.success([jellyfinFolder()])),
+    );
+
+    await refresher.refreshMediaSource(
+      makeMediaSource('jellyfin', [storedLibrary()], {
+        consecutiveAuthFailures: 2,
+      }),
+    );
+
+    verify(db.clearAuthFailures(mediaSourceId)).once();
+  });
+
+  test('refreshAll keeps going when one media source throws', async () => {
+    const { db, factory, refresher } = setup();
+    const good = makeMediaSource('jellyfin', [storedLibrary()]);
+    const bad = {
+      ...makeMediaSource('plex', [storedLibrary()]),
+      uuid: tag<MediaSourceId>(v4()),
+    };
+    when(db.getAll()).thenResolve([bad, good]);
+    when(factory.getPlexApiClientForMediaSource(anything())).thenReject(
+      new Error('boom'),
+    );
+    when(factory.getJellyfinApiClientForMediaSource(anything())).thenResolve(
+      fakeJellyfinClient(Result.success([jellyfinFolder({ Name: 'Renamed' })])),
+    );
+
+    await refresher.refreshAll();
+
+    const [update] = capture(db.updateLibraries).last();
+    expect(update.updatedLibraries).toEqual([
+      { uuid: good.libraries[0].uuid, name: 'Renamed', mediaType: 'movies' },
     ]);
   });
 

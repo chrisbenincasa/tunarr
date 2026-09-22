@@ -5,6 +5,7 @@ import type { MediaSourceId } from '../db/schema/base.ts';
 import type { MediaSourceLibrary } from '../db/schema/MediaSourceLibrary.ts';
 import {
   type LibraryReconcileResult,
+  markLibrariesUnavailable,
   reconcileLibraries,
   type ReportedLibrary,
 } from './reconcileLibraries.ts';
@@ -186,5 +187,48 @@ describe('reconcileLibraries', () => {
     ]);
     expect(result.addedLibraries).toEqual([]);
     expect(result.unavailableLibraries).toEqual([]);
+  });
+});
+
+describe('markLibrariesUnavailable', () => {
+  test('marks every library that is not already unavailable', () => {
+    const movies = storedLibrary({ externalKey: '1' });
+    const shows = storedLibrary({ externalKey: '2', name: 'Shows' });
+
+    const update = markLibrariesUnavailable(
+      { uuid: mediaSourceId, libraries: [movies, shows] },
+      now,
+    );
+
+    expect(update.unavailableLibraries).toEqual([
+      { uuid: movies.uuid, unavailableSince: now },
+      { uuid: shows.uuid, unavailableSince: now },
+    ]);
+  });
+
+  test('leaves an already unavailable library at its original timestamp', () => {
+    const earlier = new Date('2026-09-01T00:00:00Z');
+    const library = storedLibrary({ unavailableSince: earlier });
+
+    const update = markLibrariesUnavailable(
+      { uuid: mediaSourceId, libraries: [library] },
+      now,
+    );
+
+    expect(update.unavailableLibraries).toEqual([]);
+  });
+
+  test('never deletes duplicates, because an auth failure says nothing about them', () => {
+    const keep = storedLibrary({ externalKey: '1', enabled: true });
+    const duplicate = storedLibrary({ externalKey: '1', enabled: false });
+
+    const update = markLibrariesUnavailable(
+      { uuid: mediaSourceId, libraries: [keep, duplicate] },
+      now,
+    );
+
+    expect(update.duplicateLibraries).toEqual([]);
+    expect(update.addedLibraries).toEqual([]);
+    expect(update.availableLibraries).toEqual([]);
   });
 });

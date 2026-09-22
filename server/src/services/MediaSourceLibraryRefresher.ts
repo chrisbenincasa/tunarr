@@ -7,15 +7,22 @@ import { MediaSourceDB } from '../db/mediaSourceDB.js';
 import type { MediaSourceId } from '../db/schema/base.js';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import type { MediaLibraryType } from '../db/schema/MediaSource.ts';
+import type { QueryError } from '../external/BaseApiClient.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 
 import type { Maybe } from '../types/util.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import {
+  markLibrariesUnavailable,
   reconcileLibraries,
   type ReportedLibrary,
 } from './reconcileLibraries.ts';
+
+// Consecutive rejected refreshes before a source's libraries are marked
+// unavailable. A revoked token keeps failing; a server rejecting tokens while
+// it restarts recovers well inside this.
+const AuthFailuresBeforeUnavailable = 3;
 
 @injectable()
 export class MediaSourceLibraryRefresher {
@@ -31,7 +38,16 @@ export class MediaSourceLibraryRefresher {
     const mediaSources = await this.mediaSourceDB.getAll();
 
     for (const mediaSource of mediaSources) {
-      await this.refreshMediaSource(mediaSource);
+      // One unreachable source must not strand the sources behind it.
+      try {
+        await this.refreshMediaSource(mediaSource);
+      } catch (error) {
+        this.logger.error(
+          error,
+          'Unhandled error refreshing media source %s; continuing with the remaining sources',
+          mediaSource.uuid,
+        );
+      }
     }
 
     return;
@@ -78,9 +94,10 @@ export class MediaSourceLibraryRefresher {
     const plexLibrariesResult = await client.getLibrariesRaw();
 
     if (plexLibrariesResult.isFailure()) {
-      this.logger.error(
+      await this.handleFetchFailure(
+        mediaSource,
+        'Plex',
         plexLibrariesResult.error,
-        'Failure fetching Plex libraries',
       );
       return;
     }
@@ -105,9 +122,10 @@ export class MediaSourceLibraryRefresher {
     const jellyfinLibrariesResult = await client.getUserViewsRaw();
 
     if (jellyfinLibrariesResult.isFailure()) {
-      this.logger.error(
+      await this.handleFetchFailure(
+        mediaSource,
+        'Jellyfin',
         jellyfinLibrariesResult.error,
-        'Failure fetching Jellyfin libraries',
       );
       return;
     }
@@ -138,9 +156,10 @@ export class MediaSourceLibraryRefresher {
     const embyLibrariesResult = await client.getUserViewsRaw();
 
     if (embyLibrariesResult.isFailure()) {
-      this.logger.error(
+      await this.handleFetchFailure(
+        mediaSource,
+        'Emby',
         embyLibrariesResult.error,
-        'Failure fetching Emby libraries',
       );
       return;
     }
@@ -157,11 +176,72 @@ export class MediaSourceLibraryRefresher {
     await this.reconcile(mediaSource, 'Emby', reported);
   }
 
+  /**
+   * A rejected credential is the one failure that says something about the
+   * libraries themselves. Every other failure (server down, timeout, bad
+   * payload) leaves them alone, because it carries no information about them.
+   */
+  private async handleFetchFailure(
+    mediaSource: MediaSourceWithRelations,
+    backend: string,
+    error: QueryError,
+  ) {
+    if (error.type !== 'auth_error' && error.type !== 'no_access_token') {
+      this.logger.error(error, 'Failure fetching %s libraries', backend);
+      return;
+    }
+
+    const failures = await this.mediaSourceDB.recordAuthFailure(
+      mediaSource.uuid,
+    );
+
+    if (failures < AuthFailuresBeforeUnavailable) {
+      this.logger.warn(
+        error,
+        '%s media source %s rejected our credentials (%d of %d consecutive). Leaving its libraries alone until the count is reached.',
+        backend,
+        mediaSource.uuid,
+        failures,
+        AuthFailuresBeforeUnavailable,
+      );
+      return;
+    }
+
+    const update = markLibrariesUnavailable(mediaSource, new Date());
+
+    if (update.unavailableLibraries.length === 0) {
+      return;
+    }
+
+    this.logger.error(
+      error,
+      '%s media source %s has rejected our credentials %d times running. Marking %d libraries unavailable; they come back on the first successful refresh.',
+      backend,
+      mediaSource.uuid,
+      failures,
+      update.unavailableLibraries.length,
+    );
+
+    await this.logNewlyUnavailable(
+      mediaSource,
+      backend,
+      update.unavailableLibraries,
+      'was not reachable with the stored credentials',
+    );
+
+    this.mediaSourceDB.updateLibraries(update);
+  }
+
   private async reconcile(
     mediaSource: MediaSourceWithRelations,
     backend: string,
     reported: ReportedLibrary[],
   ) {
+    // The fetch succeeded, so whatever credentials we hold currently work.
+    if (mediaSource.consecutiveAuthFailures > 0) {
+      await this.mediaSourceDB.clearAuthFailures(mediaSource.uuid);
+    }
+
     const result = reconcileLibraries(mediaSource, reported, new Date());
 
     if (result.type === 'empty_response') {
@@ -178,29 +258,12 @@ export class MediaSourceLibraryRefresher {
       mediaSource.libraries.map((library) => [library.uuid, library]),
     );
 
-    // Counts are only queried on the transition to unavailable, so a
-    // permanently removed library costs nothing on later runs.
-    if (result.unavailableLibraries.length > 0) {
-      const counts = new Map(
-        (
-          await this.mediaSourceDB.getLibraryReferenceCounts(
-            result.unavailableLibraries.map(({ uuid }) => uuid),
-          )
-        ).map((count) => [count.libraryId, count]),
-      );
-
-      for (const { uuid } of result.unavailableLibraries) {
-        this.logger.warn(
-          "Library '%s' (key '%s') of media source '%s' is missing from the %s response; marking unavailable (%d programs, %d channel schedule entries preserved)",
-          storedById.get(uuid)?.name,
-          storedById.get(uuid)?.externalKey,
-          mediaSource.uuid,
-          backend,
-          counts.get(uuid)?.programCount ?? 0,
-          counts.get(uuid)?.channelProgramCount ?? 0,
-        );
-      }
-    }
+    await this.logNewlyUnavailable(
+      mediaSource,
+      backend,
+      result.unavailableLibraries,
+      'is missing from the response',
+    );
 
     for (const uuid of result.availableLibraries) {
       this.logger.info(
@@ -229,6 +292,43 @@ export class MediaSourceLibraryRefresher {
     );
 
     this.mediaSourceDB.updateLibraries(result);
+  }
+
+  // Counts are only queried on the transition to unavailable, so a library that
+  // stays gone costs nothing on later runs.
+  private async logNewlyUnavailable(
+    mediaSource: MediaSourceWithRelations,
+    backend: string,
+    unavailable: { uuid: string }[],
+    reason: string,
+  ) {
+    if (unavailable.length === 0) {
+      return;
+    }
+
+    const storedById = new Map(
+      mediaSource.libraries.map((library) => [library.uuid, library]),
+    );
+    const counts = new Map(
+      (
+        await this.mediaSourceDB.getLibraryReferenceCounts(
+          unavailable.map(({ uuid }) => uuid),
+        )
+      ).map((count) => [count.libraryId, count]),
+    );
+
+    for (const { uuid } of unavailable) {
+      this.logger.warn(
+        "Library '%s' (key '%s') of %s media source '%s' %s; marking unavailable (%d programs, %d channel schedule entries preserved)",
+        storedById.get(uuid)?.name,
+        storedById.get(uuid)?.externalKey,
+        backend,
+        mediaSource.uuid,
+        reason,
+        counts.get(uuid)?.programCount ?? 0,
+        counts.get(uuid)?.channelProgramCount ?? 0,
+      );
+    }
   }
 
   private plexLibraryTypeToTunarrType(

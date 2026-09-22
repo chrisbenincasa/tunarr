@@ -664,6 +664,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 mediaType: null,
                 replacePaths: [],
                 sendPlayStatusUpdates: false,
+                consecutiveAuthFailures: 0,
               },
             });
 
@@ -685,6 +686,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 mediaType: null,
                 replacePaths: [],
                 sendPlayStatusUpdates: false,
+                consecutiveAuthFailures: 0,
               },
             });
 
@@ -706,6 +708,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 mediaType: null,
                 replacePaths: [],
                 sendPlayStatusUpdates: false,
+                consecutiveAuthFailures: 0,
               },
             });
 

@@ -35,7 +35,7 @@ import {
 import { useMediaSourceLibraries } from '../../../hooks/media-sources/useMediaSourceLibraries.ts';
 import { useDayjs } from '../../../hooks/useDayjs.ts';
 import type { Nullable } from '../../../types/util.ts';
-import { UnavailableLibraryChip } from '../../UnavailableLibraryChip.tsx';
+import { UnavailableLibraryChip } from '../../UnavailableLibraryIndicator.tsx';
 
 type Props = {
   mediaSource: Nullable<MediaSourceSettings>;
@@ -106,7 +106,7 @@ export const EditMediaSourceLibrariesDialog = ({
           }
         >
           {libraries?.map((library) => (
-            <ListItem key={library.id}>
+            <ListItem key={library.id} sx={{ gap: 1 }}>
               <ListItemIcon>
                 {getIconForLibraryType(library.mediaType)}
               </ListItemIcon>

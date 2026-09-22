@@ -8,7 +8,7 @@ import type {
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { and, count, eq, inArray } from 'drizzle-orm';
+import { and, count, eq, inArray, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import {
@@ -460,6 +460,26 @@ export class MediaSourceDB {
           .run();
       }
     });
+  }
+
+  /** Bumps the source's consecutive auth failures and returns the new total. */
+  async recordAuthFailure(id: MediaSourceId): Promise<number> {
+    const [updated] = await this.drizzleDB
+      .update(MediaSource)
+      .set({
+        consecutiveAuthFailures: sql`${MediaSource.consecutiveAuthFailures} + 1`,
+      })
+      .where(eq(MediaSource.uuid, id))
+      .returning({ count: MediaSource.consecutiveAuthFailures });
+
+    return updated?.count ?? 0;
+  }
+
+  async clearAuthFailures(id: MediaSourceId) {
+    await this.drizzleDB
+      .update(MediaSource)
+      .set({ consecutiveAuthFailures: 0 })
+      .where(eq(MediaSource.uuid, id));
   }
 
   async getLibraryReferenceCounts(libraryIds: string[]) {

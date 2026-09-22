@@ -103,6 +103,28 @@ export function reconcileLibraries(
   return { type: 'reconciled', ...update };
 }
 
+/**
+ * Marks every stored library of a source unavailable.
+ *
+ * Used when the server rejects our credentials, so it reports nothing rather
+ * than a subset. Duplicates are left alone: an auth failure says nothing about
+ * which rows are redundant, and this path must not delete.
+ */
+export function markLibrariesUnavailable(
+  mediaSource: StoredMediaSource,
+  now: Date,
+): MediaSourceLibrariesUpdate {
+  return {
+    addedLibraries: [],
+    updatedLibraries: [],
+    unavailableLibraries: mediaSource.libraries
+      .filter((library) => library.unavailableSince === null)
+      .map((library) => ({ uuid: library.uuid, unavailableSince: now })),
+    availableLibraries: [],
+    duplicateLibraries: [],
+  };
+}
+
 // Keeps one row per external key, preferring an enabled row so the user's
 // choice survives the merge.
 function partitionDuplicates(libraries: MediaSourceLibrary[]) {
