@@ -15,10 +15,17 @@ const EtvNextRoutableModes = new Set<ChannelStreamMode>([
   'mpegts',
 ]);
 
-/** Whether a request for this mode should be served by the worker. */
+/**
+ * Whether a request for this mode should be served by the worker.
+ *
+ * The global flag enrolls every channel. A channel's own opt-in covers the
+ * period before the flag is flipped, so the two are an either-or rather than
+ * a gate and a switch. Neither overrides the routable-mode list.
+ */
 export function routesToEtvNext(
   mode: ChannelStreamMode,
   etvNextEnabled: boolean,
+  channelOptedIn: boolean,
 ): boolean {
-  return etvNextEnabled && EtvNextRoutableModes.has(mode);
+  return (etvNextEnabled || channelOptedIn) && EtvNextRoutableModes.has(mode);
 }

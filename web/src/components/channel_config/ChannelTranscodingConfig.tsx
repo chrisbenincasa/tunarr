@@ -1,3 +1,4 @@
+import { getApiSystemFeatureFlagsOptions } from '@/generated/@tanstack/react-query.gen';
 import { useSettings } from '@/store/settings/selectors.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
@@ -17,6 +18,7 @@ import {
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
+import { useQuery } from '@tanstack/react-query';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { ChannelStreamMode, Watermark } from '@tunarr/types';
 import { find, map, range, round } from 'lodash-es';
@@ -70,6 +72,17 @@ const ChannelStreamModeOptions: {
   },
 ] as const;
 
+/**
+ * Stream modes the ErsatzTV next worker can serve. Mirrors
+ * `EtvNextRoutableModes` in `server/src/stream/etv/EtvNextRouting.ts`; ticking
+ * the box on any other mode would do nothing.
+ */
+const EtvNextRoutableModes: ChannelStreamMode[] = [
+  'hls',
+  'hls_direct_v2',
+  'mpegts',
+];
+
 export default function ChannelTranscodingConfig() {
   const { t } = useLingui();
   const { backendUri } = useSettings();
@@ -77,6 +90,12 @@ export default function ChannelTranscodingConfig() {
   const transcodeConfigs = useTranscodeConfigs();
 
   const { control, watch, setValue, getValues } = useChannelFormContext();
+
+  // The global flag enrolls every channel, which makes the per-channel box
+  // meaningless, so it only appears while the flag is off.
+  const { data: featureFlags } = useQuery(getApiSystemFeatureFlagsOptions());
+  const etvNextEnabledGlobally =
+    featureFlags?.flags.ersatzTvNextEnabled === true;
 
   const [
     watermark,
@@ -199,6 +218,37 @@ export default function ChannelTranscodingConfig() {
               </FormHelperText>
             </FormControl>
           </Stack>
+          {!etvNextEnabledGlobally && (
+            <FormControl margin="normal">
+              <FormControlLabel
+                label={t`Use ErsatzTV next Backend (Experimental)`}
+                sx={{ width: 'auto' }}
+                control={
+                  <CheckboxFormController
+                    control={control}
+                    name="useEtvNext"
+                    disabled={!EtvNextRoutableModes.includes(streamMode)}
+                  />
+                }
+              />
+              <FormHelperText>
+                {EtvNextRoutableModes.includes(streamMode) ? (
+                  <Trans>
+                    Stream this channel through the experimental ErsatzTV next
+                    backend instead of Tunarr's own pipeline. Use this to move
+                    channels over one at a time. Turning on the global ErsatzTV
+                    next feature flag enrolls every channel and replaces this
+                    setting.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    The ErsatzTV next backend does not serve this stream mode.
+                    It supports HLS, HLS Direct v2 and MPEG-TS.
+                  </Trans>
+                )}
+              </FormHelperText>
+            </FormControl>
+          )}
         </Box>
         <Stack gap={1}>
           <Stack>

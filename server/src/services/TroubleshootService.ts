@@ -295,6 +295,7 @@ export class TroubleshootService {
       routesToEtvNext(
         channel.streamMode,
         this.featureFlagService.get('ersatzTvNextEnabled'),
+        channel.useEtvNext ?? false,
       )
     ) {
       return await this.troubleshootEtvNext({

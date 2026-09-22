@@ -163,6 +163,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             sessionType: routesToEtvNext(
               mode,
               req.serverCtx.featureFlagService.get('ersatzTvNextEnabled'),
+              channel.useEtvNext ?? false,
             )
               ? 'etv_next_concat'
               : `${mode}_concat`,
@@ -448,16 +449,25 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         mode = channel.streamMode;
       }
 
-      // The concat child asks for etv_next by name; every other request picks
-      // its backend from the flag.
-      if (
-        mode !== 'etv_next' &&
-        routesToEtvNext(
-          mode,
-          req.serverCtx.featureFlagService.get('ersatzTvNextEnabled'),
-        )
-      ) {
-        mode = 'etv_next';
+      // The concat child asks for etv_next by name. Every other request picks
+      // its backend from the flag and the channel's own opt-in, and the
+      // opt-in is on the channel row, so a caller-supplied mode still has to
+      // load it.
+      if (mode !== 'etv_next') {
+        channel ??= await req.serverCtx.channelDB.getChannel(req.params.id);
+        if (isNil(channel)) {
+          return res.status(404).send('Channel not found.');
+        }
+
+        if (
+          routesToEtvNext(
+            mode,
+            req.serverCtx.featureFlagService.get('ersatzTvNextEnabled'),
+            channel.useEtvNext ?? false,
+          )
+        ) {
+          mode = 'etv_next';
+        }
       }
 
       let sessionResult: Result<FastifyReply>;

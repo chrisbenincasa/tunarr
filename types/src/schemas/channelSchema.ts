@@ -208,6 +208,17 @@ export const ChannelSchema = z.object({
   transcodeConfigId: z.uuid(),
   sessions: z.array(ChannelSessionSchema).optional(),
   subtitlesEnabled: z.boolean(),
+
+  /**
+   * Routes this channel to the ErsatzTV next backend while the global feature
+   * flag is off. The flag enrolls every channel on its own, so this only
+   * decides anything when the flag is off. That is what lets a user move
+   * channels over one at a time before flipping the flag for the rest.
+   *
+   * Defaulted rather than required so a client written before the field
+   * existed can still save a channel.
+   */
+  useEtvNext: z.boolean().default(false),
   subtitlePreferences: z.array(SubtitlePreference).nonempty().optional(),
 });
 

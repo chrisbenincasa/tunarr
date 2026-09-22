@@ -10,9 +10,15 @@ This page covers how your FFmpeg and transcode settings reach the worker. For wh
 
 ## Turning it on
 
-Set `TUNARR_ERSATZTV_NEXT_ENABLED=true` (see [Environment Variables](../../getting-started/run.md#transcoding)). Every channel set to **HLS**, **HLS Direct v2** or **MPEG-TS** is then served by the worker. HLS alt and HLS Direct keep using Tunarr's pipeline.
+There are two ways in, meant to be used in that order.
 
-Nothing about a channel changes. The stream mode you picked still means what it did, and you do not assign the backend per channel.
+**One channel at a time.** Open a channel, go to the **Streaming** tab, and tick **Use ErsatzTV next Backend**. Only that channel moves to the worker; everything else keeps using Tunarr's pipeline. Use this to try the backend on a channel you do not mind breaking before you commit the rest.
+
+**All channels at once.** Set `TUNARR_ERSATZTV_NEXT_ENABLED=true` (see [Environment Variables](../../getting-started/run.md#transcoding)), or turn on **ErsatzTV next Streaming Backend** under Settings → Features. Every eligible channel is then served by the worker whether or not it was ticked individually, so the per-channel box disappears from the editor while this is on. Switching it back off returns each channel to whatever its own box says.
+
+Either way, only channels set to **HLS**, **HLS Direct v2** or **MPEG-TS** are eligible. The worker only writes HLS, and HLS Direct remuxes without transcoding, which it cannot do, so HLS alt and HLS Direct always stay on Tunarr's pipeline. The per-channel box is disabled on those two modes.
+
+Nothing else about a channel changes. The stream mode you picked still means what it did.
 
 ## How settings are translated
 
