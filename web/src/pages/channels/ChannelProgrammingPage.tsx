@@ -58,8 +58,8 @@ export default function ChannelProgrammingPage() {
               {schedule.type === 'time' ? 'Time ' : ' '}
               Slots
             </RouterLink>{' '}
-            for programming. Any manual changes on this page will likely make this
-            channel stop adhering to that schedule.
+            for programming. Any manual changes on this page will likely make
+            this channel stop adhering to that schedule.
           </Trans>
         </Alert>
       )}

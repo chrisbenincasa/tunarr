@@ -23,11 +23,8 @@ import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
-import type {
-  OtherVideoNfo} from '../../nfo/NfoSchemas.ts';
-import {
-  unwrapOtherVideoNfoContainer,
-} from '../../nfo/NfoSchemas.ts';
+import type { OtherVideoNfo } from '../../nfo/NfoSchemas.ts';
+import { unwrapOtherVideoNfoContainer } from '../../nfo/NfoSchemas.ts';
 import { OtherVideoNfoParser } from '../../nfo/OtherVideoNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { KEYS } from '../../types/inject.ts';
@@ -57,7 +54,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
   private nfoParser = new OtherVideoNfoParser();
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.LocalFolderCanonicalizer)
@@ -325,7 +322,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
     await wait();
 
-    const mediaItem = (await this.getMediaItem(fullFilePath)).getOrThrow();
+    const { mediaItem } = (await this.getMediaItem(fullFilePath)).getOrThrow();
 
     if (isNil(mediaItem.duration)) {
       throw new Error(`Could not derive duration for item: ${fullFilePath}`);

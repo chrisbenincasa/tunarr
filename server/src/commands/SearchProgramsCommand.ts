@@ -1,5 +1,8 @@
 import { seq } from '@tunarr/shared/util';
-import type { ProgramSearchRequest, ProgramSearchResponse } from '@tunarr/types/api';
+import type {
+  ProgramSearchRequest,
+  ProgramSearchResponse,
+} from '@tunarr/types/api';
 import { inject } from 'inversify';
 import { isEmpty } from 'lodash-es';
 import { match } from 'ts-pattern';
@@ -8,11 +11,10 @@ import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import type { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
-import type {
-  ProgramSearchDocument} from '../services/MeilisearchService.ts';
+import type { ProgramSearchDocument } from '../services/MeilisearchService.ts';
 import {
   decodeCaseSensitiveId,
-  MeilisearchService
+  MeilisearchService,
 } from '../services/MeilisearchService.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Path } from '../types/path.ts';

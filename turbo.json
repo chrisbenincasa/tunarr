@@ -21,9 +21,11 @@
       "interruptible": true
     },
     "test": {
+      "dependsOn": ["^build"],
       "cache": false
     },
     "test:watch": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     }

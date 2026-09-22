@@ -105,7 +105,9 @@ export const ChannelOptionsMenu = ({
             <ListItemIcon>
               <Edit />
             </ListItemIcon>
-            <ListItemText><Trans>Edit Channel</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Edit Channel</Trans>
+            </ListItemText>
           </MenuItem>
         ) : null}
 
@@ -120,7 +122,9 @@ export const ChannelOptionsMenu = ({
             <ListItemIcon>
               <Edit />
             </ListItemIcon>
-            <ListItemText><Trans>Modify Programming</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Modify Programming</Trans>
+            </ListItemText>
           </MenuItem>
         ) : null}
 
@@ -148,7 +152,9 @@ export const ChannelOptionsMenu = ({
           <ListItemIcon>
             <ContentCopy />
           </ListItemIcon>
-          <ListItemText><Trans>Copy M3U URL</Trans></ListItemText>
+          <ListItemText>
+            <Trans>Copy M3U URL</Trans>
+          </ListItemText>
         </MenuItem>
         <MenuItem
           onClick={(e) => {
@@ -163,7 +169,9 @@ export const ChannelOptionsMenu = ({
           <ListItemIcon>
             <ContentCopy />
           </ListItemIcon>
-          <ListItemText><Trans>Copy Channel ID</Trans></ListItemText>
+          <ListItemText>
+            <Trans>Copy Channel ID</Trans>
+          </ListItemText>
         </MenuItem>
 
         {!hideItems?.includes('watch') ? (
@@ -177,7 +185,9 @@ export const ChannelOptionsMenu = ({
             <ListItemIcon>
               <Tv />
             </ListItemIcon>
-            <ListItemText><Trans>Watch Channel</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Watch Channel</Trans>
+            </ListItemText>
           </MenuItem>
         ) : null}
         <MenuItem
@@ -209,7 +219,9 @@ export const ChannelOptionsMenu = ({
             <ListItemIcon>
               <CopyAll />{' '}
             </ListItemIcon>
-            <ListItemText><Trans>Duplicate Channel</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Duplicate Channel</Trans>
+            </ListItemText>
           </MenuItem>
         )}
         {!hideItems?.includes('delete') && (
@@ -222,7 +234,9 @@ export const ChannelOptionsMenu = ({
             <ListItemIcon>
               <Delete />
             </ListItemIcon>
-            <ListItemText><Trans>Delete Channel</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Delete Channel</Trans>
+            </ListItemText>
           </MenuItem>
         )}
       </Menu>

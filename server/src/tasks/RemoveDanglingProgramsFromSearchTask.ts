@@ -17,7 +17,7 @@ export class RemoveDanglingProgramsFromSearchTask extends SimpleTask {
   static ID = ReconcileProgramDurationsTask.name;
   public ID = ReconcileProgramDurationsTask.name;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,

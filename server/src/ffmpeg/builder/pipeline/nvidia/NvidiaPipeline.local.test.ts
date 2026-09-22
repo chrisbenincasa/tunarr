@@ -25,7 +25,6 @@ import { FrameState } from '../../state/FrameState.ts';
 import { FrameSize } from '../../types.ts';
 import { NvidiaPipelineBuilder } from './NvidiaPipelineBuilder.ts';
 
-
 describe.skipIf(!binaries || !nvidiaCaps)(
   'NvidiaPipelineBuilder integration',
   () => {
@@ -71,158 +70,155 @@ describe.skipIf(!binaries || !nvidiaCaps)(
     }
 
     // NvidiaPipelineBuilder arg order: hardwareCaps, binaryCaps, video, audio, concat, watermark, subtitle
-    nvidiaTest('basic h264 nvidia transcode', async ({
-      binaryCapabilities,
-      ffmpegVersion,
-      resolvedNvidia,
-    }) => {
-      const video = makeVideoInput(
-        Fixtures.video720p,
-        FrameSize.withDimensions(1280, 720),
-      );
-      const audio = makeAudioInput(Fixtures.video720p);
+    nvidiaTest(
+      'basic h264 nvidia transcode',
+      async ({ binaryCapabilities, ffmpegVersion, resolvedNvidia }) => {
+        const video = makeVideoInput(
+          Fixtures.video720p,
+          FrameSize.withDimensions(1280, 720),
+        );
+        const audio = makeAudioInput(Fixtures.video720p);
 
-      const builder = new NvidiaPipelineBuilder(
-        resolvedNvidia,
-        binaryCapabilities,
-        video,
-        audio,
-        null,
-        null,
-        null,
-      );
+        const builder = new NvidiaPipelineBuilder(
+          resolvedNvidia,
+          binaryCapabilities,
+          video,
+          audio,
+          null,
+          null,
+          null,
+        );
 
-      const frameState = new FrameState({
-        isAnamorphic: false,
-        scaledSize: FrameSize.withDimensions(1280, 720),
-        paddedSize: FrameSize.withDimensions(1280, 720),
-      });
+        const frameState = new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.withDimensions(1280, 720),
+          paddedSize: FrameSize.withDimensions(1280, 720),
+        });
 
-      const outputPath = path.join(workdir, 'nvidia_transcode.ts');
-      const pipeline = builder.build(
-        FfmpegState.create({
-          version: ffmpegVersion,
-          outputLocation: FileOutputLocation(outputPath, true),
-        }),
-        frameState,
-        DefaultPipelineOptions,
-      );
+        const outputPath = path.join(workdir, 'nvidia_transcode.ts');
+        const pipeline = builder.build(
+          FfmpegState.create({
+            version: ffmpegVersion,
+            outputLocation: FileOutputLocation(outputPath, true),
+          }),
+          frameState,
+          DefaultPipelineOptions,
+        );
 
-      const { exitCode, stderr } = runFfmpegWithPipeline(
-        binaries!.ffmpeg,
-        pipeline.getCommandArgs(),
-      );
+        const { exitCode, stderr } = runFfmpegWithPipeline(
+          binaries!.ffmpeg,
+          pipeline.getCommandArgs(),
+        );
 
-      expect(
-        exitCode,
-        `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
-      ).toBe(0);
+        expect(
+          exitCode,
+          `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
+        ).toBe(0);
 
-      const probe = probeFile(binaries!.ffprobe, outputPath);
-      expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
-    });
+        const probe = probeFile(binaries!.ffprobe, outputPath);
+        expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+      },
+    );
 
-    nvidiaTest('scale from 1080p to 720p via nvidia', async ({
-      binaryCapabilities,
-      ffmpegVersion,
-      resolvedNvidia,
-    }) => {
-      const video = makeVideoInput(
-        Fixtures.video1080p,
-        FrameSize.withDimensions(1920, 1080),
-      );
-      const audio = makeAudioInput(Fixtures.video1080p);
+    nvidiaTest(
+      'scale from 1080p to 720p via nvidia',
+      async ({ binaryCapabilities, ffmpegVersion, resolvedNvidia }) => {
+        const video = makeVideoInput(
+          Fixtures.video1080p,
+          FrameSize.withDimensions(1920, 1080),
+        );
+        const audio = makeAudioInput(Fixtures.video1080p);
 
-      const builder = new NvidiaPipelineBuilder(
-        resolvedNvidia,
-        binaryCapabilities,
-        video,
-        audio,
-        null,
-        null,
-        null,
-      );
+        const builder = new NvidiaPipelineBuilder(
+          resolvedNvidia,
+          binaryCapabilities,
+          video,
+          audio,
+          null,
+          null,
+          null,
+        );
 
-      const frameState = new FrameState({
-        isAnamorphic: false,
-        scaledSize: FrameSize.withDimensions(1280, 720),
-        paddedSize: FrameSize.withDimensions(1280, 720),
-      });
+        const frameState = new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.withDimensions(1280, 720),
+          paddedSize: FrameSize.withDimensions(1280, 720),
+        });
 
-      const outputPath = path.join(workdir, 'nvidia_scale.ts');
-      const pipeline = builder.build(
-        FfmpegState.create({
-          version: ffmpegVersion,
-          outputLocation: FileOutputLocation(outputPath, true),
-        }),
-        frameState,
-        DefaultPipelineOptions,
-      );
+        const outputPath = path.join(workdir, 'nvidia_scale.ts');
+        const pipeline = builder.build(
+          FfmpegState.create({
+            version: ffmpegVersion,
+            outputLocation: FileOutputLocation(outputPath, true),
+          }),
+          frameState,
+          DefaultPipelineOptions,
+        );
 
-      const { exitCode, stderr } = runFfmpegWithPipeline(
-        binaries!.ffmpeg,
-        pipeline.getCommandArgs(),
-      );
+        const { exitCode, stderr } = runFfmpegWithPipeline(
+          binaries!.ffmpeg,
+          pipeline.getCommandArgs(),
+        );
 
-      expect(
-        exitCode,
-        `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
-      ).toBe(0);
+        expect(
+          exitCode,
+          `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
+        ).toBe(0);
 
-      const probe = probeFile(binaries!.ffprobe, outputPath);
-      expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
-    });
+        const probe = probeFile(binaries!.ffprobe, outputPath);
+        expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+      },
+    );
 
-    nvidiaTest('copy mode (nvidia pipeline, no hw transcode needed)', async ({
-      binaryCapabilities,
-      ffmpegVersion,
-      resolvedNvidia,
-    }) => {
-      const video = makeVideoInput(
-        Fixtures.video720p,
-        FrameSize.withDimensions(1280, 720),
-      );
-      const audio = makeAudioInput(Fixtures.video720p);
+    nvidiaTest(
+      'copy mode (nvidia pipeline, no hw transcode needed)',
+      async ({ binaryCapabilities, ffmpegVersion, resolvedNvidia }) => {
+        const video = makeVideoInput(
+          Fixtures.video720p,
+          FrameSize.withDimensions(1280, 720),
+        );
+        const audio = makeAudioInput(Fixtures.video720p);
 
-      const builder = new NvidiaPipelineBuilder(
-        resolvedNvidia,
-        binaryCapabilities,
-        video,
-        audio,
-        null,
-        null,
-        null,
-      );
+        const builder = new NvidiaPipelineBuilder(
+          resolvedNvidia,
+          binaryCapabilities,
+          video,
+          audio,
+          null,
+          null,
+          null,
+        );
 
-      const frameState = new FrameState({
-        isAnamorphic: false,
-        scaledSize: FrameSize.withDimensions(1280, 720),
-        paddedSize: FrameSize.withDimensions(1280, 720),
-        videoFormat: 'copy',
-      });
+        const frameState = new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.withDimensions(1280, 720),
+          paddedSize: FrameSize.withDimensions(1280, 720),
+          videoFormat: 'copy',
+        });
 
-      const outputPath = path.join(workdir, 'nvidia_copy.ts');
-      const pipeline = builder.build(
-        FfmpegState.create({
-          version: ffmpegVersion,
-          outputLocation: FileOutputLocation(outputPath, true),
-        }),
-        frameState,
-        DefaultPipelineOptions,
-      );
+        const outputPath = path.join(workdir, 'nvidia_copy.ts');
+        const pipeline = builder.build(
+          FfmpegState.create({
+            version: ffmpegVersion,
+            outputLocation: FileOutputLocation(outputPath, true),
+          }),
+          frameState,
+          DefaultPipelineOptions,
+        );
 
-      const { exitCode, stderr } = runFfmpegWithPipeline(
-        binaries!.ffmpeg,
-        pipeline.getCommandArgs(),
-      );
+        const { exitCode, stderr } = runFfmpegWithPipeline(
+          binaries!.ffmpeg,
+          pipeline.getCommandArgs(),
+        );
 
-      expect(
-        exitCode,
-        `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
-      ).toBe(0);
+        expect(
+          exitCode,
+          `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
+        ).toBe(0);
 
-      const probe = probeFile(binaries!.ffprobe, outputPath);
-      expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
-    });
+        const probe = probeFile(binaries!.ffprobe, outputPath);
+        expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+      },
+    );
   },
 );

@@ -1,0 +1,4436 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: tunarr\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-04 00:00+0800\n"
+"PO-Revision-Date: 2026-09-04 00:00+0800\n"
+"Last-Translator: \n"
+"Language-Team: Chinese (Simplified)\n"
+"Language: zh-CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: manual\n"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid " Scheduling Strategy"
+msgstr "排期策略"
+
+#: src/components/programming_controls/AddRestrictHoursModal.tsx
+msgid " the following day."
+msgstr "次日。"
+
+#. placeholder {0}: channel.name
+#: src/pages/watch/ChannelWatchPage.tsx
+msgid "\"{0}\" Live"
+msgstr "「{0}」直播中"
+
+#. placeholder {0}: channel.name
+#: src/components/channels/ChannelSessionsDialog.tsx
+msgid "\"{0}\" Sessions"
+msgstr "「{0}」会话"
+
+#: src/components/channel_config/ChannelEpgConfig.tsx
+msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
+msgstr "「隐身」频道不会出现在节目单、模拟 HDHR 设备、m3u 播放列表等位置。该频道仍可直接播放，或作为跳转目标使用。"
+
+#. placeholder {0}: customShow.contentCount
+#: src/components/channel_config/SelectedProgrammingList.tsx
+msgid "{0, plural, one {# item} other {# items}}"
+msgstr "{0, plural, other {# 项}}"
+
+#. placeholder {0}: channel.programCount
+#. placeholder {0}: programList.length
+#. placeholder {0}: value?.programCount ?? 0
+#: src/components/channel_config/ChannelLineupList.tsx
+#: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx
+#: src/pages/channels/ChannelsPage.tsx
+msgid "{0, plural, one {# program} other {# programs}}"
+msgstr "{0, plural, other {# 个节目}}"
+
+#. placeholder {0}: customShow.contentCount
+#: src/components/channel_config/CustomShowProgrammingSelector.tsx
+msgid "{0, plural, one {# Program} other {# Programs}}"
+msgstr "{0, plural, other {# 个节目}}"
+
+#. placeholder {0}: media.childCount ?? 0
+#. placeholder {1}: media.grandchildCount ?? 0
+#: src/components/channel_config/SelectedProgrammingList.tsx
+msgid "{0, plural, one {# season} other {# seasons}}, {1, plural, one {# total episode} other {# total episodes}}"
+msgstr "{0, plural, other {# 季}}，{1, plural, other {共 # 集}}"
+
+#. placeholder {0}: selectedMedia.length
+#: src/components/channel_config/SelectedProgrammingActions.tsx
+msgid "{0, plural, one {# Selected Item} other {# Selected Items}}"
+msgstr "{0, plural, other {# 个已选项}}"
+
+#. placeholder {0}: sessions.length
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/channels/ChannelsPage.tsx
+msgid "{0, plural, one {# session} other {# sessions}}"
+msgstr "{0, plural, other {# 个会话}}"
+
+#. placeholder {0}: mediaSources.length
+#: src/pages/welcome/WelcomePage.tsx
+msgid "{0, plural, one {# source connected.} other {# sources connected.}}"
+msgstr "{0, plural, other {# 个媒体源已连接}}"
+
+#. placeholder {0}: currentBackupSchedule!.increment
+#: src/components/settings/general/BackupForm.tsx
+#: src/components/settings/general/LogRollForm.tsx
+msgid "{0, plural, one {Day} other {Days}}"
+msgstr "{0, plural, other {天}}"
+
+#. placeholder {0}: currentBackupSchedule!.increment
+#: src/components/settings/general/BackupForm.tsx
+#: src/components/settings/general/LogRollForm.tsx
+msgid "{0, plural, one {Hour} other {Hours}}"
+msgstr "{0, plural, other {小时}}"
+
+#. placeholder {0}: paths.length
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+msgid "{0, plural, one {Path} other {Paths}}"
+msgstr "{0, plural, other {条路径}}"
+
+#. placeholder {0}: slot.programCount
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+msgid "{0, plural, one {program} other {programs}}"
+msgstr "{0, plural, other {个节目}}"
+
+#. placeholder {0}: selectedMedia.length
+#: src/components/channel_config/SelectedProgrammingList.tsx
+msgid "{0, plural, one {Selected Item} other {Selected Items}}"
+msgstr "{0, plural, other {个已选项}}"
+
+#. placeholder {0}: prettifySnakeCaseString(programType)
+#: src/components/programs/ProgramDetailsDialog.tsx
+msgid "{0} Info"
+msgstr "{0} 信息"
+
+#. placeholder {0}: warning.programs.length
+#. placeholder {1}: slot.programCount
+#. placeholder {2}: import { betterHumanize } from '@/helpers/dayjs.ts'; import { alternateColors } from '@/helpers/util.ts'; import { plural } from '@lingui/core/macro'; import { Trans } from '@lingui/react/macro'; import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts'; import type { ProgramTooLongWarning, SlotTableWarnings, } from '@/model/CommonSlotModels'; import { removeChannelProgramsById } from '@/store/entityEditor/util.ts'; import { useStoreProgramLookup } from '@/store/selectors.ts'; import { Delete, Error, ExpandMore, WarningAmber } from '@mui/icons-material'; import { Accordion, AccordionDetails, AccordionSummary, Box, Button, IconButton, ListItem, ListItemText, Stack, Typography, } from '@mui/material'; import { seq } from '@tunarr/shared/util'; import type { BaseSlot } from '@tunarr/types/api'; import dayjs from 'dayjs'; import { map, uniqBy, values } from 'lodash-es'; import { averageProgramDurationMs } from '@/helpers/slots.ts'; import type { ListChildComponentProps } from 'react-window'; import { FixedSizeList } from 'react-window'; type Props = { slot: BaseSlot & SlotTableWarnings; slotType: 'time' | 'random'; warning: ProgramTooLongWarning; }; export const SlotProgrammingTooLongWarningDetails = ({ slot, warning, slotType, }: Props) => { const formatter = useProgramTitleFormatter(); const programLookup = useStoreProgramLookup(); const longPrograms = seq.collect( uniqBy(warning.programs, (p) => p.id), ({ id }) => { return programLookup[id]; }, ); const renderLongProgramRow = (props: ListChildComponentProps) => { const program = longPrograms[props.index]; if (!program.id) { return null; } const programId = program.id; return ( <ListItem style={props.style} sx={{ backgroundColor: (theme) => alternateColors(props.index, theme.palette.mode), }} key={programId} component="div" > <ListItemText primary={formatter(program)} /> <IconButton onClick={() => removeChannelProgramsById(programId)} edge="end" aria-label="delete" size="small" > <Delete fontSize="small" /> </IconButton> </ListItem> ); }; const averageLengthMs = averageProgramDurationMs(slot, values(programLookup)); return ( <Accordion defaultExpanded={slot.warnings.length === 1} key={warning.type} elevation={5} > <AccordionSummary expandIcon={<ExpandMore />}> {warning.programs.length === slot.programCount ? ( <Error sx={{ mr: 1, color: (theme) => theme.palette.error.main }} /> ) : ( <WarningAmber sx={{ mr: 1, color: (theme) => theme.palette.warning.main }} /> )} <Typography> <Trans>Programs Too Long</Trans> </Typography> </AccordionSummary> <AccordionDetails> <Stack> <Stack direction="row"> <Button onClick={() => removeChannelProgramsById( new Set(map(warning.programs, (p) => p.id)), ) } > <Trans>Remove All</Trans> </Button> </Stack> <div> <p> <Trans> {warning.programs.length} of {slot.programCount}{' '} {plural(slot.programCount, { one: 'program', other: 'programs', })}{' '} exceed the length of this slot ( {betterHumanize(dayjs.duration(slot.durationMs ?? 0))}). </Trans> {averageLengthMs !== undefined && ( <> {' '} <Trans> Average program length:{' '} {betterHumanize(dayjs.duration(averageLengthMs))} </Trans> </> )} <br /> <Trans> This could cause the following slot's programs to go unscheduled. Possible solutions include: </Trans> </p> <ul> {} {slotType === 'time' && ( <li> <Trans>Increasing "Max Overflow" for the schedule.</Trans> </li> )} <li> <Trans>Increasing the slot duration.</Trans> </li> <li> <Trans>Removing overrun programs from the channel.</Trans> </li> </ul> </div> <Box sx={{ width: '100%', height: 400 }}> <FixedSizeList height={400} width={'100%'} itemSize={46} itemCount={longPrograms.length} overscanCount={5} > {renderLongProgramRow} </FixedSizeList> </Box> </Stack> </AccordionDetails> </Accordion> ); }; 
+#. placeholder {3}: betterHumanize(dayjs.duration(slot.durationMs ?? 0))
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+msgid "{0} of {1} {2} exceed the length of this slot ({3})."
+msgstr "{0} 个（共 {1} 个）{2} 超出了此时段的长度（{3}）。"
+
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+#~ msgid "{0} of {1} {2} exceed the length of this slot ({3}). Average program length: {4}"
+#~ msgstr "{0} of {1} {2} exceed the length of this slot ({3}). Average program length: {4}"
+
+#. placeholder {0}: program.title
+#: src/components/programs/MediaDetailCard.tsx
+msgid "{0} Poster"
+msgstr "{0} 海报"
+
+#: src/components/programming_controls/AddRerunBlockModal.tsx
+msgid "{block} Hours"
+msgstr "{block} 小时"
+
+#: src/components/library/extractSubtitle.tsx
+#: src/components/programs/ProgramInfoBar.tsx
+msgid "{count, plural, one {# album} other {# albums}}"
+msgstr "{count, plural, other {# 张专辑}}"
+
+#: src/components/library/extractSubtitle.tsx
+#: src/components/programs/ProgramInfoBar.tsx
+msgid "{count, plural, one {# episode} other {# episodes}}"
+msgstr "{count, plural, other {# 集}}"
+
+#: src/components/library/extractSubtitle.tsx
+#: src/components/programs/ProgramInfoBar.tsx
+msgid "{count, plural, one {# item} other {# items}}"
+msgstr "{count, plural, other {# 项}}"
+
+#: src/components/slot_scheduler/ProgramCalendarView.tsx
+msgid "{count, plural, one {# program} other {# programs}}"
+msgstr "{count, plural, other {# 个节目}}"
+
+#: src/components/library/extractSubtitle.tsx
+#: src/components/programs/ProgramInfoBar.tsx
+msgid "{count, plural, one {# season} other {# seasons}}"
+msgstr "{count, plural, other {# 季}}"
+
+#: src/components/library/extractSubtitle.tsx
+#: src/components/programs/ProgramInfoBar.tsx
+msgid "{count, plural, one {# track} other {# tracks}}"
+msgstr "{count, plural, other {# 条音轨}}"
+
+#: src/helpers/dayjs.ts
+msgid "{count, plural, one {day} other {days}}"
+msgstr "{count, plural, other {天}}"
+
+#: src/components/programming_controls/RemoveShowsModal.tsx
+msgid "{count, plural, one {episode} other {episodes}}"
+msgstr "{count, plural, other {集}}"
+
+#: src/helpers/dayjs.ts
+msgid "{count, plural, one {hour} other {hours}}"
+msgstr "{count, plural, other {小时}}"
+
+#: src/helpers/dayjs.ts
+msgid "{count, plural, one {min} other {mins}}"
+msgstr "{count, plural, other {分钟}}"
+
+#: src/components/programming_controls/RemoveShowsModal.tsx
+#: src/components/programming_controls/RemoveShowsModal.tsx
+msgid "{count, plural, one {program} other {programs}}"
+msgstr "{count, plural, other {个节目}}"
+
+#: src/helpers/dayjs.ts
+msgid "{count, plural, one {second} other {seconds}}"
+msgstr "{count, plural, other {秒}}"
+
+#: src/components/programming_controls/RemoveShowsModal.tsx
+msgid "{count, plural, one {track} other {tracks}}"
+msgstr "{count, plural, other {条音轨}}"
+
+#. placeholder {0}: betterHumanize( dayjs.duration(details.totalDuration), { style: 'short', }, )
+#: src/components/programming_controls/RemoveShowsModal.tsx
+msgid "{count} {programLabel}, {0}"
+msgstr "{count} {programLabel}，{0}"
+
+#: src/components/channels/ChannelSummaryQuickStats.tsx
+msgid "{days, plural, one {# day} other {# days}}"
+msgstr "{days, plural, other {# 天}}"
+
+#: src/components/channels/ChannelSummaryQuickStats.tsx
+msgid "{hours, plural, one {# hour} other {# hours}}"
+msgstr "{hours, plural, other {# 小时}}"
+
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+msgid "{len, plural, one {There is # warning. Click for details.} other {There are # warnings. Click for details.}}"
+msgstr "{len, plural, other {有 # 条警告，点击查看详细信息。}}"
+
+#: src/components/channels/ChannelSummaryQuickStats.tsx
+msgid "{minutes, plural, one {# minute} other {# minutes}}"
+msgstr "{minutes, plural, other {# 分钟}}"
+
+#: src/components/guide/TvGuide.tsx
+msgid "{remainingTime} left"
+msgstr "剩余 {remainingTime}"
+
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/channels/ChannelsPage.tsx
+msgid "{totalConnections, plural, one {# connection} other {# connections}}"
+msgstr "{totalConnections, plural, other {# 个连接}}"
+
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/channels/ChannelsPage.tsx
+msgid "{totalConnections} total"
+msgstr "共 {totalConnections}"
+
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+msgid "{value, plural, one {# program} other {# programs}}"
+msgstr "{value, plural, other {# 个节目}}"
+
+#: src/pages/settings/HdhrSettingsPage.tsx
+msgid "* Restart required"
+msgstr "* 需要重启"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "# of Programs"
+msgstr "节目数量"
+
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
+msgid "# Programs"
+msgstr "节目数"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "<0>Configure the directory where Tunarr writes HLS segment files when transcoding. Tunarr will create the target directory (but not intermediate directories) if it doesn't exist.<1/>Changing this field will only affect new sessions. Existing sessions will continue writing to the previous setting, but will clean out segments when the segment ends.<2/>When unset, Tunarr will write segments to its current working directory.</0>"
+msgstr "<0>配置 Tunarr 转码时写入 HLS 分片文件的目录。若目标目录不存在，Tunarr 会自动创建（但不创建中间层级目录）。<1/>修改此字段仅影响新会话，已有会话仍会写入原目录，但会在分片结束时清理分片。<2/>若留空，Tunarr 会将分片写入当前工作目录。</0>"
+
+#. placeholder {0}: e.message
+#: src/pages/library/CustomShowsPage.tsx
+msgid "<0>Error deleting custom show: {0}<1/>Please consider opening a bug with details!</0>"
+msgstr "<0>删除自定义剧集时出错：{0}<1/>请提交包含详细信息的 Bug 报告！</0>"
+
+#. placeholder {0}: e.message
+#: src/pages/library/FillerListsPage.tsx
+msgid "<0>Error deleting filler list: {0}<1/>Please consider opening a bug with details!</0>"
+msgstr "<0>删除垫片列表时出错：{0}<1/>请提交包含详细信息的 Bug 报告！</0>"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "<0>Experimental:</0> Enable Plex Request Cache"
+msgstr "<0>实验性功能：</0>启用 Plex 请求缓存"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+msgid "<0>None:</0> slots are picked in the order they are specified in the table (i.e. not randomly)<1/><2>Uniform:</2> all slots have an equal chance to be picked.<3/><4>Weighted:</4> each slot is picked with a specified probability"
+msgstr "<0>无：</0>按表格中的顺序依次选取时段（即非随机）<1/><2>均匀：</2>所有时段被选中的概率相等<3/><4>加权：</4>每个时段按指定概率被选中"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+msgid "<0>Pad Slot:</0> Align slot start times to the specified pad time.<1/><2>Pad Episode:</2> Align episode start times (within a slot) to the specified pad time. <3>NOTE:</3> Depending on slot length and the chosen pad time, this could potentially create a lot of flex."
+msgstr "<0>对齐时段：</0>将时段的开始时间对齐到指定的填充时间<1/><2>对齐单集：</2>将单集的开始时间（时段内）对齐到指定的填充时间<3>注意：</3>根据时段长度和填充时间的不同，可能会产生大量弹性时间"
+
+#. placeholder {0}: new URL( '/api/xmltv.xml', isEmpty(backendUri) ? document.location.href : backendUri, ).href
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "<0>You can edit this location in your settings.json within your Tunarr data directory<1/><2>NOTE:</2> When manually adding the XMLTV location to a client like Plex, do not use this file directly. Instead, use the generated XMLTV from the Tunarr API endpoint: {0}</0>"
+msgstr "<0>你可以在 Tunarr 数据目录下的 settings.json 中修改此位置<1/><2>注意：</2>在 Plex 等客户端手动添加 XMLTV 位置时，请勿直接使用此文件，而应使用 Tunarr API 端点生成的 XMLTV：{0}</0>"
+
+#: src/components/channels/ChannelSummaryQuickStats.tsx
+#: src/helpers/dayjs.ts
+msgid "0 mins"
+msgstr "0 分钟"
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "12-hour"
+msgstr "12 小时制"
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "24-hour"
+msgstr "24 小时制"
+
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+msgid "A root path to scan for media. Local sources can search many different paths."
+msgstr "要扫描媒体文件的根路径。本地媒体源可以配置多个路径。"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "A-Z (asc)"
+msgstr "A-Z（升序）"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "A-Z (desc)"
+msgstr "A-Z（降序）"
+
+#: src/helpers/dayjs.ts
+msgid "about "
+msgstr "约 "
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Access Token"
+msgstr "访问令牌"
+
+#: src/components/library/ProgramListItem.tsx
+#: src/components/settings/AddPlexServer.tsx
+#: src/components/settings/media_source/AddMediaSourceButton.tsx
+#: src/components/settings/media_source/EditPathReplacementsForm.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+#: src/hooks/useRouteName.ts
+msgid "Add"
+msgstr "添加"
+
+#. placeholder {0}: item.type
+#: src/components/library/ProgramListItem.tsx
+msgid "Add {0}"
+msgstr "添加{0}"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Add a Filler List"
+msgstr "添加垫片列表"
+
+#: src/components/search/SearchFilterBuilder.tsx
+msgid "Add a filter expression to fine-tune results of the search"
+msgstr "添加筛选表达式以微调搜索结果"
+
+#: src/components/channel_config/AddSelectedMediaButton.tsx
+#~ msgid "Add All"
+#~ msgstr "Add All"
+
+#: src/components/channel_config/AddSelectedMediaButton.tsx
+#~ msgid "Add all selected programs to channel"
+#~ msgstr "Add all selected programs to channel"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#: src/components/programming_controls/AddBreaksModal.tsx
+msgid "Add Breaks"
+msgstr "添加广告时段"
+
+#: src/components/programming_controls/AddRedirectModal.tsx
+msgid "Add Channel Redirect"
+msgstr "添加频道跳转"
+
+#: src/components/search/SearchGroupNode.tsx
+msgid "Add field"
+msgstr "添加字段"
+
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "Add filler"
+msgstr "添加垫片"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Add Flex"
+msgstr "添加弹性时间"
+
+#: src/components/programming_controls/AddFlexModal.tsx
+msgid "Add Flex Time"
+msgstr "添加弹性时间"
+
+#: src/components/search/SearchGroupNode.tsx
+msgid "Add group"
+msgstr "添加分组"
+
+#: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
+msgid "Add Language Preference"
+msgstr "添加语言偏好"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#: src/components/channel_config/SelectedProgrammingActions.tsx
+#: src/components/custom-shows/EditCustomShowForm.tsx
+#: src/components/filler/EditFillerListForm.tsx
+msgid "Add Media"
+msgstr "添加媒体"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#: src/components/programming_controls/AddPaddingModal.tsx
+msgid "Add Padding"
+msgstr "添加填充"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Add point (%)"
+msgstr "添加点位（%）"
+
+#: src/hooks/useRouteName.ts
+#: src/hooks/useRouteName.ts
+msgid "Add Programming"
+msgstr "添加节目"
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "Add programming to custom show"
+msgstr "向自定义剧集添加节目"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Add Redirect"
+msgstr "添加跳转"
+
+#: src/components/channel_config/SelectedProgrammingActions.tsx
+msgid "Add Selected Media"
+msgstr "添加所选媒体"
+
+#: src/components/channel_config/CustomShowProgrammingSelector.tsx
+msgid "Add Show"
+msgstr "添加剧集"
+
+#: src/components/slot_scheduler/AddRandomSlotButton.tsx
+#: src/components/slot_scheduler/AddTimeSlotButton.tsx
+msgid "Add Slot"
+msgstr "添加时段"
+
+#: src/components/filler/EditFillerListForm.tsx
+msgid "Add TV Shows or Movies to filler"
+msgstr "向垫片添加剧集或电影"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Add TV Shows or Movies to programming list."
+msgstr "向节目列表添加剧集或电影。"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Adds a channel redirect. During this period of time, the channel will redirect to another channel."
+msgstr "添加频道跳转。在该时段内，频道将跳转到另一个频道。"
+
+#: src/components/programming_controls/AddPaddingModal.tsx
+msgid "Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks."
+msgstr "在每个剧集或电影后添加弹性间隔，确保节目在允许的分钟标记处开始。"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large."
+msgstr "在每个剧集或电影后添加弹性间隔，确保节目在允许的分钟标记处开始。例如，你可以用此功能让所有节目都在 XX:00 或 XX:30 开始。添加新间隔前会先移除已有的弹性时段。若频道规模过大，此按钮可能被禁用。"
+
+#: src/components/programming_controls/AddBreaksModal.tsx
+msgid "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes."
+msgstr "在节目之间添加弹性间隔，尽量避免连续节目的总时长超过指定的分钟数。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Adjust the output volume (not recommended). Values higher than 100 will boost the audio."
+msgstr "调整输出音量（不推荐）。高于 100 的数值会放大音频。"
+
+#: src/components/programming_controls/AdjustWeightsModal.tsx
+#: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+msgid "Adjust Weights"
+msgstr "调整权重"
+
+#: src/components/channel_config/plex/PlexProgrammingFilterToolbar.tsx
+#~ msgid "Advanced"
+#~ msgstr "Advanced"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Advanced options relating to audio. In general, do not change these unless you know what you are doing!"
+msgstr "音频相关的高级选项。通常情况下，除非你清楚自己在做什么，否则不要修改！"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Advanced options relating to transcoding. In general, do not change these unless you know what you are doing! These settings exist in order to leave some parity with the old dizqueTV transcode pipeline as well as to provide mechanisms to aid in debugging streaming issues."
+msgstr "转码相关的高级选项。通常情况下，除非你清楚自己在做什么，否则不要修改！保留这些设置是为了与旧版 dizqueTV 转码流程保持一定兼容，同时也为排查播放问题提供手段。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Advanced Video Options"
+msgstr "高级视频选项"
+
+#: src/components/programming_controls/AddBreaksModal.tsx
+msgid "After Every"
+msgstr "每隔"
+
+#: src/components/programming_controls/AddBreaksModal.tsx
+msgid "after every program"
+msgstr "每个节目之后"
+
+#: src/components/programs/Albums.tsx
+msgid "Albums"
+msgstr "专辑"
+
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
+msgstr "所有使用此配置的频道都将恢复为默认配置。如果这是最后一个配置，系统会自动创建一个新的默认配置。"
+
+#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
+#~ msgid "All Genres"
+#~ msgstr "All Genres"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+#~ msgid "All linked slots show the same episode, advancing only after all have played."
+#~ msgstr "All linked slots show the same episode, advancing only after all have played."
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "All lists are used"
+msgstr "所有列表均已使用"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "All Set!"
+msgstr "一切就绪！"
+
+#: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
+msgid "Allow External"
+msgstr "允许外部"
+
+#: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
+msgid "Allow Image Based"
+msgstr "允许图片字幕"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+#~ msgid "Allows programs to play a bit late if the previous program took longer than usual. If a program is too late, Flex is scheduled instead."
+#~ msgstr "允许节目略微延后播出（当前一个节目超时时）。若节目延迟过多，则改为安排弹性时间。"
+
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+msgid "Allows you to pick specific programming to remove from the channel."
+msgstr "可选择要从频道中移除的特定节目。"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Alphabetical"
+msgstr "按字母顺序"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Alphabetically"
+msgstr "按字母顺序"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Alternate programs in blocks. You can pick the number of programs per-type in each block and if the order of shows in each block should be randomized."
+msgstr "将节目按块交替排列。你可以设置每个块中每种类型的节目数量，以及是否随机排列块内节目的顺序。"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Alternates TV shows in blocks of episodes. You can pick the number of episodes per show in each block and if the order of shows in each block should be randomized. Movies are moved to the bottom."
+msgstr "将剧集按集数分块交替排列。你可以设置每部剧在每个块中的集数，以及是否随机排列块的顺序。电影会被移到末尾。"
+
+#: src/components/search/DateSearchValueNode.tsx
+msgid "Amount"
+msgstr "数量"
+
+#. placeholder {0}: error.message
+#: src/components/guide/TvGuide.tsx
+msgid "An error occurred: {0}"
+msgstr "发生错误：{0}"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Apply to Program Types (empty = all)"
+msgstr "应用于节目类型（留空表示全部）"
+
+#: src/components/settings/general/BackupForm.tsx
+#: src/components/settings/general/BackupForm.tsx
+msgid "Archive Format"
+msgstr "归档格式"
+
+#. placeholder {0}: deletingSmartCollection?.name
+#: src/components/smart_collections/SmartCollectionsTable.tsx
+msgid "Are you sure you want to delete Smart Collection \"{0}\"?"
+msgstr "确定要删除智能合集「{0}」吗？"
+
+#: src/components/channels/ChannelPrograms.tsx
+msgid "Artists"
+msgstr "艺术家"
+
+#: src/components/slot_scheduler/SlotOrderFormControl.tsx
+msgid "Asc"
+msgstr "升序"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Ascending"
+msgstr "升序"
+
+#: src/pages/system/StatusPage.tsx
+msgid "Attempt Auto-Fix"
+msgstr "尝试自动修复"
+
+#: src/components/programming_controls/BalanceProgrammingModal.tsx
+msgid "Attempts to balance programming groups by either total lineup duration or number of unique programs. For instance, for a channel with many seasons of one show and few seasons of another, balancing will attempt to create an even mix of both shows by inserting repeats of the show with fewer episodes."
+msgstr "尝试按总时长或节目数量均衡各节目组。例如，某频道中一部剧有很多季而另一部只有几季，均衡功能会通过重复插入集数较少的剧集，使两部剧的播出比例趋于均匀。"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Audio"
+msgstr "音频"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Audio & Subtitle Options"
+msgstr "音频与字幕选项"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Audio & Subtitles"
+msgstr "音频与字幕"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Audio Action"
+msgstr "音频处理方式"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Audio Bitrate"
+msgstr "音频码率"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Audio Buffer Size"
+msgstr "音频缓冲区大小"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Audio Channels"
+msgstr "音频声道"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+msgid "Audio Format"
+msgstr "音频格式"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Audio Language Preferences"
+msgstr "音频语言偏好"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Audio Loudness Normalization"
+msgstr "音频响度标准化"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Audio Options"
+msgstr "音频选项"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Audio Sample Rate"
+msgstr "音频采样率"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Audio Streams"
+msgstr "音频流"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Audio Volume"
+msgstr "音量"
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Auto"
+msgstr "自动"
+
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "Auto Deinterlace Video"
+msgstr "自动去隔行"
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Auto uses the time convention for the selected language."
+msgstr "自动模式将采用所选语言的时间习惯。"
+
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Auto-Update Guide"
+msgstr "自动更新节目单"
+
+#: src/components/programming_controls/AdjustWeightsModal.tsx
+msgid "Automatic"
+msgstr "自动"
+
+#. placeholder {0}: betterHumanize(dayjs.duration(averageLengthMs))
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+msgid "Average program length: {0}"
+msgstr "平均节目时长：{0}"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Back"
+msgstr "返回"
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Back to Programming"
+msgstr "返回节目编排"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Backups"
+msgstr "备份"
+
+#: src/pages/system/StatusPage.tsx
+msgid "Backups:"
+msgstr "备份："
+
+#: src/components/programming_controls/BalanceProgrammingModal.tsx
+msgid "Balance"
+msgstr "均衡"
+
+#: src/components/programming_controls/BalanceProgrammingModal.tsx
+msgid "Balance By:"
+msgstr "均衡依据："
+
+#: src/components/programming_controls/BalanceProgrammingModal.tsx
+msgid "Balance Programming"
+msgstr "节目均衡"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "Balance..."
+msgstr "均衡…"
+
+#: src/components/channel_config/plex/PlexProgrammingFilterToolbar.tsx
+#~ msgid "Basic"
+#~ msgstr "Basic"
+
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Basic button group"
+msgstr "基础按钮组"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Bit Depth"
+msgstr "色深"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Bitrate cannot be changed when copying input audio"
+msgstr "复制输入音频时无法修改码率"
+
+#: src/components/programming_controls/AddRerunBlockModal.tsx
+msgid "Block"
+msgstr "块"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Block Shuffle"
+msgstr "分块随机"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Break Duration"
+msgstr "广告时长"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Break Duration (minutes)"
+msgstr "广告时长（分钟）"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Break Interval (minutes)"
+msgstr "广告间隔（分钟）"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Break Positioning"
+msgstr "广告位置"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Buffer size cannot be changed when copying input audio"
+msgstr "复制输入音频时无法修改缓冲区大小"
+
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "Buffer size effects how frequently ffmpeg reconsiders the output bitrate. <0>Read more</0>"
+msgstr "缓冲区大小影响 ffmpeg 重新评估输出码率的频率。<0>了解更多</0>"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Builder"
+msgstr "编排器"
+
+#: src/components/settings/general/BackupForm.tsx
+msgid "By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups"
+msgstr "默认保存在服务器的运行目录中；若在 Docker 中运行，则保存到 /config/tunarr/backups"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "By default, time slots are time of the day-based, you can change it to time of the day + day of the week. That means scheduling 7x the number of time slots. If you change from daily to weekly, the current schedule will be repeated 7 times. If you change from weekly to daily, many of the slots will be deleted."
+msgstr "默认情况下，时段按「每日时刻」编排，你可以改为「每日时刻 + 星期」，这意味着时段数量将变为 7 倍。若从「每日」改为「每周」，当前排期会被复制 7 份；若从「每周」改为「每日」，许多时段将被删除。"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Caching"
+msgstr "缓存"
+
+#: src/hooks/slot_scheduler/useScheduleSlots.ts
+msgid "Calculated {humanizedDuration} ({numShows} programs) of programming in {duration}ms"
+msgstr "已在 {duration} 毫秒内完成 {humanizedDuration}（{numShows} 个节目）的排期计算"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Calculates a schedule where all programs end at the same time, creating a perfectly looping schedule."
+msgstr "计算一种所有节目同时结束的排期，从而形成完美循环。"
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+msgid "Calculating Slots..."
+msgstr "正在计算时段…"
+
+#: src/components/channels/ChannelDeleteDialog.tsx
+#: src/components/DeleteConfirmationDialog.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBreaksModal.tsx
+#: src/components/programming_controls/AddFlexModal.tsx
+#: src/components/programming_controls/AddPaddingModal.tsx
+#: src/components/programming_controls/AddRedirectModal.tsx
+#: src/components/programming_controls/AddReplicateModal.tsx
+#: src/components/programming_controls/AddRerunBlockModal.tsx
+#: src/components/programming_controls/AddRestrictHoursModal.tsx
+#: src/components/programming_controls/AdjustWeightsModal.tsx
+#: src/components/programming_controls/BalanceProgrammingModal.tsx
+#: src/components/programming_controls/RemoveShowsModal.tsx
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+#: src/components/settings/UnsavedNavigationAlert.tsx
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
+#: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+#: src/components/smart_collections/CreateSmartCollectionDialog.tsx
+#: src/components/smart_collections/EditSmartCollectionDialog.tsx
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
+msgid "Cancel"
+msgstr "取消"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Cannot be empty"
+msgstr "不能为空"
+
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+msgid "Cannot disable libraries when they are locked"
+msgstr "媒体库处于锁定状态时无法禁用"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "Cannot use a channel number <= 0"
+msgstr "频道号不能小于或等于 0"
+
+#: src/components/programs/Actors.tsx
+msgid "Cast & Crew"
+msgstr "演员与职员"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Category Log Levels"
+msgstr "分类日志级别"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Change the verbosity of specific categories of logs. Useful if debugging a specific feature."
+msgstr "调整特定日志分类的详细程度，便于调试具体功能。"
+
+#: src/components/programming_controls/AddRedirectModal.tsx
+#: src/components/programming_controls/AddRedirectModal.tsx
+#: src/pages/system/TroubleshootPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Channel"
+msgstr "频道"
+
+#. placeholder {0}: channel.number
+#: src/pages/channels/ChannelSummaryPage.tsx
+msgid "Channel #{0}"
+msgstr "频道 #{0}"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Channel Fallback"
+msgstr "频道兜底"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "Channel Group"
+msgstr "频道分组"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "Channel group is required"
+msgstr "必须填写频道分组"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "Channel Name"
+msgstr "频道名称"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "Channel name is required"
+msgstr "必须填写频道名称"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "Channel Number"
+msgstr "频道号"
+
+#: src/components/channel_config/ChannelEditActions.tsx
+msgid "Channel settings saved!"
+msgstr "频道设置已保存！"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Channel Stream Mode"
+msgstr "频道流模式"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Channel Transcode Config"
+msgstr "频道转码配置"
+
+#: src/App.tsx
+#: src/hooks/useNavItems.tsx
+#: src/hooks/useRouteName.ts
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Channels"
+msgstr "频道"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Channels configured to use the HLS Direct stream mode will output in the selected container format."
+msgstr "配置为 HLS 直连流模式的频道将按所选容器格式输出。"
+
+#: src/pages/system/StatusPage.tsx
+msgid "Channels M3U Link:"
+msgstr "频道 M3U 链接："
+
+#: src/pages/system/SystemDebugPage.tsx
+#: src/pages/system/SystemDebugPage.tsx
+msgid "Check"
+msgstr "检查"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
+msgstr "选择此频道使用的转码配置。转码配置可在<0>FFmpeg 设置页</0>中配置。"
+
+#: src/components/channel_config/SelectedProgrammingActions.tsx
+#: src/components/search/SearchFieldRestrictMenu.tsx
+msgid "Clear"
+msgstr "清除"
+
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+#: src/components/filler/EditFillerListForm.tsx
+#: src/components/slot_scheduler/ClearSlotsButton.tsx
+msgid "Clear All"
+msgstr "全部清除"
+
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+msgid "Clear Schedule"
+msgstr "清空排期"
+
+#: src/components/channel_config/CustomShowProgrammingSelector.tsx
+msgid "Click to preview the items in this Custom Show. Note that only the whole show can be added at once."
+msgstr "点击预览此自定义剧集中的条目。注意只能整部添加，不能单独添加。"
+
+#: src/components/channel_config/SelectedProgrammingList.tsx
+#: src/components/channels/ChannelSessionsDialog.tsx
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+msgid "Close"
+msgstr "关闭"
+
+#: src/pages/system/TroubleshootPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Codec"
+msgstr "编码格式"
+
+#: src/components/channel_config/plex/PlexProgrammingSelector.tsx
+#~ msgid "Collections"
+#~ msgstr "Collections"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Color"
+msgstr "颜色"
+
+#: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx
+msgid "Commit"
+msgstr "提交"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Completely randomizes the order of programs."
+msgstr "完全随机化节目顺序。"
+
+#: src/pages/system/SystemLogsPage.tsx
+msgid "Component"
+msgstr "组件"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Condition"
+msgstr "条件"
+
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
+msgid "Config"
+msgstr "配置"
+
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+msgid "Configure Cyclic Shuffle"
+msgstr "配置循环随机"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Configure preferred audio languages globally."
+msgstr "全局配置首选音频语言。"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Configure subtitle preferences. Preferences are evaluated in order of priority. The first matching subtitle stream on a program will be used."
+msgstr "配置字幕偏好。偏好按优先级顺序评估，将使用节目中第一条匹配的字幕流。"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Configure transcoding settings for Tunarr's streams. Each channel is assigned one transcode configuration."
+msgstr "配置 Tunarr 流的转码设置。每个频道可指定一个转码配置。"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Configure what appears on your channel when there is no suitable filler content available. Using channel fallbacks requires ffmpeg transcoding."
+msgstr "配置当没有合适的垫片内容时频道播放的内容。使用频道兜底需要 ffmpeg 转码。"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Congrats, you're ready to start building channels! Just click Finish below to start working on your first channel."
+msgstr "恭喜，一切就绪，可以开始创建频道了！点击下方「完成」即可开始你的第一个频道。"
+
+#: src/components/channel_config/ProgrammingSelector.tsx
+msgid "Connect Media Source"
+msgstr "连接媒体源"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Connect Media Sources"
+msgstr "连接媒体源"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Connect Sources"
+msgstr "连接媒体源"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Console"
+msgstr "控制台"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "Consolidate"
+msgstr "合并"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
+msgstr "将相邻的弹性填充块与跳转块合并为单一区间"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Continue"
+msgstr "继续"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Continue with New Content"
+msgstr "使用新内容继续"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Controls what happens when this slot runs out of replayed content from earlier continue slots."
+msgstr "控制当此时段用完前面续播时段重播的内容时如何处理。"
+
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+msgid "Cooldown"
+msgstr "冷却时间"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Cooldown (s)"
+msgstr "冷却时间（秒）"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+#~ msgid "Cooldown (seconds)"
+#~ msgstr "Cooldown (seconds)"
+
+#. placeholder {0}: navItem.name
+#: src/components/TopBar.tsx
+msgid "Copied {0} URL to clipboard"
+msgstr "已将 {0} 链接复制到剪贴板"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+msgid "Copied channel \"{channelName}\" m3u link to clipboard"
+msgstr "已将频道「{channelName}」的 m3u 链接复制到剪贴板"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+msgid "Copied Channel ID!"
+msgstr "频道 ID 已复制！"
+
+#: src/hooks/useCopyToClipboard.ts
+msgid "Copied to clipboard!"
+msgstr "已复制到剪贴板！"
+
+#: src/pages/system/SystemDebugPage.tsx
+#: src/pages/system/SystemDebugPage.tsx
+#: src/pages/system/SystemDebugPage.tsx
+msgid "Copy"
+msgstr "复制"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+msgid "Copy Channel ID"
+msgstr "复制频道 ID"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Copy Full Report"
+msgstr "复制完整报告"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+msgid "Copy M3U URL"
+msgstr "复制 M3U 链接"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Copy to clipboard"
+msgstr "复制到剪贴板"
+
+#: src/components/ProgramStreamDetails.tsx
+#: src/components/RawProgramDetails.tsx
+msgid "Copy to Clipboard"
+msgstr "复制到剪贴板"
+
+#: src/components/search/SearchFilterBuilder.tsx
+msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
+msgstr "无法解析此筛选表达式。请查看<0>文档</0>了解筛选表达式的用法。"
+
+#: src/components/smart_collections/SmartCollectionsTable.tsx
+msgid "Create"
+msgstr "创建"
+
+#: src/components/channel_config/NoChannelsCreated.tsx
+msgid "Create a Channel"
+msgstr "创建频道"
+
+#: src/components/programming_controls/AddRerunBlockModal.tsx
+msgid "Create Rerun Block"
+msgstr "创建重播块"
+
+#: src/components/smart_collections/CreateSmartCollectionDialog.tsx
+msgid "Creates a new collection"
+msgstr "创建新合集"
+
+#: src/components/guide/TvGuide.tsx
+msgid "Custom Program"
+msgstr "自定义节目"
+
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+#: src/hooks/useProgramTitleFormatter.ts
+msgid "Custom Show"
+msgstr "自定义剧集"
+
+#. placeholder {0}: customShow.name
+#. placeholder {0}: showName ?? ''
+#: src/components/channel_config/SelectedProgrammingList.tsx
+#: src/hooks/slot_scheduler/useSlotName.ts
+msgid "Custom Show - {0}"
+msgstr "自定义剧集 - {0}"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Custom show programs are grouped by their parent show"
+msgstr "自定义剧集的节目按其所属剧集分组"
+
+#. placeholder {0}: cs.description
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+msgid "Custom Show: {0}"
+msgstr "自定义剧集：{0}"
+
+#: src/components/channel_config/ProgrammingSelector.tsx
+#: src/hooks/useNavItems.tsx
+#: src/hooks/useRouteName.ts
+#: src/pages/library/CustomShowsPage.tsx
+msgid "Custom Shows"
+msgstr "自定义剧集"
+
+#: src/pages/library/CustomShowsPage.tsx
+msgid "Custom Shows are sequences of videos that represent a episodes of a virtual TV show. When you add these shows to a channel, the schedule tools will treat the videos as if they belonged to a single TV show."
+msgstr "自定义剧集是一组视频序列，相当于一部虚拟电视剧的分集。当你把这些剧集添加到频道后，排期工具会将这些视频视为属于同一部电视剧。"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Customize how movie blocks are sorted"
+msgstr "自定义电影块的排序方式"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Cyclic Shuffle"
+msgstr "循环随机"
+
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+msgid "Cyclic Shuffle randomly shuffles groups of programming."
+msgstr "循环随机会将节目分组后随机打乱。"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Daily"
+msgstr "每日"
+
+#: src/components/settings/DarkModeButton.tsx
+msgid "Dark"
+msgstr "深色"
+
+#: src/pages/system/StatusPage.tsx
+msgid "Data Directory:"
+msgstr "数据目录："
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
+msgid "Day"
+msgstr "天"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Days to Precalculate"
+msgstr "预计算天数"
+
+#: src/hooks/useNavItems.tsx
+#: src/pages/system/SystemLayout.tsx
+msgid "Debug"
+msgstr "调试"
+
+#: src/pages/system/TroubleshootPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Default"
+msgstr "默认"
+
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+msgid "Default Config"
+msgstr "默认配置"
+
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+#: src/components/channels/ChannelDeleteDialog.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+#: src/components/DeleteConfirmationDialog.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
+msgid "Delete"
+msgstr "删除"
+
+#. placeholder {0}: deletingSmartCollection?.name
+#: src/components/smart_collections/SmartCollectionsTable.tsx
+msgid "Delete \"{0}\""
+msgstr "删除「{0}」"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+#: src/pages/channels/ChannelsPage.tsx
+msgid "Delete Channel"
+msgstr "删除频道"
+
+#. placeholder {0}: channel.name
+#: src/components/channels/ChannelDeleteDialog.tsx
+msgid "Delete Channel \"{0}\"?"
+msgstr "删除频道「{0}」？"
+
+#. placeholder {0}: find(customShows, { id: deleteConfirmationId })?.name
+#: src/pages/library/CustomShowsPage.tsx
+msgid "Delete Custom Show \"{0}\"?"
+msgstr "删除自定义剧集「{0}」？"
+
+#. placeholder {0}: find(fillerLists, { id: deleteConfirmationId })?.name
+#: src/pages/library/FillerListsPage.tsx
+msgid "Delete Filler List \"{0}\"?"
+msgstr "删除垫片列表「{0}」？"
+
+#. placeholder {0}: deletingMediaSource?.name
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+msgid "Delete Media Source \"{0}\"?"
+msgstr "删除媒体源「{0}」？"
+
+#: src/components/settings/media_source/MediaSourceDeleteDialog.tsx
+#~ msgid "Delete Media Source?"
+#~ msgstr "Delete Media Source?"
+
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+msgid "Delete Slot"
+msgstr "删除时段"
+
+#. placeholder {0}: confirmDeleteTranscodeConfig?.name
+#. placeholder {0}: confirmDeleteTranscodeConfig?.name ?? ''
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Delete Transcoding Config \"{0}\"?"
+msgstr "删除转码配置「{0}」？"
+
+#: src/components/channels/ChannelDeleteDialog.tsx
+#: src/pages/channels/ChannelsPage.tsx
+msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
+msgstr "删除频道将移除该频道的所有节目编排，此操作无法撤销。"
+
+#: src/pages/library/CustomShowsPage.tsx
+msgid "Deleting a Custom Show will remove its programming from channels that use it. This action cannot be undone."
+msgstr "删除自定义剧集将从使用它的频道中移除其节目，此操作无法撤销。"
+
+#: src/pages/library/FillerListsPage.tsx
+msgid "Deleting a Filler will remove all programming from the channel. This action cannot be undone."
+msgstr "删除垫片将移除该频道的所有节目编排，此操作无法撤销。"
+
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+msgid "Deleting a media source will remove all of its associated programs from Tunarr."
+msgstr "删除媒体源将从 Tunarr 中移除其关联的所有节目。"
+
+#: src/components/settings/media_source/MediaSourceDeleteDialog.tsx
+#~ msgid "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
+#~ msgstr "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
+
+#: src/components/slot_scheduler/SlotOrderFormControl.tsx
+msgid "Desc"
+msgstr "降序"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Descending"
+msgstr "降序"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+msgid "Description"
+msgstr "描述"
+
+#: src/components/channels/ChannelNowPlayingCard.tsx
+msgid "Details"
+msgstr "详情"
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "Did not receive an accessToken or userId from Jellyfin server."
+msgstr "未从 Jellyfin 服务器获取到 accessToken 或 userId。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
+msgid "Disable Hardware Decoding"
+msgstr "禁用硬件解码"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
+msgid "Disable Hardware Encoding"
+msgstr "禁用硬件编码"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
+msgid "Disable Hardware Filters"
+msgstr "禁用硬件滤镜"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Disable Image Scaling"
+msgstr "禁用图片缩放"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Disable Watermarks"
+msgstr "禁用水印"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#: src/pages/system/StatusPage.tsx
+msgid "Disabled"
+msgstr "已禁用"
+
+#: src/hooks/useVersion.tsx
+msgid "Dismiss"
+msgstr "忽略"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Display Watermark on Leading Edge"
+msgstr "在片头显示水印"
+
+#. placeholder {0}: logBuf.length
+#: src/pages/system/SystemLogsPage.tsx
+msgid "Displays the last {0} system log events. Use the buttons below to export these logs or download the entire log file for debugging."
+msgstr "显示最近 {0} 条系统日志。可使用下方按钮导出这些日志，或下载完整日志文件用于调试。"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+msgid "Distribution"
+msgstr "分布"
+
+#: src/components/programming_controls/AddRerunBlockModal.tsx
+msgid "Divides the programming in blocks of 4, 6, 8 or 12 hours then repeats each of the blocks the specified number of times."
+msgstr "将节目分成 4、6、8 或 12 小时的块，然后按指定次数重复每个块。"
+
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+msgid "Do not group programs at all. Normal shuffle."
+msgstr "不对节目做任何分组，普通随机。"
+
+#: src/components/TopBar.tsx
+msgid "Documentation"
+msgstr "文档"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
+msgstr "没有看到想要的媒体库？请确认它已在<0>媒体源设置</0>中启用。"
+
+#: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx
+#: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx
+msgid "Done"
+msgstr "完成"
+
+#: src/pages/system/SystemLogsPage.tsx
+msgid "Download all logs"
+msgstr "下载全部日志"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Download JSON"
+msgstr "下载 JSON"
+
+#. placeholder {0}: table.getRowCount()
+#. placeholder {1}: table.getRowCount()
+#: src/pages/system/SystemLogsPage.tsx
+msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
+msgstr "下载最后 {0} {1, plural, other {# 行}}"
+
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+msgid "Duplicate"
+msgstr "创建副本"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+msgid "Duplicate Channel"
+msgstr "复制频道"
+
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+msgid "Duplicates"
+msgstr "重复项"
+
+#: src/components/programming_controls/BalanceProgrammingModal.tsx
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Duration"
+msgstr "时长"
+
+#: src/components/programming_controls/AddFlexModal.tsx
+#: src/components/programming_controls/AddRedirectModal.tsx
+msgid "Duration (seconds)"
+msgstr "时长（秒）"
+
+#: src/components/programming_controls/AddFlexModal.tsx
+msgid "Duration must be greater than 0."
+msgstr "时长必须大于 0。"
+
+#: src/components/programming_controls/AddFlexModal.tsx
+msgid "Duration must be numeric"
+msgstr "时长必须为数字"
+
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+msgid "Dynamic"
+msgstr "动态"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Eager"
+msgstr "即时"
+
+#: src/components/settings/ConnectMediaSources.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/hooks/useRouteName.ts
+#: src/hooks/useRouteName.ts
+#: src/hooks/useRouteName.ts
+#: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Edit"
+msgstr "编辑"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+msgid "Edit Channel"
+msgstr "编辑频道"
+
+#: src/components/programming_controls/AddRedirectModal.tsx
+msgid "Edit Channel Redirect"
+msgstr "编辑频道跳转"
+
+#: src/pages/channels/ChannelsPage.tsx
+msgid "Edit Channel Settings"
+msgstr "编辑频道设置"
+
+#: src/pages/library/EditFillerPage.tsx
+msgid "Edit Filler List"
+msgstr "编辑垫片列表"
+
+#: src/components/programming_controls/AddFlexModal.tsx
+msgid "Edit Flex Time"
+msgstr "编辑弹性时间"
+
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+msgid "Edit Libraries"
+msgstr "编辑媒体库"
+
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+msgid "Edit Media Source"
+msgstr "编辑媒体源"
+
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+msgid "Edit Slot"
+msgstr "编辑时段"
+
+#: src/hooks/useRouteName.ts
+msgid "Edit Transcode Config"
+msgstr "编辑转码配置"
+
+#. placeholder {0}: initialConfig.name
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Edit Transcode Config: \"{0}\""
+msgstr "编辑转码配置：「{0}」"
+
+#. placeholder {0}: server.name
+#. placeholder {0}: source.name
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+msgid "Editing \"{0}\""
+msgstr "正在编辑「{0}」"
+
+#. placeholder {0}: server.name
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Editing Plex Server \"{0}\""
+msgstr "正在编辑 Plex 服务器「{0}」"
+
+#. placeholder {0}: smartCollection.name
+#: src/components/smart_collections/EditSmartCollectionDialog.tsx
+msgid "Editing Smart Collection \"{0}\""
+msgstr "正在编辑智能合集「{0}」"
+
+#: src/components/settings/media_source/AddMediaSourceButton.tsx
+msgid "Emby"
+msgstr "Emby"
+
+#: src/pages/library/TrashPage.tsx
+msgid "Empty Trash"
+msgstr "清空回收站"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Enable <0>EBU R 128</0> loudness normalization via the <1>loudnorm</1> FFmpeg filter. May increase CPU usage during streaming."
+msgstr "通过 <1>loudnorm</1> FFmpeg 滤镜启用 <0>EBU R 128</0> 响度标准化。播放时可能会增加 CPU 占用。"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Enable Animation"
+msgstr "启用动画"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Enable Backups"
+msgstr "启用备份"
+
+#: src/components/settings/DarkModeButton.tsx
+msgid "Enable dark Mode"
+msgstr "启用深色模式"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Enable embedded subtitle extraction"
+msgstr "启用内嵌字幕提取"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
+msgstr "启用 ffmpeg 日志输出到不同的目标。输出到文件时，Tunarr 会为每个启动的 ffmpeg 进程在日志目录中创建新日志文件，这些文件会由后台进程自动清理。"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Enable if the watermark is an animated GIF or PNG. The watermark will loop according to the image's configuration. If this option is enabled and the image is not animated, there will be playback errors."
+msgstr "如果水印是动态 GIF 或 PNG，请启用此项。水印将按图片自身的配置循环播放。若启用此选项但图片并非动态图，会导致播放错误。"
+
+#: src/components/settings/DarkModeButton.tsx
+msgid "Enable light Mode"
+msgstr "启用浅色模式"
+
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Enable Log File Rolling"
+msgstr "启用日志文件轮转"
+
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Enable rolling log files using time and/or size based criteria"
+msgstr "按时间和/或大小条件启用日志文件轮转"
+
+#: src/pages/settings/HdhrSettingsPage.tsx
+msgid "Enable SSDP server"
+msgstr "启用 SSDP 服务"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Enable Subtitles"
+msgstr "启用字幕"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Enable Watermark"
+msgstr "启用水印"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+#: src/pages/system/StatusPage.tsx
+msgid "Enabled"
+msgstr "已启用"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Enabled (loudnorm)"
+msgstr "已启用（loudnorm）"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Enabling embedded subtitle extaction will periodically scan your upcoming programming for embedded text-based subtitle streams and extract them to a local cache. This is necessary in order to enable subtitle burning for text-based subtitles which are not external streams."
+msgstr "启用内嵌字幕提取后，系统会定期扫描即将播出的节目，查找内嵌的文本字幕流并提取到本地缓存。这是对非外挂的文本字幕启用字幕烧录（硬字幕）的必要步骤。"
+
+#: src/pages/library/TrashPage.tsx
+msgid "Encountered an error when emptying trash. Check console logs for details."
+msgstr "清空回收站时出错，详情请查看控制台日志。"
+
+#: src/components/programming_controls/AddRestrictHoursModal.tsx
+msgid "End Time"
+msgstr "结束时间"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Ensures programs have a nice-looking start time, it will add Flex time to fill the gaps."
+msgstr "确保节目有整齐的开始时间，会自动添加弹性时间来填补空档。"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+msgid "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
+msgstr "确保节目只在每小时的特定间隔点开始，使排期更整齐。系统会安排弹性时间来实现这一点。"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+msgid "Enter a name for your Emby Server"
+msgstr "为你的 Emby 服务器输入名称"
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "Enter a name for your Jellyfin Server"
+msgstr "为你的 Jellyfin 服务器输入名称"
+
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+msgid "Enter a name for your Local Media Source"
+msgstr "为你的本地媒体源输入名称"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+msgid "Enter your Emby password to generate a new access token."
+msgstr "输入你的 Emby 密码以生成新的访问令牌。"
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "Enter your Jellyfin password to generate a new access token.<0/><1>NOTE:</1> These are never saved to the Tunarr DB. Instead they are sent to Jellyfin to exchange for a session token."
+msgstr "输入你的 Jellyfin 密码以生成新的访问令牌。<0/><1>注意：</1>密码绝不会保存到 Tunarr 数据库中，而是发送给 Jellyfin 用于换取会话令牌。"
+
+#: src/components/channel_config/EditChannelForm.tsx
+msgid "EPG"
+msgstr "电子节目单"
+
+#: src/pages/settings/XmlTvSettingsPage.tsx
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "EPG (Hours)"
+msgstr "节目单时长（小时）"
+
+#: src/components/programs/Episodes.tsx
+#: src/pages/library/TrashPage.tsx
+msgid "Episodes"
+msgstr "剧集"
+
+#: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
+msgid "Error Audio"
+msgstr "错误提示音"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+msgid "Error copying channel m3u link to clipboard"
+msgstr "复制频道 m3u 链接到剪贴板失败"
+
+#: src/hooks/useCopyToClipboard.ts
+msgid "Error copying to clipboard!"
+msgstr "复制到剪贴板失败！"
+
+#: src/components/programming_controls/AddRedirectModal.tsx
+msgid "Error occurred while loading channels, please try again soon."
+msgstr "加载频道时出错，请稍后重试。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Error Options"
+msgstr "错误处理选项"
+
+#: src/components/channel_config/SelectedProgrammingActions.tsx
+msgid "Error querying Plex. Check console log and consider reporting a bug!"
+msgstr "查询 Plex 时出错。请查看控制台日志并考虑提交 Bug 报告！"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+msgid "Error saving new Emby server. See browser console and server logs for details"
+msgstr "保存新的 Emby 服务器时出错，详情请查看浏览器控制台和服务器日志"
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "Error saving new Jellyfin server. See browser console and server logs for details"
+msgstr "保存新的 Jellyfin 服务器时出错，详情请查看浏览器控制台和服务器日志"
+
+#: src/components/smart_collections/CreateSmartCollectionDialog.tsx
+msgid "Error saving new Smart Collection. Check server logs and browser console for details."
+msgstr "保存新的智能合集时出错，详情请查看服务器日志和浏览器控制台。"
+
+#. placeholder {0}: error.message
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+msgid "Error saving programs. {0}"
+msgstr "保存节目时出错。{0}"
+
+#: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
+msgid "Error Screen"
+msgstr "错误画面"
+
+#: src/components/channel_config/ChannelEditActions.tsx
+msgid "Error updating channel.<0/>Check browser console for details"
+msgstr "更新频道时出错。<0/>详情请查看浏览器控制台"
+
+#: src/components/smart_collections/EditSmartCollectionDialog.tsx
+msgid "Error updating Smart Collection. Check logs for details."
+msgstr "更新智能合集时出错，详情请查看日志。"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Error while copying to clipboard. Check browser logs for details"
+msgstr "复制到剪贴板时出错，详情请查看浏览器日志"
+
+#: src/pages/system/StatusPage.tsx
+msgid "Error while running system fixer {fixerId}. Check server logs for details."
+msgstr "运行系统修复项 {fixerId} 时出错，详情请查看服务器日志。"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Error while saving settings. Please check console for details."
+msgstr "保存设置时出错，详情请查看控制台。"
+
+#: src/components/settings/ffmpeg/useTranscodeConfigFormOptions.ts
+#: src/components/settings/ffmpeg/useTranscodeConfigFormOptions.ts
+msgid "Error while saving transcode config. See console log for details."
+msgstr "保存转码配置时出错，详情请查看控制台日志。"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+msgid "Error while scheduling {taskId}. Check server logs for details"
+msgstr "调度任务 {taskId} 时出错，详情请查看服务器日志"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Errors"
+msgstr "错误"
+
+#: src/pages/settings/FeaturesSettingsPage.tsx
+msgid "Escape Hatches"
+msgstr "应急选项"
+
+#: src/components/settings/general/BackupForm.tsx
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Every"
+msgstr "每"
+
+#: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
+msgid "Exclude Seasons"
+msgstr "排除季"
+
+#: src/components/smart_collections/CreateSmartCollectionDialog.tsx
+msgid "Existing query: {filterString}"
+msgstr "当前查询：{filterString}"
+
+#: src/pages/settings/FeaturesSettingsPage.tsx
+msgid "Experimental Features"
+msgstr "实验性功能"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Experimental: Make perfect schedule loop"
+msgstr "实验性：生成完美循环排期"
+
+#: src/pages/settings/FeaturesSettingsPage.tsx
+msgid "Failed to load feature flags."
+msgstr "加载功能开关失败。"
+
+#: src/components/programs/ProgramDetailsDialog.tsx
+msgid "Failed to load item details! Check logs for details"
+msgstr "加载条目详情失败！详情请查看日志"
+
+#: src/components/smart_collections/EditSmartCollectionDialog.tsx
+msgid "Failed to load Smart Collection"
+msgstr "加载智能合集失败"
+
+#: src/components/programs/ProgramDetailsDialog.tsx
+msgid "Failed to load stream details! Check logs for details"
+msgstr "加载流详情失败！详情请查看日志"
+
+#: src/pages/settings/FeaturesSettingsPage.tsx
+msgid "Failed to save feature flags."
+msgstr "保存功能开关失败。"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Failed to update Media Source settings. Please check server and browser logs for details."
+msgstr "更新媒体源设置失败，详情请查看服务器和浏览器日志。"
+
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "Fallback"
+msgstr "兜底"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Fallback Mode"
+msgstr "兜底模式"
+
+#: src/pages/settings/FeaturesSettingsPage.tsx
+msgid "Feature flags saved!"
+msgstr "功能开关已保存！"
+
+#: src/pages/settings/SettingsLayout.tsx
+msgid "Features"
+msgstr "功能"
+
+#: src/pages/settings/SettingsLayout.tsx
+msgid "FFMPEG"
+msgstr "FFmpeg"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "FFmpeg Command"
+msgstr "FFmpeg 命令"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "FFmpeg Executable Path"
+msgstr "FFmpeg 可执行文件路径"
+
+#. placeholder {0}: version?.ffmpeg
+#: src/pages/welcome/WelcomePage.tsx
+msgid "FFMPEG is installed. Detected version {0}"
+msgstr "FFmpeg 已安装，检测到版本 {0}"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "FFMPEG is not detected."
+msgstr "未检测到 FFmpeg。"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "FFmpeg Log"
+msgstr "FFmpeg 日志"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "FFMPEG Log Level"
+msgstr "FFmpeg 日志级别"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "FFMPEG Log Method"
+msgstr "FFmpeg 日志输出方式"
+
+#: src/App.tsx
+msgid "FFmpeg not found. For all features to work, we recommend installing FFmpeg 7.1+ or update your FFmpeg executable path in settings."
+msgstr "未找到 FFmpeg。为使所有功能正常使用，建议安装 FFmpeg 7.1 及以上版本，或在设置中更新 FFmpeg 可执行文件路径。"
+
+#: src/hooks/useRouteName.ts
+msgid "FFmpeg Settings"
+msgstr "FFmpeg 设置"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "FFmpeg Transcode Path"
+msgstr "FFmpeg 转码路径"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "FFMPEG transcoding is required for some features like channel overlay, subtitles, and measures to prevent issues when switching episodes."
+msgstr "部分功能需要 FFmpeg 转码支持，例如频道水印、字幕，以及避免切换剧集时出现问题。"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "FFmpeg version 7.1+ recommended. Check your current version in the sidebar"
+msgstr "建议使用 FFmpeg 7.1 及以上版本，可在侧边栏查看当前版本"
+
+#. placeholder {0}: version.ffmpeg
+#: src/components/VersionFooter.tsx
+msgid "FFMPEG: {0}"
+msgstr "FFmpeg：{0}"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "FFprobe Executable Path"
+msgstr "FFprobe 可执行文件路径"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "FFprobe version 6.0+ recommended. Check your current version in the sidebar"
+msgstr "建议使用 FFprobe 6.0 及以上版本，可在侧边栏查看当前版本"
+
+#: src/components/search/SearchGroupNode.tsx
+#: src/components/search/SearchGroupNode.tsx
+#: src/components/search/SearchValueNode.tsx
+#: src/components/search/SearchValueNode.tsx
+msgid "Field"
+msgstr "字段"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "File"
+msgstr "文件"
+
+#: src/pages/ErrorPage.tsx
+msgid "File a Bug Report"
+msgstr "提交 Bug 报告"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Fill with Flex"
+msgstr "用弹性时间填充"
+
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
+#: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+msgid "Filler"
+msgstr "垫片"
+
+#. placeholder {0}: showName ?? ''
+#: src/hooks/slot_scheduler/useSlotName.ts
+msgid "Filler - {0}"
+msgstr "垫片 - {0}"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Filler Content"
+msgstr "垫片内容"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Filler cooldown must be a number"
+msgstr "垫片冷却时间必须为数字"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Filler is picked fresh at stream time like Flex time. The guide shows \"Commercial Break\" placeholders."
+msgstr "垫片像弹性时间一样在播放时才临时选取，节目单中显示为「广告时间」占位。"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Filler is resolved at schedule time. The guide shows specific filler titles."
+msgstr "垫片在排期时就已确定，节目单中会显示具体的垫片名称。"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+#: src/components/channel_config/ChannelFlexConfig.tsx
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+msgid "Filler List"
+msgstr "垫片列表"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Filler List Cooldown (seconds)"
+msgstr "垫片列表冷却时间（秒）"
+
+#. placeholder {0}: cs.description
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+msgid "Filler List: {0}"
+msgstr "垫片列表：{0}"
+
+#: src/hooks/useNavItems.tsx
+#: src/hooks/useRouteName.ts
+#: src/pages/library/FillerListsPage.tsx
+msgid "Filler Lists"
+msgstr "垫片列表"
+
+#: src/pages/library/FillerListsPage.tsx
+msgid "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
+msgstr "垫片列表是你希望在「弹性时间」内播放的视频集合。弹性时间指频道中没有安排正式节目的时段，通常用于填充时长。"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Filler Options"
+msgstr "垫片选项"
+
+#: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
+#: src/components/search/PointAndClickSearchBuilder.tsx
+#: src/components/search/SearchFilterBuilder.tsx
+#: src/components/smart_collections/CreateSmartCollectionDialog.tsx
+msgid "Filter"
+msgstr "筛选"
+
+#: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
+msgid "Filter Type"
+msgstr "筛选类型"
+
+#: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
+msgid "Filter which subtitle tracks are considered<0/><1>Any: </1> All subtitle tracks are considered <2/><3>Forced: </3>Only consider <4>\"forced\"</4>subtitle tracks <5/><6>Default: </6>Only consider default subtitle tracks <7/><8>None: </8> Do not select any subtitles"
+msgstr "筛选要考虑的字幕轨<0/><1>任意：</1>考虑所有字幕轨<2/><3>强制：</3>仅考虑<4>「强制」</4>字幕轨<5/><6>默认：</6>仅考虑默认字幕轨<7/><8>无：</8>不选择任何字幕"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Finish"
+msgstr "完成"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddReplicateModal.tsx
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Fixed"
+msgstr "固定"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Fixed Interval"
+msgstr "固定间隔"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+#: src/components/channel_config/EditChannelForm.tsx
+#: src/hooks/programming_controls/useSlotProgramOptions.ts
+#: src/hooks/programming_controls/useSlotProgramOptions.ts
+#: src/hooks/slot_scheduler/useSlotName.ts
+#: src/hooks/useProgramTitleFormatter.ts
+#: src/hooks/useRouteName.ts
+msgid "Flex"
+msgstr "弹性时间"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Flex Style"
+msgstr "弹性时间样式"
+
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
+msgstr "有关手动获取 Plex 令牌的详细说明，请见<0>此处</0>"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Force Scan"
+msgstr "强制扫描"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Forced"
+msgstr "强制字幕"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Frame Rate"
+msgstr "帧率"
+
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+msgid "Frequency"
+msgstr "频率"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+#: src/pages/settings/SettingsLayout.tsx
+msgid "General"
+msgstr "常规"
+
+#: src/pages/ErrorPage.tsx
+msgid "Generating Bug Report Link..."
+msgstr "正在生成 Bug 报告链接…"
+
+#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
+#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
+#~ msgid "Genre"
+#~ msgstr "Genre"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Global Options"
+msgstr "全局选项"
+
+#: src/routes/__root.tsx
+msgid "Go Home"
+msgstr "返回首页"
+
+#: src/components/base/ProgramViewToggleButton.tsx
+msgid "Grid"
+msgstr "网格"
+
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+msgid "Group episode programs by their show."
+msgstr "按所属剧集对单集节目分组。"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Grouping works as follows:"
+msgstr "分组规则如下："
+
+#: src/hooks/useNavItems.tsx
+#: src/pages/guide/GuidePage.tsx
+msgid "Guide"
+msgstr "节目单"
+
+#: src/pages/guide/GuidePage.tsx
+msgid "Guide Start Time"
+msgstr "节目单起始时间"
+
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+msgid "Hardware Accel."
+msgstr "硬件加速"
+
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "Hardware Acceleration"
+msgstr "硬件加速"
+
+#: src/pages/settings/SettingsLayout.tsx
+msgid "HDHR"
+msgstr "HDHR"
+
+#: src/pages/settings/HdhrSettingsPage.tsx
+msgid "HDHR: Loading..."
+msgstr "HDHR：加载中…"
+
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "Head"
+msgstr "头部"
+
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+msgid "Healthy?"
+msgstr "是否正常？"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Hide Advanced"
+msgstr "隐藏高级选项"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Hide watermark during filler"
+msgstr "播放垫片时隐藏水印"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "HLS Direct Output Format"
+msgstr "HLS 直连输出格式"
+
+#: src/components/Video.tsx
+msgid "HLS not supported in this browser!"
+msgstr "当前浏览器不支持 HLS！"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "How far past its boundary can a slot's content extend? 'One extra item' allows exactly one more program that crosses the boundary."
+msgstr "时段的内容最多可以超出其边界多少？「One extra item」表示最多再允许一个跨越边界的节目。"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "How frequently libraries should be scanned (starting from midnight)."
+msgstr "媒体库的扫描频率（从午夜开始计算）。"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "How long each commercial break lasts"
+msgstr "每段广告的时长"
+
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "How often the XMLTV file is regenerated"
+msgstr "XMLTV 文件的重新生成频率"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "How often to insert a break"
+msgstr "插入广告的频率"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "HW Accel"
+msgstr "硬件加速"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "HW Acceleration"
+msgstr "硬件加速"
+
+#: src/pages/channels/ChannelsPage.tsx
+msgid "Icon"
+msgstr "图标"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "If a previous slot ran long, should this slot still play? Controls how late a slot can start."
+msgstr "若前一个时段超时，此时段是否仍要播出？用于控制时段最晚可以延后多久开始。"
+
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "If enabled, TV show episodes will use the poster of their show, instead of the individual episode poster."
+msgstr "启用后，剧集单集将使用所属剧集的海报，而不是单集自身的海报。"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+msgid "If no more programs can fit into a duration-based slot, flex time is added to fill the gap. This setting determines how flex is added <0>within</0> the slot to ensure all time is filled.<1/><2>Between:</2> Flex time is added between videos within a slot, if there are multiple<3/><4>End:</4> Flex time is added at the end of the slot"
+msgstr "当时长型时段无法再容纳更多节目时，会添加弹性时间来填补空缺。此设置决定弹性时间在时段<0>内部</0>如何添加，以确保时间被填满。<1/><2>节目之间：</2>若时段内有多个视频，弹性时间添加在视频之间<3/><4>时段末尾：</4>弹性时间添加在时段末尾"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "If set, all watermark overlays will be disabled for channels assigned this transcode config."
+msgstr "若启用，使用此转码配置的所有频道都将禁用水印叠加。"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "If set, any programming group with fewer episodes will be looped in order to make perfectly even blocks."
+msgstr "若启用，集数较少的节目组将被循环播放，以形成完全均等的块。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
+msgid "If there are issues playing a video, Tunarr will try to use an error screen as a placeholder while retrying loading the video every 60 seconds."
+msgstr "若播放视频时出现问题，Tunarr 会显示错误画面作为占位，并每 60 秒重试加载该视频。"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+msgid "If true, adjusting the weight of one slot will scale the weights of other slots such that all weights total 100%. Otherwise, weights can be adjusted freely and the weight of each slot is only relative to the total weight."
+msgstr "若为是，调整某个时段的权重时会自动缩放其他时段的权重，使总权重保持 100%。否则权重可自由调整，每个时段的权重仅相对于总权重而言。"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "If you are confident FFMPEG is installed, you may just need to update the executable path in the settings. To do so, simply click Edit above to update the path."
+msgstr "如果你确定已安装 FFmpeg，可能只需在设置中更新可执行文件路径。点击上方的「编辑」即可修改路径。"
+
+#: src/components/settings/UnsavedNavigationAlert.tsx
+msgid "If you proceed, all unsaved changes will be lost. Are you sure you want to proceed?"
+msgstr "如果继续，所有未保存的更改都将丢失。确定要继续吗？"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Image"
+msgstr "图片"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Image URL"
+msgstr "图片链接"
+
+#: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
+msgid "Include Seasons"
+msgstr "包含季"
+
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+#~ msgid "Increasing \"Max Lateness\" for the schedule."
+#~ msgstr "增大排期的「最大延迟时间」。"
+
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+msgid "Increasing \"Max Overflow\" for the schedule."
+msgstr "增大排期的「最大溢出」。"
+
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+msgid "Increasing the slot duration."
+msgstr "增加时段时长。"
+
+#: src/components/settings/general/BackupForm.tsx
+msgid "Increment"
+msgstr "增量"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Initial Delay (minutes)"
+msgstr "初始延迟（分钟）"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Initial Delay + Interval"
+msgstr "初始延迟 + 间隔"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Insert breaks at these percentages of the program duration"
+msgstr "在节目时长的这些百分比位置插入广告"
+
+#: src/pages/welcome/WelcomePage.tsx
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Install FFMPEG"
+msgstr "安装 FFmpeg"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Interval (minutes)"
+msgstr "间隔（分钟）"
+
+#: src/components/slot_scheduler/SlotOrderFormControl.tsx
+msgid "Inverse linear decay, heavier weighting."
+msgstr "反线性衰减，权重更大。"
+
+#: src/components/channel_config/MediaGridItem.tsx
+msgid "Item was not present during the last scan"
+msgstr "上次扫描时该条目不存在"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Items from any filler list will not be chosen more frequently than this cooldown setting."
+msgstr "任何垫片列表中的条目，其被选中的频率都不会高于此冷却时间设置。"
+
+#: src/components/settings/media_source/AddMediaSourceButton.tsx
+msgid "Jellyfin"
+msgstr "Jellyfin"
+
+#: src/components/search/SearchInput.tsx
+#: src/components/smart_collections/CreateSmartCollectionDialog.tsx
+msgid "Keywords"
+msgstr "关键词"
+
+#: src/components/search/SearchInput.tsx
+msgid "Keywords perform full text search across all (or configured) fields"
+msgstr "关键词会在所有（或已配置的）字段中进行全文检索"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Label"
+msgstr "标签"
+
+#: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
+#: src/components/LanguageAutocomplete.tsx
+#: src/components/LanguagePreferencesList.tsx
+#: src/components/settings/general/WebSettings.tsx
+#: src/components/settings/general/WebSettings.tsx
+#: src/components/settings/general/WebSettings.tsx
+#: src/pages/system/TroubleshootPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Language"
+msgstr "语言"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+msgid "Last run"
+msgstr "上次运行"
+
+#. placeholder {0}: library.lastScannedAt ? dayjs(library.lastScannedAt)?.format() : t`never`
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+msgid "Last Scanned: {0}"
+msgstr "上次扫描：{0}"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+msgid "Last Scheduled Execution"
+msgstr "上次计划执行"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Last Synced"
+msgstr "上次同步"
+
+#. placeholder {0}: dayjs(customShow.lastSyncedAt).fromNow()
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "Last synced {0}"
+msgstr "上次同步于 {0}"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Lazy"
+msgstr "延迟"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Leave blank to use the channel's icon."
+msgstr "留空则使用频道图标。"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Let's get started..."
+msgstr "让我们开始吧…"
+
+#: src/pages/system/SystemLogsPage.tsx
+msgid "Level"
+msgstr "级别"
+
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+msgid "Libraries"
+msgstr "媒体库"
+
+#: src/components/channel_config/ImportedLibrarySeletor.tsx
+#: src/components/channel_config/ImportedLibrarySeletor.tsx
+#: src/hooks/useNavItems.tsx
+#: src/hooks/useRouteName.ts
+#: src/pages/library/LibraryIndexPage.tsx
+msgid "Library"
+msgstr "媒体库"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Library Clip (not yet implemented)"
+msgstr "媒体库片段（尚未实现）"
+
+#. placeholder {0}: library.name
+#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx
+msgid "Library: {0}"
+msgstr "媒体库：{0}"
+
+#: src/components/settings/DarkModeButton.tsx
+msgid "Light"
+msgstr "浅色"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
+msgstr "与随机打乱类似，但会尽量保持每部剧集的集数顺序。如果某部剧的剧集出现多次，也会相应地循环排列。"
+
+#: src/components/channel_config/plex/PlexFilterBuilder.tsx
+#~ msgid "Limit"
+#~ msgstr "Limit"
+
+#: src/components/channel_config/plex/PlexFilterBuilder.tsx
+#~ msgid "Limit must be numeric"
+#~ msgstr "Limit must be numeric"
+
+#: src/components/slot_scheduler/SlotOrderFormControl.tsx
+msgid "Linear"
+msgstr "线性"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Link Mode"
+msgstr "关联模式"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Link to existing slot"
+msgstr "关联到已有时段"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Linked slots advance episode progression together sequentially."
+msgstr "关联的时段会一起按顺序推进剧集进度。"
+
+#: src/components/base/ProgramViewToggleButton.tsx
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+msgid "List"
+msgstr "列表"
+
+#: src/components/programs/Actors.tsx
+msgid "Load More"
+msgstr "加载更多"
+
+#: src/components/Video.tsx
+msgid "Load Stream"
+msgstr "加载流"
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+msgid "Loading"
+msgstr "加载中"
+
+#: src/components/ProgramSearchAutocomplete.tsx
+msgid "Loading..."
+msgstr "加载中…"
+
+#: src/components/ProgramSearchAutocomplete.tsx
+msgid "Loading…"
+msgstr "加载中…"
+
+#: src/components/settings/media_source/AddMediaSourceButton.tsx
+msgid "Local"
+msgstr "本地"
+
+#: src/components/settings/media_source/EditPathReplacementsForm.tsx
+msgid "Local Path"
+msgstr "本地路径"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+msgid "Lock Weights"
+msgstr "锁定权重"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Log Level"
+msgstr "日志级别"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Log level to pass to ffmpeg. Read more about ffmpeg's log levels <0>here</0>"
+msgstr "传递给 ffmpeg 的日志级别。点击<0>此处</0>了解 ffmpeg 日志级别的更多信息"
+
+#: src/components/slot_scheduler/SlotOrderFormControl.tsx
+msgid "Logarithmic"
+msgstr "对数"
+
+#: src/components/slot_scheduler/SlotOrderFormControl.tsx
+msgid "Logarithmic decay, lighter weighting."
+msgstr "对数衰减，权重更小。"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Logging"
+msgstr "日志记录"
+
+#: src/hooks/useNavItems.tsx
+#: src/pages/system/SystemLayout.tsx
+msgid "Logs"
+msgstr "日志"
+
+#: src/pages/system/StatusPage.tsx
+msgid "Logs Directory:"
+msgstr "日志目录："
+
+#: src/pages/ErrorPage.tsx
+msgid "Looks like something went wrong."
+msgstr "看起来出了问题。"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Loop Short Programs"
+msgstr "循环短节目"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Loudness Range Target"
+msgstr "响度范围目标"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Loudness Target"
+msgstr "响度目标"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Loudnorm Options"
+msgstr "Loudnorm 选项"
+
+#: src/components/programming_controls/AddReplicateModal.tsx
+msgid "Makes multiple copies of the schedule and plays them in sequence"
+msgstr "复制多份排期并按顺序播放"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "Makes multiple copies of the schedule and plays them in sequence. Normally this isn't necessary, because Tunarr will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels."
+msgstr "复制多份排期并按顺序播放。通常这并非必要，因为 Tunarr 在排期播放完后总是会从头重新开始。但在应用其他变换之前，创建副本有时是一个有用的中间步骤。注意，过大的频道可能引发问题，因此副本数量会受到限制，以避免产生过大的频道。"
+
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+msgid "Manage Libraries"
+msgstr "管理媒体库"
+
+#: src/components/programming_controls/AdjustWeightsModal.tsx
+msgid "Manual"
+msgstr "手动"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+msgid "Manually add an access token from your Emby server"
+msgstr "手动添加来自 Emby 服务器的访问令牌"
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "Manually add an access token from your Jellyfin server"
+msgstr "手动添加来自 Jellyfin 服务器的访问令牌"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Match"
+msgstr "匹配"
+
+#: src/components/search/SearchGroupNode.tsx
+msgid "Match all of"
+msgstr "匹配以下全部"
+
+#: src/components/search/SearchGroupNode.tsx
+msgid "Match any of"
+msgstr "匹配以下任一"
+
+#: src/components/settings/general/BackupForm.tsx
+#: src/components/settings/general/BackupForm.tsx
+msgid "Max Backups"
+msgstr "最大备份数"
+
+#: src/components/programming_controls/AddBreaksModal.tsx
+msgid "Max Duration"
+msgstr "最大时长"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Max Duration (minutes)"
+msgstr "最大时长（分钟）"
+
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Max file size (bytes)"
+msgstr "最大文件大小（字节）"
+
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Max Lateness"
+msgstr "最大延迟"
+
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Max Overflow"
+msgstr "最大溢出"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Max True Peak"
+msgstr "最大真峰值"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Maximum number of breaks per program (0 = unlimited)"
+msgstr "每个节目最多插入的广告数（0 表示不限）"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+msgid "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel."
+msgstr "预计算排期的最大天数。注意排期长度还受频道允许的最大节目数量限制。"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel.<0/><1>Note: Previewing the schedule in the browser for long lengths of time can cause UI performance issues</1>"
+msgstr "预计算排期的最大天数。注意排期长度还受频道允许的最大节目数量限制。<0/><1>注意：在浏览器中预览过长时间跨度的排期可能导致界面卡顿</1>"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Media Info"
+msgstr "媒体信息"
+
+#: src/components/channel_config/ProgrammingSelector.tsx
+#: src/components/channel_config/ProgrammingSelector.tsx
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "Media Source"
+msgstr "媒体源"
+
+#. placeholder {0}: library.mediaSource.name
+#. placeholder {0}: mediaSource.name
+#: src/routes/media_sources_/$mediaSourceId/index.tsx
+#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx
+msgid "Media Source: \"{0}\""
+msgstr "媒体源：「{0}」"
+
+#: src/hooks/useRouteName.ts
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+msgid "Media Sources"
+msgstr "媒体源"
+
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
+msgstr "媒体源是 Tunarr 获取内容的来源。内容可以来自你的文件系统，也可以来自远程服务器（如 Plex 或 Jellyfin）。Tunarr 至少需要连接一个媒体源，才能创建频道并播放媒体。"
+
+#: src/components/MediaSourceLibraryTable.tsx
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+msgid "Media Type"
+msgstr "媒体类型"
+
+#: src/pages/system/SystemLogsPage.tsx
+msgid "Message"
+msgstr "消息"
+
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "Mid"
+msgstr "中"
+
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
+msgid "Mid-Roll"
+msgstr "中插广告"
+
+#: src/components/programming_controls/AddBreaksModal.tsx
+msgid "Min Duration"
+msgstr "最小时长"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Min Duration (minutes)"
+msgstr "最小时长（分钟）"
+
+#: src/components/channel_config/ChannelEpgConfig.tsx
+msgid "Min. Visible in Guide Duration Program (seconds)"
+msgstr "节目单中显示的最小节目时长（秒）"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Minimum Program Duration (minutes)"
+msgstr "最小节目时长（分钟）"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+msgid "Modify Programming"
+msgstr "修改节目编排"
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+msgid "Month"
+msgstr "月"
+
+#: src/components/channel_config/SelectedProgrammingList.tsx
+#: src/hooks/slot_scheduler/useSlotName.ts
+msgid "Movie"
+msgstr "电影"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Movie Sort"
+msgstr "电影排序"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Movie Sort Order"
+msgstr "电影排序方式"
+
+#. placeholder {0}: media.year
+#: src/components/channel_config/SelectedProgrammingList.tsx
+msgid "Movie, {0}"
+msgstr "电影，{0}"
+
+#: src/components/channels/ChannelPrograms.tsx
+#: src/hooks/programming_controls/useSlotProgramOptions.ts
+#: src/hooks/programming_controls/useSlotProgramOptions.ts
+#: src/pages/library/TrashPage.tsx
+msgid "Movies"
+msgstr "电影"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Movies are grouped altogether"
+msgstr "电影统一归为一组"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Music tracks are grouped by artist"
+msgstr "音乐曲目按艺术家分组"
+
+#: src/components/channels/ChannelPrograms.tsx
+#: src/pages/library/TrashPage.tsx
+msgid "Music Videos"
+msgstr "音乐视频"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Must define at least one language preference"
+msgstr "必须至少指定一种语言偏好"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Must use a valid URL, or empty."
+msgstr "必须填写有效的 URL，或留空。"
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+#: src/components/filler/EditFillerListForm.tsx
+#: src/components/MediaSourceLibraryTable.tsx
+#: src/components/settings/ConnectMediaSources.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+#: src/components/smart_collections/CreateSmartCollectionDialog.tsx
+#: src/components/smart_collections/EditSmartCollectionDialog.tsx
+#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/pages/settings/TaskSettingsPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Name"
+msgstr "名称"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Name can only contain alphanumeric characters, dashes, and underscores"
+msgstr "名称只能包含字母、数字、连字符和下划线"
+
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+msgid "Need at least one path"
+msgstr "至少需要一个路径"
+
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+msgid "never"
+msgstr "从未"
+
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/hooks/useRouteName.ts
+#: src/hooks/useRouteName.ts
+#: src/hooks/useRouteName.ts
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
+msgid "New"
+msgstr "新建"
+
+#: src/pages/channels/NewChannelPage.tsx
+msgid "New Channel"
+msgstr "新建频道"
+
+#: src/pages/library/EditCustomShowPage.tsx
+#: src/pages/library/NewCustomShowPage.tsx
+msgid "New Custom Show"
+msgstr "新建自定义剧集"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+msgid "New Emby Media Source"
+msgstr "新建 Emby 媒体源"
+
+#: src/pages/library/NewFillerPage.tsx
+msgid "New Filler List"
+msgstr "新建垫片列表"
+
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+msgid "New Local Media Source"
+msgstr "新建本地媒体源"
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "New Media Source"
+msgstr "新建媒体源"
+
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "New Plex Server"
+msgstr "新建 Plex 服务器"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Next"
+msgstr "下一步"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+msgid "Next run"
+msgstr "下次运行"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+msgid "Next Scheduled Execution"
+msgstr "下次计划执行"
+
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/channels/ChannelsPage.tsx
+msgid "No active sessions"
+msgstr "暂无活动会话"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "No media sources connected."
+msgstr "未连接任何媒体源。"
+
+#: src/components/channel_config/ProgrammingSelector.tsx
+msgid "No Media Sources detected."
+msgstr "未检测到媒体源。"
+
+#: src/components/channel_config/ChannelLineupList.tsx
+msgid "No programming added yet"
+msgstr "尚未添加任何节目"
+
+#: src/components/guide/TvGuide.tsx
+msgid "No Programming scheduled"
+msgstr "尚未安排节目"
+
+#: src/components/guide/TvGuide.tsx
+msgid "No programming scheduled for this time period"
+msgstr "该时间段内没有安排节目"
+
+#: src/components/channel_config/AddSelectedMediaButton.tsx
+#~ msgid "No programs selected"
+#~ msgstr "No programs selected"
+
+#: src/components/channel_config/MediaItemGrid.tsx
+#: src/components/channel_config/MediaItemList.tsx
+msgid "No results"
+msgstr "无结果"
+
+#. placeholder {0}: version.nodejs
+#: src/components/VersionFooter.tsx
+msgid "NodeJS: {0}"
+msgstr "Node.js：{0}"
+
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "None"
+msgstr "无"
+
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+msgid "None:"
+msgstr "无："
+
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "Normalize Frame Rate"
+msgstr "标准化帧率"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "Not a valid number"
+msgstr "不是有效的数字"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Not a valid URL"
+msgstr "不是有效的 URL"
+
+#: src/routes/__root.tsx
+msgid "Not found!"
+msgstr "未找到！"
+
+#: src/components/channels/ChannelNowPlayingCard.tsx
+msgid "Now Playing:"
+msgstr "正在播放："
+
+#: src/pages/channels/ChannelsPage.tsx
+msgid "Number"
+msgstr "编号"
+
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "Number of hours to include in the XMLTV file"
+msgstr "XMLTV 文件包含的小时数"
+
+#: src/components/programming_controls/AddReplicateModal.tsx
+#: src/components/programming_controls/AddReplicateModal.tsx
+msgid "Number of Replications"
+msgstr "复制份数"
+
+#: src/pages/system/SystemDebugPage.tsx
+msgid "Nvidia Capabilities"
+msgstr "Nvidia 支持能力"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "On-Demand"
+msgstr "点播"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "On-Demand channels resume from where you left off. Programming is paused when the channel is not streaming.<0/><1>NOTE:</1> While the channel is inactive, the TV Guide for the channel will be empty."
+msgstr "点播频道会从你上次观看的位置继续播放。频道停止播放时，节目进度会暂停。<0/><1>注意：</1>频道处于非活动状态时，其节目单将为空。"
+
+#: src/pages/channels/ChannelsPage.tsx
+msgid "On-Demand?"
+msgstr "点播模式？"
+
+#: src/pages/ErrorPage.tsx
+msgid "Oops!"
+msgstr "哎呀！"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Opacity"
+msgstr "不透明度"
+
+#. placeholder {0}: capitalize(program.sourceType)
+#: src/components/programs/MediaDetailCard.tsx
+msgid "Open in {0}"
+msgstr "在 {0} 中打开"
+
+#: src/components/channel_config/plex/PlexFilterBuilder.tsx
+#: src/components/channel_config/plex/PlexFilterBuilder.tsx
+#~ msgid "Operation"
+#~ msgstr "Operation"
+
+#: src/components/search/SearchValueNode.tsx
+#: src/components/search/SearchValueNode.tsx
+msgid "Operator"
+msgstr "运算符"
+
+#: src/components/channels/ChannelOptionsButton.tsx
+msgid "Options"
+msgstr "选项"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "OR"
+msgstr "或"
+
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+#: src/components/slot_scheduler/SlotOrderFormControl.tsx
+#: src/components/slot_scheduler/SlotOrderFormControl.tsx
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+msgid "Order"
+msgstr "顺序"
+
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+msgid "Order of programming within the slot"
+msgstr "时段内节目的排列顺序"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "Organize"
+msgstr "整理"
+
+#: src/components/channels/ChannelPrograms.tsx
+#: src/pages/library/TrashPage.tsx
+msgid "Other Videos"
+msgstr "其他视频"
+
+#: src/components/settings/general/BackupForm.tsx
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "Output Path"
+msgstr "输出路径"
+
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "Output video at a constant frame rate."
+msgstr "以恒定帧率输出视频。"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Overflow Behavior"
+msgstr "溢出处理方式"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Override global audio and subtitle settings for this channel."
+msgstr "为此频道覆盖全局音频与字幕设置。"
+
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+msgid "Override how far past its boundary this slot's content can extend."
+msgstr "覆盖此时段的内容最多可超出其边界的程度。"
+
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+msgid "Override how late this slot can start if a previous slot ran long."
+msgstr "覆盖前一个时段超时时，此时段最晚可以延后多久开始。"
+
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+msgid "Override how programs within this slot are padded."
+msgstr "覆盖此时段内节目的填充方式。"
+
+#. placeholder {0}: hardwareAccelerationMode === 'qsv' ? 'QSV' : 'VA-API'
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "Override the default {0} device path (defaults to <0>/dev/dri/renderD128</0> on Linux and blank otherwise)"
+msgstr "覆盖默认的 {0} 设备路径（Linux 下默认为 <0>/dev/dri/renderD128</0>，其他系统默认为空）"
+
+#: src/components/programs/ProgramDetailsDialog.tsx
+msgid "Overview"
+msgstr "概览"
+
+#: src/components/programming_controls/AddPaddingModal.tsx
+#: src/components/programming_controls/AddPaddingModal.tsx
+#: src/components/programming_controls/AddPaddingModal.tsx
+msgid "Pad Start Times"
+msgstr "对齐开始时间"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+msgid "Pad Style"
+msgstr "填充方式"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Pad Times"
+msgstr "填充时间"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Passthrough audio unchanged. Other settings will not apply."
+msgstr "直接透传音频不做处理，其他设置将不生效。"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "Password"
+msgstr "密码"
+
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Path"
+msgstr "路径"
+
+#: src/components/settings/media_source/EditPathReplacementsForm.tsx
+msgid "Path Replacements"
+msgstr "路径替换"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Percentage-Based"
+msgstr "按百分比"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Period"
+msgstr "周期"
+
+#: src/components/programming_controls/RemoveShowsModal.tsx
+msgid "Pick specific programming to remove from the channel."
+msgstr "选择要从频道中移除的特定节目。"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Pipeline"
+msgstr "处理管线"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Pipeline Steps"
+msgstr "管线步骤"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Pixel Format"
+msgstr "像素格式"
+
+#: src/components/channel_config/ChannelEpgConfig.tsx
+msgid "Placeholder Program Title"
+msgstr "占位节目名称"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Platform"
+msgstr "平台"
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "Playlist"
+msgstr "播放列表"
+
+#: src/components/channel_config/plex/PlexLibrarySelector.tsx
+#: src/components/channel_config/plex/PlexProgrammingSelector.tsx
+#~ msgid "Playlists"
+#~ msgstr "Playlists"
+
+#: src/components/programming_controls/AddReplicateModal.tsx
+msgid "Please choose a value greater than 1"
+msgstr "请选择大于 1 的值"
+
+#: src/components/settings/media_source/AddMediaSourceButton.tsx
+msgid "Plex (Auto)"
+msgstr "Plex（自动）"
+
+#: src/components/settings/media_source/AddMediaSourceButton.tsx
+msgid "Plex (Manual)"
+msgstr "Plex（手动）"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Position"
+msgstr "位置"
+
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "Post"
+msgstr "后"
+
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "Pre"
+msgstr "前"
+
+#: src/components/slot_scheduler/RandomSlotPresetButton.tsx
+msgid "Presets"
+msgstr "预设"
+
+#: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
+msgid "Priority"
+msgstr "优先级"
+
+#: src/components/settings/UnsavedNavigationAlert.tsx
+msgid "Proceed"
+msgstr "继续"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Profile"
+msgstr "配置文件"
+
+#: src/components/ProgramSearchAutocomplete.tsx
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+#: src/components/slot_scheduler/RedirectProgrammingForm.tsx
+#: src/components/slot_scheduler/ShowSlotProgrammingForm.tsx
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Program"
+msgstr "节目"
+
+#: src/components/programming_controls/BalanceProgrammingModal.tsx
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+msgid "Program Count"
+msgstr "节目数量"
+
+#: src/components/RawProgramDetails.tsx
+msgid "Program JSON"
+msgstr "节目 JSON"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Program Playback Troubleshooter"
+msgstr "节目播放排查工具"
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+#: src/components/filler/EditFillerListForm.tsx
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
+#: src/hooks/useRouteName.ts
+msgid "Programming"
+msgstr "节目编排"
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Programming Preview"
+msgstr "节目编排预览"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Programming Start"
+msgstr "节目开始"
+
+#: src/components/programming_controls/AddRestrictHoursModal.tsx
+msgid "Programming starts at {startTime} and stops at {endTime}"
+msgstr "节目从 {startTime} 开始，到 {endTime} 结束"
+
+#: src/components/channels/ChannelSummaryQuickStats.tsx
+msgid "Programs"
+msgstr "节目"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
+msgstr "安排一个弹性时间时段。通常你会使用填充时间、限制时段或添加广告来批量生成弹性时间，此功能则适用于更具体的场景。"
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+msgid "Programs saved!"
+msgstr "节目已保存！"
+
+#. placeholder {0}: errors?.guideMinimumDuration?.message ?? ''
+#: src/components/channel_config/ChannelEpgConfig.tsx
+msgid ""
+"Programs shorter than this value will be treated the same as Flex time. Meaning that the TV Guide will try to meld them with the previous program or display the block of programs as the \"place holder program\" if they make a large continuous group. Use 0 to disable this feature or use a large value to make the channel report only the placeholder program and not the real programming.\n"
+"{0}"
+msgstr ""
+"时长短于此值的节目将被视同弹性时间处理。也就是说，节目单会尝试将其与前一个节目合并；如果它们构成较长的连续块，则显示为「占位节目」。设为 0 可禁用此功能，或设为很大的值，使频道只上报占位节目而不显示真实节目。\n"
+"{0}"
+
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+msgid "Programs Too Long"
+msgstr "节目过长"
+
+#: src/components/channel_config/EditChannelForm.tsx
+msgid "Properties"
+msgstr "属性"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Protocol must be HTTP or HTTPS"
+msgstr "协议必须是 HTTP 或 HTTPS"
+
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "QSV Device"
+msgstr "QSV 设备"
+
+#: src/components/MediaSourceLibraryTable.tsx
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Queued"
+msgstr "已排队"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Random"
+msgstr "随机"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Random (by show)"
+msgstr "随机（按剧集）"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Random..."
+msgstr "随机…"
+
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Random…"
+msgstr "随机…"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Range"
+msgstr "范围"
+
+#: src/components/programs/MediaDetailCard.tsx
+msgid "Read Less"
+msgstr "收起"
+
+#: src/components/programs/MediaDetailCard.tsx
+msgid "Read More"
+msgstr "展开阅读"
+
+#: src/components/programming_controls/AddRedirectModal.tsx
+msgid "Redirect duration"
+msgstr "跳转时长"
+
+#. placeholder {0}: p.channelName
+#. placeholder {0}: p.name
+#: src/hooks/programming_controls/useSlotProgramOptions.ts
+#: src/hooks/useProgramTitleFormatter.ts
+msgid "Redirect to \"{0}\""
+msgstr "跳转到「{0}」"
+
+#. placeholder {0}: p.channel
+#: src/components/guide/TvGuide.tsx
+msgid "Redirect to Channel {0}"
+msgstr "跳转到频道 {0}"
+
+#: src/hooks/useVersion.tsx
+msgid "Refresh"
+msgstr "刷新"
+
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+msgid "Refresh Libraries"
+msgstr "刷新媒体库"
+
+#: src/pages/ErrorPage.tsx
+msgid "Refresh Page"
+msgstr "刷新页面"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Refresh Preview"
+msgstr "刷新预览"
+
+#: src/pages/settings/XmlTvSettingsPage.tsx
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "Refresh Timer (Hours)"
+msgstr "刷新周期（小时）"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Release Date"
+msgstr "上映日期"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Release Date (asc)"
+msgstr "上映日期（升序）"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Release Date (desc)"
+msgstr "上映日期（降序）"
+
+#: src/components/Video.tsx
+msgid "Reload Stream"
+msgstr "重新加载流"
+
+#: src/components/library/ProgramListItem.tsx
+msgid "Remove"
+msgstr "移除"
+
+#. placeholder {0}: import { betterHumanize } from '@/helpers/dayjs'; import { isNonEmptyString } from '@/helpers/util'; import { Autocomplete, Box, Checkbox, Chip, DialogContentText, List, ListItem, ListItemText, TextField, } from '@mui/material'; import Button from '@mui/material/Button'; import Dialog from '@mui/material/Dialog'; import DialogActions from '@mui/material/DialogActions'; import DialogContent from '@mui/material/DialogContent'; import DialogTitle from '@mui/material/DialogTitle'; import { seq } from '@tunarr/shared/util'; import dayjs from 'dayjs'; import { every, identity, includes, isEmpty, map, reduce, some, uniqBy, values, } from 'lodash-es'; import { Trans, useLingui } from '@lingui/react/macro'; import { plural } from '@lingui/core/macro'; import type { HTMLAttributes } from 'react'; import { useMemo, useState } from 'react'; import { match, P } from 'ts-pattern'; import { useCounter } from 'usehooks-ts'; import { extractProgramGrandparent } from '../../helpers/programUtil.ts'; import type { RemoveProgrammingRequest } from '../../hooks/programming_controls/useRemoveProgramming'; import { useRemoveProgramming } from '../../hooks/programming_controls/useRemoveProgramming'; import useStore from '../../store'; import { materializedProgramListSelector } from '../../store/selectors'; type RemoveShowsModalProps = { open: boolean; onClose: () => void; }; interface FilmOptionType { id: string; title: string; firstLetter?: string; } export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => { const { t } = useLingui(); const { count, increment, decrement } = useCounter(0); const removeProgramming = useRemoveProgramming(); const [removeRequest, setRemoveRequest] = useState<RemoveProgrammingRequest>( {}, ); const programs = useStore(materializedProgramListSelector); const hasMovies = useMemo(() => { return some( programs, (p) => p.type === 'content' && p.program.type === 'movie', ); }, [programs]); const numAndDurationById = useMemo(() => { return reduce( programs, (acc, curr) => { const key = match(curr) .with( { type: 'content', program: { type: P.select(P.union('movie', 'music_video', 'other_video')), }, }, identity, ) .with( { type: 'content', program: { type: 'episode' } }, ({ program }) => program.show?.uuid ?? program.season?.show?.uuid, ) .with( { type: 'content', program: { type: 'track' } }, ({ program }) => program.artist?.uuid ?? program.album?.artist?.uuid, ) .with({ type: P._ }, () => undefined) .exhaustive(); if (key) { acc[key] ??= { totalDuration: 0, totalPrograms: 0 }; acc[key].totalDuration += curr.duration; acc[key].totalPrograms++; } return acc; }, {} as Record<string, { totalPrograms: number; totalDuration: number }>, ); }, [programs]); // Get the total number of movies from the memoized object const movieCount = numAndDurationById['movie']?.totalPrograms ?? 0; const showList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'episode' && isNonEmptyString( program.program.show?.uuid ?? program.program.season?.show?.uuid, ) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const artistList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'track' && isNonEmptyString(extractProgramGrandparent(program.program)?.uuid) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const mapListToGroupedOptions = ( list: Array<{ id: string; title: string }>, ) => { return list.map((option) => { // Get the first letter, use a placeholder if title is empty. const firstLetter = (option.title?.[0] ?? '-').toUpperCase(); return { // Group numbers/digits under '0-9', otherwise use the first letter. firstLetter: /[0-9]/.test(firstLetter) ? '0-9' : firstLetter, ...option, }; }); }; const showOptions = useMemo( () => mapListToGroupedOptions(showList), [showList], ); const artistOptions = useMemo( () => mapListToGroupedOptions(artistList), [artistList], ); const isEmptyRemoveRequest = useMemo(() => { return ( isEmpty(removeRequest) ?? every(values(removeRequest), (value) => { // If it's a boolean (movies: true/false), only check if it's the 'empty' state (false). // We do this because lodash treats booleans as empty regardless of value if (typeof value === 'boolean') { return value === false; } // Otherwise, check if the value is empty. return isEmpty(value); }) ); }, [removeRequest]); const removeShowsProgramming = () => { removeProgramming(removeRequest); onClose(); }; const getProgramCounts = (id: string, type?: string) => { const details = numAndDurationById[id]; if (!details) { return null; } const count = details.totalPrograms; const programLabel = type === 'episode' ? plural(count, { one: 'episode', other: 'episodes' }) : type === 'track' ? plural(count, { one: 'track', other: 'tracks' }) : plural(count, { one: 'program', other: 'programs' }); return t`${count} ${programLabel}, ${betterHumanize( dayjs.duration(details.totalDuration), { style: 'short', }, )}`; }; const getArtistIds = (options: FilmOptionType[]) => map(options, 'id'); return ( <> <Dialog open={open} scroll={'paper'}> <DialogTitle> <Trans>Remove Programming</Trans> </DialogTitle> <DialogContent> <DialogContentText> <Trans>Pick specific programming to remove from the channel.</Trans> </DialogContentText> <Autocomplete options={showOptions.sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.showIds ?? []; return includes(selectedIds, option.id); }} onChange={(_, newOptions) => { // Extract the IDs from the selected options const newShowIds = map(newOptions, 'id'); setRemoveRequest((prev) => ({ ...prev, showIds: newShowIds, })); // Update the program counter based on the number of selected shows const countDifference = newShowIds.length - (removeRequest.showIds?.length ?? 0); if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} value={ removeRequest.showIds ? showList.filter((show) => (removeRequest.showIds ?? []).includes(show.id), ) : [] } renderInput={(params) => ( <TextField {...params} label={t`Select Shows to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'episode')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> {artistList.length > 0 && ( <Autocomplete options={artistOptions.sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.artistIds ?? []; return includes(selectedIds, option.id); }} value={ removeRequest.artistIds ? artistList.filter((artist) => (removeRequest.artistIds ?? []).includes(artist.id), ) : [] } onChange={(_, newOptions) => { const newArtistIds = getArtistIds(newOptions); const previousArtistIds = removeRequest.artistIds ?? []; setRemoveRequest((prev) => ({ ...prev, artistIds: newArtistIds, })); // Update the program counter based on the number of selected shows const countDifference = newArtistIds.length - previousArtistIds.length; if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} renderInput={(params) => ( <TextField {...params} label={t`Select Artists to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'track')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> )} <Box key="dynamic-list-container"> <List dense> {hasMovies && ( <ListItem secondaryAction={ <Checkbox edge="end" onChange={(e) => { const isChecked = e.target.checked; setRemoveRequest((prev) => { const newState = { ...prev, movies: isChecked, }; return newState; }); const countDelta = isChecked ? movieCount : -movieCount; for (let i = 0; i < Math.abs(countDelta); i++) { if (countDelta > 0) increment(); else decrement(); } }} checked={!!removeRequest.movies} /> } > <ListItemText primary={t`Remove All ${movieCount} ${plural(movieCount, { one: 'Movie', other: 'Movies' })}`} secondary={getProgramCounts('movies')} /> </ListItem> )} </List> </Box> </DialogContent> <DialogActions> <Button onClick={() => onClose()}> <Trans>Cancel</Trans> </Button> <Button variant="contained" onClick={() => removeShowsProgramming()} disabled={isEmptyRemoveRequest} > <Trans> Remove {count}{' '} {plural(count, { one: 'program', other: 'programs' })} </Trans> </Button> </DialogActions> </Dialog> </> ); }; 
+#: src/components/programming_controls/RemoveShowsModal.tsx
+msgid "Remove {count} {0}"
+msgstr "移除 {count} {0}"
+
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+msgid "Remove All"
+msgstr "全部移除"
+
+#: src/components/programming_controls/RemoveShowsModal.tsx
+msgid "Remove All {movieCount} {movieCount, plural, one {Movie} other {Movies}}"
+msgstr "移除全部 {movieCount} {movieCount, plural, other {部电影}}"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+#~ msgid "Remove custom icon"
+#~ msgstr "Remove custom icon"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "Remove icon"
+msgstr "移除图标"
+
+#: src/components/programming_controls/RemoveShowsModal.tsx
+msgid "Remove Programming"
+msgstr "移除节目"
+
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+msgid "Remove..."
+msgstr "移除…"
+
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+msgid "Removes all Flex periods from the schedule."
+msgstr "移除排期中的所有弹性时段。"
+
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Removes all programs from custom show"
+msgstr "移除自定义剧集中的所有节目"
+
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+msgid "Removes all programs from schedule"
+msgstr "移除排期中的所有节目"
+
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+msgid "Removes any specials from the schedule. Specials are episodes with season '00'."
+msgstr "移除排期中的所有特别篇。特别篇指季号为 00 的剧集。"
+
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+msgid "Removes repeated programs."
+msgstr "移除重复的节目。"
+
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+msgid "Removing overrun programs from the channel."
+msgstr "从频道中移除超时的节目。"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Renders a channel icon (also known as bug or Digital On-screen Graphic) on top of the channel's stream."
+msgstr "在频道流画面上叠加频道图标（也称台标或屏幕角标）。"
+
+#: src/components/programming_controls/AddRerunBlockModal.tsx
+msgid "Repeats"
+msgstr "重播"
+
+#: src/components/programming_controls/AddReplicateModal.tsx
+msgid "Replicate Programs"
+msgstr "复制节目"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "Replicate..."
+msgstr "复制…"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Rerun"
+msgstr "重播"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Rescan Interval (hours)"
+msgstr "重新扫描间隔（小时）"
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+#: src/components/custom-shows/EditCustomShowForm.tsx
+#: src/components/filler/EditFillerListForm.tsx
+msgid "Reset"
+msgstr "重置"
+
+#: src/components/channel_config/ChannelEditActions.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+#: src/pages/settings/FeaturesSettingsPage.tsx
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#: src/pages/settings/HdhrSettingsPage.tsx
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "Reset Changes"
+msgstr "重置更改"
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+msgid "Reset changes made to the channel's lineup"
+msgstr "重置对频道节目单所做的更改"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Reset Options"
+msgstr "重置选项"
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "Reset programming to most recently saved state"
+msgstr "将节目编排重置为最近一次保存的状态"
+
+#: src/pages/guide/GuidePage.tsx
+msgid "Reset to current date/time"
+msgstr "重置为当前日期/时间"
+
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Resolution"
+msgstr "分辨率"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "Restore default logo"
+msgstr "恢复默认台标"
+
+#: src/pages/settings/HdhrSettingsPage.tsx
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "Restore Default Settings"
+msgstr "恢复默认设置"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#: src/components/programming_controls/AddRestrictHoursModal.tsx
+msgid "Restrict Hours"
+msgstr "限制时段"
+
+#: src/components/search/SearchInput.tsx
+msgid "Restrict search fields"
+msgstr "限定搜索字段"
+
+#: src/components/channel_config/SelectedProgrammingActions.tsx
+msgid "Review"
+msgstr "复查"
+
+#: src/components/channel_config/SelectedProgrammingActions.tsx
+msgid "Review Selections"
+msgstr "复查所选内容"
+
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Roll based on size"
+msgstr "按文件大小轮转"
+
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Roll on Schedule"
+msgstr "按计划轮转"
+
+#: src/components/settings/general/LogRollForm.tsx
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Roll the log file on a fixed schedule, regardless of file size."
+msgstr "按固定的时间计划轮转日志文件，不受文件大小影响。"
+
+#: src/components/library/LibraryListViewBreadcrumbs.tsx
+msgid "Root"
+msgstr "根"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+msgid "Run"
+msgstr "运行"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+msgid "Run now"
+msgstr "立即运行"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Run Troubleshooter"
+msgstr "运行排查工具"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Running..."
+msgstr "运行中…"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Sample rate cannot be changed when copying input audio"
+msgstr "复制输入音频时无法修改采样率"
+
+#: src/components/channel_config/ChannelEditActions.tsx
+#: src/components/channel_config/ChannelEditActions.tsx
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+#: src/components/custom-shows/EditCustomShowForm.tsx
+#: src/components/filler/EditFillerListForm.tsx
+#: src/components/programming_controls/AddBreaksModal.tsx
+#: src/components/programming_controls/AddFlexModal.tsx
+#: src/components/programming_controls/AddRedirectModal.tsx
+#: src/components/programming_controls/AddReplicateModal.tsx
+#: src/components/programming_controls/AddRerunBlockModal.tsx
+#: src/components/programming_controls/AddRestrictHoursModal.tsx
+#: src/components/programming_controls/AdjustWeightsModal.tsx
+#: src/components/settings/general/GeneralSettingsForm.tsx
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+#: src/components/smart_collections/CreateSmartCollectionDialog.tsx
+#: src/components/smart_collections/EditSmartCollectionDialog.tsx
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+#: src/pages/settings/FeaturesSettingsPage.tsx
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#: src/pages/settings/HdhrSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "Save"
+msgstr "保存"
+
+#: src/components/smart_collections/CreateSmartCollectionDialog.tsx
+msgid "Save as new collection…"
+msgstr "另存为新合集…"
+
+#: src/components/search/SearchInput.tsx
+msgid "Save as Smart Collection"
+msgstr "另存为智能合集"
+
+#: src/components/smart_collections/CreateSmartCollectionDialog.tsx
+msgid "Save Smart Collection"
+msgstr "保存智能合集"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Scan"
+msgstr "扫描"
+
+#. placeholder {0}: prettifySnakeCaseString(programType)
+#: src/components/programs/ProgramOperationsMenu.tsx
+msgid "Scan {0}"
+msgstr "扫描 {0}"
+
+#: src/pages/settings/SettingsLayout.tsx
+msgid "Scanner"
+msgstr "扫描器"
+
+#: src/components/MediaSourceLibraryTable.tsx
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Scanning"
+msgstr "扫描中"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "Schedule programming in blocks that are either count or duration based. Can be used to generate random schedules."
+msgstr "按数量或时长分块编排节目，可用于生成随机排期。"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "Schedule programming using slots assigned a start time and duration."
+msgstr "使用指定了开始时间和时长的时段来编排节目。"
+
+#: src/hooks/useRouteName.ts
+msgid "Search"
+msgstr "搜索"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Search for a program"
+msgstr "搜索节目"
+
+#: src/components/ProgramSearchAutocomplete.tsx
+msgid "Search for shows"
+msgstr "搜索剧集"
+
+#: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx
+msgid "Search is currently scoped to this Media Source Library."
+msgstr "当前搜索范围限定在此媒体源媒体库内。"
+
+#: src/routes/media_sources_/$mediaSourceId/index.tsx
+msgid "Search is currently scoped to this Media Source."
+msgstr "当前搜索范围限定在此媒体源内。"
+
+#: src/pages/system/StatusPage.tsx
+msgid "Search Server URL:"
+msgstr "搜索服务器地址："
+
+#: src/components/TopBar.tsx
+msgid "Search…"
+msgstr "搜索…"
+
+#: src/components/programs/Seasons.tsx
+msgid "Seasons"
+msgstr "季"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Select a program and channel to test playback. The troubleshooter will analyze stream selection, build the FFmpeg pipeline, and run a short test transcode."
+msgstr "选择一个节目和频道来测试播放。排查工具会分析流的选择、构建 FFmpeg 处理管线，并运行一次简短的转码测试。"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Select a slot to link to"
+msgstr "选择要关联的时段"
+
+#: src/components/channel_config/SelectedProgrammingActions.tsx
+#: src/components/search/SearchFieldRestrictMenu.tsx
+msgid "Select All"
+msgstr "全选"
+
+#: src/components/programming_controls/RemoveShowsModal.tsx
+msgid "Select Artists to Remove"
+msgstr "选择要移除的艺术家"
+
+#: src/components/programming_controls/RemoveShowsModal.tsx
+msgid "Select Shows to Remove"
+msgstr "选择要移除的剧集"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Select the port the Tunarr server will listen on. This requires a server restart to take effect."
+msgstr "选择 Tunarr 服务器监听的端口。此设置需重启服务器后才能生效。"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Selected Audio"
+msgstr "已选音频"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Selected Subtitle"
+msgstr "已选字幕"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Server is unreachable"
+msgstr "服务器无法连接"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Server Listen Port"
+msgstr "服务器监听端口"
+
+#: src/components/settings/media_source/EditPathReplacementsForm.tsx
+msgid "Server Path"
+msgstr "服务器路径"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Server Settings"
+msgstr "服务器设置"
+
+#: src/pages/settings/FeaturesSettingsPage.tsx
+msgid "Set by environment variable"
+msgstr "由环境变量设置"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Set the host of your Tunarr backend. When empty, the web UI will use the current host/port to communicate with the backend."
+msgstr "设置 Tunarr 后端的主机地址。留空时，网页界面将使用当前的主机/端口与后端通信。"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Set the log level for the Tunarr server.<0/>Selecting <1>\"Use environment settings\"</1> will instruct the server to use the <2>LOG_LEVEL</2> environment variable, if set, or system default \"info\"."
+msgstr "设置 Tunarr 服务器的日志级别。<0/>选择<1>「使用环境设置」</1>将指示服务器使用 <2>LOG_LEVEL</2> 环境变量（若已设置），否则使用系统默认值「info」。"
+
+#: src/components/settings/general/BackupForm.tsx
+msgid "Set to 0 to never delete backups"
+msgstr "设为 0 表示永不删除备份"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Sets the number of threads used to decode the input stream. Set to 0 to let ffmpeg automatically decide how many threads to use. Read more about this option <0>here</0>. <1>Note: </1> this option is overridden to 1 when using hardware accelearation for stability reasons."
+msgstr "设置用于解码输入流的线程数。设为 0 表示由 ffmpeg 自动决定线程数。点击<0>此处</0>了解该选项的更多信息。<1>注意：</1>出于稳定性考虑，使用硬件加速时此选项会被强制设为 1。"
+
+#: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
+#: src/hooks/useNavItems.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+#: src/pages/settings/SettingsLayout.tsx
+msgid "Settings"
+msgstr "设置"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#: src/pages/settings/HdhrSettingsPage.tsx
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "Settings Saved!"
+msgstr "设置已保存！"
+
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+#: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+msgid "Show"
+msgstr "剧集"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Show Advanced"
+msgstr "显示高级选项"
+
+#: src/components/channel_config/ProgrammingSelector.tsx
+#~ msgid "Show only synced libraries"
+#~ msgstr "Show only synced libraries"
+
+#: src/pages/guide/GuidePage.tsx
+msgid "Show Stealth"
+msgstr "显示隐身频道"
+
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+msgid "Show:"
+msgstr "剧集："
+
+#. placeholder {0}: show.title
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+msgid "Show: {0}"
+msgstr "剧集：{0}"
+
+#: src/components/channels/ChannelPrograms.tsx
+#: src/hooks/programming_controls/useSlotProgramOptions.ts
+msgid "Shows"
+msgstr "剧集"
+
+#: src/components/programming_controls/AddReplicateModal.tsx
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+msgid "Shuffle"
+msgstr "随机打乱"
+
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+msgid "Shuffle Grouping"
+msgstr "随机分组"
+
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+msgid "Shuffle Programming"
+msgstr "随机打乱节目"
+
+#: src/components/programming_controls/ShuffleProgrammingModal.tsx
+msgid "Shuffle programming in a channel, optionally grouping programs by certain criteria."
+msgstr "随机打乱频道中的节目，可选择按特定条件对节目分组。"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Skip mid-roll for programs shorter than this"
+msgstr "时长短于此值的节目跳过中插广告"
+
+#: src/hooks/useRouteName.ts
+msgid "Slot Editor"
+msgstr "时段编辑器"
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+msgid "Slot Scheduler"
+msgstr "时段排期器"
+
+#: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx
+#: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx
+msgid "Slot Warnings"
+msgstr "时段警告"
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+msgid "Slots"
+msgstr "时段"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "Slots Editor..."
+msgstr "时段编辑器…"
+
+#: src/components/slot_scheduler/SmartCollectionSlotProgrammingForm.tsx
+msgid "Smart Collection"
+msgstr "智能合集"
+
+#. placeholder {0}: collectionName ?? ''
+#: src/hooks/slot_scheduler/useSlotName.ts
+msgid "Smart Collection - {0}"
+msgstr "智能合集 - {0}"
+
+#. placeholder {0}: smartCollection.name
+#: src/routes/library/smart_collections/$id.tsx
+msgid "Smart Collection: {0}"
+msgstr "智能合集：{0}"
+
+#: src/hooks/useNavItems.tsx
+#: src/hooks/useRouteName.ts
+#: src/routes/library/smart_collections/index.tsx
+msgid "Smart Collections"
+msgstr "智能合集"
+
+#: src/routes/library/smart_collections/index.tsx
+msgid "Smart Collections are self-updating content lists. You set the query and the collection automatically adds any new content from your library that fits those rules. Any newly added content matching query will not modify existing channel programming at this time."
+msgstr "智能合集是会自动更新的内容列表。你只需设置查询条件，合集就会自动把媒体库中符合规则的新内容加入进来。目前，新加入的匹配内容不会修改频道已有的节目编排。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+msgid "Software (No GPU)"
+msgstr "软件（无 GPU）"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Sort"
+msgstr "排序"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Sort By..."
+msgstr "排序方式…"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Sort TV Shows"
+msgstr "剧集排序"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Sort TV Shows (asc)"
+msgstr "剧集排序（升序）"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Sort TV Shows (desc)"
+msgstr "剧集排序（降序）"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Sorts alphabetically by program title"
+msgstr "按节目名称的字母顺序排序"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom."
+msgstr "按上映日期排序所有内容。只有在 Plex 中的上映日期正确的情况下才能正常工作。若某条目未指定上映日期，它会被排到末尾。"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Sorts the list by TV Show and the episodes in each TV show by their season/episode number. Movies are moved to the bottom of the schedule."
+msgstr "按剧集名称对列表排序，每部剧内的剧集按季号/集号排序。电影会被排到列表末尾。"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Soundtrack"
+msgstr "原声"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Source"
+msgstr "来源"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Source Type"
+msgstr "来源类型"
+
+#: src/hooks/useNavItems.tsx
+msgid "Sources"
+msgstr "媒体源"
+
+#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+msgid "Specials"
+msgstr "特别篇"
+
+#: src/components/programming_controls/AddRerunBlockModal.tsx
+msgid "Start"
+msgstr "开始"
+
+#: src/components/programming_controls/AddRestrictHoursModal.tsx
+#: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+msgid "Start Time"
+msgstr "开始时间"
+
+#: src/components/channels/ChannelNowPlayingCard.tsx
+msgid "Started {startedAgo} - {remainingTime}remaining"
+msgstr "已于 {startedAgo} 开始 - 剩余 {remainingTime}"
+
+#: src/hooks/useNavItems.tsx
+#: src/pages/system/SystemLayout.tsx
+msgid "Status"
+msgstr "状态"
+
+#: src/components/channel_config/ChannelEpgConfig.tsx
+msgid "Stealth Mode"
+msgstr "隐身模式"
+
+#: src/pages/channels/ChannelsPage.tsx
+msgid "Stealth?"
+msgstr "隐身？"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+msgid "Stop Transcode Session"
+msgstr "停止转码会话"
+
+#: src/components/programs/ProgramDetailsDialog.tsx
+msgid "Stream Info"
+msgstr "流信息"
+
+#: src/components/ProgramStreamDetails.tsx
+msgid "Stream JSON"
+msgstr "流 JSON"
+
+#: src/components/channels/ChannelSummaryQuickStats.tsx
+msgid "Stream Mode"
+msgstr "流模式"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Stream Selection"
+msgstr "流选择"
+
+#: src/components/channel_config/EditChannelForm.tsx
+msgid "Streaming"
+msgstr "播放中"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Submit"
+msgstr "提交"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Submitting..."
+msgstr "提交中…"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Subtitle Action"
+msgstr "字幕处理方式"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Subtitle Streams"
+msgstr "字幕流"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Subtitles"
+msgstr "字幕"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Successfully copied to clipboard!"
+msgstr "已成功复制到剪贴板！"
+
+#: src/pages/library/TrashPage.tsx
+msgid "Successfully emptied trash."
+msgstr "回收站已清空。"
+
+#: src/pages/system/StatusPage.tsx
+msgid "Successfully ran system fixer {fixerId}"
+msgstr "已成功运行系统修复项 {fixerId}"
+
+#: src/components/settings/ffmpeg/useTranscodeConfigFormOptions.ts
+#: src/components/settings/ffmpeg/useTranscodeConfigFormOptions.ts
+msgid "Successfully saved config!"
+msgstr "配置已成功保存！"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+msgid "Successfully scheduled {taskId} (running in background)."
+msgstr "已成功调度 {taskId}（正在后台运行）。"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Successfully updated Media Source settings."
+msgstr "媒体源设置已成功更新。"
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "Sync Now"
+msgstr "立即同步"
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "Sync with external playlist"
+msgstr "与外部播放列表同步"
+
+#: src/pages/library/CustomShowsPage.tsx
+msgid "Synced with external playlist"
+msgstr "已与外部播放列表同步"
+
+#: src/components/settings/DarkModeButton.tsx
+#: src/hooks/useNavItems.tsx
+#: src/pages/system/SystemLayout.tsx
+msgid "System"
+msgstr "系统"
+
+#: src/pages/system/SystemDebugPage.tsx
+msgid "System Environment"
+msgstr "系统环境"
+
+#: src/pages/system/StatusPage.tsx
+msgid "System Health"
+msgstr "系统健康"
+
+#: src/pages/system/StatusPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "System Info"
+msgstr "系统信息"
+
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "Tail"
+msgstr "尾部"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Tail Buffer (minutes)"
+msgstr "尾部缓冲（分钟）"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+#: src/pages/system/SystemLayout.tsx
+msgid "Tasks"
+msgstr "任务"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
+msgstr "按请求路径临时缓存来自 Plex 的响应，可能有助于加快频道编辑速度。"
+
+#: src/routes/channels_/test.tsx
+msgid "Test"
+msgstr "测试"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Test Duration (seconds)"
+msgstr "测试时长（秒）"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Test Playback"
+msgstr "测试播放"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Test Transcode"
+msgstr "测试转码"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#: src/components/programming_controls/AddRestrictHoursModal.tsx
+msgid "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
+msgstr "频道在指定时段内的常规节目安排，其余时间由弹性时间填充。"
+
+#: src/components/channel_config/MediaItemGrid.tsx
+msgid "The End."
+msgstr "结束。"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "The image will be rendered at its actual size without any scaling applied."
+msgstr "图片将按实际尺寸渲染，不做任何缩放。"
+
+#: src/hooks/useVersion.tsx
+msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
+msgstr "当前加载的 Tunarr 界面版本与服务器不匹配。请刷新浏览器以获取最新版本。若此提示持续出现，请清除浏览器缓存后重新加载。"
+
+#: src/components/UnavailableLibraryIndicator.tsx
+msgid "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
+msgstr ""
+
+#: src/components/LanguagePreferencesList.tsx
+msgid "The selected languages will be considered in order they are selected."
+msgstr "所选语言将按选择的先后顺序依次生效。"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "The streaming mode affects the type of underlying transcoding process used to create the channel's video stream.<0/>Learn more about Tunarr's stream modes <1>here</1>!"
+msgstr "流模式决定了生成频道视频流时所使用的底层转码方式。<0/>点击<1>此处</1>了解 Tunarr 流模式的更多信息！"
+
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+msgid "The type of media in the provided paths"
+msgstr "所提供路径中的媒体类型"
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Theme Settings"
+msgstr "主题设置"
+
+#: src/hooks/slot_scheduler/useScheduleSlots.ts
+msgid "There was an error generating time slots. Check the browser console log for more information"
+msgstr "生成时段时出错，详情请查看浏览器控制台日志"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
+msgstr "提交媒体源设置更新请求时出错，请检查表单后重试"
+
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+msgid "There was an error when submitting the form. Please see console logs for details."
+msgstr "提交表单时出错，详情请查看控制台日志。"
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "These settings are stored in your browser and are saved automatically when changed."
+msgstr "这些设置保存在你的浏览器中，修改后会自动保存。"
+
+#. placeholder {0}: slot.type .split('-') .map((s) => capitalize(s)) .join(' ')
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+msgid "This {0} is marked as missing in the database."
+msgstr "此 {0} 在数据库中被标记为缺失。"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "This allows to schedule specific shows to run at specific time slots of the day or a week. It's recommended you first populate the channel with the episodes from the shows you want to play and/or other content like movies and redirects."
+msgstr "此功能可将特定剧集安排在一天或一周中的特定时段播出。建议先用你想播放的剧集分集（以及电影、跳转等其他内容）填充频道，再使用此功能。"
+
+#: src/components/programming_controls/AdjustWeightsModal.tsx
+msgid "This allows you to pick the weights for each of the shows, so you can decide that some shows should be less frequent than other shows."
+msgstr "此功能可让你为每部剧设置权重，从而让某些剧集的播出频率低于其他剧集。"
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+msgid "This channel has an existing time slot schedule. A channel can only use one scheduling type at a time. Saving a schedule here will remove the existing time slot schedule."
+msgstr "此频道已有时段排期。一个频道同一时间只能使用一种排期方式，在此保存排期会移除现有的时段排期。"
+
+#. placeholder {0}: schedule.type === 'time' ? 'Time ' : ' '
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "This channel is set up to use <0>{0}Slots</0> for programming. Any manual changes on this page will likely make this channel stop adhering to that schedule."
+msgstr "此频道已配置为使用<0>{0}时段</0>编排节目。在此页面进行的任何手动修改都可能导致该频道不再遵循原排期。"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "This channel number has already been used"
+msgstr "该频道号已被占用"
+
+#: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
+msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
+msgstr "这可能导致下一个时段的节目无法排入。可行的解决办法包括："
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
+msgstr "此自定义剧集已与外部播放列表同步，内容会自动更新，无法手动编辑。"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
+msgstr "此功能目前为实验性，请谨慎使用。如遇到问题，可尝试关闭缓存。"
+
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "This filler list has no programs and will be ignored."
+msgstr ""
+
+#: src/components/channel_config/ChannelEpgConfig.tsx
+msgid "This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled."
+msgstr "当某个时段没有节目可显示时（例如安排了较长的弹性时间块），节目单中显示的虚拟节目名称。"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "This is used by iptv clients to categorize the channels. You can leave it as 'tunarr' if you don't need this sort of classification."
+msgstr "IPTV 客户端用此字段对频道分类。如果不需要此类分类，保留为 tunarr 即可。"
+
+#: src/components/channel_config/ProgrammingSelector.tsx
+msgid "This media source has no enabled or scanned libraries. Enable libraries for this source on the <0>Media Sources</0> page or manually trigger scans on the <1>Library</1> page."
+msgstr "此媒体源没有已启用或已扫描的媒体库。请在<0>媒体源</0>页面启用该来源的媒体库，或在<1>媒体库</1>页面手动触发扫描。"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "This option is disabled because it would calculate a schedule that is too long."
+msgstr "此选项已禁用，因为它会计算出过长的排期。"
+
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+#: src/components/slot_scheduler/TimeSlotTable.tsx
+msgid "This show is marked as missing in the database."
+msgstr "此剧集在数据库中被标记为缺失。"
+
+#. placeholder {0}: groupPeers.length
+#. placeholder {1}: groupPeers.length
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "This slot is linked with {0} other {1, plural, one {slot} other {slots}}. Content fields are shared across the group."
+msgstr "此时段已与另外 {0} 个{1, plural, other {时段}}关联，内容字段在该组中是共享的。"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+#~ msgid "This slot is linked with {0} other {1, plural, one {slot} other {slots}}Content fields are shared across the group."
+#~ msgstr "This slot is linked with {0} other {1, plural, one {slot} other {slots}}Content fields are shared across the group."
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+#~ msgid "This slot is linked with {0} other slot(s). Content fields are shared across the group."
+#~ msgstr "This slot is linked with {0} other slot(s). Content fields are shared across the group."
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "This slot replays content aired by continue slots earlier in the period."
+msgstr "此时段会重播本周期内前面续播时段已播出的内容。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Threads"
+msgstr "线程数"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "Thumbnail URL"
+msgstr "缩略图链接"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Time before first break"
+msgstr "第一段广告前的时间"
+
+#: src/components/slot_scheduler/MidRollConfigPanel.tsx
+msgid "Time between subsequent breaks"
+msgstr "后续广告之间的间隔"
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Time format"
+msgstr "时间格式"
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Time Format"
+msgstr "时间格式"
+
+#: src/hooks/useRouteName.ts
+msgid "Time Slot Editor"
+msgstr "时段编辑器"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Time Slots"
+msgstr "时段"
+
+#: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
+msgid "Time Slots..."
+msgstr "时段…"
+
+#: src/pages/system/SystemLogsPage.tsx
+msgid "Timestamp"
+msgstr "时间戳"
+
+#: src/pages/system/TroubleshootPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Title"
+msgstr "标题"
+
+#: src/components/programming_controls/AddRestrictHoursModal.tsx
+msgid "TO"
+msgstr "至"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "To use Tunarr, you must first connect at least one media source. Media sources provide all content used to create channels in Tunarr. Plex and Jellyfin are currently supported."
+msgstr "使用 Tunarr 前，必须先连接至少一个媒体源。媒体源提供创建频道所需的全部内容。目前支持 Plex 和 Jellyfin。"
+
+#: src/components/channel_config/ProgrammingSelector.tsx
+msgid "To use Tunarr, you need to first connect a media source. This will allow you to build custom channels with your content."
+msgstr "使用 Tunarr 前需要先连接媒体源，这样才能用你的内容创建自定义频道。"
+
+#: src/components/slot_scheduler/ProgramWeekCalendarView.tsx
+msgid "Today"
+msgstr "今天"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "toggle access token visibility"
+msgstr "切换访问令牌可见性"
+
+#: src/components/channel_config/ChannelProgrammingTools.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Tools"
+msgstr "工具"
+
+#. placeholder {0}: isNonEmptyString(query.query) && totalHits >= 1000 ? '>1000' : totalHits
+#: src/components/library/LibraryProgramGrid.tsx
+msgid "Total hits: {0}"
+msgstr "命中总数：{0}"
+
+#: src/components/channels/ChannelSummaryQuickStats.tsx
+msgid "Total Runtime"
+msgstr "总时长"
+
+#: src/components/programs/Tracks.tsx
+#: src/pages/library/TrashPage.tsx
+msgid "Tracks"
+msgstr "音轨"
+
+#: src/pages/channels/ChannelsPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Transcode Config"
+msgstr "转码配置"
+
+#: src/pages/system/TroubleshootPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Transcode Config (optional override)"
+msgstr "转码配置（可选覆盖）"
+
+#: src/components/channels/ChannelSummaryQuickStats.tsx
+msgid "Transcode Config <0> <1/></0>"
+msgstr "转码配置 <0> <1/></0>"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Transcoding Configs"
+msgstr "转码配置"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Transcoding Settings"
+msgstr "转码设置"
+
+#: src/hooks/useNavItems.tsx
+#: src/hooks/useRouteName.ts
+#: src/pages/library/TrashPage.tsx
+msgid "Trash"
+msgstr "回收站"
+
+#: src/pages/library/TrashPage.tsx
+msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
+msgstr "回收站中的条目是指之前扫描到、但在最近一次扫描中未找到的条目。原因可能是文件丢失，或媒体服务器不再通过 API 返回该条目。这些条目当前在频道中将无法播放。清空回收站后，它们在频道中的位置将被弹性时间替代。"
+
+#: src/pages/system/SystemLayout.tsx
+msgid "Troubleshoot"
+msgstr "排查"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "Tunarr Backend URL"
+msgstr "Tunarr 后端地址"
+
+#: src/pages/system/StatusPage.tsx
+msgid "Tunarr Backend URL:"
+msgstr "Tunarr 后端地址："
+
+#: src/components/Video.tsx
+msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
+msgstr "Tunarr 当前配置为使用 AC3 音频编码器。浏览器不支持该音频格式，生成的流很可能没有声音，或完全无法播放。"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
+msgstr "Tunarr 会运行各类后台任务，其中一些按计划定时执行。"
+
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Tunarr will attempt to get Plex to pull Tunarr's updated XMLTV upon regeneration"
+msgstr ""
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "Tunarr will update Jellyfin's \"now playing\" state while channels are active."
+msgstr ""
+
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Tunarr will update Plex's \"now playing\" state while channels are active."
+msgstr ""
+
+#: src/pages/settings/HdhrSettingsPage.tsx
+#: src/pages/settings/HdhrSettingsPage.tsx
+msgid "Tuner Count"
+msgstr "调谐器数量"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "TV shows are grouped by show"
+msgstr "剧集按剧名分组"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddReplicateModal.tsx
+#: src/components/programming_controls/AddReplicateModal.tsx
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Type"
+msgstr "类型"
+
+#: src/components/UnavailableLibraryIndicator.tsx
+#: src/components/UnavailableLibraryIndicator.tsx
+msgid "Unavailable"
+msgstr ""
+
+#: src/components/search/DateSearchValueNode.tsx
+#: src/components/search/DateSearchValueNode.tsx
+msgid "Unit"
+msgstr "单位"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+msgid "Unlink"
+msgstr "解除关联"
+
+#: src/components/slot_scheduler/SlotLinkingControl.tsx
+#~ msgid "Unlink from group"
+#~ msgstr "Unlink from group"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/LocalMediaEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Update"
+msgstr "更新"
+
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+msgid "Update Play Status"
+msgstr ""
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+#: src/components/settings/media_source/PlexServerEditDialog.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
+msgid "URL"
+msgstr "链接"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Use channel default"
+msgstr "使用频道默认设置"
+
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+#: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
+msgid "Use schedule default"
+msgstr "使用排期默认值"
+
+#: src/pages/settings/XmlTvSettingsPage.tsx
+msgid "Use Show Poster"
+msgstr "使用剧集海报"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Use these settings to override global ffmpeg settings for this channel."
+msgstr "使用这些设置覆盖该频道的全局 ffmpeg 设置。"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "Username"
+msgstr "用户名"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Usually slots need to add flex time to ensure that the next slot starts at the correct time. When there are multiple videos in the slot, you might prefer to distribute the flex time between the videos or to place most of the flex time at the end of the slot."
+msgstr "通常时段需要添加弹性时间，以确保下一个时段能准时开始。当一个时段内有多个视频时，你可以选择把弹性时间分摊到各视频之间，或者把大部分弹性时间放在时段末尾。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "VA-API Device"
+msgstr "VA-API 设备"
+
+#: src/pages/system/SystemDebugPage.tsx
+msgid "VAAPI Capabilities"
+msgstr "VAAPI 支持能力"
+
+#: src/components/search/DateSearchValueNode.tsx
+#: src/components/search/DateSearchValueNode.tsx
+#: src/components/search/DateSearchValueNode.tsx
+#: src/components/search/FacetStringValueSearchNode.tsx
+#: src/components/search/NumericValueSearchNode.tsx
+#: src/components/search/StringValueSearchNode.tsx
+msgid "Value"
+msgstr "值"
+
+#: src/hooks/useVersion.tsx
+msgid "Version Mismatch!"
+msgstr "版本不匹配！"
+
+#. placeholder {0}: version.tunarr
+#: src/components/VersionFooter.tsx
+msgid "Version: {0}"
+msgstr "版本：{0}"
+
+#: src/components/VersionFooter.tsx
+msgid "Version: unknown"
+msgstr "版本：未知"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Video"
+msgstr "视频"
+
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "Video Bitrate"
+msgstr "视频码率"
+
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "Video Buffer Size"
+msgstr "视频缓冲区大小"
+
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
+msgid "Video Format"
+msgstr "视频格式"
+
+#: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
+msgid "Video Options"
+msgstr "视频选项"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Video Streams"
+msgstr "视频流"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time.<0/>Each filler can be assigned a cooldown, which restricts how frequently the list will be chosen during flex time."
+msgstr "垫片列表中的视频会被随机选取播放，除非存在冷却时间限制，或者没有足够短的视频能填入剩余的弹性时间。<0/>每个垫片都可设置冷却时间，用于限制该列表在弹性时间内被选中的频率。"
+
+#: src/components/smart_collections/SmartCollectionsTable.tsx
+msgid "View Collection"
+msgstr "查看合集"
+
+#: src/components/ProgramMetadataDialogContent.tsx
+#: src/components/programs/ProgramOperationsMenu.tsx
+msgid "View Full Details"
+msgstr "查看完整详情"
+
+#. placeholder {0}: capitalize(firstProgram.program.sourceType)
+#. placeholder {0}: capitalize(program.sourceType)
+#: src/components/channels/ChannelNowPlayingCard.tsx
+#: src/components/ProgramMetadataDialogContent.tsx
+msgid "View in {0}"
+msgstr "在 {0} 中查看"
+
+#: src/components/MediaSourceLibraryTable.tsx
+#~ msgid "View Library"
+#~ msgstr "View Library"
+
+#: src/hooks/useRouteName.ts
+msgid "Watch"
+msgstr "观看"
+
+#: src/components/channels/ChannelOptionsMenu.tsx
+msgid "Watch Channel"
+msgstr "观看频道"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Watermark"
+msgstr "水印"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Watermark Image URL"
+msgstr "水印图片链接"
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Web Settings"
+msgstr "网页设置"
+
+#. placeholder {0}: trimStart(__TUNARR_VERSION__, 'v')
+#. placeholder {1}: trimStart(query.data?.tunarr, 'v')
+#: src/hooks/useVersion.tsx
+msgid "Web version = {0}, Server version = {1}"
+msgstr "网页版本 = {0}，服务器版本 = {1}"
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+msgid "Week"
+msgstr "周"
+
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Weekly"
+msgstr "每周"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+#: src/components/slot_scheduler/RandomSlotTable.tsx
+msgid "Weight"
+msgstr "权重"
+
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+msgid "Weight %"
+msgstr "权重 %"
+
+#: src/components/slot_scheduler/SlotOrderFormControl.tsx
+#: src/components/slot_scheduler/SlotOrderFormControl.tsx
+msgid "Weighting"
+msgstr "加权方式"
+
+#: src/hooks/useNavItems.tsx
+msgid "Welcome"
+msgstr "欢迎"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Welcome to Tunarr!"
+msgstr "欢迎使用 Tunarr！"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "When enabled, intermittent watermarks fade in immediately when a stream is initialized. When disabled, the first watermark fade-in occurs after a full period."
+msgstr "启用后，间歇性水印会在流初始化时立即淡入；禁用时，第一次水印淡入会在一个完整周期后才出现。"
+
+#: src/components/settings/general/GeneralSettingsForm.tsx
+msgid "When enabling, Tunarr will generate an initial backup immediately"
+msgstr "启用时，Tunarr 会立即生成一份初始备份"
+
+#: src/components/settings/media_source/EditPathReplacementsForm.tsx
+msgid "When file paths on the remote server differ from the paths Tunarr can see, use Path Replacements to instruct Tunarr how to stream media from disk."
+msgstr "当远程服务器上的文件路径与 Tunarr 可见的路径不一致时，可使用路径替换来告诉 Tunarr 如何从磁盘读取媒体。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
+msgid "Will force use of a software decoder despite hardware acceleration settings."
+msgstr "即使已设置硬件加速，也强制使用软件解码器。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
+msgid "Will force use of a software encoder despite hardware acceleration settings."
+msgstr "即使已设置硬件加速，也强制使用软件编码器。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
+msgid "Will force use of a software filters (e.g. scale, pad, etc.) despite hardware acceleration settings."
+msgstr "即使已设置硬件加速，也强制使用软件滤镜（如缩放、填充等）。"
+
+#: src/pages/settings/SettingsLayout.tsx
+msgid "XMLTV"
+msgstr "XMLTV"
+
+#: src/pages/system/StatusPage.tsx
+msgid "XMLTV Link:"
+msgstr "XMLTV 链接："
+
+#: src/pages/library/FillerListsPage.tsx
+msgid "You have no Filler Lists. Create your first Filler List <0>here.</0>"
+msgstr "你还没有任何垫片列表。<0>点击此处</0>创建第一个垫片列表。"
+
+#: src/components/smart_collections/SmartCollectionsTable.tsx
+msgid "You have no smart collections. Smart collections can be created on the <0>search</0> page."
+msgstr "你还没有智能合集。可以在<0>搜索</0>页面创建智能合集。"
+
+#: src/components/settings/UnsavedNavigationAlert.tsx
+msgid "You have unsaved changes!"
+msgstr "有未保存的更改！"
+
+#: src/components/channel_config/NoChannelsCreated.tsx
+msgid "You haven't created any channels yet."
+msgstr "你还没有创建任何频道。"
+
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
+msgstr "你还没有创建任何垫片列表！请前往<0>垫片列表</0>页面创建。"
+
+#: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+msgid "You must create at least one <0>filler list</0> before assigning filler to a lot."
+msgstr "你必须先创建至少一个<0>垫片列表</0>，才能为时段分配垫片。"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "You're All Set!"
+msgstr "一切就绪！"
+
+#. placeholder {0}: field.value
+#: src/components/programming_controls/AddReplicateModal.tsx
+msgid "Your list will be replicated {0} times"
+msgstr "你的列表将被复制 {0} 份"

@@ -4,6 +4,7 @@ export const FeatureFlagsSchema = z.object({
   proxyArtwork: z.boolean().default(false),
   tonemapEnabled: z.boolean().default(false),
   webvttSidecarEnabled: z.boolean().default(false),
+  xmltvCreditImagesEnabled: z.boolean().default(false),
   disableSearchSnapshotInBackup: z.boolean().default(false),
   disableVulkan: z.boolean().default(false),
   disableVaapiPad: z.boolean().default(false),
@@ -43,6 +44,14 @@ export const FeatureFlagMetadata: FeatureFlagMeta[] = [
     description:
       'Enable generation of WebVTT subtitle sidecar files during streaming.',
     envVar: 'TUNARR_WEBVTT_SIDECAR_ENABLED',
+    category: 'experimental',
+  },
+  {
+    key: 'xmltvCreditImagesEnabled',
+    displayName: 'XMLTV Credit Images',
+    description:
+      'Enable embedding images of people in the xmltv credit elements. (must regenerate xmltv to take effect)',
+    envVar: 'TUNARR_XMLTV_CREDIT_IMAGES_ENABLED',
     category: 'experimental',
   },
   {

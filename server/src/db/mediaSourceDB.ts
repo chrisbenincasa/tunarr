@@ -8,7 +8,7 @@ import type {
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, count, eq, inArray, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import {
@@ -30,18 +30,19 @@ import type {
   MediaSourceName,
   MediaSourceType,
 } from './schema/base.js';
+import { ChannelPrograms } from './schema/ChannelPrograms.ts';
 import type { DB } from './schema/db.ts';
 import type { MediaSourceWithRelations } from './schema/derivedTypes.js';
 import type { DrizzleDBAccess } from './schema/index.ts';
 import { MediaSource } from './schema/MediaSource.ts';
 import type {
   MediaSourceLibraryUpdate,
-  NewMediaSourceLibrary} from './schema/MediaSourceLibrary.ts';
-import {
-  MediaSourceLibrary
+  NewMediaSourceLibrary,
 } from './schema/MediaSourceLibrary.ts';
+import { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
 import { MediaSourceLibraryReplacePath } from './schema/MediaSourceLibraryReplacePath.ts';
 import { Program } from './schema/Program.ts';
+import { ProgramGrouping } from './schema/ProgramGrouping.ts';
 
 type MediaSourceUserInfo = {
   userId?: string;
@@ -264,6 +265,10 @@ export class MediaSourceDB {
           uri: trimEnd(updateReq.uri, '/'),
           accessToken: updateReq.accessToken,
           sendGuideUpdates: booleanToNumber(sendGuideUpdates),
+          sendPlayStatusUpdates:
+            updateReq.type === 'plex' || updateReq.type === 'jellyfin'
+              ? booleanToNumber(updateReq.sendPlayStatusUpdates ?? false)
+              : 0,
           updatedAt: +dayjs(),
           // This allows clearing the values
           userId: updateReq.userId,
@@ -418,21 +423,87 @@ export class MediaSourceDB {
         tx.insert(MediaSourceLibrary).values(updates.addedLibraries).run();
       }
 
-      if (updates.updatedLibraries.length > 0) {
-        for (const update of updates.updatedLibraries) {
-          tx.update(MediaSourceLibrary)
-            .set(update)
-            .where(eq(MediaSourceLibrary.uuid, update.uuid))
-            .run();
-        }
+      for (const update of updates.updatedLibraries) {
+        tx.update(MediaSourceLibrary)
+          .set(update)
+          .where(eq(MediaSourceLibrary.uuid, update.uuid))
+          .run();
       }
 
-      if (updates.deletedLibraries.length > 0) {
+      for (const { uuid, unavailableSince } of updates.unavailableLibraries) {
+        tx.update(MediaSourceLibrary)
+          .set({ unavailableSince })
+          .where(eq(MediaSourceLibrary.uuid, uuid))
+          .run();
+      }
+
+      if (updates.availableLibraries.length > 0) {
+        tx.update(MediaSourceLibrary)
+          .set({ unavailableSince: null })
+          .where(inArray(MediaSourceLibrary.uuid, updates.availableLibraries))
+          .run();
+      }
+
+      // Library foreign keys cascade to programs and channel schedules, so
+      // references must move to the kept library before duplicates are deleted.
+      for (const { keepUuid, duplicateUuids } of updates.duplicateLibraries) {
+        tx.update(Program)
+          .set({ libraryId: keepUuid })
+          .where(inArray(Program.libraryId, duplicateUuids))
+          .run();
+        tx.update(ProgramGrouping)
+          .set({ libraryId: keepUuid })
+          .where(inArray(ProgramGrouping.libraryId, duplicateUuids))
+          .run();
         tx.delete(MediaSourceLibrary)
-          .where(inArray(MediaSourceLibrary.uuid, updates.deletedLibraries))
+          .where(inArray(MediaSourceLibrary.uuid, duplicateUuids))
           .run();
       }
     });
+  }
+
+  /** Bumps the source's consecutive auth failures and returns the new total. */
+  async recordAuthFailure(id: MediaSourceId): Promise<number> {
+    const [updated] = await this.drizzleDB
+      .update(MediaSource)
+      .set({
+        consecutiveAuthFailures: sql`${MediaSource.consecutiveAuthFailures} + 1`,
+      })
+      .where(eq(MediaSource.uuid, id))
+      .returning({ count: MediaSource.consecutiveAuthFailures });
+
+    return updated?.count ?? 0;
+  }
+
+  async clearAuthFailures(id: MediaSourceId) {
+    await this.drizzleDB
+      .update(MediaSource)
+      .set({ consecutiveAuthFailures: 0 })
+      .where(eq(MediaSource.uuid, id));
+  }
+
+  async getLibraryReferenceCounts(libraryIds: string[]) {
+    const programCounts = await this.drizzleDB
+      .select({ libraryId: Program.libraryId, count: count() })
+      .from(Program)
+      .where(inArray(Program.libraryId, libraryIds))
+      .groupBy(Program.libraryId);
+
+    const channelProgramCounts = await this.drizzleDB
+      .select({ libraryId: Program.libraryId, count: count() })
+      .from(ChannelPrograms)
+      .innerJoin(Program, eq(ChannelPrograms.programUuid, Program.uuid))
+      .where(inArray(Program.libraryId, libraryIds))
+      .groupBy(Program.libraryId);
+
+    return libraryIds.map((libraryId) => ({
+      libraryId,
+      programCount:
+        programCounts.find((row) => row.libraryId === libraryId)?.count ?? 0,
+      channelProgramCount:
+        channelProgramCounts.find((row) => row.libraryId === libraryId)
+          ?.count ?? 0,
+    }));
   }
 
   async setLibraryEnabled(
@@ -467,8 +538,10 @@ export class MediaSourceDB {
   }
 }
 
-type MediaSourceLibrariesUpdate = {
+export type MediaSourceLibrariesUpdate = {
   addedLibraries: NewMediaSourceLibrary[];
   updatedLibraries: MarkRequired<MediaSourceLibraryUpdate, 'uuid'>[];
-  deletedLibraries: string[];
+  unavailableLibraries: { uuid: string; unavailableSince: Date }[];
+  availableLibraries: string[];
+  duplicateLibraries: { keepUuid: string; duplicateUuids: string[] }[];
 };

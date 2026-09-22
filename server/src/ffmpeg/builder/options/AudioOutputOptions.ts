@@ -12,7 +12,8 @@ export const AudioChannelsOutputOption = (
   const opts: string[] = [];
   if (
     sourceChannels !== desiredChannels ||
-    (audioFormat === AudioFormats.Aac && desiredChannels > 2)
+    ((audioFormat === AudioFormats.Aac || audioFormat === AudioFormats.Opus) &&
+      desiredChannels > 2)
   ) {
     opts.push('-ac', desiredChannels.toString());
   }

@@ -121,11 +121,13 @@ export const ProgramListItem = ({
               onClick={(e) => handleItem(e)}
               variant="contained"
             >
-              {!isTerminalItemType(item) && (item.childCount ?? 0) > 0
-                ? <Trans>Add {item.type}</Trans>
-                : selectedMediaIds.includes(item.uuid)
-                  ? <Trans>Remove</Trans>
-                  : <Trans>Add</Trans>}
+              {!isTerminalItemType(item) && (item.childCount ?? 0) > 0 ? (
+                <Trans>Add {item.type}</Trans>
+              ) : selectedMediaIds.includes(item.uuid) ? (
+                <Trans>Remove</Trans>
+              ) : (
+                <Trans>Add</Trans>
+              )}
             </Button>
           )}
         </ListItemButton>

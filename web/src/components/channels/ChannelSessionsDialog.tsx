@@ -22,12 +22,16 @@ export const ChannelSessionsDialog = ({ open, onClose, channel }: Props) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle><Trans>"{channel.name}" Sessions</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>"{channel.name}" Sessions</Trans>
+      </DialogTitle>
       <DialogContent>
         <pre>{JSON.stringify(channel.sessions, undefined, 2)}</pre>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Close</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Close</Trans>
+        </Button>
       </DialogActions>
     </Dialog>
   );

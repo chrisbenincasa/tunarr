@@ -28,6 +28,7 @@ export class HdhrApiRouter {
           routeOpts.config = {};
         }
         routeOpts.config.disableRequestLogging = true;
+        routeOpts.config.authRequired = false;
         if (!routeOpts.schema) {
           routeOpts.schema = {};
         }

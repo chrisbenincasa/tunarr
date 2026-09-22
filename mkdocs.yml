@@ -79,6 +79,7 @@ nav:
       - Library:
           - configure/library/index.md
           - Filler: configure/library/filler.md
+          - How Filler Is Chosen: configure/library/filler-selection.md
           - Custom Shows: configure/library/custom-shows.md
           - Smart Collections: configure/library/smart-collections.md
       - Scheduling:
@@ -114,7 +115,11 @@ markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span

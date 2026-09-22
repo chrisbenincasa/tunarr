@@ -55,8 +55,9 @@ class Scheduler {
   runScheduledJobNow<Id extends TaskId, OutType = TaskOutputType<Id>>(
     id: Id,
     background?: boolean,
+    request?: unknown,
   ): Promise<OutType | undefined> {
-    return this.getScheduledJob<Id, OutType>(id)?.runNow(background);
+    return this.getScheduledJob<Id, OutType>(id)?.runNow(background, request);
   }
 
   // Clears all scheduled tasks for an ID and cancels them
@@ -184,8 +185,8 @@ export function scheduleBackupJobs(
   );
 }
 
-export function hoursCrontab(hours: number): string {
-  return `0 0 */${hours} * * *`;
+export function hoursCrontab(hours: number, minute = 0): string {
+  return `0 ${minute} */${hours} * * *`;
 }
 
 export function minutesCrontab(mins: number): string {

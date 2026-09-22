@@ -12,8 +12,7 @@ import { InjectLogger } from '@/util/inject.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import type { MutexMap } from '@/util/mutexMap.js';
 import { seq } from '@tunarr/shared/util';
-import type {
-  CondensedContentProgram} from '@tunarr/types';
+import type { CondensedContentProgram } from '@tunarr/types';
 import {
   isTerminalItemType,
   tag,

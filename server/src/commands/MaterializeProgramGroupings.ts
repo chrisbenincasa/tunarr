@@ -1,5 +1,5 @@
 import type { MediaSourceId } from '@tunarr/shared';
-import type { ProgramGrouping} from '@tunarr/types';
+import type { ProgramGrouping } from '@tunarr/types';
 import { untag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { capitalize } from 'lodash-es';
@@ -15,7 +15,7 @@ import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
 export class MaterializeProgramGroupings {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,

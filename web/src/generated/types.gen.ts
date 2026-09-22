@@ -103,7 +103,7 @@ export type TerminalProgramInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -121,7 +121,7 @@ export type TerminalProgramInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -142,7 +142,7 @@ export type TerminalProgramInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -245,7 +245,7 @@ export type TerminalProgramInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -263,7 +263,7 @@ export type TerminalProgramInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -284,7 +284,7 @@ export type TerminalProgramInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -370,6 +370,8 @@ export type TerminalProgramInput = {
         path?: string | null;
     }>;
     state: 'ok' | 'missing';
+    artistName?: string | null;
+    albumName?: string | null;
     mediaSourceId: string;
     libraryId: string;
     canonicalId: string;
@@ -387,7 +389,7 @@ export type TerminalProgramInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -405,7 +407,7 @@ export type TerminalProgramInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -426,7 +428,7 @@ export type TerminalProgramInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -697,7 +699,7 @@ export type SeasonInput = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -715,7 +717,7 @@ export type SeasonInput = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -736,7 +738,7 @@ export type SeasonInput = {
                 title?: string | null;
                 chapterType?: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -845,7 +847,7 @@ export type EpisodeInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -863,7 +865,7 @@ export type EpisodeInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -884,7 +886,7 @@ export type EpisodeInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1127,7 +1129,7 @@ export type MusicAlbumInput = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -1145,7 +1147,7 @@ export type MusicAlbumInput = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -1166,7 +1168,7 @@ export type MusicAlbumInput = {
                 title?: string | null;
                 chapterType?: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -1284,7 +1286,7 @@ export type MusicTrackInput = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1302,7 +1304,7 @@ export type MusicTrackInput = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1323,7 +1325,7 @@ export type MusicTrackInput = {
             title?: string | null;
             chapterType?: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1513,7 +1515,7 @@ export type TerminalProgram = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1531,7 +1533,7 @@ export type TerminalProgram = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1552,7 +1554,7 @@ export type TerminalProgram = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1655,7 +1657,7 @@ export type TerminalProgram = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1673,7 +1675,7 @@ export type TerminalProgram = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1694,7 +1696,7 @@ export type TerminalProgram = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -1780,6 +1782,8 @@ export type TerminalProgram = {
         path?: string | null;
     }>;
     state: 'ok' | 'missing';
+    artistName?: string | null;
+    albumName?: string | null;
     mediaSourceId: string;
     libraryId: string;
     canonicalId: string;
@@ -1797,7 +1801,7 @@ export type TerminalProgram = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -1815,7 +1819,7 @@ export type TerminalProgram = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -1836,7 +1840,7 @@ export type TerminalProgram = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -2107,7 +2111,7 @@ export type Season = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -2125,7 +2129,7 @@ export type Season = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -2146,7 +2150,7 @@ export type Season = {
                 title?: string | null;
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -2255,7 +2259,7 @@ export type Episode = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -2273,7 +2277,7 @@ export type Episode = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -2294,7 +2298,7 @@ export type Episode = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -2537,7 +2541,7 @@ export type MusicAlbum = {
                 hasAttachedPicture?: boolean | null;
                 fileName?: string | null;
                 mimeType?: string | null;
-                frameRate?: (string | number) | null;
+                frameRate?: string | number | null;
                 pixelFormat?: string | null;
                 bitDepth?: number | null;
                 colorRange?: string | null;
@@ -2555,7 +2559,7 @@ export type MusicAlbum = {
             duration: number;
             sampleAspectRatio?: string | null;
             displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
+            frameRate?: number | string | null;
             resolution?: {
                 widthPx: number;
                 heightPx: number;
@@ -2576,7 +2580,7 @@ export type MusicAlbum = {
                 title?: string | null;
                 chapterType: 'chapter' | 'intro' | 'outro';
             }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
             externalKey?: string | null;
         };
         duration: number;
@@ -2694,7 +2698,7 @@ export type MusicTrack = {
             hasAttachedPicture?: boolean | null;
             fileName?: string | null;
             mimeType?: string | null;
-            frameRate?: (string | number) | null;
+            frameRate?: string | number | null;
             pixelFormat?: string | null;
             bitDepth?: number | null;
             colorRange?: string | null;
@@ -2712,7 +2716,7 @@ export type MusicTrack = {
         duration: number;
         sampleAspectRatio?: string | null;
         displayAspectRatio?: string | null;
-        frameRate?: (number | string) | null;
+        frameRate?: number | string | null;
         resolution?: {
             widthPx: number;
             heightPx: number;
@@ -2733,7 +2737,7 @@ export type MusicTrack = {
             title?: string | null;
             chapterType: 'chapter' | 'intro' | 'outro';
         }> | null;
-        scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
         externalKey?: string | null;
     };
     duration: number;
@@ -2856,7 +2860,7 @@ export type PostApiTasksByIdRunData = {
         id: string;
     };
     query?: {
-        background?: boolean | string;
+        background?: boolean | 'true' | 'false' | number;
     };
     url: '/api/tasks/{id}/run';
 };
@@ -3002,6 +3006,7 @@ export type GetChannelsResponses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3033,10 +3038,10 @@ export type CreateChannelV2Data = {
             guideFlexTitle?: string;
             guideMinimumDuration: number;
             icon: {
-                path: string;
-                width: number;
-                duration: number;
-                position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                path?: string;
+                width?: number;
+                duration?: number;
+                position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
                 useDefaultIconFallback?: boolean;
             };
             id: string;
@@ -3207,6 +3212,7 @@ export type CreateChannelV2Responses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3366,6 +3372,7 @@ export type GetChannelsByNumberV2Responses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3395,10 +3402,10 @@ export type PutApiChannelsByIdData = {
         guideFlexTitle?: string;
         guideMinimumDuration: number;
         icon: {
-            path: string;
-            width: number;
-            duration: number;
-            position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+            path?: string;
+            width?: number;
+            duration?: number;
+            position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
             useDefaultIconFallback?: boolean;
         };
         id: string;
@@ -3571,6 +3578,7 @@ export type PutApiChannelsByIdResponses = {
                 ip: string;
                 userAgent?: string;
                 lastHeartbeat?: number;
+                lastHeartbeatStr?: string;
             }>;
         }>;
         subtitlesEnabled: boolean;
@@ -3766,11 +3774,24 @@ export type GetApiChannelsByIdProgrammingResponses = {
             flexPreference: 'distribute' | 'end';
             latenessMs: number;
             maxDays: number;
+            overflow: {
+                type: 'duration';
+                maxMs: number;
+            } | {
+                type: 'oneExtra';
+            };
             padMs: number;
             period: 'day' | 'week';
             slots: Array<{
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
@@ -3808,6 +3829,13 @@ export type GetApiChannelsByIdProgrammingResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter: Array<number>;
@@ -3848,6 +3876,13 @@ export type GetApiChannelsByIdProgrammingResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'flex';
             } | {
                 type: 'redirect';
@@ -3855,9 +3890,23 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 channelName?: string;
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
@@ -3933,9 +3982,23 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 };
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'smart-collection';
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
@@ -4331,11 +4394,24 @@ export type PostApiChannelsByIdProgrammingData = {
             flexPreference: 'distribute' | 'end';
             latenessMs: number;
             maxDays: number;
+            overflow?: {
+                type: 'duration';
+                maxMs: number;
+            } | {
+                type: 'oneExtra';
+            };
             padMs: number;
             period: 'day' | 'week';
             slots: Array<{
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
@@ -4373,6 +4449,13 @@ export type PostApiChannelsByIdProgrammingData = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter?: Array<number>;
@@ -4413,6 +4496,13 @@ export type PostApiChannelsByIdProgrammingData = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'flex';
             } | {
                 type: 'redirect';
@@ -4420,9 +4510,23 @@ export type PostApiChannelsByIdProgrammingData = {
                 channelName?: string;
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
@@ -4498,9 +4602,23 @@ export type PostApiChannelsByIdProgrammingData = {
                 };
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'smart-collection';
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
@@ -4837,6 +4955,10 @@ export type PostApiChannelsByIdProgrammingErrors = {
     /**
      * Default Response
      */
+    400: string;
+    /**
+     * Default Response
+     */
     404: unknown;
     /**
      * Default Response
@@ -4847,6 +4969,8 @@ export type PostApiChannelsByIdProgrammingErrors = {
      */
     501: unknown;
 };
+
+export type PostApiChannelsByIdProgrammingError = PostApiChannelsByIdProgrammingErrors[keyof PostApiChannelsByIdProgrammingErrors];
 
 export type PostApiChannelsByIdProgrammingResponses = {
     /**
@@ -4919,11 +5043,24 @@ export type PostApiChannelsByIdProgrammingResponses = {
             flexPreference: 'distribute' | 'end';
             latenessMs: number;
             maxDays: number;
+            overflow: {
+                type: 'duration';
+                maxMs: number;
+            } | {
+                type: 'oneExtra';
+            };
             padMs: number;
             period: 'day' | 'week';
             slots: Array<{
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
@@ -4961,6 +5098,13 @@ export type PostApiChannelsByIdProgrammingResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter: Array<number>;
@@ -5001,6 +5145,13 @@ export type PostApiChannelsByIdProgrammingResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'flex';
             } | {
                 type: 'redirect';
@@ -5008,9 +5159,23 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 channelName?: string;
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
@@ -5086,9 +5251,23 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 };
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'smart-collection';
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
@@ -5440,7 +5619,7 @@ export type GetChannelFallbacksData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/{id}/fallbacks';
 };
@@ -5478,7 +5657,7 @@ export type GetApiChannelsAllLineupsData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/all/lineups';
 };
@@ -5579,7 +5758,7 @@ export type GetApiChannelsByIdLineupData = {
     query?: {
         from?: string;
         to?: string;
-        includePrograms?: boolean;
+        includePrograms?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels/{id}/lineup';
 };
@@ -5800,11 +5979,11 @@ export type GetApiChannelsByIdTranscodeConfigResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -5848,11 +6027,24 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
             flexPreference: 'distribute' | 'end';
             latenessMs: number;
             maxDays: number;
+            overflow?: {
+                type: 'duration';
+                maxMs: number;
+            } | {
+                type: 'oneExtra';
+            };
             padMs: number;
             period: 'day' | 'week';
             slots: Array<{
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
@@ -5890,6 +6082,13 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter?: Array<number>;
@@ -5930,6 +6129,13 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'flex';
             } | {
                 type: 'redirect';
@@ -5937,9 +6143,23 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 channelName?: string;
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
@@ -6015,9 +6235,23 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 };
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'smart-collection';
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
@@ -6524,11 +6758,24 @@ export type GetApiChannelsByIdScheduleResponses = {
             flexPreference: 'distribute' | 'end';
             latenessMs: number;
             maxDays: number;
+            overflow: {
+                type: 'duration';
+                maxMs: number;
+            } | {
+                type: 'oneExtra';
+            };
             padMs: number;
             period: 'day' | 'week';
             slots: Array<{
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'movie';
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
@@ -6566,6 +6813,13 @@ export type GetApiChannelsByIdScheduleResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter: Array<number>;
@@ -6613,6 +6867,13 @@ export type GetApiChannelsByIdScheduleResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'flex';
             } | {
                 type: 'redirect';
@@ -6620,6 +6881,13 @@ export type GetApiChannelsByIdScheduleResponses = {
                 channelName?: string;
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 channel: {
                     disableFillerOverlay: boolean;
                     duration: number;
@@ -6717,6 +6985,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                             ip: string;
                             userAgent?: string;
                             lastHeartbeat?: number;
+                            lastHeartbeatStr?: string;
                         }>;
                     }>;
                     subtitlesEnabled: boolean;
@@ -6767,6 +7036,13 @@ export type GetApiChannelsByIdScheduleResponses = {
                 };
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 customShow: {
                     id: string;
                     name: string;
@@ -6781,6 +7057,13 @@ export type GetApiChannelsByIdScheduleResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
@@ -6827,6 +7110,13 @@ export type GetApiChannelsByIdScheduleResponses = {
             } | {
                 startTime: number;
                 padMs?: number;
+                overflow?: {
+                    type: 'duration';
+                    maxMs: number;
+                } | {
+                    type: 'oneExtra';
+                };
+                latenessMs?: number;
                 type: 'smart-collection';
                 smartCollectionId: string;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
@@ -7106,6 +7396,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                             ip: string;
                             userAgent?: string;
                             lastHeartbeat?: number;
+                            lastHeartbeatStr?: string;
                         }>;
                     }>;
                     subtitlesEnabled: boolean;
@@ -8299,7 +8590,7 @@ export type GetApiProgramsByIdExternalLinkData = {
         id: string;
     };
     query?: {
-        forward?: boolean;
+        forward?: boolean | 'true' | 'false' | number;
     };
     url: '/api/programs/{id}/external-link';
 };
@@ -8491,10 +8782,6 @@ export type GetApiMediaSourcesResponses = {
     200: Array<{
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -8504,11 +8791,17 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'plex';
         sendGuideUpdates: boolean;
         index: number;
@@ -8516,10 +8809,6 @@ export type GetApiMediaSourcesResponses = {
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -8529,19 +8818,21 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'jellyfin';
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -8551,11 +8842,17 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'emby';
     } | {
         id: string;
@@ -8569,6 +8866,7 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -8585,39 +8883,42 @@ export type GetApiMediaSourcesResponse = GetApiMediaSourcesResponses[keyof GetAp
 export type PostApiMediaSourcesData = {
     body?: {
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'plex';
         sendGuideUpdates?: boolean;
         index?: number;
         clientIdentifier?: string;
     } | {
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'jellyfin';
     } | {
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'emby';
     } | {
         name: string;
@@ -8687,10 +8988,6 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
     200: {
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -8700,11 +8997,17 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'plex';
         sendGuideUpdates: boolean;
         index: number;
@@ -8712,10 +9015,6 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -8725,19 +9024,21 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'jellyfin';
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken?: string;
-        userId: string | null;
-        username: string | null;
         libraries: Array<{
             id: string;
             name: string;
@@ -8747,11 +9048,17 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
         type: 'emby';
     } | {
         id: string;
@@ -8765,6 +9072,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -8817,17 +9125,19 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
         type: 'plex' | 'jellyfin' | 'emby' | 'local';
         enabled: boolean;
         isLocked: boolean;
+        unavailableSince?: number;
         mediaSource?: {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'plex';
             sendGuideUpdates: boolean;
             index: number;
@@ -8835,26 +9145,28 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'jellyfin';
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'emby';
         } | {
             id: string;
@@ -8913,17 +9225,19 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
         type: 'plex' | 'jellyfin' | 'emby' | 'local';
         enabled: boolean;
         isLocked: boolean;
+        unavailableSince?: number;
         mediaSource?: {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'plex';
             sendGuideUpdates: boolean;
             index: number;
@@ -8931,26 +9245,28 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'jellyfin';
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'emby';
         } | {
             id: string;
@@ -8996,13 +9312,10 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
         type: 'plex' | 'jellyfin' | 'emby' | 'local';
         enabled: boolean;
         isLocked: boolean;
+        unavailableSince?: number;
         mediaSource: {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             libraries: Array<{
                 id: string;
                 name: string;
@@ -9012,11 +9325,17 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'plex';
             sendGuideUpdates: boolean;
             index: number;
@@ -9024,10 +9343,6 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             libraries: Array<{
                 id: string;
                 name: string;
@@ -9037,19 +9352,21 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'jellyfin';
         } | {
             id: string;
             name: string;
-            uri: string;
-            accessToken?: string;
-            userId: string | null;
-            username: string | null;
             libraries: Array<{
                 id: string;
                 name: string;
@@ -9059,11 +9376,17 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
             type: 'emby';
         } | {
             id: string;
@@ -9077,6 +9400,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
@@ -9343,14 +9667,15 @@ export type PutApiMediaSourcesByIdData = {
     body?: {
         id: string;
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'plex';
         sendGuideUpdates?: boolean;
         index: number;
@@ -9358,26 +9683,28 @@ export type PutApiMediaSourcesByIdData = {
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'jellyfin';
     } | {
         id: string;
         name: string;
-        uri: string;
-        accessToken: string;
-        userId: string | null;
-        username: string | null;
         pathReplacements: Array<{
             serverPath: string;
             localPath: string;
         }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
         type: 'emby';
     } | {
         id: string;
@@ -9593,11 +9920,11 @@ export type GetApiTranscodeConfigsResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9648,11 +9975,11 @@ export type PostApiTranscodeConfigsData = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9708,11 +10035,11 @@ export type PostApiTranscodeConfigsResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9806,11 +10133,11 @@ export type GetApiTranscodeConfigsByIdResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9862,11 +10189,11 @@ export type PutApiTranscodeConfigsByIdData = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -9924,11 +10251,11 @@ export type PutApiTranscodeConfigsByIdResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -10003,11 +10330,11 @@ export type PostApiTranscodeConfigsByIdCopyResponses = {
         videoFormat: 'h264' | 'hevc' | 'mpeg2video';
         videoProfile: string | null;
         videoPreset: string | null;
-        videoBitDepth: (8 | 10) | null;
+        videoBitDepth: 8 | 10 | null;
         videoBitRate: number;
         videoBufferSize: number;
         audioChannels: number;
-        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+        audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
         audioBitRate: number;
         audioBufferSize: number;
         audioSampleRate: number;
@@ -10450,7 +10777,7 @@ export type PutApiSystemSettingsData = {
                 };
             };
             categoryLogLevel?: {
-                [key: string]: ('silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace') | unknown;
+                [key: string]: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace' | null;
             };
         };
         backup?: {
@@ -10691,6 +11018,7 @@ export type GetApiSystemFeatureFlagsResponses = {
             proxyArtwork: boolean;
             tonemapEnabled: boolean;
             webvttSidecarEnabled: boolean;
+            xmltvCreditImagesEnabled: boolean;
             disableSearchSnapshotInBackup: boolean;
             disableVulkan: boolean;
             disableVaapiPad: boolean;
@@ -10715,6 +11043,7 @@ export type PutApiSystemFeatureFlagsData = {
         disableSearchSnapshotInBackup?: boolean;
         disableVulkan?: boolean;
         disableVaapiPad?: boolean;
+        xmltvCreditImagesEnabled?: boolean;
     };
     path?: never;
     query?: never;
@@ -10730,6 +11059,7 @@ export type PutApiSystemFeatureFlagsResponses = {
             proxyArtwork: boolean;
             tonemapEnabled: boolean;
             webvttSidecarEnabled: boolean;
+            xmltvCreditImagesEnabled: boolean;
             disableSearchSnapshotInBackup: boolean;
             disableVulkan: boolean;
             disableVaapiPad: boolean;
@@ -11124,7 +11454,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     hasAttachedPicture?: boolean | null;
                     fileName?: string | null;
                     mimeType?: string | null;
-                    frameRate?: (string | number) | null;
+                    frameRate?: string | number | null;
                     pixelFormat?: string | null;
                     bitDepth?: number | null;
                     colorRange?: string | null;
@@ -11142,7 +11472,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 duration: number;
                 sampleAspectRatio?: string | null;
                 displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
+                frameRate?: number | string | null;
                 resolution?: {
                     widthPx: number;
                     heightPx: number;
@@ -11163,7 +11493,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     title?: string | null;
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
                 externalKey?: string | null;
             };
             duration: number;
@@ -11249,6 +11579,8 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 path?: string | null;
             }>;
             state: 'ok' | 'missing';
+            artistName?: string | null;
+            albumName?: string | null;
             mediaSourceId: string;
             libraryId: string;
             canonicalId: string;
@@ -11266,7 +11598,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     hasAttachedPicture?: boolean | null;
                     fileName?: string | null;
                     mimeType?: string | null;
-                    frameRate?: (string | number) | null;
+                    frameRate?: string | number | null;
                     pixelFormat?: string | null;
                     bitDepth?: number | null;
                     colorRange?: string | null;
@@ -11284,7 +11616,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 duration: number;
                 sampleAspectRatio?: string | null;
                 displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
+                frameRate?: number | string | null;
                 resolution?: {
                     widthPx: number;
                     heightPx: number;
@@ -11305,7 +11637,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     title?: string | null;
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
                 externalKey?: string | null;
             };
             duration: number;
@@ -11408,7 +11740,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     hasAttachedPicture?: boolean | null;
                     fileName?: string | null;
                     mimeType?: string | null;
-                    frameRate?: (string | number) | null;
+                    frameRate?: string | number | null;
                     pixelFormat?: string | null;
                     bitDepth?: number | null;
                     colorRange?: string | null;
@@ -11426,7 +11758,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 duration: number;
                 sampleAspectRatio?: string | null;
                 displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
+                frameRate?: number | string | null;
                 resolution?: {
                     widthPx: number;
                     heightPx: number;
@@ -11447,7 +11779,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     title?: string | null;
                     chapterType: 'chapter' | 'intro' | 'outro';
                 }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+                scanKind?: 'unknown' | 'progressive' | 'interlaced' | null;
                 externalKey?: string | null;
             };
             duration: number;
@@ -11755,6 +12087,23 @@ export type JellyfinLoginData = {
     url: '/api/jellyfin/login';
 };
 
+export type JellyfinLoginErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        reason: 'blocked-address';
+    };
+    /**
+     * Default Response
+     */
+    502: {
+        reason: 'unreachable' | 'auth' | 'timeout' | 'bad_response' | 'unknown';
+    };
+};
+
+export type JellyfinLoginError = JellyfinLoginErrors[keyof JellyfinLoginErrors];
+
 export type JellyfinLoginResponses = {
     /**
      * Default Response
@@ -11830,7 +12179,7 @@ export type GetJellyfinLibraryGenresResponses = {
             PlaylistItemId?: string | null;
             DateCreated?: string | null;
             DateLastMediaAdded?: string | null;
-            ExtraType?: ('Unknown' | 'Clip' | 'Trailer' | 'BehindTheScenes' | 'DeletedScene' | 'Interview' | 'Scene' | 'Sample' | 'ThemeSong' | 'ThemeVideo' | 'Featurette' | 'Short') | null;
+            ExtraType?: 'Unknown' | 'Clip' | 'Trailer' | 'BehindTheScenes' | 'DeletedScene' | 'Interview' | 'Scene' | 'Sample' | 'ThemeSong' | 'ThemeVideo' | 'Featurette' | 'Short' | null;
             AirsBeforeSeasonNumber?: number | null;
             AirsAfterSeasonNumber?: number | null;
             AirsBeforeEpisodeNumber?: number | null;
@@ -11843,7 +12192,7 @@ export type GetJellyfinLibraryGenresResponses = {
             Container?: string | null;
             SortName?: string | null;
             ForcedSortName?: string | null;
-            Video3DFormat?: ('HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC') | null;
+            Video3DFormat?: 'HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC' | null;
             PremiereDate?: string | null;
             ExternalUrls?: Array<{
                 Name?: string | null;
@@ -11854,7 +12203,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Id?: string | null;
                 Path?: string | null;
                 EncoderPath?: string | null;
-                EncoderProtocol?: ('File' | 'Http' | 'Rtmp' | 'Rtsp' | 'Udp' | 'Rtp' | 'Ftp') | null;
+                EncoderProtocol?: 'File' | 'Http' | 'Rtmp' | 'Rtsp' | 'Udp' | 'Rtp' | 'Ftp' | null;
                 Type?: 'Default' | 'Grouping' | 'Placeholder';
                 Container?: string | null;
                 Size?: number | null;
@@ -11877,9 +12226,9 @@ export type GetJellyfinLibraryGenresResponses = {
                 BufferMs?: number | null;
                 RequiresLooping?: boolean;
                 SupportsProbing?: boolean;
-                VideoType?: ('VideoFile' | 'Iso' | 'Dvd' | 'BluRay') | null;
-                IsoType?: ('Dvd' | 'BluRay') | null;
-                Video3DFormat?: ('HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC') | null;
+                VideoType?: 'VideoFile' | 'Iso' | 'Dvd' | 'BluRay' | null;
+                IsoType?: 'Dvd' | 'BluRay' | null;
+                Video3DFormat?: 'HalfSideBySide' | 'FullSideBySide' | 'FullTopAndBottom' | 'HalfTopAndBottom' | 'MVC' | null;
                 MediaStreams?: Array<{
                     Codec?: string | null;
                     CodecTag?: string | null;
@@ -11932,7 +12281,7 @@ export type GetJellyfinLibraryGenresResponses = {
                     Index?: number;
                     Score?: number | null;
                     IsExternal?: boolean;
-                    DeliveryMethod?: ('Encode' | 'Embed' | 'External' | 'Hls' | 'Drop') | null;
+                    DeliveryMethod?: 'Encode' | 'Embed' | 'External' | 'Hls' | 'Drop' | null;
                     DeliveryUrl?: string | null;
                     IsExternalUrl?: boolean | null;
                     IsTextSubtitleStream?: boolean;
@@ -12041,7 +12390,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Id?: string;
             }> | null;
             Album?: string | null;
-            CollectionType?: ('unknown' | 'movies' | 'tvshows' | 'music' | 'musicvideos' | 'trailers' | 'homevideos' | 'boxsets' | 'books' | 'photos' | 'livetv' | 'playlists' | 'folders') | null;
+            CollectionType?: 'unknown' | 'movies' | 'tvshows' | 'music' | 'musicvideos' | 'trailers' | 'homevideos' | 'boxsets' | 'books' | 'photos' | 'livetv' | 'playlists' | 'folders' | null;
             DisplayOrder?: string | null;
             AlbumId?: string | null;
             AlbumPrimaryImageTag?: string | null;
@@ -12104,7 +12453,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Index?: number;
                 Score?: number | null;
                 IsExternal?: boolean;
-                DeliveryMethod?: ('Encode' | 'Embed' | 'External' | 'Hls' | 'Drop') | null;
+                DeliveryMethod?: 'Encode' | 'Embed' | 'External' | 'Hls' | 'Drop' | null;
                 DeliveryUrl?: string | null;
                 IsExternalUrl?: boolean | null;
                 IsTextSubtitleStream?: boolean;
@@ -12114,7 +12463,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 Level?: number | null;
                 IsAnamorphic?: boolean | null;
             }> | null;
-            VideoType?: ('VideoFile' | 'Iso' | 'Dvd' | 'BluRay') | null;
+            VideoType?: 'VideoFile' | 'Iso' | 'Dvd' | 'BluRay' | null;
             PartCount?: number | null;
             MediaSourceCount?: number | null;
             ImageTags?: {
@@ -12179,7 +12528,7 @@ export type GetJellyfinLibraryGenresResponses = {
                 ImageDateModified?: string;
                 ImageTag?: string | null;
             }> | null;
-            IsoType?: ('Dvd' | 'BluRay') | null;
+            IsoType?: 'Dvd' | 'BluRay' | null;
             MediaType: 'Unknown' | 'Video' | 'Audio' | 'Photo' | 'Book';
             EndDate?: string | null;
             TrailerCount?: number | null;
@@ -12417,6 +12766,23 @@ export type PostApiEmbyLoginData = {
     query?: never;
     url: '/api/emby/login';
 };
+
+export type PostApiEmbyLoginErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        reason: 'blocked-address';
+    };
+    /**
+     * Default Response
+     */
+    502: {
+        reason: 'unreachable' | 'auth' | 'timeout' | 'bad_response' | 'unknown';
+    };
+};
+
+export type PostApiEmbyLoginError = PostApiEmbyLoginErrors[keyof PostApiEmbyLoginErrors];
 
 export type PostApiEmbyLoginResponses = {
     /**
@@ -12971,11 +13337,11 @@ export type PostApiTroubleshootResponses = {
             videoFormat: 'h264' | 'hevc' | 'mpeg2video';
             videoProfile: string | null;
             videoPreset: string | null;
-            videoBitDepth: (8 | 10) | null;
+            videoBitDepth: 8 | 10 | null;
             videoBitRate: number;
             videoBufferSize: number;
             audioChannels: number;
-            audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3';
+            audioFormat: 'aac' | 'ac3' | 'copy' | 'mp3' | 'libopus' | 'eac3';
             audioBitRate: number;
             audioBufferSize: number;
             audioSampleRate: number;
@@ -13105,6 +13471,7 @@ export type PostApiTroubleshootResponses = {
                     ip: string;
                     userAgent?: string;
                     lastHeartbeat?: number;
+                    lastHeartbeatStr?: string;
                 }>;
             }>;
             subtitlesEnabled: boolean;

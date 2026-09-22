@@ -40,7 +40,7 @@ export class MediaSourceApiFactory {
 
   #requestCacheEnabled: boolean | Record<string, boolean> = false;
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(new LazyServiceIdentifier(() => MediaSourceDB))
@@ -113,10 +113,7 @@ export class MediaSourceApiFactory {
           username,
         })
         .catch((e) => {
-          this.logger.error(
-            e,
-            'Error updating Emby media source user info',
-          );
+          this.logger.error(e, 'Error updating Emby media source user info');
         });
     }
 
@@ -194,7 +191,7 @@ export class MediaSourceApiFactory {
     name: MediaSourceId,
     factory: (opts: MediaSourceWithRelations) => ApiClient,
   ): Promise<Maybe<ApiClient>> {
-    const key = `${type}|${name}`;
+    const key = this.getCacheKey(type, name);
     return cacheGetOrSet<Maybe<ApiClient>>(
       MediaSourceApiFactory.cache,
       key,
@@ -214,18 +211,16 @@ export class MediaSourceApiFactory {
       : (this.#requestCacheEnabled[id] ?? false);
   }
 
-  private getCacheKey(type: MediaSourceType, uri: string, accessToken: string) {
-    return `${type}|${uri}|${accessToken}`;
+  // Keyed by ID alone so that a credential change still resolves to the entry
+  // holding the stale client.
+  private getCacheKey(type: MediaSourceType, mediaSourceId: MediaSourceId) {
+    return `${type}|${mediaSourceId}`;
   }
 
   private getCacheKeyForMediaSource(
     mediaSource: MediaSource | MediaSourceOrm,
   ): string {
-    return this.getCacheKey(
-      mediaSource.type,
-      mediaSource.uri,
-      mediaSource.accessToken,
-    );
+    return this.getCacheKey(mediaSource.type, mediaSource.uuid);
   }
 
   private async backfillPlexUserId(

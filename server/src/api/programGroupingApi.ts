@@ -5,12 +5,8 @@ import z from 'zod';
 import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
 import { container } from '../container.ts';
 import { ProgramGroupingDB } from '../db/ProgramGroupingDB.ts';
-import type {
-  MediaSourceId,
-  RemoteSourceType} from '../db/schema/base.ts';
-import {
-  RemoteSourceTypes,
-} from '../db/schema/base.ts';
+import type { MediaSourceId, RemoteSourceType } from '../db/schema/base.ts';
+import { RemoteSourceTypes } from '../db/schema/base.ts';
 import { BatchLookupExternalProgrammingSchema } from '../types/schemas.ts';
 import type { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { groupByUniq, inConstArr } from '../util/index.ts';

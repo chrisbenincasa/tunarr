@@ -8,22 +8,16 @@ import { fileExists } from '../../util/fsUtil.ts';
 import { isNodeError, isNonEmptyString } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
-import type {
-  HealthCheck,
-  HealthCheckResult} from './HealthCheck.ts';
-import {
-  healthCheckResult,
-} from './HealthCheck.ts';
+import type { HealthCheck, HealthCheckResult } from './HealthCheck.ts';
+import { healthCheckResult } from './HealthCheck.ts';
 
 @injectable()
 export class FfmpegTranscodeDirectoryHealthCheck implements HealthCheck {
   readonly id: string = 'FfmpegTranscodeDirectory';
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
-  constructor(
-    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
-  ) {}
+  constructor(@inject(KEYS.SettingsDB) private settingsDB: ISettingsDB) {}
 
   async getStatus(): Promise<HealthCheckResult> {
     const settings = this.settingsDB.ffmpegSettings();

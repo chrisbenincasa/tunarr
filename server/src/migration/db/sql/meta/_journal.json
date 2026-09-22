@@ -316,6 +316,55 @@
       "when": 1777906281969,
       "tag": "0044_useful_groot",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1779654984240,
+      "tag": "0045_lean_violations",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "6",
+      "when": 1782780220054,
+      "tag": "0046_melted_captain_flint",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1789851681310,
+      "tag": "0047_eac3_audio_format_constraint",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1790033149560,
+      "tag": "0048_old_firestar",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1790034899981,
+      "tag": "0049_slim_toad_men",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1790035117345,
+      "tag": "0050_whole_molly_hayes",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "6",
+      "when": 1790105118811,
+      "tag": "0051_striped_marvel_apes",
+      "breakpoints": true
     }
   ]
 }

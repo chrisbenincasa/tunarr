@@ -51,6 +51,10 @@ import { ArtworkService } from '../services/ArtworkService.ts';
 import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
 import { ProgramStreamDetailsFetcher } from '../stream/ProgramStreamDetailsFetcher.ts';
 import { TypedError } from '../types/errors.ts';
+import {
+  MaterializedProgramRelations,
+  ProgramStreamRelations,
+} from '../db/program/programRelations.ts';
 import { KEYS } from '../types/inject.ts';
 
 const LookupExternalProgrammingSchema = z.object({
@@ -255,36 +259,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       const dbRes = await db.query.program.findFirst({
         where: (program, { eq }) => eq(program.uuid, req.params.id),
         with: {
-          externalIds: true,
+          ...MaterializedProgramRelations,
+          ...ProgramStreamRelations,
           mediaLibrary: true,
-          credits: {
-            with: {
-              artwork: true,
-            },
-          },
-          artwork: true,
-          versions: {
-            with: {
-              mediaStreams: true,
-              chapters: true,
-              mediaFiles: true,
-            },
-          },
-          genres: {
-            with: {
-              genre: true,
-            },
-          },
-          studios: {
-            with: {
-              studio: true,
-            },
-          },
-          tags: {
-            with: {
-              tag: true,
-            },
-          },
         },
       });
 
@@ -395,6 +372,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           200: z.any(),
           404: z.void(),
         },
+      },
+      config: {
+        authRequired: false,
       },
     },
     async (req, res) => {

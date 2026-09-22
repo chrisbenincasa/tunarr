@@ -1,8 +1,5 @@
-import type {
-  SlotScheduleResult} from '@tunarr/types/api';
-import {
-  RandomSlotScheduleSchema
-} from '@tunarr/types/api';
+import type { SlotScheduleResult } from '@tunarr/types/api';
+import { RandomSlotScheduleSchema } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { z } from 'zod/v4';

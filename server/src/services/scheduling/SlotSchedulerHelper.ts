@@ -4,6 +4,7 @@ import { inject, injectable } from 'inversify';
 import {
   flatten,
   isError,
+  isNil,
   isNumber,
   partition,
   reduce,
@@ -34,7 +35,7 @@ import type { TimeSlotScheduleServiceRequest } from './TimeSlotSchedulerService.
 
 @injectable()
 export class SlotSchedulerHelper {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(CustomShowDB) private customShowDB: CustomShowDB,
@@ -102,6 +103,7 @@ export class SlotSchedulerHelper {
       if (seenContentIds.has(program.uuid)) {
         continue;
       }
+      seenContentIds.add(program.uuid);
 
       slotPrograms.push({
         ...program,
@@ -173,15 +175,52 @@ export class SlotSchedulerHelper {
     slotFiller.forEach((id) => slottedFillerLists.add(id));
 
     // Query
-    return Object.fromEntries(
-      await Promise.all(
-        [...slottedFillerLists].map((list) =>
-          this.fillerDB
-            .getFillerPrograms(list)
-            .then((programs) => [list, programs] as const),
+    const programsByFillerList: Record<string, ProgramWithRelationsOrm[]> =
+      Object.fromEntries(
+        await Promise.all(
+          [...slottedFillerLists].map((list) =>
+            this.fillerDB
+              .getFillerPrograms(list)
+              .then((programs) => [list, programs] as const),
+          ),
         ),
-      ),
-    );
+      );
+
+    await this.warnOnUnusableFillerLists(programsByFillerList);
+
+    return programsByFillerList;
+  }
+
+  /**
+   * A filler list referenced by the schedule that yields no programs is
+   * skipped by the scheduler. Name it in the logs -- including whether the
+   * list still exists at all -- since there is nothing in the UI that would
+   * otherwise explain the missing filler.
+   */
+  private async warnOnUnusableFillerLists(
+    programsByFillerList: Record<string, ProgramWithRelationsOrm[]>,
+  ) {
+    for (const [fillerListId, programs] of Object.entries(
+      programsByFillerList,
+    )) {
+      if (programs.length > 0) {
+        continue;
+      }
+
+      const fillerList = await this.fillerDB.getFiller(fillerListId);
+      if (isNil(fillerList)) {
+        this.logger.warn(
+          'Slot schedule references filler list %s, which no longer exists. It will be ignored.',
+          fillerListId,
+        );
+      } else {
+        this.logger.warn(
+          'Filler list "%s" (%s) has no programs, so slots referencing it will not get filler from it.',
+          fillerList.name,
+          fillerListId,
+        );
+      }
+    }
   }
 
   async materializeShows(slots: BaseSlot[]) {

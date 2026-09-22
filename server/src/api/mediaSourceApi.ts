@@ -162,6 +162,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             lastScannedAt: library.lastScannedAt
               ? +dayjs(library.lastScannedAt)
               : undefined,
+            unavailableSince: nullToUndefined(
+              library.unavailableSince,
+            )?.valueOf(),
             isLocked:
               entityLocker.isLibraryLocked(library) ||
               entityLocker.isMediaSourceLocked(mediaSource),
@@ -245,6 +248,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         type: mediaSource.type,
         enabled: updatedLibrary.enabled,
         lastScannedAt: nullToUndefined(updatedLibrary.lastScannedAt)?.valueOf(),
+        unavailableSince: nullToUndefined(
+          updatedLibrary.unavailableSince,
+        )?.valueOf(),
         isLocked:
           entityLocker.isLibraryLocked(updatedLibrary) ||
           entityLocker.isMediaSourceLocked(mediaSource),
@@ -286,6 +292,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         type: library.mediaSource.type,
         enabled: library.enabled,
         lastScannedAt: library.lastScannedAt?.valueOf(),
+        unavailableSince: library.unavailableSince?.valueOf(),
         isLocked:
           entityLocker.isLibraryLocked(library) ||
           entityLocker.isMediaSourceLocked(library.mediaSource),
@@ -489,7 +496,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           );
 
       if (!libraries || isEmpty(libraries)) {
-        return res.status(501);
+        return res.status(501).send();
       }
 
       if (mediaSource.type === 'local') {
@@ -656,6 +663,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 paths: [],
                 mediaType: null,
                 replacePaths: [],
+                sendPlayStatusUpdates: false,
+                consecutiveAuthFailures: 0,
               },
             });
 
@@ -676,6 +685,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 paths: [],
                 mediaType: null,
                 replacePaths: [],
+                sendPlayStatusUpdates: false,
+                consecutiveAuthFailures: 0,
               },
             });
 
@@ -696,6 +707,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 paths: [],
                 mediaType: null,
                 replacePaths: [],
+                sendPlayStatusUpdates: false,
+                consecutiveAuthFailures: 0,
               },
             });
 
@@ -939,6 +952,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
               name: library.name,
               externalKey: library.externalKey,
               mediaType: library.mediaType,
+              unavailableSince: nullToUndefined(
+                library.unavailableSince,
+              )?.valueOf(),
             })),
             userId: source.userId,
             username: source.username,
@@ -946,6 +962,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
               localPath: replace.localPath,
               serverPath: replace.serverPath,
             })),
+            sendPlayStatusUpdates: source.sendPlayStatusUpdates ?? false,
           }) satisfies StrictExtract<
             MediaSourceSettings,
             { type: 'plex' | 'jellyfin' | 'emby' }
@@ -971,6 +988,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
               name: library.name,
               externalKey: library.externalKey,
               mediaType: library.mediaType,
+              unavailableSince: nullToUndefined(
+                library.unavailableSince,
+              )?.valueOf(),
             })),
             // N/A for local media sources
             pathReplacements: [],

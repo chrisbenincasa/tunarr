@@ -20,11 +20,8 @@ import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
 import type { DB } from '../schema/db.ts';
 import type { ChannelOrmWithRelations } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
-import type {
-  NewChannelSubtitlePreferenceOrm} from '../schema/SubtitlePreferences.ts';
-import {
-  ChannelSubtitlePreferences
-} from '../schema/SubtitlePreferences.ts';
+import type { NewChannelSubtitlePreferenceOrm } from '../schema/SubtitlePreferences.ts';
+import { ChannelSubtitlePreferences } from '../schema/SubtitlePreferences.ts';
 import type { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
 import type { LineupRepository } from './LineupRepository.ts';
 
@@ -216,6 +213,10 @@ export class BasicChannelRepository {
     this.drizzleDB.transaction((tx) => {
       tx.update(Channel).set(update).where(eq(Channel.uuid, id)).run();
 
+      tx.delete(ChannelFillerShow)
+        .where(eq(ChannelFillerShow.channelUuid, channel.uuid))
+        .run();
+
       if (!isEmpty(updateReq.fillerCollections)) {
         const channelFillerShows = map(
           updateReq.fillerCollections,
@@ -227,9 +228,6 @@ export class BasicChannelRepository {
           }),
         );
 
-        tx.delete(ChannelFillerShow)
-          .where(eq(ChannelFillerShow.channelUuid, channel.uuid))
-          .run();
         tx.insert(ChannelFillerShow).values(channelFillerShows).run();
       }
       const subtitlePreferences = updateReq.subtitlePreferences?.map(

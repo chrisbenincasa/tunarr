@@ -488,7 +488,7 @@ export abstract class MediaSourceMusicArtistScanner<
     );
 
     albumAndRelations.programGrouping.libraryId = scanContext.library.uuid;
-    albumAndRelations.programGrouping.showUuid = artist.uuid;
+    albumAndRelations.programGrouping.artistUuid = artist.uuid;
 
     const upsertResult = await Result.attemptAsync(() =>
       this.programDB.upsertProgramGrouping(

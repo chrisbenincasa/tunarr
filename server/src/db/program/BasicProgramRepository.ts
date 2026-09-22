@@ -10,6 +10,10 @@ import { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
 import type { DB } from '../schema/db.ts';
 import type { ProgramWithRelationsOrm } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
+import {
+  MaterializedProgramRelations,
+  ProgramStreamRelations,
+} from './programRelations.ts';
 
 @injectable()
 export class BasicProgramRepository {
@@ -24,17 +28,8 @@ export class BasicProgramRepository {
     return this.drizzleDB.query.program.findFirst({
       where: (fields, { eq }) => eq(fields.uuid, id),
       with: {
-        externalIds: true,
-        artwork: true,
-        subtitles: true,
-        credits: true,
-        versions: {
-          with: {
-            mediaStreams: true,
-            mediaFiles: true,
-            chapters: true,
-          },
-        },
+        ...MaterializedProgramRelations,
+        ...ProgramStreamRelations,
       },
     });
   }
@@ -85,37 +80,7 @@ export class BasicProgramRepository {
     for (const idChunk of chunk(uniq(ids), batchSize)) {
       const res = await this.drizzleDB.query.program.findMany({
         where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
-        with: {
-          album: {
-            with: {
-              externalIds: true,
-              artwork: true,
-            },
-          },
-          artist: {
-            with: {
-              externalIds: true,
-            },
-          },
-          season: {
-            with: {
-              externalIds: true,
-            },
-          },
-          show: {
-            with: {
-              externalIds: true,
-              artwork: true,
-            },
-          },
-          externalIds: true,
-          artwork: true,
-          tags: {
-            with: {
-              tag: true,
-            },
-          },
-        },
+        with: MaterializedProgramRelations,
       });
       results.push(...res);
     }

@@ -25,14 +25,16 @@ import { TimeField } from '@mui/x-date-pickers';
 import type { RandomSlot } from '@tunarr/types/api';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { find, isNil, map } from 'lodash-es';
+import { find, isNil, map, values } from 'lodash-es';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import type { StrictOmit } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { deriveMidRollDefaults } from '../../helpers/midRollDefaults.ts';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
+import useStore from '../../store/index.ts';
 import type { LinkMode } from '../../model/CommonSlotModels.ts';
 import {
   copySlotForLinking,
@@ -160,24 +162,17 @@ export const EditRandomSlotDialogContent = ({
     ) ?? false;
   const [tab, setTab] = useState(0);
   const { data: fillerLists } = useFillerLists();
+  const programLookup = useStore((s) => s.programLookup);
+  const channelPrograms = useMemo(() => values(programLookup), [programLookup]);
 
   useEffect(() => {
     if (!hasMidFiller && tab === 2) {
       setTab(0);
     }
     if (hasMidFiller && !getValues('midRoll')) {
-      setValue('midRoll', {
-        intervalMs: 30 * 60 * 1000,
-        breakRule: { type: 'fixed_interval', intervalMs: 30 * 60 * 1000 },
-        breakDurationMs: 3 * 60 * 1000,
-        maxBreaks: 0,
-        minProgramDurationMs: 60 * 60 * 1000,
-        tailBufferMs: 0,
-        programTypes: [],
-        strategy: 'eager',
-      });
+      setValue('midRoll', deriveMidRollDefaults(getValues(), channelPrograms));
     }
-  }, [hasMidFiller, tab, getValues, setValue]);
+  }, [hasMidFiller, tab, getValues, setValue, channelPrograms]);
 
   const [weightValue, setWeightValue] = useState(getValues('weight'));
 

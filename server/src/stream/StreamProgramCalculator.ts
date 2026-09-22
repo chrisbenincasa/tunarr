@@ -15,16 +15,17 @@ import type {
   CommercialStreamLineupItem,
   FallbackStreamLineupItem,
   ProgramStreamLineupItem,
-  StreamLineupItem} from '../db/derived_types/StreamLineup.ts';
+  StreamLineupItem,
+} from '../db/derived_types/StreamLineup.ts';
 import {
   createOfflineStreamLineupItem,
-  isContentBackedLineupItem
+  isContentBackedLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { ProgramPlayHistoryDB } from '../db/ProgramPlayHistoryDB.ts';
-import { OneDayMillis } from '../ffmpeg/builder/constants.ts';
+import { OneWeekMillis } from '../ffmpeg/builder/constants.ts';
 import type { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import { WrappedError } from '../types/errors.ts';
 import { devAssert } from '../util/debug.ts';
@@ -327,7 +328,7 @@ export class StreamProgramCalculator {
     } else {
       lineupItem = {
         type: 'offline',
-        durationMs: OneDayMillis,
+        durationMs: OneWeekMillis,
       };
     }
 
@@ -601,7 +602,7 @@ export function calculateStreamDuration(
   devAssert(now >= channelStartTime);
   if (lineup.items.length === 0) {
     return {
-      streamDuration: OneDayMillis,
+      streamDuration: OneWeekMillis,
       timeElapsed: 0,
       currentProgramIndex: -1,
     };

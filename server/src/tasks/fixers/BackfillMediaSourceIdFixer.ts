@@ -10,11 +10,9 @@ import { match } from 'ts-pattern';
 
 @injectable()
 export class BackfillMediaSourceIdFixer extends Fixer {
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
-  constructor(
-    @inject(KEYS.Database) private db: Kysely<DB>,
-  ) {
+  constructor(@inject(KEYS.Database) private db: Kysely<DB>) {
     super();
   }
 
