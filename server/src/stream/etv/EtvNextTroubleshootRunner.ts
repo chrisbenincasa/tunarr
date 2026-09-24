@@ -309,7 +309,7 @@ function tail(stderr: string, lines = StderrTailLines): string {
 function redactSecrets(text: string | undefined): string | undefined {
   return text
     ?.replace(/(X-Plex-Token=)[A-Za-z0-9_-]+/g, '$1REDACTED')
-    .replace(/(X-Emby-Token:\s*)[A-Za-z0-9_-]+/g, '$1REDACTED')
+    .replace(/(X-Emby-Token[:=]\s*)[A-Za-z0-9_-]+/g, '$1REDACTED')
     .replace(/(api_key=)[A-Za-z0-9_-]+/g, '$1REDACTED');
 }
 

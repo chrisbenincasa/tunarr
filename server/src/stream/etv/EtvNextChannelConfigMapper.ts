@@ -226,6 +226,19 @@ export function findIgnoredSettings({
     transcodeConfig.hardwareAccelerationMode !== 'none' &&
     isSupportedAccel(transcodeConfig.hardwareAccelerationMode);
 
+  if (usesAccel) {
+    const stages = [
+      ['disableHardwareDecoder', 'decoding'],
+      ['disableHardwareEncoding', 'encoding'],
+      ['disableHardwareFilters', 'filters'],
+    ] as const;
+    for (const [field, stage] of stages) {
+      if (transcodeConfig[field]) {
+        note(field, `the backend has no switch for hardware ${stage} alone`);
+      }
+    }
+  }
+
   if (
     usesAccel &&
     !isSupportedVaapiDriver(transcodeConfig.vaapiDriver) &&

@@ -518,6 +518,23 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
         return;
       }
 
+      // A rebuild the schedule cut short would replace a longer window with a
+      // shorter one. The written window stays until a rebuild reaches past it.
+      const writtenFinishMs = this.#windowItems.at(-1)?.finish;
+      if (
+        window.finishMs < targetFinishMs &&
+        writtenFinishMs !== undefined &&
+        window.finishMs < Date.parse(writtenFinishMs)
+      ) {
+        this.logger.warn(
+          'The schedule for channel %s stopped at %d, short of the window already written to %s. Keeping that window and retrying on the next refresh.',
+          this.channel.uuid,
+          window.finishMs,
+          writtenFinishMs,
+        );
+        return;
+      }
+
       const items =
         playing !== undefined ? [playing, ...window.items] : window.items;
 

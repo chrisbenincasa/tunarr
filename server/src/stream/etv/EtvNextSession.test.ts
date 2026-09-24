@@ -494,6 +494,31 @@ describe('the playout window', () => {
     expect(afterSecond.items.map((i) => i.id)).toEqual(['item-0', 'item-2']);
   });
 
+  test('keeps its tail when a rebuild is cut short', async () => {
+    const { session, playoutWriter, transcodeDirectory, startMs } =
+      await makeSession({ windowMs });
+    await session.start();
+    await refreshAt(session, startMs + windowMs / 4);
+
+    playoutWriter.materializeWindow.mockImplementation(
+      (request: { startMs: number; idSeed?: number }) => {
+        const finishMs = request.startMs + windowMs / 10;
+        return Promise.resolve({
+          startMs: request.startMs,
+          finishMs,
+          items: [
+            playoutItem(request.startMs, finishMs, `item-${request.idSeed}`),
+          ],
+          ignored: [],
+        });
+      },
+    );
+    await refreshAt(session, startMs + windowMs / 2);
+
+    const { items } = await readWindow(transcodeDirectory);
+    expect(items.map((i) => i.id)).toEqual(['item-0', 'item-1']);
+  });
+
   test('is left alone while one long program still covers the lead', async () => {
     const { session, playoutWriter, startMs } = await makeSession({ windowMs });
     playoutWriter.materializeWindow.mockImplementation(

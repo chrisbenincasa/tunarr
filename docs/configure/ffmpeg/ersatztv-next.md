@@ -71,7 +71,7 @@ the channel will transcode in software.
 
 - **Audio and subtitle track selection does not reach the worker.** The playout contract carries no track indices, so a channel on this backend plays the file's default tracks regardless of the stream selection profile that would otherwise apply.
 - **Watermarks and channel overlays are not applied.** The worker draws neither.
-- **Programming edits land within half an hour.** The schedule is materialized ahead of playback, so an edit takes effect at the first program boundary after the next rebuild.
+- **Programming edits land at the next item, not immediately.** The worker asks Tunarr what to play one item at a time, and it transcodes up to 44 seconds ahead of what viewers see. An edit takes effect the next time the worker asks. Anything already transcoded plays as it was.
 
 ## Troubleshooting a channel
 
