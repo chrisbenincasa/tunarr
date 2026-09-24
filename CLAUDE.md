@@ -37,6 +37,22 @@ This is a monorepo with four main packages:
 - The `main` branch creates "stable" releases. It receives fixes, chores, build/CI changes, docs, refactors, and small to medium features, including those with database migrations.
 - The `dev` branch creates prereleases. It is reserved for large features that need many prerelease iterations before they reach stable, such as infinite schedules or remote streaming sources.
 
+### PR Review Labels
+
+The maintainer cannot approve their own PRs on GitHub, so review agents record their verdict with labels.
+
+| Label | Meaning |
+|---|---|
+| `approved` | Reviewed and ready to merge |
+| `changes requested` | Review found issues; the PR needs another pass |
+
+- A reviewer sets exactly one of these labels and removes the other.
+- A reviewer also leaves a comment with the findings. The label carries the verdict and the comment carries the reasons.
+- Whoever pushes new commits to an `approved` PR removes the label, because nobody has reviewed the new code.
+- An author who addresses the findings removes `changes requested` so the PR returns to review.
+- Only merge a PR labeled `approved`.
+- Commands: `gh pr edit <n> --add-label approved --remove-label "changes requested"` and the reverse.
+
 ### Common Commands
 
 ```bash
