@@ -228,6 +228,23 @@ describe('EtvNextTroubleshootRunner', () => {
     expect(result.report).toContain('X-Plex-Token=REDACTED');
   });
 
+  // Emby carries its token in the query string, not only as a header.
+  test('redacts an Emby token passed in the URI', async () => {
+    const { run } = await makeRunner({
+      stderr:
+        'optimized pipeline: -i http://emby/Videos/1/stream?X-Emby-Token=sup3rsecret -f hls out.m3u8\n',
+      dossier:
+        'Command line:\n-i http://emby/Videos/1/stream?X-Emby-Token=sup3rsecret\n',
+    });
+
+    const result = await run();
+
+    expect(result.ffmpegCommand).toContain('X-Emby-Token=REDACTED');
+    expect(result.ffmpegCommand).not.toContain('sup3rsecret');
+    expect(result.stderr).not.toContain('sup3rsecret');
+    expect(result.report).not.toContain('sup3rsecret');
+  });
+
   test('reads the FFmpeg report out of the dossier the worker leaves', async () => {
     const { run } = await makeRunner({ dossier: 'ffmpeg started on 2026\n' });
 
