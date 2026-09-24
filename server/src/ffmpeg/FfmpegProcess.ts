@@ -70,7 +70,7 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
     const argsWithTokenRedacted = this.ffmpegArgs
       .join(' ')
       .replaceAll(/(X-Plex-Token=)([A-z0-9_\\-]+)/g, '$1REDACTED')
-      .replaceAll(/(X-Emby-Token:\s)([A-z0-9_\\-]+)/g, '$1REDACTED');
+      .replaceAll(/(X-Emby-Token[:=]\s*)([A-z0-9_\\-]+)/g, '$1REDACTED');
 
     this.#logger.debug(
       `Starting ffmpeg with args: "%s"`,

@@ -1,0 +1,60 @@
+{
+  "$schema": "../../schema/playout.json",
+  "version": "https://ersatztv.org/playout/version/0.0.3",
+  "generated_at": "2026-02-23T18:02:00-05:00",
+  "items": [
+    {
+      "id": "1",
+      "start": "2026-02-23T20:00:00.000-05:00",
+      "finish": "2026-02-23T20:09:56.460-05:00",
+      "source": {
+        "source_type": "local",
+        "path": "~/Videos/movies/Big Buck Bunny (2008)/Big Buck Bunny (2008).mov"
+      },
+      "tracks": {
+        "audio": {
+          "stream_index": 1
+        }
+      },
+      "watermark": {
+        "source": {
+          "source_type": "local",
+          "path": "~/Pictures/network-logo.png"
+        },
+        "location": "bottom_right",
+        "width_percent": 10,
+        "horizontal_margin_percent": 2,
+        "vertical_margin_percent": 2,
+        "opacity_percent": 80,
+        "timing": {
+          "timing_type": "periodic",
+          "clock": "wall",
+          "frequency_ms": 300000,
+          "phase_offset_ms": 0,
+          "disable_after_ms": 3000000,
+          "fade_ms": 1000,
+          "hold_ms": 8000
+        }
+      }
+    },
+    {
+      "id": "2",
+      "start": "2026-02-23T20:09:56.460-05:00",
+      "finish": "2026-02-23T20:10:06.460-05:00",
+      "tracks": {
+        "audio": {
+          "source": {
+            "source_type": "lavfi",
+            "params": "anullsrc=channel_layout=stereo:sample_rate=48000:d=10"
+          }
+        },
+        "video": {
+          "source": {
+            "source_type": "local",
+            "path": "/home/jason/Pictures/be-right-back.png"
+          }
+        }
+      }
+    }
+  ]
+}

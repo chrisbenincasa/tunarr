@@ -7,6 +7,8 @@ import type { OnDemandChannelService } from '@/services/OnDemandChannelService.j
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import type { DeepRequired } from 'ts-essentials';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SessionConcatStreamMode } from '@tunarr/types/schemas';
+import { SessionConcatStreamModes } from '@tunarr/types/schemas';
 import type { HlsSessionOptions } from './hls/HlsSession.ts';
 
 // Mock modules that create circular dependency chains through Inversify
@@ -73,6 +75,22 @@ class StubHlsSession extends BaseHlsSession<HlsSessionOptions> {
   // tests exercise the actual threshold logic.
 }
 
+/** A session whose stream never becomes ready. */
+class NeverReadySession extends StubHlsSession {
+  protected override async waitForStreamReady() {
+    const { Result } = await import('@/types/result.js');
+    const { GenericError } = await import('@/types/errors.js');
+    return Result.failure<void>(new GenericError('stream never became ready'));
+  }
+}
+
+/** A session that throws out of startInternal. */
+class FailingStartSession extends StubHlsSession {
+  protected override async startInternal() {
+    throw new Error('ffmpeg could not be spawned');
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Mock logger
 // ---------------------------------------------------------------------------
@@ -134,6 +152,7 @@ function makeSessionManager(
     hlsFactory,
     vi.fn(), // hlsSlowerSessionFactory — not used in these tests
     vi.fn(), // concatSessionFactory
+    vi.fn(), // etvNextSessionFactory
     eventService,
     settingsDB,
   ) as SessionManager;
@@ -154,6 +173,43 @@ describe('SessionManager', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  // A session that never became ready must not be handed to a client. Both
+  // failure paths have to leave the session in 'error', because that is what
+  // getOrCreateSession reads to decide whether to serve it.
+  describe('readiness and startup failures', () => {
+    it('does not report a session started when the stream never becomes ready', async () => {
+      const manager = makeSessionManager(
+        (channel, options) => new NeverReadySession(channel, options),
+      );
+
+      const result = await manager.getOrCreateHlsSession(
+        channelUuid,
+        'token-a',
+        connection,
+        { streamMode: 'hls' },
+      );
+
+      expect(result.isFailure()).toBe(true);
+      expect(result.error.message).toContain('stream never became ready');
+    });
+
+    it('surfaces the error a session threw while starting', async () => {
+      const manager = makeSessionManager(
+        (channel, options) => new FailingStartSession(channel, options),
+      );
+
+      const result = await manager.getOrCreateHlsSession(
+        channelUuid,
+        'token-a',
+        connection,
+        { streamMode: 'hls' },
+      );
+
+      expect(result.isFailure()).toBe(true);
+      expect(result.error.message).toContain('ffmpeg could not be spawned');
+    });
   });
 
   describe('session replacement race condition', () => {
@@ -399,6 +455,64 @@ describe('SessionManager', () => {
       // Session should still be in the manager — cleanup was aborted
       // because #connections is non-empty when the timer fires
       expect(manager.getHlsSession(channelUuid)).toBe(session);
+    });
+  });
+  // The route behind GET /channels/:id/sessions reads this. Concat sessions are
+  // keyed `${mode}_concat`, so a list that named three of them by hand reported
+  // neither MPEG-TS nor the two newest modes.
+  describe('getAllConcatSessions', () => {
+    const putSession = (
+      manager: SessionManager,
+      sessionType: SessionConcatStreamMode,
+    ) => {
+      const session = { sessionType };
+      (
+        manager as unknown as {
+          addSession: (id: string, t: string, s: unknown) => void;
+        }
+      ).addSession(channelUuid, sessionType, session);
+      return session;
+    };
+
+    it('reports a concat session for every concat mode', () => {
+      const manager = makeSessionManager(
+        (channel, options) => new StubHlsSession(channel, options),
+      );
+
+      const sessions = SessionConcatStreamModes.map((mode) =>
+        putSession(manager, mode),
+      );
+
+      expect(manager.getAllConcatSessions(channelUuid)).toEqual(
+        expect.arrayContaining(sessions),
+      );
+      expect(manager.getAllConcatSessions(channelUuid)).toHaveLength(
+        SessionConcatStreamModes.length,
+      );
+    });
+
+    it('reports an etv_next_concat session', () => {
+      const manager = makeSessionManager(
+        (channel, options) => new StubHlsSession(channel, options),
+      );
+
+      const session = putSession(manager, 'etv_next_concat');
+
+      expect(manager.getAllConcatSessions(channelUuid)).toEqual([session]);
+    });
+
+    it('ignores a non-concat session on the same channel', () => {
+      const manager = makeSessionManager(
+        (channel, options) => new StubHlsSession(channel, options),
+      );
+
+      (
+        manager as unknown as {
+          addSession: (id: string, t: string, s: unknown) => void;
+        }
+      ).addSession(channelUuid, 'etv_next', { sessionType: 'etv_next' });
+
+      expect(manager.getAllConcatSessions(channelUuid)).toEqual([]);
     });
   });
 });

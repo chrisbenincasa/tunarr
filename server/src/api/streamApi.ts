@@ -2,6 +2,7 @@ import type { ChannelOrm } from '@/db/schema/Channel.js';
 import type { BaseHlsSession } from '@/stream/hls/BaseHlsSession.js';
 import { HlsPlaylistCreator } from '@/stream/hls/HlsPlaylistCreator.js';
 import type { HlsSession } from '@/stream/hls/HlsSession.js';
+import { routesToEtvNext } from '@/stream/etv/EtvNextRouting.js';
 import { VideoStream } from '@/stream/VideoStream.js';
 import type { Result } from '@/types/result.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
@@ -11,7 +12,10 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import fastifyStatic from '@fastify/static';
 import type { StreamConnectionDetails } from '@tunarr/types/api';
-import { ChannelStreamModeSchema } from '@tunarr/types/schemas';
+import {
+  ChannelStreamModeSchema,
+  SessionStreamModeSchema,
+} from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import type { FastifyReply } from 'fastify';
 import { isArray, isNil, isNumber, isUndefined } from 'lodash-es';
@@ -156,7 +160,12 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           },
           {
             audioOnly: req.query.audioOnly,
-            sessionType: `${mode}_concat`,
+            sessionType: routesToEtvNext(
+              mode,
+              req.serverCtx.featureFlagService.get('ersatzTvNextEnabled'),
+            )
+              ? 'etv_next_concat'
+              : `${mode}_concat`,
           },
         );
 
@@ -266,7 +275,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         hide: true,
         params: z.object({
-          sessionType: ChannelStreamModeSchema.refine(
+          sessionType: SessionStreamModeSchema.refine(
             (typ) => typ !== 'mpegts',
           ),
           id: z.uuid(),
@@ -278,6 +287,46 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
+      // The worker owns its output directory, so there is no playlist to trim
+      // and no segment accounting to keep — files are served as found. Its
+      // WebVTT already carries an X-TIMESTAMP-MAP computed against its own
+      // output offset, so Tunarr must not inject a second one.
+      if (req.params.sessionType === 'etv_next') {
+        const etvSession = req.serverCtx.sessionManager.getEtvNextSession(
+          req.params.id,
+        );
+
+        if (isUndefined(etvSession)) {
+          return res.status(404).send('No session found');
+        }
+
+        if (!etvSession.isKnownConnection(req.ip)) {
+          etvSession.addConnection(req.ip, {
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+          });
+        }
+        etvSession.recordHeartbeat(req.ip);
+
+        const { workingDirectory } = etvSession;
+        const filePath = resolve(workingDirectory, req.params.file);
+        if (!filePath.startsWith(workingDirectory + sep)) {
+          return res.status(400).send('Invalid file path');
+        }
+
+        if (req.params.file.endsWith('.m3u8')) {
+          const content = await fs.readFile(filePath);
+          return res.type('application/vnd.apple.mpegurl').send(content);
+        }
+
+        if (req.params.file.endsWith('.vtt')) {
+          const content = await fs.readFile(filePath, 'utf-8');
+          return res.type('text/vtt').send(content);
+        }
+
+        return res.sendFile(req.params.file, workingDirectory);
+      }
+
       let session: Maybe<BaseHlsSession>;
       switch (req.params.sessionType) {
         case 'hls':
@@ -369,7 +418,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         id: z.uuid().or(z.coerce.number()),
       }),
       querystring: z.object({
-        mode: ChannelStreamModeSchema.optional(),
+        mode: SessionStreamModeSchema.optional(),
       }),
     },
     handler: async (req, res) => {
@@ -397,6 +446,18 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send('Channel not found.');
         }
         mode = channel.streamMode;
+      }
+
+      // The concat child asks for etv_next by name; every other request picks
+      // its backend from the flag.
+      if (
+        mode !== 'etv_next' &&
+        routesToEtvNext(
+          mode,
+          req.serverCtx.featureFlagService.get('ersatzTvNextEnabled'),
+        )
+      ) {
+        mode = 'etv_next';
       }
 
       let sessionResult: Result<FastifyReply>;
@@ -470,6 +531,18 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         }
         case 'mpegts':
           return res.status(400).send();
+        case 'etv_next':
+          sessionResult = await req.serverCtx.sessionManager
+            .getOrCreateEtvNextSession(channelId, req.ip, connectionDetails)
+            .then((result) =>
+              result.map((session) => {
+                session.recordHeartbeat(req.ip);
+                return res
+                  .type('application/vnd.apple.mpegurl')
+                  .send(session.getMasterPlaylist());
+              }),
+            );
+          break;
       }
 
       if (sessionResult.isFailure()) {

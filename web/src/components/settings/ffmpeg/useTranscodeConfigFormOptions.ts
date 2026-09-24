@@ -6,6 +6,7 @@ import { TranscodeConfigSchema } from '@tunarr/types/schemas';
 import { useSnackbar } from 'notistack';
 import type z from 'zod';
 import {
+  getApiEtvTranscodeConfigsByIdCompatibilityQueryKey,
   getApiTranscodeConfigsQueryKey,
   postApiTranscodeConfigsMutation,
   putApiTranscodeConfigsByIdMutation,
@@ -45,10 +46,21 @@ export const useTranscodeConfigFormOptions = ({
         variant: 'success',
       });
       onSave(ret);
-      return queryClient.invalidateQueries({
-        queryKey: getApiTranscodeConfigsQueryKey(),
-        exact: false,
-      });
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: getApiTranscodeConfigsQueryKey(),
+          exact: false,
+        }),
+
+        // A saved codec change moves the config in or out of what the ErsatzTV
+        // next backend accepts, so the notice has to re-read it.
+        queryClient.invalidateQueries({
+          queryKey: getApiEtvTranscodeConfigsByIdCompatibilityQueryKey({
+            path: { id: ret.id },
+          }),
+          exact: false,
+        }),
+      ]);
     },
     onError: (e) => {
       console.error(e);

@@ -1,7 +1,7 @@
 import { z } from 'zod/v4';
 import {
-  ChannelConcatStreamModes,
-  ChannelStreamModes,
+  SessionConcatStreamModes,
+  SessionStreamModes,
 } from './channelSchema.js';
 
 export const EventTypeSchema = z.union([
@@ -58,7 +58,7 @@ export const StreamSessionEventSchema = BaseEventSchema.extend({
   ]),
   details: z.object({
     channelId: z.string().uuid(),
-    sessionType: z.enum([...ChannelStreamModes, ...ChannelConcatStreamModes]),
+    sessionType: z.enum([...SessionStreamModes, ...SessionConcatStreamModes]),
   }),
 });
 

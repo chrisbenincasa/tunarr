@@ -2,16 +2,16 @@ import { inject, injectable } from 'inversify';
 import { v4 } from 'uuid';
 import { isContentBackedLineupItem } from '../../db/derived_types/StreamLineup.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type {
-  UpdatePlexPlayStatusScheduledTaskFactory} from '../../tasks/plex/UpdatePlexPlayStatusTask.ts';
-import {
-  UpdatePlexPlayStatusScheduledTask
-} from '../../tasks/plex/UpdatePlexPlayStatusTask.ts';
+import type { UpdatePlexPlayStatusScheduledTaskFactory } from '../../tasks/plex/UpdatePlexPlayStatusTask.ts';
+import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/plex/UpdatePlexPlayStatusTask.ts';
 import { Result } from '../../types/result.ts';
 import type { Maybe } from '../../types/util.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
-import type { PluginContext, ProgramStreamPlugin } from './ProgramStreamPlugin.ts';
+import type {
+  PluginContext,
+  ProgramStreamPlugin,
+} from './ProgramStreamPlugin.ts';
 
 @injectable()
 export class PlexPlayStatusUpdaterPlugin implements ProgramStreamPlugin {

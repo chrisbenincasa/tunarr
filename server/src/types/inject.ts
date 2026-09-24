@@ -30,6 +30,8 @@ const KEYS = {
   HlsSession: Symbol.for('HlsSession'),
   HlsSlowerSession: Symbol.for('HlsSlowerSession'),
   ConcatSession: Symbol.for('ConcatSession'),
+  EtvNextSession: Symbol.for('EtvNextSession'),
+  EtvNextTroubleshootRunner: Symbol.for('EtvNextTroubleshootRunner'),
   HlsSessionProvder: Symbol.for('HlsSessionProvider'),
   ProgramStreamFactory: Symbol.for('Factory<ProgramStream>'),
   ProgramStreamPlugin: Symbol.for('ProgramStreamPlugin'),

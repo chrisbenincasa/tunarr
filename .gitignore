@@ -52,3 +52,4 @@ web/.tanstack
 
 .claude/worktrees
 .pnpm-store/
+.orchestra/
