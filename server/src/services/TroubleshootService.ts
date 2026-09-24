@@ -203,7 +203,7 @@ export class TroubleshootService {
       const redactPath = (p: string) =>
         p
           .replace(/(X-Plex-Token=)[A-Za-z0-9_-]+/g, '$1REDACTED')
-          .replace(/(X-Emby-Token:\s)[A-Za-z0-9_-]+/g, '$1REDACTED')
+          .replace(/(X-Emby-Token[:=]\s*)[A-Za-z0-9_-]+/g, '$1REDACTED')
           .replace(/(api_key=)[A-Za-z0-9_-]+/g, '$1REDACTED');
 
       result.mediaInfo = {
@@ -511,7 +511,7 @@ export class TroubleshootService {
       const redactArg = (arg: string) =>
         arg
           .replace(/(X-Plex-Token=)[A-Za-z0-9_-]+/g, '$1REDACTED')
-          .replace(/(X-Emby-Token:\s)[A-Za-z0-9_-]+/g, '$1REDACTED')
+          .replace(/(X-Emby-Token[:=]\s*)[A-Za-z0-9_-]+/g, '$1REDACTED')
           .replace(/(api_key=)[A-Za-z0-9_-]+/g, '$1REDACTED');
 
       const redactedArgs = session.process.args.map(redactArg);

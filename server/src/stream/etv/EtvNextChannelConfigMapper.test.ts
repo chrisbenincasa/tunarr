@@ -279,6 +279,30 @@ describe('toChannelConfig', () => {
     ]);
   });
 
+  test('names the per-stage hardware switches it cannot honour', () => {
+    const { ignored } = map({
+      hardwareAccelerationMode: 'vaapi',
+      disableHardwareDecoder: true,
+      disableHardwareEncoding: true,
+      disableHardwareFilters: true,
+    });
+
+    expect(ignored.map((i) => i.field)).toEqual(
+      expect.arrayContaining([
+        'disableHardwareDecoder',
+        'disableHardwareEncoding',
+        'disableHardwareFilters',
+      ]),
+    );
+  });
+
+  test('says nothing of the hardware switches under software encoding', () => {
+    expect(
+      map({ disableHardwareDecoder: true, disableHardwareEncoding: true })
+        .ignored,
+    ).toEqual([]);
+  });
+
   test('reports nothing ignored for a config that maps cleanly', () => {
     expect(map().ignored).toEqual([]);
   });
