@@ -1629,6 +1629,7 @@ describe('TimeSlotService', () => {
         slots: [slot],
         period: 'day',
         latenessMs: 0,
+        overflow: { type: 'duration', maxMs: 0 },
         timeZoneOffset: 0,
       });
 
