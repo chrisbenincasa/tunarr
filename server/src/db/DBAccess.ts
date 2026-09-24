@@ -302,16 +302,16 @@ class Connection {
 
 export class DBAccess {
   static instance: DBAccess = new DBAccess();
-  private static didInit = false;
   private static connections: Map<string, Connection> = new Map();
 
   private logger = LoggerFactory.child({ className: DBAccess.name });
 
   static init(connName: string = getDefaultDatabaseName()): Connection {
-    if (!this.didInit) {
-      this.connections.set(connName, new Connection(connName));
-    }
-    return this.connections.get(connName)!;
+    // A second init for the same database must reuse the live connection:
+    // `didInit` guarded this and was never set, so the guard never engaged and
+    // the map entry was replaced, abandoning the previous sqlite handle
+    // without closing it.
+    return DBAccess.instance.getOrCreateConnection(connName);
   }
 
   get db(): Maybe<Kysely<DB>> {
