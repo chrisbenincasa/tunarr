@@ -74,7 +74,51 @@ const nullableBranch = (branches: JsonSchema[]) => {
   return nulls.length === 1 && rest.length === 1 ? rest[0] : undefined;
 };
 
+/** Keywords `render` either emits or can drop without weakening validation. */
+const knownKeywords = new Set([
+  '$ref',
+  '$schema',
+  '$id',
+  '$defs',
+  'definitions',
+  'title',
+  'description',
+  'default',
+  'type',
+  'const',
+  'enum',
+  'format',
+  'properties',
+  'required',
+  'items',
+  'oneOf',
+  'anyOf',
+  'discriminator',
+  'minimum',
+  'maximum',
+  'additionalProperties',
+]);
+
+function assertClosedSubset(node: JsonSchema, ctx: string) {
+  const unknown = Object.keys(node).filter((k) => !knownKeywords.has(k));
+  if (unknown.length > 0) {
+    throw new Error(`${ctx}: unsupported keyword(s) ${unknown.join(', ')}`);
+  }
+
+  // Objects render strict, which is only right when extra keys are refused.
+  if (
+    node.additionalProperties !== undefined &&
+    node.additionalProperties !== false
+  ) {
+    throw new Error(
+      `${ctx}: additionalProperties ${JSON.stringify(node.additionalProperties)} is not supported`,
+    );
+  }
+}
+
 function render(node: JsonSchema, ctx: string): string {
+  assertClosedSubset(node, ctx);
+
   if (node.$ref !== undefined) {
     return schemaConst(refName(node.$ref));
   }
