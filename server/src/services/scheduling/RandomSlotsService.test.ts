@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { MersenneTwister19937, Random } from 'random-js';
 import { describe, expect, test } from 'vitest';
 import { createFakeProgramOrm } from '../../testing/fakes/entityCreators.ts';
+import { ScheduleValidationError } from '../../types/errors.ts';
 import { RandomSlotScheduler } from './RandomSlotsService.ts';
 import {
   createFillerIterators,
@@ -649,6 +650,7 @@ describe('random slot scheduler termination', () => {
     (_label, durationSpec) => {
       const scheduler = new RandomSlotScheduler(
         schedule([movieSlot(durationSpec)]),
+        { strictValidation: true },
       );
 
       expect(() =>
@@ -658,7 +660,26 @@ describe('random slot scheduler termination', () => {
           0,
           midnight,
         ),
-      ).toThrow(/slot 0/i);
+      ).toThrow(ScheduleValidationError);
+    },
+  );
+
+  test.each([
+    ['zero', { type: 'fixed', durationMs: 0 }],
+    ['negative', { type: 'fixed', durationMs: -oneHour }],
+    ['fractional count', { type: 'dynamic', programCount: 1.5 }],
+  ] satisfies [string, RandomSlotDurationSpec][])(
+    'regeneration tolerates a stored %s slot duration',
+    (_label, durationSpec) => {
+      const result = new RandomSlotScheduler(
+        schedule([
+          movieSlot(durationSpec),
+          movieSlot({ type: 'dynamic', programCount: 1 }),
+        ]),
+      ).generateSchedule(makeMovies('movie', 4, oneHour), [42], 0, midnight);
+
+      expect(contentIds(result).length).toBeGreaterThan(0);
+      expect(totalDuration(result)).toBe(oneDay);
     },
   );
 

@@ -22,6 +22,15 @@ See below for an example of our schedule now that we have Flex after our two epi
 
 ![Time Slots preview with flex](../../assets/scheduling-tools-time_slots_previewflex.png)
 
+## Slot Requirements
+
+Tunarr checks these rules when you save or preview a schedule, and rejects a schedule that breaks one with HTTP 400.
+
+- A schedule needs at least one slot.
+- Each slot's start time is a whole number of milliseconds within the period.
+- Pad times and the number of days to schedule are greater than zero.
+- Every filler list, show, smart collection, and channel a slot references must exist.
+
 ## Empty or Deleted Custom Shows
 
 A custom show with no programs cannot fill a time slot.

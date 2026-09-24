@@ -116,6 +116,20 @@ export function findBadRequestError(e: unknown): BadRequestError | undefined {
   return;
 }
 
+// Result.attempt* hides the thrown error inside an anonymous, message-less
+// WrappedError. Returns the error that was actually thrown.
+export function unwrapError(e: Error): Error {
+  let current = e;
+  while (
+    current instanceof WrappedError &&
+    !(current instanceof TypedError) &&
+    isError(current.cause)
+  ) {
+    current = current.cause;
+  }
+  return current;
+}
+
 export class GenericNotFoundError extends NotFoundError {
   constructor(id: string, entity: string) {
     super(`${entity} entity with id = ${id} not found`);

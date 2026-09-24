@@ -7,7 +7,7 @@ import type {
   UpdateCustomShowRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { count, eq, sum } from 'drizzle-orm';
+import { and, count, eq, gt, lte, sum } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import { chunk, isNil } from 'lodash-es';
@@ -254,6 +254,19 @@ export class CustomShowDB {
             .from(Program)
             .where(eq(Program.uuid, CustomShowContent.contentUuid)),
         ),
+        // Matches hasSchedulableDuration. The upper bound excludes infinity.
+        schedulableCount: sum(
+          this.drizzle
+            .select({ matches: count() })
+            .from(Program)
+            .where(
+              and(
+                eq(Program.uuid, CustomShowContent.contentUuid),
+                gt(Program.duration, 0),
+                lte(Program.duration, Number.MAX_VALUE),
+              ),
+            ),
+        ),
       })
       .from(CustomShow)
       .leftJoin(
@@ -263,10 +276,13 @@ export class CustomShowDB {
       .groupBy(CustomShow.uuid);
 
     return showsAndContentCount.map(
-      ({ customShow, totalDuration, contentCount }) => ({
+      ({ customShow, totalDuration, contentCount, schedulableCount }) => ({
         id: customShow.uuid,
         name: customShow.name,
         count: contentCount,
+        schedulableCount: schedulableCount
+          ? (parseFloatOrNull(schedulableCount) ?? 0)
+          : 0,
         totalDuration: totalDuration
           ? (parseFloatOrNull(totalDuration) ?? 0)
           : 0,
@@ -300,6 +316,10 @@ export class CustomShowDB {
     programs: CondensedContentProgram[],
   ): Promise<void> {
     if (programs.length === 0) {
+      this.drizzle
+        .delete(CustomShowContent)
+        .where(eq(CustomShowContent.customShowUuid, customShowId))
+        .run();
       return;
     }
 

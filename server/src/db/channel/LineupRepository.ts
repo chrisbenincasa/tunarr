@@ -974,9 +974,9 @@ export class LineupRepository {
         }
       });
 
-      await this.assertProgramsExist(
-        req.lineup.map(channelProgramToLineupItemFunc),
-      );
+      // Check the merged lineup, so an append cannot carry forward a stored
+      // item that no longer resolves.
+      await this.assertProgramsExist(newLineupItems);
       this.assertValidLineup(lineup, newLineupItems, lineup.schedule);
 
       const updatedChannel = this.timer.timeSync('updateChannel', () =>
@@ -1013,7 +1013,7 @@ export class LineupRepository {
             schedule: req.schedule,
             seed: req.seed,
             startTime: channel.startTime,
-            validateReferences: true,
+            strictValidation: true,
           },
         });
 
@@ -1033,7 +1033,7 @@ export class LineupRepository {
             startTime: channel.startTime,
             schedule: req.schedule,
             seed: req.seed,
-            validateReferences: true,
+            strictValidation: true,
           },
         });
         materializedPrograms = await this.materializeLineupCommand.execute({

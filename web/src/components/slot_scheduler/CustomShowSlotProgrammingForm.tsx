@@ -44,7 +44,7 @@ export const CustomShowSlotProgrammingForm = () => {
               ? {
                   type: 'custom-show',
                   customShowId: field.value,
-                  programCount: 0,
+                  schedulableProgramCount: 0,
                   value: `custom-show.${field.value}`,
                   description: t`Deleted custom show`,
                 }

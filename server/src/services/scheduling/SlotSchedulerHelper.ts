@@ -32,6 +32,7 @@ import type {
   CustomShowContext,
   SlotSchedulerProgram,
 } from './slotSchedulerUtil.ts';
+import { hasSchedulableDuration } from './slotSchedulerUtil.ts';
 import type { TimeSlotScheduleServiceRequest } from './TimeSlotSchedulerService.ts';
 
 @injectable()
@@ -119,13 +120,13 @@ export class SlotSchedulerHelper {
 
   // New requests must not reference a custom show with nothing to schedule.
   // Saved schedules skip this check so regeneration can fall back to flex.
-  assertCustomShowReferences(
+  async assertSlotReferences(
     slots: BaseSlot[],
     slotPrograms: SlotSchedulerProgram[],
   ) {
     const schedulableShowIds = new Set<string>();
     for (const program of slotPrograms) {
-      if (!Number.isFinite(program.duration) || program.duration <= 0) {
+      if (!hasSchedulableDuration(program.duration)) {
         continue;
       }
       for (const { customShowId } of program.parentCustomShows) {
@@ -133,14 +134,101 @@ export class SlotSchedulerHelper {
       }
     }
 
-    const problems = seq.collect([...zipWithIndex(slots)], ([slot, index]) => {
-      if (
-        slot.type !== 'custom-show' ||
-        schedulableShowIds.has(slot.customShowId)
-      ) {
-        return;
+    const fillerListIds = uniq(
+      slots.flatMap((slot) => {
+        switch (slot.type) {
+          case 'filler':
+            return [slot.fillerListId];
+          case 'flex':
+          case 'redirect':
+            return [];
+          case 'movie':
+          case 'show':
+          case 'custom-show':
+          case 'smart-collection':
+            return slot.filler?.map(({ fillerListId }) => fillerListId) ?? [];
+        }
+      }),
+    );
+    const showIds = uniq(
+      seq.collect(slots, (slot) =>
+        slot.type === 'show' ? slot.showId : undefined,
+      ),
+    );
+    const smartCollectionIds = uniq(
+      seq.collect(slots, (slot) =>
+        slot.type === 'smart-collection' ? slot.smartCollectionId : undefined,
+      ),
+    );
+    const channelIds = uniq(
+      seq.collect(slots, (slot) =>
+        slot.type === 'redirect' ? slot.channelId : undefined,
+      ),
+    );
+
+    const [fillerLists, shows, smartCollections, channels] = await Promise.all([
+      this.fillerDB.getFillerListsByIds(fillerListIds),
+      this.programDB.getProgramGroupings(showIds),
+      this.smartCollectionsDB.getByIds(smartCollectionIds),
+      Promise.all(channelIds.map((id) => this.channelDB.getChannel(id))),
+    ]);
+    const existingFillerListIds = new Set(fillerLists.map((l) => l.uuid));
+    const existingSmartCollectionIds = new Set(
+      smartCollections.map((c) => c.uuid),
+    );
+    const existingChannelIds = new Set(
+      seq.collect(channels, (channel) => channel?.uuid),
+    );
+
+    const problems = [...zipWithIndex(slots)].flatMap(([slot, index]) => {
+      const slotProblems: string[] = [];
+      const missing = (entity: string, id: string) =>
+        slotProblems.push(
+          `Slot ${index} references ${entity} ${id}, which does not exist`,
+        );
+
+      switch (slot.type) {
+        case 'custom-show':
+          if (!schedulableShowIds.has(slot.customShowId)) {
+            slotProblems.push(
+              `Slot ${index} references custom show ${slot.customShowId}, which has no content to schedule`,
+            );
+          }
+          break;
+        case 'filler':
+          if (!existingFillerListIds.has(slot.fillerListId)) {
+            missing('filler list', slot.fillerListId);
+          }
+          break;
+        case 'show':
+          if (shows[slot.showId] === undefined) {
+            missing('show', slot.showId);
+          }
+          break;
+        case 'smart-collection':
+          if (!existingSmartCollectionIds.has(slot.smartCollectionId)) {
+            missing('smart collection', slot.smartCollectionId);
+          }
+          break;
+        case 'redirect':
+          if (!existingChannelIds.has(slot.channelId)) {
+            missing('channel', slot.channelId);
+          }
+          break;
+        case 'movie':
+        case 'flex':
+          break;
       }
-      return `Slot ${index} references custom show ${slot.customShowId}, which has no content to schedule`;
+
+      if (slot.type !== 'filler' && 'filler' in slot) {
+        for (const { fillerListId } of slot.filler ?? []) {
+          if (!existingFillerListIds.has(fillerListId)) {
+            missing('filler list', fillerListId);
+          }
+        }
+      }
+
+      return slotProblems;
     });
 
     if (problems.length > 0) {

@@ -501,6 +501,34 @@ describe('CustomShowDB', () => {
       // rows pointing to the same program, we get 3 * duration
       expect(found!.totalDuration).toBe(duration * 3);
     });
+
+    test('counts only members with a positive duration as schedulable', async ({
+      customShowDb,
+      drizzle,
+      mediaSourceId,
+    }) => {
+      const zero = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId, { duration: 0 }),
+      );
+      const valid = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId, { duration: 60_000 }),
+      );
+      const show = await createCustomShow(drizzle, 'Mixed Durations');
+
+      await insertCustomShowContent(drizzle, [
+        { customShowUuid: show.uuid, contentUuid: zero.uuid, index: 0 },
+        { customShowUuid: show.uuid, contentUuid: valid.uuid, index: 1 },
+      ]);
+
+      const found = (await customShowDb.getAllShowsInfo()).find(
+        (s) => s.id === show.uuid,
+      );
+
+      expect(found?.count).toBe(2);
+      expect(found?.schedulableCount).toBe(1);
+    });
   });
 
   describe('getShows', () => {
@@ -682,6 +710,40 @@ describe('CustomShowDB', () => {
       await customShowDb.saveShow(showId, { programs: [], enableSync: false });
 
       expect(await membership(drizzle, showId)).toEqual([]);
+    });
+
+    test('upserting an empty list clears membership', async ({
+      customShowDb,
+      drizzle,
+      mediaSourceId,
+    }) => {
+      const { showId } = await showWithOneProgram(
+        customShowDb,
+        drizzle,
+        mediaSourceId,
+      );
+
+      await customShowDb.upsertCustomShowContent(showId, []);
+
+      expect(await membership(drizzle, showId)).toEqual([]);
+    });
+
+    test('upserting only unknown programs leaves membership alone', async ({
+      customShowDb,
+      drizzle,
+      mediaSourceId,
+    }) => {
+      const { program, showId } = await showWithOneProgram(
+        customShowDb,
+        drizzle,
+        mediaSourceId,
+      );
+
+      await customShowDb.upsertCustomShowContent(showId, [
+        { type: 'content', id: 'does-not-exist', duration: 1_000 },
+      ]);
+
+      expect(await membership(drizzle, showId)).toEqual([program.uuid]);
     });
 
     test('valid programs replace membership in order', async ({

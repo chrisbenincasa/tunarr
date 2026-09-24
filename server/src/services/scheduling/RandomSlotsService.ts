@@ -22,6 +22,7 @@ import {
 } from 'lodash-es';
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
+import { ScheduleValidationError } from '../../types/errors.ts';
 import type { Nilable } from '../../types/util.ts';
 import { isNonEmptyArray, zipWithIndex } from '../../util/index.ts';
 import { type IterationState } from './ProgramIterator.ts';
@@ -211,7 +212,12 @@ export class RandomSlotScheduler {
     className: RandomSlotScheduler.name,
   });
 
-  constructor(private schedule: RandomSlotSchedule) {}
+  constructor(
+    private schedule: RandomSlotSchedule,
+    private options: { strictValidation: boolean } = {
+      strictValidation: false,
+    },
+  ) {}
 
   generateSchedule(
     programming: SlotSchedulerProgram[],
@@ -449,33 +455,42 @@ export class RandomSlotScheduler {
       }
 
       const spec = slot.durationSpec;
-      if (spec.type === 'fixed') {
-        if (!Number.isFinite(spec.durationMs) || spec.durationMs <= 0) {
-          throw new Error(
-            `Slot ${index} (type = ${slot.type}) has fixed duration ${spec.durationMs}; it must be a positive number of milliseconds`,
-          );
+      if (spec.type === 'dynamic') {
+        switch (slot.type) {
+          case 'flex':
+          case 'redirect':
+            throw new Error(
+              `Cannot schedule slot of type ${slot.type} with dynamic duration`,
+            );
+          case 'movie':
+          case 'show':
+          case 'custom-show':
+          case 'filler':
+          case 'smart-collection':
+            break;
         }
+      }
+
+      // Schedules saved before these checks existed may hold these values.
+      // The generation loop skips slots that produce nothing, so regeneration
+      // tolerates them and plays flex instead.
+      if (!this.options.strictValidation) {
         continue;
       }
 
-      if (!Number.isInteger(spec.programCount) || spec.programCount <= 0) {
-        throw new Error(
+      if (spec.type === 'fixed') {
+        if (!Number.isFinite(spec.durationMs) || spec.durationMs <= 0) {
+          throw new ScheduleValidationError(
+            `Slot ${index} (type = ${slot.type}) has fixed duration ${spec.durationMs}; it must be a positive number of milliseconds`,
+          );
+        }
+      } else if (
+        !Number.isInteger(spec.programCount) ||
+        spec.programCount <= 0
+      ) {
+        throw new ScheduleValidationError(
           `Slot ${index} (type = ${slot.type}) has program count ${spec.programCount}; it must be a positive whole number`,
         );
-      }
-
-      switch (slot.type) {
-        case 'flex':
-        case 'redirect':
-          throw new Error(
-            `Cannot schedule slot of type ${slot.type} with dynamic duration`,
-          );
-        case 'movie':
-        case 'show':
-        case 'custom-show':
-        case 'filler':
-        case 'smart-collection':
-          break;
       }
     }
   }

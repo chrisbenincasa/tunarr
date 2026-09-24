@@ -10,7 +10,7 @@ import { useLingui } from '@lingui/react/macro';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import { filter, map } from 'lodash-es';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import type {
@@ -65,15 +65,12 @@ export const EditSlotProgrammingForm = <
     !availableTypes.has('custom-show') &&
     programOptions.some((opt) => opt.type === 'custom-show');
 
-  const [typeSelectValue, setTypeSelectValue] =
-    useState<ProgramOptionType>(type);
-
+  // The Select reads the form's type directly. Slot linking resets the form,
+  // so a local copy would go stale and list a type with no content behind it.
   const handleTypeChange = (value: ProgramOptionType) => {
-    if (value === typeSelectValue) {
+    if (value === type) {
       return;
     }
-
-    setTypeSelectValue(value);
 
     const slot = newSlotForType(value);
     reset((prev) => ({ ...prev, ...slot }));
@@ -85,7 +82,7 @@ export const EditSlotProgrammingForm = <
         <InputLabel>{t`Type`}</InputLabel>
         <Select
           label={t`Type`}
-          value={typeSelectValue}
+          value={type}
           onChange={(e) =>
             handleTypeChange(e.target.value as ProgramOption['type'])
           }
@@ -108,14 +105,12 @@ export const EditSlotProgrammingForm = <
           )}
         </Select>
       </FormControl>
-      {typeSelectValue === 'custom-show' && <CustomShowSlotProgrammingForm />}
-      {typeSelectValue === 'smart-collection' && (
-        <SmartCollectionSlotProgrammingForm />
-      )}
-      {typeSelectValue === 'filler' && <FillerListSlotProgrammingForm />}
-      {typeSelectValue === 'show' && <ShowSearchSlotProgrammingForm />}
-      {typeSelectValue === 'redirect' && <RedirectProgrammingForm />}
-      {typeSelectValue === 'movie' && <SlotOrderFormControl />}
+      {type === 'custom-show' && <CustomShowSlotProgrammingForm />}
+      {type === 'smart-collection' && <SmartCollectionSlotProgrammingForm />}
+      {type === 'filler' && <FillerListSlotProgrammingForm />}
+      {type === 'show' && <ShowSearchSlotProgrammingForm />}
+      {type === 'redirect' && <RedirectProgrammingForm />}
+      {type === 'movie' && <SlotOrderFormControl />}
 
       <SlotLinkingControl
         allSlots={allSlots}

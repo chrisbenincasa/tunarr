@@ -154,11 +154,19 @@ export function deduplicatePrograms(
 
 // Programs without a finite, positive duration cannot advance a schedule, so
 // packing them loops without end.
+// A program the slot schedulers can place. Custom shows count only these
+// members when deciding whether they have content.
+export function hasSchedulableDuration(
+  duration: number | null | undefined,
+): boolean {
+  return Number.isFinite(duration) && (duration ?? 0) > 0;
+}
+
 export function partitionSchedulablePrograms(programs: SlotSchedulerProgram[]) {
   const schedulable: SlotSchedulerProgram[] = [];
   const unschedulable: SlotSchedulerProgram[] = [];
   for (const program of programs) {
-    if (Number.isFinite(program.duration) && program.duration > 0) {
+    if (hasSchedulableDuration(program.duration)) {
       schedulable.push(program);
     } else {
       unschedulable.push(program);

@@ -94,29 +94,31 @@ export class CustomShowSyncService {
       show.syncExternalPlaylistId,
     );
 
+    // An empty playlist empties the show, matching an explicit empty list
+    // saved through the API.
     if (programs.length > 0) {
       await this.ensureProgramsExist(
         tag<MediaSourceId>(show.syncMediaSourceId),
         programs,
       );
-      await this.customShowDB.upsertCustomShowContent(
-        show.uuid,
-        programs.map(
-          (program) =>
-            ({
-              duration: program.duration,
-              id: program.uuid,
-              type: 'content',
-            }) satisfies CondensedContentProgram,
-        ),
-      );
     } else {
       this.logger.warn(
-        'Got 0 items from external playlist (type = %s id = %s)',
+        'Got 0 items from external playlist (type = %s id = %s); clearing the custom show',
         show.syncMediaSourceType,
         show.syncExternalPlaylistId,
       );
     }
+    await this.customShowDB.upsertCustomShowContent(
+      show.uuid,
+      programs.map(
+        (program) =>
+          ({
+            duration: program.duration,
+            id: program.uuid,
+            type: 'content',
+          }) satisfies CondensedContentProgram,
+      ),
+    );
 
     await this.customShowDB.updateLastSyncedAt(show.uuid);
 

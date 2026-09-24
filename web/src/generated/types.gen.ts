@@ -7669,6 +7669,7 @@ export type GetApiCustomShowsResponses = {
         id: string;
         name: string;
         contentCount: number;
+        schedulableContentCount: number;
         programs?: Array<{
             type: 'custom';
             duration: number;
@@ -7723,6 +7724,7 @@ export type CreateCustomShowResponses = {
         id: string;
         name: string;
         contentCount: number;
+        schedulableContentCount: number;
         programs?: Array<{
             type: 'custom';
             duration: number;
@@ -7801,6 +7803,7 @@ export type GetApiCustomShowsByIdResponses = {
         id: string;
         name: string;
         contentCount: number;
+        schedulableContentCount: number;
         programs?: Array<{
             type: 'custom';
             duration: number;
@@ -7871,6 +7874,7 @@ export type PutApiCustomShowsByIdResponses = {
         id: string;
         name: string;
         contentCount: number;
+        schedulableContentCount: number;
         programs?: Array<{
             type: 'custom';
             duration: number;
@@ -7970,6 +7974,7 @@ export type SyncCustomShowResponses = {
         id: string;
         name: string;
         contentCount: number;
+        schedulableContentCount: number;
         programs?: Array<{
             type: 'custom';
             duration: number;

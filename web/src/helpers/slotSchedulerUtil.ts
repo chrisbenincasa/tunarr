@@ -21,7 +21,8 @@ dayjs.extend(relativeTime);
 export type CustomShowProgramOption = DropdownOption<string> & {
   type: 'custom-show';
   customShowId: string;
-  programCount: number;
+  // Members the server can schedule, i.e. those with a positive duration.
+  schedulableProgramCount: number;
 };
 
 export type RedirectProgramOption = DropdownOption<string> & {
@@ -284,12 +285,12 @@ export function customShowAvailability(
   if (option === undefined) {
     return 'missing';
   }
-  return option.programCount > 0 ? 'available' : 'empty';
+  return option.schedulableProgramCount > 0 ? 'available' : 'empty';
 }
 
 // An empty custom show cannot fill a slot, so it is never offered for a new one.
 export function isSelectableForNewSlot(option: ProgramOption): boolean {
-  return option.type !== 'custom-show' || option.programCount > 0;
+  return option.type !== 'custom-show' || option.schedulableProgramCount > 0;
 }
 
 export function unavailableCustomShowSlotIndexes(

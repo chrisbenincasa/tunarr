@@ -63,7 +63,7 @@ import { sessionToApiSession } from '../db/converters/sessionConverter.ts';
 import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import type { ChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
 import type { ChannelOrmWithRelations } from '../db/schema/derivedTypes.ts';
-import { findBadRequestError } from '../types/errors.ts';
+import { findBadRequestError, unwrapError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams, TruthyQueryParam } from '../types/schemas.ts';
 
@@ -532,6 +532,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/programming',
     {
       bodyLimit: 1024 * 1024 * 100,
+      // Fastify's own validation error is an object, which the string 400
+      // schema cannot serialize, so answer it here.
+      attachValidation: true,
       schema: {
         params: BasicIdParamSchema,
         tags: ['Channels'],
@@ -546,6 +549,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
+      if (req.validationError) {
+        return res.status(400).send(req.validationError.message);
+      }
+
       if (isNil(await req.serverCtx.channelDB.getChannel(req.params.id))) {
         return res.status(404).send();
       }
@@ -558,6 +565,18 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       // and then regenerated badly by RegenerateChannelLineupCommand.
       let programmingRequest = req.body;
       if (req.body.type === 'time') {
+        const strictSchedule = StrictTimeSlotScheduleSchema.safeParse(
+          req.body.schedule,
+        );
+        if (!strictSchedule.success) {
+          return res
+            .status(400)
+            .send(
+              strictSchedule.error.issues
+                .map((issue) => issue.message)
+                .join('; '),
+            );
+        }
         const groupValidation = validateSlotGroups(req.body.schedule.slots, {
           scheduleType: 'time',
         });
@@ -597,17 +616,6 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             slots: groupValidation.sanitizedSlots,
           },
         };
-      } else {
-        const invalidDurations = req.body.lineup.flatMap((program, index) =>
-          Number.isFinite(program.duration) && program.duration > 0
-            ? []
-            : [
-                `Lineup item ${index} has duration ${program.duration}; it must be positive`,
-              ],
-        );
-        if (invalidDurations.length > 0) {
-          return res.status(400).send(invalidDurations.join('; '));
-        }
       }
 
       const updateResult = await Result.attemptAsync(() =>
@@ -618,7 +626,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         if (badRequest) {
           return res.status(400).send(badRequest.message);
         }
-        throw updateResult.error;
+        throw unwrapError(updateResult.error);
       }
       const result = updateResult.get();
 
@@ -864,7 +872,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             channelId: req.params.channelId,
             schedule: sanitizedSchedule,
             startTime: channel.startTime,
-            validateReferences: true,
+            strictValidation: true,
           },
           type: 'time-slots',
         }),
@@ -874,7 +882,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         if (badRequest) {
           return res.status(400).send(badRequest.message);
         }
-        throw scheduleResult.error;
+        throw unwrapError(scheduleResult.error);
       }
       const { result } = scheduleResult.get();
 
@@ -939,7 +947,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             channelId: req.params.channelId,
             schedule: sanitizedSchedule,
             startTime: channel.startTime,
-            validateReferences: true,
+            strictValidation: true,
           },
           type: 'schedule-slots',
         }),
@@ -949,7 +957,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         if (badRequest) {
           return res.status(400).send(badRequest.message);
         }
-        throw scheduleResult.error;
+        throw unwrapError(scheduleResult.error);
       }
       const { result } = scheduleResult.get();
 

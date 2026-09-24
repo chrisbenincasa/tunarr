@@ -8,11 +8,11 @@ import {
 
 const customShow = (
   customShowId: string,
-  programCount: number,
+  schedulableProgramCount: number,
 ): ProgramOption => ({
   type: 'custom-show',
   customShowId,
-  programCount,
+  schedulableProgramCount,
   value: `custom-show.${customShowId}`,
   description: customShowId,
 });

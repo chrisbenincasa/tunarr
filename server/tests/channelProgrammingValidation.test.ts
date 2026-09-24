@@ -85,7 +85,7 @@ describe('POST /channels/:id/programming - slot group validation on the save pat
           flexPreference: 'distribute',
           latenessMs: 0,
           maxDays: 1,
-          padMs: 0,
+          padMs: 60 * 60 * 1000,
           period: 'day',
           timeZoneOffset: 0,
           slots: [
@@ -293,7 +293,74 @@ describe('rejected programming leaves stored state unchanged', () => {
     });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body).toContain('Lineup item 0');
+    expect(res.body).toContain('lineup/0/duration');
+    expect(await snapshot(channelId)).toEqual(before);
+  });
+
+  test('a time schedule with a fractional start time is rejected', async () => {
+    const channelId = await createChannel();
+    await saveFlexLineup(channelId);
+    const before = await snapshot(channelId);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/channels/${channelId}/programming`,
+      payload: {
+        type: 'time',
+        programs: [],
+        schedule: {
+          type: 'time',
+          flexPreference: 'end',
+          latenessMs: 0,
+          maxDays: 1,
+          padMs: oneHour,
+          period: 'day',
+          timeZoneOffset: 0,
+          slots: [{ id: v4(), type: 'flex', startTime: 1234.567 }],
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toContain('startTime');
+    expect(await snapshot(channelId)).toEqual(before);
+  });
+
+  test('a random schedule that references a deleted filler list is rejected', async () => {
+    const channelId = await createChannel();
+    await saveFlexLineup(channelId);
+    const before = await snapshot(channelId);
+    const fillerListId = v4();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/channels/${channelId}/programming`,
+      payload: {
+        type: 'random',
+        programs: [],
+        schedule: {
+          ...randomSchedule(v4(), { type: 'fixed', durationMs: oneHour }),
+          slots: [
+            {
+              id: v4(),
+              type: 'filler',
+              fillerListId,
+              order: 'shuffle_prefer_short',
+              direction: 'asc',
+              decayFactor: 0.5,
+              durationWeighting: 'linear',
+              recoveryFactor: 0.05,
+              weight: 1,
+              cooldownMs: 0,
+              durationSpec: { type: 'fixed', durationMs: oneHour },
+            },
+          ],
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toContain(fillerListId);
     expect(await snapshot(channelId)).toEqual(before);
   });
 
@@ -331,5 +398,16 @@ describe('rejected programming leaves stored state unchanged', () => {
     const after = await snapshot(channelId);
     expect(after.cachedItems).toEqual([]);
     expect(after.duration).toBe(0);
+  });
+});
+
+describe('custom show API', () => {
+  test('DELETE of an unknown custom show answers 404', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/custom-shows/${v4()}`,
+    });
+
+    expect(res.statusCode).toBe(404);
   });
 });

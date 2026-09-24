@@ -76,7 +76,7 @@ export const useScheduledSlotProgramDetails = (slotIds: SlotId[]) => {
               (opt): opt is CustomShowProgramOption =>
                 opt.type === 'custom-show' &&
                 opt.customShowId === slotIdentifier,
-            )?.programCount ?? 0
+            )?.schedulableProgramCount ?? 0
           );
         })
         .with(

@@ -59,7 +59,7 @@ type EditRandomSlotDialogContentProps = {
 type PartialRandomSlot = StrictOmit<
   RandomSlot,
   'durationSpec' | 'cooldownMs' | 'weight'
->;
+> & { durationSpec?: RandomSlot['durationSpec'] };
 
 export const EditRandomSlotDialogContent = ({
   slot,
@@ -272,6 +272,18 @@ export const EditRandomSlotDialogContent = ({
 
   const newSlotForType = useCallback(
     (type: RandomSlot['type']) => {
+      // Flex and redirect slots only take a fixed duration, and their editor
+      // hides the Fixed/Dynamic toggle, so replace a dynamic spec here.
+      const fixedDurationSpec = (): RandomSlot['durationSpec'] => {
+        const current = getValues('durationSpec');
+        return current.type === 'fixed'
+          ? current
+          : {
+              type: 'fixed',
+              durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
+            };
+      };
+
       return match(type)
         .returnType<PartialRandomSlot>()
         .with('custom-show', () => {
@@ -312,13 +324,19 @@ export const EditRandomSlotDialogContent = ({
             (opt): opt is FillerProgramOption => opt.type === 'filler',
           )!.fillerListId,
         }))
-        .with('flex', () => ({ type: 'flex', order: 'next', direction: 'asc' }))
+        .with('flex', () => ({
+          type: 'flex',
+          order: 'next',
+          direction: 'asc',
+          durationSpec: fixedDurationSpec(),
+        }))
         .with('redirect', () => ({
           type: 'redirect',
           channelId: programOptions.find((opt) => opt.type === 'redirect')!
             .channelId,
           order: 'next',
           direction: 'asc',
+          durationSpec: fixedDurationSpec(),
         }))
         .with('show', () => ({
           id: v4(),
@@ -343,7 +361,7 @@ export const EditRandomSlotDialogContent = ({
         })
         .exhaustive();
     },
-    [programOptions],
+    [getValues, programOptions],
   );
 
   // const slotId = getRandomSlotId(programming);

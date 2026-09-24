@@ -83,12 +83,6 @@ const KNOWN: Record<string, string> = {
   'UpdateMediaSourceRequestSchema.sendPlayStatusUpdates':
     'PUT /media-sources/:id replaces the whole object',
 
-  // Reaches the handler as `programs: []`, but saveShow guards on
-  // `programs.length > 0`, so it is inert. Means programs cannot be cleared
-  // through this route, which is a separate question.
-  'UpdateCustomShowRequestSchema.programs':
-    'defused by a length guard in CustomShowDB.saveShow',
-
   'UpdateSystemSettingsRequestSchema.cache.enablePlexRequestCache':
     'catch on a boolean; low impact, not yet changed',
   'XmlTvSettingsSchema.useShowPoster':

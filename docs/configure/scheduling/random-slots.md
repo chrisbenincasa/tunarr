@@ -28,7 +28,11 @@ Some programming types also allow configuration of the **order** in which their 
 - **Fixed** slots need a duration greater than zero.
 - **Dynamic** slots need a whole-number program count of at least 1.
 - A schedule needs at least one slot.
+- Flex and Redirect slots always use a fixed duration.
+- Every filler list, show, smart collection, and channel a slot references must exist.
 - Programs with no duration are skipped, because they cannot advance the schedule.
+
+Tunarr checks these rules when you save or preview a schedule, and rejects a schedule that breaks one with HTTP 400. Schedules saved before these checks existed still regenerate. A fixed slot with no duration produces nothing, and the scheduler moves on to the other slots.
 
 ### Empty or Deleted Custom Shows
 

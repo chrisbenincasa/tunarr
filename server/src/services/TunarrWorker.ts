@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import PQueue from 'p-queue';
 import { parentPort } from 'worker_threads';
 
-import { TypedError } from '../types/errors.ts';
+import { TypedError, unwrapError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import type {
   WorkerReply,
@@ -80,16 +80,7 @@ export class TunarrWorker {
     );
 
     if (result.isFailure()) {
-      this.logger.error(result.error);
-      this.sendReply({
-        type: 'error',
-        requestId: req.requestId,
-        message: result.error.message,
-        httpCode:
-          result.error instanceof TypedError
-            ? result.error.httpCode
-            : undefined,
-      });
+      this.replyWithError(req.requestId, result.error);
       return;
     }
 
@@ -105,16 +96,7 @@ export class TunarrWorker {
     );
 
     if (result.isFailure()) {
-      this.logger.error(result.error);
-      this.sendReply({
-        type: 'error',
-        requestId: req.requestId,
-        message: result.error.message,
-        httpCode:
-          result.error instanceof TypedError
-            ? result.error.httpCode
-            : undefined,
-      });
+      this.replyWithError(req.requestId, result.error);
       return;
     }
 
@@ -132,6 +114,17 @@ export class TunarrWorker {
       type: 'success',
       data,
       requestId,
+    });
+  }
+
+  private replyWithError(requestId: string, wrapped: Error) {
+    const error = unwrapError(wrapped);
+    this.logger.error(error);
+    this.sendReply({
+      type: 'error',
+      requestId,
+      message: error.message,
+      httpCode: error instanceof TypedError ? error.httpCode : undefined,
     });
   }
 
