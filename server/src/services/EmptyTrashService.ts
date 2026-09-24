@@ -1,6 +1,6 @@
 import type { IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import { ProgramStateRepository } from '@/db/program/ProgramStateRepository.js';
+import type { ProgramStateRepository } from '@/db/program/ProgramStateRepository.js';
 import type { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
