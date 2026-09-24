@@ -380,8 +380,4 @@ export class ProgramDB implements IProgramDB {
   ): Promise<void> {
     return this.stateRepo.updateGroupingsState(groupingIds, newState);
   }
-
-  emptyTrashPrograms(): Promise<void> {
-    return this.stateRepo.emptyTrashPrograms();
-  }
 }

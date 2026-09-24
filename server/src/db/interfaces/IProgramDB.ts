@@ -236,8 +236,6 @@ export interface IProgramDB {
     newState: ProgramState,
   ): Promise<void>;
 
-  emptyTrashPrograms(): Promise<void>;
-
   upsertProgramGroupingGenres(
     groupingId: string,
     genres: NewGenre[],

@@ -13553,8 +13553,17 @@ export type DeleteApiTrashResponses = {
     /**
      * Default Response
      */
-    200: unknown;
+    202: {
+        state: 'idle' | 'running' | 'cancelling' | 'failed';
+        total: number;
+        deleted: number;
+        startedAt: number | null;
+        finishedAt: number | null;
+        error: string | null;
+    };
 };
+
+export type DeleteApiTrashResponse = DeleteApiTrashResponses[keyof DeleteApiTrashResponses];
 
 export type GetApiTrashData = {
     body?: never;
@@ -13613,6 +13622,52 @@ export type GetApiTrashResponses = {
 };
 
 export type GetApiTrashResponse = GetApiTrashResponses[keyof GetApiTrashResponses];
+
+export type GetApiTrashStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/trash/status';
+};
+
+export type GetApiTrashStatusResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        state: 'idle' | 'running' | 'cancelling' | 'failed';
+        total: number;
+        deleted: number;
+        startedAt: number | null;
+        finishedAt: number | null;
+        error: string | null;
+    };
+};
+
+export type GetApiTrashStatusResponse = GetApiTrashStatusResponses[keyof GetApiTrashStatusResponses];
+
+export type PostApiTrashCancelData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/trash/cancel';
+};
+
+export type PostApiTrashCancelResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        state: 'idle' | 'running' | 'cancelling' | 'failed';
+        total: number;
+        deleted: number;
+        startedAt: number | null;
+        finishedAt: number | null;
+        error: string | null;
+    };
+};
+
+export type PostApiTrashCancelResponse = PostApiTrashCancelResponses[keyof PostApiTrashCancelResponses];
 
 export type GetApiSmartCollectionsData = {
     body?: never;

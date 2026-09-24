@@ -809,6 +809,7 @@ msgstr "正在计算时段…"
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
+#: src/pages/library/TrashPage.tsx
 msgid "Cancel"
 msgstr "取消"
 
@@ -1091,6 +1092,10 @@ msgstr "复制到剪贴板"
 #: src/components/RawProgramDetails.tsx
 msgid "Copy to Clipboard"
 msgstr "复制到剪贴板"
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Could not cancel emptying the trash."
+msgstr ""
 
 #: src/components/search/SearchFilterBuilder.tsx
 msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
@@ -1501,9 +1506,28 @@ msgstr "正在编辑智能合集「{0}」"
 msgid "Emby"
 msgstr "Emby"
 
+#. placeholder {0}: ev.detail.deleted
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptied trash. Removed {0} item(s)."
+msgstr ""
+
 #: src/pages/library/TrashPage.tsx
 msgid "Empty Trash"
 msgstr "清空回收站"
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptying the trash failed. Check the server logs for details."
+msgstr ""
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptying trash in the background. You can keep using Tunarr."
+msgstr ""
+
+#. placeholder {0}: status.deleted
+#. placeholder {1}: status.total
+#: src/pages/library/TrashPage.tsx
+msgid "Emptying trash: {0} / {1}"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enable <0>EBU R 128</0> loudness normalization via the <1>loudnorm</1> FFmpeg filter. May increase CPU usage during streaming."
@@ -1570,7 +1594,7 @@ msgstr "已启用（loudnorm）"
 msgid "Enabling embedded subtitle extaction will periodically scan your upcoming programming for embedded text-based subtitle streams and extract them to a local cache. This is necessary in order to enable subtitle burning for text-based subtitles which are not external streams."
 msgstr "启用内嵌字幕提取后，系统会定期扫描即将播出的节目，查找内嵌的文本字幕流并提取到本地缓存。这是对非外挂的文本字幕启用字幕烧录（硬字幕）的必要步骤。"
 
-#: src/pages/library/TrashPage.tsx
+#: src/hooks/useEmptyTrash.ts
 msgid "Encountered an error when emptying trash. Check console logs for details."
 msgstr "清空回收站时出错，详情请查看控制台日志。"
 
@@ -3778,8 +3802,8 @@ msgid "Successfully copied to clipboard!"
 msgstr "已成功复制到剪贴板！"
 
 #: src/pages/library/TrashPage.tsx
-msgid "Successfully emptied trash."
-msgstr "回收站已清空。"
+#~ msgid "Successfully emptied trash."
+#~ msgstr "回收站已清空。"
 
 #: src/pages/system/StatusPage.tsx
 msgid "Successfully ran system fixer {fixerId}"
