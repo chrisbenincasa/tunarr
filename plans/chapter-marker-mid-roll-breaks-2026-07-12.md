@@ -54,7 +54,9 @@ const MidRollBreakRuleSchema = z.discriminatedUnion('type', [
   ...BaseMidRollBreakRuleSchema.options,
   z.object({
     type: z.literal('chapters'),
-    chapterTypes: z.array(z.enum(['chapter', 'intro', 'outro'])).default(['chapter']),
+    chapterTypes: z
+      .array(z.enum(['chapter', 'intro', 'outro']))
+      .default(['chapter']),
     fallback: BaseMidRollBreakRuleSchema.optional(),
   }),
 ]);
@@ -134,6 +136,7 @@ Returns `Map<string, ChapterInfo[]>` keyed by program UUID.
 **File**: `server/src/services/scheduling/SlotSchedulerHelper.ts`
 
 After collecting all `slotPrograms`:
+
 - Collect all program UUIDs
 - Bulk-load chapters via the query from 3a
 - Change return type to `{ programs: SlotSchedulerProgram[], chapterMap: Map<string, ChapterInfo[]> }`
@@ -141,6 +144,7 @@ After collecting all `slotPrograms`:
 #### 3c. Update scheduler services to forward chapter map
 
 **Files**:
+
 - `server/src/services/scheduling/RandomSlotSchedulerService.ts` (`SlotSchedulerService.schedule`)
 - `server/src/services/scheduling/TimeSlotSchedulerService.ts` (`TimeSlotSchedulerService.schedule`)
 
@@ -149,10 +153,12 @@ Both destructure the new return type from `collectSlotProgramming()` and forward
 #### 3d. Thread through scheduling functions
 
 **File**: `server/src/services/scheduling/RandomSlotsService.ts`
+
 - `ScheduleContext` accepts `chapterMap?: Map<string, ChapterInfo[]>` and stores as a field
 - Pass it to `applyMidRollBreaks()` at line ~261
 
 **File**: `server/src/services/scheduling/TimeSlotService.ts`
+
 - `scheduleTimeSlots()` accepts `chapterMap` parameter
 - Pass it to `applyMidRollBreaks()` at line ~312
 
@@ -200,6 +206,7 @@ const BreakRuleFields = ({ pathPrefix }: BreakRuleFieldsProps) => {
 #### 4c. Add handler
 
 In `handleBreakRuleTypeChange`, add:
+
 ```typescript
 case 'chapters':
   setValue('midRoll.breakRule', {
@@ -228,33 +235,34 @@ This applies to all rule types since it's on `MidRollConfigSchema`.
 
 ### 5. Edge cases
 
-| Scenario | Behavior |
-|----------|----------|
-| Program has no chapters | Use fallback rule if configured; otherwise skip mid-roll (no breaks) |
-| Program has 1 chapter spanning the full duration | No boundaries -> no breaks |
-| Chapter `endTime` > program duration | Filter out (existing offset filter handles this) |
-| Multiple `ProgramVersion`s | Use first version's chapters (single version assumed for now) |
-| `tailBufferMs` / `maxBreaks` / `minProgramDurationMs` / `minBreakIntervalMs` | Applied by existing code after break point calculation |
-| Fallback rule is also `chapters` | Prevented in schema: fallback type is `BaseMidRollBreakRuleSchema` which excludes `chapters` |
-| Two break points closer than `minBreakIntervalMs` | Second one is skipped (greedy left-to-right) |
+| Scenario                                                                     | Behavior                                                                                     |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Program has no chapters                                                      | Use fallback rule if configured; otherwise skip mid-roll (no breaks)                         |
+| Program has 1 chapter spanning the full duration                             | No boundaries -> no breaks                                                                   |
+| Chapter `endTime` > program duration                                         | Filter out (existing offset filter handles this)                                             |
+| Multiple `ProgramVersion`s                                                   | Use first version's chapters (single version assumed for now)                                |
+| `tailBufferMs` / `maxBreaks` / `minProgramDurationMs` / `minBreakIntervalMs` | Applied by existing code after break point calculation                                       |
+| Fallback rule is also `chapters`                                             | Prevented in schema: fallback type is `BaseMidRollBreakRuleSchema` which excludes `chapters` |
+| Two break points closer than `minBreakIntervalMs`                            | Second one is skipped (greedy left-to-right)                                                 |
 
 ### 6. Files to modify (summary)
 
-| File | Change |
-|------|--------|
-| `types/src/api/CommonSlots.ts` | Extract `BaseMidRollBreakRuleSchema`, add `chapters` variant, add `minBreakIntervalMs` to `MidRollConfigSchema` |
-| `server/src/services/scheduling/midRollBreakRules.ts` | Add `ChapterInfo` type, `chapters` param, `case 'chapters'`, `minBreakIntervalMs` post-filter |
-| `server/src/services/scheduling/slotSchedulerUtil.ts` | Add `chapterMap` param to `applyMidRollBreaks`, pass to `resolveBreakPoints` |
-| `server/src/services/scheduling/SlotSchedulerHelper.ts` | Add chapter bulk-load query, change return type |
-| `server/src/services/scheduling/RandomSlotSchedulerService.ts` | Forward chapter map |
-| `server/src/services/scheduling/RandomSlotsService.ts` | Add `chapterMap` to `ScheduleContext`, pass to `applyMidRollBreaks` |
-| `server/src/services/scheduling/TimeSlotSchedulerService.ts` | Forward chapter map |
-| `server/src/services/scheduling/TimeSlotService.ts` | Accept and pass `chapterMap` to `applyMidRollBreaks` |
-| `web/src/components/slot_scheduler/MidRollConfigPanel.tsx` | Extract `BreakRuleFields`, add chapter rule UI, add `minBreakIntervalMs` field |
+| File                                                           | Change                                                                                                          |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `types/src/api/CommonSlots.ts`                                 | Extract `BaseMidRollBreakRuleSchema`, add `chapters` variant, add `minBreakIntervalMs` to `MidRollConfigSchema` |
+| `server/src/services/scheduling/midRollBreakRules.ts`          | Add `ChapterInfo` type, `chapters` param, `case 'chapters'`, `minBreakIntervalMs` post-filter                   |
+| `server/src/services/scheduling/slotSchedulerUtil.ts`          | Add `chapterMap` param to `applyMidRollBreaks`, pass to `resolveBreakPoints`                                    |
+| `server/src/services/scheduling/SlotSchedulerHelper.ts`        | Add chapter bulk-load query, change return type                                                                 |
+| `server/src/services/scheduling/RandomSlotSchedulerService.ts` | Forward chapter map                                                                                             |
+| `server/src/services/scheduling/RandomSlotsService.ts`         | Add `chapterMap` to `ScheduleContext`, pass to `applyMidRollBreaks`                                             |
+| `server/src/services/scheduling/TimeSlotSchedulerService.ts`   | Forward chapter map                                                                                             |
+| `server/src/services/scheduling/TimeSlotService.ts`            | Accept and pass `chapterMap` to `applyMidRollBreaks`                                                            |
+| `web/src/components/slot_scheduler/MidRollConfigPanel.tsx`     | Extract `BreakRuleFields`, add chapter rule UI, add `minBreakIntervalMs` field                                  |
 
 ### 7. Verification
 
 1. **Unit tests** for `resolveBreakPoints` with chapters:
+
    - Standard chapter boundaries produce correct offsets
    - `chapterTypes` filter works
    - Fallback activates when no chapters
