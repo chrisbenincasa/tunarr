@@ -153,7 +153,9 @@ export function EditCustomShowsForm({
     ) => {
       const body = {
         name: data.name,
-        programs: data.syncEnabled ? [] : data.programs,
+        // Sync owns a synced show's programs, so leave them out. An explicit
+        // list replaces the show's contents.
+        ...(data.syncEnabled ? {} : { programs: data.programs }),
         enableSync: data.syncEnabled,
         ...(data.syncEnabled &&
         isNonEmptyString(data.syncMediaSourceId) &&

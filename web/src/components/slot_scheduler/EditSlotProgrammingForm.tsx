@@ -2,12 +2,15 @@ import type {
   ProgramOption,
   ProgramOptionType,
 } from '@/helpers/slotSchedulerUtil';
-import { ProgramOptionTypes } from '@/helpers/slotSchedulerUtil.ts';
+import {
+  isSelectableForNewSlot,
+  ProgramOptionTypes,
+} from '@/helpers/slotSchedulerUtil.ts';
 import { useLingui } from '@lingui/react/macro';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { filter, map, uniqBy } from 'lodash-es';
-import { useMemo, useState } from 'react';
+import { filter, map } from 'lodash-es';
+import { useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import type {
@@ -49,21 +52,25 @@ export const EditSlotProgrammingForm = <
   });
   const programOptions = useSlotProgramOptionsContext();
   const availableTypes = useMemo(() => {
-    return map(
-      uniqBy(programOptions, ({ type }) => type),
-      'type',
+    const types = new Set<ProgramOptionType>(
+      programOptions.filter(isSelectableForNewSlot).map(({ type }) => type),
     );
-  }, [programOptions]);
+    // A saved slot keeps its own type listed so it stays editable after its
+    // content becomes unavailable.
+    types.add(type);
+    return types;
+  }, [programOptions, type]);
 
-  const [typeSelectValue, setTypeSelectValue] =
-    useState<ProgramOptionType>(type);
+  const onlyEmptyCustomShows =
+    !availableTypes.has('custom-show') &&
+    programOptions.some((opt) => opt.type === 'custom-show');
 
+  // The Select reads the form's type directly. Slot linking resets the form,
+  // so a local copy would go stale and list a type with no content behind it.
   const handleTypeChange = (value: ProgramOptionType) => {
-    if (value === typeSelectValue) {
+    if (value === type) {
       return;
     }
-
-    setTypeSelectValue(value);
 
     const slot = newSlotForType(value);
     reset((prev) => ({ ...prev, ...slot }));
@@ -75,7 +82,7 @@ export const EditSlotProgrammingForm = <
         <InputLabel>{t`Type`}</InputLabel>
         <Select
           label={t`Type`}
-          value={typeSelectValue}
+          value={type}
           onChange={(e) =>
             handleTypeChange(e.target.value as ProgramOption['type'])
           }
@@ -83,7 +90,7 @@ export const EditSlotProgrammingForm = <
         >
           {map(
             filter(ProgramOptionTypes, ({ value }) =>
-              availableTypes.includes(value),
+              availableTypes.has(value),
             ),
             ({ value, description }) => (
               <MenuItem key={value} value={value}>
@@ -91,16 +98,19 @@ export const EditSlotProgrammingForm = <
               </MenuItem>
             ),
           )}
+          {onlyEmptyCustomShows && (
+            <MenuItem value="custom-show" disabled>
+              {t`Custom Show (add programs to a custom show first)`}
+            </MenuItem>
+          )}
         </Select>
       </FormControl>
-      {typeSelectValue === 'custom-show' && <CustomShowSlotProgrammingForm />}
-      {typeSelectValue === 'smart-collection' && (
-        <SmartCollectionSlotProgrammingForm />
-      )}
-      {typeSelectValue === 'filler' && <FillerListSlotProgrammingForm />}
-      {typeSelectValue === 'show' && <ShowSearchSlotProgrammingForm />}
-      {typeSelectValue === 'redirect' && <RedirectProgrammingForm />}
-      {typeSelectValue === 'movie' && <SlotOrderFormControl />}
+      {type === 'custom-show' && <CustomShowSlotProgrammingForm />}
+      {type === 'smart-collection' && <SmartCollectionSlotProgrammingForm />}
+      {type === 'filler' && <FillerListSlotProgrammingForm />}
+      {type === 'show' && <ShowSearchSlotProgrammingForm />}
+      {type === 'redirect' && <RedirectProgrammingForm />}
+      {type === 'movie' && <SlotOrderFormControl />}
 
       <SlotLinkingControl
         allSlots={allSlots}

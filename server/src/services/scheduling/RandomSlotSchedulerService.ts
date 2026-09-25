@@ -13,6 +13,9 @@ export const ChannelSlotScheduleRequest = z.object({
   seed: z.number().array().optional(),
   discardCount: z.number().optional(),
   startTime: z.number().optional(),
+  // Set on save and preview. Rejects slots that reference missing content or
+  // cannot play. Regeneration leaves it off so stored schedules keep playing.
+  strictValidation: z.boolean().optional(),
 });
 
 export type ChannelSlotScheduleRequest = z.infer<
@@ -26,6 +29,9 @@ export const ProgramsSlotScheduleRequest = z.object({
   seed: z.number().array().optional(),
   discardCount: z.number().optional(),
   startTime: z.number().optional(),
+  // Set on save and preview. Rejects slots that reference missing content or
+  // cannot play. Regeneration leaves it off so stored schedules keep playing.
+  strictValidation: z.boolean().optional(),
 });
 
 export type ProgramsSlotScheduleRequest = z.infer<
@@ -54,7 +60,16 @@ export class SlotSchedulerService {
     const slotPrograms =
       await this.slotSchedulerHelper.collectSlotProgramming(request);
 
-    return new RandomSlotScheduler(request.schedule).generateSchedule(
+    if (request.strictValidation) {
+      await this.slotSchedulerHelper.assertSlotReferences(
+        request.schedule.slots,
+        slotPrograms,
+      );
+    }
+
+    return new RandomSlotScheduler(request.schedule, {
+      strictValidation: request.strictValidation ?? false,
+    }).generateSchedule(
       slotPrograms,
       request.seed,
       request.discardCount,

@@ -7,12 +7,13 @@ import type {
   UpdateCustomShowRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { count, eq, sum } from 'drizzle-orm';
+import { and, count, eq, gt, lte, sum } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import { chunk, isNil } from 'lodash-es';
 import type { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
+import { GenericBadRequestError } from '../types/errors.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import type { BasicProgramRepository } from './program/BasicProgramRepository.ts';
@@ -125,11 +126,19 @@ export class CustomShowDB {
       return null;
     }
 
-    if (updateRequest.programs && updateRequest.programs.length > 0) {
-      await this.upsertCustomShowContent(show.uuid, updateRequest.programs);
+    // An omitted field leaves membership alone. An explicit list, including an
+    // empty one, replaces it. Resolve every ID before changing anything.
+    const replacementPrograms = updateRequest.programs;
+    if (replacementPrograms !== undefined) {
+      const missingIds = await this.findMissingProgramIds(replacementPrograms);
+      if (missingIds.length > 0) {
+        throw new GenericBadRequestError(
+          `Cannot update custom show programs: ${missingIds.length} program(s) do not exist: ${missingIds.slice(0, 10).join(', ')}`,
+        );
+      }
     }
 
-    const updates: Partial<NewCustomShow> = {};
+    const updates: Partial<typeof CustomShow.$inferInsert> = {};
     if (updateRequest.name) {
       updates.name = updateRequest.name;
     }
@@ -145,20 +154,43 @@ export class CustomShowDB {
         updateRequest.syncExternalPlaylistId ?? null;
     }
 
-    if (Object.keys(updates).length > 0) {
-      await this.db
-        .updateTable('customShow')
-        .where('uuid', '=', show.uuid)
-        .limit(1)
-        .set({
-          ...updates,
-          // Do not allow clients to set this.
-          lastSyncedAt: undefined,
-        })
-        .execute();
-    }
+    this.drizzle.transaction((tx) => {
+      if (Object.keys(updates).length > 0) {
+        tx.update(CustomShow)
+          .set(updates)
+          .where(eq(CustomShow.uuid, show.uuid))
+          .run();
+      }
+
+      if (replacementPrograms === undefined) {
+        return;
+      }
+
+      tx.delete(CustomShowContent)
+        .where(eq(CustomShowContent.customShowUuid, show.uuid))
+        .run();
+
+      const rows = replacementPrograms.map(
+        (program, index) =>
+          ({
+            customShowUuid: show.uuid,
+            contentUuid: program.id,
+            index,
+          }) satisfies NewCustomShowContent,
+      );
+      for (const contentChunk of chunk(rows, 1_000)) {
+        tx.insert(CustomShowContent).values(contentChunk).run();
+      }
+    });
 
     return await this.getShow(show.uuid);
+  }
+
+  private async findMissingProgramIds(programs: CondensedContentProgram[]) {
+    const ids = [...new Set(programs.map((program) => program.id))];
+    const existingIds =
+      await this.basicProgramRepo.filterNonExistentProgramIds(ids);
+    return ids.filter((programId) => !existingIds.has(programId));
   }
 
   async createShow(createRequest: CreateCustomShowRequest) {
@@ -222,6 +254,19 @@ export class CustomShowDB {
             .from(Program)
             .where(eq(Program.uuid, CustomShowContent.contentUuid)),
         ),
+        // Matches hasSchedulableDuration. The upper bound excludes infinity.
+        schedulableCount: sum(
+          this.drizzle
+            .select({ matches: count() })
+            .from(Program)
+            .where(
+              and(
+                eq(Program.uuid, CustomShowContent.contentUuid),
+                gt(Program.duration, 0),
+                lte(Program.duration, Number.MAX_VALUE),
+              ),
+            ),
+        ),
       })
       .from(CustomShow)
       .leftJoin(
@@ -231,10 +276,13 @@ export class CustomShowDB {
       .groupBy(CustomShow.uuid);
 
     return showsAndContentCount.map(
-      ({ customShow, totalDuration, contentCount }) => ({
+      ({ customShow, totalDuration, contentCount, schedulableCount }) => ({
         id: customShow.uuid,
         name: customShow.name,
         count: contentCount,
+        schedulableCount: schedulableCount
+          ? (parseFloatOrNull(schedulableCount) ?? 0)
+          : 0,
         totalDuration: totalDuration
           ? (parseFloatOrNull(totalDuration) ?? 0)
           : 0,
@@ -268,6 +316,10 @@ export class CustomShowDB {
     programs: CondensedContentProgram[],
   ): Promise<void> {
     if (programs.length === 0) {
+      this.drizzle
+        .delete(CustomShowContent)
+        .where(eq(CustomShowContent.customShowUuid, customShowId))
+        .run();
       return;
     }
 

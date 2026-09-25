@@ -1,4 +1,5 @@
 import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
+import { isSelectableForNewSlot } from '@/helpers/slotSchedulerUtil';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
 import { Trans } from '@lingui/react/macro';
 import { Add } from '@mui/icons-material';
@@ -25,7 +26,12 @@ const findBestProgramOption = (
   programOptions: ProgramOption[],
 ): ProgramOption => {
   return (
-    first(sortBy(programOptions, (opt) => typeWeights[opt.type])) ?? {
+    first(
+      sortBy(
+        programOptions.filter(isSelectableForNewSlot),
+        (opt) => typeWeights[opt.type],
+      ),
+    ) ?? {
       type: 'flex',
       value: 'flex',
       description: 'Flex',

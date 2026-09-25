@@ -27,6 +27,7 @@ import {
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { Nilable } from '../../types/util.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import type {
   PaddedProgram,
   SlotSchedulerProgram,
@@ -40,6 +41,7 @@ import {
   createSlotIterators,
   createSlotProgramIterator,
   deduplicatePrograms,
+  partitionSchedulablePrograms,
   deduplicateSlotIds,
   distributeFlex,
   getFillerIteratorsForSlot,
@@ -104,7 +106,18 @@ export async function scheduleTimeSlots(
 
   // Load programs
   // TODO: include redirects and custom programs!
-  const allPrograms = deduplicatePrograms(programs);
+  const { schedulable: allPrograms, unschedulable } =
+    partitionSchedulablePrograms(deduplicatePrograms(programs));
+  if (unschedulable.length > 0) {
+    LoggerFactory.child({
+      caller: import.meta,
+      className: 'TimeSlotService',
+    }).warn(
+      'Skipping %d program(s) without a positive duration while generating a time slot schedule: %j',
+      unschedulable.length,
+      unschedulable.map((program) => program.uuid),
+    );
+  }
   const programMap = createProgramMap(allPrograms);
   const fillerIterators = createFillerIterators(
     schedule.slots,

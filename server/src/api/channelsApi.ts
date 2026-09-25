@@ -18,8 +18,8 @@ import {
   BasicPagingSchema,
   MaterializedSchedule,
   PagedResult,
-  RandomSlotScheduleSchema,
   SlotScheduleWithPrograms,
+  StrictRandomSlotScheduleSchema,
   StrictTimeSlotScheduleSchema,
   TimeSlotScheduleWithPrograms,
   UpdateChannelProgrammingRequestSchema,
@@ -63,6 +63,7 @@ import { sessionToApiSession } from '../db/converters/sessionConverter.ts';
 import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import type { ChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
 import type { ChannelOrmWithRelations } from '../db/schema/derivedTypes.ts';
+import { findBadRequestError, unwrapError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams, TruthyQueryParam } from '../types/schemas.ts';
 
@@ -531,6 +532,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/programming',
     {
       bodyLimit: 1024 * 1024 * 100,
+      // Fastify's own validation error is an object, which the string 400
+      // schema cannot serialize, so answer it here.
+      attachValidation: true,
       schema: {
         params: BasicIdParamSchema,
         tags: ['Channels'],
@@ -545,6 +549,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
+      if (req.validationError) {
+        return res.status(400).send(req.validationError.message);
+      }
+
       if (isNil(await req.serverCtx.channelDB.getChannel(req.params.id))) {
         return res.status(404).send();
       }
@@ -557,6 +565,18 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       // and then regenerated badly by RegenerateChannelLineupCommand.
       let programmingRequest = req.body;
       if (req.body.type === 'time') {
+        const strictSchedule = StrictTimeSlotScheduleSchema.safeParse(
+          req.body.schedule,
+        );
+        if (!strictSchedule.success) {
+          return res
+            .status(400)
+            .send(
+              strictSchedule.error.issues
+                .map((issue) => issue.message)
+                .join('; '),
+            );
+        }
         const groupValidation = validateSlotGroups(req.body.schedule.slots, {
           scheduleType: 'time',
         });
@@ -571,6 +591,18 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           },
         };
       } else if (req.body.type === 'random') {
+        const strictSchedule = StrictRandomSlotScheduleSchema.safeParse(
+          req.body.schedule,
+        );
+        if (!strictSchedule.success) {
+          return res
+            .status(400)
+            .send(
+              strictSchedule.error.issues
+                .map((issue) => issue.message)
+                .join('; '),
+            );
+        }
         const groupValidation = validateSlotGroups(req.body.schedule.slots, {
           scheduleType: 'random',
         });
@@ -586,10 +618,17 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         };
       }
 
-      const result = await req.serverCtx.channelDB.updateLineup(
-        req.params.id,
-        programmingRequest,
+      const updateResult = await Result.attemptAsync(() =>
+        req.serverCtx.channelDB.updateLineup(req.params.id, programmingRequest),
       );
+      if (updateResult.isFailure()) {
+        const badRequest = findBadRequestError(updateResult.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw unwrapError(updateResult.error);
+      }
+      const result = updateResult.get();
 
       if (isNil(result)) {
         return res.status(500).send();
@@ -826,15 +865,26 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         slots: groupValidation.sanitizedSlots,
       };
 
-      const { result } = await req.serverCtx.workerPool.queueTask({
-        request: {
-          type: 'channel',
-          channelId: req.params.channelId,
-          schedule: sanitizedSchedule,
-          startTime: channel.startTime,
-        },
-        type: 'time-slots',
-      });
+      const scheduleResult = await Result.attemptAsync(() =>
+        req.serverCtx.workerPool.queueTask({
+          request: {
+            type: 'channel',
+            channelId: req.params.channelId,
+            schedule: sanitizedSchedule,
+            startTime: channel.startTime,
+            strictValidation: true,
+          },
+          type: 'time-slots',
+        }),
+      );
+      if (scheduleResult.isFailure()) {
+        const badRequest = findBadRequestError(scheduleResult.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw unwrapError(scheduleResult.error);
+      }
+      const { result } = scheduleResult.get();
 
       const programsById = await container
         .get(MaterializeLineupCommand)
@@ -858,7 +908,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           channelId: z.string(),
         }),
         body: z.object({
-          schedule: RandomSlotScheduleSchema,
+          schedule: StrictRandomSlotScheduleSchema,
         }),
         response: {
           200: SlotScheduleWithPrograms,
@@ -890,15 +940,26 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         slots: groupValidation.sanitizedSlots,
       };
 
-      const { result } = await req.serverCtx.workerPool.queueTask({
-        request: {
-          type: 'channel',
-          channelId: req.params.channelId,
-          schedule: sanitizedSchedule,
-          startTime: channel.startTime,
-        },
-        type: 'schedule-slots',
-      });
+      const scheduleResult = await Result.attemptAsync(() =>
+        req.serverCtx.workerPool.queueTask({
+          request: {
+            type: 'channel',
+            channelId: req.params.channelId,
+            schedule: sanitizedSchedule,
+            startTime: channel.startTime,
+            strictValidation: true,
+          },
+          type: 'schedule-slots',
+        }),
+      );
+      if (scheduleResult.isFailure()) {
+        const badRequest = findBadRequestError(scheduleResult.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw unwrapError(scheduleResult.error);
+      }
+      const { result } = scheduleResult.get();
 
       const programsById = await container
         .get(MaterializeLineupCommand)

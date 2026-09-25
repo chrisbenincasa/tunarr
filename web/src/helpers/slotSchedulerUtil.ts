@@ -21,7 +21,8 @@ dayjs.extend(relativeTime);
 export type CustomShowProgramOption = DropdownOption<string> & {
   type: 'custom-show';
   customShowId: string;
-  programCount: number;
+  // Members the server can schedule, i.e. those with a positive duration.
+  schedulableProgramCount: number;
 };
 
 export type RedirectProgramOption = DropdownOption<string> & {
@@ -267,6 +268,47 @@ export function slotOrderOptions(
       OrderedShuffleSortOpt,
     ])
     .exhaustive();
+}
+
+export type CustomShowAvailability = 'available' | 'empty' | 'missing';
+
+// Custom shows load through a suspense query, so an absent option means the
+// show was deleted rather than still loading.
+export function customShowAvailability(
+  programOptions: ProgramOption[],
+  customShowId: string,
+): CustomShowAvailability {
+  const option = programOptions.find(
+    (opt): opt is CustomShowProgramOption =>
+      opt.type === 'custom-show' && opt.customShowId === customShowId,
+  );
+  if (option === undefined) {
+    return 'missing';
+  }
+  return option.schedulableProgramCount > 0 ? 'available' : 'empty';
+}
+
+// An empty custom show cannot fill a slot, so it is never offered for a new one.
+export function isSelectableForNewSlot(option: ProgramOption): boolean {
+  return option.type !== 'custom-show' || option.schedulableProgramCount > 0;
+}
+
+export function unavailableCustomShowSlotIndexes(
+  slots: readonly { type: string; customShowId?: string }[],
+  programOptions: ProgramOption[],
+): number[] {
+  const indexes: number[] = [];
+  slots.forEach((slot, index) => {
+    if (
+      slot.type === 'custom-show' &&
+      (slot.customShowId === undefined ||
+        customShowAvailability(programOptions, slot.customShowId) !==
+          'available')
+    ) {
+      indexes.push(index);
+    }
+  });
+  return indexes;
 }
 
 export const ProgramOptionTypes: DropdownOption<ProgramOptionType>[] = [

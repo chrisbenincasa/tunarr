@@ -7,10 +7,13 @@ import {
   UpdateCustomShowRequestSchema,
 } from '@tunarr/types/api';
 import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
-import { isNil, isNull, isNumber, sumBy } from 'lodash-es';
+import { isNil, isNumber, sumBy } from 'lodash-es';
 import { z } from 'zod/v4';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { container } from '../container.ts';
+import { hasSchedulableDuration } from '../services/scheduling/slotSchedulerUtil.ts';
+import { findBadRequestError, unwrapError } from '../types/errors.ts';
+import { Result } from '../types/result.ts';
 import { parseFloatOrNull } from '../util/index.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -43,6 +46,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
           id: cs.id,
           name: cs.name,
           contentCount: cs.count,
+          schedulableContentCount: cs.schedulableCount,
           totalDuration: isNumber(cs.totalDuration)
             ? cs.totalDuration
             : (parseFloatOrNull(cs.totalDuration) ?? 0),
@@ -81,6 +85,9 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         id: customShow.uuid,
         name: customShow.name,
         contentCount: customShow.content.length,
+        schedulableContentCount: sumBy(customShow.content, ({ program }) =>
+          hasSchedulableDuration(program.duration) ? 1 : 0,
+        ),
         totalDuration: sumBy(
           customShow.content,
           ({ program }) => program.duration ?? 0,
@@ -105,16 +112,25 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         body: UpdateCustomShowRequestSchema,
         response: {
           200: CustomShowSchema,
+          400: z.string(),
           404: z.void(),
         },
       },
     },
     async (req, res) => {
-      const customShow = await req.serverCtx.customShowDB.saveShow(
-        req.params.id,
-        req.body,
+      const saveResult = await Result.attemptAsync(() =>
+        req.serverCtx.customShowDB.saveShow(req.params.id, req.body),
       );
 
+      if (saveResult.isFailure()) {
+        const badRequest = findBadRequestError(saveResult.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw unwrapError(saveResult.error);
+      }
+
+      const customShow = saveResult.get();
       if (isNil(customShow)) {
         return res.status(404).send();
       }
@@ -123,6 +139,9 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         id: customShow.uuid,
         name: customShow.name,
         contentCount: customShow.content.length,
+        schedulableContentCount: sumBy(customShow.content, ({ program }) =>
+          hasSchedulableDuration(program.duration) ? 1 : 0,
+        ),
         totalDuration: sumBy(
           customShow.content,
           ({ program }) => program.duration ?? 0,
@@ -215,6 +234,9 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         id: newShow.uuid,
         name: newShow.name,
         contentCount: newShow.content.length,
+        schedulableContentCount: sumBy(newShow.content, ({ program }) =>
+          hasSchedulableDuration(program.duration) ? 1 : 0,
+        ),
         totalDuration: sumBy(
           newShow.content,
           ({ program }) => program.duration ?? 0,
@@ -249,7 +271,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         req.params.id,
       );
 
-      if (isNull(customShow)) {
+      if (customShow === undefined) {
         return res.status(404).send();
       }
 
@@ -299,6 +321,9 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         id: updatedShow.uuid,
         name: updatedShow.name,
         contentCount: updatedShow.content.length,
+        schedulableContentCount: sumBy(updatedShow.content, ({ program }) =>
+          hasSchedulableDuration(program.duration) ? 1 : 0,
+        ),
         totalDuration: sumBy(
           updatedShow.content,
           ({ program }) => program.duration ?? 0,

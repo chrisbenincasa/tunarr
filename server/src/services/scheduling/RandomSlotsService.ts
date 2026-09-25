@@ -22,6 +22,7 @@ import {
 } from 'lodash-es';
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
+import { ScheduleValidationError } from '../../types/errors.ts';
 import type { Nilable } from '../../types/util.ts';
 import { isNonEmptyArray, zipWithIndex } from '../../util/index.ts';
 import { type IterationState } from './ProgramIterator.ts';
@@ -43,8 +44,10 @@ import {
   distributeFlex,
   getFillerIteratorsForSlot,
   maybeAddPrePostFiller,
+  partitionSchedulablePrograms,
   pushOrExtendFlex,
 } from './slotSchedulerUtil.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 
 export const random = new Random(MersenneTwister19937.autoSeed());
 
@@ -63,6 +66,7 @@ class ScheduleContext {
   #seed: number[];
   #random: Random;
   #engine: MersenneTwister19937;
+  #unschedulablePrograms: SlotSchedulerProgram[];
 
   constructor(
     schedule: RandomSlotSchedule,
@@ -77,7 +81,11 @@ class ScheduleContext {
     );
     this.#random = new Random(this.#engine);
     deduplicateSlotIds(schedule.slots);
-    const programMap = createProgramMap(deduplicatePrograms(programming));
+    const { schedulable, unschedulable } = partitionSchedulablePrograms(
+      deduplicatePrograms(programming),
+    );
+    this.#unschedulablePrograms = unschedulable;
+    const programMap = createProgramMap(schedulable);
     const fillerIterators = createFillerIterators(
       schedule.slots,
       programMap,
@@ -168,11 +176,24 @@ class ScheduleContext {
     this.#slotLastPlayed.set(slotIndex, timeMs);
   }
 
-  getNextSequentialSlot() {
-    const slot = this.#sortedSlots[this.#currentSlotIndex]!;
-    this.#currentSlotIndex =
-      (this.#currentSlotIndex + 1) % this.#sortedSlots.length;
-    return slot;
+  getNextSequentialSlot(
+    excludedSlotIndexes: ReadonlySet<number>,
+  ): { slot: RandomSlotImpl; index: number } | null {
+    const slotCount = this.#sortedSlots.length;
+    for (let offset = 0; offset < slotCount; offset++) {
+      const index = (this.#currentSlotIndex + offset) % slotCount;
+      const slot = this.#sortedSlots[index];
+      if (!slot || excludedSlotIndexes.has(index)) {
+        continue;
+      }
+      this.#currentSlotIndex = (index + 1) % slotCount;
+      return { slot, index };
+    }
+    return null;
+  }
+
+  get unschedulablePrograms(): readonly SlotSchedulerProgram[] {
+    return this.#unschedulablePrograms;
   }
 
   get result(): SlotScheduleResult {
@@ -186,7 +207,17 @@ class ScheduleContext {
 }
 
 export class RandomSlotScheduler {
-  constructor(private schedule: RandomSlotSchedule) {}
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: RandomSlotScheduler.name,
+  });
+
+  constructor(
+    private schedule: RandomSlotSchedule,
+    private options: { strictValidation: boolean } = {
+      strictValidation: false,
+    },
+  ) {}
 
   generateSchedule(
     programming: SlotSchedulerProgram[],
@@ -210,11 +241,26 @@ export class RandomSlotScheduler {
     const t0 = startTime;
     const upperLimit = t0.add(maxDays + 1, 'day');
 
-    while (context.timeCursor.isBefore(upperLimit)) {
-      let currSlot: RandomSlotImpl | null = null;
-      let currSlotIndex: number | null = null;
+    if (context.unschedulablePrograms.length > 0) {
+      this.logger.warn(
+        'Skipping %d program(s) without a positive duration while generating a random slot schedule: %j',
+        context.unschedulablePrograms.length,
+        context.unschedulablePrograms.map((program) => program.uuid),
+      );
+    }
 
-      let minNextTime = context.timeCursor.add(24, 'days');
+    // Slots that produced nothing at the current cursor. Every pass of the loop
+    // either advances time or adds a slot here, so selection cannot spin.
+    const emptySlotIndexes = new Set<number>();
+    const reportedEmptySlotIndexes = new Set<number>();
+    let emptySlotCursorMs = +context.timeCursor;
+
+    while (context.timeCursor.isBefore(upperLimit)) {
+      if (+context.timeCursor !== emptySlotCursorMs) {
+        emptySlotIndexes.clear();
+        emptySlotCursorMs = +context.timeCursor;
+      }
+
       // Pad time
       const m = +context.timeCursor.mod(padMs);
       if (m > constants.SLACK && padMs - m > constants.SLACK) {
@@ -222,27 +268,33 @@ export class RandomSlotScheduler {
         continue;
       }
 
+      let selected: { slot: RandomSlotImpl; index: number } | null = null;
+      let nextEligibleTime: dayjs.Dayjs | null = null;
       switch (randomDistribution) {
         case 'uniform':
         case 'weighted': {
-          const result = this.getRandomSlot(context);
-          currSlot = result.currSlot;
-          currSlotIndex = result.currSlotIndex;
-          minNextTime = result.minNextTime;
+          const result = this.getRandomSlot(context, emptySlotIndexes);
+          selected = result.selected;
+          nextEligibleTime = result.nextEligibleTime;
           break;
         }
         case 'none':
-          currSlot = context.getNextSequentialSlot();
+          selected = context.getNextSequentialSlot(emptySlotIndexes);
           break;
       }
 
-      if (isNull(currSlot)) {
-        const duration = dayjs.duration(
-          +minNextTime.subtract(+context.timeCursor),
-        );
-        context.pushOrExtendFlex(duration);
+      if (isNull(selected)) {
+        // Nothing can play now. Wait for the earliest cooldown to end, or fill
+        // the rest of the window when no slot is left to try.
+        const flexEnd =
+          nextEligibleTime?.isBefore(upperLimit) === true
+            ? nextEligibleTime
+            : upperLimit;
+        context.pushOrExtendFlex(+flexEnd - +context.timeCursor);
         continue;
       }
+
+      const { slot: currSlot, index: currSlotIndex } = selected;
 
       if (isUndefined(currSlot.durationSpec) && !isNil(currSlot.durationMs)) {
         currSlot.durationSpec = {
@@ -253,28 +305,35 @@ export class RandomSlotScheduler {
         throw new Error('Invalid slot configuration - missing durationSpec');
       }
 
-      let paddedPrograms: NonEmptyArray<PaddedProgram>;
-      if (currSlot.durationSpec.type === 'fixed') {
-        const maybePrograms = this.handleFixedDurationSlot(currSlot, context);
-        if (!maybePrograms) {
-          continue;
-        }
+      const slotStartMs = +context.timeCursor;
+      const maybePrograms =
+        currSlot.durationSpec.type === 'fixed'
+          ? this.handleFixedDurationSlot(currSlot, context)
+          : this.handleDynamicDurationSlot(currSlot, context);
 
-        paddedPrograms = maybePrograms;
-      } else {
-        const maybePrograms = this.handleDynamicDurationSlot(currSlot, context);
-        if (!maybePrograms) {
-          continue;
+      if (!maybePrograms) {
+        if (+context.timeCursor === slotStartMs) {
+          emptySlotIndexes.add(currSlotIndex);
+          if (!reportedEmptySlotIndexes.has(currSlotIndex)) {
+            reportedEmptySlotIndexes.add(currSlotIndex);
+            this.logger.warn(
+              'Random slot %d (type = %s) has no schedulable content; trying other slots',
+              currSlotIndex,
+              currSlot.type,
+            );
+          }
         }
-        paddedPrograms = maybePrograms;
+        continue;
       }
+
+      const paddedPrograms: NonEmptyArray<PaddedProgram> = maybePrograms;
 
       // The slot has committed programs, so it counts as played from the point
       // the cursor is at now -- the slot's start, before its programs advance
       // it. getRandomSlot compares this against timeCursor to apply cooldownMs.
       // Only the random distributions consult it; 'none' walks the slots in
       // order and ignores cooldown entirely.
-      if (currSlotIndex !== null) {
+      if (randomDistribution !== 'none') {
         context.recordSlotPlayed(currSlotIndex, +context.timeCursor);
       }
 
@@ -376,20 +435,27 @@ export class RandomSlotScheduler {
       if (done) {
         break;
       }
+
+      if (+context.timeCursor <= slotStartMs) {
+        throw new Error(
+          `Random slot ${currSlotIndex} (type = ${currSlot.type}) placed programs without advancing the schedule at ${context.timeCursor.toISOString()}`,
+        );
+      }
     }
 
     return context.result;
   }
 
   private validateSchedule() {
-    for (const slot of this.schedule.slots) {
+    for (const [slot, index] of zipWithIndex(this.schedule.slots)) {
       if (isUndefined(slot.durationSpec)) {
         throw new Error(
           `Slot definition missing duration spec: ${JSON.stringify(slot)}`,
         );
       }
 
-      if (slot.durationSpec.type === 'dynamic') {
+      const spec = slot.durationSpec;
+      if (spec.type === 'dynamic') {
         switch (slot.type) {
           case 'flex':
           case 'redirect':
@@ -403,6 +469,28 @@ export class RandomSlotScheduler {
           case 'smart-collection':
             break;
         }
+      }
+
+      // Schedules saved before these checks existed may hold these values.
+      // The generation loop skips slots that produce nothing, so regeneration
+      // tolerates them and plays flex instead.
+      if (!this.options.strictValidation) {
+        continue;
+      }
+
+      if (spec.type === 'fixed') {
+        if (!Number.isFinite(spec.durationMs) || spec.durationMs <= 0) {
+          throw new ScheduleValidationError(
+            `Slot ${index} (type = ${slot.type}) has fixed duration ${spec.durationMs}; it must be a positive number of milliseconds`,
+          );
+        }
+      } else if (
+        !Number.isInteger(spec.programCount) ||
+        spec.programCount <= 0
+      ) {
+        throw new ScheduleValidationError(
+          `Slot ${index} (type = ${slot.type}) has program count ${spec.programCount}; it must be a positive whole number`,
+        );
       }
     }
   }
@@ -459,6 +547,11 @@ export class RandomSlotScheduler {
         break;
       }
       const nextPadded = this.createPaddedProgram(nextProgram);
+      if (!(nextPadded.totalDuration > 0)) {
+        throw new Error(
+          `Cannot pack program ${'id' in nextProgram ? nextProgram.id : nextProgram.type} into a fixed slot: its duration is ${nextProgram.duration}`,
+        );
+      }
       paddedPrograms.push(nextPadded);
       context.advanceIterator(currSlot);
       maybeAddPrePostFiller(
@@ -567,37 +660,42 @@ export class RandomSlotScheduler {
     );
   }
 
-  private getRandomSlot(context: ScheduleContext) {
+  private getRandomSlot(
+    context: ScheduleContext,
+    excludedSlotIndexes: ReadonlySet<number>,
+  ) {
     let n = 0;
-    let currSlot: RandomSlotImpl | null = null;
-    let currSlotIndex: number | null = null;
-    let minNextTime = context.timeCursor.add(24, 'days');
+    let selected: { slot: RandomSlotImpl; index: number } | null = null;
+    // The earliest time a slot still in cooldown becomes eligible again.
+    let nextEligibleTime: dayjs.Dayjs | null = null;
     for (const [slot, i] of zipWithIndex(context.sortedSlots)) {
+      if (excludedSlotIndexes.has(i)) {
+        continue;
+      }
+
       const slotLastPlayed = context.getSlotLastPlayedTime(i);
-      // Default next time to play a program
-      if (!isNil(slotLastPlayed)) {
-        const nextPlay = dayjs.tz(slotLastPlayed + slot.cooldownMs);
-        minNextTime = minNextTime.isBefore(nextPlay) ? minNextTime : nextPlay;
-        if (
-          +dayjs.duration(context.timeCursor.diff(slotLastPlayed)) <
+      if (
+        !isNil(slotLastPlayed) &&
+        +dayjs.duration(context.timeCursor.diff(slotLastPlayed)) <
           slot.cooldownMs - constants.SLACK
-        ) {
-          continue;
+      ) {
+        const nextPlay = dayjs.tz(slotLastPlayed + slot.cooldownMs);
+        if (isNull(nextEligibleTime) || nextPlay.isBefore(nextEligibleTime)) {
+          nextEligibleTime = nextPlay;
         }
+        continue;
       }
 
       n += slot.weight;
 
       if (random.bool(slot.weight, n)) {
-        currSlot = slot;
-        currSlotIndex = i;
+        selected = { slot, index: i };
       }
     }
 
     return {
-      currSlot,
-      currSlotIndex,
-      minNextTime,
+      selected,
+      nextEligibleTime,
     };
   }
 }

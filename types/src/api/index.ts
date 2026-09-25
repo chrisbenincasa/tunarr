@@ -19,8 +19,12 @@ import {
 import {
   CondensedChannelProgramSchema,
   CondensedContentProgramSchema,
+  CondensedCustomProgramSchema,
+  CondensedFillerProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
+  FlexProgramSchema,
+  RedirectProgramSchema,
 } from '../schemas/lineups.js';
 import {
   Episode,
@@ -98,8 +102,11 @@ export type CreateCustomShowRequest = z.infer<
   typeof CreateCustomShowRequestSchema
 >;
 
+// `programs` has no default here. Omitting it leaves membership alone, while
+// an explicit list, including an empty one, replaces it.
 export const UpdateCustomShowRequestSchema =
   CreateCustomShowRequestSchema.partial().extend({
+    programs: z.array(CondensedContentProgramSchema).optional(),
     enableSync: z.boolean(),
   });
 
@@ -138,9 +145,19 @@ export const BasicPagingSchema = z.object({
   limit: z.coerce.number().optional(),
 });
 
+// A zero-length item can never play, so a saved lineup needs a positive
+// duration on every item, content included.
+const ManualLineupProgramSchema = z.discriminatedUnion('type', [
+  CondensedContentProgramSchema.extend({ duration: z.number().positive() }),
+  CondensedCustomProgramSchema,
+  CondensedFillerProgramSchema,
+  RedirectProgramSchema,
+  FlexProgramSchema,
+]);
+
 export const ManualProgramLineupSchema = z.object({
   type: z.literal('manual'),
-  lineup: CondensedChannelProgramSchema.array(),
+  lineup: ManualLineupProgramSchema.array(),
   append: z.boolean().default(false),
 });
 

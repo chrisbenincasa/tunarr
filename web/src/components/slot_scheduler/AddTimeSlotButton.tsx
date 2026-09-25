@@ -4,6 +4,7 @@ import type {
   ProgramOption,
   ShowProgramOption,
 } from '@/helpers/slotSchedulerUtil.ts';
+import { isSelectableForNewSlot } from '@/helpers/slotSchedulerUtil.ts';
 import { useTimeSlotFormContext } from '@/hooks/slot_scheduler/useTimeSlotFormContext.ts';
 import type {
   ShowTimeSlotViewModel,
@@ -42,10 +43,10 @@ export const AddTimeSlotButton = ({
   }, [currentPeriod, dayOffset, slots]);
 
   const optionsByType = useMemo(() => {
-    return groupBy(programOptions, (opt) => opt.type) as Dictionary<
-      ProgramOption[],
-      ProgramOption['type']
-    >;
+    return groupBy(
+      programOptions.filter(isSelectableForNewSlot),
+      (opt) => opt.type,
+    ) as Dictionary<ProgramOption[], ProgramOption['type']>;
   }, [programOptions]);
 
   const addSlot = useCallback(() => {

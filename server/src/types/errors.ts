@@ -101,6 +101,35 @@ export class GenericError extends TypedError {
 
 export class GenericBadRequestError extends BadRequestError {}
 
+// A scheduling request that would change stored state is invalid as written.
+export class ScheduleValidationError extends BadRequestError {}
+
+// Result.attempt* wraps thrown errors, so the original may sit in the cause chain.
+export function findBadRequestError(e: unknown): BadRequestError | undefined {
+  let current: unknown = e;
+  for (let depth = 0; depth < 5 && isError(current); depth++) {
+    if (current instanceof BadRequestError) {
+      return current;
+    }
+    current = current.cause;
+  }
+  return;
+}
+
+// Result.attempt* hides the thrown error inside an anonymous, message-less
+// WrappedError. Returns the error that was actually thrown.
+export function unwrapError(e: Error): Error {
+  let current = e;
+  while (
+    current instanceof WrappedError &&
+    !(current instanceof TypedError) &&
+    isError(current.cause)
+  ) {
+    current = current.cause;
+  }
+  return current;
+}
+
 export class GenericNotFoundError extends NotFoundError {
   constructor(id: string, entity: string) {
     super(`${entity} entity with id = ${id} not found`);

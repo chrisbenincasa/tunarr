@@ -1,5 +1,9 @@
 import { OneDayMillis } from '@/helpers/constants.ts';
-import { getTimeSlotId, OneWeekMillis } from '@/helpers/slotSchedulerUtil.ts';
+import {
+  customShowAvailability,
+  getTimeSlotId,
+  OneWeekMillis,
+} from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptionsContext } from '@/hooks/programming_controls/useSlotProgramOptions';
 import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails.ts';
 import type { TimeSlotViewModel } from '@/model/TimeSlotModels.ts';
@@ -177,6 +181,19 @@ export const TimeSlotTable = () => {
           programCount = slotDetails.programCount;
         }
 
+        if (slot.type === 'custom-show') {
+          const availability = customShowAvailability(
+            programOptions,
+            slot.customShowId,
+          );
+          if (availability !== 'available') {
+            warnings.push({
+              type: 'custom_show_unavailable',
+              reason: availability,
+            });
+          }
+        }
+
         return {
           ...slot,
           durationMs: slotDuration,
@@ -185,7 +202,14 @@ export const TimeSlotTable = () => {
         } satisfies TimeSlotTableRowType;
       },
     );
-  }, [currentPeriod, detailsBySlotId, overflow, selectedDay, slotArray.fields]);
+  }, [
+    currentPeriod,
+    detailsBySlotId,
+    overflow,
+    programOptions,
+    selectedDay,
+    slotArray.fields,
+  ]);
 
   const columns = useMemo<MRT_ColumnDef<TimeSlotTableRowType>[]>(() => {
     return [
