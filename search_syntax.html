@@ -1,0 +1,940 @@
+
+<!-- This is a generated file -->
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  body {
+    background-color: hsl(30, 20%, 95%)
+  }
+</style>
+
+
+<link rel='stylesheet' href='https://unpkg.com/chevrotain@11.0.3/diagrams/diagrams.css'>
+
+<script src='https://unpkg.com/chevrotain@11.0.3/diagrams/vendor/railroad-diagrams.js'></script>
+<script src='https://unpkg.com/chevrotain@11.0.3/diagrams/src/diagrams_builder.js'></script>
+<script src='https://unpkg.com/chevrotain@11.0.3/diagrams/src/diagrams_behavior.js'></script>
+<script src='https://unpkg.com/chevrotain@11.0.3/diagrams/src/main.js'></script>
+
+<div id="diagrams" align="center"></div>    
+
+<script>
+    window.serializedGrammar = [
+  {
+    "type": "Rule",
+    "name": "searchValue",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "Quote",
+                "label": "Quote",
+                "idx": 0,
+                "terminalLabel": "str_open",
+                "pattern": "\""
+              },
+              {
+                "type": "RepetitionMandatory",
+                "idx": 0,
+                "definition": [
+                  {
+                    "type": "Repetition",
+                    "idx": 0,
+                    "definition": [
+                      {
+                        "type": "Alternation",
+                        "idx": 2,
+                        "definition": [
+                          {
+                            "type": "Alternative",
+                            "definition": [
+                              {
+                                "type": "Terminal",
+                                "name": "Identifier",
+                                "label": "Identifier",
+                                "idx": 2,
+                                "terminalLabel": "query",
+                                "pattern": "[a-zA-Z0-9-]+"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "Alternative",
+                            "definition": [
+                              {
+                                "type": "Terminal",
+                                "name": "Integer",
+                                "label": "Integer",
+                                "idx": 2,
+                                "terminalLabel": "query",
+                                "pattern": "\\d+"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "Terminal",
+                "name": "Quote",
+                "label": "Quote",
+                "idx": 3,
+                "terminalLabel": "str_close",
+                "pattern": "\""
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Repetition",
+                "idx": 2,
+                "definition": [
+                  {
+                    "type": "Alternation",
+                    "idx": 3,
+                    "definition": [
+                      {
+                        "type": "Alternative",
+                        "definition": [
+                          {
+                            "type": "Terminal",
+                            "name": "Identifier",
+                            "label": "Identifier",
+                            "idx": 4,
+                            "terminalLabel": "query",
+                            "pattern": "[a-zA-Z0-9-]+"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Alternative",
+                        "definition": [
+                          {
+                            "type": "Terminal",
+                            "name": "Integer",
+                            "label": "Integer",
+                            "idx": 4,
+                            "terminalLabel": "query",
+                            "pattern": "\\d+"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "parenGroup",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "OpenParenGroup",
+        "label": "OpenParenGroup",
+        "idx": 0,
+        "pattern": "\\("
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "searchClause",
+            "idx": 0
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "CloseParenGroup",
+        "label": "CloseParenGroup",
+        "idx": 0,
+        "pattern": "\\)"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "string_operator",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Alternation",
+                "idx": 2,
+                "definition": [
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "EqOperator",
+                        "label": "EqOperator",
+                        "idx": 0,
+                        "pattern": ":|="
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "NeqOperator",
+                        "label": "NeqOperator",
+                        "idx": 0,
+                        "pattern": "!="
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "LTEOperator",
+                        "label": "LTEOperator",
+                        "idx": 0,
+                        "pattern": "<="
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "LTOperator",
+                        "label": "LTOperator",
+                        "idx": 0,
+                        "pattern": "<"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "ContainsOperator",
+                        "label": "ContainsOperator",
+                        "idx": 0,
+                        "pattern": "~"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "NonTerminal",
+                "name": "searchValue",
+                "idx": 0
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "InOperator",
+                "label": "InOperator",
+                "idx": 0,
+                "pattern": "in"
+              },
+              {
+                "type": "Terminal",
+                "name": "OpenArray",
+                "label": "OpenArray",
+                "idx": 2,
+                "pattern": "\\["
+              },
+              {
+                "type": "RepetitionMandatoryWithSeparator",
+                "idx": 0,
+                "separator": {
+                  "type": "Terminal",
+                  "name": "Comma",
+                  "label": "Comma",
+                  "idx": 1,
+                  "pattern": ","
+                },
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "searchValue",
+                    "idx": 2
+                  }
+                ]
+              },
+              {
+                "type": "Terminal",
+                "name": "CloseArray",
+                "label": "CloseArray",
+                "idx": 2,
+                "pattern": "]"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "numeric_operator",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Alternation",
+                "idx": 2,
+                "definition": [
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "EqOperator",
+                        "label": "EqOperator",
+                        "idx": 0,
+                        "pattern": ":|="
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "NeqOperator",
+                        "label": "NeqOperator",
+                        "idx": 0,
+                        "pattern": "!="
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "LTEOperator",
+                        "label": "LTEOperator",
+                        "idx": 0,
+                        "pattern": "<="
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "GTEOperator",
+                        "label": "GTEOperator",
+                        "idx": 0,
+                        "pattern": ">="
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "LTOperator",
+                        "label": "LTOperator",
+                        "idx": 0,
+                        "pattern": "<"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "GTOperator",
+                        "label": "GTOperator",
+                        "idx": 0,
+                        "pattern": ">"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "NonTerminal",
+                "name": "numeric_value",
+                "idx": 0
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "BetweenOperator",
+                "label": "BetweenOperator",
+                "idx": 0,
+                "pattern": "between"
+              },
+              {
+                "type": "Alternation",
+                "idx": 3,
+                "definition": [
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "OpenParenGroup",
+                        "label": "OpenParenGroup",
+                        "idx": 2,
+                        "pattern": "\\("
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "OpenArray",
+                        "label": "OpenArray",
+                        "idx": 2,
+                        "pattern": "\\["
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "NonTerminal",
+                "name": "numeric_value",
+                "idx": 2
+              },
+              {
+                "type": "Option",
+                "idx": 0,
+                "definition": [
+                  {
+                    "type": "Terminal",
+                    "name": "Comma",
+                    "label": "Comma",
+                    "idx": 2,
+                    "pattern": ","
+                  }
+                ]
+              },
+              {
+                "type": "NonTerminal",
+                "name": "numeric_value",
+                "idx": 3
+              },
+              {
+                "type": "Alternation",
+                "idx": 4,
+                "definition": [
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "CloseParenGroup",
+                        "label": "CloseParenGroup",
+                        "idx": 3,
+                        "pattern": "\\)"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "CloseArray",
+                        "label": "CloseArray",
+                        "idx": 3,
+                        "pattern": "]"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "numeric_value",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "FloatingPoint",
+                "label": "FloatingPoint",
+                "idx": 0,
+                "pattern": "\\d+\\.\\d+"
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "Integer",
+                "label": "Integer",
+                "idx": 0,
+                "pattern": "\\d+"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "date_operator",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Alternation",
+                "idx": 2,
+                "definition": [
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "EqOperator",
+                        "label": "EqOperator",
+                        "idx": 0,
+                        "pattern": ":|="
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "LTEOperator",
+                        "label": "LTEOperator",
+                        "idx": 0,
+                        "pattern": "<="
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "LTOperator",
+                        "label": "LTOperator",
+                        "idx": 0,
+                        "pattern": "<"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "GTEOperator",
+                        "label": "GTEOperator",
+                        "idx": 0,
+                        "pattern": ">="
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "GTOperator",
+                        "label": "GTOperator",
+                        "idx": 0,
+                        "pattern": ">"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "NonTerminal",
+                "name": "searchValue",
+                "idx": 0
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "BetweenOperator",
+                "label": "BetweenOperator",
+                "idx": 0,
+                "pattern": "between"
+              },
+              {
+                "type": "Alternation",
+                "idx": 3,
+                "definition": [
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "OpenParenGroup",
+                        "label": "OpenParenGroup",
+                        "idx": 2,
+                        "pattern": "\\("
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "OpenArray",
+                        "label": "OpenArray",
+                        "idx": 2,
+                        "pattern": "\\["
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "NonTerminal",
+                "name": "searchValue",
+                "idx": 2
+              },
+              {
+                "type": "Option",
+                "idx": 0,
+                "definition": [
+                  {
+                    "type": "Terminal",
+                    "name": "Comma",
+                    "label": "Comma",
+                    "idx": 2,
+                    "pattern": ","
+                  }
+                ]
+              },
+              {
+                "type": "NonTerminal",
+                "name": "searchValue",
+                "idx": 3
+              },
+              {
+                "type": "Alternation",
+                "idx": 4,
+                "definition": [
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "CloseParenGroup",
+                        "label": "CloseParenGroup",
+                        "idx": 3,
+                        "pattern": "\\)"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Alternative",
+                    "definition": [
+                      {
+                        "type": "Terminal",
+                        "name": "CloseArray",
+                        "label": "CloseArray",
+                        "idx": 3,
+                        "pattern": "]"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "singleStringSearch",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "StringField",
+        "label": "StringField",
+        "idx": 0,
+        "terminalLabel": "field",
+        "pattern": "actor|genre|director|writer|library_id|title|video_codec|video_dynamic_range|audio_codec|tags|rating|type"
+      },
+      {
+        "type": "NonTerminal",
+        "name": "string_operator",
+        "idx": 0,
+        "label": "op"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "singleNumericSearch",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "NumericField",
+        "label": "NumericField",
+        "idx": 0,
+        "pattern": "duration|minutes|seconds|video_bit_depth|video_height|video_width|audio_channels|release_year"
+      },
+      {
+        "type": "NonTerminal",
+        "name": "numeric_operator",
+        "idx": 0
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "singleDateSearch",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "DateField",
+        "label": "DateField",
+        "idx": 0,
+        "terminalLabel": "field",
+        "pattern": "release_date"
+      },
+      {
+        "type": "NonTerminal",
+        "name": "date_operator",
+        "idx": 0,
+        "label": "op"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "singleSearch",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "singleStringSearch",
+                "idx": 0
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "singleNumericSearch",
+                "idx": 0
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "singleDateSearch",
+                "idx": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "searchClause",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "parenGroup",
+                "idx": 0
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "singleSearch",
+                "idx": 0
+              },
+              {
+                "type": "Option",
+                "idx": 0,
+                "definition": [
+                  {
+                    "type": "Alternation",
+                    "idx": 2,
+                    "definition": [
+                      {
+                        "type": "Alternative",
+                        "definition": [
+                          {
+                            "type": "Terminal",
+                            "name": "CombineOr",
+                            "label": "CombineOr",
+                            "idx": 0,
+                            "pattern": "OR"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Alternative",
+                        "definition": [
+                          {
+                            "type": "Terminal",
+                            "name": "CombineAnd",
+                            "label": "CombineAnd",
+                            "idx": 0,
+                            "pattern": "AND"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Alternative",
+                        "definition": [
+                          {
+                            "type": "Terminal",
+                            "name": "WhiteSpace",
+                            "label": "WhiteSpace",
+                            "idx": 0,
+                            "pattern": "\\s+"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "NonTerminal",
+                    "name": "searchClause",
+                    "idx": 0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "searchExpression",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "searchClause",
+            "idx": 0
+          }
+        ]
+      }
+    ]
+  }
+];
+</script>
+
+<script>
+    var diagramsDiv = document.getElementById("diagrams");
+    main.drawDiagramsFromSerializedGrammar(serializedGrammar, diagramsDiv);
+</script>
