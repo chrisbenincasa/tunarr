@@ -859,6 +859,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       const option = new StreamSeekInputOption(this.ffmpegState.start);
       this.audioInputSource?.addOption(option);
       this.videoInputSource.addOption(option);
+      this.subtitleInputSource?.addOption(option);
 
       if (this.context.hasSubtitleTextContext()) {
         this.pipelineSteps.push(new StreamSeekFilter(this.ffmpegState.start));
