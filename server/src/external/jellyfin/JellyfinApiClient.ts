@@ -71,6 +71,7 @@ import { MediaSourceType } from '../../db/schema/base.ts';
 import type { ProgramType } from '../../db/schema/Program.ts';
 import type { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import type { Canonicalizer } from '../../services/Canonicalizer.ts';
+import { LanguageService } from '../../services/LanguageService.ts';
 import { extractIsAnamorphic } from '../../stream/util.ts';
 import type {
   JellyfinEpisode as ApiJellyfinEpisode,
@@ -1270,7 +1271,9 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
             profile: (audioStream.Profile ?? '').toLowerCase(),
             channels: audioStream.Channels ?? 2,
             selected: audioStream.IsForced,
-            languageCodeISO6392: nullToUndefined(audioStream.Language),
+            languageCodeISO6392: audioStream.Language
+              ? LanguageService.getAlpha3TCode(audioStream.Language)
+              : undefined,
             index: Math.max(0, (audioStream.Index ?? 0) - streamIndexOffset),
             title: audioStream.Title ?? audioStream.DisplayTitle,
           };
@@ -1292,7 +1295,9 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
             selected: subStream.IsForced,
             forced: subStream.IsForced,
             sdh: subStream.IsHearingImpaired,
-            languageCodeISO6392: nullToUndefined(subStream.Language),
+            languageCodeISO6392: subStream.Language
+              ? LanguageService.getAlpha3TCode(subStream.Language)
+              : undefined,
             index: Math.max(0, (subStream.Index ?? 0) - streamIndexOffset),
             title: subStream.Title ?? subStream.DisplayTitle,
             // External subtitles live outside the container, so the adjusted
