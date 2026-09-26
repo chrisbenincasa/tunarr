@@ -316,7 +316,8 @@ export async function scheduleTimeSlots(
     );
     let totalAddedDuration = paddedProgram.totalDuration;
 
-    const effectiveOverflow = currSlot.overflow ?? schedule.overflow;
+    const effectiveOverflow = currSlot.overflow ??
+      schedule.overflow ?? { type: 'duration', maxMs: 0 };
 
     for (;;) {
       const nextProgram = currSlot.getNextProgram({
