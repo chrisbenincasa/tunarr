@@ -8,6 +8,7 @@ import { inject, multiInject } from 'inversify';
 import 'reflect-metadata';
 
 const INJECT_META = Symbol('assistedInject:inject');
+const MULTI_INJECT_META = Symbol('assistedInject:multiInject');
 const ASSISTED_META = Symbol('assistedInject:assisted');
 
 function commonInjectedWrapper<T>(
@@ -41,7 +42,18 @@ export function multiInjected<T extends unknown[]>(
   serviceId: ServiceIdentifier<T>,
 ) {
   const injectFn = multiInject(serviceId);
-  return commonInjectedWrapper(serviceId, injectFn);
+  return (
+    target: object,
+    propertyKey: string | symbol | undefined,
+    index: number,
+  ) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const set: Set<number> =
+      Reflect.getOwnMetadata(MULTI_INJECT_META, target) ?? new Set();
+    set.add(index);
+    Reflect.defineMetadata(MULTI_INJECT_META, set, target);
+    commonInjectedWrapper(serviceId, injectFn)(target, propertyKey, index);
+  };
 }
 
 export function assisted(
@@ -74,6 +86,9 @@ export function bindAssistedFactory<
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const assistedSet: Set<number> =
     Reflect.getOwnMetadata(ASSISTED_META, Target) || new Set();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const multiInjectSet: Set<number> =
+    Reflect.getOwnMetadata(MULTI_INJECT_META, Target) || new Set();
   const paramCount = Target.length;
 
   // Validate: every param must be either injected or assisted
@@ -91,7 +106,10 @@ export function bindAssistedFactory<
       let aIdx = 0;
       for (let i = 0; i < paramCount; i++) {
         if (injectMap.has(i)) {
-          args.push(context.get(injectMap.get(i)!));
+          const id = injectMap.get(i)!;
+          args.push(
+            multiInjectSet.has(i) ? context.getAll(id) : context.get(id),
+          );
         } else {
           args.push(assistedArgs[aIdx++]);
         }
