@@ -467,6 +467,44 @@ describe('FfmpegStreamFactory', () => {
       // calculateForErrorStream (used by offline) doesn't set videoPreset
       expect(frameState!.videoPreset).toBeNull();
     });
+
+    test('createPlaceholderSession (offline) applies software deinterlace + scaling filters', async () => {
+      const config = makeTranscodeConfig({
+        hardwareAccelerationMode: 'none',
+        videoFormat: 'h264',
+      });
+      const { factory, getCapturedFfmpegState } =
+        createCapturingPipelineBuilderFactory();
+
+      const ffmpegSettings = {
+        ...makeFfmpegSettings(),
+        deinterlaceFilter: 'yadif=0',
+        scalingAlgorithm: 'lanczos',
+      };
+      const sut = new FfmpegStreamFactory(
+        makeMockFfmpegInfo(),
+        makeMockSettingsDB(ffmpegSettings),
+        factory,
+        makeMockChannelDB(),
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        config,
+        makeChannel(),
+      );
+
+      await sut.createPlaceholderSession({
+        kind: 'offline',
+        duration: dayjs.duration({ seconds: 10 }),
+        outputFormat: MpegTsOutputFormat,
+      });
+
+      const ffmpegState = getCapturedFfmpegState();
+      expect(ffmpegState).toBeDefined();
+      // Mirrors the error session: reuse the configured ffmpegSettings,
+      // not the FfmpegState class defaults.
+      expect(ffmpegState!.softwareDeinterlaceFilter).toBe('yadif=0');
+      expect(ffmpegState!.softwareScalingAlgorithm).toBe('lanczos');
+    });
   });
 
   describe('passthrough mode (HlsDirectV2 / remux)', () => {
