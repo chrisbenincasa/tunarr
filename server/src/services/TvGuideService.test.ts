@@ -898,4 +898,136 @@ describe('TVGuideService', () => {
       expect(discontinuities).toEqual([]);
     });
   });
+
+  describe('redirect to a deleted channel', () => {
+    it('lists the slot as flex in XMLTV', async () => {
+      const channel = makeChannelOrm({
+        name: 'Main',
+        guideFlexTitle: 'Off Air',
+      });
+      const lineups = {
+        [channel.uuid]: {
+          channel,
+          lineup: makeLineup([
+            {
+              type: 'redirect',
+              channel: v4(),
+              durationMs: 24 * 60 * 60 * 1000,
+            },
+          ]),
+        },
+      };
+
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(lineups),
+          syncChannelDuration: vi.fn().mockResolvedValue(false),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+
+      await service.buildAllChannels(dayjs.duration({ hours: 4 }), true);
+
+      const written = mockWrite.mock.calls.at(
+        -1,
+      )?.[0] as MaterializedChannelPrograms[];
+      const programs = written.flatMap((entry) => entry.programs);
+
+      expect(programs.length).toBeGreaterThan(0);
+      for (const program of programs) {
+        expect(program.programming.type).toBe('flex');
+        expect(program.title).toBe('Off Air');
+      }
+    });
+  });
+
+  describe('updateCachedChannel', () => {
+    /**
+     * A guide item stays a redirect when the redirect can't be followed, for
+     * example in a loop. XMLTV writes that happen after a guide build must
+     * still resolve the redirect target's channel.
+     */
+    it('rewrites XMLTV for a guide that holds an unresolved redirect', async () => {
+      const HOUR = 60 * 60 * 1000;
+      const a = makeChannelOrm({ number: 1, name: 'Channel A' });
+      const b = makeChannelOrm({ number: 2, name: 'Channel B' });
+      const channels = {
+        [a.uuid]: {
+          channel: a,
+          lineup: makeLineup([
+            { type: 'redirect', channel: b.uuid, durationMs: 24 * HOUR },
+          ]),
+        },
+        [b.uuid]: {
+          channel: b,
+          lineup: makeLineup([
+            { type: 'redirect', channel: a.uuid, durationMs: 24 * HOUR },
+          ]),
+        },
+      };
+
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(channels),
+          getChannelOrm: vi.fn().mockResolvedValue(a),
+          syncChannelDuration: vi.fn().mockResolvedValue(false),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        {
+          xmlTvSettings: () => ({ programmingHours: 4 }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+
+      await service.buildAllChannels(dayjs.duration({ hours: 4 }), true);
+
+      // A start time change regenerates the lineup and recalculates the guide
+      await service.updateCachedChannel(a.uuid, true);
+
+      const written = mockWrite.mock.calls.at(
+        -1,
+      )?.[0] as MaterializedChannelPrograms[];
+      const redirects = written
+        .flatMap((entry) => entry.programs)
+        .map((program) => program.programming)
+        .filter((programming) => programming.type === 'redirect');
+
+      expect(redirects.length).toBeGreaterThan(0);
+      for (const redirect of redirects) {
+        expect([a.uuid, b.uuid]).toContain(redirect.channelId);
+      }
+    });
+  });
 });

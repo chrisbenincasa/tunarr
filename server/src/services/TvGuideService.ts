@@ -1415,13 +1415,27 @@ export class TVGuideService {
         };
       })
       .with({ type: 'redirect' }, (redirect) => {
-        const backingChannel = this.channelsById![redirect.channel]!;
+        // XMLTV is also written outside a guide build, when channelsById is
+        // empty, so resolve the target from the guide cache.
+        const backingChannel = this.cachedGuide[redirect.channel]?.channel;
+        if (!backingChannel) {
+          return {
+            ...baseItem,
+            title: isNonEmptyString(channel.guideFlexTitle)
+              ? channel.guideFlexTitle
+              : channel.name,
+            programming: {
+              type: 'flex',
+            },
+          };
+        }
+
         return {
           ...baseItem,
           programming: {
-            channelId: backingChannel.channel.uuid,
-            channelName: backingChannel.channel.name,
-            channelNumber: backingChannel.channel.number,
+            channelId: backingChannel.uuid,
+            channelName: backingChannel.name,
+            channelNumber: backingChannel.number,
             type: 'redirect',
           },
         };
