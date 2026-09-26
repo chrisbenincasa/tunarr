@@ -1,16 +1,26 @@
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
 import { FileStreamSource } from '../../../stream/types.ts';
 import { EmptyFfmpegCapabilities } from '../capabilities/FfmpegCapabilities.ts';
 import { AudioVolumeFilter } from '../filter/AudioVolumeFilter.ts';
 import { LoudnormFilter } from '../filter/LoudnormFilter.ts';
 import { PixelFormatYuv420P } from '../format/PixelFormat.ts';
 import { AudioInputSource } from '../input/AudioInputSource.ts';
+import { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
 import { VideoInputSource } from '../input/VideoInputSource.ts';
-import { AudioStream, VideoStream } from '../MediaStream.ts';
+import {
+  AudioStream,
+  ExternalSubtitleStream,
+  SubtitleMethods,
+  VideoStream,
+} from '../MediaStream.ts';
 import { AudioState } from '../state/AudioState.ts';
 import { DefaultPipelineOptions, FfmpegState } from '../state/FfmpegState.ts';
 import { FrameState } from '../state/FrameState.ts';
 import { FrameSize } from '../types.ts';
 import { BasePipelineBuilder } from './BasePipelineBuilder.ts';
+
+dayjs.extend(duration);
 
 class NoopPipelineBuilder extends BasePipelineBuilder {
   protected setupVideoFilters(): void {}
@@ -416,5 +426,40 @@ describe('BasePipelineBuilder', () => {
     const channelIdx = commandArgs?.indexOf('-ac');
     expect(channelIdx).toBeDefined();
     expect(commandArgs?.at(channelIdx + 1)).toBe('6');
+  });
+
+  test('apply the stream seek offset to an external sidecar subtitle input', () => {
+    const seekState = FfmpegState.create({
+      version: state.version,
+      start: dayjs.duration(90_000),
+    });
+
+    const subtitle = new SubtitlesInputSource(
+      new FileStreamSource('/path/to/movie.srt'),
+      [new ExternalSubtitleStream('subrip', SubtitleMethods.Convert)],
+      SubtitleMethods.Convert,
+    );
+
+    const pipeline = new NoopPipelineBuilder(
+      video,
+      audio,
+      null,
+      subtitle,
+      null,
+      EmptyFfmpegCapabilities,
+    );
+
+    const result = pipeline.build(
+      seekState,
+      frameState,
+      DefaultPipelineOptions,
+    );
+    const commandArgs = result.getCommandArgs();
+
+    const subtitleInputIdx = commandArgs.indexOf('/path/to/movie.srt');
+    expect(subtitleInputIdx).toBeGreaterThan(0);
+    expect(commandArgs[subtitleInputIdx - 1]).toBe('-i');
+    expect(commandArgs[subtitleInputIdx - 3]).toBe('-ss');
+    expect(commandArgs[subtitleInputIdx - 2]).toBe('90000ms');
   });
 });
