@@ -833,6 +833,8 @@ describe('VaapiPipelineBuilder tonemap', () => {
     binaryCapabilities?: FfmpegCapabilities;
     pipelineOptions?: Partial<PipelineOptions>;
     desiredState?: Partial<FrameStateOpts>;
+    subtitles?: SubtitlesInputSource | null;
+    stateVaapiDevice?: string;
   }): Pipeline {
     const capabilities = new VaapiHardwareCapabilities([
       new VaapiProfileEntrypoint(
@@ -865,11 +867,14 @@ describe('VaapiPipelineBuilder tonemap', () => {
       video,
       null,
       null,
-      null,
+      opts.subtitles ?? null,
       null,
     );
 
-    const state = FfmpegState.create({ version: fakeVersion });
+    const state = FfmpegState.create({
+      version: fakeVersion,
+      ...(opts.stateVaapiDevice ? { vaapiDevice: opts.stateVaapiDevice } : {}),
+    });
 
     const desiredState = new FrameState({
       isAnamorphic: false,
@@ -1502,6 +1507,45 @@ describe('VaapiPipelineBuilder tonemap', () => {
 
       console.log(builtPipeline.getCommandArgs().join(' '));
     });
+  });
+
+  test('sets filter_hw_device to vaapi when opencl tonemap and subtitle burn-in are both active', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const pipeline = buildWithTonemap({
+      videoStream: createHdrVideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.TonemapOpencl]),
+        new Set(),
+      ),
+      stateVaapiDevice: '/dev/dri/renderD128',
+      subtitles: new SubtitlesInputSource(
+        new FileStreamSource('/path/to/video.mkv'),
+        [new EmbeddedSubtitleStream('pgs', 5, SubtitleMethods.Burn)],
+        SubtitleMethods.Burn,
+      ),
+    });
+
+    const args = pipeline.getCommandArgs();
+    const argsString = args.join(' ');
+
+    // Two hw devices are registered (opencl derived from vaapi for tonemap)...
+    expect(argsString).toContain('opencl=ocl@va');
+    // ...and subtitle burn-in goes through the hardware hwupload/overlay_vaapi path...
+    expect(argsString).toContain('hwupload');
+    // ...so ffmpeg must be told explicitly to default filters to the vaapi
+    // device, otherwise hwupload defaults to opencl and scale_vaapi/overlay_vaapi
+    // reject the resulting frames.
+    const filterHwDeviceIdx = args.indexOf('-filter_hw_device');
+    expect(filterHwDeviceIdx).toBeGreaterThan(-1);
+    expect(args[filterHwDeviceIdx + 1]).toEqual('va');
+
+    // The flag must be set before ffmpeg reaches any hwupload filter use.
+    const hwuploadIdx = argsString.indexOf('hwupload');
+    const filterHwDeviceArgIdx = argsString.indexOf('-filter_hw_device');
+    expect(filterHwDeviceArgIdx).toBeLessThan(hwuploadIdx);
   });
 });
 
