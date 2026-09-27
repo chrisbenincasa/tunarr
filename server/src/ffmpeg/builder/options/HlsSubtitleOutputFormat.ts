@@ -17,6 +17,13 @@ export class HlsSubtitleOutputFormat extends OutputOption {
     // Offset in seconds to align subtitle cue timestamps with the video PTS
     // timeline across transcode boundaries. Must match the video -output_ts_offset.
     private ptsOffsetSeconds: number = 0,
+    // Continues segment/file numbering from a prior ffmpeg process for this
+    // session instead of restarting at 0, so a client mid-poll on the
+    // previous subs.m3u8 doesn't get pointed at an overwritten filename.
+    // Note this does not affect the muxer's #EXT-X-MEDIA-SEQUENCE header,
+    // which ffmpeg always writes as 0 for a fresh process regardless --
+    // the HTTP layer re-derives that from on-disk segment numbers instead.
+    private segmentStartNumber: number = 0,
   ) {
     super();
   }
@@ -33,6 +40,10 @@ export class HlsSubtitleOutputFormat extends OutputOption {
     // when serving the segments.
     if (this.ptsOffsetSeconds > 0) {
       opts.push('-output_ts_offset', `${this.ptsOffsetSeconds}`);
+    }
+
+    if (this.segmentStartNumber > 0) {
+      opts.push('-segment_start_number', `${this.segmentStartNumber}`);
     }
 
     opts.push(

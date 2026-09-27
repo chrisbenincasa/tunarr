@@ -947,6 +947,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
                 this.ffmpegState.hlsBaseStreamUrl,
                 this.computeSubtitleMapRef(),
                 this.computeSubtitlePtsOffsetSeconds(),
+                this.ffmpegState.subtitleSegmentStartNumber ?? 0,
               ),
             );
           }
@@ -986,6 +987,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
                 this.ffmpegState.hlsBaseStreamUrl,
                 this.computeSubtitleMapRef(),
                 this.computeSubtitlePtsOffsetSeconds(),
+                this.ffmpegState.subtitleSegmentStartNumber ?? 0,
               ),
             );
           }

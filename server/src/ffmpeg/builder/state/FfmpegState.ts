@@ -88,6 +88,13 @@ export class FfmpegState {
   outputLocation: OutputLocation = StdoutOutputLocation;
   ptsOffset?: number;
   /**
+   * Segment/file number to continue the WebVTT subtitle sidecar's `segment`
+   * muxer output from, so a new ffmpeg process doesn't restart at
+   * `sub000000.vtt` and collide with a filename a client may still be
+   * referencing from the previous process's `subs.m3u8`.
+   */
+  subtitleSegmentStartNumber?: number;
+  /**
    * Explicit flag indicating whether this is the first transcode in the HLS
    * session. When set, it takes precedence over the `ptsOffset === 0` heuristic
    * for deciding whether to include `discont_start` in the ffmpeg HLS flags.
