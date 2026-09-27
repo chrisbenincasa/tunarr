@@ -137,6 +137,96 @@ describe('ArtworkService artwork derivation', () => {
   });
 });
 
+function storedArt(artworkType: Artwork['artworkType']): Artwork {
+  return {
+    artworkType,
+    sourcePath: `/media/video-${artworkType}.jpg`,
+    cachePath: `cache-${artworkType}`,
+  } as unknown as Artwork;
+}
+
+const localMediaSource = { uri: '', type: 'local', accessToken: '' };
+
+describe('ArtworkService stored artwork fallback', () => {
+  test('serves a local other video thumbnail when a poster is requested', async () => {
+    const service = makeService({
+      program: {
+        artwork: [storedArt('thumbnail')],
+        type: 'other_video',
+        mediaSourceId,
+        externalKey: '/media/video.mkv',
+        sourceType: 'local',
+      },
+      mediaSource: localMediaSource,
+    });
+
+    const result = await service.resolveArtwork(v4(), 'program', 'fanart', [
+      'poster',
+    ]);
+
+    expect(result.kind).toBe('file');
+    if (result.kind !== 'file') return;
+    expect(result.artworkType).toBe('thumbnail');
+  });
+
+  test('prefers the requested type over the stored fallback order', async () => {
+    const service = makeService({
+      program: {
+        artwork: [storedArt('poster'), storedArt('banner')],
+        type: 'movie',
+        mediaSourceId,
+        externalKey: '/media/movie.mkv',
+        sourceType: 'local',
+      },
+      mediaSource: localMediaSource,
+    });
+
+    const result = await service.resolveArtwork(v4(), 'program', 'banner');
+
+    expect(result.kind).toBe('file');
+    if (result.kind !== 'file') return;
+    expect(result.artworkType).toBe('banner');
+  });
+
+  test('does not stand a logo in for a display image', async () => {
+    const service = makeService({
+      program: {
+        artwork: [storedArt('logo')],
+        type: 'other_video',
+        mediaSourceId,
+        externalKey: '/media/video.mkv',
+        sourceType: 'local',
+      },
+      mediaSource: localMediaSource,
+    });
+
+    const result = await service.resolveArtwork(v4(), 'program', 'poster');
+
+    expect(result.kind).toBe('not-found');
+  });
+
+  test('prefers the source-derived url over an unrelated stored type', async () => {
+    const service = makeService({
+      program: {
+        artwork: [storedArt('fanart')],
+        type: 'movie',
+        mediaSourceId,
+        externalKey: 'abc123',
+        sourceType: 'plex',
+      },
+      mediaSource: {
+        uri: 'http://plex.local:32400',
+        type: 'plex',
+        accessToken: 'plex-token',
+      },
+    });
+
+    const result = await service.resolveArtwork(v4(), 'program', 'poster');
+
+    expect(result.kind).toBe('url');
+  });
+});
+
 const ACCESS_TOKEN = 'super-secret-media-server-token';
 const SOURCE_PATH = 'http://plex.local:32400/library/metadata/1/thumb/2';
 
