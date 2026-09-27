@@ -270,4 +270,33 @@ describe('WeightedFillerProgramIterator', () => {
       expect(ids).not.toContain('too-long');
     });
   });
+
+  describe('fork cooldown carryover', () => {
+    test('does not replay a filler the parent just scheduled', () => {
+      const programs = makeFillerPrograms(2, 15_000);
+      const slotDef = makeSlotDef();
+      const iterator = new WeightedFillerProgramIterator(
+        programs as never,
+        slotDef,
+        makeRandom(),
+        'pre',
+      );
+
+      // The parent fills a single break at one instant, so both
+      // programs end up inside their cooldown window.
+      const timeCursor = 1_000_000;
+      const first = iterator.current({ timeCursor, slotDuration: 60_000 });
+      iterator.next();
+      const second = iterator.current({ timeCursor, slotDuration: 60_000 });
+      iterator.next();
+
+      expect(first).not.toBeNull();
+      expect(second!.id).not.toBe(first!.id);
+
+      // A fork continues the parent's sequence, so it inherits what the
+      // parent just played and has nothing eligible in the same window.
+      const forked = iterator.fork();
+      expect(forked.current({ timeCursor, slotDuration: 60_000 })).toBeNull();
+    });
+  });
 });

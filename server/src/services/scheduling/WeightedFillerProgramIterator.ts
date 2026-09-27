@@ -70,6 +70,7 @@ export class WeightedFillerProgramIterator
 
   private static fromState(
     weightedPrograms: NonEmptyArray<WeightedProgram>,
+    lastSeenTimestampById: Map<string, number>,
     weightsById: Map<string, number>,
     maxDuration: number,
     slotDef: FillerProgrammingSlot,
@@ -82,7 +83,7 @@ export class WeightedFillerProgramIterator
       WeightedFillerProgramIterator.prototype,
     ) as WeightedFillerProgramIterator;
     instance.weightedPrograms = weightedPrograms;
-    instance.lastSeenTimestampById = new Map();
+    instance.lastSeenTimestampById = lastSeenTimestampById;
     instance.weightsById = weightsById;
     instance.maxDuration = maxDuration;
     instance.slotDef = slotDef;
@@ -102,6 +103,10 @@ export class WeightedFillerProgramIterator
 
     return WeightedFillerProgramIterator.fromState(
       copiedPrograms,
+      // A fork continues the parent's sequence, so it keeps the cooldown
+      // memory. Copying it keeps the two iterators independent while
+      // stopping the fork from replaying what the parent just scheduled.
+      new Map(this.lastSeenTimestampById),
       this.weightsById,
       this.maxDuration,
       this.slotDef,
