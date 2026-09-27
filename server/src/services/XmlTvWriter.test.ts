@@ -949,6 +949,53 @@ describe('XmlTvWriter', () => {
       expect(credits?.actor?.[0]?.role).toBe('Himself');
     });
 
+    test('escapes quotes, apostrophes, and ampersands in actor roles', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const xml = writeXmltv(
+        writer.generateXmltv([
+          {
+            channel: createChannel(),
+            programs: [
+              {
+                programming: {
+                  type: 'program',
+                  program: createFakeProgram({
+                    type: 'movie',
+                    credits: [
+                      {
+                        uuid: v4(),
+                        name: 'Michael Palin',
+                        type: 'cast',
+                        role: 'Various / "It\'s" man',
+                        artwork: [],
+                      },
+                      {
+                        uuid: v4(),
+                        name: 'Tómas Matos',
+                        type: 'cast',
+                        role: 'Lattes & Lashes Technician',
+                        artwork: [],
+                      },
+                    ],
+                  }),
+                },
+                start: Date.now(),
+                stop: Date.now() + 3600000,
+                title: 'Live at the Hollywood Bowl',
+              },
+            ],
+          },
+        ]),
+      );
+
+      expect(xml).toContain(
+        '<actor role="Various / &quot;It&#39;s&quot; man">Michael Palin</actor>',
+      );
+      expect(xml).toContain(
+        '<actor role="Lattes &amp; Lashes Technician">Tómas Matos</actor>',
+      );
+    });
+
     test('maps director, writer, and producer credits correctly', () => {
       const writer = new XmlTvWriter(inMemorySettingsDB());
       const channels: MaterializedChannelPrograms[] = [
