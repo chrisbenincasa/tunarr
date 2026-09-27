@@ -258,7 +258,7 @@ export class XmlTvWriter {
 
         xmlCreditList.push({
           _value: escape(credit.name),
-          ...(credit.role?.length && { role: credit.role }),
+          ...(credit.role?.length && { role: escape(credit.role) }),
           ...(this.settingsDB.featureFlags().xmltvCreditImagesEnabled &&
             credit.artwork?.length && {
               image: credit.artwork.map(
