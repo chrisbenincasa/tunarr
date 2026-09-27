@@ -22,7 +22,10 @@ export class HlsSubtitleOutputFormat extends OutputOption {
   }
 
   options(): string[] {
-    const opts: string[] = [];
+    // Without this, the segment muxer shifts the earliest surviving cue
+    // after a subtitle input seek back to timestamp 0 instead of to its
+    // actual (seeked) position.
+    const opts: string[] = ['-avoid_negative_ts', 'disabled'];
 
     // Apply the same PTS offset as the video output so subtitle cue timestamps
     // stay in sync with the MPEG-TS PTS clock across transcode boundaries.
