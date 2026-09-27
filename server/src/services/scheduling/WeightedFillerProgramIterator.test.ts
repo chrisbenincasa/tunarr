@@ -270,4 +270,62 @@ describe('WeightedFillerProgramIterator', () => {
       expect(ids).not.toContain('too-long');
     });
   });
+
+  describe('fork', () => {
+    // The scheduler forks while building slots, before any program is picked,
+    // so each test forks first and picks afterward.
+
+    test('a fork skips programs the parent aired inside their cooldown', () => {
+      const parent = new WeightedFillerProgramIterator(
+        makeFillerPrograms(2, 15_000) as never,
+        makeSlotDef(),
+        makeRandom(),
+        'pre',
+      );
+      const fork = parent.fork();
+      const state = { timeCursor: 1_000_000, slotDuration: 60_000 };
+
+      const fromParent = parent.current(state);
+      const fromFork = fork.current(state);
+
+      if (!fromParent || !fromFork) {
+        throw new Error('expected both iterators to pick a program');
+      }
+      expect(fromFork.id).not.toBe(fromParent.id);
+    });
+
+    test('the parent skips programs the fork aired inside their cooldown', () => {
+      const parent = new WeightedFillerProgramIterator(
+        makeFillerPrograms(2, 15_000) as never,
+        makeSlotDef(),
+        makeRandom(),
+        'pre',
+      );
+      const fork = parent.fork();
+      const state = { timeCursor: 1_000_000, slotDuration: 60_000 };
+
+      expect(fork.current(state)).not.toBeNull();
+      expect(fork.current(state)).not.toBeNull();
+
+      expect(parent.current(state)).toBeNull();
+    });
+
+    test('programs become eligible for both again once the cooldown passes', () => {
+      const parent = new WeightedFillerProgramIterator(
+        makeFillerPrograms(1, 15_000) as never,
+        makeSlotDef(),
+        makeRandom(),
+        'pre',
+      );
+      const fork = parent.fork();
+
+      const aired = parent.current({ timeCursor: 0, slotDuration: 60_000 });
+      const later = fork.current({ timeCursor: 60_000, slotDuration: 60_000 });
+
+      if (!aired || !later) {
+        throw new Error('expected both iterators to pick a program');
+      }
+      expect(later.id).toBe(aired.id);
+    });
+  });
 });

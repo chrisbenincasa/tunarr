@@ -162,12 +162,14 @@ describe('randomSlotsService', () => {
     // The iterators should be different objects (forked)
     expect(fillersSlotA[fillerListId]).not.toBe(fillersSlotB[fillerListId]);
 
-    // Draw 8 items from each and compare sequences
-    const state = { slotDuration: 30 * 60 * 1000, timeCursor: 0 };
+    // Draw 8 items from each and compare sequences. Each round is one slot
+    // later, so the previous round's picks are past their cooldown.
+    const slotDuration = 30 * 60 * 1000;
     const seqA: string[] = [];
     const seqB: string[] = [];
 
     for (let i = 0; i < 8; i++) {
+      const state = { slotDuration, timeCursor: i * slotDuration };
       const itemA = fillersSlotA[fillerListId].current(state);
       if (itemA && 'id' in itemA) {
         seqA.push(itemA.id ?? '');
@@ -183,6 +185,11 @@ describe('randomSlotsService', () => {
 
     expect(seqA.length).toBe(8);
     expect(seqB.length).toBe(8);
+
+    // Forks share cooldown, so within a round B never repeats what A picked.
+    for (let i = 0; i < 8; i++) {
+      expect(seqB[i]).not.toBe(seqA[i]);
+    }
 
     // The sequences should differ because fork() creates an independent PRNG copy
     // that diverges from the original after fork point
