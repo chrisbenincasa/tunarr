@@ -720,3 +720,107 @@ describe('random slot scheduler termination', () => {
     },
   );
 });
+
+describe('random slot pad coverage with a fallback filler', () => {
+  const oneMin = 60 * 1000;
+  const oneDay = 24 * 60 * oneMin;
+  const slotMs = 30 * oneMin;
+  const midnight = dayjs('2024-01-01T00:00:00.000Z');
+
+  const makeMovies = (
+    count: number,
+    durationMs: number,
+  ): SlotSchedulerProgram[] =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `movie-${i + 1}`,
+        title: `Movie ${i + 1}`,
+        type: 'movie',
+        duration: durationMs,
+      }),
+      parentFillerLists: [],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    })) satisfies SlotSchedulerProgram[];
+
+  const makeFillers = (
+    fillerListId: string,
+    count: number,
+    durationMs: number,
+  ): SlotSchedulerProgram[] =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `bumper-${i}`,
+        title: `Bumper ${i}`,
+        type: 'movie',
+        duration: durationMs,
+      }),
+      parentFillerLists: [fillerListId],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  test('the fallback covers the pad without flex covering it a second time', () => {
+    const fillerListId = randomUUID();
+
+    const scheduler = new RandomSlotScheduler({
+      type: 'random',
+      flexPreference: 'distribute',
+      maxDays: 1,
+      padMs: slotMs,
+      padStyle: 'episode',
+      randomDistribution: 'uniform',
+      lockWeights: false,
+      slots: [
+        {
+          weight: 100,
+          cooldownMs: 0,
+          durationSpec: { type: 'fixed', durationMs: slotMs },
+          type: 'movie',
+          order: 'next',
+          direction: 'asc',
+          filler: [
+            {
+              types: ['fallback'],
+              fillerListId,
+              fillerOrder: 'shuffle_prefer_short',
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = scheduler.generateSchedule(
+      [
+        ...makeMovies(60, 25 * oneMin),
+        ...makeFillers(fillerListId, 5, 2 * oneMin),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    // A 25 minute movie in a 30 minute slot gets a 5 minute pad, covered by the
+    // fallback. The cursor has to advance past that pad: otherwise the pad
+    // boundary check at the top of the loop still sees it as uncovered, adds a
+    // flex item over the same 5 minutes, and the lineup drifts past the window.
+    const shape = result.lineup
+      .slice(0, 4)
+      .map((item) =>
+        item.type === 'content' && 'id' in item
+          ? `content:${item.id}`
+          : `${item.type}:${item.duration / oneMin}min`,
+      );
+
+    expect(shape).toEqual([
+      'content:movie-1',
+      'filler:5min',
+      'content:movie-2',
+      'filler:5min',
+    ]);
+    expect(result.lineup.filter((item) => item.type === 'flex')).toHaveLength(0);
+    // maxDays: 1 fills up to start + (maxDays + 1) days. 96 slots of 30 minutes
+    // is 2880 minutes; with the pad covered twice it comes out at 3360.
+    expect(sumBy(result.lineup, 'duration')).toBe(2 * oneDay);
+  });
+});
