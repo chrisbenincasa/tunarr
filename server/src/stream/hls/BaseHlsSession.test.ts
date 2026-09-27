@@ -18,6 +18,10 @@ class TestHlsSession extends BaseHlsSession {
     return this.minSegmentRequested;
   }
 
+  get minSubtitleSegment() {
+    return this.minSubtitleSegmentRequested;
+  }
+
   protected getHlsOptions(): DeepRequired<HlsOptions> {
     return {
       hlsDeleteThreshold: 3,
@@ -70,8 +74,8 @@ describe('BaseHlsSession', () => {
       session.onSegmentRequested('192.168.1.1', 'data000010.ts');
       session.onSegmentRequested('192.168.1.2', 'data000020.ts');
 
-      expect(session.minByIp.get('192.168.1.1')).toBe(10);
-      expect(session.minByIp.get('192.168.1.2')).toBe(20);
+      expect(session.minByIp.get('192.168.1.1')?.video).toBe(10);
+      expect(session.minByIp.get('192.168.1.2')?.video).toBe(20);
       expect(session.minSegment).toBe(10);
     });
 
@@ -148,7 +152,7 @@ describe('BaseHlsSession', () => {
       session.removeConnection('192.168.1.2');
 
       // Device 1 is unaffected
-      expect(session.minByIp.get('192.168.1.1')).toBe(10);
+      expect(session.minByIp.get('192.168.1.1')?.video).toBe(10);
       expect(session.minSegment).toBe(10);
     });
 
@@ -198,6 +202,33 @@ describe('BaseHlsSession', () => {
       expect(session.minByIp.has('192.168.1.1')).toBe(true);
       expect(session.minByIp.has('192.168.1.2')).toBe(true);
       expect(session.minSegment).toBe(50);
+    });
+
+    it('tracks video (.ts) and subtitle (.vtt) segment numbers independently for the same client', () => {
+      // Subtitle segments are produced far more sparsely than video segments,
+      // so their segment numbers are unrelated and must not clobber each
+      // other in the same client's tracked state.
+      session.onSegmentRequested('192.168.1.1', 'data000024.ts');
+      session.onSegmentRequested('192.168.1.1', 'sub000005.vtt');
+
+      expect(session.minByIp.get('192.168.1.1')).toEqual({
+        video: 24,
+        subtitle: 5,
+      });
+      expect(session.minSegment).toBe(24);
+      expect(session.minSubtitleSegment).toBe(5);
+    });
+
+    it('a low-numbered subtitle request does not collapse the video floor, and vice versa', () => {
+      session.onSegmentRequested('192.168.1.1', 'data000100.ts');
+      session.onSegmentRequested('192.168.1.2', 'data000140.ts');
+      session.onSegmentRequested('192.168.1.2', 'sub000003.vtt');
+
+      // Client 2's most recent request was a low-numbered subtitle segment —
+      // this must not drag the video floor down to 3, nor should client 1's
+      // high video number inflate the subtitle floor.
+      expect(session.minSegment).toBe(100);
+      expect(session.minSubtitleSegment).toBe(3);
     });
   });
 });

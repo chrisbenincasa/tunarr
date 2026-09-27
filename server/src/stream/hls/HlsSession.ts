@@ -167,7 +167,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   async trimSubtitlePlaylist(filterOpts?: FilterBeforeSegmentNumber) {
     filterOpts ??= {
       type: 'before_segment_number',
-      segmentNumber: this.minSegmentRequested,
+      segmentNumber: this.minSubtitleSegmentRequested,
       segmentsToKeepBefore: 10,
     };
     return Result.attemptAsync(async () => {
