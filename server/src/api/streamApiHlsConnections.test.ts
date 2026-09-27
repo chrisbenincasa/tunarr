@@ -167,8 +167,8 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
     for (const [token, conn] of Object.entries(session.connections())) {
       expect(token).toBe(conn.ip);
     }
-    expect(session.minByIp.get('203.0.113.10')).toBe(100);
-    expect(session.minByIp.get('203.0.113.20')).toBe(10);
+    expect(session.minByIp.get('203.0.113.10')?.video).toBe(100);
+    expect(session.minByIp.get('203.0.113.20')?.video).toBe(10);
     expect(session.minSegment).toBe(10); // window anchored to departed client
 
     // B goes quiet past the staleness window; A keeps heartbeating

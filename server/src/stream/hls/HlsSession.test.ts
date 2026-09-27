@@ -122,6 +122,46 @@ describe('HlsSession', () => {
       expect(trimResult!.sequence).toBe(20);
       expect(trimResult!.playlist).toContain('#EXT-X-MEDIA-SEQUENCE:20');
     });
+
+    test('a client that has only ever requested an old video segment does not drag down the subtitle floor', async () => {
+      // Regression test for the "media sequence changed unexpectedly: 24 ->
+      // 13" bug: before BaseHlsSession tracked video/subtitle segment
+      // numbers independently, the default trim floor
+      // (`minSegmentRequested`) was a single per-IP value shared across
+      // both numbering spaces. A client that connected but has so far only
+      // fetched an old, low-numbered video segment would report that low
+      // number as its "last requested segment" — which then incorrectly
+      // became part of the *subtitle* trim's floor too, even though it has
+      // nothing to do with subtitle segment numbers, dragging the reported
+      // sequence back down on the next poll.
+      const session = makeSession(dir.name);
+      const workingDir = session.workingDirectory;
+      await fs.mkdir(workingDir, { recursive: true });
+
+      const lines = [
+        '#EXTM3U',
+        '#EXT-X-VERSION:3',
+        '#EXT-X-TARGETDURATION:4',
+        '#EXT-X-MEDIA-SEQUENCE:0',
+      ];
+      for (let i = 0; i < 60; i++) {
+        lines.push('#EXTINF:4.000000,', `sub${String(i).padStart(6, '0')}.vtt`);
+      }
+      await fs.writeFile(path.join(workingDir, 'subs.m3u8'), lines.join('\n'));
+
+      // Client A has been following subtitles and is caught up.
+      session.onSegmentRequested('192.168.1.1', 'sub000050.vtt');
+      // Client B is lagging behind on video and hasn't touched subtitles.
+      session.onSegmentRequested('192.168.1.2', 'data000015.ts');
+
+      const result = await session.trimSubtitlePlaylist();
+      expect(result.isSuccess()).toBe(true);
+      const trimResult = result.get();
+      expect(trimResult).toBeDefined();
+      // Floor should come from client A's subtitle position (50), not
+      // client B's unrelated low video number (15).
+      expect(trimResult!.sequence).toBe(40);
+    });
   });
 
   describe('getLastSubtitleSegmentNumber (private)', () => {

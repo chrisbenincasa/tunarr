@@ -6,7 +6,7 @@ import { isNonEmptyString } from '@/util/index.js';
 import retry from 'async-retry';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { filter, isError, isNaN, isString, minBy, some } from 'lodash-es';
+import { filter, isError, isNaN, isString, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
@@ -16,6 +16,14 @@ import { serverOptions } from '../../globals.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 
 export const SegmentNameRegex = /\D+(\d+)\.(ts|mp4|vtt)/;
+
+// Tracks the most recently requested segment number per client IP, split by
+// numbering space: video (.ts/.mp4) and subtitle (.vtt) segments are produced
+// at very different cadences and must not be conflated into a single floor.
+type SegmentRequestRecord = {
+  video?: number;
+  subtitle?: number;
+};
 
 export abstract class BaseHlsSession<
   HlsSessionOptsT extends BaseHlsSessionOptions = BaseHlsSessionOptions,
@@ -33,14 +41,28 @@ export abstract class BaseHlsSession<
 
   protected transcodedUntil?: Dayjs;
 
-  protected _minByIp = new Map<string, number>();
+  protected _minByIp = new Map<string, SegmentRequestRecord>();
+
+  private minRequestedFor(kind: keyof SegmentRequestRecord): number {
+    let min: number | undefined;
+    for (const record of this._minByIp.values()) {
+      const value = record[kind];
+      if (value === undefined) {
+        continue;
+      }
+      if (min === undefined || value < min) {
+        min = value;
+      }
+    }
+    return min ?? 0;
+  }
 
   protected get minSegmentRequested(): number {
-    if (this._minByIp.size === 0) {
-      return 0;
-    }
+    return this.minRequestedFor('video');
+  }
 
-    return minBy([...this._minByIp.entries()], ([_, seg]) => seg)?.[1] ?? 0;
+  protected get minSubtitleSegmentRequested(): number {
+    return this.minRequestedFor('subtitle');
   }
 
   constructor(
@@ -86,11 +108,13 @@ export abstract class BaseHlsSession<
   onSegmentRequested(clientIp: string, filename: string) {
     const base = basename(filename);
     const matches = base.match(SegmentNameRegex);
-    if (matches && matches.length > 1) {
-      const m = matches[1]!;
-      const parsed = parseInt(m);
+    if (matches && matches.length > 2) {
+      const parsed = parseInt(matches[1]!);
       if (!isNaN(parsed)) {
-        this._minByIp.set(clientIp, parsed);
+        const kind: keyof SegmentRequestRecord =
+          matches[2] === 'vtt' ? 'subtitle' : 'video';
+        const existing = this._minByIp.get(clientIp) ?? {};
+        this._minByIp.set(clientIp, { ...existing, [kind]: parsed });
       }
     }
   }
