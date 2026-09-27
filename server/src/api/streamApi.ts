@@ -331,6 +331,27 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           .send(playlist.playlist);
       }
 
+      if (
+        req.params.file === 'subs.m3u8' &&
+        (req.params.sessionType === 'hls' ||
+          req.params.sessionType === 'hls_direct_v2')
+      ) {
+        const playlistResult = await (
+          session as HlsSession
+        ).trimSubtitlePlaylist();
+        if (playlistResult.isFailure()) {
+          logger.error(playlistResult.error);
+          return res.status(500).send('Error retrieving subtitle playlist');
+        }
+        const playlist = playlistResult.get();
+        if (!playlist) {
+          return res.status(404).send('Subtitle playlist not found');
+        }
+        return res
+          .type('application/vnd.apple.mpegurl')
+          .send(playlist.playlist);
+      }
+
       session.onSegmentRequested(req.ip, req.params.file);
 
       if (req.params.file.endsWith('.vtt')) {

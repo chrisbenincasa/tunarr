@@ -310,6 +310,7 @@ export class FfmpegStreamFactory {
       encoding,
       isFirstTranscode,
       emitEndList,
+      subtitleSegmentStartNumber,
     },
     lineupItem,
   }: StreamSessionCreateArgs): Promise<Maybe<TranscodeSessionResult>> {
@@ -422,6 +423,7 @@ export class FfmpegStreamFactory {
         duration,
         ptsOffset,
         isFirstTranscode,
+        subtitleSegmentStartNumber,
         emitEndList: emitEndList ?? false,
         threadCount: isPassthrough ? 0 : this.transcodeConfig.threadCount,
         copyAllStreams: isPassthrough,

@@ -68,6 +68,11 @@ export type StreamOptions = {
   extraInputHeaders?: Record<string, string>;
   outputFormat: OutputFormat;
   ptsOffset?: number;
+  /**
+   * Segment/file number to continue the WebVTT subtitle sidecar's `segment`
+   * muxer output from across an HLS session's ffmpeg process restarts.
+   */
+  subtitleSegmentStartNumber?: number;
   streamMode: ChannelStreamMode;
   /** How the pipeline should encode this stream. Defaults to 'transcode'. */
   encoding?: StreamEncoding;
