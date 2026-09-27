@@ -3,6 +3,7 @@ import type { FillerProgrammingSlot } from '@tunarr/types/api';
 import { MersenneTwister19937, Random } from 'random-js';
 import { describe, expect, test } from 'vitest';
 import { createFakeProgramOrm } from '../../testing/fakes/entityCreators.ts';
+import type { WeightedProgram } from './ProgramIterator.ts';
 import type { SlotSchedulerProgram } from './slotSchedulerUtil.ts';
 import { WeightedFillerProgramIterator } from './WeightedFillerProgramIterator.ts';
 
@@ -326,6 +327,73 @@ describe('WeightedFillerProgramIterator', () => {
         throw new Error('expected both iterators to pick a program');
       }
       expect(later.id).toBe(aired.id);
+    });
+  });
+
+  describe('duration weighting', () => {
+    const filler = (uuid: string, duration: number): SlotSchedulerProgram => ({
+      ...createFakeProgramOrm({ uuid, title: uuid, type: 'movie', duration }),
+      parentFillerLists: [],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    });
+
+    // Deliberately not ordered by duration. The iterator sorts its own
+    // copy for the duration cutoff in current(), and every weight has to
+    // stay attached to the program it was computed from.
+    const programs = [
+      filler('p60', 60_000),
+      filler('p15', 15_000),
+      filler('p120', 120_000),
+      filler('p30', 30_000),
+    ];
+
+    function weightsByUuid(
+      order: 'shuffle_prefer_short' | 'shuffle_prefer_long',
+      durationWeighting: 'linear' | 'log',
+    ): Map<string, number> {
+      const iterator = new WeightedFillerProgramIterator(
+        programs as never,
+        makeSlotDef({ order, durationWeighting }),
+        makeRandom(),
+        'pre',
+      );
+      const weighted = (
+        iterator as unknown as { weightedPrograms: WeightedProgram[] }
+      ).weightedPrograms;
+      return new Map(weighted.map((wp) => [wp.program.uuid, wp.currentWeight]));
+    }
+
+    test('prefer_short with linear weighting favors the shortest programs', () => {
+      const weights = weightsByUuid('shuffle_prefer_short', 'linear');
+      expect(weights.get('p15')).toBeCloseTo(0.4118, 4);
+      expect(weights.get('p30')).toBeCloseTo(0.3529, 4);
+      expect(weights.get('p60')).toBeCloseTo(0.2353, 4);
+      expect(weights.get('p120')).toBeCloseTo(0, 4);
+    });
+
+    test('prefer_short with log weighting favors the shortest programs', () => {
+      const weights = weightsByUuid('shuffle_prefer_short', 'log');
+      expect(weights.get('p15')).toBeCloseTo(0.3925, 4);
+      expect(weights.get('p30')).toBeCloseTo(0.2875, 4);
+      expect(weights.get('p60')).toBeCloseTo(0.1962, 4);
+      expect(weights.get('p120')).toBeCloseTo(0.1238, 4);
+    });
+
+    test('prefer_long with linear weighting favors the longest programs', () => {
+      const weights = weightsByUuid('shuffle_prefer_long', 'linear');
+      expect(weights.get('p15')).toBeCloseTo(0.0667, 4);
+      expect(weights.get('p30')).toBeCloseTo(0.1333, 4);
+      expect(weights.get('p60')).toBeCloseTo(0.2667, 4);
+      expect(weights.get('p120')).toBeCloseTo(0.5333, 4);
+    });
+
+    test('prefer_long with log weighting favors the longest programs', () => {
+      const weights = weightsByUuid('shuffle_prefer_long', 'log');
+      expect(weights.get('p15')).toBeCloseTo(0.2256, 4);
+      expect(weights.get('p30')).toBeCloseTo(0.2419, 4);
+      expect(weights.get('p60')).toBeCloseTo(0.2581, 4);
+      expect(weights.get('p120')).toBeCloseTo(0.2744, 4);
     });
   });
 });

@@ -38,7 +38,12 @@ export class WeightedFillerProgramIterator
         programs.map((p) => this.maxDuration - p.duration + 1),
       )
       .with(['shuffle_prefer_short', 'log'], () =>
-        programs.map((p) => Math.log(1 / p.duration)),
+        // log(1 / duration) is negative for every duration in ms, and
+        // normalizing by that negative sum ordered the weights by
+        // log(duration), which is the prefer_long shape. This keeps them
+        // positive and ordered by how much shorter than the longest
+        // program each one is.
+        programs.map((p) => Math.log(1 + this.maxDuration / p.duration)),
       )
       .with(['shuffle_prefer_long', 'linear'], () =>
         programs.map((p) => p.duration),
@@ -58,12 +63,20 @@ export class WeightedFillerProgramIterator
     // TODO: Precalculate slices because we know all of the relevant
     // slot lengths at creation time. Then we don't have to calculate
     // the correct slices each time.
-    this.weightedPrograms = sortBy(programs, (p) => p.duration).map(
-      (p, i) =>
+    //
+    // Sort the programs together with their weights: current() walks this
+    // array in duration order for its cutoff, and the weights are computed
+    // in the caller's order, so sorting the programs on their own paired
+    // them with the wrong weights.
+    this.weightedPrograms = sortBy(
+      programs.map((p, idx) => ({ p, weight: normalizedWeights[idx]! })),
+      (entry) => entry.p.duration,
+    ).map(
+      ({ p, weight }) =>
         ({
           program: p,
-          currentWeight: normalizedWeights[i]!,
-          originalWeight: normalizedWeights[i]!,
+          currentWeight: weight,
+          originalWeight: weight,
         }) satisfies WeightedProgram,
     ) as NonEmptyArray<WeightedProgram>;
   }
