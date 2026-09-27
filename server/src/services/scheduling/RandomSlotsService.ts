@@ -426,6 +426,11 @@ export class RandomSlotScheduler {
               ...fallback,
               duration: padMs,
             });
+            // The fallback occupies the pad, so the cursor has to move past it
+            // like it does for the flex below. Without this the pad boundary
+            // check at the top of the loop still sees the cursor inside the pad
+            // and covers the same span a second time.
+            context.advanceTime(padMs);
           } else {
             context.pushOrExtendFlex(padMs);
           }
