@@ -275,11 +275,7 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
 
       <FormProvider {...methods}>
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-          <Paper
-            component="fieldset"
-            disabled={locked}
-            sx={{ m: 0, mb: 2, p: [2, 3], border: 0, minWidth: 0 }}
-          >
+          <Paper sx={{ p: [2, 3], mb: 2 }}>
             <Controller
               control={control}
               name="name"
@@ -288,6 +284,7 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
                 <TextField
                   {...field}
                   label={t`Profile Name`}
+                  disabled={locked}
                   error={!!error}
                   helperText={error?.message}
                   fullWidth
@@ -312,6 +309,7 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
                 size="small"
                 startIcon={<AddCircle />}
                 onClick={handleAddRule}
+                sx={{ display: locked ? 'none' : undefined }}
               >
                 <Trans>Add Rule</Trans>
               </Button>
@@ -351,6 +349,7 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
                     }
                   }}
                   onValidateCondition={validateCondition}
+                  readOnly={locked}
                 />
               ))}
             </Stack>
