@@ -66,7 +66,7 @@ This plan replaces the legacy path entirely: every stream resolves through profi
 ### PR 2 — Preview + Basic-mode fields (target: `main`)
 
 - [ ] **13. Rule preview** (D15, D16)
-  - [ ] `POST /stream-selection-profiles/preview`: inline unsaved profile + program ID + optional channel ID; evaluates only that profile; reports "no match — would cascade" without cascading
+  - [x] `POST /stream-selection-profiles/preview`: inline unsaved profile + program ID + optional channel ID; evaluates only that profile; reports "no match — would cascade" without cascading
   - [ ] Collapsible "Test" panel at the bottom of the editor: program search, optional channel select, Run button, per-rule matched/unmatched, chosen streams, highlight winning rule; remember last program for the session; "Troubleshoot on channel X" link
 - [ ] **14. CEL context + Basic-mode fields** (D17)
   - [ ] Add `program.showTitle`, `program.genres` (episode ∪ show genres), `program.libraryId` to the CEL context (loaded at stream start)
