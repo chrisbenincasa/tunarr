@@ -117,6 +117,13 @@ export class ProgramDB implements IProgramDB {
     return this.basicProg.getProgramsByIds(ids, batchSize);
   }
 
+  getLineupProgramsByIds(
+    ids: string[] | readonly string[],
+    batchSize?: number,
+  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+    return this.basicProg.getLineupProgramsByIds(ids, batchSize);
+  }
+
   getProgramGrouping(
     id: string,
   ): Promise<Maybe<ProgramGroupingOrmWithRelations>> {

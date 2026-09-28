@@ -97,6 +97,21 @@ export class BasicProgramRepository {
     return results;
   }
 
+  async getLineupProgramsByIds(
+    ids: string[] | readonly string[],
+    batchSize: number = 500,
+  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+    const results: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[] = [];
+    for (const idChunk of chunk(uniq(ids), batchSize)) {
+      const res = await this.drizzleDB.query.program.findMany({
+        where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
+        with: LineupProgramRelations,
+      });
+      results.push(...res);
+    }
+    return results;
+  }
+
   /**
    * Given an array of program IDs, return the set of those IDs which exist in
    * the database.

@@ -71,6 +71,15 @@ export interface IProgramDB {
     batchSize?: number,
   ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
 
+  /**
+   * Loads programs with only the relations a lineup needs. See
+   * `LineupProgramRelations`.
+   */
+  getLineupProgramsByIds(
+    ids: string[] | readonly string[],
+    batchSize?: number,
+  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
+
   getProgramGrouping(
     id: string,
   ): Promise<Maybe<ProgramGroupingOrmWithRelations>>;

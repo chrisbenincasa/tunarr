@@ -39,7 +39,9 @@ export class MaterializeLineupCommand {
       }),
     );
 
-    const dbPrograms = await this.programDB.getProgramsByIds([...programIds]);
+    const dbPrograms = await this.programDB.getLineupProgramsByIds([
+      ...programIds,
+    ]);
     const materializedPrograms =
       await this.materializePrograms.execute(dbPrograms);
 
