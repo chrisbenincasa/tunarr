@@ -1,6 +1,8 @@
-import { NewTranscodeConfigSettingsPage } from '@/pages/settings/NewTranscodeConfigSettingsPage';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
+// Transcode configs moved under Profiles; keep old links working.
 export const Route = createFileRoute('/settings/ffmpeg_/new')({
-  component: NewTranscodeConfigSettingsPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/profiles/transcode/new', replace: true });
+  },
 });

@@ -57,7 +57,7 @@ This plan replaces the legacy path entirely: every stream resolves through profi
   - [x] API: set/clear/copy/invalid id → 400 for channel, filler, custom show; locked profile update/delete rejected; delete nulls references and resets pointer
   - [x] Factory: profile subtitle action applies regardless of the old toggle
 - [x] **12. QA** (D19) — Claude drives Chrome against `pnpm turbo dev`, records GIFs, checklist in the PR description:
-  - [ ] Transcode config page restructure: edit/cancel, unsaved-changes alert, advanced toggle, breadcrumbs, and Save pass. Open: New still links to `/settings/ffmpeg/new` (the old Settings tab), and there is no `/profiles/transcode/new` route. The table's Edit link also points at `/settings/ffmpeg/$id`.
+  - [x] Transcode config page restructure: create/edit/cancel, unsaved-changes alert, advanced toggle, nav/breadcrumbs, Save button
   - [x] Profiles page: default pointer, built-in view/duplicate, usage popover, delete + confirm
   - [x] Channel / filler / custom show selects
   - [x] Migration on a seeded DB with mixed legacy subtitle configs — verify dedup and naming

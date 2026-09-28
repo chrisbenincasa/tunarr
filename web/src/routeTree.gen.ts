@@ -43,6 +43,7 @@ import { Route as LibrarySmart_collectionsIndexRouteImport } from './routes/libr
 import { Route as ChannelsChannelIdIndexRouteImport } from './routes/channels_/$channelId/index';
 import { Route as SettingsFfmpegNewRouteImport } from './routes/settings/ffmpeg_/new';
 import { Route as SettingsFfmpegConfigIdRouteImport } from './routes/settings/ffmpeg_/$configId';
+import { Route as ProfilesTranscodeNewRouteImport } from './routes/profiles/transcode_/new';
 import { Route as ProfilesTranscodeConfigIdRouteImport } from './routes/profiles/transcode_/$configId';
 import { Route as ProfilesStreamSelectionNewRouteImport } from './routes/profiles/stream-selection_/new';
 import { Route as ProfilesStreamSelectionProfileIdRouteImport } from './routes/profiles/stream-selection_/$profileId';
@@ -240,6 +241,11 @@ const SettingsFfmpegConfigIdRoute = SettingsFfmpegConfigIdRouteImport.update({
   path: '/ffmpeg/$configId',
   getParentRoute: () => SettingsRoute,
 } as any);
+const ProfilesTranscodeNewRoute = ProfilesTranscodeNewRouteImport.update({
+  id: '/profiles/transcode_/new',
+  path: '/profiles/transcode/new',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const ProfilesTranscodeConfigIdRoute =
   ProfilesTranscodeConfigIdRouteImport.update({
     id: '/profiles/transcode_/$configId',
@@ -421,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/profiles/stream-selection/$profileId': typeof ProfilesStreamSelectionProfileIdRoute;
   '/profiles/stream-selection/new': typeof ProfilesStreamSelectionNewRoute;
   '/profiles/transcode/$configId': typeof ProfilesTranscodeConfigIdRoute;
+  '/profiles/transcode/new': typeof ProfilesTranscodeNewRoute;
   '/settings/ffmpeg/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg/new': typeof SettingsFfmpegNewRoute;
   '/channels/$channelId/': typeof ChannelsChannelIdIndexRoute;
@@ -477,6 +484,7 @@ export interface FileRoutesByTo {
   '/profiles/stream-selection/$profileId': typeof ProfilesStreamSelectionProfileIdRoute;
   '/profiles/stream-selection/new': typeof ProfilesStreamSelectionNewRoute;
   '/profiles/transcode/$configId': typeof ProfilesTranscodeConfigIdRoute;
+  '/profiles/transcode/new': typeof ProfilesTranscodeNewRoute;
   '/settings/ffmpeg/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg/new': typeof SettingsFfmpegNewRoute;
   '/channels/$channelId': typeof ChannelsChannelIdIndexRoute;
@@ -538,6 +546,7 @@ export interface FileRoutesById {
   '/profiles/stream-selection_/$profileId': typeof ProfilesStreamSelectionProfileIdRoute;
   '/profiles/stream-selection_/new': typeof ProfilesStreamSelectionNewRoute;
   '/profiles/transcode_/$configId': typeof ProfilesTranscodeConfigIdRoute;
+  '/profiles/transcode_/new': typeof ProfilesTranscodeNewRoute;
   '/settings/ffmpeg_/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg_/new': typeof SettingsFfmpegNewRoute;
   '/channels_/$channelId/': typeof ChannelsChannelIdIndexRoute;
@@ -600,6 +609,7 @@ export interface FileRouteTypes {
     | '/profiles/stream-selection/$profileId'
     | '/profiles/stream-selection/new'
     | '/profiles/transcode/$configId'
+    | '/profiles/transcode/new'
     | '/settings/ffmpeg/$configId'
     | '/settings/ffmpeg/new'
     | '/channels/$channelId/'
@@ -656,6 +666,7 @@ export interface FileRouteTypes {
     | '/profiles/stream-selection/$profileId'
     | '/profiles/stream-selection/new'
     | '/profiles/transcode/$configId'
+    | '/profiles/transcode/new'
     | '/settings/ffmpeg/$configId'
     | '/settings/ffmpeg/new'
     | '/channels/$channelId'
@@ -716,6 +727,7 @@ export interface FileRouteTypes {
     | '/profiles/stream-selection_/$profileId'
     | '/profiles/stream-selection_/new'
     | '/profiles/transcode_/$configId'
+    | '/profiles/transcode_/new'
     | '/settings/ffmpeg_/$configId'
     | '/settings/ffmpeg_/new'
     | '/channels_/$channelId/'
@@ -764,6 +776,7 @@ export interface RootRouteChildren {
   ProfilesStreamSelectionProfileIdRoute: typeof ProfilesStreamSelectionProfileIdRoute;
   ProfilesStreamSelectionNewRoute: typeof ProfilesStreamSelectionNewRoute;
   ProfilesTranscodeConfigIdRoute: typeof ProfilesTranscodeConfigIdRoute;
+  ProfilesTranscodeNewRoute: typeof ProfilesTranscodeNewRoute;
   LibrarySmart_collectionsIndexRoute: typeof LibrarySmart_collectionsIndexRoute;
   LibraryTrashIndexRoute: typeof LibraryTrashIndexRoute;
   Media_sourcesMediaSourceIdIndexRoute: typeof Media_sourcesMediaSourceIdIndexRoute;
@@ -1009,6 +1022,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/ffmpeg/$configId';
       preLoaderRoute: typeof SettingsFfmpegConfigIdRouteImport;
       parentRoute: typeof SettingsRoute;
+    };
+    '/profiles/transcode_/new': {
+      id: '/profiles/transcode_/new';
+      path: '/profiles/transcode/new';
+      fullPath: '/profiles/transcode/new';
+      preLoaderRoute: typeof ProfilesTranscodeNewRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
     '/profiles/transcode_/$configId': {
       id: '/profiles/transcode_/$configId';
@@ -1352,6 +1372,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfilesStreamSelectionProfileIdRoute: ProfilesStreamSelectionProfileIdRoute,
   ProfilesStreamSelectionNewRoute: ProfilesStreamSelectionNewRoute,
   ProfilesTranscodeConfigIdRoute: ProfilesTranscodeConfigIdRoute,
+  ProfilesTranscodeNewRoute: ProfilesTranscodeNewRoute,
   LibrarySmart_collectionsIndexRoute: LibrarySmart_collectionsIndexRoute,
   LibraryTrashIndexRoute: LibraryTrashIndexRoute,
   Media_sourcesMediaSourceIdIndexRoute: Media_sourcesMediaSourceIdIndexRoute,
