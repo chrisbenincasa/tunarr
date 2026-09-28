@@ -16,7 +16,10 @@ import { useSnackbar } from 'notistack';
 import { useCallback, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { Imported } from '../../helpers/constants.ts';
-import { enumerateSyncedItems } from '../../helpers/programUtil.ts';
+import {
+  defaultLibrarySearchFilter,
+  enumerateSyncedItems,
+} from '../../helpers/programUtil.ts';
 import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 import useStore from '../../store/index.ts';
 import {
@@ -62,11 +65,14 @@ export default function SelectedProgrammingActions({
         selectedLibrary?.type === Imported ||
         selectedServer.type === 'local'
       ) {
-        prom = enumerateSyncedItems(
-          selectedServer.id,
-          selectedLibrary?.type === Imported ? selectedLibrary.view.id : null,
-          currentSearchRequest,
-        ).then((res) => {
+        const library =
+          selectedLibrary?.type === Imported ? selectedLibrary.view : undefined;
+        prom = enumerateSyncedItems(selectedServer.id, library?.id ?? null, {
+          ...currentSearchRequest,
+          filter:
+            currentSearchRequest?.filter ??
+            defaultLibrarySearchFilter(selectedServer, library),
+        }).then((res) => {
           const selectedMedia = res.map((program) =>
             match(program)
               .returnType<SelectedMedia>()
