@@ -31,7 +31,9 @@ type FormValues = {
   type: ReplicationType;
 };
 
-const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
+const AddReplicateModalContent = ({
+  onClose,
+}: Omit<AddReplicateModalProps, 'open'>) => {
   const { t } = useLingui();
   const replicateProgram = useReplicatePrograms();
 
@@ -58,7 +60,7 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
   };
 
   return (
-    <Dialog open={open}>
+    <>
       <DialogTitle>
         <Trans>Replicate Programs</Trans>
       </DialogTitle>
@@ -119,8 +121,15 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
           <Trans>Save</Trans>
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+// The content mounts only while the dialog is open, so it does no work when closed.
+const AddReplicateModal = ({ open, ...props }: AddReplicateModalProps) => (
+  <Dialog open={open}>
+    <AddReplicateModalContent {...props} />
+  </Dialog>
+);
 
 export default AddReplicateModal;

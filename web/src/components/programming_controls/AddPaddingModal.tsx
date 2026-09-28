@@ -27,7 +27,9 @@ type AddPaddingModalProps = {
   onClose: () => void;
 };
 
-const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
+const AddPaddingModalContent = ({
+  onClose,
+}: Omit<AddPaddingModalProps, 'open'>) => {
   const { t } = useLingui();
   const [currentPadding, setCurrentPadding] = useState<StartTimePadding | null>(
     null,
@@ -46,7 +48,7 @@ const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
   );
 
   return (
-    <Dialog open={open}>
+    <>
       <DialogTitle>
         <Trans>Pad Start Times</Trans>
       </DialogTitle>
@@ -95,8 +97,15 @@ const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
           <Trans>Add Padding</Trans>
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+// The content mounts only while the dialog is open, so it does no work when closed.
+const AddPaddingModal = ({ open, ...props }: AddPaddingModalProps) => (
+  <Dialog open={open}>
+    <AddPaddingModalContent {...props} />
+  </Dialog>
+);
 
 export default AddPaddingModal;
