@@ -12,56 +12,56 @@ This plan replaces the legacy path entirely: every stream resolves through profi
 
 ### PR 1 — Engine, migration, assignment, docs (target: `dev`)
 
-- [ ] **1. Resolver cascade**
-  - [ ] Resolver returns an ordered chain: program → source (custom show *or* filler list) → channel → default pointer → built-in (D1, D2)
-  - [ ] Evaluator walks the chain; cascades only when no rule condition matches (D3)
-  - [ ] Provenance: result records the matching level + profile (D4)
-  - [ ] Evaluator no-match path no longer returns `audioStreams[0]` (replaced by cascade)
-- [ ] **2. Custom-show level** (D2)
-  - [ ] Populate `customShowId` in `StreamProgramCalculator.ts:366` (slot iterators and stored lineups already carry it)
-  - [ ] `custom_show.stream_selection_profile_id` column + migration (`pnpm drizzle-kit generate`)
-  - [ ] Resolver: custom show and filler list form one "source" level; if both IDs are present, log a warning and pick deterministically
-- [ ] **3. Built-in profile + default pointer** (D6, D7)
-  - [ ] `locked` column on `stream_selection_profiles`; seed the built-in row with a fixed UUID (first audio via default heuristic, no subtitles)
-  - [ ] API rejects update/delete of locked profiles
-  - [ ] Default pointer in settings (`settings.json`); reset to built-in when its target is deleted
-- [ ] **4. Remove subtitle gate** (D5) — delete the `subtitlesEnabled` checks in `FfmpegStreamFactory.buildTranscodeInputs` (:535) and `buildPassthroughSubtitles` (:625-630)
-- [ ] **5. Legacy → profile fixer (release N)** (D8, D9)
-  - [ ] One-shot fixer in `tasks/fixers/` with a done marker in settings
-  - [ ] "Migrated Defaults" profile = global `languagePreferences` audio + subtitles `disable`; point the default pointer at it (skip if there is nothing to migrate)
-  - [ ] One profile per distinct subtitle config among channels with subtitles on, named from content (e.g. "Migrated: eng, spa subtitles"); assign to those channels
-  - [ ] Old columns / subtitle-preferences table / `languagePreferences` are left in place, unused
-- [ ] **6. Profile deletion** (D10) — null `channel`/`filler_show`/`program`/`custom_show` references in app code inside the delete transaction; reset the default pointer if needed
-- [ ] **7. Assignment API**
-  - [ ] Channel: add `streamSelectionProfileId: z.uuid().nullable()` to `ChannelSchema` (`SaveableChannelSchema` inherits it as optional; `null` clears, omitted leaves unchanged); validate existence in `channelsApi` POST/PUT (400); map in `BasicChannelRepository` save/update/copy and `channelConverters`
-  - [ ] Filler list: same field on filler list schemas, API, and repository
-  - [ ] Custom show: same field on custom show schemas, API, and repository
-  - [ ] Usage: `GET /stream-selection-profiles` returns the channels, filler lists, and custom shows using each profile (not just counts)
-  - [ ] Regenerate OpenAPI spec + web client
-- [ ] **8. Assignment UI** (D11, D12, D13)
-  - [ ] Channel Transcoding tab, "Audio & Subtitles" section: profile select (`Default (<name>)` + profiles), Edit / Create new links; remove the `subtitlesEnabled` toggle and `ChannelSubtitlePreferencesTable`
-  - [ ] Same select in `EditFillerListForm.tsx` and the custom show editor
-  - [ ] Profiles list page: default pointer select, locked built-in (lock icon; View read-only + Duplicate only), "Set as default" row action, "Default" chip
-  - [ ] Usage counts become a popover listing channels / filler lists / custom shows with links
-  - [ ] Delete confirmation lists usage and warns when deleting the default target
-  - [ ] Remove global language preferences from Settings → FFmpeg
-- [ ] **9. Evaluator trace + Troubleshoot refactor** (D14)
-  - [ ] Evaluator returns a trace per level walked: `{level, profileId, profileName, rules[{label, condition, matched}], chosen}`
-  - [ ] `TroubleshootService` calls the evaluator instead of its own rule loop (fixes subtitle drift; passes `fillerListId`/`customShowId`); UI renders the cascade trace
-- [ ] **10. Docs** (D18)
-  - [ ] `docs/configure/stream-selection.md`: concepts; resolution order (source → channel → default → built-in; program omitted); built-in + default pointer; upgrade notes; rule/action reference + CEL field table; recipes; debugging with Troubleshoot
-  - [ ] Update `docs/misc/troubleshooting.md` cross-links; remove/redirect docs for channel subtitle preferences and global language preferences
-- [ ] **11. Tests**
-  - [ ] Resolver/evaluator: cascade order, source level, matched-rule finality, built-in fallback, provenance
-  - [ ] Fixer: dedup, naming, pointer, idempotency (done marker), nothing-to-migrate case
-  - [ ] API: set/clear/copy/invalid id → 400 for channel, filler, custom show; locked profile update/delete rejected; delete nulls references and resets pointer
-  - [ ] Factory: profile subtitle action applies regardless of the old toggle
-- [ ] **12. QA** (D19) — Claude drives Chrome against `pnpm turbo dev`, records GIFs, checklist in the PR description:
-  - [ ] Transcode config page restructure: create/edit/cancel, unsaved-changes alert, advanced toggle, nav/breadcrumbs, Save button
-  - [ ] Profiles page: default pointer, built-in view/duplicate, usage popover, delete + confirm
-  - [ ] Channel / filler / custom show selects
-  - [ ] Migration on a seeded DB with mixed legacy subtitle configs — verify dedup and naming
-  - [ ] Troubleshoot cascade trace
+- [x] **1. Resolver cascade**
+  - [x] Resolver returns an ordered chain: program → source (custom show *or* filler list) → channel → default pointer → built-in (D1, D2)
+  - [x] Evaluator walks the chain; cascades only when no rule condition matches (D3)
+  - [x] Provenance: result records the matching level + profile (D4)
+  - [x] Evaluator no-match path no longer returns `audioStreams[0]` (replaced by cascade)
+- [x] **2. Custom-show level** (D2)
+  - [x] Populate `customShowId` in `StreamProgramCalculator.ts:366` (slot iterators and stored lineups already carry it)
+  - [x] `custom_show.stream_selection_profile_id` column + migration (`pnpm drizzle-kit generate`)
+  - [x] Resolver: custom show and filler list form one "source" level; if both IDs are present, log a warning and pick deterministically
+- [x] **3. Built-in profile + default pointer** (D6, D7)
+  - [x] `locked` column on `stream_selection_profiles`; seed the built-in row with a fixed UUID (first audio via default heuristic, no subtitles)
+  - [x] API rejects update/delete of locked profiles
+  - [x] Default pointer in settings (`settings.json`); reset to built-in when its target is deleted
+- [x] **4. Remove subtitle gate** (D5) — delete the `subtitlesEnabled` checks in `FfmpegStreamFactory.buildTranscodeInputs` (:535) and `buildPassthroughSubtitles` (:625-630)
+- [x] **5. Legacy → profile fixer (release N)** (D8, D9)
+  - [x] One-shot fixer in `tasks/fixers/` with a done marker in settings
+  - [x] "Migrated Defaults" profile = global `languagePreferences` audio + subtitles `disable`; point the default pointer at it (skip if there is nothing to migrate)
+  - [x] One profile per distinct subtitle config among channels with subtitles on, named from content (e.g. "Migrated: eng, spa subtitles"); assign to those channels
+  - [x] Old columns / subtitle-preferences table / `languagePreferences` are left in place, unused
+- [x] **6. Profile deletion** (D10) — null `channel`/`filler_show`/`program`/`custom_show` references in app code inside the delete transaction; reset the default pointer if needed
+- [x] **7. Assignment API**
+  - [x] Channel: add `streamSelectionProfileId: z.uuid().nullable()` to `ChannelSchema` (`SaveableChannelSchema` inherits it as optional; `null` clears, omitted leaves unchanged); validate existence in `channelsApi` POST/PUT (400); map in `BasicChannelRepository` save/update/copy and `channelConverters`
+  - [x] Filler list: same field on filler list schemas, API, and repository
+  - [x] Custom show: same field on custom show schemas, API, and repository
+  - [x] Usage: `GET /stream-selection-profiles` returns the channels, filler lists, and custom shows using each profile (not just counts)
+  - [x] Regenerate OpenAPI spec + web client
+- [x] **8. Assignment UI** (D11, D12, D13)
+  - [x] Channel Transcoding tab, "Audio & Subtitles" section: profile select (`Default (<name>)` + profiles), Edit / Create new links; remove the `subtitlesEnabled` toggle and `ChannelSubtitlePreferencesTable`
+  - [x] Same select in `EditFillerListForm.tsx` and the custom show editor
+  - [x] Profiles list page: default pointer select, locked built-in (lock icon; View read-only + Duplicate only), "Set as default" row action, "Default" chip
+  - [x] Usage counts become a popover listing channels / filler lists / custom shows with links
+  - [x] Delete confirmation lists usage and warns when deleting the default target
+  - [x] Remove global language preferences from Settings → FFmpeg
+- [x] **9. Evaluator trace + Troubleshoot refactor** (D14)
+  - [x] Evaluator returns a trace per level walked: `{level, profileId, profileName, rules[{label, condition, matched}], chosen}`
+  - [x] `TroubleshootService` calls the evaluator instead of its own rule loop (fixes subtitle drift; passes `fillerListId`/`customShowId`); UI renders the cascade trace
+- [x] **10. Docs** (D18)
+  - [x] `docs/configure/stream-selection.md`: concepts; resolution order (source → channel → default → built-in; program omitted); built-in + default pointer; upgrade notes; rule/action reference + CEL field table; recipes; debugging with Troubleshoot
+  - [x] Update `docs/misc/troubleshooting.md` cross-links; remove/redirect docs for channel subtitle preferences and global language preferences
+- [x] **11. Tests**
+  - [x] Resolver/evaluator: cascade order, source level, matched-rule finality, built-in fallback, provenance
+  - [x] Fixer: dedup, naming, pointer, idempotency (done marker), nothing-to-migrate case
+  - [x] API: set/clear/copy/invalid id → 400 for channel, filler, custom show; locked profile update/delete rejected; delete nulls references and resets pointer
+  - [x] Factory: profile subtitle action applies regardless of the old toggle
+- [x] **12. QA** (D19) — Claude drives Chrome against `pnpm turbo dev`, records GIFs, checklist in the PR description:
+  - [x] Transcode config page restructure: create/edit/cancel, unsaved-changes alert, advanced toggle, nav/breadcrumbs, Save button
+  - [x] Profiles page: default pointer, built-in view/duplicate, usage popover, delete + confirm
+  - [x] Channel / filler / custom show selects
+  - [x] Migration on a seeded DB with mixed legacy subtitle configs — verify dedup and naming
+  - [ ] Troubleshoot cascade trace (not run: QA DB has no media or FFmpeg; covered by evaluator chain tests)
 
 ### PR 2 — Preview + Basic-mode fields (target: `dev`)
 
