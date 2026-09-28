@@ -1086,6 +1086,11 @@ msgstr ""
 msgid "Codec"
 msgstr ""
 
+#. placeholder {0}: item.name
+#: src/components/Drawer.tsx
+msgid "Collapse {0}"
+msgstr ""
+
 #: src/components/channel_config/plex/PlexProgrammingSelector.tsx
 #~ msgid "Collections"
 #~ msgstr ""
@@ -1975,6 +1980,11 @@ msgstr ""
 
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Existing query: {filterString}"
+msgstr ""
+
+#. placeholder {0}: item.name
+#: src/components/Drawer.tsx
+msgid "Expand {0}"
 msgstr ""
 
 #: src/pages/settings/FeaturesSettingsPage.tsx

@@ -1086,6 +1086,11 @@ msgstr "关闭"
 msgid "Codec"
 msgstr "编码格式"
 
+#. placeholder {0}: item.name
+#: src/components/Drawer.tsx
+msgid "Collapse {0}"
+msgstr ""
+
 #: src/components/channel_config/plex/PlexProgrammingSelector.tsx
 #~ msgid "Collections"
 #~ msgstr "Collections"
@@ -1976,6 +1981,11 @@ msgstr "排除季"
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Existing query: {filterString}"
 msgstr "当前查询：{filterString}"
+
+#. placeholder {0}: item.name
+#: src/components/Drawer.tsx
+msgid "Expand {0}"
+msgstr ""
 
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Experimental Features"
