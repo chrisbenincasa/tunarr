@@ -2,7 +2,6 @@ import { getApiSystemFeatureFlagsOptions } from '@/generated/@tanstack/react-que
 import { useSettings } from '@/store/settings/selectors.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
-  Collapse,
   Divider,
   FormControl,
   FormControlLabel,
@@ -36,7 +35,7 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
-import { ChannelSubtitlePreferencesTable } from './ChannelSubtitlePreferencesTable.tsx';
+import { StreamSelectionProfileSelect } from '../profiles/StreamSelectionProfileSelect.tsx';
 
 const watermarkPositionOptions: {
   value: Watermark['position'];
@@ -99,17 +98,10 @@ export default function ChannelTranscodingConfig() {
   const etvNextEnabledGlobally =
     featureFlags?.flags.ersatzTvNextEnabled === true;
 
-  const [
-    watermark,
-    transcodeConfigId,
-    subtitlesEnabled,
-    fadePeriod,
-    streamMode,
-    useEtvNext,
-  ] = watch([
+  const [watermark, transcodeConfigId, fadePeriod, streamMode, useEtvNext] =
+    watch([
     'watermark',
     'transcodeConfigId',
-    'subtitlesEnabled',
     'watermark.fadeConfig.0.periodMins',
     'streamMode',
     'useEtvNext',
@@ -263,45 +255,28 @@ export default function ChannelTranscodingConfig() {
             />
           )}
         </Box>
-        <Stack gap={1}>
-          <Stack>
-            <Typography sx={{ mb: 1 }} variant="h5">
-              <Trans>Audio &amp; Subtitles</Trans>
-            </Typography>
-            <Typography variant="subtitle1">
-              <Trans>
-                Override global audio and subtitle settings for this channel.
-              </Trans>
-            </Typography>
-            <Divider sx={{ my: 2 }} />
-            <FormControlLabel
-              label={t`Enable Subtitles`}
-              sx={{
-                width: 'auto',
-              }}
-              control={
-                <Controller
-                  control={control}
-                  name="subtitlesEnabled"
-                  render={({ field }) => (
-                    <Switch {...field} checked={field.value} />
-                  )}
-                />
-              }
-            />
-            <Collapse in={subtitlesEnabled}>
-              <Divider sx={{ my: 2 }} />
-              <Typography>
-                <Trans>
-                  Configure subtitle preferences. Preferences are evaluated in
-                  order of priority. The first matching subtitle stream on a
-                  program will be used.
-                </Trans>
-              </Typography>
-              <ChannelSubtitlePreferencesTable />
-            </Collapse>
-          </Stack>
-        </Stack>
+        <Box>
+          <Typography sx={{ mb: 1 }} variant="h5">
+            <Trans>Audio &amp; Subtitles</Trans>
+          </Typography>
+          <Typography variant="subtitle1">
+            <Trans>
+              A stream selection profile chooses the audio and subtitle streams
+              for programs on this channel. Filler lists and custom shows can
+              assign their own profile, which takes precedence.
+            </Trans>
+          </Typography>
+          <Controller
+            control={control}
+            name="streamSelectionProfileId"
+            render={({ field }) => (
+              <StreamSelectionProfileSelect
+                value={field.value ?? null}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        </Box>
         <Box>
           <Typography variant="h5">
             <Trans>Watermark</Trans>

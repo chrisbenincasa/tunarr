@@ -97,6 +97,7 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
     subtitlesEnabled: channel.subtitlesEnabled,
     useEtvNext: channel.useEtvNext,
     subtitlePreferences: channel.subtitlePreferences ?? [],
+    streamSelectionProfileId: channel.streamSelectionProfileId ?? null,
   };
 }
 
@@ -122,9 +123,8 @@ const EditChannelTabsProps: EditChannelTabProps[] = [
     fields: [
       'watermark',
       'streamMode',
-      'subtitlesEnabled',
       'useEtvNext',
-      'subtitlePreferences',
+      'streamSelectionProfileId',
     ],
   },
 ];

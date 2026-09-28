@@ -10,9 +10,9 @@ export default function StreamSelectionProfilesPage() {
       </Typography>
       <Typography variant="body1" sx={{ mb: 2 }}>
         <Trans>
-          Stream selection profiles control which audio and subtitle streams are
-          selected during transcoding. Assign profiles to channels, filler
-          lists, or individual programs.
+          Stream selection profiles control which audio and subtitle streams
+          play. Assign profiles to channels, filler lists, and custom shows.
+          Anything without an assigned profile uses the default profile.
         </Trans>
       </Typography>
       <Paper sx={{ p: [1, 2] }}>
