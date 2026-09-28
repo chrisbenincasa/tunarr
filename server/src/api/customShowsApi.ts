@@ -220,7 +220,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         body: CreateCustomShowRequestSchema,
         response: {
           201: CustomShowSchema,
-          400: z.string(),
+          400: z.object({ error: z.string() }),
         },
       },
     },
@@ -230,7 +230,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         req.body.streamSelectionProfileId,
       );
       if (profileError) {
-        return res.status(400).send(profileError);
+        return res.status(400).send({ error: profileError });
       }
 
       const newId = await req.serverCtx.customShowDB.createShow(req.body);

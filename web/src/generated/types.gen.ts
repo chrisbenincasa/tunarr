@@ -7743,7 +7743,9 @@ export type CreateCustomShowErrors = {
     /**
      * Default Response
      */
-    400: string;
+    400: {
+        error: string;
+    };
 };
 
 export type CreateCustomShowError = CreateCustomShowErrors[keyof CreateCustomShowErrors];
