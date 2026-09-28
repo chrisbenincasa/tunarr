@@ -39,12 +39,11 @@ type AddBlockShuffleModalProps = {
   canUsePerfectSync: (size: number) => boolean;
 };
 
-const AddBlockShuffleModal = ({
-  open,
+const AddBlockShuffleModalContent = ({
   onClose,
   blockShuffle,
   canUsePerfectSync,
-}: AddBlockShuffleModalProps) => {
+}: Omit<AddBlockShuffleModalProps, 'open'>) => {
   const { t } = useLingui();
   const { control, watch, getValues } = useForm<BlockShuffleConfig>({
     defaultValues: {
@@ -75,7 +74,7 @@ const AddBlockShuffleModal = ({
   const isRandom = watch('shuffleType') === 'Random';
 
   return (
-    <Dialog open={open}>
+    <>
       <DialogTitle>
         <Trans>Block Shuffle</Trans>
       </DialogTitle>
@@ -280,8 +279,18 @@ const AddBlockShuffleModal = ({
           <Trans>Block Shuffle</Trans>
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+// The content mounts only while the dialog is open, so it does no work when closed.
+const AddBlockShuffleModal = ({
+  open,
+  ...props
+}: AddBlockShuffleModalProps) => (
+  <Dialog open={open}>
+    <AddBlockShuffleModalContent {...props} />
+  </Dialog>
+);
 
 export default AddBlockShuffleModal;
