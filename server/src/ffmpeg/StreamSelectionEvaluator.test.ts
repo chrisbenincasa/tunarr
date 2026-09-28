@@ -12,8 +12,10 @@ import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLi
 import type { StreamSelectionCelContext } from '../services/CelEvaluationService.ts';
 import {
   buildCelContext,
+  evaluateStreamSelectionChain,
   evaluateStreamSelectionProfile,
   evaluateSubtitleSelection,
+  evaluateSubtitleSelectionChain,
   resolveAudioAction,
 } from './StreamSelectionEvaluator.ts';
 
@@ -88,10 +90,14 @@ function makeCelService(evaluateResult: boolean | ((expr: string) => boolean)) {
   };
 }
 
-function makeProfile(rules: StreamSelectionRule[]): StreamSelectionProfile {
+function makeProfile(
+  rules: StreamSelectionRule[],
+  uuid = 'profile-1',
+): StreamSelectionProfile {
   return {
-    uuid: 'profile-1',
-    name: 'Test Profile',
+    uuid,
+    name: `Test Profile ${uuid}`,
+    locked: false,
     rules,
   };
 }
@@ -1794,6 +1800,183 @@ describe('evaluateStreamSelectionProfile', () => {
   });
 });
 
+// ── evaluateStreamSelectionChain ────────────────────────────────────────────
+
+describe('evaluateStreamSelectionChain', () => {
+  const audioStreams: NonEmptyArray<AudioStreamDetails> = [
+    makeAudioStream({ index: 0, languageCodeISO6392: 'eng' }),
+    makeAudioStream({ index: 1, languageCodeISO6392: 'jpn', default: true }),
+  ];
+  const subtitleStreams: SubtitleStreamDetails[] = [
+    makeSubtitleStream({ index: 2, languageCodeISO6392: 'eng' }),
+  ];
+  const celContext = buildCelContext(
+    audioStreams,
+    subtitleStreams,
+    { name: 'Test', number: 1 },
+    { title: 'Test Movie', type: 'movie' },
+  );
+  const lineupItem = makeLineupItem();
+
+  const programProfile = makeProfile(
+    [
+      makeRule({
+        label: 'anime',
+        condition: 'is_anime',
+        audioAction: { type: 'by_language', languages: ['jpn'] },
+      }),
+    ],
+    'program',
+  );
+  const channelProfile = makeProfile(
+    [
+      makeRule({
+        label: 'channel rule',
+        condition: 'channel_cond',
+        audioAction: { type: 'by_language', languages: ['eng'] },
+      }),
+    ],
+    'channel',
+  );
+  const builtInProfile = makeProfile([makeRule({ label: 'Default' })], 'built');
+
+  const chain = [
+    { level: 'program' as const, sourceId: 'prog-1', profile: programProfile },
+    { level: 'channel' as const, sourceId: 'ch-1', profile: channelProfile },
+    { level: 'built_in' as const, profile: builtInProfile },
+  ];
+
+  it('stops at the first profile with a matching rule', async () => {
+    const celService = makeCelService(
+      (expr) => expr === 'is_anime' || expr === 'channel_cond',
+    );
+
+    const result = await evaluateStreamSelectionChain(
+      chain,
+      audioStreams,
+      subtitleStreams,
+      celService,
+      celContext,
+      lineupItem,
+    );
+
+    expect(result.audioStream.languageCodeISO6392).toBe('jpn');
+    expect(result.matchedRule?.label).toBe('anime');
+    expect(result.levels.map((l) => l.level)).toEqual(['program']);
+  });
+
+  it('cascades to the next profile when no rule condition matches', async () => {
+    const celService = makeCelService((expr) => expr === 'channel_cond');
+
+    const result = await evaluateStreamSelectionChain(
+      chain,
+      audioStreams,
+      subtitleStreams,
+      celService,
+      celContext,
+      lineupItem,
+    );
+
+    expect(result.audioStream.languageCodeISO6392).toBe('eng');
+    expect(result.levels).toMatchObject([
+      { level: 'program', matchedRuleIndex: null },
+      { level: 'channel', sourceId: 'ch-1', matchedRuleIndex: 0 },
+    ]);
+  });
+
+  it('does not cascade when a matched rule finds no stream', async () => {
+    const noSubtitleMatch = makeProfile(
+      [
+        makeRule({
+          condition: 'matches',
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['fre'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+            preferTextBased: false,
+          },
+        }),
+      ],
+      'no-fre',
+    );
+    const fallback = makeProfile(
+      [
+        makeRule({
+          condition: 'true',
+          subtitleAction: { type: 'default', preferTextBased: false },
+        }),
+      ],
+      'fallback',
+    );
+    const celService = makeCelService(true);
+
+    const result = await evaluateStreamSelectionChain(
+      [
+        { level: 'channel', profile: noSubtitleMatch },
+        { level: 'built_in', profile: fallback },
+      ],
+      audioStreams,
+      subtitleStreams,
+      celService,
+      celContext,
+      lineupItem,
+    );
+
+    expect(result.subtitleStream).toBeNull();
+    expect(result.levels).toHaveLength(1);
+  });
+
+  it('traces every rule in an evaluated profile', async () => {
+    const profile = makeProfile(
+      [
+        makeRule({ label: 'a', condition: 'no' }),
+        makeRule({ label: 'b', condition: 'yes' }),
+        makeRule({ label: 'c', condition: 'yes' }),
+      ],
+      'multi',
+    );
+    const celService = makeCelService((expr) => expr === 'yes');
+
+    const result = await evaluateStreamSelectionChain(
+      [{ level: 'channel', profile }],
+      audioStreams,
+      subtitleStreams,
+      celService,
+      celContext,
+      lineupItem,
+    );
+
+    expect(result.levels[0]).toMatchObject({
+      profileId: 'multi',
+      matchedRuleIndex: 1,
+      rules: [
+        { label: 'a', matched: false },
+        { label: 'b', matched: true },
+        { label: 'c', matched: true },
+      ],
+    });
+  });
+
+  it('uses the default audio stream if nothing in the chain matches', async () => {
+    const celService = makeCelService(false);
+
+    const result = await evaluateStreamSelectionChain(
+      chain,
+      audioStreams,
+      subtitleStreams,
+      celService,
+      celContext,
+      lineupItem,
+    );
+
+    expect(result.audioStream.index).toBe(1);
+    expect(result.subtitleStream).toBeNull();
+    expect(result.matchedRule).toBeNull();
+  });
+});
+
 // ── ISO 639-2 bibliographic vs terminological codes ─────────────────────────
 //
 // ISO 639-2 gives 20 languages two 3-letter codes: a bibliographic (/B) code
@@ -2331,6 +2514,102 @@ describe('evaluateSubtitleSelection', () => {
       profile,
       undefined,
       makeCelService(true),
+      celContext,
+      lineupItem,
+    );
+
+    expect(result).toBeNull();
+  });
+});
+
+// ── evaluateSubtitleSelectionChain ──────────────────────────────────────────
+
+describe('evaluateSubtitleSelectionChain', () => {
+  const audioStreams: NonEmptyArray<AudioStreamDetails> = [
+    makeAudioStream({ index: 0, languageCodeISO6392: 'eng' }),
+  ];
+  const subtitleStreams: SubtitleStreamDetails[] = [
+    makeSubtitleStream({
+      index: 2,
+      languageCodeISO6392: 'eng',
+      type: 'external',
+    }),
+    makeSubtitleStream({
+      index: 3,
+      languageCodeISO6392: 'jpn',
+      type: 'external',
+    }),
+  ];
+  const celContext = buildCelContext(
+    audioStreams,
+    subtitleStreams,
+    { name: 'Test', number: 1 },
+    { title: 'Test Movie', type: 'movie' },
+  );
+  const lineupItem = makeLineupItem();
+
+  const byLanguage = (language: string) => ({
+    type: 'by_language' as const,
+    languages: [language],
+    filterType: 'any' as const,
+    allowImageBased: true,
+    allowExternal: true,
+    preferTextBased: false,
+  });
+
+  const chain = [
+    {
+      level: 'program' as const,
+      sourceId: 'prog-1',
+      profile: makeProfile(
+        [
+          makeRule({
+            condition: 'is_anime',
+            subtitleAction: byLanguage('jpn'),
+          }),
+        ],
+        'program',
+      ),
+    },
+    {
+      level: 'channel' as const,
+      sourceId: 'ch-1',
+      profile: makeProfile(
+        [makeRule({ condition: 'true', subtitleAction: byLanguage('eng') })],
+        'channel',
+      ),
+    },
+  ];
+
+  it('uses the first profile with a matching rule', async () => {
+    const result = await evaluateSubtitleSelectionChain(
+      chain,
+      subtitleStreams,
+      makeCelService(true),
+      celContext,
+      lineupItem,
+    );
+
+    expect(result?.index).toBe(3);
+  });
+
+  it('cascades to the next profile when no rule condition matches', async () => {
+    const result = await evaluateSubtitleSelectionChain(
+      chain,
+      subtitleStreams,
+      makeCelService((expr) => expr === 'true'),
+      celContext,
+      lineupItem,
+    );
+
+    expect(result?.index).toBe(2);
+  });
+
+  it('returns null when no profile in the chain matches', async () => {
+    const result = await evaluateSubtitleSelectionChain(
+      chain,
+      subtitleStreams,
+      makeCelService(false),
       celContext,
       lineupItem,
     );

@@ -75,7 +75,7 @@ function makeHarness(opts: {
   subtitles: SubtitleRow[];
   sourceType?: 'jellyfin' | 'emby' | 'plex';
   replacePaths?: { localPath: string; serverPath: string }[];
-  subtitlesEnabled?: boolean;
+  mayPickSubtitles?: boolean;
   enableSubtitleExtraction?: boolean;
   downloadedPath?: string;
 }) {
@@ -151,7 +151,6 @@ function makeHarness(opts: {
       getChannel: () =>
         Promise.resolve({
           uuid: CHANNEL_ID,
-          subtitlesEnabled: opts.subtitlesEnabled ?? true,
         }),
     } as never,
     {
@@ -173,6 +172,10 @@ function makeHarness(opts: {
       getJellyfinApiClientForMediaSource: () => Promise.resolve(apiClient),
       getEmbyApiClientForMediaSource: () => Promise.resolve(apiClient),
       getPlexApiClientForMediaSource: () => Promise.resolve(apiClient),
+    } as never,
+    {
+      channelMayPickSubtitles: () =>
+        Promise.resolve(opts.mayPickSubtitles ?? true),
     } as never,
   );
 
@@ -396,9 +399,9 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
     expect(harness.setSubtitlePath).not.toHaveBeenCalled();
   });
 
-  it('skips channels that have subtitles turned off', async () => {
+  it('skips channels whose stream selection profiles never select subtitles', async () => {
     const harness = makeHarness({
-      subtitlesEnabled: false,
+      mayPickSubtitles: false,
       downloadedPath: CACHED_SUBTITLE_PATH,
       subtitles: [
         {

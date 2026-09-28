@@ -27,12 +27,15 @@ import {
 import type {
   BackupSettings,
   GlobalMediaSourceSettings,
+  StreamSelectionSettings,
 } from '@tunarr/types/schemas';
 import {
+  defaultStreamSelectionSettings,
   FfmpegSettingsSchema,
   GlobalMediaSourceSettingsSchema,
   HdhrSettingsSchema,
   PlexStreamSettingsSchema,
+  StreamSelectionSettingsSchema,
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
 import { injectable } from 'inversify';
@@ -63,6 +66,9 @@ export const SettingsSchema = z.object({
   plexStream: PlexStreamSettingsSchema,
   ffmpeg: FfmpegSettingsSchema,
   mediaSource: GlobalMediaSourceSettingsSchema,
+  streamSelection: StreamSelectionSettingsSchema.default(
+    () => defaultStreamSelectionSettings,
+  ),
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -74,6 +80,9 @@ export const MigrationStateSchema = z.object({
     .describe('Whether a legacy migration was performed'),
   isFreshSettings: z.boolean().default(true).optional(),
   hasMigratedTo1_0: z.boolean().optional().default(false),
+  // Set once the legacy language/subtitle preferences have been converted
+  // into stream selection profiles.
+  hasMigratedLegacyStreamSelection: z.boolean().optional().default(false),
 });
 
 export type MigrationState = z.infer<typeof MigrationStateSchema>;
@@ -115,6 +124,8 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
   migration: {
     legacyMigration: false,
     hasMigratedTo1_0: false,
+    // Fresh installs have no legacy preferences to convert.
+    hasMigratedLegacyStreamSelection: true,
   },
   settings: {
     clientId: uuidv4(),
@@ -123,6 +134,7 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     plexStream: defaultPlexStreamSettings,
     ffmpeg: defaultFfmpegSettings,
     mediaSource: defaultGlobalMediaSourceSettings,
+    streamSelection: defaultStreamSelectionSettings,
   },
   system: {
     backup: {
@@ -203,6 +215,10 @@ export class SettingsDB extends ITypedEventEmitter implements ISettingsDB {
 
   ffmpegSettings(): ReadableFfmpegSettings {
     return this.db.data.settings.ffmpeg;
+  }
+
+  streamSelectionSettings(): DeepReadonly<StreamSelectionSettings> {
+    return this.db.data.settings.streamSelection;
   }
 
   get ffprobePath(): string {

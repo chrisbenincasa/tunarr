@@ -1,11 +1,12 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 
-import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
-import type { LanguageTaggedStream } from '@/ffmpeg/StreamSelectionEvaluator.js';
+import type {
+  ContentBackedStreamLineupItem,
+  StreamLineupItem,
+} from '@/db/derived_types/StreamLineup.js';
 import {
   buildCelContext,
-  resolveAudioAction,
-  streamMatchesLanguage,
+  evaluateStreamSelectionChain,
 } from '@/ffmpeg/StreamSelectionEvaluator.js';
 import {
   defaultHlsOptions,
@@ -40,43 +41,12 @@ import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConvert
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { PlayerContext } from '../stream/PlayerStreamContext.ts';
 import type { ProgramStreamFactory } from '../stream/ProgramStreamFactory.ts';
-import type {
-  AudioStreamDetails,
-  SubtitleStreamDetails,
-} from '../stream/types.js';
 import { KEYS } from '../types/inject.js';
 import { TroubleshootSessionFolderName } from '../util/constants.ts';
 import { CelEvaluationService } from './CelEvaluationService.js';
 import { StreamSelectionProfileResolver } from './StreamSelectionProfileResolver.js';
 
 dayjs.extend(duration);
-
-/**
- * Find the first subtitle stream matching any of the requested languages, in
- * preference order, along with the language that matched.
- *
- * The troubleshoot report must agree with what playback would actually pick,
- * so this uses the same matching the stream selector does.
- */
-export function findSubtitleForLanguages<T extends LanguageTaggedStream>(
-  subtitleStreams: T[] | undefined,
-  languages: string[],
-): { stream: T; language: string } | undefined {
-  if (!subtitleStreams) {
-    return undefined;
-  }
-
-  for (const language of languages) {
-    const stream = subtitleStreams.find((s) =>
-      streamMatchesLanguage(s, language),
-    );
-    if (stream) {
-      return { stream, language };
-    }
-  }
-
-  return undefined;
-}
 
 @injectable()
 export class TroubleshootService {
@@ -275,93 +245,88 @@ export class TroubleshootService {
     // Stage 4: Stream Selection Trace (diagnostic only — the real stream
     // session will perform its own selection through the same code path)
     try {
-      const selectionCtx = {
+      // The request only names a program, so look for it in the channel's
+      // lineup to learn whether it plays from a filler list or custom show.
+      const lineupEntry = lineup?.items.find(
+        (item) => item.type === 'content' && item.id === program.uuid,
+      );
+      const fillerListId =
+        lineupEntry?.type === 'content' &&
+        isNonEmptyString(lineupEntry.fillerListId)
+          ? lineupEntry.fillerListId
+          : undefined;
+      const customShowId =
+        lineupEntry?.type === 'content' ? lineupEntry.customShowId : undefined;
+
+      const chain = await this.profileResolver.resolveChain({
         channelId: channel.uuid,
         programId: program.uuid,
-      };
-
-      const profile = await this.profileResolver.resolve(selectionCtx);
+        fillerListId,
+        customShowId,
+      });
 
       const audioStreams = streamDetails.streamDetails.audioDetails;
       const subtitleStreams = streamDetails.streamDetails.subtitleDetails;
 
-      const celContext = audioStreams
-        ? buildCelContext(
-            audioStreams,
-            subtitleStreams,
-            { name: channel.name, number: channel.number },
-            { title: program.title, type: program.type },
-          )
-        : undefined;
+      const trace: TroubleshootStreamSelectionTrace = { levels: [] };
 
-      const ruleTraces: TroubleshootStreamSelectionTrace = {
-        profileName: profile.name,
-        profileSource: 'resolved',
-        rules: [],
-      };
+      if (isNonEmptyArray(audioStreams)) {
+        const baseItem = {
+          program: { ...program, mediaSourceId: program.mediaSourceId },
+          duration: program.duration,
+          infiniteLoop: false,
+          programBeginMs: +dayjs(),
+          streamDuration: program.duration,
+        };
+        const selectionLineupItem: ContentBackedStreamLineupItem = fillerListId
+          ? { ...baseItem, type: 'commercial', fillerListId }
+          : { ...baseItem, type: 'program', customShowId };
 
-      let selectedAudio: AudioStreamDetails | undefined;
-      let selectedSubtitle: SubtitleStreamDetails | null | undefined;
-      let subtitleReason: string | undefined;
+        const celContext = buildCelContext(
+          audioStreams,
+          subtitleStreams,
+          { name: channel.name, number: channel.number },
+          { title: program.title, type: program.type },
+        );
 
-      if (celContext && isNonEmptyArray(audioStreams)) {
-        let matched = false;
-        for (const rule of profile.rules) {
-          const conditionResult = this.celService.evaluate(
-            rule.condition,
-            celContext,
-          );
-          const audioActionDesc = this.describeAudioAction(rule.audioAction);
-          const subtitleActionDesc = this.describeSubtitleAction(
-            rule.subtitleAction,
-          );
+        const evaluation = await evaluateStreamSelectionChain(
+          chain,
+          audioStreams,
+          subtitleStreams,
+          this.celService,
+          celContext,
+          selectionLineupItem,
+          { preferTextBased: true },
+        );
 
-          ruleTraces.rules.push({
-            label: rule.label,
-            condition: rule.condition,
-            matched: !!conditionResult,
-            audioAction: audioActionDesc,
-            subtitleAction: subtitleActionDesc,
-          });
+        trace.levels = evaluation.levels.map((levelTrace, levelIdx) => {
+          const profile = chain[levelIdx]?.profile;
+          return {
+            level: levelTrace.level,
+            sourceId: levelTrace.sourceId,
+            profileId: levelTrace.profileId,
+            profileName: levelTrace.profileName,
+            matched: levelTrace.matchedRuleIndex !== null,
+            rules: levelTrace.rules.map((ruleTrace, ruleIdx) => {
+              const rule = profile?.rules[ruleIdx];
+              return {
+                ...ruleTrace,
+                applied:
+                  levelIdx === evaluation.levels.length - 1 &&
+                  levelTrace.matchedRuleIndex === ruleIdx,
+                audioAction: rule
+                  ? this.describeAudioAction(rule.audioAction)
+                  : undefined,
+                subtitleAction: rule
+                  ? this.describeSubtitleAction(rule.subtitleAction)
+                  : undefined,
+              };
+            }),
+          };
+        });
 
-          if (conditionResult && !matched) {
-            matched = true;
-            selectedAudio = resolveAudioAction(rule.audioAction, audioStreams);
-
-            if (rule.subtitleAction.type === 'disable') {
-              selectedSubtitle = null;
-              subtitleReason = 'Disabled by stream selection rule';
-            } else if (rule.subtitleAction.type === 'default') {
-              selectedSubtitle =
-                subtitleStreams?.find((s) => s.default) ?? null;
-              subtitleReason = selectedSubtitle
-                ? 'Default subtitle stream'
-                : 'No default subtitle stream found';
-            } else {
-              selectedSubtitle = null;
-              subtitleReason = `No subtitle found for languages: ${rule.subtitleAction.languages.join(', ')}`;
-              const match = findSubtitleForLanguages(
-                subtitleStreams,
-                rule.subtitleAction.languages,
-              );
-              if (match) {
-                selectedSubtitle = match.stream;
-                subtitleReason = `Matched language: ${match.language}`;
-              }
-            }
-          }
-        }
-
-        if (!matched) {
-          selectedAudio = audioStreams[0];
-          subtitleReason = 'No rule matched, using defaults (no subtitles)';
-        }
-      } else {
-        subtitleReason = 'No audio streams available';
-      }
-
-      if (selectedAudio) {
-        ruleTraces.selectedAudioStream = {
+        const selectedAudio = evaluation.audioStream;
+        trace.selectedAudioStream = {
           index: selectedAudio.index,
           codec: selectedAudio.codec ?? 'unknown',
           language:
@@ -372,27 +337,35 @@ export class TroubleshootService {
           title: selectedAudio.title,
           default: selectedAudio.default,
         };
-      }
 
-      if (selectedSubtitle) {
-        ruleTraces.selectedSubtitleStream = {
-          index: selectedSubtitle.index ?? 0,
-          codec: selectedSubtitle.codec ?? 'unknown',
-          language:
-            selectedSubtitle.languageCodeISO6392 ??
-            selectedSubtitle.languageCodeISO6391 ??
-            selectedSubtitle.language,
-          type: selectedSubtitle.type,
-          default: selectedSubtitle.default,
-          forced: selectedSubtitle.forced,
-          sdh: selectedSubtitle.sdh,
-        };
+        const selectedSubtitle = evaluation.subtitleStream;
+        if (selectedSubtitle) {
+          trace.selectedSubtitleStream = {
+            index: selectedSubtitle.index ?? 0,
+            codec: selectedSubtitle.codec ?? 'unknown',
+            language:
+              selectedSubtitle.languageCodeISO6392 ??
+              selectedSubtitle.languageCodeISO6391 ??
+              selectedSubtitle.language,
+            type: selectedSubtitle.type,
+            default: selectedSubtitle.default,
+            forced: selectedSubtitle.forced,
+            sdh: selectedSubtitle.sdh,
+          };
+        } else {
+          trace.selectedSubtitleStream = null;
+          const ruleName = evaluation.matchedRule?.label ?? 'unlabeled rule';
+          trace.subtitleReason = !evaluation.matchedRule
+            ? 'No rule matched'
+            : evaluation.matchedRule.subtitleAction.type === 'disable'
+              ? `Disabled by rule "${ruleName}"`
+              : `No subtitle stream satisfied rule "${ruleName}"`;
+        }
       } else {
-        ruleTraces.selectedSubtitleStream = null;
+        trace.subtitleReason = 'No audio streams available';
       }
 
-      ruleTraces.subtitleReason = subtitleReason;
-      result.streamSelection = ruleTraces;
+      result.streamSelection = trace;
     } catch (err) {
       errors.push(`Stream selection: ${String(err)}`);
     }

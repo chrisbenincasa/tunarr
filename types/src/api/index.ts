@@ -96,6 +96,8 @@ export const CreateCustomShowRequestSchema = z.object({
   syncMediaSourceId: z.string().nullable(),
   syncMediaSourceType: z.enum(['plex']).nullable(),
   syncExternalPlaylistId: z.string().nullable(),
+  // Omitted leaves the assignment unchanged; null clears it.
+  streamSelectionProfileId: z.uuid().nullish(),
 });
 
 export type CreateCustomShowRequest = z.infer<
@@ -123,6 +125,8 @@ export const CreateFillerListRequestSchema = z.object({
       z.discriminatedUnion('type', [ContentProgramSchema, CustomProgramSchema]),
     )
     .min(1, 'A filler list must have at least one program.'),
+  // Omitted leaves the assignment unchanged; null clears it.
+  streamSelectionProfileId: z.uuid().nullish(),
 });
 
 export type CreateFillerListRequest = z.infer<

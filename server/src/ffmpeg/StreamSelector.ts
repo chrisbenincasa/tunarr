@@ -14,8 +14,8 @@ import type {
 } from '../stream/types.ts';
 import {
   buildCelContext,
-  evaluateStreamSelectionProfile,
-  evaluateSubtitleSelection,
+  evaluateStreamSelectionChain,
+  evaluateSubtitleSelectionChain,
 } from './StreamSelectionEvaluator.ts';
 import type { StreamSelectionHints } from './StreamSelectionEvaluator.ts';
 
@@ -46,12 +46,12 @@ export class StreamSelector {
     subtitleStreams,
     hints,
   }: StreamSelectRequest) {
-    const profile = await this.streamSelectionResolver.resolve(
+    const chain = await this.streamSelectionResolver.resolveChain(
       this.buildSelectionContext(channel, lineupItem),
     );
 
-    return await evaluateStreamSelectionProfile(
-      profile,
+    return await evaluateStreamSelectionChain(
+      chain,
       audioStreams,
       subtitleStreams,
       this.celService,
@@ -78,12 +78,12 @@ export class StreamSelector {
     subtitleStreams,
     hints,
   }: SubtitleSelectRequest) {
-    const profile = await this.streamSelectionResolver.resolve(
+    const chain = await this.streamSelectionResolver.resolveChain(
       this.buildSelectionContext(channel, lineupItem),
     );
 
-    return await evaluateSubtitleSelection(
-      profile,
+    return await evaluateSubtitleSelectionChain(
+      chain,
       subtitleStreams,
       this.celService,
       this.buildCelContextFor(
