@@ -26,11 +26,13 @@ import useStore from '../../store/index.ts';
 import type { UIFillerListProgram } from '../../types/index.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
 import ChannelLineupList from '../channel_config/ChannelLineupList.tsx';
+import { StreamSelectionProfileSelect } from '../profiles/StreamSelectionProfileSelect.tsx';
 
 type FillerListMutationArgs = {
   id?: string;
   name: string;
   programs: UIFillerListProgram[];
+  streamSelectionProfileId: string | null;
 };
 
 type FillerListFormType = Omit<FillerListMutationArgs, 'id'>;
@@ -63,21 +65,26 @@ export function EditFillerListForm({
     mode: 'onChange',
     defaultValues: {
       name: fillerList?.name ?? '',
+      streamSelectionProfileId: fillerList?.streamSelectionProfileId ?? null,
     },
   });
 
   const saveShowMutation = useMutation({
     mutationKey: ['fillers', isNew ? 'new' : fillerList.id],
-    mutationFn: async ({ name, programs }: FillerListMutationArgs) => {
+    mutationFn: async ({
+      name,
+      programs,
+      streamSelectionProfileId,
+    }: FillerListMutationArgs) => {
       if (isNew) {
         return postApiFillerLists({
-          body: { name, programs },
+          body: { name, programs, streamSelectionProfileId },
           throwOnError: true,
         });
       } else {
         return putApiFillerListsById({
           path: { id: fillerList.id },
-          body: { name, programs },
+          body: { name, programs, streamSelectionProfileId },
           throwOnError: true,
         });
       }
@@ -108,6 +115,7 @@ export function EditFillerListForm({
       id: fillerList?.id,
       name: data.name,
       programs: programList,
+      streamSelectionProfileId: data.streamSelectionProfileId,
     });
   };
 
@@ -135,6 +143,18 @@ export function EditFillerListForm({
           name="name"
           render={({ field }) => (
             <TextField margin="normal" fullWidth label={t`Name`} {...field} />
+          )}
+        />
+        <Controller
+          control={control}
+          name="streamSelectionProfileId"
+          render={({ field }) => (
+            <StreamSelectionProfileSelect
+              value={field.value}
+              onChange={field.onChange}
+              unassignedLabel={t`None (use the channel's profile)`}
+              helperText={t`Chooses audio and subtitle streams when programs from this list play as filler.`}
+            />
           )}
         />
         <Divider />
