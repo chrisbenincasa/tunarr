@@ -66,6 +66,7 @@ import type { ChannelOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { findBadRequestError, unwrapError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams, TruthyQueryParam } from '../types/schemas.ts';
+import { validateStreamSelectionProfileId } from './streamSelectionApi.ts';
 
 dayjs.extend(duration);
 
@@ -231,6 +232,13 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
               error: `Transcode config with ID ${body.channel.transcodeConfigId} not found`,
             });
           }
+          const profileError = await validateStreamSelectionProfileId(
+            req.serverCtx.drizzleFactory(),
+            body.channel.streamSelectionProfileId,
+          );
+          if (profileError) {
+            return res.status(400).send({ error: profileError });
+          }
           insertResult = await Result.attemptAsync(() =>
             req.serverCtx.channelDB.saveChannel(body.channel),
           );
@@ -291,6 +299,14 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(400).send({
             error: `Transcode config with ID ${req.body.transcodeConfigId} not found`,
           });
+        }
+
+        const profileError = await validateStreamSelectionProfileId(
+          req.serverCtx.drizzleFactory(),
+          req.body.streamSelectionProfileId,
+        );
+        if (profileError) {
+          return res.status(400).send({ error: profileError });
         }
 
         const channelUpdate = {

@@ -15,6 +15,7 @@ import type {
 import type {
   BackupSettings,
   GlobalMediaSourceSettings,
+  StreamSelectionSettings,
 } from '@tunarr/types/schemas';
 import type events from 'node:events';
 import type { DeepReadonly } from 'ts-essentials';
@@ -37,6 +38,8 @@ export interface ISettingsDB extends events.EventEmitter<SettingsChangeEvents> {
   plexSettings(): DeepReadonly<PlexStreamSettings>;
 
   ffmpegSettings(): ReadableFfmpegSettings;
+
+  streamSelectionSettings(): DeepReadonly<StreamSelectionSettings>;
 
   globalMediaSourceSettings(): DeepReadonly<GlobalMediaSourceSettings>;
 

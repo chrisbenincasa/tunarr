@@ -531,7 +531,7 @@ export class FfmpegStreamFactory {
         audioState,
       );
 
-      if (subtitleStream && this.channel.subtitlesEnabled) {
+      if (subtitleStream) {
         this.logger.trace('Using subtitle stream: %O', subtitleStream);
 
         const sidecarEnabled = this.featureFlagService.get(
@@ -622,10 +622,7 @@ export class FfmpegStreamFactory {
 
     // In passthrough mode, only sidecar (Convert) is available since we're
     // not re-encoding video for burn-in.
-    if (
-      this.channel.subtitlesEnabled &&
-      isDefined(streamDetails.subtitleDetails)
-    ) {
+    if (isDefined(streamDetails.subtitleDetails)) {
       const pickedSubtitleStream =
         await this.streamSelector.selectSubtitleStream({
           channel: this.channel,

@@ -368,6 +368,7 @@ export class StreamProgramCalculator {
               type: 'program',
               infiniteLoop: false,
               startOffset: lineupItem.startOffsetMs ?? 0,
+              customShowId: lineupItem.customShowId,
             } satisfies ProgramStreamLineupItem;
           }
         } else if (backingItem) {

@@ -1,4 +1,5 @@
 import { seq } from '@tunarr/shared/util';
+import { StreamSelectionProfileResolver } from '../services/StreamSelectionProfileResolver.ts';
 import type { ContentGuideProgram } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -112,6 +113,8 @@ export class SubtitleExtractorTask extends Task2<
     private externalSubtitleDownloader: ExternalSubtitleDownloader,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(StreamSelectionProfileResolver)
+    private profileResolver: StreamSelectionProfileResolver,
   ) {
     super();
   }
@@ -155,9 +158,9 @@ export class SubtitleExtractorTask extends Task2<
         continue;
       }
 
-      if (!channel.subtitlesEnabled) {
+      if (!(await this.profileResolver.channelMayPickSubtitles(channel.uuid))) {
         this.logger.trace(
-          'Skipping subtitle extraction for channel %s as subtitles are disabled',
+          'Skipping subtitle extraction for channel %s as its stream selection profiles never select subtitles',
           channel.uuid,
         );
         continue;

@@ -143,6 +143,10 @@ export class CustomShowDB {
       updates.name = updateRequest.name;
     }
 
+    if (updateRequest.streamSelectionProfileId !== undefined) {
+      updates.streamSelectionProfileId = updateRequest.streamSelectionProfileId;
+    }
+
     if (!updateRequest.enableSync) {
       updates.syncExternalPlaylistId = null;
       updates.syncMediaSourceId = null;
@@ -203,6 +207,7 @@ export class CustomShowDB {
       syncMediaSourceId: createRequest.syncMediaSourceId ?? null,
       syncMediaSourceType: createRequest.syncMediaSourceType ?? null,
       syncExternalPlaylistId: createRequest.syncExternalPlaylistId ?? null,
+      streamSelectionProfileId: createRequest.streamSelectionProfileId ?? null,
     } satisfies NewCustomShow;
 
     await this.db.insertInto('customShow').values(show).execute();
@@ -290,6 +295,7 @@ export class CustomShowDB {
         syncMediaSourceType: customShow.syncMediaSourceType,
         syncExternalPlaylistId: customShow.syncExternalPlaylistId,
         lastSyncedAt: customShow.lastSyncedAt,
+        streamSelectionProfileId: customShow.streamSelectionProfileId,
       }),
     );
   }

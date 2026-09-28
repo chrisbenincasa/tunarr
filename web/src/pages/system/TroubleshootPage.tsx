@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
 import ContentCopy from '@mui/icons-material/ContentCopy';
@@ -35,7 +36,11 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { createTypeSearchField } from '@tunarr/shared/util';
 import type { ProgramOrFolder, TerminalProgram } from '@tunarr/types';
 import { getGrandparentItem, isTerminalItemType } from '@tunarr/types';
-import type { SearchFilter, SearchRequest } from '@tunarr/types/schemas';
+import type {
+  SearchFilter,
+  SearchRequest,
+  StreamSelectionLevel,
+} from '@tunarr/types/schemas';
 import Hls from 'hls.js';
 import { useSnackbar } from 'notistack';
 import { useCallback, useRef, useState } from 'react';
@@ -144,6 +149,23 @@ function CodeBlock({ text }: { text: string }) {
 type Props = {
   initialProgram: Nullable<TerminalProgram>;
 };
+
+function streamSelectionLevelName(level: StreamSelectionLevel): string {
+  switch (level) {
+    case 'program':
+      return t`Program`;
+    case 'custom_show':
+      return t`Custom show`;
+    case 'filler':
+      return t`Filler list`;
+    case 'channel':
+      return t`Channel`;
+    case 'default':
+      return t`Default`;
+    case 'built_in':
+      return t`Built-in`;
+  }
+}
 
 const terminalTypeFilter: SearchFilter = {
   op: 'or',
@@ -727,76 +749,98 @@ export const TroubleshootPage = ({ initialProgram }: Props) => {
                 </AccordionSummary>
                 <AccordionDetails>
                   <Stack spacing={2}>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        <Trans>Profile</Trans>:{' '}
-                        <strong>
-                          {result.streamSelection.profileName ?? 'Legacy'}
-                        </strong>
-                      </Typography>
-                    </Box>
-
-                    {/* Rules Table */}
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>
-                              <Trans>Match</Trans>
-                            </TableCell>
-                            <TableCell>
-                              <Trans>Label</Trans>
-                            </TableCell>
-                            <TableCell>
-                              <Trans>Condition</Trans>
-                            </TableCell>
-                            <TableCell>
-                              <Trans>Audio Action</Trans>
-                            </TableCell>
-                            <TableCell>
-                              <Trans>Subtitle Action</Trans>
-                            </TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {result.streamSelection.rules.map((rule, i) => (
-                            <TableRow
-                              key={i}
-                              sx={
-                                rule.matched
-                                  ? {
-                                      bgcolor: 'success.main',
-                                      '& td': { color: 'success.contrastText' },
-                                    }
-                                  : undefined
-                              }
-                            >
-                              <TableCell>
-                                {rule.matched ? (
-                                  <CheckCircleOutline
-                                    fontSize="small"
-                                    color={rule.matched ? 'inherit' : 'success'}
-                                  />
-                                ) : (
-                                  <ErrorOutline
-                                    fontSize="small"
-                                    color="disabled"
-                                  />
-                                )}
-                              </TableCell>
-                              <TableCell>{rule.label ?? '-'}</TableCell>
-                              <TableCell>
-                                <code>{rule.condition}</code>
-                              </TableCell>
-                              <TableCell>{rule.audioAction ?? '-'}</TableCell>
-                              <TableCell>
-                                {rule.subtitleAction ?? '-'}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                    {result.streamSelection.levels.map((level) => (
+                      <Box key={`${level.level}-${level.profileId}`}>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={1}
+                          sx={{ mb: 1 }}
+                          flexWrap="wrap"
+                          useFlexGap
+                        >
+                          <Typography variant="subtitle2">
+                            {streamSelectionLevelName(level.level)}:{' '}
+                            <strong>{level.profileName}</strong>
+                          </Typography>
+                          <Chip
+                            size="small"
+                            color={level.matched ? 'success' : 'default'}
+                            label={
+                              level.matched
+                                ? t`Matched`
+                                : t`No rule matched, continuing`
+                            }
+                          />
+                        </Stack>
+                        <TableContainer component={Paper} variant="outlined">
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>
+                                  <Trans>Match</Trans>
+                                </TableCell>
+                                <TableCell>
+                                  <Trans>Label</Trans>
+                                </TableCell>
+                                <TableCell>
+                                  <Trans>Condition</Trans>
+                                </TableCell>
+                                <TableCell>
+                                  <Trans>Audio Action</Trans>
+                                </TableCell>
+                                <TableCell>
+                                  <Trans>Subtitle Action</Trans>
+                                </TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {level.rules.map((rule, i) => (
+                                <TableRow
+                                  key={i}
+                                  sx={
+                                    rule.applied
+                                      ? {
+                                          bgcolor: 'success.main',
+                                          '& td': {
+                                            color: 'success.contrastText',
+                                          },
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  <TableCell>
+                                    {rule.matched ? (
+                                      <CheckCircleOutline
+                                        fontSize="small"
+                                        color={
+                                          rule.applied ? 'inherit' : 'success'
+                                        }
+                                      />
+                                    ) : (
+                                      <ErrorOutline
+                                        fontSize="small"
+                                        color="disabled"
+                                      />
+                                    )}
+                                  </TableCell>
+                                  <TableCell>{rule.label ?? '-'}</TableCell>
+                                  <TableCell>
+                                    <code>{rule.condition}</code>
+                                  </TableCell>
+                                  <TableCell>
+                                    {rule.audioAction ?? '-'}
+                                  </TableCell>
+                                  <TableCell>
+                                    {rule.subtitleAction ?? '-'}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+                    ))}
 
                     {/* Selected Streams */}
                     <Box>

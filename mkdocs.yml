@@ -66,6 +66,7 @@ nav:
       - FFmpeg:
           - configure/ffmpeg/index.md
           - Transcode Configs: configure/ffmpeg/transcode_config.md
+      - Stream Selection: configure/stream-selection.md
       - Search:
           - misc/search/index.md
       - Channels:

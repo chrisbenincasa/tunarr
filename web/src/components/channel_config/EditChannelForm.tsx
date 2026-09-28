@@ -87,6 +87,7 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
     },
     subtitlesEnabled: channel.subtitlesEnabled,
     subtitlePreferences: channel.subtitlePreferences ?? [],
+    streamSelectionProfileId: channel.streamSelectionProfileId ?? null,
   };
 }
 
@@ -109,12 +110,7 @@ const EditChannelTabsProps: EditChannelTabProps[] = [
   {
     value: 'ffmpeg',
     description: 'Streaming',
-    fields: [
-      'watermark',
-      'streamMode',
-      'subtitlesEnabled',
-      'subtitlePreferences',
-    ],
+    fields: ['watermark', 'streamMode', 'streamSelectionProfileId'],
   },
 ];
 
