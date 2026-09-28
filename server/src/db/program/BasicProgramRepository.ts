@@ -11,6 +11,7 @@ import type { DB } from '../schema/db.ts';
 import type { ProgramWithRelationsOrm } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
 import {
+  LineupProgramRelations,
   MaterializedProgramRelations,
   ProgramStreamRelations,
 } from './programRelations.ts';
@@ -31,6 +32,15 @@ export class BasicProgramRepository {
         ...MaterializedProgramRelations,
         ...ProgramStreamRelations,
       },
+    });
+  }
+
+  async getLineupProgramById(
+    id: string,
+  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+    return this.drizzleDB.query.program.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, id),
+      with: LineupProgramRelations,
     });
   }
 

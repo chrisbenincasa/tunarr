@@ -3,6 +3,7 @@ import type {
   WithChannelIdFilter,
 } from '@/db/interfaces/IProgramDB.js';
 import { KEYS } from '@/types/inject.js';
+import { LineupProgramRelations } from './programRelations.ts';
 import type { Maybe, PagedResult } from '@/types/util.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
@@ -540,29 +541,7 @@ export class ProgramGroupingRepository {
           );
         }
       },
-      with: {
-        album: {
-          with: {
-            externalIds: true,
-          },
-        },
-        artist: {
-          with: {
-            externalIds: true,
-          },
-        },
-        season: {
-          with: {
-            externalIds: true,
-          },
-        },
-        show: {
-          with: {
-            externalIds: true,
-          },
-        },
-        externalIds: true,
-      },
+      with: LineupProgramRelations,
     });
 
     return orderBy(
