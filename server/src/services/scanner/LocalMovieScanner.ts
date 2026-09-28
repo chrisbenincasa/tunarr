@@ -39,10 +39,8 @@ import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
 import type { LocalScanContext } from './FileSystemScanner.ts';
 import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import {
-  KnownImageFileExtensions,
-  KnownVideoFileExtensions,
-} from './constants.ts';
+import { KnownVideoFileExtensions } from './constants.ts';
+import { locateImageFile } from './imageFileLookup.ts';
 
 @injectable()
 export class LocalMovieScanner extends FileSystemScanner {
@@ -540,33 +538,18 @@ export class LocalMovieScanner extends FileSystemScanner {
     }
 
     const folder = dirname(fullMoviePath);
-    const possibleArtworkPaths = KnownImageFileExtensions.values()
-      .flatMap((ext) => [
-        `${filename}.${ext}`,
-        `${basename(fullMoviePath, extname(fullMoviePath))}-${filename}.${ext}`,
-      ])
-      .map((name) => path.join(folder, name));
-    let foundPath: Maybe<string>;
-    for (const possiblePath of possibleArtworkPaths) {
-      if (await fileExists(possiblePath)) {
-        foundPath = possiblePath;
-        break;
-      }
+    const stemPaths = [
+      path.join(folder, filename),
+      path.join(
+        folder,
+        `${basename(fullMoviePath, extname(fullMoviePath))}-${filename}`,
+      ),
+    ];
+    const found = await locateImageFile(stemPaths);
+    if (found || artworkType !== 'poster') {
+      return found;
     }
 
-    // Check for folder.exr
-    if (!foundPath && artworkType === 'poster') {
-      const folderPaths = KnownImageFileExtensions.values()
-        .map((ext) => `folder.${ext}`)
-        .map((name) => path.join(folder, name));
-      for (const possiblePath of folderPaths) {
-        if (await fileExists(possiblePath)) {
-          foundPath = possiblePath;
-          break;
-        }
-      }
-    }
-
-    return foundPath;
+    return locateImageFile([path.join(folder, 'folder')]);
   }
 }
