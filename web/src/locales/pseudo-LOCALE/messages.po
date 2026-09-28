@@ -103,15 +103,24 @@ msgstr ""
 msgid "{0, plural, one {Selected Item} other {Selected Items}}"
 msgstr ""
 
-#. placeholder {0}: original.usedByChannels
+#. placeholder {0}: channels.length
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "{0} channel(s)"
 msgstr ""
 
-#. placeholder {0}: original.usedByFillers
+#. placeholder {0}: customShows.length
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
-msgid "{0} filler(s)"
+msgid "{0} custom show(s)"
 msgstr ""
+
+#. placeholder {0}: fillerLists.length
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "{0} filler list(s)"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+#~ msgid "{0} filler(s)"
+#~ msgstr ""
 
 #. placeholder {0}: prettifySnakeCaseString(programType)
 #: src/components/programs/ProgramDetailsDialog.tsx
@@ -135,10 +144,9 @@ msgstr ""
 msgid "{0} Poster"
 msgstr ""
 
-#. placeholder {0}: original.usedByPrograms
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
-msgid "{0} program(s)"
-msgstr ""
+#~ msgid "{0} program(s)"
+#~ msgstr ""
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "{block} Hours"
@@ -224,6 +232,11 @@ msgstr ""
 msgid "{minutes, plural, one {# minute} other {# minutes}}"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "{programCount} program(s)"
+msgstr ""
+
 #: src/components/guide/TvGuide.tsx
 msgid "{remainingTime} left"
 msgstr ""
@@ -307,6 +320,10 @@ msgstr ""
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "A root path to scan for media. Local sources can search many different paths."
+msgstr ""
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "A stream selection profile chooses the audio and subtitle streams for programs on this channel. Filler lists and custom shows can assign their own profile, which takes precedence."
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
@@ -402,8 +419,8 @@ msgid "Add group"
 msgstr ""
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
-msgid "Add Language Preference"
-msgstr ""
+#~ msgid "Add Language Preference"
+#~ msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/channel_config/SelectedProgrammingActions.tsx
@@ -525,8 +542,8 @@ msgid "All channels assigned to this config will be set to use the default confi
 msgstr ""
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
-msgid "All channels, fillers, and programs using this profile will have their stream selection reset to defaults."
-msgstr ""
+#~ msgid "All channels, fillers, and programs using this profile will have their stream selection reset to defaults."
+#~ msgstr ""
 
 #: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
 #~ msgid "All Genres"
@@ -545,16 +562,16 @@ msgid "All Set!"
 msgstr ""
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
-msgid "Allow External"
-msgstr ""
+#~ msgid "Allow External"
+#~ msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Allow external subtitles"
 msgstr ""
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
-msgid "Allow Image Based"
-msgstr ""
+#~ msgid "Allow Image Based"
+#~ msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Allow image-based subtitles"
@@ -688,8 +705,8 @@ msgid "Audio language"
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
-msgid "Audio Language Preferences"
-msgstr ""
+#~ msgid "Audio Language Preferences"
+#~ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
@@ -836,6 +853,14 @@ msgstr ""
 msgid "Builder"
 msgstr ""
 
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Built-in"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "Built-in profiles cannot be edited"
+msgstr ""
+
 #: src/components/settings/general/BackupForm.tsx
 msgid "By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups"
 msgstr ""
@@ -947,6 +972,7 @@ msgstr ""
 #: src/components/programming_controls/AddRedirectModal.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
+#: src/pages/system/TroubleshootPage.tsx
 msgid "Channel"
 msgstr ""
 
@@ -996,6 +1022,7 @@ msgid "Channel Transcode Config"
 msgstr ""
 
 #: src/App.tsx
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/hooks/useNavItems.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/channels/ChannelsPage.tsx
@@ -1018,6 +1045,14 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
+msgstr ""
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "Chooses audio and subtitle streams for programs scheduled from this custom show."
+msgstr ""
+
+#: src/components/filler/EditFillerListForm.tsx
+msgid "Chooses audio and subtitle streams when programs from this list play as filler."
 msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
@@ -1091,12 +1126,12 @@ msgid "Configure Cyclic Shuffle"
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
-msgid "Configure preferred audio languages globally."
-msgstr ""
+#~ msgid "Configure preferred audio languages globally."
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
-msgid "Configure subtitle preferences. Preferences are evaluated in order of priority. The first matching subtitle stream on a program will be used."
-msgstr ""
+#~ msgid "Configure subtitle preferences. Preferences are evaluated in order of priority. The first matching subtitle stream on a program will be used."
+#~ msgstr ""
 
 #: src/pages/profiles/TranscodeConfigsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -1195,6 +1230,13 @@ msgstr ""
 msgid "Copy M3U URL"
 msgstr ""
 
+#. placeholder {0}: existingProfile.name
+#. placeholder {0}: profile.name
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "Copy of {0}"
+msgstr ""
+
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Copy to clipboard"
 msgstr ""
@@ -1220,6 +1262,10 @@ msgstr ""
 msgid "Create a Channel"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfileSelect.tsx
+msgid "Create a new profile"
+msgstr ""
+
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Create Profile"
 msgstr ""
@@ -1234,6 +1280,10 @@ msgstr ""
 
 #: src/components/guide/TvGuide.tsx
 msgid "Custom Program"
+msgstr ""
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Custom show"
 msgstr ""
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
@@ -1264,6 +1314,7 @@ msgid "Custom Show: {0}"
 msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/hooks/useNavItems.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/CustomShowsPage.tsx
@@ -1317,12 +1368,19 @@ msgstr ""
 msgid "Debug"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Default"
+msgstr ""
+
+#. placeholder {0}: defaultProfile?.name ?? t`Tunarr Default`
+#: src/components/profiles/StreamSelectionProfileSelect.tsx
+msgid "Default ({0})"
 msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
@@ -1335,6 +1393,11 @@ msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Default only"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "Default profile"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
@@ -1536,7 +1599,9 @@ msgstr ""
 msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Duplicate"
 msgstr ""
 
@@ -1616,6 +1681,10 @@ msgstr ""
 
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Edit Media Source"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionProfileSelect.tsx
+msgid "Edit profile"
 msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx
@@ -1728,8 +1797,8 @@ msgid "Enable SSDP server"
 msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
-msgid "Enable Subtitles"
-msgstr ""
+#~ msgid "Enable Subtitles"
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable Watermark"
@@ -1895,6 +1964,10 @@ msgstr ""
 #: src/components/settings/general/BackupForm.tsx
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Every"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "Everything using this profile will fall back to the next profile in the resolution order (usually the channel's profile, or the default)."
 msgstr ""
 
 #: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
@@ -2076,6 +2149,10 @@ msgstr ""
 msgid "Filler is resolved at schedule time. The guide shows specific filler titles."
 msgstr ""
 
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Filler list"
+msgstr ""
+
 #: src/components/channel_config/ChannelFlexConfig.tsx
 #: src/components/channel_config/ChannelFlexConfig.tsx
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
@@ -2092,6 +2169,7 @@ msgstr ""
 msgid "Filler List: {0}"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/hooks/useNavItems.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/FillerListsPage.tsx
@@ -2106,7 +2184,6 @@ msgstr ""
 msgid "Filler Options"
 msgstr ""
 
-#: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/search/PointAndClickSearchBuilder.tsx
@@ -2116,12 +2193,12 @@ msgid "Filter"
 msgstr ""
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
-msgid "Filter Type"
-msgstr ""
+#~ msgid "Filter Type"
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
-msgid "Filter which subtitle tracks are considered<0/><1>Any: </1> All subtitle tracks are considered <2/><3>Forced: </3>Only consider <4>\"forced\"</4>subtitle tracks <5/><6>Default: </6>Only consider default subtitle tracks <7/><8>None: </8> Do not select any subtitles"
-msgstr ""
+#~ msgid "Filter which subtitle tracks are considered<0/><1>Any: </1> All subtitle tracks are considered <2/><3>Forced: </3>Only consider <4>\"forced\"</4>subtitle tracks <5/><6>Default: </6>Only consider default subtitle tracks <7/><8>None: </8> Do not select any subtitles"
+#~ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Finish"
@@ -2429,9 +2506,7 @@ msgstr ""
 msgid "Label"
 msgstr ""
 
-#: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
 #: src/components/LanguageAutocomplete.tsx
-#: src/components/LanguagePreferencesList.tsx
 #: src/components/settings/general/WebSettings.tsx
 #: src/components/settings/general/WebSettings.tsx
 #: src/components/settings/general/WebSettings.tsx
@@ -2639,6 +2714,10 @@ msgstr ""
 msgid "Manage Libraries"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfileSelect.tsx
+msgid "Manage profiles"
+msgstr ""
+
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 msgid "Manual"
 msgstr ""
@@ -2666,6 +2745,10 @@ msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Match audio streams whose title contains this text (case-insensitive)"
+msgstr ""
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Matched"
 msgstr ""
 
 #: src/components/settings/general/BackupForm.tsx
@@ -2842,8 +2925,8 @@ msgid "Music Videos"
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
-msgid "Must define at least one language preference"
-msgstr ""
+#~ msgid "Must define at least one language preference"
+#~ msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Must use a valid URL, or empty."
@@ -2989,6 +3072,10 @@ msgstr ""
 msgid "No results"
 msgstr ""
 
+#: src/pages/system/TroubleshootPage.tsx
+msgid "No rule matched, continuing"
+msgstr ""
+
 #. placeholder {0}: version.nodejs
 #: src/components/VersionFooter.tsx
 msgid "NodeJS: {0}"
@@ -3001,6 +3088,11 @@ msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "None (no filter)"
+msgstr ""
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+#: src/components/filler/EditFillerListForm.tsx
+msgid "None (use the channel's profile)"
 msgstr ""
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
@@ -3142,8 +3234,8 @@ msgid "Overflow Behavior"
 msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
-msgid "Override global audio and subtitle settings for this channel."
-msgstr ""
+#~ msgid "Override global audio and subtitle settings for this channel."
+#~ msgstr ""
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Override how far past its boundary this slot's content can extend."
@@ -3289,16 +3381,16 @@ msgid "Presets"
 msgstr ""
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
-msgid "Priority"
-msgstr ""
+#~ msgid "Priority"
+#~ msgstr ""
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "Proceed"
 msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
-msgid "Profile"
-msgstr ""
+#~ msgid "Profile"
+#~ msgstr ""
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Profile created"
@@ -3325,6 +3417,7 @@ msgstr ""
 #: src/components/slot_scheduler/RedirectProgrammingForm.tsx
 #: src/components/slot_scheduler/ShowSlotProgrammingForm.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
+#: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Program"
 msgstr ""
@@ -3865,6 +3958,10 @@ msgstr ""
 msgid "Server Settings"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "Set as default"
+msgstr ""
+
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Set by environment variable"
 msgstr ""
@@ -4105,13 +4202,22 @@ msgstr ""
 msgid "Stream Selection"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfileSelect.tsx
+#: src/components/profiles/StreamSelectionProfileSelect.tsx
+msgid "Stream Selection Profile"
+msgstr ""
+
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 #: src/pages/profiles/StreamSelectionProfilesPage.tsx
 msgid "Stream Selection Profiles"
 msgstr ""
 
 #: src/pages/profiles/StreamSelectionProfilesPage.tsx
-msgid "Stream selection profiles control which audio and subtitle streams are selected during transcoding. Assign profiles to channels, filler lists, or individual programs."
+#~ msgid "Stream selection profiles control which audio and subtitle streams are selected during transcoding. Assign profiles to channels, filler lists, or individual programs."
+#~ msgstr ""
+
+#: src/pages/profiles/StreamSelectionProfilesPage.tsx
+msgid "Stream selection profiles control which audio and subtitle streams play. Assign profiles to channels, filler lists, and custom shows. Anything without an assigned profile uses the default profile."
 msgstr ""
 
 #: src/components/channel_config/EditChannelForm.tsx
@@ -4266,8 +4372,8 @@ msgid "The media server stopped reporting this library on {since}. Its programs 
 msgstr ""
 
 #: src/components/LanguagePreferencesList.tsx
-msgid "The selected languages will be considered in order they are selected."
-msgstr ""
+#~ msgid "The selected languages will be considered in order they are selected."
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "The streaming mode affects the type of underlying transcoding process used to create the channel's video stream.<0/>Learn more about Tunarr's stream modes <1>here</1>!"
@@ -4356,6 +4462,10 @@ msgstr ""
 msgid "This filler list has no programs and will be ignored."
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "This is the default profile. The built-in profile will become the default."
+msgstr ""
+
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled."
 msgstr ""
@@ -4370,6 +4480,10 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "This option is disabled because it would calculate a schedule that is too long."
+msgstr ""
+
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "This profile is built into Tunarr and cannot be changed. Duplicate it to make a version you can edit."
 msgstr ""
 
 #: src/components/slot_scheduler/TimeSlotTable.tsx
@@ -4553,6 +4667,10 @@ msgstr ""
 msgid "Tunarr Backend URL:"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfileSelect.tsx
+msgid "Tunarr Default"
+msgstr ""
+
 #: src/components/Video.tsx
 msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
 msgstr ""
@@ -4723,6 +4841,10 @@ msgstr ""
 msgid "Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time.<0/>Each filler can be assigned a cooldown, which restricts how frequently the list will be chosen during flex time."
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "View"
+msgstr ""
+
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "View Collection"
 msgstr ""
@@ -4742,6 +4864,14 @@ msgstr ""
 #: src/components/MediaSourceLibraryTable.tsx
 #~ msgid "View Library"
 #~ msgstr ""
+
+#: src/components/profiles/StreamSelectionProfileSelect.tsx
+msgid "View profile"
+msgstr ""
+
+#: src/pages/profiles/StreamSelectionProfilePage.tsx
+msgid "View Stream Selection Profile"
+msgstr ""
 
 #: src/hooks/useRouteName.ts
 msgid "Watch"
