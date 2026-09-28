@@ -12,6 +12,7 @@ import { isNil, map } from 'lodash-es';
 import { z } from 'zod/v4';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { container } from '../container.ts';
+import { validateStreamSelectionProfileId } from './streamSelectionApi.ts';
 
 // We can't use the built-in zod brand because we have our own custom
 // tagged type.
@@ -37,6 +38,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
           id: f.uuid,
           name: f.name,
           contentCount: f.content.length,
+          streamSelectionProfileId: f.streamSelectionProfileId ?? null,
         })),
       );
     },
@@ -64,6 +66,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
         id: filler.uuid,
         name: filler.name,
         contentCount: filler.fillerContent.length,
+        streamSelectionProfileId: filler.streamSelectionProfileId ?? null,
       });
     },
   );
@@ -98,10 +101,18 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
         body: CreateFillerListRequestSchema,
         response: {
           201: z.object({ id: z.string() }),
+          400: z.object({ error: z.string() }),
         },
       },
     },
     async (req, res) => {
+      const profileError = await validateStreamSelectionProfileId(
+        req.serverCtx.drizzleFactory(),
+        req.body.streamSelectionProfileId,
+      );
+      if (profileError) {
+        return res.status(400).send({ error: profileError });
+      }
       const id = await req.serverCtx.fillerDB.createFiller(req.body);
       return res.status(201).send({ id });
     },
@@ -118,11 +129,19 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
         body: UpdateFillerListRequestSchema,
         response: {
           200: FillerListSchema,
+          400: z.object({ error: z.string() }),
           404: z.void(),
         },
       },
     },
     async (req, res) => {
+      const profileError = await validateStreamSelectionProfileId(
+        req.serverCtx.drizzleFactory(),
+        req.body.streamSelectionProfileId,
+      );
+      if (profileError) {
+        return res.status(400).send({ error: profileError });
+      }
       const result = await req.serverCtx.fillerDB.saveFiller(
         req.params.id,
         req.body,
@@ -136,6 +155,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
         id: result.uuid,
         name: result.name,
         contentCount: result.fillerContent.length,
+        streamSelectionProfileId: result.streamSelectionProfileId ?? null,
       });
     },
   );

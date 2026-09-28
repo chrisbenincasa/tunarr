@@ -1,13 +1,13 @@
 import type {
+  StreamSelectionLevel,
   StreamSelectionProfile,
-  StreamSelectionRule,
 } from '@tunarr/types/schemas';
+import { BuiltInStreamSelectionProfileId } from '@tunarr/types/schemas';
 import { eq } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { orderBy } from 'lodash-es';
-import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { Channel } from '../db/schema/Channel.ts';
+import { CustomShow } from '../db/schema/CustomShow.ts';
 import { FillerShow } from '../db/schema/FillerShow.ts';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { Program } from '../db/schema/Program.ts';
@@ -23,6 +23,37 @@ export type StreamSelectionContext = {
   customShowId?: string;
 };
 
+export type ResolvedStreamSelectionProfile = {
+  level: StreamSelectionLevel;
+  // The ID of the entity the profile was assigned to (program, custom show,
+  // filler list, or channel). Undefined for the default and built-in levels.
+  sourceId?: string;
+  profile: StreamSelectionProfile;
+};
+
+// Used only if the seeded built-in row is missing from the database, so that
+// the resolution chain always ends with a profile that matches.
+export const BuiltInStreamSelectionProfile: StreamSelectionProfile = {
+  uuid: BuiltInStreamSelectionProfileId,
+  name: 'Tunarr Default',
+  locked: true,
+  rules: [
+    {
+      label: 'Default',
+      condition: 'true',
+      audioAction: { type: 'default' },
+      subtitleAction: { type: 'disable' },
+    },
+  ],
+};
+
+const profileColumns = {
+  uuid: StreamSelectionProfileTable.uuid,
+  name: StreamSelectionProfileTable.name,
+  rules: StreamSelectionProfileTable.rules,
+  locked: StreamSelectionProfileTable.locked,
+};
+
 @injectable()
 export class StreamSelectionProfileResolver {
   @InjectLogger() declare private readonly logger: Logger;
@@ -30,64 +61,120 @@ export class StreamSelectionProfileResolver {
   constructor(
     @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
-    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
   ) {}
 
-  async resolve(ctx: StreamSelectionContext): Promise<StreamSelectionProfile> {
-    // 1. Check program-level profile
+  /**
+   * Returns every profile that applies to the context, from most to least
+   * specific: program → source (custom show or filler list) → channel →
+   * default → built-in. The evaluator walks this chain and stops at the
+   * first profile with a matching rule. A profile appears at most once, at
+   * its most specific level.
+   */
+  async resolveChain(
+    ctx: StreamSelectionContext,
+  ): Promise<ResolvedStreamSelectionProfile[]> {
+    const chain: ResolvedStreamSelectionProfile[] = [];
+    const seen = new Set<string>();
+    const push = (
+      level: StreamSelectionLevel,
+      profile: StreamSelectionProfile | undefined,
+      sourceId?: string,
+    ) => {
+      if (!profile || seen.has(profile.uuid)) {
+        return;
+      }
+      seen.add(profile.uuid);
+      chain.push({ level, sourceId, profile });
+    };
+
     if (ctx.programId) {
-      const profile = await this.getProfileForProgram(ctx.programId);
-      if (profile) {
-        this.logger.debug(
-          'Resolved stream selection profile from program %s: %s',
-          ctx.programId,
-          profile.name,
-        );
-        return profile;
-      }
-    }
-
-    // 2. Check filler list-level profile
-    if (ctx.fillerListId) {
-      const profile = await this.getProfileForFillerList(ctx.fillerListId);
-      if (profile) {
-        this.logger.debug(
-          'Resolved stream selection profile from filler list %s: %s',
-          ctx.fillerListId,
-          profile.name,
-        );
-        return profile;
-      }
-    }
-
-    // 3. Check channel-level profile
-    const profile = await this.getProfileForChannel(ctx.channelId);
-    if (profile) {
-      this.logger.debug(
-        'Resolved stream selection profile from channel %s: %s',
-        ctx.channelId,
-        profile.name,
+      push(
+        'program',
+        await this.getProfileForProgram(ctx.programId),
+        ctx.programId,
       );
-      return profile;
     }
 
-    // 4. Legacy fallback
-    this.logger.debug(
-      'No stream selection profile found for channel %s, using legacy fallback',
+    // Custom shows and filler lists form a single "source" level. An item
+    // is scheduled from one or the other, never both.
+    if (ctx.fillerListId && ctx.customShowId) {
+      this.logger.warn(
+        'Stream selection context has both a filler list (%s) and a custom show (%s); using the filler list',
+        ctx.fillerListId,
+        ctx.customShowId,
+      );
+    }
+
+    if (ctx.fillerListId) {
+      push(
+        'filler',
+        await this.getProfileForFillerList(ctx.fillerListId),
+        ctx.fillerListId,
+      );
+    } else if (ctx.customShowId) {
+      push(
+        'custom_show',
+        await this.getProfileForCustomShow(ctx.customShowId),
+        ctx.customShowId,
+      );
+    }
+
+    push(
+      'channel',
+      await this.getProfileForChannel(ctx.channelId),
       ctx.channelId,
     );
-    return this.buildLegacyProfile(ctx.channelId);
+
+    const defaultProfileId =
+      this.settingsDB.streamSelectionSettings().defaultProfileId;
+    if (defaultProfileId !== BuiltInStreamSelectionProfileId) {
+      const defaultProfile = await this.getProfileById(defaultProfileId);
+      if (!defaultProfile) {
+        this.logger.warn(
+          'Default stream selection profile %s does not exist; falling back to the built-in profile',
+          defaultProfileId,
+        );
+      }
+      push('default', defaultProfile);
+    }
+
+    push(
+      'built_in',
+      (await this.getProfileById(BuiltInStreamSelectionProfileId)) ??
+        BuiltInStreamSelectionProfile,
+    );
+
+    return chain;
+  }
+
+  /**
+   * Whether any channel-wide profile (channel → default → built-in) could
+   * select a subtitle. Program and source overrides are not considered.
+   * Used to decide whether subtitles are worth preparing ahead of time.
+   */
+  async channelMayPickSubtitles(channelId: string): Promise<boolean> {
+    const chain = await this.resolveChain({ channelId });
+    return chain.some(({ profile }) =>
+      profile.rules.some((rule) => rule.subtitleAction.type !== 'disable'),
+    );
+  }
+
+  private async getProfileById(
+    id: string,
+  ): Promise<StreamSelectionProfile | undefined> {
+    const [result] = await this.drizzle
+      .select(profileColumns)
+      .from(StreamSelectionProfileTable)
+      .where(eq(StreamSelectionProfileTable.uuid, id))
+      .limit(1);
+    return result;
   }
 
   private async getProfileForProgram(
     programId: string,
   ): Promise<StreamSelectionProfile | undefined> {
-    const result = await this.drizzle
-      .select({
-        uuid: StreamSelectionProfileTable.uuid,
-        name: StreamSelectionProfileTable.name,
-        rules: StreamSelectionProfileTable.rules,
-      })
+    const [result] = await this.drizzle
+      .select(profileColumns)
       .from(Program)
       .innerJoin(
         StreamSelectionProfileTable,
@@ -95,22 +182,32 @@ export class StreamSelectionProfileResolver {
       )
       .where(eq(Program.uuid, programId))
       .limit(1);
+    return result;
+  }
 
-    if (result.length > 0) {
-      return result[0];
-    }
-    return;
+  private async getProfileForCustomShow(
+    customShowId: string,
+  ): Promise<StreamSelectionProfile | undefined> {
+    const [result] = await this.drizzle
+      .select(profileColumns)
+      .from(CustomShow)
+      .innerJoin(
+        StreamSelectionProfileTable,
+        eq(
+          CustomShow.streamSelectionProfileId,
+          StreamSelectionProfileTable.uuid,
+        ),
+      )
+      .where(eq(CustomShow.uuid, customShowId))
+      .limit(1);
+    return result;
   }
 
   private async getProfileForFillerList(
     fillerListId: string,
   ): Promise<StreamSelectionProfile | undefined> {
-    const result = await this.drizzle
-      .select({
-        uuid: StreamSelectionProfileTable.uuid,
-        name: StreamSelectionProfileTable.name,
-        rules: StreamSelectionProfileTable.rules,
-      })
+    const [result] = await this.drizzle
+      .select(profileColumns)
       .from(FillerShow)
       .innerJoin(
         StreamSelectionProfileTable,
@@ -121,22 +218,14 @@ export class StreamSelectionProfileResolver {
       )
       .where(eq(FillerShow.uuid, fillerListId))
       .limit(1);
-
-    if (result.length > 0) {
-      return result[0];
-    }
-    return;
+    return result;
   }
 
   private async getProfileForChannel(
     channelId: string,
   ): Promise<StreamSelectionProfile | undefined> {
-    const result = await this.drizzle
-      .select({
-        uuid: StreamSelectionProfileTable.uuid,
-        name: StreamSelectionProfileTable.name,
-        rules: StreamSelectionProfileTable.rules,
-      })
+    const [result] = await this.drizzle
+      .select(profileColumns)
       .from(Channel)
       .innerJoin(
         StreamSelectionProfileTable,
@@ -144,74 +233,6 @@ export class StreamSelectionProfileResolver {
       )
       .where(eq(Channel.uuid, channelId))
       .limit(1);
-
-    if (result.length > 0) {
-      return result[0];
-    }
-    return;
-  }
-
-  private async buildLegacyProfile(
-    channelId: string,
-  ): Promise<StreamSelectionProfile> {
-    const rules: StreamSelectionRule[] = [];
-
-    // Build audio action from ffmpeg language preferences
-    const ffmpegSettings = this.settingsDB.ffmpegSettings();
-    const langPrefs = ffmpegSettings.languagePreferences?.preferences ?? [];
-
-    const audioAction =
-      langPrefs.length > 0
-        ? {
-            type: 'by_language' as const,
-            languages: langPrefs.map((p) => p.iso6392),
-          }
-        : { type: 'default' as const };
-
-    // Check if the channel has subtitles enabled
-    const channel = await this.channelDB.getChannel(channelId);
-
-    let subtitleAction: StreamSelectionRule['subtitleAction'];
-    if (!channel?.subtitlesEnabled) {
-      subtitleAction = { type: 'disable' as const };
-    } else {
-      // Build subtitle action from channel subtitle preferences
-      const subtitlePrefs =
-        await this.channelDB.getChannelSubtitlePreferences(channelId);
-
-      // Filter out preferences with filterType 'none' — they mean
-      // "don't match subtitles for this language", matching the
-      // legacy SubtitleStreamPicker behavior.
-      const activeSubtitlePrefs = subtitlePrefs.filter(
-        (p) => p.filterType !== 'none',
-      );
-      if (activeSubtitlePrefs.length > 0) {
-        const sorted = orderBy(activeSubtitlePrefs, 'priority', 'asc');
-        const topPref = sorted[0]!;
-        subtitleAction = {
-          type: 'by_language' as const,
-          languages: sorted.map((p) => p.languageCode),
-          filterType: topPref.filterType ?? 'any',
-          allowImageBased: Boolean(topPref.allowImageBased ?? true),
-          allowExternal: Boolean(topPref.allowExternal ?? true),
-          preferTextBased: false,
-        };
-      } else {
-        subtitleAction = { type: 'default' as const, preferTextBased: false };
-      }
-    }
-
-    rules.push({
-      label: 'Legacy fallback',
-      condition: 'true',
-      audioAction,
-      subtitleAction,
-    });
-
-    return {
-      uuid: `legacy-${channelId}`,
-      name: 'Legacy Settings',
-      rules,
-    };
+    return result;
   }
 }

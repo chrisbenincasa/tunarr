@@ -1,4 +1,5 @@
 import { seq } from '@tunarr/shared/util';
+import { StreamSelectionProfileResolver } from '../services/StreamSelectionProfileResolver.ts';
 import type { ContentGuideProgram } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -112,6 +113,8 @@ export class SubtitleExtractorTask extends Task2<
     private externalSubtitleDownloader: ExternalSubtitleDownloader,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(StreamSelectionProfileResolver)
+    private profileResolver: StreamSelectionProfileResolver,
   ) {
     super();
   }
@@ -140,13 +143,16 @@ export class SubtitleExtractorTask extends Task2<
     // On the first run we may have to block if the guide is updating.
     await this.guideService.get();
 
-    const channelIds = (await this.channelDB.getAllChannels())
-      .filter((channel) => channel.subtitlesEnabled)
-      .map((channel) => channel.uuid);
+    const channelIds: string[] = [];
+    for (const channel of await this.channelDB.getAllChannels()) {
+      if (await this.profileResolver.channelMayPickSubtitles(channel.uuid)) {
+        channelIds.push(channel.uuid);
+      }
+    }
 
     if (channelIds.length === 0) {
       this.logger.trace(
-        'Skipping subtitle extraction because no channel has subtitles enabled',
+        "Skipping subtitle extraction because no channel's stream selection profiles select subtitles",
       );
       return;
     }

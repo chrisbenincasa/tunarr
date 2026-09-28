@@ -15,6 +15,7 @@ import { hasSchedulableDuration } from '../services/scheduling/slotSchedulerUtil
 import { findBadRequestError, unwrapError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import { parseFloatOrNull } from '../util/index.ts';
+import { validateStreamSelectionProfileId } from './streamSelectionApi.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
@@ -54,6 +55,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
           syncMediaSourceType: cs.syncMediaSourceType ?? undefined,
           syncExternalPlaylistId: cs.syncExternalPlaylistId ?? undefined,
           lastSyncedAt: cs.lastSyncedAt?.getTime() ?? undefined,
+          streamSelectionProfileId: cs.streamSelectionProfileId ?? null,
           isSyncing: req.serverCtx.customShowSyncService.isShowSyncing(cs.id),
         })),
       );
@@ -96,6 +98,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         syncMediaSourceType: customShow.syncMediaSourceType ?? undefined,
         syncExternalPlaylistId: customShow.syncExternalPlaylistId ?? undefined,
         lastSyncedAt: customShow.lastSyncedAt?.getTime() ?? undefined,
+        streamSelectionProfileId: customShow.streamSelectionProfileId ?? null,
         isSyncing: req.serverCtx.customShowSyncService.isShowSyncing(
           customShow.uuid,
         ),
@@ -118,6 +121,14 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
+      const profileError = await validateStreamSelectionProfileId(
+        req.serverCtx.drizzleFactory(),
+        req.body.streamSelectionProfileId,
+      );
+      if (profileError) {
+        return res.status(400).send(profileError);
+      }
+
       const saveResult = await Result.attemptAsync(() =>
         req.serverCtx.customShowDB.saveShow(req.params.id, req.body),
       );
@@ -150,6 +161,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         syncMediaSourceType: customShow.syncMediaSourceType ?? undefined,
         syncExternalPlaylistId: customShow.syncExternalPlaylistId ?? undefined,
         lastSyncedAt: customShow.lastSyncedAt?.getTime() ?? undefined,
+        streamSelectionProfileId: customShow.streamSelectionProfileId ?? null,
         isSyncing: req.serverCtx.customShowSyncService.isShowSyncing(
           customShow.uuid,
         ),
@@ -208,10 +220,19 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         body: CreateCustomShowRequestSchema,
         response: {
           201: CustomShowSchema,
+          400: z.string(),
         },
       },
     },
     async (req, res) => {
+      const profileError = await validateStreamSelectionProfileId(
+        req.serverCtx.drizzleFactory(),
+        req.body.streamSelectionProfileId,
+      );
+      if (profileError) {
+        return res.status(400).send(profileError);
+      }
+
       const newId = await req.serverCtx.customShowDB.createShow(req.body);
 
       // If this is a synced custom show, trigger an immediate sync
@@ -245,6 +266,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         syncMediaSourceType: newShow.syncMediaSourceType ?? undefined,
         syncExternalPlaylistId: newShow.syncExternalPlaylistId ?? undefined,
         lastSyncedAt: newShow.lastSyncedAt?.getTime() ?? undefined,
+        streamSelectionProfileId: newShow.streamSelectionProfileId ?? null,
         isSyncing: req.serverCtx.customShowSyncService.isShowSyncing(
           newShow.uuid,
         ),
@@ -332,6 +354,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         syncMediaSourceType: updatedShow.syncMediaSourceType ?? undefined,
         syncExternalPlaylistId: updatedShow.syncExternalPlaylistId ?? undefined,
         lastSyncedAt: updatedShow.lastSyncedAt?.getTime() ?? undefined,
+        streamSelectionProfileId: updatedShow.streamSelectionProfileId ?? null,
       });
     },
   );
