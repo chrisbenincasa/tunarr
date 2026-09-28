@@ -10,7 +10,7 @@ This plan replaces the legacy path entirely: every stream resolves through profi
 
 ## Task List
 
-### PR 1 — Engine, migration, assignment, docs (target: `dev`)
+### PR 1 — Engine, migration, assignment, docs (target: `main`, #1876)
 
 - [x] **1. Resolver cascade**
   - [x] Resolver returns an ordered chain: program → source (custom show *or* filler list) → channel → default pointer → built-in (D1, D2)
@@ -63,7 +63,7 @@ This plan replaces the legacy path entirely: every stream resolves through profi
   - [x] Migration on a seeded DB with mixed legacy subtitle configs — verify dedup and naming
   - [ ] Troubleshoot cascade trace (not run: QA DB has no media or FFmpeg; covered by evaluator chain tests)
 
-### PR 2 — Preview + Basic-mode fields (target: `dev`)
+### PR 2 — Preview + Basic-mode fields (target: `main`)
 
 - [ ] **13. Rule preview** (D15, D16)
   - [ ] `POST /stream-selection-profiles/preview`: inline unsaved profile + program ID + optional channel ID; evaluates only that profile; reports "no match — would cascade" without cascading
@@ -112,5 +112,5 @@ Settled 2026-09-27.
 - **D16. Preview UI:** a collapsible Test panel at the bottom of the editor with a manual Run button.
 - **D17. Basic mode:** adds show and program title, genres (the union of episode and show genres), and library. No channel fields and no regex. Unrecognized CEL stays in CEL mode.
 - **D18. Docs:** `docs/configure/stream-selection.md` with the outline in task 10. Program is left out of the documented order until it's reachable.
-- **D19. Delivery:** PR 1 (engine, migration, assignment, docs) and PR 2 (preview, Basic-mode fields), both targeting `dev`, followed by an N+1 chore PR. Claude runs QA in Chrome with GIFs.
+- **D19. Delivery:** PR 1 (engine, migration, assignment, docs) and PR 2 (preview, Basic-mode fields), both targeting `main`, followed by an N+1 chore PR. Claude runs QA in Chrome with GIFs.
 - **Program-level assignment:** deferred (see Deferred).
