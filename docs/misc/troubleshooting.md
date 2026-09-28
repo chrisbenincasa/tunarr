@@ -76,12 +76,13 @@ Details about the program and its streams as reported by the media source:
 
 ### Stream Selection
 
-Shows which stream selection profile was applied and the result of evaluating each rule:
+Shows how the audio and subtitle streams were chosen. Tunarr checks [stream selection profiles](../configure/stream-selection.md) in order — the program's custom show or filler list, then the channel, then the default profile, then the built-in profile — and stops at the first profile with a matching rule. Each profile it checked is listed with the level it came from:
 
-- Rules that **matched** are highlighted in green.
-- The first matched rule determines the selected audio and subtitle streams.
-- If no rule matched, the first audio stream is selected and subtitles are disabled.
-- The **Selected Audio** and **Selected Subtitle** chips show exactly which streams will be used during transcoding.
+- Rules that **matched** show a check mark. The rule that was **applied** is highlighted in green.
+- A profile marked **No rule matched, continuing** had no matching rule, so Tunarr moved on to the next one.
+- The **Selected Audio** and **Selected Subtitle** chips show exactly which streams will be used during transcoding. If no subtitle was selected, the reason is shown instead.
+
+The troubleshooter finds the program in the selected channel's lineup to decide whether it plays from a filler list or custom show.
 
 ### Transcode Config
 
@@ -135,7 +136,7 @@ The downloaded JSON file contains:
 {
   "systemInfo": { "tunarrVersion": "...", "ffmpegVersion": "...", ... },
   "mediaInfo": { "title": "...", "videoStreams": [...], "audioStreams": [...], ... },
-  "streamSelection": { "profileName": "...", "rules": [...], ... },
+  "streamSelection": { "levels": [{ "level": "channel", "profileName": "...", "rules": [...] }], ... },
   "transcodeConfig": { "name": "...", "videoFormat": "...", ... },
   "channelConfig": { ... },
   "pipeline": { "ffmpegArgs": [...], "ffmpegArgsString": "...", ... },
