@@ -16,6 +16,7 @@ import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import { AddCircle } from '@mui/icons-material';
 import {
+  Alert,
   Box,
   Breadcrumbs,
   Button,
@@ -140,6 +141,8 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
     reset,
   } = methods;
 
+  const locked = existingProfile?.locked ?? false;
+
   const { fields, append, remove, move } = useFieldArray({
     control,
     name: 'rules',
@@ -173,6 +176,18 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
       reset(methods.getValues());
     },
   });
+
+  const duplicate = useCallback(() => {
+    if (!existingProfile) {
+      return;
+    }
+    createMutation.mutate({
+      body: {
+        name: t`Copy of ${existingProfile.name}`,
+        rules: existingProfile.rules,
+      },
+    });
+  }, [createMutation, existingProfile]);
 
   const onSubmit = useCallback(
     (values: StreamSelectionProfileFormValues) => {
@@ -234,14 +249,37 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
       <Typography variant="h4" mb={2}>
         {isNew ? (
           <Trans>New Stream Selection Profile</Trans>
+        ) : locked ? (
+          <Trans>View Stream Selection Profile</Trans>
         ) : (
           <Trans>Edit Stream Selection Profile</Trans>
         )}
       </Typography>
 
+      {locked && (
+        <Alert
+          severity="info"
+          sx={{ mb: 2 }}
+          action={
+            <Button color="inherit" size="small" onClick={duplicate}>
+              <Trans>Duplicate</Trans>
+            </Button>
+          }
+        >
+          <Trans>
+            This profile is built into Tunarr and cannot be changed. Duplicate
+            it to make a version you can edit.
+          </Trans>
+        </Alert>
+      )}
+
       <FormProvider {...methods}>
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-          <Paper sx={{ p: [2, 3], mb: 2 }}>
+          <Paper
+            component="fieldset"
+            disabled={locked}
+            sx={{ m: 0, mb: 2, p: [2, 3], border: 0, minWidth: 0 }}
+          >
             <Controller
               control={control}
               name="name"
@@ -318,7 +356,12 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
             </Stack>
           </Paper>
 
-          <Stack direction="row" spacing={2} justifyContent="flex-end">
+          <Stack
+            direction="row"
+            spacing={2}
+            justifyContent="flex-end"
+            sx={{ mt: 2, display: locked ? 'none' : undefined }}
+          >
             {isDirty && (
               <Button
                 variant="outlined"
