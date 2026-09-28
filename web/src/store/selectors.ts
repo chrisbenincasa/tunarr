@@ -20,7 +20,27 @@ import type {
 } from './channelEditor/store.ts';
 import useStore, { type State } from './index.ts';
 
+// Many components select the materialized list on every render. Caching by
+// input identity keeps the result stable, so callers must not mutate it.
+const materializeCache = new WeakMap<
+  object,
+  { programLookup: object; result: UIChannelProgramWithOffset[] }
+>();
+
 export const materializeProgramList = (
+  lineup: (CondensedChannelProgram & UIIndex)[],
+  programLookup: Record<string, ContentProgram>,
+): UIChannelProgramWithOffset[] => {
+  const cached = materializeCache.get(lineup);
+  if (cached?.programLookup === programLookup) {
+    return cached.result;
+  }
+  const result = buildProgramList(lineup, programLookup);
+  materializeCache.set(lineup, { programLookup, result });
+  return result;
+};
+
+const buildProgramList = (
   lineup: (CondensedChannelProgram & UIIndex)[],
   programLookup: Record<string, ContentProgram>,
 ): UIChannelProgramWithOffset[] => {
@@ -69,8 +89,22 @@ export const materializedProgramListSelector = ({
   return materializeProgramList(programList, programLookup);
 };
 
+const channelEditorCache = new WeakMap<
+  ChannelEditorState,
+  ReturnType<typeof buildChannelEditor>
+>();
+
 function channelEditorSelector(s: State) {
   const editor = s.channelEditor;
+  let result = channelEditorCache.get(editor);
+  if (result === undefined) {
+    result = buildChannelEditor(editor);
+    channelEditorCache.set(editor, result);
+  }
+  return result;
+}
+
+function buildChannelEditor(editor: ChannelEditorState) {
   return {
     ...editor,
     programList: materializeProgramList(
