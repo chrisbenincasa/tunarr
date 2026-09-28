@@ -20,7 +20,7 @@ export const sortPrograms = (
   sortOrder: SortOrder,
 ) => {
   let newProgramSort: ChannelProgram[] = [];
-  newProgramSort = programs.sort((a, b) => {
+  newProgramSort = [...programs].sort((a, b) => {
     if (isContentProgram(a) && isContentProgram(b)) {
       if (a.program.title < b.program.title) {
         return -1;
