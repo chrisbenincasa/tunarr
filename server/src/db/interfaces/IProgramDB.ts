@@ -45,6 +45,14 @@ export interface IProgramDB {
     id: string,
   ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>>;
 
+  /**
+   * Loads a program with only the relations a lineup needs. See
+   * `LineupProgramRelations`.
+   */
+  getLineupProgramById(
+    id: string,
+  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>>;
+
   getProgramExternalIds(
     id: string,
     externalIdTypes?: ProgramExternalIdType[],

@@ -64,7 +64,7 @@ import {
   wait,
 } from '../../util/index.ts';
 import { ProgramConverter } from '../converters/ProgramConverter.ts';
-import { MaterializedProgramRelations } from '../program/programRelations.ts';
+import { LineupProgramRelations } from '../program/programRelations.ts';
 import type {
   ContentItem,
   Lineup,
@@ -727,7 +727,7 @@ export class LineupRepository {
           where: (fields, { eq }) => eq(fields.channelUuid, channelId),
           with: {
             program: {
-              with: MaterializedProgramRelations,
+              with: LineupProgramRelations,
             },
           },
         }),

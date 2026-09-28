@@ -142,3 +142,19 @@ export const ProgramStreamRelations = {
     },
   },
 } as const;
+
+/**
+ * The relations a program needs when it is added to or listed in a lineup.
+ *
+ * Deliberately narrower than {@link MaterializedProgramRelations}. Lineup
+ * paths load thousands of programs at once, and the full set copies every
+ * parent's cast, genres and artwork into each episode. A 6k-episode add from
+ * the program picker grew to hundreds of megabytes in the browser with it.
+ */
+export const LineupProgramRelations = {
+  externalIds: true,
+  show: { with: { externalIds: true } },
+  season: { with: { externalIds: true } },
+  album: { with: { externalIds: true } },
+  artist: { with: { externalIds: true } },
+} as const;

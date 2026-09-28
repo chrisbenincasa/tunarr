@@ -81,6 +81,12 @@ export class ProgramDB implements IProgramDB {
     return this.basicProg.getProgramById(id);
   }
 
+  getLineupProgramById(
+    id: string,
+  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+    return this.basicProg.getLineupProgramById(id);
+  }
+
   getProgramExternalIds(
     id: string,
     externalIdTypes?: ProgramExternalIdType[],
