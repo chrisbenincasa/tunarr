@@ -28,11 +28,13 @@ import { useTranscodeConfigFormOptions } from './useTranscodeConfigFormOptions.t
 type Props = {
   initialConfig: z.input<typeof TranscodeConfigSchema>;
   isNew?: boolean;
+  onCreated?: (config: TranscodeConfig) => void;
 };
 
 export const TranscodeConfigSettingsForm = ({
   initialConfig,
   isNew,
+  onCreated,
 }: Props) => {
   const { t } = useLingui();
   const showAdvancedSettings = useStore(
@@ -47,6 +49,7 @@ export const TranscodeConfigSettingsForm = ({
     initialConfig,
     isNew,
     onSave: saveForm,
+    onCreated,
   });
   const transcodeConfigForm = useAppForm({ ...formOpts });
 

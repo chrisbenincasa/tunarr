@@ -15,6 +15,8 @@ type Opts = {
   initialConfig: z.input<typeof TranscodeConfigSchema>;
   isNew?: boolean;
   onSave: (newConfig: TranscodeConfig) => void;
+  // Called after a new config is created, e.g. to move to its edit page.
+  onCreated?: (newConfig: TranscodeConfig) => void;
 };
 
 export const useBaseTranscodeConfigFormOptions = (
@@ -32,6 +34,7 @@ export const useBaseTranscodeConfigFormOptions = (
 export const useTranscodeConfigFormOptions = ({
   initialConfig,
   onSave,
+  onCreated,
   isNew,
 }: Opts) => {
   const snackbar = useSnackbar();
@@ -63,15 +66,16 @@ export const useTranscodeConfigFormOptions = ({
 
   const newConfigMutation = useMutation({
     ...postApiTranscodeConfigsMutation(),
-    onSuccess: (ret) => {
+    onSuccess: async (ret) => {
       snackbar.enqueueSnackbar(t`Successfully saved config!`, {
         variant: 'success',
       });
       onSave(ret);
-      return queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: getApiTranscodeConfigsQueryKey(),
         exact: false,
       });
+      onCreated?.(ret);
     },
     onError: (e) => {
       console.error(e);

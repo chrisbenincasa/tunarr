@@ -1736,7 +1736,6 @@ msgid "Edit Stream Selection Profile"
 msgstr "Edit Stream Selection Profile"
 
 #: src/hooks/useRouteName.ts
-#: src/hooks/useRouteName.ts
 msgid "Edit Transcode Config"
 msgstr "Edit Transcode Config"
 
@@ -3026,6 +3025,7 @@ msgstr "never"
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
+#: src/hooks/useRouteName.ts
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
@@ -3068,6 +3068,10 @@ msgstr "New Profile"
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "New Stream Selection Profile"
 msgstr "New Stream Selection Profile"
+
+#: src/pages/profiles/TranscodeConfigPage.tsx
+msgid "New Transcode Config"
+msgstr "New Transcode Config"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Next"
