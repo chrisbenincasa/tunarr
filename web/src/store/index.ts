@@ -118,6 +118,9 @@ const useStore = create<State>()(
           },
         },
       ),
+      // Zustand v4 enables devtools whenever the Redux DevTools extension is
+      // present, and the extension serializes the whole store on every update.
+      { enabled: import.meta.env.DEV },
     ),
   ),
 );
