@@ -8,6 +8,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import type { AnyRoute } from '@tanstack/react-router';
 import { useBlocker } from '@tanstack/react-router';
 import { isEmpty } from 'lodash-es';
+import { useRef } from 'react';
 
 type AvailablePaths<TRoute extends AnyRoute = AnyRoute> = TRoute['fullPath'];
 
@@ -25,6 +26,12 @@ export default function UnsavedNavigationAlert({
   exceptTargetPaths,
   onProceed,
 }: Props) {
+  // Read at unload time so the browser's "Leave site?" prompt follows the
+  // current dirty state. Without this, useBlocker enables the prompt
+  // unconditionally and it fires even on a pristine form.
+  const isDirtyRef = useRef(isDirty);
+  isDirtyRef.current = isDirty;
+
   const { proceed, status, reset } = useBlocker({
     shouldBlockFn: ({ next }) => {
       if (exceptTargetPaths && !isEmpty(exceptTargetPaths)) {
@@ -36,6 +43,7 @@ export default function UnsavedNavigationAlert({
       }
       return isDirty;
     },
+    enableBeforeUnload: () => isDirtyRef.current,
     withResolver: true,
   });
 
