@@ -219,4 +219,17 @@ describe('JellyfinApiClient external subtitle canonicalization', () => {
       expect(stream.externalKey).toBeUndefined();
     }
   });
+
+  it('normalizes the 2-letter language code Jellyfin reports for external subtitles to 3-letter ISO 639-2/T', async () => {
+    const streams = await canonicalizedStreams();
+
+    // The fixture's sidecar entries report Language "en" (Jellyfin's
+    // filename-detected form for external subs), which must be normalized to
+    // "eng" rather than stored raw.
+    expect(
+      streams
+        .filter((s) => s.streamType === 'external_subtitles')
+        .map((s) => s.languageCodeISO6392),
+    ).toEqual(['eng', 'eng']);
+  });
 });
