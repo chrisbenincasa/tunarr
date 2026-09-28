@@ -122,7 +122,7 @@ export const TranscodeConfigsTable = () => {
             <Tooltip title={t`Edit`} placement="top">
               <IconButton
                 aria-label={t`Edit`}
-                to={`/settings/ffmpeg/${config.id}`}
+                to={`/profiles/transcode/${config.id}`}
                 component={Link}
               >
                 <Edit />
@@ -175,7 +175,7 @@ export const TranscodeConfigsTable = () => {
             variant="contained"
             startIcon={<AddCircle />}
             component={Link}
-            to="/settings/ffmpeg/new"
+            to="/profiles/transcode/new"
           >
             <Trans>New</Trans>
           </Button>

@@ -393,7 +393,7 @@ export default function ChannelsPage() {
 
           return (
             <RouterLink
-              to="/settings/ffmpeg/$configId"
+              to="/profiles/transcode/$configId"
               params={{ configId: conf.id }}
               onClick={(e) => e.stopPropagation()}
             >
