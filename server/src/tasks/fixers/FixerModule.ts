@@ -4,6 +4,7 @@ import { KEYS } from '@/types/inject.js';
 import { ContainerModule } from 'inversify';
 import { BackfillMediaSourceIdFixer } from './BackfillMediaSourceIdFixer.ts';
 import { BackfillProgramArtworkFixer } from './BackfillProgramArtworkFixer.ts';
+import { FixMislabeledGroupingExternalIdSourceType } from './FixMislabeledGroupingExternalIdSourceType.ts';
 import { FixSmartCollectionFilters } from './FixSmartCollectionFIlters.ts';
 
 const FixerModule = new ContainerModule(({ bind }) => {
@@ -11,6 +12,7 @@ const FixerModule = new ContainerModule(({ bind }) => {
   bind<Fixer>(KEYS.Fixer).to(BackfillMediaSourceIdFixer);
   bind<Fixer>(KEYS.Fixer).to(BackfillProgramArtworkFixer);
   bind<Fixer>(KEYS.Fixer).to(FixSmartCollectionFilters);
+  bind<Fixer>(KEYS.Fixer).to(FixMislabeledGroupingExternalIdSourceType);
 });
 
 export { FixerModule };
