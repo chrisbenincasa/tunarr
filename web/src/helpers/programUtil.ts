@@ -1,10 +1,14 @@
 import { createExternalId } from '@tunarr/shared';
 import type {
   Episode,
+  MediaSourceContentType,
+  MediaSourceLibrary,
+  MediaSourceSettings,
   MusicAlbum,
   MusicArtist,
   MusicTrack,
   ProgramGrouping,
+  ProgramLike,
   ProgramOrFolder,
   Season,
   Show,
@@ -13,6 +17,7 @@ import type {
 import { isTerminalItemType, tag, type ChannelProgram } from '@tunarr/types';
 import {
   isValidSingleExternalIdType,
+  type SearchFilter,
   type SearchRequest,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
@@ -87,6 +92,59 @@ export function getProgramGroupingKey(program: ChannelProgram): string {
       .with({ type: 'filler' }, (program) => `filler.${program.fillerListId}`)
       .exhaustive()
   );
+}
+
+function searchItemTypeFromContentType(
+  mediaType: MediaSourceContentType,
+): ProgramLike['type'] {
+  switch (mediaType) {
+    case 'movies':
+      return 'movie';
+    case 'shows':
+      return 'show';
+    case 'tracks':
+      return 'artist';
+    case 'other_videos':
+      return 'other_video';
+    case 'music_videos':
+      return 'music_video';
+  }
+}
+
+function mediaTypeSearchFilter(
+  mediaType: MediaSourceContentType,
+): SearchFilter {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: 'type',
+      name: 'Type',
+      op: '=',
+      type: 'string',
+      value: [searchItemTypeFromContentType(mediaType)],
+    },
+  };
+}
+
+/**
+ * The filter a library listing applies when the user has not set one. It
+ * limits a TV library to shows, a music library to artists, and so on. Without
+ * it a search returns every indexed level, so shows, seasons and episodes all
+ * match at once.
+ */
+export function defaultLibrarySearchFilter(
+  mediaSource: Maybe<MediaSourceSettings>,
+  library: Maybe<Pick<MediaSourceLibrary, 'mediaType'>>,
+): SearchFilter | null {
+  if (library) {
+    return mediaTypeSearchFilter(library.mediaType);
+  }
+
+  if (mediaSource?.type === 'local') {
+    return mediaTypeSearchFilter(mediaSource.mediaType);
+  }
+
+  return null;
 }
 
 export async function enumerateSyncedItems(
