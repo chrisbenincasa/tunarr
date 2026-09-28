@@ -10,4 +10,6 @@ export const FillerListSchema = z.object({
   name: z.string(),
   contentCount: z.number(),
   programs: FillerListProgrammingSchema.optional(),
+  // Applies when a program plays as filler from this list.
+  streamSelectionProfileId: z.uuid().nullish(),
 });

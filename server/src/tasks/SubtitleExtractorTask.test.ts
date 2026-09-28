@@ -76,7 +76,7 @@ function makeHarness(opts: {
   subtitles: SubtitleRow[];
   sourceType?: 'jellyfin' | 'emby' | 'plex';
   replacePaths?: { localPath: string; serverPath: string }[];
-  subtitlesEnabled?: boolean;
+  mayPickSubtitles?: boolean;
   enableSubtitleExtraction?: boolean;
   downloadedPath?: string;
 }) {
@@ -157,13 +157,7 @@ function makeHarness(opts: {
     } as never,
     {
       getAllChannels: () =>
-        Promise.resolve([
-          {
-            uuid: CHANNEL_ID,
-            subtitlesEnabled: opts.subtitlesEnabled ?? true,
-          },
-          { uuid: OTHER_CHANNEL_ID, subtitlesEnabled: false },
-        ]),
+        Promise.resolve([{ uuid: CHANNEL_ID }, { uuid: OTHER_CHANNEL_ID }]),
     } as never,
     {
       getStream: () => Promise.reject(new Error('should not be called')),
@@ -184,6 +178,12 @@ function makeHarness(opts: {
       getJellyfinApiClientForMediaSource: () => Promise.resolve(apiClient),
       getEmbyApiClientForMediaSource: () => Promise.resolve(apiClient),
       getPlexApiClientForMediaSource: () => Promise.resolve(apiClient),
+    } as never,
+    {
+      channelMayPickSubtitles: (channelId: string) =>
+        Promise.resolve(
+          channelId === CHANNEL_ID && (opts.mayPickSubtitles ?? true),
+        ),
     } as never,
   );
 
@@ -408,9 +408,9 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
     expect(harness.setSubtitlePath).not.toHaveBeenCalled();
   });
 
-  it('skips channels that have subtitles turned off', async () => {
+  it('skips channels whose stream selection profiles never select subtitles', async () => {
     const harness = makeHarness({
-      subtitlesEnabled: false,
+      mayPickSubtitles: false,
       downloadedPath: CACHED_SUBTITLE_PATH,
       subtitles: [
         {
@@ -429,7 +429,7 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
     expect(harness.downloadSubtitlesIfNecessary).not.toHaveBeenCalled();
   });
 
-  it('loads guides only for channels with subtitles turned on', async () => {
+  it('loads guides only for channels whose profiles may select subtitles', async () => {
     const harness = makeHarness({ subtitles: [] });
 
     await run(harness);

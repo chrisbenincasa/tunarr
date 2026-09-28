@@ -1,6 +1,8 @@
 import type {
   AudioAction,
+  StreamSelectionLevel,
   StreamSelectionProfile,
+  StreamSelectionRule,
   SubtitleAction,
 } from '@tunarr/types/schemas';
 import type { NonEmptyArray } from 'ts-essentials';
@@ -10,6 +12,7 @@ import type {
   StreamSelectionCelContext,
 } from '../services/CelEvaluationService.ts';
 import { LanguageService } from '../services/LanguageService.ts';
+import type { ResolvedStreamSelectionProfile } from '../services/StreamSelectionProfileResolver.ts';
 import type {
   AudioStreamDetails,
   SubtitleStreamDetails,
@@ -89,24 +92,85 @@ export type StreamSelectionHints = {
   preferTextBased?: boolean;
 };
 
+export type StreamSelectionRuleTrace = {
+  label?: string;
+  condition: string;
+  matched: boolean;
+};
+
+export type ProfileRuleEvaluation = {
+  rules: StreamSelectionRuleTrace[];
+  // Index into profile.rules of the first matching rule, or null if none
+  // matched.
+  matchedRuleIndex: number | null;
+};
+
+/**
+ * Evaluates every rule condition in a profile. Only the first match is
+ * applied, but all rules are evaluated so that traces can show which other
+ * rules would have matched.
+ */
+export function evaluateProfileRules(
+  profile: StreamSelectionProfile,
+  celService: CelEvaluationService,
+  celContext: StreamSelectionCelContext,
+): ProfileRuleEvaluation {
+  let matchedRuleIndex: number | null = null;
+  const rules = profile.rules.map((rule, idx) => {
+    const matched = !!celService.evaluate(rule.condition, celContext);
+    if (matched && matchedRuleIndex === null) {
+      matchedRuleIndex = idx;
+    }
+    return { label: rule.label, condition: rule.condition, matched };
+  });
+  return { rules, matchedRuleIndex };
+}
+
 function findMatchingRule(
   profile: StreamSelectionProfile,
   celService: CelEvaluationService,
   celContext: StreamSelectionCelContext,
-): StreamSelectionProfile['rules'][number] | undefined {
-  for (const rule of profile.rules) {
-    if (celService.evaluate(rule.condition, celContext)) {
-      logger.debug(
-        'Stream selection rule matched: %s (condition: %s)',
-        rule.label ?? '(unlabeled)',
-        rule.condition,
-      );
-      return rule;
-    }
-  }
-  return undefined;
+): StreamSelectionRule | undefined {
+  const { matchedRuleIndex } = evaluateProfileRules(
+    profile,
+    celService,
+    celContext,
+  );
+  return matchedRuleIndex !== null
+    ? profile.rules[matchedRuleIndex]
+    : undefined;
 }
 
+async function applyRule(
+  rule: StreamSelectionRule,
+  audioStreams: NonEmptyArray<AudioStreamDetails>,
+  subtitleStreams: SubtitleStreamDetails[] | undefined,
+  lineupItem: ContentBackedStreamLineupItem,
+  hints?: StreamSelectionHints,
+): Promise<StreamSelectionResult> {
+  const audioStream = resolveAudioAction(rule.audioAction, audioStreams);
+  const subtitleStream = await resolveSubtitleAction(
+    rule.subtitleAction,
+    subtitleStreams,
+    lineupItem,
+    hints,
+  );
+  return { audioStream, subtitleStream };
+}
+
+function noMatchResult(
+  audioStreams: NonEmptyArray<AudioStreamDetails>,
+): StreamSelectionResult {
+  return {
+    audioStream: selectDefaultAudioStream(audioStreams),
+    subtitleStream: null,
+  };
+}
+
+/**
+ * Evaluates a single profile. If no rule matches, the default audio stream
+ * is chosen and subtitles are disabled.
+ */
 export async function evaluateStreamSelectionProfile(
   profile: StreamSelectionProfile,
   audioStreams: NonEmptyArray<AudioStreamDetails>,
@@ -119,21 +183,9 @@ export async function evaluateStreamSelectionProfile(
   const rule = findMatchingRule(profile, celService, celContext);
   if (!rule) {
     logger.debug('No stream selection rule matched, using defaults');
-    return {
-      audioStream: audioStreams[0],
-      subtitleStream: null,
-    };
+    return noMatchResult(audioStreams);
   }
-
-  return {
-    audioStream: resolveAudioAction(rule.audioAction, audioStreams),
-    subtitleStream: await resolveSubtitleAction(
-      rule.subtitleAction,
-      subtitleStreams,
-      lineupItem,
-      hints,
-    ),
-  };
+  return applyRule(rule, audioStreams, subtitleStreams, lineupItem, hints);
 }
 
 /**
@@ -154,8 +206,109 @@ export async function evaluateSubtitleSelection(
     logger.debug('No stream selection rule matched, selecting no subtitles');
     return null;
   }
+  return resolveSubtitleAction(
+    rule.subtitleAction,
+    subtitleStreams,
+    lineupItem,
+    hints,
+  );
+}
 
-  return await resolveSubtitleAction(
+export type StreamSelectionLevelTrace = ProfileRuleEvaluation & {
+  level: StreamSelectionLevel;
+  sourceId?: string;
+  profileId: string;
+  profileName: string;
+};
+
+export type StreamSelectionChainResult = StreamSelectionResult & {
+  // One entry per profile evaluated, in chain order. The last entry is the
+  // one whose rule was applied, unless no profile matched at all.
+  levels: StreamSelectionLevelTrace[];
+  matchedRule: StreamSelectionRule | null;
+};
+
+/**
+ * Walks a resolved profile chain. The first profile with a matching rule
+ * wins, and its rule is final even if its actions find no stream. The chain
+ * only moves on to the next profile when no rule condition matches.
+ */
+function walkChain(
+  chain: ResolvedStreamSelectionProfile[],
+  celService: CelEvaluationService,
+  celContext: StreamSelectionCelContext,
+): { levels: StreamSelectionLevelTrace[]; rule: StreamSelectionRule | null } {
+  const levels: StreamSelectionLevelTrace[] = [];
+  for (const { level, sourceId, profile } of chain) {
+    const evaluation = evaluateProfileRules(profile, celService, celContext);
+    levels.push({
+      level,
+      sourceId,
+      profileId: profile.uuid,
+      profileName: profile.name,
+      ...evaluation,
+    });
+
+    const rule =
+      evaluation.matchedRuleIndex !== null
+        ? profile.rules[evaluation.matchedRuleIndex]
+        : undefined;
+    if (rule) {
+      logger.debug(
+        'Stream selection rule matched: %s (condition: %s) in profile %s (%s level)',
+        rule.label ?? '(unlabeled)',
+        rule.condition,
+        profile.name,
+        level,
+      );
+      return { levels, rule };
+    }
+  }
+
+  // Unreachable in practice: the built-in profile always matches.
+  logger.warn('No stream selection profile in the chain matched');
+  return { levels, rule: null };
+}
+
+export async function evaluateStreamSelectionChain(
+  chain: ResolvedStreamSelectionProfile[],
+  audioStreams: NonEmptyArray<AudioStreamDetails>,
+  subtitleStreams: SubtitleStreamDetails[] | undefined,
+  celService: CelEvaluationService,
+  celContext: StreamSelectionCelContext,
+  lineupItem: ContentBackedStreamLineupItem,
+  hints?: StreamSelectionHints,
+): Promise<StreamSelectionChainResult> {
+  const { levels, rule } = walkChain(chain, celService, celContext);
+  if (!rule) {
+    return { ...noMatchResult(audioStreams), levels, matchedRule: null };
+  }
+  const result = await applyRule(
+    rule,
+    audioStreams,
+    subtitleStreams,
+    lineupItem,
+    hints,
+  );
+  return { ...result, levels, matchedRule: rule };
+}
+
+/**
+ * Chain counterpart of evaluateSubtitleSelection, for passthrough output.
+ */
+export async function evaluateSubtitleSelectionChain(
+  chain: ResolvedStreamSelectionProfile[],
+  subtitleStreams: SubtitleStreamDetails[] | undefined,
+  celService: CelEvaluationService,
+  celContext: StreamSelectionCelContext,
+  lineupItem: ContentBackedStreamLineupItem,
+  hints?: StreamSelectionHints,
+): Promise<SubtitleStreamDetails | null> {
+  const { rule } = walkChain(chain, celService, celContext);
+  if (!rule) {
+    return null;
+  }
+  return resolveSubtitleAction(
     rule.subtitleAction,
     subtitleStreams,
     lineupItem,
