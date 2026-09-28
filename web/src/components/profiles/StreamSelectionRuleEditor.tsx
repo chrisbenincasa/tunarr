@@ -68,6 +68,8 @@ interface Props {
   onMoveDown: () => void;
   onRemove: () => void;
   onValidateCondition: (expression: string) => Promise<string | undefined>;
+  // Shows the rule without allowing changes, e.g. for locked profiles.
+  readOnly?: boolean;
 }
 
 function getAudioSummary(audioType: AudioAction['type']) {
@@ -101,6 +103,7 @@ export function StreamSelectionRuleEditor({
   onMoveDown,
   onRemove,
   onValidateCondition,
+  readOnly = false,
 }: Props) {
   const { control } = useFormContext<StreamSelectionProfileFormValues>();
 
@@ -155,7 +158,12 @@ export function StreamSelectionRuleEditor({
             </>
           )}
         </Box>
-        <Stack direction="row" spacing={0} onClick={(e) => e.stopPropagation()}>
+        <Stack
+          direction="row"
+          spacing={0}
+          onClick={(e) => e.stopPropagation()}
+          sx={{ display: readOnly ? 'none' : undefined }}
+        >
           <Tooltip title={t`Move up`}>
             <span>
               <IconButton
@@ -192,7 +200,20 @@ export function StreamSelectionRuleEditor({
         </Stack>
       </AccordionSummary>
       <AccordionDetails>
-        <Stack spacing={3}>
+        <Stack
+          spacing={3}
+          component="fieldset"
+          disabled={readOnly}
+          // A disabled fieldset only disables native controls; MUI selects
+          // and autocompletes also need pointer events blocked.
+          sx={{
+            border: 0,
+            m: 0,
+            p: 0,
+            minWidth: 0,
+            pointerEvents: readOnly ? 'none' : undefined,
+          }}
+        >
           {/* Label */}
           <Controller
             control={control}
