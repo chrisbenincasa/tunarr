@@ -72,7 +72,7 @@ This plan replaces the legacy path entirely: every stream resolves through profi
   - [x] Add `program.showTitle`, `program.genres` (episode ∪ show genres), `program.libraryId` to the CEL context (loaded at stream start by `StreamSelectionProgramContextLoader`; also used by Troubleshoot and preview)
   - [x] Basic builder: show title / program title (`==`, `!=`, `contains`); genre (`in`, `not in`; suggestions from the `genres.name` search facet, free text allowed); library (`==`, `!=`; picker from media source libraries)
   - [x] `celParser` / `celGenerator` round-trip, including escaped strings; unrecognized CEL stays in CEL mode
-- [ ] **15. Docs** — preview, new fields, genre/library recipes (e.g. anime → jpn audio + eng subs)
+- [x] **15. Docs** — preview ("Testing rules"), new fields, genre/library/show recipes (e.g. anime → jpn audio + eng subs)
 - [ ] **16. QA** — preview panel and new Basic-mode fields in Chrome
 
 ### Release N+1 — chore PR
