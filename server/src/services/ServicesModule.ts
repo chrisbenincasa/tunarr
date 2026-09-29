@@ -13,6 +13,8 @@ import { CelEvaluationService } from './CelEvaluationService.ts';
 import { CustomShowSyncService } from './CustomShowSyncService.ts';
 import { EmbyItemCanonicalizer } from './EmbyItemCanonicalizer.ts';
 import { FeatureFlagService } from './FeatureFlagService.ts';
+import { StreamSelectionPreviewService } from './StreamSelectionPreviewService.ts';
+import { StreamSelectionProgramContextLoader } from './StreamSelectionProgramContextLoader.ts';
 import { TroubleshootService } from './TroubleshootService.ts';
 import { JellyfinItemCanonicalizer } from './JellyfinItemCanonicalizer.ts';
 import type { FolderAndContents } from './LocalFolderCanonicalizer.ts';
@@ -230,5 +232,7 @@ export const ServicesModule = new ContainerModule(({ bind }) => {
   bind(StreamSelectionProfileResolver).toSelf().inSingletonScope();
   bind(FeatureFlagService).toSelf().inSingletonScope();
   bind(TroubleshootService).toSelf().inSingletonScope();
+  bind(StreamSelectionPreviewService).toSelf().inSingletonScope();
+  bind(StreamSelectionProgramContextLoader).toSelf().inSingletonScope();
   bind(ArtworkService).toSelf().inSingletonScope();
 });

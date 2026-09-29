@@ -18,9 +18,17 @@ import {
   LIST_OPERATOR_LABELS,
   NUMERIC_OPERATOR_LABELS,
   PROGRAM_TYPES,
+  TEXT_OPERATOR_LABELS,
 } from './types.ts';
-import type { ComparisonOperator, ListOperator, NumericOperator } from './types.ts';
+import type {
+  ComparisonOperator,
+  ListOperator,
+  NumericOperator,
+  TextOperator,
+} from './types.ts';
 import { LanguageAutocomplete } from '@/components/LanguageAutocomplete.tsx';
+import { GenreAutocomplete } from './GenreAutocomplete.tsx';
+import { LibrarySelect } from './LibrarySelect.tsx';
 
 interface Props {
   clause: ConditionClause;
@@ -34,6 +42,10 @@ const CLAUSE_TYPES: ClauseType[] = [
   'audio_language',
   'subtitle_language',
   'audio_channels',
+  'program_title',
+  'show_title',
+  'genre',
+  'library',
 ];
 
 export function ConditionClauseEditor({
@@ -59,11 +71,26 @@ export function ConditionClauseEditor({
       case 'audio_channels':
         onChange({ type: 'audio_channels', operator: 'gte', value: 6 });
         break;
+      case 'program_title':
+      case 'show_title':
+        onChange({ type: newType, operator: 'eq', value: '' });
+        break;
+      case 'genre':
+        onChange({ type: 'genre', operator: 'in', value: '' });
+        break;
+      case 'library':
+        onChange({ type: 'library', operator: 'eq', value: '' });
+        break;
     }
   };
 
   return (
-    <Stack direction="row" spacing={1} alignItems="center" sx={{ minHeight: 40 }}>
+    <Stack
+      direction="row"
+      spacing={1}
+      alignItems="center"
+      sx={{ minHeight: 40 }}
+    >
       {/* Clause type selector */}
       <FormControl size="small" sx={{ minWidth: 170 }}>
         <InputLabel>
@@ -105,9 +132,7 @@ export function ConditionClauseEditor({
           <FormControl size="small" sx={{ minWidth: 140 }}>
             <Select
               value={clause.value}
-              onChange={(e) =>
-                onChange({ ...clause, value: e.target.value })
-              }
+              onChange={(e) => onChange({ ...clause, value: e.target.value })}
             >
               {PROGRAM_TYPES.map((pt) => (
                 <MenuItem key={pt.value} value={pt.value}>
@@ -214,6 +239,87 @@ export function ConditionClauseEditor({
             }}
             slotProps={{ htmlInput: { min: 1, max: 16 } }}
             sx={{ width: 80 }}
+          />
+        </>
+      )}
+
+      {(clause.type === 'program_title' || clause.type === 'show_title') && (
+        <>
+          <FormControl size="small" sx={{ minWidth: 110 }}>
+            <Select
+              value={clause.operator}
+              onChange={(e) =>
+                onChange({
+                  ...clause,
+                  operator: e.target.value as TextOperator,
+                })
+              }
+            >
+              {Object.entries(TEXT_OPERATOR_LABELS).map(([k, v]) => (
+                <MenuItem key={k} value={k}>
+                  {t(v)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            size="small"
+            label={t`Title`}
+            value={clause.value}
+            onChange={(e) => onChange({ ...clause, value: e.target.value })}
+            sx={{ minWidth: 200 }}
+          />
+        </>
+      )}
+
+      {clause.type === 'genre' && (
+        <>
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <Select
+              value={clause.operator}
+              onChange={(e) =>
+                onChange({
+                  ...clause,
+                  operator: e.target.value as ListOperator,
+                })
+              }
+            >
+              {Object.entries(LIST_OPERATOR_LABELS).map(([k, v]) => (
+                <MenuItem key={k} value={k}>
+                  {t(v)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <GenreAutocomplete
+            value={clause.value}
+            onChange={(value) => onChange({ ...clause, value })}
+          />
+        </>
+      )}
+
+      {clause.type === 'library' && (
+        <>
+          <FormControl size="small" sx={{ minWidth: 90 }}>
+            <Select
+              value={clause.operator}
+              onChange={(e) =>
+                onChange({
+                  ...clause,
+                  operator: e.target.value as ComparisonOperator,
+                })
+              }
+            >
+              {Object.entries(COMPARISON_OPERATOR_LABELS).map(([k, v]) => (
+                <MenuItem key={k} value={k}>
+                  {t(v)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <LibrarySelect
+            value={clause.value}
+            onChange={(value) => onChange({ ...clause, value })}
           />
         </>
       )}

@@ -365,3 +365,34 @@ describe('source assignment', () => {
     expect(res.statusCode).toBe(400);
   });
 });
+
+describe('rule preview', () => {
+  const rules = [
+    {
+      condition: 'true',
+      audioAction: { type: 'default' },
+      subtitleAction: { type: 'disable' },
+    },
+  ];
+
+  test('rejects a request with no rules', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/stream-selection-profiles/preview',
+      payload: { rules: [], programId: NON_EXISTENT_UUID },
+    });
+    expect(res.statusCode, res.body).toBe(400);
+  });
+
+  test('returns 404 for an unknown program', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/stream-selection-profiles/preview',
+      payload: { rules, programId: NON_EXISTENT_UUID },
+    });
+    expect(res.statusCode, res.body).toBe(404);
+    expect(res.json<{ message: string }>().message).toContain(
+      NON_EXISTENT_UUID,
+    );
+  });
+});

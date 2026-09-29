@@ -103,6 +103,18 @@ msgstr "{0, plural, other {个节目}}"
 msgid "{0, plural, one {Selected Item} other {Selected Items}}"
 msgstr "{0, plural, other {个已选项}}"
 
+#. placeholder {0}: result.audioStreams.length
+#. placeholder {1}: result.subtitleStreams.length
+#. placeholder {2}: result.program.title
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "{0} audio and {1} subtitle streams available in {2}."
+msgstr ""
+
+#. placeholder {0}: stream.channels
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "{0} ch"
+msgstr ""
+
 #. placeholder {0}: channels.length
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "{0} channel(s)"
@@ -623,6 +635,10 @@ msgstr ""
 msgid "ANY"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Applied"
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Apply to Program Types (empty = all)"
 msgstr "应用于节目类型（留空表示全部）"
@@ -737,6 +753,10 @@ msgstr "音频流"
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Volume"
 msgstr "音量"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Audio:"
+msgstr ""
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Auto"
@@ -976,6 +996,11 @@ msgstr "调整特定日志分类的详细程度，便于调试具体功能。"
 msgid "Channel"
 msgstr "频道"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Channel (optional)"
+msgstr ""
+
 #. placeholder {0}: channel.number
 #: src/pages/channels/ChannelSummaryPage.tsx
 msgid "Channel #{0}"
@@ -1174,6 +1199,10 @@ msgstr "合并"
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
 msgstr "将相邻的弹性填充块与跳转块合并为单一区间"
+
+#: src/components/profiles/condition/types.ts
+msgid "contains"
+msgstr ""
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Continue"
@@ -1995,6 +2024,10 @@ msgstr "实验性功能"
 msgid "Experimental: Make perfect schedule loop"
 msgstr "实验性：生成完美循环排期"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "external"
+msgstr ""
+
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Failed to load feature flags."
 msgstr "加载功能开关失败。"
@@ -2213,6 +2246,10 @@ msgstr "筛选"
 msgid "Finish"
 msgstr "完成"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Fix the errors in the rules above to run a test."
+msgstr ""
+
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
@@ -2250,6 +2287,10 @@ msgstr "有关手动获取 Plex 令牌的详细说明，请见<0>此处</0>"
 msgid "Force Scan"
 msgstr "强制扫描"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "forced"
+msgstr ""
+
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Forced"
 msgstr "强制字幕"
@@ -2276,10 +2317,10 @@ msgstr "常规"
 msgid "Generating Bug Report Link..."
 msgstr "正在生成 Bug 报告链接…"
 
-#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
-#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
-#~ msgid "Genre"
-#~ msgstr "Genre"
+#: src/components/profiles/condition/GenreAutocomplete.tsx
+#: src/components/profiles/condition/types.ts
+msgid "Genre"
+msgstr "Genre"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Global Options"
@@ -2473,6 +2514,11 @@ msgstr "安装 FFmpeg"
 msgid "Interval (minutes)"
 msgstr "间隔（分钟）"
 
+#. placeholder {0}: rule.error
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Invalid condition: {0}"
+msgstr ""
+
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Invalid expression"
 msgstr ""
@@ -2482,9 +2528,11 @@ msgid "Inverse linear decay, heavier weighting."
 msgstr "反线性衰减，权重更大。"
 
 #: src/components/profiles/condition/types.ts
+#: src/components/profiles/condition/types.ts
 msgid "is"
 msgstr ""
 
+#: src/components/profiles/condition/types.ts
 #: src/components/profiles/condition/types.ts
 msgid "is not"
 msgstr ""
@@ -2576,6 +2624,9 @@ msgstr "媒体库"
 
 #: src/components/channel_config/ImportedLibrarySeletor.tsx
 #: src/components/channel_config/ImportedLibrarySeletor.tsx
+#: src/components/profiles/condition/LibrarySelect.tsx
+#: src/components/profiles/condition/LibrarySelect.tsx
+#: src/components/profiles/condition/types.ts
 #: src/hooks/useNavItems.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/LibraryIndexPage.tsx
@@ -3090,11 +3141,17 @@ msgstr "无结果"
 msgid "No rule matched, continuing"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "No rule matched. On a real stream, Tunarr would move on to the next profile: the source, then the channel, then the default profile, then the built-in profile."
+msgstr ""
+
 #. placeholder {0}: version.nodejs
 #: src/components/VersionFooter.tsx
 msgid "NodeJS: {0}"
 msgstr "Node.js：{0}"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "None"
@@ -3102,6 +3159,10 @@ msgstr "无"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "None (no filter)"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "None (the program has no audio streams)"
 msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
@@ -3184,6 +3245,10 @@ msgstr "不透明度"
 #: src/components/programs/MediaDetailCard.tsx
 msgid "Open in {0}"
 msgstr "在 {0} 中打开"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Open in Troubleshoot"
+msgstr ""
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
@@ -3448,6 +3513,10 @@ msgstr "节目 JSON"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Program Playback Troubleshooter"
 msgstr "节目播放排查工具"
+
+#: src/components/profiles/condition/types.ts
+msgid "Program title"
+msgstr ""
 
 #: src/components/profiles/condition/types.ts
 msgid "Program type"
@@ -3785,11 +3854,14 @@ msgstr "按固定的时间计划轮转日志文件，不受文件大小影响。
 msgid "Root"
 msgstr "根"
 
+#. placeholder {0}: idx + 1
 #. placeholder {0}: index + 1
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Rule {0}"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Rules"
@@ -3799,6 +3871,7 @@ msgstr ""
 msgid "Rules are evaluated in order. The first rule whose condition matches determines the audio and subtitle streams for playback."
 msgstr ""
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Run"
 msgstr "运行"
@@ -3895,6 +3968,7 @@ msgstr "使用指定了开始时间和时长的时段来编排节目。"
 msgid "Search"
 msgstr "搜索"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Search for a program"
 msgstr "搜索节目"
@@ -3951,6 +4025,10 @@ msgstr "选择 Tunarr 服务器监听的端口。此设置需重启服务器后�
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Selected Audio"
 msgstr "已选音频"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Selected streams"
+msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Selected Subtitle"
@@ -4030,6 +4108,10 @@ msgstr "显示高级选项"
 #: src/pages/guide/GuidePage.tsx
 msgid "Show Stealth"
 msgstr "显示隐身频道"
+
+#: src/components/profiles/condition/types.ts
+msgid "Show title"
+msgstr ""
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Show:"
@@ -4277,6 +4359,10 @@ msgstr "字幕流"
 msgid "Subtitles"
 msgstr "字幕"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Subtitles:"
+msgstr ""
+
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Successfully copied to clipboard!"
 msgstr "已成功复制到剪贴板！"
@@ -4301,6 +4387,10 @@ msgstr "已成功调度 {taskId}（正在后台运行）。"
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Successfully updated Media Source settings."
 msgstr "媒体源设置已成功更新。"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Supplies the channel name and number to rule conditions."
+msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync Now"
@@ -4350,6 +4440,7 @@ msgstr "任务"
 msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
 msgstr "按请求路径临时缓存来自 Plex 的响应，可能有助于加快频道编辑速度。"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/routes/channels_/test.tsx
 msgid "Test"
 msgstr "测试"
@@ -4387,6 +4478,10 @@ msgstr "当前加载的 Tunarr 界面版本与服务器不匹配。请刷新浏�
 msgid "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
 msgstr ""
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "The rules changed since this test ran. Run it again."
+msgstr ""
+
 #: src/components/LanguagePreferencesList.tsx
 #~ msgid "The selected languages will be considered in order they are selected."
 #~ msgstr "所选语言将按选择的先后顺序依次生效。"
@@ -4394,6 +4489,10 @@ msgstr ""
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "The streaming mode affects the type of underlying transcoding process used to create the channel's video stream.<0/>Learn more about Tunarr's stream modes <1>here</1>!"
 msgstr "流模式决定了生成频道视频流时所使用的底层转码方式。<0/>点击<1>此处</1>了解 Tunarr 流模式的更多信息！"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "The test could not be run."
+msgstr ""
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "The type of media in the provided paths"
@@ -4573,6 +4672,7 @@ msgstr "时段…"
 msgid "Timestamp"
 msgstr "时间戳"
 
+#: src/components/profiles/condition/ConditionClauseEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Title"
@@ -4675,6 +4775,14 @@ msgstr "回收站中的条目是指之前扫描到、但在最近一次扫描中
 msgid "Troubleshoot"
 msgstr "排查"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Troubleshoot on channel {channelName}"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Try these rules against a program, including unsaved changes."
+msgstr ""
+
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Tunarr Backend URL"
 msgstr "Tunarr 后端地址"
@@ -4740,6 +4848,10 @@ msgstr ""
 #: src/components/search/DateSearchValueNode.tsx
 msgid "Unit"
 msgstr "单位"
+
+#: src/components/profiles/condition/LibrarySelect.tsx
+msgid "Unknown library"
+msgstr ""
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Unlink"

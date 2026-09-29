@@ -33,7 +33,8 @@ export function buildCelContext(
   audioStreams: readonly AudioStreamDetails[],
   subtitleStreams: SubtitleStreamDetails[] | undefined,
   channel: { name: string; number: number },
-  program: { title: string; type: string },
+  program: Pick<StreamSelectionCelContext['program'], 'title' | 'type'> &
+    Partial<StreamSelectionCelContext['program']>,
 ): StreamSelectionCelContext {
   const audioLanguages = [
     ...new Set(
@@ -84,7 +85,12 @@ export function buildCelContext(
       languages: subtitleLanguages,
     },
     channel,
-    program,
+    program: {
+      showTitle: '',
+      genres: [],
+      libraryId: '',
+      ...program,
+    },
   };
 }
 

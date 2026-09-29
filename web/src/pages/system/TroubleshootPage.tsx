@@ -33,24 +33,25 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { createTypeSearchField } from '@tunarr/shared/util';
 import type { ProgramOrFolder, TerminalProgram } from '@tunarr/types';
-import { getGrandparentItem, isTerminalItemType } from '@tunarr/types';
+import { isTerminalItemType } from '@tunarr/types';
 import type {
-  SearchFilter,
   SearchRequest,
   StreamSelectionLevel,
 } from '@tunarr/types/schemas';
 import Hls from 'hls.js';
 import { useSnackbar } from 'notistack';
 import { useCallback, useRef, useState } from 'react';
-import { match, P } from 'ts-pattern';
 import { ProgramSearchAutocomplete } from '../../components/ProgramSearchAutocomplete.tsx';
 import {
   getApiTranscodeConfigsOptions,
   getChannelsOptions,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { postApiTroubleshoot } from '../../generated/index.ts';
+import {
+  formatTerminalProgramTitle,
+  terminalTypeFilter,
+} from '../../helpers/programSearch.ts';
 import { resolutionToString } from '../../helpers/util.ts';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard.ts';
 import { useHls } from '../../hooks/useHls.ts';
@@ -63,29 +64,6 @@ function formatDuration(ms: number): string {
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-}
-
-function formatOptionTitle(program: TerminalProgram): string {
-  return match(program)
-    .with(
-      { type: P.union('movie', 'other_video', 'music_video') },
-      (video) => video.title,
-    )
-    .with({ type: 'episode' }, (ep) => {
-      const show = getGrandparentItem(ep);
-      if (!show) return ep.title;
-      const season =
-        ep.season?.index !== undefined
-          ? ep.season?.index?.toString().padStart(2, '0')
-          : null;
-      return `${ep.title} - ${show.title} (${show.year}) S${season}E${ep.episodeNumber.toString().padStart(2, '0')}`;
-    })
-    .with({ type: 'track' }, (track) => {
-      const artist = getGrandparentItem(track);
-      if (!artist) return track.title;
-      return `${track.title} - ${artist.title}`;
-    })
-    .exhaustive();
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -148,6 +126,7 @@ function CodeBlock({ text }: { text: string }) {
 
 type Props = {
   initialProgram: Nullable<TerminalProgram>;
+  initialChannelId?: string;
 };
 
 function streamSelectionLevelName(level: StreamSelectionLevel): string {
@@ -167,26 +146,19 @@ function streamSelectionLevelName(level: StreamSelectionLevel): string {
   }
 }
 
-const terminalTypeFilter: SearchFilter = {
-  op: 'or',
-  type: 'op',
-  children: [
-    createTypeSearchField('movie'),
-    createTypeSearchField('music_video'),
-    createTypeSearchField('other_video'),
-    createTypeSearchField('episode'),
-    createTypeSearchField('track'),
-  ],
-};
-
-export const TroubleshootPage = ({ initialProgram }: Props) => {
+export const TroubleshootPage = ({
+  initialProgram,
+  initialChannelId,
+}: Props) => {
   const { t } = useLingui();
   const { backendUri } = useSettings();
 
   // Form state
   const [selectedProgram, setSelectedProgram] =
     useState<TerminalProgram | null>(initialProgram);
-  const [selectedChannelId, setSelectedChannelId] = useState<string>('');
+  const [selectedChannelId, setSelectedChannelId] = useState<string>(
+    initialChannelId ?? '',
+  );
   const [transcodeConfigOverride, setTranscodeConfigOverride] =
     useState<string>('');
   const [testDuration, setTestDuration] = useState(30);
@@ -305,7 +277,7 @@ export const TroubleshootPage = ({ initialProgram }: Props) => {
           onChange={setSelectedProgram}
           onQueryChange={(q) => setSearchQuery({ ...searchQuery, query: q })}
           label={t`Search for a program`}
-          renderOptionTitle={formatOptionTitle}
+          renderOptionTitle={formatTerminalProgramTitle}
         />
 
         <FormControl fullWidth>

@@ -13381,6 +13381,129 @@ export type PutApiStreamSelectionSettingsResponses = {
 
 export type PutApiStreamSelectionSettingsResponse = PutApiStreamSelectionSettingsResponses[keyof PutApiStreamSelectionSettingsResponses];
 
+export type PostApiStreamSelectionProfilesPreviewData = {
+    body: {
+        rules: Array<{
+            label?: string;
+            condition: string;
+            audioAction: {
+                type: 'by_language';
+                languages: Array<string>;
+                preferChannels?: 'most' | 'least';
+            } | {
+                type: 'by_title';
+                titleContains: string;
+            } | {
+                type: 'default';
+            };
+            subtitleAction: {
+                type: 'disable';
+            } | {
+                type: 'by_language';
+                languages: Array<string>;
+                filterType?: 'none' | 'forced' | 'default' | 'any';
+                allowImageBased?: boolean;
+                allowExternal?: boolean;
+                preferTextBased?: boolean;
+            } | {
+                type: 'default';
+                preferTextBased?: boolean;
+            };
+        }>;
+        programId: string;
+        channelId?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/stream-selection-profiles/preview';
+};
+
+export type PostApiStreamSelectionProfilesPreviewErrors = {
+    /**
+     * Default Response
+     */
+    404: {
+        message: string;
+    };
+    /**
+     * Default Response
+     */
+    502: {
+        message: string;
+    };
+};
+
+export type PostApiStreamSelectionProfilesPreviewError = PostApiStreamSelectionProfilesPreviewErrors[keyof PostApiStreamSelectionProfilesPreviewErrors];
+
+export type PostApiStreamSelectionProfilesPreviewResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        program: {
+            uuid: string;
+            title: string;
+            type: string;
+        };
+        channel?: {
+            uuid: string;
+            name: string;
+            number: number;
+        };
+        audioStreams: Array<{
+            index: number;
+            codec: string;
+            language?: string;
+            channels?: number;
+            title?: string;
+            default?: boolean;
+            selected?: boolean;
+            forced?: boolean;
+            bitrate?: number;
+        }>;
+        subtitleStreams: Array<{
+            index: number;
+            codec: string;
+            language?: string;
+            title?: string;
+            type?: 'embedded' | 'external';
+            default?: boolean;
+            forced?: boolean;
+            sdh?: boolean;
+        }>;
+        rules: Array<{
+            label?: string;
+            condition: string;
+            matched: boolean;
+            error?: string;
+        }>;
+        matchedRuleIndex: number | null;
+        selectedAudioStream?: {
+            index: number;
+            codec: string;
+            language?: string;
+            channels?: number;
+            title?: string;
+            default?: boolean;
+            selected?: boolean;
+            forced?: boolean;
+            bitrate?: number;
+        };
+        selectedSubtitleStream: {
+            index: number;
+            codec: string;
+            language?: string;
+            title?: string;
+            type?: 'embedded' | 'external';
+            default?: boolean;
+            forced?: boolean;
+            sdh?: boolean;
+        } | null;
+    };
+};
+
+export type PostApiStreamSelectionProfilesPreviewResponse = PostApiStreamSelectionProfilesPreviewResponses[keyof PostApiStreamSelectionProfilesPreviewResponses];
+
 export type PostApiStreamSelectionProfilesValidateExpressionData = {
     body: {
         expression: string;

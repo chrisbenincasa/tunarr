@@ -30,7 +30,7 @@ const VideoStreamInfoSchema = z.object({
   bitrate: z.number().optional(),
 });
 
-const AudioStreamInfoSchema = z.object({
+export const AudioStreamInfoSchema = z.object({
   index: z.number(),
   codec: z.string(),
   language: z.string().optional(),
@@ -42,7 +42,7 @@ const AudioStreamInfoSchema = z.object({
   bitrate: z.number().optional(),
 });
 
-const SubtitleStreamInfoSchema = z.object({
+export const SubtitleStreamInfoSchema = z.object({
   index: z.number(),
   codec: z.string(),
   language: z.string().optional(),
