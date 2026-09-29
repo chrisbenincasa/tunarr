@@ -3,6 +3,7 @@ import {
   type StreamSelectionProfileFormValues,
   type StreamSelectionRuleFormValues,
 } from '@/components/profiles/streamSelectionFormTypes';
+import { StreamSelectionPreviewPanel } from '@/components/profiles/StreamSelectionPreviewPanel';
 import { StreamSelectionRuleEditor } from '@/components/profiles/StreamSelectionRuleEditor';
 import {
   getApiStreamSelectionProfilesByIdOptions,
@@ -385,6 +386,14 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
               {isNew ? <Trans>Create Profile</Trans> : <Trans>Save</Trans>}
             </Button>
           </Stack>
+        </Box>
+
+        {/* Outside the form so Enter in the program search cannot submit it */}
+        <Box sx={{ mt: 3 }}>
+          <StreamSelectionPreviewPanel
+            getRules={() => formValuesToBody(methods.getValues()).rules}
+            canRun={isValid}
+          />
         </Box>
       </FormProvider>
     </Box>

@@ -7,6 +7,7 @@ import { TroubleshootPage } from '../../pages/system/TroubleshootPage.tsx';
 
 const troubleshootParams = z.object({
   programId: z.uuid().optional(),
+  channelId: z.uuid().optional(),
 });
 
 type TroubleshootParams = z.infer<typeof troubleshootParams>;
@@ -28,5 +29,11 @@ export const Route = createFileRoute('/system/troubleshoot')({
 
 function Page() {
   const maybeProgram = Route.useLoaderData();
-  return <TroubleshootPage initialProgram={maybeProgram} />;
+  const { channelId } = Route.useSearch();
+  return (
+    <TroubleshootPage
+      initialProgram={maybeProgram}
+      initialChannelId={channelId}
+    />
+  );
 }

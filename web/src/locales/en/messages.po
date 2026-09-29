@@ -103,6 +103,18 @@ msgstr "{0, plural, one {program} other {programs}}"
 msgid "{0, plural, one {Selected Item} other {Selected Items}}"
 msgstr "{0, plural, one {Selected Item} other {Selected Items}}"
 
+#. placeholder {0}: result.audioStreams.length
+#. placeholder {1}: result.subtitleStreams.length
+#. placeholder {2}: result.program.title
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "{0} audio and {1} subtitle streams available in {2}."
+msgstr "{0} audio and {1} subtitle streams available in {2}."
+
+#. placeholder {0}: stream.channels
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "{0} ch"
+msgstr "{0} ch"
+
 #. placeholder {0}: channels.length
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "{0} channel(s)"
@@ -623,6 +635,10 @@ msgstr "Any"
 msgid "ANY"
 msgstr "ANY"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Applied"
+msgstr "Applied"
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Apply to Program Types (empty = all)"
 msgstr "Apply to Program Types (empty = all)"
@@ -737,6 +753,10 @@ msgstr "Audio Streams"
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Volume"
 msgstr "Audio Volume"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Audio:"
+msgstr "Audio:"
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Auto"
@@ -975,6 +995,11 @@ msgstr "Change the verbosity of specific categories of logs. Useful if debugging
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Channel"
 msgstr "Channel"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Channel (optional)"
+msgstr "Channel (optional)"
 
 #. placeholder {0}: channel.number
 #: src/pages/channels/ChannelSummaryPage.tsx
@@ -1995,6 +2020,10 @@ msgstr "Experimental Features"
 msgid "Experimental: Make perfect schedule loop"
 msgstr "Experimental: Make perfect schedule loop"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "external"
+msgstr "external"
+
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Failed to load feature flags."
 msgstr "Failed to load feature flags."
@@ -2213,6 +2242,10 @@ msgstr "Filter"
 msgid "Finish"
 msgstr "Finish"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Fix the errors in the rules above to run a test."
+msgstr "Fix the errors in the rules above to run a test."
+
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
@@ -2249,6 +2282,10 @@ msgstr "For more details on manually retrieving a Plex token, see <0>here</0>"
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Force Scan"
 msgstr "Force Scan"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "forced"
+msgstr "forced"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Forced"
@@ -2472,6 +2509,11 @@ msgstr "Install FFMPEG"
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Interval (minutes)"
 msgstr "Interval (minutes)"
+
+#. placeholder {0}: rule.error
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Invalid condition: {0}"
+msgstr "Invalid condition: {0}"
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Invalid expression"
@@ -3090,11 +3132,17 @@ msgstr "No results"
 msgid "No rule matched, continuing"
 msgstr "No rule matched, continuing"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "No rule matched. On a real stream, Tunarr would move on to the next profile: the source, then the channel, then the default profile, then the built-in profile."
+msgstr "No rule matched. On a real stream, Tunarr would move on to the next profile: the source, then the channel, then the default profile, then the built-in profile."
+
 #. placeholder {0}: version.nodejs
 #: src/components/VersionFooter.tsx
 msgid "NodeJS: {0}"
 msgstr "NodeJS: {0}"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "None"
@@ -3103,6 +3151,10 @@ msgstr "None"
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "None (no filter)"
 msgstr "None (no filter)"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "None (the program has no audio streams)"
+msgstr "None (the program has no audio streams)"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
@@ -3184,6 +3236,10 @@ msgstr "Opacity"
 #: src/components/programs/MediaDetailCard.tsx
 msgid "Open in {0}"
 msgstr "Open in {0}"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Open in Troubleshoot"
+msgstr "Open in Troubleshoot"
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
@@ -3785,11 +3841,14 @@ msgstr "Roll the log file on a fixed schedule, regardless of file size."
 msgid "Root"
 msgstr "Root"
 
+#. placeholder {0}: idx + 1
 #. placeholder {0}: index + 1
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Rule {0}"
 msgstr "Rule {0}"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Rules"
@@ -3799,6 +3858,7 @@ msgstr "Rules"
 msgid "Rules are evaluated in order. The first rule whose condition matches determines the audio and subtitle streams for playback."
 msgstr "Rules are evaluated in order. The first rule whose condition matches determines the audio and subtitle streams for playback."
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Run"
 msgstr "Run"
@@ -3895,6 +3955,7 @@ msgstr "Schedule programming using slots assigned a start time and duration."
 msgid "Search"
 msgstr "Search"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Search for a program"
 msgstr "Search for a program"
@@ -3951,6 +4012,10 @@ msgstr "Select the port the Tunarr server will listen on. This requires a server
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Selected Audio"
 msgstr "Selected Audio"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Selected streams"
+msgstr "Selected streams"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Selected Subtitle"
@@ -4277,6 +4342,10 @@ msgstr "Subtitle Streams"
 msgid "Subtitles"
 msgstr "Subtitles"
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Subtitles:"
+msgstr "Subtitles:"
+
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Successfully copied to clipboard!"
 msgstr "Successfully copied to clipboard!"
@@ -4301,6 +4370,10 @@ msgstr "Successfully scheduled {taskId} (running in background)."
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Successfully updated Media Source settings."
 msgstr "Successfully updated Media Source settings."
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Supplies the channel name and number to rule conditions."
+msgstr "Supplies the channel name and number to rule conditions."
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync Now"
@@ -4350,6 +4423,7 @@ msgstr "Tasks"
 msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
 msgstr "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 #: src/routes/channels_/test.tsx
 msgid "Test"
 msgstr "Test"
@@ -4387,6 +4461,10 @@ msgstr "The loaded version of the Tunarr UI does not match the server. Reload th
 msgid "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
 msgstr "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
 
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "The rules changed since this test ran. Run it again."
+msgstr "The rules changed since this test ran. Run it again."
+
 #: src/components/LanguagePreferencesList.tsx
 #~ msgid "The selected languages will be considered in order they are selected."
 #~ msgstr "The selected languages will be considered in order they are selected."
@@ -4394,6 +4472,10 @@ msgstr "The media server stopped reporting this library on {since}. Its programs
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "The streaming mode affects the type of underlying transcoding process used to create the channel's video stream.<0/>Learn more about Tunarr's stream modes <1>here</1>!"
 msgstr "The streaming mode affects the type of underlying transcoding process used to create the channel's video stream.<0/>Learn more about Tunarr's stream modes <1>here</1>!"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "The test could not be run."
+msgstr "The test could not be run."
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "The type of media in the provided paths"
@@ -4674,6 +4756,14 @@ msgstr "Trashed items are items that were previously scanned, but not found in a
 #: src/pages/system/SystemLayout.tsx
 msgid "Troubleshoot"
 msgstr "Troubleshoot"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Troubleshoot on channel {channelName}"
+msgstr "Troubleshoot on channel {channelName}"
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Try these rules against a program, including unsaved changes."
+msgstr "Try these rules against a program, including unsaved changes."
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Tunarr Backend URL"
