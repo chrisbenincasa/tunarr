@@ -74,16 +74,23 @@ Language codes accept ISO 639-1 (`en`) and both ISO 639-2 forms (`ger` and `deu`
 
 Conditions are written in [CEL](https://cel.dev). The profile editor's **Basic** mode builds common conditions for you; switch to **CEL** for anything else.
 
+Basic mode covers program type, program title, show title, genre, library, audio and subtitle languages, and audio channel count. A condition that Basic mode can't represent opens in CEL mode.
+
 | Field | Type | Description |
 | ----- | ---- | ----------- |
 | `program.title` | string | The program's title |
 | `program.type` | string | `movie`, `episode`, `track`, `music_video`, or `other_video` |
+| `program.showTitle` | string | The show's title for an episode; empty for anything else |
+| `program.genres` | list of strings | Genre names from your media server. An episode includes its show's genres. |
+| `program.libraryId` | string | Tunarr's ID for the library the program came from. Pick the library in Basic mode rather than typing the ID. |
 | `channel.name` | string | The channel's name |
 | `channel.number` | number | The channel's number |
 | `audio.languages` | list of strings | Languages of the file's audio tracks |
 | `audio.streams` | list | Audio tracks, each with `index`, `language`, `codec`, `channels`, `title`, `default`, `selected` |
 | `subtitle.languages` | list of strings | Languages of the file's subtitle tracks |
 | `subtitle.streams` | list | Subtitle tracks, each with `index`, `language`, `codec`, `type`, `title`, `default`, `forced`, `sdh` |
+
+Text comparisons are exact and case-sensitive. `"Anime" in program.genres` does not match a genre named `anime`, so use the spelling your media server shows.
 
 Helper functions, which treat equivalent language codes as equal:
 
@@ -110,6 +117,33 @@ Helper functions, which treat equivalent language codes as equal:
 | Condition | Audio | Subtitles |
 | --------- | ----- | --------- |
 | `program.type == "movie"` | By language: `eng`, prefer most channels | Disable |
+
+**Anime by genre:** Japanese audio with English subtitles for anything tagged *Anime*, defaults for everything else.
+
+| Condition | Audio | Subtitles |
+| --------- | ----- | --------- |
+| `"Anime" in program.genres` | By language: `jpn` | By language: `eng` |
+| `true` | Default | Disable |
+
+**Anime by library:** if your anime lives in its own library, choose **Library** in Basic mode and pick it. The condition looks like `program.libraryId == "…"`.
+
+**One show dubbed:** English audio for a single show. Assign this profile to the channel. Programs from other shows match no rule, so they fall through to the default profile.
+
+| Condition | Audio | Subtitles |
+| --------- | ----- | --------- |
+| `program.showTitle == "Cowboy Bebop"` | By language: `eng` | Disable |
+
+## Testing rules
+
+The **Test** panel at the bottom of the profile editor runs the rules you are editing against a real program, including changes you haven't saved.
+
+1. Search for a program.
+2. Optionally pick a channel, which supplies `channel.name` and `channel.number` to conditions.
+3. Click **Run**.
+
+The panel shows whether each rule's condition matched, highlights the rule that would apply, and lists the audio and subtitle tracks it would pick. Conditions that don't parse are flagged. If you edit the rules after a run, the panel marks the result as out of date.
+
+The test checks only the profile you are editing. If no rule matches, it says so; during playback, Tunarr would move on to the next profile (see [Where profiles apply](#where-profiles-apply)). To see the whole chain for a program on a channel, use the panel's Troubleshoot link.
 
 ## Debugging
 
