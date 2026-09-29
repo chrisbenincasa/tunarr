@@ -1200,6 +1200,10 @@ msgstr "合并"
 msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
 msgstr "将相邻的弹性填充块与跳转块合并为单一区间"
 
+#: src/components/profiles/condition/types.ts
+msgid "contains"
+msgstr ""
+
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Continue"
 msgstr "继续"
@@ -2313,10 +2317,10 @@ msgstr "常规"
 msgid "Generating Bug Report Link..."
 msgstr "正在生成 Bug 报告链接…"
 
-#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
-#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
-#~ msgid "Genre"
-#~ msgstr "Genre"
+#: src/components/profiles/condition/GenreAutocomplete.tsx
+#: src/components/profiles/condition/types.ts
+msgid "Genre"
+msgstr "Genre"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Global Options"
@@ -2524,9 +2528,11 @@ msgid "Inverse linear decay, heavier weighting."
 msgstr "反线性衰减，权重更大。"
 
 #: src/components/profiles/condition/types.ts
+#: src/components/profiles/condition/types.ts
 msgid "is"
 msgstr ""
 
+#: src/components/profiles/condition/types.ts
 #: src/components/profiles/condition/types.ts
 msgid "is not"
 msgstr ""
@@ -2618,6 +2624,9 @@ msgstr "媒体库"
 
 #: src/components/channel_config/ImportedLibrarySeletor.tsx
 #: src/components/channel_config/ImportedLibrarySeletor.tsx
+#: src/components/profiles/condition/LibrarySelect.tsx
+#: src/components/profiles/condition/LibrarySelect.tsx
+#: src/components/profiles/condition/types.ts
 #: src/hooks/useNavItems.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/LibraryIndexPage.tsx
@@ -3506,6 +3515,10 @@ msgid "Program Playback Troubleshooter"
 msgstr "节目播放排查工具"
 
 #: src/components/profiles/condition/types.ts
+msgid "Program title"
+msgstr ""
+
+#: src/components/profiles/condition/types.ts
 msgid "Program type"
 msgstr ""
 
@@ -4096,6 +4109,10 @@ msgstr "显示高级选项"
 msgid "Show Stealth"
 msgstr "显示隐身频道"
 
+#: src/components/profiles/condition/types.ts
+msgid "Show title"
+msgstr ""
+
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Show:"
 msgstr "剧集："
@@ -4655,6 +4672,7 @@ msgstr "时段…"
 msgid "Timestamp"
 msgstr "时间戳"
 
+#: src/components/profiles/condition/ConditionClauseEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Title"
@@ -4830,6 +4848,10 @@ msgstr ""
 #: src/components/search/DateSearchValueNode.tsx
 msgid "Unit"
 msgstr "单位"
+
+#: src/components/profiles/condition/LibrarySelect.tsx
+msgid "Unknown library"
+msgstr ""
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Unlink"

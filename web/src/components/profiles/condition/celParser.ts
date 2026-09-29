@@ -2,6 +2,7 @@
 // Returns null when the expression uses constructs the basic builder can't represent.
 
 import type {
+  ComparisonOperator,
   ConditionClause,
   ConditionEntry,
   ConditionGroup,
@@ -20,59 +21,112 @@ type Token =
   | { kind: 'lparen' }
   | { kind: 'rparen' };
 
-const LEAF_PATTERNS: Array<{
+// A double-quoted CEL string literal, escapes included. The capture holds the
+// raw body, which decodeString turns into the actual value.
+const STR = String.raw`"((?:[^"\\]|\\.)*)"`;
+
+function leaf(pattern: string): RegExp {
+  return new RegExp(`^${pattern}$`);
+}
+
+// Decodes a string literal body. CEL escapes that JSON lacks, such as \x41,
+// return null so the expression stays in CEL mode.
+function decodeString(body: string | undefined): string | null {
+  if (body === undefined) return null;
+  try {
+    const value: unknown = JSON.parse(`"${body}"`);
+    return typeof value === 'string' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function comparison(op: string | undefined): ComparisonOperator {
+  return op === '==' ? 'eq' : 'neq';
+}
+
+// Parses program.<field> ==, !=, and .contains() clauses on a text field.
+function textPatterns(
+  field: string,
+  type: 'program_title' | 'show_title',
+): LeafPattern[] {
+  const escaped = field.replace('.', '\\.');
+  return [
+    {
+      regex: leaf(String.raw`${escaped}\s*(==|!=)\s*${STR}`),
+      extract: (m) => {
+        const value = decodeString(m[2]);
+        return value === null
+          ? null
+          : { type, operator: comparison(m[1]), value };
+      },
+    },
+    {
+      regex: leaf(String.raw`${escaped}\.contains\(\s*${STR}\s*\)`),
+      extract: (m) => {
+        const value = decodeString(m[1]);
+        return value === null ? null : { type, operator: 'contains', value };
+      },
+    },
+  ];
+}
+
+// Parses `"x" in <list>` and `!("x" in <list>)`.
+function membershipPatterns(
+  list: string,
+  type: 'audio_language' | 'subtitle_language' | 'genre',
+): LeafPattern[] {
+  const escaped = list.replace('.', '\\.');
+  const extract =
+    (operator: ListOperator) =>
+    (m: RegExpMatchArray): ConditionClause | null => {
+      const value = decodeString(m[1]);
+      return value === null ? null : { type, operator, value };
+    };
+  return [
+    {
+      regex: leaf(String.raw`${STR}\s+in\s+${escaped}`),
+      extract: extract('in'),
+    },
+    {
+      regex: leaf(String.raw`!\(\s*${STR}\s+in\s+${escaped}\s*\)`),
+      extract: extract('not_in'),
+    },
+  ];
+}
+
+type LeafPattern = {
   regex: RegExp;
   extract: (m: RegExpMatchArray) => ConditionClause | null;
-}> = [
-  // "true"
+};
+
+const LEAF_PATTERNS: LeafPattern[] = [
   {
     regex: /^true$/,
     extract: () => ({ type: 'always' }),
   },
-  // program.type == "movie" / program.type != "movie"
   {
-    regex: /^program\.type\s*(==|!=)\s*"([^"]+)"$/,
-    extract: (m) => ({
-      type: 'program_type',
-      operator: m[1] === '==' ? 'eq' : 'neq',
-      value: m[2],
-    }),
+    regex: leaf(String.raw`program\.type\s*(==|!=)\s*${STR}`),
+    extract: (m) => {
+      const value = decodeString(m[2]);
+      return value === null
+        ? null
+        : { type: 'program_type', operator: comparison(m[1]), value };
+    },
   },
-  // "eng" in audio.languages
+  ...membershipPatterns('audio.languages', 'audio_language'),
+  ...membershipPatterns('subtitle.languages', 'subtitle_language'),
+  ...membershipPatterns('program.genres', 'genre'),
+  ...textPatterns('program.title', 'program_title'),
+  ...textPatterns('program.showTitle', 'show_title'),
   {
-    regex: /^"([^"]+)"\s+in\s+audio\.languages$/,
-    extract: (m) => ({
-      type: 'audio_language',
-      operator: 'in' as ListOperator,
-      value: m[1],
-    }),
-  },
-  // !("eng" in audio.languages)
-  {
-    regex: /^!\("([^"]+)"\s+in\s+audio\.languages\)$/,
-    extract: (m) => ({
-      type: 'audio_language',
-      operator: 'not_in' as ListOperator,
-      value: m[1],
-    }),
-  },
-  // "eng" in subtitle.languages
-  {
-    regex: /^"([^"]+)"\s+in\s+subtitle\.languages$/,
-    extract: (m) => ({
-      type: 'subtitle_language',
-      operator: 'in' as ListOperator,
-      value: m[1],
-    }),
-  },
-  // !("eng" in subtitle.languages)
-  {
-    regex: /^!\("([^"]+)"\s+in\s+subtitle\.languages\)$/,
-    extract: (m) => ({
-      type: 'subtitle_language',
-      operator: 'not_in' as ListOperator,
-      value: m[1],
-    }),
+    regex: leaf(String.raw`program\.libraryId\s*(==|!=)\s*${STR}`),
+    extract: (m) => {
+      const value = decodeString(m[2]);
+      return value === null
+        ? null
+        : { type: 'library', operator: comparison(m[1]), value };
+    },
   },
   // audio.streams.exists(s, s.channels >= 6)
   {
