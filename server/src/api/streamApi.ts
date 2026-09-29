@@ -370,6 +370,11 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       }),
       querystring: z.object({
         mode: ChannelStreamModeSchema.optional(),
+        variant: TruthyQueryParam.optional()
+          .default(false)
+          .describe(
+            'For hls and hls_direct_v2, return the variant playlist instead of the master. The .ts wrapper uses this so ffmpeg reads only the muxed streams.',
+          ),
       }),
     },
     handler: async (req, res) => {
@@ -410,6 +415,31 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             .then((result) =>
               result.mapAsync(async (session) => {
                 session.recordHeartbeat(req.ip);
+
+                if (req.query.variant) {
+                  const variantResult = await session.trimPlaylist();
+                  if (variantResult.isFailure()) {
+                    throw new Error(
+                      'Error retrieving HLS variant playlist for playback',
+                      { cause: variantResult.error },
+                    );
+                  }
+
+                  const variant = variantResult.get();
+                  if (!variant) {
+                    throw new Error(
+                      format(
+                        'No variant playlist found for channel %s. This could mean the stream is not ready.',
+                        channelId,
+                      ),
+                    );
+                  }
+
+                  return res
+                    .type('application/vnd.apple.mpegurl')
+                    .send(variant.playlist);
+                }
+
                 const masterResult = await session.getMasterPlaylist();
 
                 if (masterResult.isFailure()) {

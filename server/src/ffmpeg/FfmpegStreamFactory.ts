@@ -473,7 +473,11 @@ export class FfmpegStreamFactory {
 
     return {
       session: transcodeSession,
-      renditions: this.buildRenditions(streamDetails, subtitleRendition),
+      renditions: this.buildRenditions(
+        streamDetails,
+        subtitleRendition,
+        isPassthrough,
+      ),
     };
   }
 
@@ -717,9 +721,12 @@ export class FfmpegStreamFactory {
   private buildRenditions(
     streamDetails: StreamDetails,
     subtitleRendition: SubtitleRenditionInfo | undefined,
+    isPassthrough: boolean,
   ): StreamRenditions {
+    // Transcode mode muxes only the selected audio track into the variant,
+    // so there are no alternate audio renditions to advertise.
     const audioRenditions: AudioRenditionInfo[] = [];
-    if (streamDetails.audioDetails) {
+    if (isPassthrough && streamDetails.audioDetails) {
       for (let i = 0; i < streamDetails.audioDetails.length; i++) {
         const audio = streamDetails.audioDetails[i]!;
         audioRenditions.push({

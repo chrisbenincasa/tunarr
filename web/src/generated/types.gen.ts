@@ -14183,6 +14183,10 @@ export type GetStreamChannelsByIdM3U8Data = {
     };
     query?: {
         mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        /**
+         * For hls and hls_direct_v2, return the variant playlist instead of the master. The .ts wrapper uses this so ffmpeg reads only the muxed streams.
+         */
+        variant?: boolean | 'true' | 'false' | number;
     };
     url: '/stream/channels/{id}.m3u8';
 };
@@ -14201,6 +14205,10 @@ export type HeadStreamChannelsByIdM3U8Data = {
     };
     query?: {
         mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        /**
+         * For hls and hls_direct_v2, return the variant playlist instead of the master. The .ts wrapper uses this so ffmpeg reads only the muxed streams.
+         */
+        variant?: boolean | 'true' | 'false' | number;
     };
     url: '/stream/channels/{id}.m3u8';
 };
