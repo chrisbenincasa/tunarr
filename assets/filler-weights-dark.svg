@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" width="100%" role="img" aria-label="Raffle tickets by position in line. Tickets rise with the square of the position, from 7 at position 1 to 700 at position 10 for a thirty second clip. A sixty second clip scores about 1.7 times higher at every position.">
+<g font-family="system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<line x1="62" y1="346.0" x2="704" y2="346.0" stroke="#2b353f" stroke-width="1"/>
+<text x="52" y="350.0" text-anchor="end" font-size="12" fill="#7d8994">0</text>
+<line x1="62" y1="271.0" x2="704" y2="271.0" stroke="#2b353f" stroke-width="1"/>
+<text x="52" y="275.0" text-anchor="end" font-size="12" fill="#7d8994">300</text>
+<line x1="62" y1="196.0" x2="704" y2="196.0" stroke="#2b353f" stroke-width="1"/>
+<text x="52" y="200.0" text-anchor="end" font-size="12" fill="#7d8994">600</text>
+<line x1="62" y1="121.0" x2="704" y2="121.0" stroke="#2b353f" stroke-width="1"/>
+<text x="52" y="125.0" text-anchor="end" font-size="12" fill="#7d8994">900</text>
+<line x1="62" y1="46.0" x2="704" y2="46.0" stroke="#2b353f" stroke-width="1"/>
+<text x="52" y="50.0" text-anchor="end" font-size="12" fill="#7d8994">1200</text>
+<rect x="62" y="14" width="11" height="11" rx="2" fill="#4fd1c0"/>
+<text x="79" y="24" font-size="12.5" fill="#aeb9c4">30-second clip</text>
+<rect x="194" y="14" width="11" height="11" rx="2" fill="#63a6d4"/>
+<text x="211" y="24" font-size="12.5" fill="#aeb9c4">60-second clip</text>
+<rect x="70.1" y="344.2" width="22.0" height="1.8" rx="2" fill="#4fd1c0"/>
+<rect x="96.1" y="343.0" width="22.0" height="3.0" rx="2" fill="#63a6d4"/>
+<text x="94.1" y="366" text-anchor="middle" font-size="12" fill="#7d8994">1</text>
+<rect x="134.3" y="339.0" width="22.0" height="7.0" rx="2" fill="#4fd1c0"/>
+<rect x="160.3" y="334.0" width="22.0" height="12.0" rx="2" fill="#63a6d4"/>
+<text x="158.3" y="366" text-anchor="middle" font-size="12" fill="#7d8994">2</text>
+<rect x="198.5" y="330.2" width="22.0" height="15.8" rx="2" fill="#4fd1c0"/>
+<rect x="224.5" y="319.0" width="22.0" height="27.0" rx="2" fill="#63a6d4"/>
+<text x="222.5" y="366" text-anchor="middle" font-size="12" fill="#7d8994">3</text>
+<rect x="262.7" y="318.0" width="22.0" height="28.0" rx="2" fill="#4fd1c0"/>
+<rect x="288.7" y="298.0" width="22.0" height="48.0" rx="2" fill="#63a6d4"/>
+<text x="286.7" y="366" text-anchor="middle" font-size="12" fill="#7d8994">4</text>
+<rect x="326.9" y="302.2" width="22.0" height="43.8" rx="2" fill="#4fd1c0"/>
+<rect x="352.9" y="271.0" width="22.0" height="75.0" rx="2" fill="#63a6d4"/>
+<text x="350.9" y="366" text-anchor="middle" font-size="12" fill="#7d8994">5</text>
+<rect x="391.1" y="283.0" width="22.0" height="63.0" rx="2" fill="#4fd1c0"/>
+<rect x="417.1" y="238.0" width="22.0" height="108.0" rx="2" fill="#63a6d4"/>
+<text x="415.1" y="366" text-anchor="middle" font-size="12" fill="#7d8994">6</text>
+<rect x="455.3" y="260.2" width="22.0" height="85.8" rx="2" fill="#4fd1c0"/>
+<rect x="481.3" y="199.0" width="22.0" height="147.0" rx="2" fill="#63a6d4"/>
+<text x="479.3" y="366" text-anchor="middle" font-size="12" fill="#7d8994">7</text>
+<rect x="519.5" y="234.0" width="22.0" height="112.0" rx="2" fill="#4fd1c0"/>
+<rect x="545.5" y="154.0" width="22.0" height="192.0" rx="2" fill="#63a6d4"/>
+<text x="543.5" y="366" text-anchor="middle" font-size="12" fill="#7d8994">8</text>
+<rect x="583.7" y="204.2" width="22.0" height="141.8" rx="2" fill="#4fd1c0"/>
+<rect x="609.7" y="103.0" width="22.0" height="243.0" rx="2" fill="#63a6d4"/>
+<text x="607.7" y="366" text-anchor="middle" font-size="12" fill="#7d8994">9</text>
+<rect x="647.9" y="171.0" width="22.0" height="175.0" rx="2" fill="#4fd1c0"/>
+<rect x="673.9" y="46.0" width="22.0" height="300.0" rx="2" fill="#63a6d4"/>
+<text x="671.9" y="366" text-anchor="middle" font-size="12" fill="#7d8994">10</text>
+<text x="81.1" y="337.2" text-anchor="middle" font-size="11.5" font-weight="600" fill="#4fd1c0">7</text>
+<text x="658.9" y="164.0" text-anchor="middle" font-size="11.5" font-weight="600" fill="#4fd1c0">700</text>
+<line x1="62" y1="346" x2="704" y2="346" stroke="#2b353f" stroke-width="1.5"/>
+<text x="383" y="386" text-anchor="middle" font-size="12.5" fill="#aeb9c4">Position in line &#8212; 1 played most recently, 10 has waited longest</text>
+<text transform="translate(16,196) rotate(-90)" text-anchor="middle" font-size="12.5" fill="#aeb9c4">Raffle tickets</text>
+</g></svg>
