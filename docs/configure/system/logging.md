@@ -130,7 +130,7 @@ Log rolling prevents log files from growing indefinitely by rotating them when t
 | Option | Default | Description |
 |--------|---------|-------------|
 | **Enabled** | `false` | Enable log file rotation |
-| **Max File Size** | `1 MB` | Rotate when file exceeds this size |
+| **Max File Size** | `1 MB` | Rotate when file exceeds this size. Tunarr checks the size every 10 seconds, so the file can briefly overshoot. |
 | **Rolled File Limit** | `3` | Number of rotated files to keep |
 | **Schedule** | (none) | Optional time-based rotation |
 
