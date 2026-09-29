@@ -2,6 +2,7 @@ import type { StreamSelectionProfile } from '@tunarr/types/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import type { StreamDetails, SubtitleStreamDetails } from '../stream/types.ts';
 import { CelEvaluationService } from './CelEvaluationService.ts';
+import type { StreamSelectionProgramRef } from './StreamSelectionProgramContextLoader.ts';
 import type { StreamSelectionContext } from './StreamSelectionProfileResolver.ts';
 import { TroubleshootService } from './TroubleshootService.ts';
 
@@ -70,6 +71,16 @@ async function trace(subtitleDetails: SubtitleStreamDetails[]) {
       { resolveChain },
       new CelEvaluationService(),
       ...Array.from({ length: 8 }, () => ({})),
+      {
+        load: (program: StreamSelectionProgramRef) =>
+          Promise.resolve({
+            title: program.title,
+            type: program.type,
+            showTitle: '',
+            genres: [],
+            libraryId: '',
+          }),
+      },
     ] as ConstructorParameters<typeof TroubleshootService>),
   );
 

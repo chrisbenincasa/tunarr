@@ -23,6 +23,7 @@ import { inject, injectable } from 'inversify';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { KEYS } from '../types/inject.ts';
 import { CelEvaluationService } from './CelEvaluationService.ts';
+import { StreamSelectionProgramContextLoader } from './StreamSelectionProgramContextLoader.ts';
 
 export type StreamSelectionPreviewOutcome =
   | { type: 'success'; result: StreamSelectionPreviewResult }
@@ -47,6 +48,8 @@ export class StreamSelectionPreviewService {
     @inject(ProgramStreamDetailsFetcher)
     private streamDetailsFetcher: ProgramStreamDetailsFetcher,
     @inject(CelEvaluationService) private celService: CelEvaluationService,
+    @inject(StreamSelectionProgramContextLoader)
+    private programContextLoader: StreamSelectionProgramContextLoader,
   ) {}
 
   async preview(
@@ -118,7 +121,7 @@ export class StreamSelectionPreviewService {
       audioStreams,
       subtitleStreams,
       channel ?? { name: '', number: 0 },
-      { title: program.title, type: program.type },
+      await this.programContextLoader.load(program),
     );
 
     const { rules, matchedRuleIndex } = evaluateProfileRules(

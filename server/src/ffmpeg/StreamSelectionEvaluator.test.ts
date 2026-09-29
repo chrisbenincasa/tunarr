@@ -183,7 +183,13 @@ describe('buildCelContext', () => {
   it('passes channel and program info through', () => {
     const ctx = buildCelContext(baseAudio, baseSubs, channel, program);
     expect(ctx.channel).toEqual({ name: 'Movies', number: 5 });
-    expect(ctx.program).toEqual({ title: 'The Matrix', type: 'movie' });
+    expect(ctx.program).toEqual({
+      title: 'The Matrix',
+      type: 'movie',
+      showTitle: '',
+      genres: [],
+      libraryId: '',
+    });
   });
 
   it('falls back through language code priority (ISO6392 > ISO6391 > language)', () => {
