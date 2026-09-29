@@ -188,7 +188,7 @@ describe('XmlTvWriter', () => {
 
           expect(children.map((node) => node.tagName)).toEqual([
             'title',
-            'sub-title',
+            ...(type === 'movie' ? [] : ['sub-title']),
             'desc',
             'credits',
             'date',
@@ -203,6 +203,7 @@ describe('XmlTvWriter', () => {
           ]);
           expect(xml).toContain('<desc>Test summary &amp; description</desc>');
           expect(xml).toContain('<length units="seconds">1800</length>');
+          expect(xml).not.toContain('Test Tagline');
 
           const icons = children.filter((node) => node.tagName === 'icon');
           const images = children.filter((node) => node.tagName === 'image');

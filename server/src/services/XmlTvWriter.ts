@@ -189,10 +189,6 @@ export class XmlTvWriter {
         ({ program }) =>
           `${program.album?.title ? `${program.album.title} - ` : ''}${program.title}`,
       )
-      .with(
-        { type: 'program', program: { type: 'movie' } },
-        ({ program }) => program.tagline,
-      )
       // .with(
       //   { type: 'custom', program: { subtype: P.union('track', 'episode') } },
       //   (p) => p.program?.title,
