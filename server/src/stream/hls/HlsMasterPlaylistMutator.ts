@@ -81,8 +81,8 @@ export class HlsMasterPlaylistMutator {
       const langName = rendition.languageName ?? rendition.language;
       const title = rendition.title ?? langName;
       // The default rendition is muxed with video, so no URI is needed.
-      // Alternate renditions also reference the same muxed segments since
-      // all audio tracks are interleaved in the same TS output.
+      // Alternate renditions reference the same variant because passthrough
+      // interleaves every audio track in the same TS output.
       const uriPart = isDefault
         ? ''
         : `,URI="${options.streamBaseUrl}stream.m3u8"`;
