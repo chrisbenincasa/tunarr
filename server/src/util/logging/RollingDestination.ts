@@ -34,10 +34,12 @@ type Opts = {
   };
 };
 
+export const SIZE_CHECK_INTERVAL_MS = 10_000;
+
 export class RollingLogDestination {
   private scheduledTask: Maybe<UnknownScheduledTask>;
   private destination?: SonicBoomType;
-  private currentFileName?: string;
+  private sizeCheckTimer?: NodeJS.Timeout;
   private createdFileNames: string[] = [];
   private rotatePattern: RegExp;
   private destinationReady = false;
@@ -80,37 +82,26 @@ export class RollingLogDestination {
       this.destinationReady = true;
     });
 
-    // TODO: Fix this!!
-    if (
-      this.opts.maxSizeBytes &&
-      this.opts.maxSizeBytes > 0 &&
-      this.currentFileName
-    ) {
-      let currentSize = getFileSize(this.currentFileName);
-      this.destination.on('write', (size) => {
-        currentSize += size;
-        if (
-          isDefined(this.opts.maxSizeBytes) &&
-          this.opts.maxSizeBytes > 0 &&
-          currentSize >= this.opts.maxSizeBytes
-        ) {
-          currentSize = 0;
-          // Make sure the log flushes before we roll
-          setTimeout(() => {
-            const rollResult = attemptSync(() => this.roll());
-            if (isError(rollResult)) {
-              console.error('Error while rolling log files', rollResult);
-            }
-          }, 0);
+    // Worker threads append to this file through their own handles, so this
+    // destination's write events undercount. Poll the size on disk instead.
+    const maxSizeBytes = this.opts.maxSizeBytes;
+    if (isDefined(maxSizeBytes) && maxSizeBytes > 0) {
+      this.sizeCheckTimer = setInterval(() => {
+        if (getFileSize(this.opts.fileName) < maxSizeBytes) {
+          return;
         }
-      });
+        const rollResult = attemptSync(() => this.roll());
+        if (isError(rollResult)) {
+          console.error('Error while rolling log files', rollResult);
+        }
+      }, SIZE_CHECK_INTERVAL_MS);
+      this.sizeCheckTimer.unref();
     }
 
-    if (this.scheduledTask) {
-      this.destination.on('close', () => {
-        this.scheduledTask?.cancel();
-      });
-    }
+    this.destination.on('close', () => {
+      this.scheduledTask?.cancel();
+      clearInterval(this.sizeCheckTimer);
+    });
 
     return this.destination;
   }
@@ -124,6 +115,7 @@ export class RollingLogDestination {
     this.destination.end();
 
     this.scheduledTask?.cancel(false);
+    clearInterval(this.sizeCheckTimer);
   }
 
   roll() {
