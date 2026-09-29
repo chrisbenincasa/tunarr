@@ -1,5 +1,4 @@
 import type { GetApiStreamSelectionProfilesByIdResponse } from '@/generated/types.gen';
-import type { ComponentProps } from 'react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type * as Sdk from '../../generated/sdk.gen.ts';
 
@@ -7,12 +6,10 @@ type Profile = GetApiStreamSelectionProfilesByIdResponse;
 
 const navigateMock = vi.fn((_opts: unknown) => Promise.resolve());
 
-vi.mock('@tanstack/react-router', () => ({
+vi.mock('@tanstack/react-router', async () => ({
+  ...(await import('@/test/routerMock.tsx')),
   useNavigate: () => navigateMock,
   useParams: () => ({ profileId: 'anime' }),
-  Link: ({ to, ...props }: ComponentProps<'a'> & { to: string }) => (
-    <a href={to} {...props} />
-  ),
 }));
 
 const sdk = vi.hoisted(() => ({
