@@ -4,6 +4,7 @@ import { AudioVolumeFilter } from '../filter/AudioVolumeFilter.ts';
 import { LoudnormFilter } from '../filter/LoudnormFilter.ts';
 import { PixelFormatYuv420P } from '../format/PixelFormat.ts';
 import { AudioInputSource } from '../input/AudioInputSource.ts';
+import { ConcatInputSource } from '../input/ConcatInputSource.ts';
 import { VideoInputSource } from '../input/VideoInputSource.ts';
 import { AudioStream, VideoStream } from '../MediaStream.ts';
 import { AudioState } from '../state/AudioState.ts';
@@ -416,5 +417,31 @@ describe('BasePipelineBuilder', () => {
     const channelIdx = commandArgs?.indexOf('-ac');
     expect(channelIdx).toBeDefined();
     expect(commandArgs?.at(channelIdx + 1)).toBe('6');
+  });
+
+  test('hlsWrap maps a single A/V pair from the wrapped playlist', () => {
+    const pipeline = new NoopPipelineBuilder(
+      video,
+      audio,
+      null,
+      null,
+      null,
+      EmptyFfmpegCapabilities,
+    );
+
+    const result = pipeline.hlsWrap(
+      new ConcatInputSource(
+        new FileStreamSource('/path/to/stream.m3u8'),
+        FrameSize.FHD,
+      ),
+      state,
+    );
+
+    const commandArgs = result.getCommandArgs();
+    const mappedStreams = commandArgs.flatMap((arg, idx) =>
+      commandArgs[idx - 1] === '-map' ? [arg] : [],
+    );
+
+    expect(mappedStreams).toEqual(['0:v:0?', '0:a:0?']);
   });
 });

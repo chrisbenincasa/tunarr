@@ -108,7 +108,7 @@ import {
   FastStartOutputOption,
   makeConstantOutputOption,
   MapAllNonSubtitleStreamsOutputOption,
-  MapAllStreamsOutputOption,
+  MapDefaultAvStreamsOutputOption,
   MatroskaOutputFormatOption,
   MetadataServiceNameOutputOption,
   MetadataServiceProviderOutputOption,
@@ -305,7 +305,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       new LogLevelOption(state.logLevel),
       new NoStatsOption(),
       new StandardFormatFlags(),
-      MapAllStreamsOutputOption(),
+      MapDefaultAvStreamsOutputOption(),
       new CopyAllEncoder(),
     ];
 

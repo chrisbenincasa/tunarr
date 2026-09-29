@@ -57,8 +57,20 @@ export const MetadataServiceNameOutputOption = (serviceName: string) =>
 export const DoNotMapMetadataOutputOption = () =>
   makeConstantOutputOption(['-map_metadata', '-1']);
 
-export const MapAllStreamsOutputOption = () =>
-  makeConstantOutputOption(['-map', '0']);
+/**
+ * Maps the first video and first audio stream of the first input, and nothing
+ * else.
+ *
+ * The HLS wrapper rewrites a Tunarr master playlist whose variant already
+ * carries the single muxed A/V pair. Alternate EXT-X-MEDIA audio renditions
+ * point their URI at that same variant playlist, so `-map 0` makes ffmpeg pull
+ * the pair a second time and the wrapped transport stream ends up advertising
+ * duplicate video and audio tracks. Tuner endpoints (`.ts`) must expose exactly
+ * one pair. The `?` keeps the command valid for audio-only and video-only
+ * streams.
+ */
+export const MapDefaultAvStreamsOutputOption = () =>
+  makeConstantOutputOption(['-map', '0:v:0?', '-map', '0:a:0?']);
 
 /**
  * Maps all video, audio, and data streams from the first input but excludes
