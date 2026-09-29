@@ -35,7 +35,15 @@ export type StreamSelectionCelContext = {
     languages: string[];
   };
   channel: { name: string; number: number };
-  program: { title: string; type: string };
+  program: {
+    title: string;
+    type: string;
+    // Empty unless the program is an episode.
+    showTitle: string;
+    // Genre names on the program and, for episodes, on its show.
+    genres: string[];
+    libraryId: string;
+  };
 };
 
 @injectable()

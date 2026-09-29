@@ -22,6 +22,10 @@ import { Result } from '../types/result.ts';
 import { isNonEmptyArray } from '../util/index.ts';
 import { CelEvaluationService } from './CelEvaluationService.ts';
 import { StreamSelectionPreviewService } from './StreamSelectionPreviewService.ts';
+import type {
+  StreamSelectionProgramContextLoader,
+  StreamSelectionProgramRef,
+} from './StreamSelectionProgramContextLoader.ts';
 
 dayjs.extend(duration);
 
@@ -84,6 +88,7 @@ type HarnessOptions = {
   audio?: AudioStreamDetails[];
   subtitles?: SubtitleStreamDetails[];
   streamError?: Error;
+  genres?: string[];
 };
 
 function createService(opts: HarnessOptions = {}) {
@@ -134,12 +139,24 @@ function createService(opts: HarnessOptions = {}) {
       ),
   } as unknown as ProgramStreamDetailsFetcher;
 
+  const programContextLoader = {
+    load: (ref: StreamSelectionProgramRef) =>
+      Promise.resolve({
+        title: ref.title,
+        type: ref.type,
+        showTitle: '',
+        genres: opts.genres ?? [],
+        libraryId: '',
+      }),
+  } as unknown as StreamSelectionProgramContextLoader;
+
   return new StreamSelectionPreviewService(
     programDB,
     channelDB,
     mediaSourceDB,
     streamDetailsFetcher,
     new CelEvaluationService(),
+    programContextLoader,
   );
 }
 
@@ -219,6 +236,15 @@ describe('StreamSelectionPreviewService', () => {
     const withoutChannel = await previewSuccess(createService(), rules);
     expect(withoutChannel.matchedRuleIndex).toBeNull();
     expect(withoutChannel.channel).toBeUndefined();
+  });
+
+  it('exposes loaded program fields to rule conditions', async () => {
+    const result = await previewSuccess(
+      createService({ genres: ['Anime', 'Fantasy'] }),
+      [rule('"Anime" in program.genres')],
+    );
+
+    expect(result.matchedRuleIndex).toBe(0);
   });
 
   it('selects subtitles for content with no audio streams', async () => {
