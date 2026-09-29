@@ -26,9 +26,7 @@ describe('basicConditionToCel', () => {
     const group: ConditionGroup = {
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'program_type', operator: 'neq', value: 'episode' },
-      ],
+      conditions: [{ type: 'program_type', operator: 'neq', value: 'episode' }],
     };
     expect(basicConditionToCel(group)).toBe('program.type != "episode"');
   });
@@ -57,9 +55,7 @@ describe('basicConditionToCel', () => {
     const group: ConditionGroup = {
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'subtitle_language', operator: 'in', value: 'jpn' },
-      ],
+      conditions: [{ type: 'subtitle_language', operator: 'in', value: 'jpn' }],
     };
     expect(basicConditionToCel(group)).toBe('"jpn" in subtitle.languages');
   });
@@ -68,9 +64,7 @@ describe('basicConditionToCel', () => {
     const group: ConditionGroup = {
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'audio_channels', operator: 'gte', value: 6 },
-      ],
+      conditions: [{ type: 'audio_channels', operator: 'gte', value: 6 }],
     };
     expect(basicConditionToCel(group)).toBe(
       'audio.streams.exists(s, s.channels >= 6)',
@@ -127,6 +121,48 @@ describe('basicConditionToCel', () => {
   });
 });
 
+describe('basicConditionToCel program fields', () => {
+  const single = (clause: ConditionGroup['conditions'][number]) =>
+    basicConditionToCel({
+      type: 'group',
+      operator: 'and',
+      conditions: [clause],
+    });
+
+  it('generates title comparisons', () => {
+    expect(
+      single({ type: 'program_title', operator: 'eq', value: 'Heat' }),
+    ).toBe('program.title == "Heat"');
+    expect(single({ type: 'show_title', operator: 'neq', value: 'Lost' })).toBe(
+      'program.showTitle != "Lost"',
+    );
+    expect(
+      single({ type: 'show_title', operator: 'contains', value: 'Star' }),
+    ).toBe('program.showTitle.contains("Star")');
+  });
+
+  it('escapes quotes and backslashes in titles', () => {
+    expect(
+      single({ type: 'program_title', operator: 'eq', value: 'Say "Hi" \\o/' }),
+    ).toBe('program.title == "Say \\"Hi\\" \\\\o/"');
+  });
+
+  it('generates genre membership', () => {
+    expect(single({ type: 'genre', operator: 'in', value: 'Anime' })).toBe(
+      '"Anime" in program.genres',
+    );
+    expect(single({ type: 'genre', operator: 'not_in', value: 'Horror' })).toBe(
+      '!("Horror" in program.genres)',
+    );
+  });
+
+  it('generates library comparisons', () => {
+    expect(single({ type: 'library', operator: 'eq', value: 'lib-1' })).toBe(
+      'program.libraryId == "lib-1"',
+    );
+  });
+});
+
 describe('celToBasicCondition', () => {
   it('parses "true"', () => {
     const result = celToBasicCondition('true');
@@ -142,9 +178,7 @@ describe('celToBasicCondition', () => {
     expect(result).toEqual({
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'program_type', operator: 'eq', value: 'movie' },
-      ],
+      conditions: [{ type: 'program_type', operator: 'eq', value: 'movie' }],
     });
   });
 
@@ -153,9 +187,7 @@ describe('celToBasicCondition', () => {
     expect(result).toEqual({
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'audio_language', operator: 'in', value: 'eng' },
-      ],
+      conditions: [{ type: 'audio_language', operator: 'in', value: 'eng' }],
     });
   });
 
@@ -226,14 +258,38 @@ describe('celToBasicCondition', () => {
     expect(result).toEqual({
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'audio_channels', operator: 'gte', value: 6 },
-      ],
+      conditions: [{ type: 'audio_channels', operator: 'gte', value: 6 }],
     });
   });
 
   it('returns null for unrecognized expression', () => {
     expect(celToBasicCondition('some.unknown.field == 42')).toBeNull();
+  });
+
+  it('parses program field clauses', () => {
+    expect(
+      celToBasicCondition(
+        'program.showTitle.contains( "Star" ) && !("Horror" in program.genres)',
+      )?.conditions,
+    ).toEqual([
+      { type: 'show_title', operator: 'contains', value: 'Star' },
+      { type: 'genre', operator: 'not_in', value: 'Horror' },
+    ]);
+  });
+
+  it('decodes escaped quotes', () => {
+    expect(
+      celToBasicCondition(String.raw`program.title == "a \"b\" && c"`)
+        ?.conditions,
+    ).toEqual([{ type: 'program_title', operator: 'eq', value: 'a "b" && c' }]);
+  });
+
+  it('returns null for CEL escapes the builder cannot decode', () => {
+    expect(celToBasicCondition(String.raw`program.title == "\x41"`)).toBeNull();
+  });
+
+  it('returns null for single-quoted strings', () => {
+    expect(celToBasicCondition("program.title == 'Heat'")).toBeNull();
   });
 
   it('returns null for empty string', () => {
@@ -247,9 +303,7 @@ describe('round-trip', () => {
     {
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'program_type', operator: 'eq', value: 'movie' },
-      ],
+      conditions: [{ type: 'program_type', operator: 'eq', value: 'movie' }],
     },
     {
       type: 'group',
@@ -280,6 +334,16 @@ describe('round-trip', () => {
             { type: 'subtitle_language', operator: 'in', value: 'eng' },
           ],
         },
+      ],
+    },
+    {
+      type: 'group',
+      operator: 'or',
+      conditions: [
+        { type: 'program_title', operator: 'contains', value: 'Tom & "Jerry"' },
+        { type: 'show_title', operator: 'eq', value: 'Back\\slash || (x)' },
+        { type: 'genre', operator: 'in', value: 'Science Fiction' },
+        { type: 'library', operator: 'neq', value: 'lib-1' },
       ],
     },
   ];

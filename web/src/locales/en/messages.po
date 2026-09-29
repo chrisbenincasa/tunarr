@@ -1219,6 +1219,10 @@ msgstr "Consolidate"
 msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
 msgstr "Consolidates contiguous match flex and redirect blocks into singular spans"
 
+#: src/components/profiles/condition/types.ts
+msgid "contains"
+msgstr "contains"
+
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Continue"
 msgstr "Continue"
@@ -2358,10 +2362,10 @@ msgstr "General"
 msgid "Generating Bug Report Link..."
 msgstr "Generating Bug Report Link..."
 
-#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
-#: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
-#~ msgid "Genre"
-#~ msgstr "Genre"
+#: src/components/profiles/condition/GenreAutocomplete.tsx
+#: src/components/profiles/condition/types.ts
+msgid "Genre"
+msgstr "Genre"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Global Options"
@@ -2573,9 +2577,11 @@ msgid "Inverse linear decay, heavier weighting."
 msgstr "Inverse linear decay, heavier weighting."
 
 #: src/components/profiles/condition/types.ts
+#: src/components/profiles/condition/types.ts
 msgid "is"
 msgstr "is"
 
+#: src/components/profiles/condition/types.ts
 #: src/components/profiles/condition/types.ts
 msgid "is not"
 msgstr "is not"
@@ -2669,6 +2675,9 @@ msgstr "Libraries"
 
 #: src/components/channel_config/ImportedLibrarySeletor.tsx
 #: src/components/channel_config/ImportedLibrarySeletor.tsx
+#: src/components/profiles/condition/LibrarySelect.tsx
+#: src/components/profiles/condition/LibrarySelect.tsx
+#: src/components/profiles/condition/types.ts
 #: src/hooks/useNavItems.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/LibraryIndexPage.tsx
@@ -3583,6 +3592,10 @@ msgid "Program Playback Troubleshooter"
 msgstr "Program Playback Troubleshooter"
 
 #: src/components/profiles/condition/types.ts
+msgid "Program title"
+msgstr "Program title"
+
+#: src/components/profiles/condition/types.ts
 msgid "Program type"
 msgstr "Program type"
 
@@ -4190,6 +4203,10 @@ msgstr "Show Order"
 msgid "Show Stealth"
 msgstr "Show Stealth"
 
+#: src/components/profiles/condition/types.ts
+msgid "Show title"
+msgstr "Show title"
+
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Show:"
 msgstr "Show:"
@@ -4785,6 +4802,7 @@ msgstr "Time Slots..."
 msgid "Timestamp"
 msgstr "Timestamp"
 
+#: src/components/profiles/condition/ConditionClauseEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Title"
@@ -4974,6 +4992,10 @@ msgstr "Unavailable"
 #: src/components/search/DateSearchValueNode.tsx
 msgid "Unit"
 msgstr "Unit"
+
+#: src/components/profiles/condition/LibrarySelect.tsx
+msgid "Unknown library"
+msgstr "Unknown library"
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Unlink"
