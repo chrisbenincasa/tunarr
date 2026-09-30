@@ -1,6 +1,6 @@
 # Channel Lineup Loading, Server-Side Drafts and Program Add Flow
 
-> **Status (09/28/2026):** Phases 0 and 1 are in open PR #2176. Part of Phase 2 is in open PR #2177 (dialogs mount only when open, memoized lineup). A 16,920-item lineup now cold-loads in 1.7 s at a 110 MB peak heap. Phase 4 is now server-side lineup drafts, chosen 09/28/2026 over a slim client payload. Next step is Phase 4a on `dev`. Phase 3 (batched add) is not started and now feeds the draft.
+> **Status (09/29/2026):** Phases 0 and 1 are in open PR #2176. Part of Phase 2 is in open PR #2177 (dialogs mount only when open, memoized lineup). A 16,920-item lineup now cold-loads in 1.7 s at a 110 MB peak heap. Phase 4 is now server-side lineup drafts, chosen 09/28/2026 over a slim client payload. Phase 4 design was grilled 09/28–09/29/2026, and all open questions are settled. Next step is Phase 4a on `dev`. Phase 3 (batched add) is not started and now feeds the draft.
 
 ## Context
 
@@ -100,7 +100,7 @@ The add flow today works like this:
   - Expands groupings with `getProgramGroupingDescendants`.
   - Loads terminal programs in chunks with `LineupProgramRelations`.
   - De-duplicates while preserving order.
-- **Response:** `{lineup: CondensedChannelProgram[], programs: Record<id, LineupProgramSummary>}`. Once Phase 4c lands, resolve runs inside the `add` draft operation and nothing returns to the browser but the operation response.
+- **Response:** `{lineup: CondensedChannelProgram[], programs: Record<id, LineupProgramSummary>}`. Once Phase 4b lands, resolve runs inside the `add` draft operation and nothing returns to the browser but the operation response.
 - **Client:**
   - Select All stores one `query` entry instead of expanding hits.
   - Individually toggled items become `ids` entries.
@@ -140,13 +140,23 @@ The editor's working lineup moves from the browser to the server. Tools run in t
 - Content item durations are program data, not draft data. Paged reads and commit take them from `program` and recompute start offsets. Chosen 09/28/2026.
   - `ReconcileProgramDurationsTask` rewrites saved durations at playback time. A draft that stored its own durations would conflict with every fix and revert it on commit, because the manual save path trusts request durations (`LineupRepository.ts:108`).
   - `totalDuration` is computed from the join, not stored.
+- Start offsets live in an in-memory LRU keyed by `(draftId, version)`, or by live hash before a draft exists. Chosen 09/29/2026.
+  - The first read of a version builds the offsets array (about 140 KB at 17k items). Page and time-window reads binary-search it.
+  - Any duration reconcile drops the whole cache. Reconciles are rare.
+  - Offsets are not stored in version rows, because a reconcile would make them stale.
 - Draft items whose program was deleted stay in place. Chosen 09/28/2026.
   - Paged reads return a "missing program" row, so indices stay stable for index-based operations.
   - The draft header shows the missing count. Commit drops those items and reports how many.
   - Drafts are not cleaned when programs are deleted, because that would rewrite history under the user.
 - `items` holds condensed items only. That is 103 B per item, so about 1.7 MB per version at 17k items.
-- History is capped at 25 versions per draft. The oldest are pruned.
-- A background task deletes drafts untouched for 14 days.
+- Each version stores a full item list. History is capped at 25 versions per draft, and the oldest are pruned. Chosen 09/29/2026.
+  - Most tools rewrite the whole list, so a diff would be as large as a snapshot. Measure database growth in 4a, and cut the cap or compress if it matters.
+- Drafts never expire. They live until committed or discarded. Chosen 09/29/2026.
+  - One draft per target and 25 versions per draft already bound storage. Expiry would silently delete unsaved work.
+  - The channel, custom show and filler lists show a "draft" badge on any target with a draft. The badge becomes a warning once the draft is untouched for 30 days.
+  - The editor opens a draft with a banner offering resume or discard.
+  - A drafts list in Settings shows every draft with its target and age. It supports selecting many and deleting them, plus "delete drafts older than N days."
+  - Deleting a channel, custom show or filler list deletes its draft.
 - Operations run in the worker pool, with an in-process fallback through `NoopWorkerPool`, the same as the slot schedulers. Chosen 09/28/2026.
   - The worker reads the draft version and program summaries through its own DI container (`TunarrWorker.ts`), runs the transform and returns the new item list.
   - The main thread writes the new version. Workers never write today, and SQLite keeps a single writer.
@@ -163,12 +173,15 @@ The editor's working lineup moves from the browser to the server. Tools run in t
 | `GET /lineups/:targetType/:targetId/history` | Versions with operation and summary. |
 | `POST /lineups/:targetType/:targetId/commit` | Write the draft to the live lineup, then delete the draft. |
 | `DELETE /lineups/:targetType/:targetId/draft` | Discard the draft. |
+| `GET /lineup-drafts` | Every draft with target, age, version count and item total, for badges and the Settings list. |
+| `DELETE /lineup-drafts` | Bulk discard. Body is a list of targets or `{olderThanDays}`. |
 
 - Endpoints are keyed by target, because there is at most one draft per target and reads work with or without one.
 - `expected` is either `{draftVersion}` or, before a draft exists, `{liveHash}` from the last read. A mismatch returns 409, so an index-based edit never lands on a list the user did not see.
 - A new operation after an undo drops the redo branch.
 - Commit returns 409 when the saved lineup hash no longer matches `base_hash`, for example after a slot schedule regeneration. The user then chooses to overwrite or discard.
 - Commit reuses the existing manual lineup write path.
+- `GET /channels/:id/programming` keeps its current shape and stored offsets for API users. External callers who want pages or summaries use `/lineups/...`. Chosen 09/29/2026.
 
 ### Operation response
 
@@ -188,7 +201,7 @@ Every edit becomes an operation, including manual ones. Versions are ordered, so
 | Arrange | balance, replicate, consolidate, slide | `useBalancePrograms`, `useReplicatePrograms`, `useConcolidatePrograms`, `useSlideSchedule` |
 | Flex | add breaks, pad start times, restrict hours | `useAddBreaks`, `usePadStartTimes`, `useRestrictHours` |
 | Manual | move, remove item, insert or edit flex, insert redirect | `store/channelEditor/actions.ts` |
-| Add | add a resolved selection (Phase 3) | `useAddProgramming` |
+| Add | add an ordered list of program ids (4a), then Phase 3 selection entries (4b) | `useAddProgramming` |
 
 - Move the pure transforms out of the hooks into `@tunarr/shared`. The worker and the existing unit tests both use them.
 - Random operations store their seed in `operation`, so the history is reproducible.
@@ -222,19 +235,21 @@ Pages carry a slim summary per program, not full `ContentProgram` objects.
 
 ### Stages
 
-Stages 4a to 4d ship on `dev`, because the work spans many PRs and changes the core editor.
+Stages 4a to 4c ship on `dev`, because the work spans many PRs and changes the core editor.
 
-1. **4a:** Tables, draft API, paged reads and summaries. Channel editor list reads from the draft. Manual operations and the sort group run on the server.
-2. **4b:** Port the remove, arrange and flex groups. Add the history panel and changed-row highlights.
-3. **4c:** Add flow writes into the draft through Phase 3's resolve.
-4. **4d:** Custom show and filler editors switch to drafts. Remove the client-side tool hooks.
+1. **4a:** Tables, draft API, paged reads and summaries. Channel editor list reads from the draft. Every operation group runs on the server: manual, sort, remove, arrange and flex. History panel and changed-row highlights.
+   - Delete the dead offsets fallback in `assembleCondensedLineup` (`LineupRepository.ts:844-848`). `startTimeOffsets` is a required array, so the branch never runs, and it has an off-by-one (`take(items, cleanOffset - 1)`).
+   - All tool groups ship together, because a tool left on the client has no full list to work on once the editor pages the draft. Chosen 09/29/2026 over hiding unported tools or a temporary `replace` bridge.
+   - Delete the client-side tool hooks. The tools menu is channel-only (`ChannelProgrammingTools`, `ChannelProgrammingSort` and `ChannelProgrammingDeleteOptions` are used only by `ChannelProgrammingConfig`).
+   - Only the channel editor slice changes. Custom show and filler editors keep their slices until 4c. Add reaches each editor through `useProgrammingSelectionContext`, so repointing the channel editor's add leaves the others alone.
+   - The `add` operation takes an ordered id list, which is Phase 3's `{kind: 'ids'}` entry shape. The client keeps its current expansion and sends the resulting ids. Chosen 09/29/2026.
+2. **4b:** Add flow writes into the draft through Phase 3's resolve. The client sends `query` entries, and expansion moves to the server.
+3. **4c:** Custom show and filler editors switch to drafts.
    - New custom shows and filler lists are created before programming, like channels. The "new" page saves name and settings, then routes to `$showId/programming`. Delete `custom-shows_/new/programming.tsx` and `fillers_/new/programming.tsx`. Chosen 09/28/2026.
 
 ### Open questions
 
-- Is 25 versions the right history cap, or should versions store diffs instead of full item lists?
-- `GET /channels/:id/programming` keeps its current shape for API users. Should it also offer summaries?
-- Fix the suspected off-by-one in the `assembleCondensedLineup` fallback (`LineupRepository.ts:845`) during 4a?
+None. All were settled in the 09/28–09/29/2026 grill.
 
 ## What the browser reads from the whole list today
 
@@ -251,8 +266,8 @@ Each dependency needs a server-side replacement in Phase 4.
 
 ## Risks
 
-- **`ChannelLineupList` is shared** with the custom show and filler editors and both slot editors. Phase 4d moves the first two to drafts. The slot editors use the in-memory `type: 'direct'` mode, so the component keeps exactly two sources: paged draft reads and a passed list.
-- **Drafts outlive the tab.** A user who closes the tab and returns resumes the draft. The editor must say so clearly and offer discard.
+- **`ChannelLineupList` is shared** with the custom show and filler editors and both slot editors. Phase 4c moves the first two to drafts. The slot editors use the in-memory `type: 'direct'` mode, so the component keeps exactly two sources: paged draft reads and a passed list.
+- **Drafts outlive the tab.** A user who closes the tab and returns resumes the draft. The badge, the resume-or-discard banner and the Settings list cover this.
 - **Latency per operation.** Each tool becomes a round trip plus a page fetch. Transforms on 17k items take milliseconds, so the fetch should dominate. Measure it in 4a.
 - **Transform parity.** Moving transforms to `@tunarr/shared` must not change their output. Keep the existing hook tests and run them against the shared functions.
 - **The resolve order must match what users expect.** Today the order is Meilisearch `sortTitle:asc`, then the descendant order. Keep that, and pass the grid's sort when there is one.
