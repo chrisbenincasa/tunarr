@@ -42,6 +42,7 @@ import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 import type { HasMediaSourceInfo, SeasonWithShow } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
+import type { Maybe } from '../../types/util.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { isDefined, wait } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
@@ -61,7 +62,7 @@ import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
 import type { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { KnownVideoFileExtensions } from './constants.ts';
-import type { LocalScanContext } from './FileSystemScanner.ts';
+import type { ArtworkOwnerRow, LocalScanContext } from './FileSystemScanner.ts';
 import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
@@ -233,11 +234,17 @@ export class LocalTvShowScanner extends FileSystemScanner {
     const showMetadata = showResult.get();
 
     // Scan artwork
+    const existingShow = await this.localMediaDB.findExistingLocalGrouping(
+      context.mediaSource.uuid,
+      context.library.uuid,
+      fullPath,
+      'show',
+    );
     const artworkResults = await Promise.all([
-      this.scanShowArtwork(fullPath, 'poster'),
-      this.scanShowArtwork(fullPath, 'fanart'),
-      this.scanShowArtwork(fullPath, 'thumbnail'),
-      this.scanShowArtwork(fullPath, 'banner'),
+      this.scanShowArtwork(fullPath, 'poster', existingShow),
+      this.scanShowArtwork(fullPath, 'fanart', existingShow),
+      this.scanShowArtwork(fullPath, 'thumbnail', existingShow),
+      this.scanShowArtwork(fullPath, 'banner', existingShow),
     ]);
 
     const show: Show = {
@@ -390,10 +397,17 @@ export class LocalTvShowScanner extends FileSystemScanner {
       seasonDao.programGrouping.showUuid = show.uuid;
 
       // Posters
+      const existingSeason = await this.localMediaDB.findExistingLocalGrouping(
+        context.mediaSource.uuid,
+        context.library.uuid,
+        season.externalId,
+        'season',
+      );
       const seasonPosterResult = await this.scanSeasonArtwork(
         path.join(showDirent.parentPath, showDirent.name),
         seasonNumber,
         'poster',
+        existingSeason,
         context.force,
       );
 
@@ -484,10 +498,17 @@ export class LocalTvShowScanner extends FileSystemScanner {
       seasonDao.programGrouping.showUuid = show.uuid;
 
       // Posters
+      const existingSeason = await this.localMediaDB.findExistingLocalGrouping(
+        context.mediaSource.uuid,
+        context.library.uuid,
+        season.externalId,
+        'season',
+      );
       const seasonPosterResult = await this.scanSeasonArtwork(
         path.join(showDirent.parentPath, showDirent.name),
         seasonNumber,
         'poster',
+        existingSeason,
         context.force,
       );
 
@@ -629,9 +650,16 @@ export class LocalTvShowScanner extends FileSystemScanner {
     ).getOrThrow();
 
     // Artwork
+    const existingEpisode = await this.localMediaDB.findExistingLocalProgram(
+      context.mediaSource.uuid,
+      context.library.uuid,
+      fullEpisodePath,
+      'episode',
+    );
     const artworkResult = await this.scanEpisodeArtwork(
       episodeDirent,
       'thumbnail',
+      existingEpisode,
       context.force,
     );
 
@@ -833,6 +861,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
   private async scanShowArtwork(
     showFullPath: string,
     artworkType: ArtworkType,
+    existingShow: Maybe<ArtworkOwnerRow>,
     force: boolean = false,
   ) {
     const artworkFileNames = match(artworkType)
@@ -867,7 +896,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
     const scanResult = await this.scanArtwork(
       artPath,
       artworkType,
-      undefined,
+      existingShow,
       force,
     );
 
@@ -887,6 +916,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
     showFolderPath: string,
     seasonNumber: number,
     artworkType: ArtworkType,
+    existingSeason: Maybe<ArtworkOwnerRow>,
     force: boolean = false,
   ) {
     const artworkFileNames = match(artworkType)
@@ -928,7 +958,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
     const scanResult = await this.scanArtwork(
       foundPath,
       artworkType,
-      undefined,
+      existingSeason,
       force,
     );
 
@@ -947,6 +977,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
   private async scanEpisodeArtwork(
     episodeDirent: Dirent,
     artworkType: ArtworkType,
+    existingEpisode: Maybe<ArtworkOwnerRow>,
     force: boolean = false,
   ) {
     const artworkFileNames = match(artworkType)
@@ -984,7 +1015,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
     const scanResult = await this.scanArtwork(
       foundPath,
       artworkType,
-      undefined,
+      existingEpisode,
       force,
     );
 

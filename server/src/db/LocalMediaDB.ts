@@ -16,6 +16,7 @@ import type {
 import { LocalMediaFolder } from './schema/LocalMediaFolder.ts';
 import type { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
 import type { ProgramType } from './schema/Program.ts';
+import type { ProgramGroupingType } from './schema/ProgramGrouping.ts';
 
 @injectable()
 export class LocalMediaDB {
@@ -151,6 +152,36 @@ export class LocalMediaDB {
             mediaStreams: true,
           },
         },
+        artwork: true,
+      },
+    });
+  }
+
+  /**
+   * The persisted show/season/artist/album row for a local path, with its
+   * artwork, so a rescan can reuse the images it already cached. `externalKey`
+   * is the grouping's `externalId`, which for a local library is the folder
+   * path, or the synthetic key the scanner builds for a flat season.
+   */
+  async findExistingLocalGrouping(
+    mediaSourceId: MediaSourceId,
+    libraryId: string,
+    externalKey: string,
+    groupingType?: ProgramGroupingType,
+  ) {
+    return this.db.query.programGrouping.findFirst({
+      where: (fields, { eq, and }) => {
+        const clauses = [
+          eq(fields.mediaSourceId, mediaSourceId),
+          eq(fields.libraryId, libraryId),
+          eq(fields.externalKey, externalKey),
+        ];
+        if (groupingType) {
+          clauses.push(eq(fields.type, groupingType));
+        }
+        return and(...clauses);
+      },
+      with: {
         artwork: true,
       },
     });
