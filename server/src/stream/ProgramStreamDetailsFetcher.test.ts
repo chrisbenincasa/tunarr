@@ -171,7 +171,7 @@ function makeProgram(
 
 function makeProgramDB(program: ProgramWithRelationsOrm): IProgramDB {
   return {
-    getProgramById: vi.fn().mockResolvedValue(program),
+    getStreamProgramById: vi.fn().mockResolvedValue(program),
   } as unknown as IProgramDB;
 }
 

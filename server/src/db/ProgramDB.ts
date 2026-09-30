@@ -87,6 +87,12 @@ export class ProgramDB implements IProgramDB {
     return this.basicProg.getLineupProgramById(id);
   }
 
+  getStreamProgramById(
+    id: string,
+  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+    return this.basicProg.getStreamProgramById(id);
+  }
+
   getProgramExternalIds(
     id: string,
     externalIdTypes?: ProgramExternalIdType[],
@@ -115,6 +121,14 @@ export class ProgramDB implements IProgramDB {
     batchSize?: number,
   ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
     return this.basicProg.getProgramsByIds(ids, batchSize);
+  }
+
+  getGuideProgramsByIds(
+    ids: string[] | readonly string[],
+    opts: { includeCreditArtwork: boolean },
+    batchSize?: number,
+  ): Promise<ProgramWithRelationsOrm[]> {
+    return this.basicProg.getGuideProgramsByIds(ids, opts, batchSize);
   }
 
   getLineupProgramsByIds(

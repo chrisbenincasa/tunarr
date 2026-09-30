@@ -81,7 +81,10 @@ import {
 import { loggingDef } from '../util/logging/loggingDef.ts';
 import { EventService } from './EventService.ts';
 import { OnDemandChannelService } from './OnDemandChannelService.ts';
-import { XmlTvWriter } from './XmlTvWriter.ts';
+import {
+  type MaterializedChannelPrograms,
+  XmlTvWriter,
+} from './XmlTvWriter.ts';
 import { findMidRollAnchorIndex, isSameProgramSegment } from './tvGuideUtil.ts';
 
 export type ChannelAndPrograms = ChannelOrm & {
@@ -1112,16 +1115,18 @@ export class TVGuideService {
       Object.values(this.cachedGuide).flatMap(({ programs }) => programs),
     );
 
-    const materializedGuide = Object.values(this.cachedGuide).map(
-      ({ channel, programs }) => {
-        return {
-          channel,
-          programs: programs.map((program) =>
-            this.materializeGuideItem(channel, program, allProgramsById),
-          ),
-        };
-      },
-    );
+    // Yield per channel: every channel's guide items together are tens of
+    // milliseconds of synchronous work on a large guide.
+    const materializedGuide: MaterializedChannelPrograms[] = [];
+    for (const { channel, programs } of Object.values(this.cachedGuide)) {
+      await throttle();
+      materializedGuide.push({
+        channel,
+        programs: programs.map((program) =>
+          this.materializeGuideItem(channel, program, allProgramsById),
+        ),
+      });
+    }
 
     await this.xmltv.write(materializedGuide);
 
@@ -1335,8 +1340,12 @@ export class TVGuideService {
       (item) => item.id,
     );
     return groupByUniq(
-      await this.programDB.getProgramsByIds(
+      await this.programDB.getGuideProgramsByIds(
         contentItems.map((item) => item.id),
+        {
+          includeCreditArtwork:
+            this.settingsDB.featureFlags().xmltvCreditImagesEnabled,
+        },
       ),
       (prg) => prg.uuid,
     );

@@ -98,6 +98,41 @@ function makeGrouping(
 }
 
 describe('XmlTvWriter', () => {
+  describe('serialize', () => {
+    it('matches serializing the whole document at once', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(Date.parse('2026-09-22T00:00:00Z'));
+      try {
+        const writer = new XmlTvWriter(inMemorySettingsDB());
+        // Enough programmes per channel to span several serialize batches.
+        const channels: MaterializedChannelPrograms[] = [1, 2, 3].map(
+          (number) => ({
+            channel: createChannelOrm({ number, name: `Channel ${number}` }),
+            programs: Array.from({ length: 600 }, (_, i) => {
+              const program = makeProgram({
+                title: `Program ${number}-${i} <&>`,
+                summary: 'A "quoted" summary',
+              });
+              return {
+                programming: { type: 'program' as const, program },
+                title: program.title,
+                start: i * 1_800_000,
+                stop: (i + 1) * 1_800_000,
+                durationMs: 1_800_000,
+              };
+            }),
+          }),
+        );
+
+        expect(await writer.serialize(channels)).toEqual(
+          writeXmltv(writer.generateXmltv(channels)),
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe('serialized program order', () => {
     function serializeProgram(program: ProgramWithRelationsOrm) {
       const writer = new XmlTvWriter(inMemorySettingsDB());
