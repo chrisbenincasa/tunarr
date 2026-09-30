@@ -195,6 +195,16 @@ The web app uses a generated API client (`generated/`) created from the server's
 - Run tests with `pnpm turbo test` or `pnpm test:watch` for watch mode
 - Server tests often use `@faker-js/faker` for test data generation
 
+### E2E route sweep (`e2e/`)
+
+- Playwright suite that visits every web route against a seeded server. Local only; CI does not run it yet.
+- Run with `cd e2e && pnpm e2e`. First time only: `pnpm e2e:install-browsers`. Needs `ffmpeg` on the PATH and the Meilisearch binary (`cd server && pnpm install-meilisearch`).
+- Uses its own ports (server 18000, search 17700, web 15173), so it can run beside `pnpm turbo dev`.
+- The fixture is rebuilt on every run: generated test clips, three local media sources, three channels, a custom show, a filler list, and a smart collection (`e2e/fixture/seed.ts`).
+- A route fails on uncaught exceptions, `console.error` output (including React warnings), 5xx API responses, or the error page.
+- New routes must be added to `e2e/tests/routes.ts`; a coverage test compares it against `routeTree.gen.ts`.
+- Pre-existing warnings are listed per route in `e2e/tests/knownIssues.ts`. Remove an entry when its cause is fixed.
+
 ## Code Style
 
 - Prettier for formatting (config in root `package.json`)
