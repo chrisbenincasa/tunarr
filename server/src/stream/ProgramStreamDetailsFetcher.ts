@@ -43,7 +43,7 @@ export class ProgramStreamDetailsFetcher {
     lineupItem,
     server,
   }: StreamFetchRequest): Promise<Result<ProgramStreamResult>> {
-    const program = await this.programDB.getProgramById(lineupItem.uuid);
+    const program = await this.programDB.getStreamProgramById(lineupItem.uuid);
 
     if (!program) {
       return Result.forError(

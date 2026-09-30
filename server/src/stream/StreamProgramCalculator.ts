@@ -336,7 +336,9 @@ export class StreamProgramCalculator {
     switch (lineupItem.type) {
       case 'content': {
         // Defer program lookup
-        const backingItem = await this.programDB.getProgramById(lineupItem.id);
+        const backingItem = await this.programDB.getStreamProgramById(
+          lineupItem.id,
+        );
 
         program = {
           duration: lineupItem.durationMs,
@@ -504,7 +506,9 @@ export class StreamProgramCalculator {
       if (!isNil(filler)) {
         // TODO: This stinks right now, but re-materialize the program
         // to get the shiny new type.
-        const fillerProgram = await this.programDB.getProgramById(filler.uuid);
+        const fillerProgram = await this.programDB.getStreamProgramById(
+          filler.uuid,
+        );
         if (!fillerProgram) {
           throw new Error(`Expected program with ID ${filler.uuid}`);
         } else if (!isNonEmptyString(fillerProgram.mediaSourceId)) {

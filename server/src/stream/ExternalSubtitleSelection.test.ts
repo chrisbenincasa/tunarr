@@ -207,7 +207,7 @@ function makeLineupItem(program: StreamLineupProgram) {
 
 function makeProgramDB(program: StreamLineupProgram): IProgramDB {
   return {
-    getProgramById: vi.fn().mockResolvedValue(program),
+    getStreamProgramById: vi.fn().mockResolvedValue(program),
     clearExtractedSubtitle: vi.fn().mockResolvedValue(undefined),
   } as unknown as IProgramDB;
 }

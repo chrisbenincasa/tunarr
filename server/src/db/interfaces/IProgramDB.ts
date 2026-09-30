@@ -53,6 +53,14 @@ export interface IProgramDB {
     id: string,
   ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>>;
 
+  /**
+   * Loads a program with only the relations streaming needs. See
+   * `StreamProgramRelations`.
+   */
+  getStreamProgramById(
+    id: string,
+  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>>;
+
   getProgramExternalIds(
     id: string,
     externalIdTypes?: ProgramExternalIdType[],
@@ -70,6 +78,16 @@ export interface IProgramDB {
     ids: string[] | readonly string[],
     batchSize?: number,
   ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
+
+  /**
+   * Loads programs with only the relations the XMLTV writer reads. See
+   * `GuideProgramRelations`.
+   */
+  getGuideProgramsByIds(
+    ids: string[] | readonly string[],
+    opts: { includeCreditArtwork: boolean },
+    batchSize?: number,
+  ): Promise<ProgramWithRelationsOrm[]>;
 
   /**
    * Loads programs with only the relations a lineup needs. See
