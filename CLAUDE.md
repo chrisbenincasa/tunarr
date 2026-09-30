@@ -41,9 +41,9 @@ This is a monorepo with four main packages:
 
 The maintainer cannot approve their own PRs on GitHub, so review agents record their verdict with labels.
 
-| Label | Meaning |
-|---|---|
-| `approved` | Reviewed and ready to merge |
+| Label               | Meaning                                        |
+| ------------------- | ---------------------------------------------- |
+| `approved`          | Reviewed and ready to merge                    |
 | `changes requested` | Review found issues; the PR needs another pass |
 
 - A reviewer sets exactly one of these labels and removes the other.
