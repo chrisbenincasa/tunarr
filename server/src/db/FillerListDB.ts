@@ -130,15 +130,18 @@ export class FillerDB implements IFillerListDB {
           }) satisfies NewFillerShowContent,
       );
 
-      this.drizzle.transaction((tx) => {
-        tx.delete(FillerShowContent)
-          .where(eq(FillerShowContent.fillerShowUuid, filler.uuid))
-          .run();
+      this.drizzle.transaction(
+        (tx) => {
+          tx.delete(FillerShowContent)
+            .where(eq(FillerShowContent.fillerShowUuid, filler.uuid))
+            .run();
 
-        for (const fsc of chunk(persistedFillerShowContent, 1_000)) {
-          tx.insert(FillerShowContent).values(fsc).run();
-        }
-      });
+          for (const fsc of chunk(persistedFillerShowContent, 1_000)) {
+            tx.insert(FillerShowContent).values(fsc).run();
+          }
+        },
+        { behavior: 'immediate' },
+      );
     }
 
     if (updateRequest.name) {
@@ -199,91 +202,102 @@ export class FillerDB implements IFillerListDB {
   }
 
   deleteFiller(id: string): void {
-    this.drizzle.transaction((tx) => {
-      const relevantChannelFillers = tx
-        .select()
-        .from(ChannelFillerShow)
-        .where(eq(ChannelFillerShow.fillerShowUuid, id))
-        .all();
+    this.drizzle.transaction(
+      (tx) => {
+        const relevantChannelFillers = tx
+          .select()
+          .from(ChannelFillerShow)
+          .where(eq(ChannelFillerShow.fillerShowUuid, id))
+          .all();
 
-      const allRelevantChannelFillers = tx
-        .select()
-        .from(ChannelFillerShow)
-        .where(
-          inArray(
-            ChannelFillerShow.channelUuid,
-            uniq(map(relevantChannelFillers, (cf) => cf.channelUuid)),
-          ),
-        )
-        .all();
-
-      const fillersByChannel = groupBy(
-        allRelevantChannelFillers,
-        (cf) => cf.channelUuid,
-      );
-
-      forEach(values(fillersByChannel), (cfs) => {
-        const removedWeight = find(
-          cfs,
-          (cf) => cf.fillerShowUuid === id,
-        )?.weight;
-        if (isUndefined(removedWeight)) {
-          return;
-        }
-        const remainingFillers = reject(cfs, (cf) => cf.fillerShowUuid === id);
-        const distributeWeight =
-          remainingFillers.length > 0
-            ? round(removedWeight / remainingFillers.length, 2)
-            : 0;
-        forEach(remainingFillers, (filler) => {
-          filler.weight += distributeWeight;
-        });
-      });
-
-      tx.delete(ChannelFillerShow)
-        .where(eq(ChannelFillerShow.fillerShowUuid, id))
-        .run();
-
-      const reminaingChannelFillers = omitBy<ChannelFillerShow[]>(
-        mapValues(fillersByChannel, (cfs) =>
-          reject(cfs, (cf) => cf.fillerShowUuid === id),
-        ),
-        isEmpty,
-      );
-
-      const allRemainingFillers = Object.values(reminaingChannelFillers).flat();
-      if (!isEmpty(fillersByChannel) && !isEmpty(allRemainingFillers)) {
-        const firstFiller = head(allRemainingFillers)!;
-        const rest = tail(allRemainingFillers);
-        const baseCase = caseWhen(
-          and(
-            eq(ChannelFillerShow.fillerShowUuid, firstFiller.fillerShowUuid),
-            eq(ChannelFillerShow.channelUuid, firstFiller.channelUuid),
-          )!,
-          sql`${firstFiller.weight}`,
-        );
-        const cases = rest
-          .reduce(
-            (caseBuilder, channelFiller) =>
-              caseBuilder.when(
-                and(
-                  eq(
-                    ChannelFillerShow.fillerShowUuid,
-                    channelFiller.fillerShowUuid,
-                  ),
-                  eq(ChannelFillerShow.channelUuid, channelFiller.channelUuid),
-                )!,
-                sql`${channelFiller.weight}`,
-              ),
-            baseCase,
+        const allRelevantChannelFillers = tx
+          .select()
+          .from(ChannelFillerShow)
+          .where(
+            inArray(
+              ChannelFillerShow.channelUuid,
+              uniq(map(relevantChannelFillers, (cf) => cf.channelUuid)),
+            ),
           )
-          .else(ChannelFillerShow.weight);
+          .all();
 
-        tx.update(ChannelFillerShow).set({ weight: cases }).run();
-      }
+        const fillersByChannel = groupBy(
+          allRelevantChannelFillers,
+          (cf) => cf.channelUuid,
+        );
 
-      tx.delete(FillerShow).where(eq(FillerShow.uuid, id)).run();
-    });
+        forEach(values(fillersByChannel), (cfs) => {
+          const removedWeight = find(
+            cfs,
+            (cf) => cf.fillerShowUuid === id,
+          )?.weight;
+          if (isUndefined(removedWeight)) {
+            return;
+          }
+          const remainingFillers = reject(
+            cfs,
+            (cf) => cf.fillerShowUuid === id,
+          );
+          const distributeWeight =
+            remainingFillers.length > 0
+              ? round(removedWeight / remainingFillers.length, 2)
+              : 0;
+          forEach(remainingFillers, (filler) => {
+            filler.weight += distributeWeight;
+          });
+        });
+
+        tx.delete(ChannelFillerShow)
+          .where(eq(ChannelFillerShow.fillerShowUuid, id))
+          .run();
+
+        const reminaingChannelFillers = omitBy<ChannelFillerShow[]>(
+          mapValues(fillersByChannel, (cfs) =>
+            reject(cfs, (cf) => cf.fillerShowUuid === id),
+          ),
+          isEmpty,
+        );
+
+        const allRemainingFillers = Object.values(
+          reminaingChannelFillers,
+        ).flat();
+        if (!isEmpty(fillersByChannel) && !isEmpty(allRemainingFillers)) {
+          const firstFiller = head(allRemainingFillers)!;
+          const rest = tail(allRemainingFillers);
+          const baseCase = caseWhen(
+            and(
+              eq(ChannelFillerShow.fillerShowUuid, firstFiller.fillerShowUuid),
+              eq(ChannelFillerShow.channelUuid, firstFiller.channelUuid),
+            )!,
+            sql`${firstFiller.weight}`,
+          );
+          const cases = rest
+            .reduce(
+              (caseBuilder, channelFiller) =>
+                caseBuilder.when(
+                  and(
+                    eq(
+                      ChannelFillerShow.fillerShowUuid,
+                      channelFiller.fillerShowUuid,
+                    ),
+                    eq(
+                      ChannelFillerShow.channelUuid,
+                      channelFiller.channelUuid,
+                    ),
+                  )!,
+                  sql`${channelFiller.weight}`,
+                ),
+              baseCase,
+            )
+            .else(ChannelFillerShow.weight);
+
+          tx.update(ChannelFillerShow).set({ weight: cases }).run();
+        }
+
+        tx.delete(FillerShow).where(eq(FillerShow.uuid, id)).run();
+      },
+      { behavior: 'immediate' },
+    );
 
     return;
   }

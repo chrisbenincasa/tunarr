@@ -243,24 +243,27 @@ export class ProgramExternalIdRepository {
     newExternalId: NewProgramExternalId,
     oldExternalId?: MinimalProgramExternalId,
   ) {
-    this.drizzleDB.transaction((tx) => {
-      if (oldExternalId) {
-        tx.delete(ProgramExternalId)
-          .where(
-            and(
-              eq(ProgramExternalId.programUuid, programId),
-              eq(ProgramExternalId.externalKey, oldExternalId.externalKey),
-              eq(
-                ProgramExternalId.externalSourceId,
-                oldExternalId.externalSourceId!,
+    this.drizzleDB.transaction(
+      (tx) => {
+        if (oldExternalId) {
+          tx.delete(ProgramExternalId)
+            .where(
+              and(
+                eq(ProgramExternalId.programUuid, programId),
+                eq(ProgramExternalId.externalKey, oldExternalId.externalKey),
+                eq(
+                  ProgramExternalId.externalSourceId,
+                  oldExternalId.externalSourceId!,
+                ),
+                eq(ProgramExternalId.sourceType, oldExternalId.sourceType),
               ),
-              eq(ProgramExternalId.sourceType, oldExternalId.sourceType),
-            ),
-          )
-          .run();
-      }
-      tx.insert(ProgramExternalId).values(newExternalId).run();
-    });
+            )
+            .run();
+        }
+        tx.insert(ProgramExternalId).values(newExternalId).run();
+      },
+      { behavior: 'immediate' },
+    );
   }
 
   upsertProgramExternalIds(
@@ -283,25 +286,27 @@ export class ProgramExternalIdRepository {
     if (!isEmpty(singles)) {
       try {
         const singleResults = chunk(singles, chunkSize).flatMap((singleChunk) =>
-          this.drizzleDB.transaction((tx) =>
-            tx
-              .insert(ProgramExternalId)
-              .values(singleChunk.map(toInsertableProgramExternalId))
-              .onConflictDoUpdate({
-                target: [
-                  ProgramExternalId.programUuid,
-                  ProgramExternalId.sourceType,
-                ],
-                targetWhere: dbIsNull(ProgramExternalId.mediaSourceId),
-                set: {
-                  updatedAt: sql`excluded.updated_at`,
-                  externalFilePath: sql`excluded.external_file_path`,
-                  directFilePath: sql`excluded.direct_file_path`,
-                  programUuid: sql`excluded.program_uuid`,
-                },
-              })
-              .returning()
-              .all(),
+          this.drizzleDB.transaction(
+            (tx) =>
+              tx
+                .insert(ProgramExternalId)
+                .values(singleChunk.map(toInsertableProgramExternalId))
+                .onConflictDoUpdate({
+                  target: [
+                    ProgramExternalId.programUuid,
+                    ProgramExternalId.sourceType,
+                  ],
+                  targetWhere: dbIsNull(ProgramExternalId.mediaSourceId),
+                  set: {
+                    updatedAt: sql`excluded.updated_at`,
+                    externalFilePath: sql`excluded.external_file_path`,
+                    directFilePath: sql`excluded.direct_file_path`,
+                    programUuid: sql`excluded.program_uuid`,
+                  },
+                })
+                .returning()
+                .all(),
+            { behavior: 'immediate' },
           ),
         );
         logger.trace('Upserted %d external IDs', singleResults.length);
@@ -314,26 +319,28 @@ export class ProgramExternalIdRepository {
     if (!isEmpty(multiples)) {
       try {
         const multiResults = chunk(multiples, chunkSize).flatMap((multiChunk) =>
-          this.drizzleDB.transaction((tx) =>
-            tx
-              .insert(ProgramExternalId)
-              .values(multiChunk.map(toInsertableProgramExternalId))
-              .onConflictDoUpdate({
-                target: [
-                  ProgramExternalId.programUuid,
-                  ProgramExternalId.sourceType,
-                  ProgramExternalId.mediaSourceId,
-                ],
-                targetWhere: isNotNull(ProgramExternalId.mediaSourceId),
-                set: {
-                  updatedAt: sql`excluded.updated_at`,
-                  externalFilePath: sql`excluded.external_file_path`,
-                  directFilePath: sql`excluded.direct_file_path`,
-                  programUuid: sql`excluded.program_uuid`,
-                },
-              })
-              .returning()
-              .all(),
+          this.drizzleDB.transaction(
+            (tx) =>
+              tx
+                .insert(ProgramExternalId)
+                .values(multiChunk.map(toInsertableProgramExternalId))
+                .onConflictDoUpdate({
+                  target: [
+                    ProgramExternalId.programUuid,
+                    ProgramExternalId.sourceType,
+                    ProgramExternalId.mediaSourceId,
+                  ],
+                  targetWhere: isNotNull(ProgramExternalId.mediaSourceId),
+                  set: {
+                    updatedAt: sql`excluded.updated_at`,
+                    externalFilePath: sql`excluded.external_file_path`,
+                    directFilePath: sql`excluded.direct_file_path`,
+                    programUuid: sql`excluded.program_uuid`,
+                  },
+                })
+                .returning()
+                .all(),
+            { behavior: 'immediate' },
           ),
         );
         logger.trace('Upserted %d external IDs', multiResults.length);

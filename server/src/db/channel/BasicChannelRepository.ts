@@ -116,54 +116,59 @@ export class BasicChannelRepository {
       );
     }
 
-    const channel = this.drizzleDB.transaction((tx) => {
-      const channel = tx
-        .insert(Channel)
-        .values(createRequestToChannel(createReq))
-        .returning()
-        .get();
-
-      if (!channel) {
-        throw new Error('Error while saving new channel.');
-      }
-
-      let filler: ChannelFillerShow[] = [];
-      if (!isEmpty(createReq.fillerCollections)) {
-        filler = tx
-          .insert(ChannelFillerShow)
-          .values(
-            map(createReq.fillerCollections, (fc) => ({
-              channelUuid: channel.uuid,
-              cooldown: fc.cooldownSeconds,
-              fillerShowUuid: fc.id,
-              weight: fc.weight,
-            })),
-          )
+    const channel = this.drizzleDB.transaction(
+      (tx) => {
+        const channel = tx
+          .insert(Channel)
+          .values(createRequestToChannel(createReq))
           .returning()
-          .all();
-      }
+          .get();
 
-      const subtitlePreferences = createReq.subtitlePreferences?.map(
-        (pref) =>
-          ({
-            channelId: channel.uuid,
-            uuid: v4(),
-            languageCode: pref.langugeCode,
-            allowExternal: pref.allowExternal,
-            allowImageBased: pref.allowImageBased,
-            filterType: pref.filter,
-            priority: pref.priority,
-          }) satisfies NewChannelSubtitlePreferenceOrm,
-      );
-      if (subtitlePreferences) {
-        tx.insert(ChannelSubtitlePreferences).values(subtitlePreferences).run();
-      }
+        if (!channel) {
+          throw new Error('Error while saving new channel.');
+        }
 
-      return {
-        ...channel,
-        fillerShows: filler,
-      } satisfies MarkRequired<ChannelOrmWithRelations, 'fillerShows'>;
-    });
+        let filler: ChannelFillerShow[] = [];
+        if (!isEmpty(createReq.fillerCollections)) {
+          filler = tx
+            .insert(ChannelFillerShow)
+            .values(
+              map(createReq.fillerCollections, (fc) => ({
+                channelUuid: channel.uuid,
+                cooldown: fc.cooldownSeconds,
+                fillerShowUuid: fc.id,
+                weight: fc.weight,
+              })),
+            )
+            .returning()
+            .all();
+        }
+
+        const subtitlePreferences = createReq.subtitlePreferences?.map(
+          (pref) =>
+            ({
+              channelId: channel.uuid,
+              uuid: v4(),
+              languageCode: pref.langugeCode,
+              allowExternal: pref.allowExternal,
+              allowImageBased: pref.allowImageBased,
+              filterType: pref.filter,
+              priority: pref.priority,
+            }) satisfies NewChannelSubtitlePreferenceOrm,
+        );
+        if (subtitlePreferences) {
+          tx.insert(ChannelSubtitlePreferences)
+            .values(subtitlePreferences)
+            .run();
+        }
+
+        return {
+          ...channel,
+          fillerShows: filler,
+        } satisfies MarkRequired<ChannelOrmWithRelations, 'fillerShows'>;
+      },
+      { behavior: 'immediate' },
+    );
 
     await this.lineupRepository.createLineup(channel.uuid);
 
@@ -210,45 +215,50 @@ export class BasicChannelRepository {
       }
     }
 
-    this.drizzleDB.transaction((tx) => {
-      tx.update(Channel).set(update).where(eq(Channel.uuid, id)).run();
+    this.drizzleDB.transaction(
+      (tx) => {
+        tx.update(Channel).set(update).where(eq(Channel.uuid, id)).run();
 
-      tx.delete(ChannelFillerShow)
-        .where(eq(ChannelFillerShow.channelUuid, channel.uuid))
-        .run();
+        tx.delete(ChannelFillerShow)
+          .where(eq(ChannelFillerShow.channelUuid, channel.uuid))
+          .run();
 
-      if (!isEmpty(updateReq.fillerCollections)) {
-        const channelFillerShows = map(
-          updateReq.fillerCollections,
-          (filler) => ({
-            cooldown: filler.cooldownSeconds,
-            channelUuid: channel.uuid,
-            fillerShowUuid: filler.id,
-            weight: filler.weight,
-          }),
+        if (!isEmpty(updateReq.fillerCollections)) {
+          const channelFillerShows = map(
+            updateReq.fillerCollections,
+            (filler) => ({
+              cooldown: filler.cooldownSeconds,
+              channelUuid: channel.uuid,
+              fillerShowUuid: filler.id,
+              weight: filler.weight,
+            }),
+          );
+
+          tx.insert(ChannelFillerShow).values(channelFillerShows).run();
+        }
+        const subtitlePreferences = updateReq.subtitlePreferences?.map(
+          (pref) =>
+            ({
+              channelId: channel.uuid,
+              uuid: v4(),
+              languageCode: pref.langugeCode,
+              allowExternal: pref.allowExternal,
+              allowImageBased: pref.allowImageBased,
+              filterType: pref.filter,
+              priority: pref.priority,
+            }) satisfies NewChannelSubtitlePreferenceOrm,
         );
-
-        tx.insert(ChannelFillerShow).values(channelFillerShows).run();
-      }
-      const subtitlePreferences = updateReq.subtitlePreferences?.map(
-        (pref) =>
-          ({
-            channelId: channel.uuid,
-            uuid: v4(),
-            languageCode: pref.langugeCode,
-            allowExternal: pref.allowExternal,
-            allowImageBased: pref.allowImageBased,
-            filterType: pref.filter,
-            priority: pref.priority,
-          }) satisfies NewChannelSubtitlePreferenceOrm,
-      );
-      tx.delete(ChannelSubtitlePreferences)
-        .where(eq(ChannelSubtitlePreferences.channelId, channel.uuid))
-        .run();
-      if (subtitlePreferences) {
-        tx.insert(ChannelSubtitlePreferences).values(subtitlePreferences).run();
-      }
-    });
+        tx.delete(ChannelSubtitlePreferences)
+          .where(eq(ChannelSubtitlePreferences.channelId, channel.uuid))
+          .run();
+        if (subtitlePreferences) {
+          tx.insert(ChannelSubtitlePreferences)
+            .values(subtitlePreferences)
+            .run();
+        }
+      },
+      { behavior: 'immediate' },
+    );
 
     if (isDefined(updateReq.onDemand)) {
       const db = await this.lineupRepository.getFileDb(id);
@@ -324,65 +334,68 @@ export class BasicChannelRepository {
 
     const newChannelId = v4();
     const now = +dayjs();
-    const newChannel = this.drizzleDB.transaction((tx) => {
-      const maxRow = tx
-        .select({ number: Channel.number })
-        .from(Channel)
-        .orderBy(desc(Channel.number))
-        .limit(1)
-        .get();
+    const newChannel = this.drizzleDB.transaction(
+      (tx) => {
+        const maxRow = tx
+          .select({ number: Channel.number })
+          .from(Channel)
+          .orderBy(desc(Channel.number))
+          .limit(1)
+          .get();
 
-      const maxNumber = maxRow?.number ?? 0;
+        const maxNumber = maxRow?.number ?? 0;
 
-      const { transcodeConfig: _, ...channelFields } = channel;
-      const newChannel = tx
-        .insert(Channel)
-        .values({
-          ...channelFields,
-          uuid: newChannelId,
-          name: `${channel.name} - Copy`,
-          number: maxNumber + 1,
-          icon: channel.icon,
-          offline: channel.offline,
-          watermark: channel.watermark,
-          createdAt: now,
-          updatedAt: now,
-          transcoding: null,
-          transcodeConfigId: channel.transcodeConfigId,
-        })
-        .returning()
-        .get();
+        const { transcodeConfig: _, ...channelFields } = channel;
+        const newChannel = tx
+          .insert(Channel)
+          .values({
+            ...channelFields,
+            uuid: newChannelId,
+            name: `${channel.name} - Copy`,
+            number: maxNumber + 1,
+            icon: channel.icon,
+            offline: channel.offline,
+            watermark: channel.watermark,
+            createdAt: now,
+            updatedAt: now,
+            transcoding: null,
+            transcodeConfigId: channel.transcodeConfigId,
+          })
+          .returning()
+          .get();
 
-      const fillerShows = tx
-        .insert(ChannelFillerShow)
-        .select(
-          tx
-            .select({
-              channelUuid: sql<string>`${newChannelId}`.as('channelUuid'),
-              fillerShowUuid: ChannelFillerShow.fillerShowUuid,
-              cooldown: ChannelFillerShow.cooldown,
-              weight: ChannelFillerShow.weight,
-            })
-            .from(ChannelFillerShow)
-            .where(eq(ChannelFillerShow.channelUuid, channel.uuid)),
-        )
-        .returning()
-        .all();
+        const fillerShows = tx
+          .insert(ChannelFillerShow)
+          .select(
+            tx
+              .select({
+                channelUuid: sql<string>`${newChannelId}`.as('channelUuid'),
+                fillerShowUuid: ChannelFillerShow.fillerShowUuid,
+                cooldown: ChannelFillerShow.cooldown,
+                weight: ChannelFillerShow.weight,
+              })
+              .from(ChannelFillerShow)
+              .where(eq(ChannelFillerShow.channelUuid, channel.uuid)),
+          )
+          .returning()
+          .all();
 
-      tx.insert(ChannelPrograms)
-        .select(
-          tx
-            .select({
-              channelUuid: sql<string>`${newChannelId}`.as('channelUuid'),
-              programUuid: ChannelPrograms.programUuid,
-            })
-            .from(ChannelPrograms)
-            .where(eq(ChannelPrograms.channelUuid, channel.uuid)),
-        )
-        .run();
+        tx.insert(ChannelPrograms)
+          .select(
+            tx
+              .select({
+                channelUuid: sql<string>`${newChannelId}`.as('channelUuid'),
+                programUuid: ChannelPrograms.programUuid,
+              })
+              .from(ChannelPrograms)
+              .where(eq(ChannelPrograms.channelUuid, channel.uuid)),
+          )
+          .run();
 
-      return { ...newChannel, fillerShows };
-    });
+        return { ...newChannel, fillerShows };
+      },
+      { behavior: 'immediate' },
+    );
 
     const newLineup = await this.lineupRepository.saveLineup(
       newChannel.uuid,
@@ -404,12 +417,15 @@ export class BasicChannelRepository {
       await this.lineupRepository.markLineupFileForDeletion(channelId);
       marked = true;
 
-      this.drizzleDB.transaction((tx) => {
-        tx.delete(ChannelSubtitlePreferences)
-          .where(eq(ChannelSubtitlePreferences.channelId, channelId))
-          .run();
-        tx.delete(Channel).where(eq(Channel.uuid, channelId)).run();
-      });
+      this.drizzleDB.transaction(
+        (tx) => {
+          tx.delete(ChannelSubtitlePreferences)
+            .where(eq(ChannelSubtitlePreferences.channelId, channelId))
+            .run();
+          tx.delete(Channel).where(eq(Channel.uuid, channelId)).run();
+        },
+        { behavior: 'immediate' },
+      );
 
       const removeRefs = () =>
         this.lineupRepository.removeRedirectReferences(channelId).catch(() => {

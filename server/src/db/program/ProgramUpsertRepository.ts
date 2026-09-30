@@ -82,20 +82,22 @@ export class ProgramUpsertRepository {
 
     const result = await Promise.all(
       chunk(requests, programUpsertBatchSize).map(async (c) => {
-        const chunkResult = this.drizzleDB.transaction((tx) =>
-          tx
-            .insert(Program)
-            .values(c.map(({ program }) => program))
-            .onConflictDoUpdate({
-              target: [
-                Program.sourceType,
-                Program.mediaSourceId,
-                Program.externalKey,
-              ],
-              set: ProgramUpsertSetClause,
-            })
-            .returning()
-            .all(),
+        const chunkResult = this.drizzleDB.transaction(
+          (tx) =>
+            tx
+              .insert(Program)
+              .values(c.map(({ program }) => program))
+              .onConflictDoUpdate({
+                target: [
+                  Program.sourceType,
+                  Program.mediaSourceId,
+                  Program.externalKey,
+                ],
+                set: ProgramUpsertSetClause,
+              })
+              .returning()
+              .all(),
+          { behavior: 'immediate' },
         ) as MarkNonNullable<ProgramDao, 'mediaSourceId' | 'canonicalId'>[];
 
         const allExternalIds = flatten(c.map((program) => program.externalIds));
@@ -199,40 +201,46 @@ export class ProgramUpsertRepository {
     }
 
     const insertedVersions: ProgramVersion[] = [];
-    this.drizzleDB.transaction((tx) => {
-      const byProgramId = groupByUniq(versions, (version) => version.programId);
-      for (const batch of chunk(Object.entries(byProgramId), 50)) {
-        const [programIds, versionBatch] = myUnzip(batch);
-        tx.delete(ProgramVersion)
-          .where(inArray(ProgramVersion.programId, programIds))
-          .run();
-
-        const insertResult = tx
-          .insert(ProgramVersion)
-          .values(
-            versionBatch.map((version) =>
-              omit(version, ['chapters', 'mediaStreams', 'mediaFiles']),
-            ),
-          )
-          .returning()
-          .all();
-
-        this.upsertProgramMediaStreams(
-          versionBatch.flatMap(({ mediaStreams }) => mediaStreams),
-          tx,
+    this.drizzleDB.transaction(
+      (tx) => {
+        const byProgramId = groupByUniq(
+          versions,
+          (version) => version.programId,
         );
-        this.upsertProgramChapters(
-          versionBatch.flatMap(({ chapters }) => chapters ?? []),
-          tx,
-        );
-        this.upsertProgramMediaFiles(
-          versionBatch.flatMap(({ mediaFiles }) => mediaFiles),
-          tx,
-        );
+        for (const batch of chunk(Object.entries(byProgramId), 50)) {
+          const [programIds, versionBatch] = myUnzip(batch);
+          tx.delete(ProgramVersion)
+            .where(inArray(ProgramVersion.programId, programIds))
+            .run();
 
-        insertedVersions.push(...insertResult);
-      }
-    });
+          const insertResult = tx
+            .insert(ProgramVersion)
+            .values(
+              versionBatch.map((version) =>
+                omit(version, ['chapters', 'mediaStreams', 'mediaFiles']),
+              ),
+            )
+            .returning()
+            .all();
+
+          this.upsertProgramMediaStreams(
+            versionBatch.flatMap(({ mediaStreams }) => mediaStreams),
+            tx,
+          );
+          this.upsertProgramChapters(
+            versionBatch.flatMap(({ chapters }) => chapters ?? []),
+            tx,
+          );
+          this.upsertProgramMediaFiles(
+            versionBatch.flatMap(({ mediaFiles }) => mediaFiles),
+            tx,
+          );
+
+          insertedVersions.push(...insertResult);
+        }
+      },
+      { behavior: 'immediate' },
+    );
     return insertedVersions;
   }
 

@@ -118,78 +118,85 @@ export class TranscodeConfigDB implements ITranscodeConfigDB {
     // 1. if we are deleting the default configuration, we have to pick a new one.
     // 2. If we are deleting the last configuration, we have to create a default configuration
     // 3. We have to update all related channels.
-    this.drizzle.transaction((tx) => {
-      const numConfigs = sumBy(
-        tx
-          .select({
-            count: count(),
+    this.drizzle.transaction(
+      (tx) => {
+        const numConfigs = sumBy(
+          tx
+            .select({
+              count: count(),
+            })
+            .from(TranscodeConfigTable)
+            .all(),
+          (r) => r.count,
+        );
+
+        // If there are no configs (should be impossible) create a default, assign it to all channels
+        // and move on.
+        if (numConfigs === 0) {
+          const newDefaultConfigId = this.insertDefaultConfiguration(tx);
+          tx.update(Channel)
+            .set({ transcodeConfigId: newDefaultConfigId })
+            .run();
+          return;
+        }
+
+        const configToDelete = tx.query.transcodeConfigs
+          .findFirst({
+            where: (fields, { eq }) => eq(fields.uuid, id),
           })
-          .from(TranscodeConfigTable)
-          .all(),
-        (r) => r.count,
-      );
+          .sync();
 
-      // If there are no configs (should be impossible) create a default, assign it to all channels
-      // and move on.
-      if (numConfigs === 0) {
-        const newDefaultConfigId = this.insertDefaultConfiguration(tx);
-        tx.update(Channel).set({ transcodeConfigId: newDefaultConfigId }).run();
-        return;
-      }
+        if (!configToDelete) {
+          return;
+        }
 
-      const configToDelete = tx.query.transcodeConfigs
-        .findFirst({
-          where: (fields, { eq }) => eq(fields.uuid, id),
-        })
-        .sync();
+        // If this is the last config, we'll need a new one and will have to assign it
+        if (numConfigs === 1) {
+          const newDefaultConfigId = this.insertDefaultConfiguration(tx);
+          tx.update(Channel)
+            .set({ transcodeConfigId: newDefaultConfigId })
+            .run();
+          tx.delete(TranscodeConfigTable)
+            .where(eq(TranscodeConfigTable.uuid, id))
+            .limit(1)
+            .run();
+          return;
+        }
 
-      if (!configToDelete) {
-        return;
-      }
+        let replacementId: string;
+        if (configToDelete.isDefault) {
+          const newDefaultConfig = tx
+            .select({ uuid: TranscodeConfigTable.uuid })
+            .from(TranscodeConfigTable)
+            .where(eq(TranscodeConfigTable.isDefault, false))
+            .limit(1)
+            .get()!;
+          tx.update(TranscodeConfigTable)
+            .set({ isDefault: true })
+            .where(eq(TranscodeConfigTable.uuid, newDefaultConfig.uuid));
+          replacementId = newDefaultConfig.uuid;
+        } else {
+          const defaultId = tx
+            .select({ uuid: TranscodeConfigTable.uuid })
+            .from(TranscodeConfigTable)
+            .where(eq(TranscodeConfigTable.isDefault, true))
+            .limit(1)
+            .get()!;
+          replacementId = defaultId.uuid;
+        }
 
-      // If this is the last config, we'll need a new one and will have to assign it
-      if (numConfigs === 1) {
-        const newDefaultConfigId = this.insertDefaultConfiguration(tx);
-        tx.update(Channel).set({ transcodeConfigId: newDefaultConfigId }).run();
+        tx.update(Channel)
+          .set({ transcodeConfigId: replacementId })
+          .where(eq(Channel.transcodeConfigId, configToDelete.uuid))
+          .run();
+
         tx.delete(TranscodeConfigTable)
           .where(eq(TranscodeConfigTable.uuid, id))
           .limit(1)
           .run();
-        return;
-      }
-
-      let replacementId: string;
-      if (configToDelete.isDefault) {
-        const newDefaultConfig = tx
-          .select({ uuid: TranscodeConfigTable.uuid })
-          .from(TranscodeConfigTable)
-          .where(eq(TranscodeConfigTable.isDefault, false))
-          .limit(1)
-          .get()!;
-        tx.update(TranscodeConfigTable)
-          .set({ isDefault: true })
-          .where(eq(TranscodeConfigTable.uuid, newDefaultConfig.uuid));
-        replacementId = newDefaultConfig.uuid;
-      } else {
-        const defaultId = tx
-          .select({ uuid: TranscodeConfigTable.uuid })
-          .from(TranscodeConfigTable)
-          .where(eq(TranscodeConfigTable.isDefault, true))
-          .limit(1)
-          .get()!;
-        replacementId = defaultId.uuid;
-      }
-
-      tx.update(Channel)
-        .set({ transcodeConfigId: replacementId })
-        .where(eq(Channel.transcodeConfigId, configToDelete.uuid))
-        .run();
-
-      tx.delete(TranscodeConfigTable)
-        .where(eq(TranscodeConfigTable.uuid, id))
-        .limit(1)
-        .run();
-    });
+      },
+      { behavior: 'immediate' },
+    );
   }
 
   private insertDefaultConfiguration(db: DrizzleDBAccess = this.drizzle) {

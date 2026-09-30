@@ -165,9 +165,12 @@ export class MediaSourceDB {
     // Remove all associations of this program
     for (const programChunk of chunk(allPrograms, 100)) {
       const programIds = programChunk.map((p) => p.uuid);
-      this.drizzleDB.transaction((tx) => {
-        tx.delete(Program).where(inArray(Program.uuid, programIds)).run();
-      });
+      this.drizzleDB.transaction(
+        (tx) => {
+          tx.delete(Program).where(inArray(Program.uuid, programIds)).run();
+        },
+        { behavior: 'immediate' },
+      );
     }
 
     for (const programChunk of chunk(allGroupings, 100)) {
@@ -202,56 +205,59 @@ export class MediaSourceDB {
     }
 
     if (updateReq.type === 'local') {
-      this.drizzleDB.transaction((tx) => {
-        tx.update(MediaSource)
-          .set({
-            mediaType: updateReq.mediaType,
-            name: tag<MediaSourceName>(updateReq.name),
-          })
-          .where(eq(MediaSource.uuid, id))
-          .run();
+      this.drizzleDB.transaction(
+        (tx) => {
+          tx.update(MediaSource)
+            .set({
+              mediaType: updateReq.mediaType,
+              name: tag<MediaSourceName>(updateReq.name),
+            })
+            .where(eq(MediaSource.uuid, id))
+            .run();
 
-        const newPaths = differenceWith(
-          updateReq.paths,
-          mediaSource.libraries,
-          (incomingPath, { externalKey }) => incomingPath === externalKey,
-        );
-        const deletePaths = differenceWith(
-          mediaSource.libraries,
-          updateReq.paths,
-          ({ externalKey }, incomingPath) => externalKey === incomingPath,
-        ).map(({ externalKey }) => externalKey);
+          const newPaths = differenceWith(
+            updateReq.paths,
+            mediaSource.libraries,
+            (incomingPath, { externalKey }) => incomingPath === externalKey,
+          );
+          const deletePaths = differenceWith(
+            mediaSource.libraries,
+            updateReq.paths,
+            ({ externalKey }, incomingPath) => externalKey === incomingPath,
+          ).map(({ externalKey }) => externalKey);
 
-        if (deletePaths.length > 0) {
-          tx.delete(MediaSourceLibrary)
-            .where(
-              and(
-                eq(
-                  MediaSourceLibrary.mediaSourceId,
-                  tag<MediaSourceId>(updateReq.id),
+          if (deletePaths.length > 0) {
+            tx.delete(MediaSourceLibrary)
+              .where(
+                and(
+                  eq(
+                    MediaSourceLibrary.mediaSourceId,
+                    tag<MediaSourceId>(updateReq.id),
+                  ),
+                  inArray(MediaSourceLibrary.externalKey, deletePaths),
                 ),
-                inArray(MediaSourceLibrary.externalKey, deletePaths),
-              ),
-            )
-            .run();
-        }
+              )
+              .run();
+          }
 
-        if (newPaths.length > 0) {
-          tx.insert(MediaSourceLibrary)
-            .values(
-              newPaths.map((path) => ({
-                externalKey: path,
-                mediaSourceId: mediaSource.uuid,
-                mediaType: updateReq.mediaType,
-                name: path,
-                uuid: v4(),
-                enabled: true,
-                lastScannedAt: null,
-              })),
-            )
-            .run();
-        }
-      });
+          if (newPaths.length > 0) {
+            tx.insert(MediaSourceLibrary)
+              .values(
+                newPaths.map((path) => ({
+                  externalKey: path,
+                  mediaSourceId: mediaSource.uuid,
+                  mediaType: updateReq.mediaType,
+                  name: path,
+                  uuid: v4(),
+                  enabled: true,
+                  lastScannedAt: null,
+                })),
+              )
+              .run();
+          }
+        },
+        { behavior: 'immediate' },
+      );
     } else {
       const sendGuideUpdates =
         updateReq.type === 'plex'
@@ -346,60 +352,63 @@ export class MediaSourceDB {
       .then((_) => _?.count ?? 0);
 
     const now = +dayjs();
-    const newServer = this.drizzleDB.transaction((tx) => {
-      const newServer = tx
-        .insert(MediaSource)
-        .values({
-          uuid: tag<MediaSourceId>(v4()),
-          name,
-          uri: server.type === 'local' ? '' : trimEnd(server.uri, '/'),
-          sendChannelUpdates: false,
-          sendGuideUpdates: sendGuideUpdates,
-          createdAt: now,
-          updatedAt: now,
-          index,
-          type: server.type,
-          userId:
-            server.type === 'local'
-              ? null
-              : isNonEmptyString(server.userId)
-                ? server.userId
-                : null,
-          username:
-            server.type === 'local'
-              ? null
-              : isNonEmptyString(server.username)
-                ? server.username
-                : null,
-          accessToken: server.type === 'local' ? '' : server.accessToken,
-          mediaType: server.type === 'local' ? server.mediaType : null,
-          clientIdentifier:
-            server.type === 'plex' ? server.clientIdentifier : null,
-        } satisfies typeof MediaSource.$inferInsert)
-        .returning({ uuid: MediaSource.uuid })
-        .get();
+    const newServer = this.drizzleDB.transaction(
+      (tx) => {
+        const newServer = tx
+          .insert(MediaSource)
+          .values({
+            uuid: tag<MediaSourceId>(v4()),
+            name,
+            uri: server.type === 'local' ? '' : trimEnd(server.uri, '/'),
+            sendChannelUpdates: false,
+            sendGuideUpdates: sendGuideUpdates,
+            createdAt: now,
+            updatedAt: now,
+            index,
+            type: server.type,
+            userId:
+              server.type === 'local'
+                ? null
+                : isNonEmptyString(server.userId)
+                  ? server.userId
+                  : null,
+            username:
+              server.type === 'local'
+                ? null
+                : isNonEmptyString(server.username)
+                  ? server.username
+                  : null,
+            accessToken: server.type === 'local' ? '' : server.accessToken,
+            mediaType: server.type === 'local' ? server.mediaType : null,
+            clientIdentifier:
+              server.type === 'plex' ? server.clientIdentifier : null,
+          } satisfies typeof MediaSource.$inferInsert)
+          .returning({ uuid: MediaSource.uuid })
+          .get();
 
-      if (server.type === 'local') {
-        tx.insert(MediaSourceLibrary)
-          .values(
-            server.paths.map(
-              (path) =>
-                ({
-                  externalKey: path,
-                  mediaSourceId: newServer.uuid,
-                  mediaType: server.mediaType,
-                  name: path,
-                  uuid: v4(),
-                  enabled: true,
-                  lastScannedAt: null,
-                }) satisfies typeof MediaSourceLibrary.$inferInsert,
-            ),
-          )
-          .run();
-      }
+        if (server.type === 'local') {
+          tx.insert(MediaSourceLibrary)
+            .values(
+              server.paths.map(
+                (path) =>
+                  ({
+                    externalKey: path,
+                    mediaSourceId: newServer.uuid,
+                    mediaType: server.mediaType,
+                    name: path,
+                    uuid: v4(),
+                    enabled: true,
+                    lastScannedAt: null,
+                  }) satisfies typeof MediaSourceLibrary.$inferInsert,
+              ),
+            )
+            .run();
+        }
 
-      return newServer;
-    });
+        return newServer;
+      },
+      { behavior: 'immediate' },
+    );
 
     if (server.pathReplacements.length > 0) {
       await this.drizzleDB.insert(MediaSourceLibraryReplacePath).values(
@@ -418,48 +427,51 @@ export class MediaSourceDB {
   }
 
   updateLibraries(updates: MediaSourceLibrariesUpdate) {
-    this.drizzleDB.transaction((tx) => {
-      if (!isEmpty(updates.addedLibraries)) {
-        tx.insert(MediaSourceLibrary).values(updates.addedLibraries).run();
-      }
+    this.drizzleDB.transaction(
+      (tx) => {
+        if (!isEmpty(updates.addedLibraries)) {
+          tx.insert(MediaSourceLibrary).values(updates.addedLibraries).run();
+        }
 
-      for (const update of updates.updatedLibraries) {
-        tx.update(MediaSourceLibrary)
-          .set(update)
-          .where(eq(MediaSourceLibrary.uuid, update.uuid))
-          .run();
-      }
+        for (const update of updates.updatedLibraries) {
+          tx.update(MediaSourceLibrary)
+            .set(update)
+            .where(eq(MediaSourceLibrary.uuid, update.uuid))
+            .run();
+        }
 
-      for (const { uuid, unavailableSince } of updates.unavailableLibraries) {
-        tx.update(MediaSourceLibrary)
-          .set({ unavailableSince })
-          .where(eq(MediaSourceLibrary.uuid, uuid))
-          .run();
-      }
+        for (const { uuid, unavailableSince } of updates.unavailableLibraries) {
+          tx.update(MediaSourceLibrary)
+            .set({ unavailableSince })
+            .where(eq(MediaSourceLibrary.uuid, uuid))
+            .run();
+        }
 
-      if (updates.availableLibraries.length > 0) {
-        tx.update(MediaSourceLibrary)
-          .set({ unavailableSince: null })
-          .where(inArray(MediaSourceLibrary.uuid, updates.availableLibraries))
-          .run();
-      }
+        if (updates.availableLibraries.length > 0) {
+          tx.update(MediaSourceLibrary)
+            .set({ unavailableSince: null })
+            .where(inArray(MediaSourceLibrary.uuid, updates.availableLibraries))
+            .run();
+        }
 
-      // Library foreign keys cascade to programs and channel schedules, so
-      // references must move to the kept library before duplicates are deleted.
-      for (const { keepUuid, duplicateUuids } of updates.duplicateLibraries) {
-        tx.update(Program)
-          .set({ libraryId: keepUuid })
-          .where(inArray(Program.libraryId, duplicateUuids))
-          .run();
-        tx.update(ProgramGrouping)
-          .set({ libraryId: keepUuid })
-          .where(inArray(ProgramGrouping.libraryId, duplicateUuids))
-          .run();
-        tx.delete(MediaSourceLibrary)
-          .where(inArray(MediaSourceLibrary.uuid, duplicateUuids))
-          .run();
-      }
-    });
+        // Library foreign keys cascade to programs and channel schedules, so
+        // references must move to the kept library before duplicates are deleted.
+        for (const { keepUuid, duplicateUuids } of updates.duplicateLibraries) {
+          tx.update(Program)
+            .set({ libraryId: keepUuid })
+            .where(inArray(Program.libraryId, duplicateUuids))
+            .run();
+          tx.update(ProgramGrouping)
+            .set({ libraryId: keepUuid })
+            .where(inArray(ProgramGrouping.libraryId, duplicateUuids))
+            .run();
+          tx.delete(MediaSourceLibrary)
+            .where(inArray(MediaSourceLibrary.uuid, duplicateUuids))
+            .run();
+        }
+      },
+      { behavior: 'immediate' },
+    );
   }
 
   /** Bumps the source's consecutive auth failures and returns the new total. */

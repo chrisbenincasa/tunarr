@@ -273,9 +273,12 @@ function wrapWithTransaction(
           ({
             ...m,
             upDrizzle(db) {
-              return db.transaction((tx) => {
-                return m.upDrizzle(tx);
-              });
+              return db.transaction(
+                (tx) => {
+                  return m.upDrizzle(tx);
+                },
+                { behavior: 'immediate' },
+              );
             },
           }) satisfies TunarrDatabaseMigrationWithDrizzle,
       )
