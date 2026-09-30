@@ -3,6 +3,7 @@ packages:
   - web
   - types
   - shared
+  - e2e
 
 catalog:
   "@typescript/native-preview": beta
