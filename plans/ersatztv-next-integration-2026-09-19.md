@@ -18,6 +18,8 @@ This is a design and source-inspection plan against `next` at `ed95077` and Tuna
 > 2. **The B-series blockers.** B2 — a failed callback costs 60 seconds of black with no retry and no failure budget. And B6–B8, three silent regressions found by the §15.G sweep: hardcoded `fast_bilinear` scaling that degrades every scaled frame for every viewer, DTS/TrueHD not being rewritten to AC-3 under copy so Apple clients lose audio, and no silent-audio synthesis so video-only files stop playing.
 >
 > Phase 0 (§11) is a throwaway spike and is exempt.
+>
+> **The upstream work is tracked separately** in [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md), which owns the order, status and Tunarr follow-up for the ship gate and the B-series. §14 and §15 stay here as the evidence.
 
 ---
 
@@ -387,15 +389,23 @@ Write the shared part from the `TranscodeConfig` row as the base `channel.json`,
 
 ---
 
-## 8. Feature flag and stream-mode surface
+## 8. Feature flag and per-channel opt-in
 
-Two levels, using machinery that already exists.
+> **Revised 22 September 2026, shipped in `e126ed7`.** This section originally made `etv_next` a saveable channel stream mode, which needed a CHECK-constraint migration on `channel.streamMode`. That is not what shipped. A channel's stream mode keeps the meaning it always had, and the backend is chosen by a boolean on the channel row OR'd with the flag. The text below describes the shipped design.
 
-**A `FeatureFlags` entry** — `ersatzTvNextEnabled`, env `TUNARR_ERSATZTV_NEXT_ENABLED`, category `experimental`, added to `types/src/FeatureFlags.ts` and `FeatureFlagMetadata`. It gates whether `EtvNextService` starts, whether the mode appears in the channel editor, and whether the resolver route is mounted. `FeatureFlagService` and `FeaturesSettingsPage.tsx` render it with no further work.
+Two switches, both using machinery that already exists, combined with an OR.
 
-**A per-channel stream mode** — `etv_next` added to `ChannelStreamModes`, and `etv_next_concat` to `ChannelConcatStreamModes`, in `types/src/schemas/channelSchema.ts`. Both flow automatically into `ChannelStreamModeSchema`, `SessionType`, and the session-key namespace.
+**A `FeatureFlags` entry** — `ersatzTvNextEnabled`, env `TUNARR_ERSATZTV_NEXT_ENABLED`, category `experimental`, added to `types/src/FeatureFlags.ts` and `FeatureFlagMetadata`. On its own it enrolls every eligible channel. `FeatureFlagService` and `FeaturesSettingsPage.tsx` render it with no further work.
 
-Note the migration: `streamMode` is `text({ enum: ChannelStreamModes })` (`server/src/db/schema/Channel.ts:45`), which SQLite enforces as a CHECK constraint, and the table is also queried with `inArray(table.streamMode, table.streamMode.enumValues)`. Adding a value requires a Drizzle migration that rebuilds the constraint — `pnpm drizzle-kit generate` via the `new-migration` skill, and `pnpm resolve-migrations` if it conflicts on merge.
+**A per-channel opt-in** — `channel.useEtvNext`, a boolean column added by migration `0048_charming_stranger`, defaulting to false, carried on `channelSchema` and rendered as a checkbox on the channel editor's Streaming tab. A user moves channels over one at a time with it, then flips the flag for the rest.
+
+`routesToEtvNext(mode, etvNextEnabled, channelOptedIn)` in `server/src/stream/etv/EtvNextRouting.ts` is the single decision point. The flag enrolls everything by itself, so the per-channel box only decides anything while the flag is off, and the editor hides the box once the flag is on. A channel's stored opt-in persists and reasserts if the flag ever goes back off. The opt-in is a required argument rather than a defaulted one, so a new call site has to decide rather than silently not routing.
+
+**Eligibility is a separate, narrower test.** Neither switch overrides `EtvNextRoutableModes` — `hls`, `hls_direct_v2`, `mpegts`. The worker only writes HLS, and `hls_direct` remuxes without transcoding, so it cannot be served at all; `hls_slower` is excluded because it is slated for deprecation. The checkbox is disabled on both.
+
+**`useEtvNext` is defaulted rather than required on the write schema.** The channel write-contract tests encode real client payloads, so a required field rejects saves from any client predating it. Responses always carry the field; write requests may omit it.
+
+**`etv_next` is a session mode, not a channel mode.** `EtvNextStreamMode` and `EtvNextConcatStreamMode` live in `SessionStreamModes` and `SessionConcatStreamModes`, which extend the channel enums rather than replacing them. They appear in session keys and stream URLs and never on a channel row, so `streamMode`'s CHECK constraint is untouched and the enum migration the original design called for is not needed.
 
 **MPEG-TS clients come almost free.** `ConcatStream` (`server/src/stream/ConcatStream.ts`) already takes a channel's own `.m3u8` URL and remuxes it to MPEG-TS through FFmpeg, which is how `hls_concat` and `hls_slower_concat` serve HDHomeRun and Plex DVR today. Pointing `ConcatStreamModeToChildMode` at `etv_next` gives `etv_next_concat` for free and covers the only output format `next` does not speak.
 
@@ -409,7 +419,7 @@ Per the branch policy in `CLAUDE.md`, this is a large feature needing many prere
 | ---------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | No MPEG-TS output                                                                                                            | low      | `etv_next_concat` via existing `ConcatStream`                                                                                                    |
 | No `hls_direct` equivalent (remux, no transcode, per-item playlist)                                                          | medium   | Out of scope; `hls_direct`/`hls_direct_v2` remain Tunarr-native modes                                                                            |
-| `mpeg2video` video, `mp3`/`copy` audio                                                                                       | medium   | Validate in the channel editor and on the API; refuse `etv_next` for such configs with a clear message                                           |
+| `mpeg2video` video, `mp3`/`copy` audio                                                                                       | medium   | Validate in the channel editor and on the API; refuse the opt-in for such configs with a clear message                                           |
 | `threadCount`, `videoPreset`, `videoProfile`, `audioVolumePercent`, `normalizeFrameRate`, `scalingAlgorithm` not expressible | medium   | Add upstream (D3) — pure config surface, cheap. Until then, surface as "ignored under this backend" in the UI rather than silently dropping them |
 | Rich error screens (`static`, `pic`, `testsrc`, `text`) vs. black+silence                                                    | low      | Tunarr emits its own `lavfi`/image items through the resolver; `next`'s fallback becomes a last-resort net only                                  |
 | Flex/offline `pic` and `clip` modes                                                                                          | low      | Same — resolver emits an image or file item                                                                                                      |
@@ -449,9 +459,32 @@ Two details in upstream's release pipeline are worth banking. The binaries are *
 
 **Phase 3 — dynamic resolution.** `/api/etv/playout-item`, bearer-token auth via `{{TUNARR_ETV_TOKEN}}`, redirect flattening, the play-history side-effect audit from §4, and `EtvNextPlayoutWriter`'s rolling window with refresh-on-lineup-change. This is where on-demand channels, filler, and error degradation start working.
 
-**Phase 4 — product surface.** Feature flag, the `streamMode` migration, channel-editor option with validation for the unsupported codec combinations, `etv_next_concat` for HDHR/Plex DVR, session reporting in `sessionApi`, troubleshooting via `ersatztv-channel debug`, and docs. Documentation lands in `docs/configure/channels/transcoding.md` plus a new page under `docs/configure/ffmpeg/`, registered in `mkdocs.yml` — required by the repo rule that behaviour changes update the docs.
+**Phase 4 — product surface.** Feature flag, the `channel.useEtvNext` column and its migration, the channel-editor checkbox with validation for the unsupported codec combinations, `etv_next_concat` for HDHR/Plex DVR, session reporting in `sessionApi`, troubleshooting via `ersatztv-channel debug`, and docs. Documentation lands in `docs/configure/channels/transcoding.md` plus a new page under `docs/configure/ffmpeg/`, registered in `mkdocs.yml` — required by the repo rule that behaviour changes update the docs.
 
-Phases 1 and 2 are independently useful and independently revertable. Phase 3 is where the design risk concentrates.
+**Phase 5 — playout parity: stream selection and watermarks.** Both features exist in the contract and neither is wired. The mapper fills `tracks` only for synthetic error and flex items, and never fills `watermark` or `graphics`. So a channel on this backend plays each file's first audio track, no chosen subtitles, and no overlay. The shipped docs (`docs/configure/ffmpeg/ersatztv-next.md:78-79,90`, `docs/misc/troubleshooting.md:116`) blame the contract for the track gap. That is wrong, because `PlayoutItemTracks` carries `stream_index` per kind (`generated/playout.ts:183-195`). The docs change with this phase.
+
+_Stream selection._
+
+- Run `StreamSelector.selectAudioAndSubtitleStreams` (`ffmpeg/StreamSelector.ts:35`) in `EtvNextPlayoutWriter` for content items. It is async and needs the DB, so it stays out of the pure mapper. Today its only stream-path caller is `FfmpegStreamFactory.ts:515`.
+- Use only this profile-based path. The legacy picker (`SubtitleStreamPicker.pickSubtitles` with `getChannelSubtitlePreferences`) is being retired, so nothing new calls it. `FfmpegStreamFactory.buildPassthroughSubtitles` still does, and this phase does not copy it. Legacy preferences still apply, because `StreamSelectionProfileResolver` turns them into a "Legacy fallback" rule when no profile matches.
+- Gate the subtitle track on `channel.subtitlesEnabled`, as `FfmpegStreamFactory.ts:534` does after selection.
+- Pass the chosen audio and subtitle streams into `toPlayoutItem` as plain data. The mapper emits `tracks.audio.stream_index` and `tracks.subtitle.stream_index`.
+- Sidecar subtitles use `tracks.subtitle.source` with a `local` path, so no muxing is needed.
+- Before the mapper emits anything, confirm upstream whether `stream_index` is the absolute container index or an index within its kind. Tunarr's `StreamDetails` records absolute indices. The schema text says only "this specific stream within the effective source."
+- When the profile selects no subtitle, omit `tracks.subtitle`. When the program has no audio streams, emit `tracks.audio` as lavfi `anullsrc`. Today `anullsrc` covers only error and flex items, so this is new, and it is Tunarr's stopgap for B8.
+- The troubleshoot run (F9) goes through the same writer, so it picks this up for free. Put the selection trace back into the troubleshoot output, and drop the "no stream selection trace" caveat.
+- Tests cover a profile that picks a non-first audio track, a text subtitle, an image subtitle, a sidecar subtitle, and a profile that picks nothing. Each output is `.strict()`-parsed against the generated schema.
+
+_Watermarks._
+
+- Move the resolution logic out of `ProgramStream.getWatermark` (`stream/ProgramStream.ts:345`) into a shared service, so both backends get the same `disableChannelOverlay`, `disableFillerOverlay`, image cache and channel-icon fallback. This also closes G6.
+- Map the resolved `Watermark` to `GraphicsLayer` using the §7 table. A cached image becomes a `local` source. A localhost URL, including the built-in `tunarr.png` fallback, becomes an `http` source.
+- Emit it as the item's `watermark` field, which is the compatibility layer under `graphics[]`. Keep `graphics[]` free for later overlays.
+- Fade cycles use `PeriodicTiming` with `clock: "wall"`, so every viewer sees the same phase. Pin the `leadingEdge` → `phase_offset_ms` arithmetic with tests.
+- Error and flex items get no watermark, matching Tunarr's current behaviour.
+- Tests cover each corner, `fixedSize`, `duration`, a fade config, both disable switches, and the icon fallback.
+
+Phases 1 and 2 are independently useful and independently revertable. Phase 3 is where the design risk concentrates. Phase 5 is pure mapping work against a contract that already supports it, so it can land in either order relative to the §12 version gate.
 
 ### 11.A Phase 0 results
 
@@ -811,11 +844,15 @@ Answers to the §13 agenda, recorded as they were settled.
 | F2  | The seam (§13.1)                       | **HTTP `DynamicSource`.** Co-location is all the MVP requires, but remote workers are a desirable future, and only HTTP survives that. The "stdio avoids a port" argument was false in any case — `local_proxy` already binds a loopback socket on every session (`local_proxy.rs:43-57`).                                                                                                                      |
 | F3  | Multi-audio renditions (§13.5)         | **Deferred, undesigned.** Shape recorded in E.1; settle the `PlayoutItemTracks.audio` field shape early so the eventual change is additive rather than a `breaking`-digit bump.                                                                                                                                                                                                                                 |
 | F4  | Worker lifetime across restart (§13.1) | **User option, defaulting to Tunarr's current behaviour** — children die with the parent. Survival is opt-in and deferred. See E.2.                                                                                                                                                                                                                                                                             |
-| F5  | Validation model (§13.7)               | **Refuse at assign time, warn at config-save time, never silently substitute.** Picking `etv_next` for an incompatible config is refused with a message naming the field. Editing a shared config that channels depend on warns and lists them rather than blocking. Derive the rules from C9 once it exists rather than hardcoding them.                                                                       |
+| F5  | Validation model (§13.7)               | **Refuse at assign time, warn at config-save time, never silently substitute.** Opting a channel into the backend with an incompatible config is refused with a message naming the field. Editing a shared config that channels depend on warns and lists them rather than blocking. Derive the rules from C9 once it exists rather than hardcoding them.                                                       |
 | F6  | Config composition (§7)                | **No overlay files.** Tunarr has no per-channel config deltas — `channel.transcodeConfigId` is a many-to-one pointer at a shared named row, and the vestigial `channel.transcoding` JSON column is never read. Compose one `channel.json` per spawn from the selected config plus global `FfmpegSettings`, and pipe it via the stdin path (`config.rs:535-556`).                                                |
 | F7  | Failure semantics (§13.6)              | **A failure budget in `next` that exits non-zero, folded into B2.** Tunarr's rich error screens already survive via the resolver. The gap is a failed callback, where Tunarr cannot supply an item; without a budget, `errorScreen: kill` stops working and loud session failure becomes impossible. Stopgap until then: Tunarr infers sustained failure from the resolver going uncalled and ends the session. |
 | F8  | Testing (§13.8)                        | **Follow the conventions that already exist, plus one CI smoke test.** Phase 1 is pure and runs in CI. Anything spawning a worker follows the established `*.local.test.ts` pattern, which `server/vitest.config.ts` excludes from the run. One new CI job downloads `ersatztv-channel` and asserts the output contract end to end. The drift check goes upstream (C6).                                         |
 | F9  | Support and diagnostics (§13.9)        | **Dossier on by default with a retention cap; troubleshoot runs through a one-item playout; one issue tracker.** See below.                                                                                                                                                                                                                                                                                     |
+
+> **F7's stopgap shipped 22 September 2026.** `EtvNextSession` runs a silence watchdog on the dynamic path. Every successful resolve records the item's end as the next call's deadline plus a five-minute grace, and a deadline that passes ends the session. It catches the worker that cannot reach Tunarr and the worker Tunarr keeps refusing; it does not catch one that resolves fine and fails to transcode, which is what B2's failure budget is for.
+
+> **F9's dossier shipped 22 September 2026.** `reports_folder` points at `etv-diagnostics/<channel id>/` under the data directory, outside the workspace teardown removes. Five bundles per channel, pruned at spawn. `GET /api/etv/channels/:id/diagnostics` lists them and `.zip` hands them over, with a download button beside Run Troubleshooter. The `enableFileLogging` fallback is gone — the dossier no longer depends on a setting.
 
 F9 in detail. Co-development already answers the political half of §13.9 — a hardware-pipeline bug is fixable rather than a dead end. Three operational decisions remain, and one of them is an upside rather than a gap.
 
@@ -888,7 +925,7 @@ Two further notes. `compute_timing` does not exist under that name — the funct
 
 | Risk                                                                                                           | Impact | Mitigation                                                                                                                                                                                                                                         |
 | -------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Upstream is pre-1.0 and self-describes as "not yet ready for production"                                       | high   | Ship behind a flag, default off, on the `dev` branch; never make it a default stream mode until upstream stabilizes                                                                                                                                |
+| Upstream is pre-1.0 and self-describes as "not yet ready for production"                                       | high   | Ship behind a flag, default off, on the `dev` branch; never route a channel to it by default until upstream stabilizes                                                                                                                             |
 | **Nothing upstream stays pinnable** — the `develop` release GCs each target's prior asset on every `main` push | high   | **Ship gate (§12).** Mirror a SHA-256-pinned artifact into a location Tunarr controls; verify `--version` at startup and refuse the mode on mismatch                                                                                               |
 | Channel config has no version field                                                                            | low    | Corrected in §15. `ChannelConfig` has no `deny_unknown_fields`, so an unknown key is ignored rather than fatal. The eleven strict structs are video-filter options only. Validate with Zod before writing (C1); add a config version upstream (C3) |
 | Playout schema still moving (`0.0.3` → `0.0.4` within the inspected history)                                   | medium | Version is validated at load, so a mismatch fails loudly rather than misbehaving; keep the emitted version in one constant next to the binary pin                                                                                                  |
