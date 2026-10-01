@@ -632,9 +632,9 @@ export class TroubleshootService {
    * settings the backend drops are reported as errors so a config that streams
    * differently than it reads says so.
    *
-   * No stream-selection trace is produced. The playout contract carries no
-   * track indices, so Tunarr's audio and subtitle selection does not reach the
-   * worker and tracing it here would report a choice nothing acts on.
+   * No stream-selection trace is produced. The playout writer does not yet
+   * send the selected track indices to the worker, so a trace here would
+   * report a choice nothing acts on.
    */
   private async troubleshootEtvNext({
     request,
@@ -650,7 +650,7 @@ export class TroubleshootService {
     program: TroubleshootProgram;
   }): Promise<TroubleshootResult> {
     errors.push(
-      'Audio and subtitle track selection is not applied on the ErsatzTV next backend, so this run transcodes the file\u2019s default tracks.',
+      'Tunarr does not yet apply audio and subtitle track selection on the ErsatzTV next backend, so this run transcodes the file\u2019s first audio track.',
     );
 
     const { mediaSourceId } = program;
