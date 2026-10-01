@@ -21,6 +21,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { toChannelConfig } from '../src/stream/etv/EtvNextChannelConfigMapper.ts';
+import { toWatermarkLayer } from '../src/stream/etv/EtvNextPlayoutItemMapper.ts';
 import { EtvNextWorkspace } from '../src/stream/etv/EtvNextWorkspace.ts';
 import type {
   PlayoutItem,
@@ -93,6 +94,17 @@ const baseTranscode = {
   errorScreen: 'pic',
 };
 
+const watermark = {
+  enabled: true,
+  url: path.resolve(import.meta.dirname, '../src/resources/images/tunarr.png'),
+  position: 'top-right',
+  width: 15,
+  verticalMargin: 5,
+  horizontalMargin: 5,
+  duration: 0,
+  opacity: 80,
+} as const;
+
 type Scenario = {
   name: string;
   what: string;
@@ -110,6 +122,7 @@ function repeat(
   file: string,
   itemMs: number,
   extra: Record<string, unknown> = {},
+  itemExtra: Record<string, unknown> = {},
 ) {
   return (startMs: number, finishMs: number): PlayoutItem[] => {
     const items: PlayoutItem[] = [];
@@ -124,6 +137,7 @@ function repeat(
           video: { source: { source_type: 'local', path: file, ...extra } },
           audio: { source: { source_type: 'local', path: file, ...extra } },
         },
+        ...itemExtra,
       } as PlayoutItem);
       cursor = end;
     }
@@ -177,6 +191,33 @@ const scenarios: Scenario[] = [
     },
     items: repeat(h264, H264DurationMs),
   },
+  {
+    name: 'watermark-fade',
+    what: 'a mapped watermark with a wall-clock fade cycle is composited',
+    transcode: baseTranscode,
+    items: repeat(
+      h264,
+      H264DurationMs,
+      {},
+      {
+        watermark: toWatermarkLayer({
+          ...watermark,
+          fadeConfig: [{ periodMins: 1, leadingEdge: true }],
+        }),
+      },
+    ),
+  },
+  {
+    name: 'watermark-duration',
+    what: 'a mapped watermark limited to the first seconds of each item is composited',
+    transcode: baseTranscode,
+    items: repeat(
+      h264,
+      H264DurationMs,
+      {},
+      { watermark: toWatermarkLayer({ ...watermark, duration: 2 }) },
+    ),
+  },
 ];
 
 /**
@@ -197,7 +238,12 @@ async function writeShim(directory: string): Promise<string> {
   return directory;
 }
 
-type Trace = { ffprobeCalls: number; videoCodec: string; hwaccel: boolean };
+type Trace = {
+  ffprobeCalls: number;
+  videoCodec: string;
+  hwaccel: boolean;
+  overlay: boolean;
+};
 
 /** Reads the last real transcode out of a shim log. */
 function readTrace(log: string): Trace {
@@ -217,6 +263,7 @@ function readTrace(log: string): Trace {
     ffprobeCalls,
     videoCodec: at === -1 ? '(none)' : (args[at + 1] ?? '(none)'),
     hwaccel: args.includes('-hwaccel') || args.includes('-vaapi_device'),
+    overlay: args.some((a) => a.includes('overlay')),
   };
 }
 
@@ -239,6 +286,7 @@ async function run(scenario: Scenario): Promise<boolean> {
       enableFileLogging: false,
     } as never,
     playoutFolder: workspace.playoutDirectory,
+    subtitleMode: 'burn',
   });
 
   await workspace.writeChannelConfig(config);
@@ -294,7 +342,7 @@ async function run(scenario: Scenario): Promise<boolean> {
     if (trace) {
       const t = readTrace(await fs.readFile(shimLog, 'utf-8'));
       console.log(
-        `        ffprobe calls: ${t.ffprobeCalls}, video codec: ${t.videoCodec}, hardware: ${t.hwaccel}`,
+        `        ffprobe calls: ${t.ffprobeCalls}, video codec: ${t.videoCodec}, hardware: ${t.hwaccel}, overlay: ${t.overlay}`,
       );
     }
   } catch (e) {
