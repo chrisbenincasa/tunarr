@@ -155,6 +155,7 @@ async function makeRunner({
       baseDirectory,
       sessionId: channelUuid,
       timeoutMs: 5_000,
+      subtitleMode: 'burn',
     });
 
   return { run, spawn, killed, outputDirectory, playoutWriter };

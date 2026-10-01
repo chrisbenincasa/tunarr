@@ -304,133 +304,19 @@ export class TroubleshootService {
         errors,
         channel: { ...channel, transcodeConfig },
         program,
+        streamDetails,
       });
     }
 
     // Stage 4: Stream Selection Trace (diagnostic only — the real stream
     // session will perform its own selection through the same code path)
-    try {
-      const selectionCtx = {
-        channelId: channel.uuid,
-        programId: program.uuid,
-      };
-
-      const profile = await this.profileResolver.resolve(selectionCtx);
-
-      const audioStreams = streamDetails.streamDetails.audioDetails;
-      const subtitleStreams = streamDetails.streamDetails.subtitleDetails;
-
-      const celContext = audioStreams
-        ? buildCelContext(
-            audioStreams,
-            subtitleStreams,
-            { name: channel.name, number: channel.number },
-            { title: program.title, type: program.type },
-          )
-        : undefined;
-
-      const ruleTraces: TroubleshootStreamSelectionTrace = {
-        profileName: profile.name,
-        profileSource: 'resolved',
-        rules: [],
-      };
-
-      let selectedAudio: AudioStreamDetails | undefined;
-      let selectedSubtitle: SubtitleStreamDetails | null | undefined;
-      let subtitleReason: string | undefined;
-
-      if (celContext && isNonEmptyArray(audioStreams)) {
-        let matched = false;
-        for (const rule of profile.rules) {
-          const conditionResult = this.celService.evaluate(
-            rule.condition,
-            celContext,
-          );
-          const audioActionDesc = this.describeAudioAction(rule.audioAction);
-          const subtitleActionDesc = this.describeSubtitleAction(
-            rule.subtitleAction,
-          );
-
-          ruleTraces.rules.push({
-            label: rule.label,
-            condition: rule.condition,
-            matched: !!conditionResult,
-            audioAction: audioActionDesc,
-            subtitleAction: subtitleActionDesc,
-          });
-
-          if (conditionResult && !matched) {
-            matched = true;
-            selectedAudio = resolveAudioAction(rule.audioAction, audioStreams);
-
-            if (rule.subtitleAction.type === 'disable') {
-              selectedSubtitle = null;
-              subtitleReason = 'Disabled by stream selection rule';
-            } else if (rule.subtitleAction.type === 'default') {
-              selectedSubtitle =
-                subtitleStreams?.find((s) => s.default) ?? null;
-              subtitleReason = selectedSubtitle
-                ? 'Default subtitle stream'
-                : 'No default subtitle stream found';
-            } else {
-              selectedSubtitle = null;
-              subtitleReason = `No subtitle found for languages: ${rule.subtitleAction.languages.join(', ')}`;
-              const match = findSubtitleForLanguages(
-                subtitleStreams,
-                rule.subtitleAction.languages,
-              );
-              if (match) {
-                selectedSubtitle = match.stream;
-                subtitleReason = `Matched language: ${match.language}`;
-              }
-            }
-          }
-        }
-
-        if (!matched) {
-          selectedAudio = audioStreams[0];
-          subtitleReason = 'No rule matched, using defaults (no subtitles)';
-        }
-      } else {
-        subtitleReason = 'No audio streams available';
-      }
-
-      if (selectedAudio) {
-        ruleTraces.selectedAudioStream = {
-          index: selectedAudio.index,
-          codec: selectedAudio.codec ?? 'unknown',
-          language:
-            selectedAudio.languageCodeISO6392 ??
-            selectedAudio.languageCodeISO6391 ??
-            selectedAudio.language,
-          channels: selectedAudio.channels,
-          title: selectedAudio.title,
-          default: selectedAudio.default,
-        };
-      }
-
-      if (selectedSubtitle) {
-        ruleTraces.selectedSubtitleStream = {
-          index: selectedSubtitle.index ?? 0,
-          codec: selectedSubtitle.codec ?? 'unknown',
-          language:
-            selectedSubtitle.languageCodeISO6392 ??
-            selectedSubtitle.languageCodeISO6391 ??
-            selectedSubtitle.language,
-          type: selectedSubtitle.type,
-          default: selectedSubtitle.default,
-          forced: selectedSubtitle.forced,
-          sdh: selectedSubtitle.sdh,
-        };
-      } else {
-        ruleTraces.selectedSubtitleStream = null;
-      }
-
-      ruleTraces.subtitleReason = subtitleReason;
-      result.streamSelection = ruleTraces;
-    } catch (err) {
-      errors.push(`Stream selection: ${String(err)}`);
-    }
+    await this.traceStreamSelection({
+      channel,
+      program,
+      streamDetails,
+      result,
+      errors,
+    });
 
     // Stage 5 & 6: Create stream session using the real pipeline and run
     // the test transcode. This uses the exact same code path as production
@@ -623,6 +509,143 @@ export class TroubleshootService {
     }, SessionRetentionMs);
   }
 
+  private async traceStreamSelection({
+    channel,
+    program,
+    streamDetails,
+    result,
+    errors,
+  }: {
+    channel: Pick<ChannelOrmWithTranscodeConfig, 'uuid' | 'name' | 'number'>;
+    program: TroubleshootProgram;
+    streamDetails: ProgramStreamResult;
+    result: TroubleshootResult;
+    errors: string[];
+  }): Promise<void> {
+    try {
+      const selectionCtx = {
+        channelId: channel.uuid,
+        programId: program.uuid,
+      };
+
+      const profile = await this.profileResolver.resolve(selectionCtx);
+
+      const audioStreams = streamDetails.streamDetails.audioDetails;
+      const subtitleStreams = streamDetails.streamDetails.subtitleDetails;
+
+      const celContext = audioStreams
+        ? buildCelContext(
+            audioStreams,
+            subtitleStreams,
+            { name: channel.name, number: channel.number },
+            { title: program.title, type: program.type },
+          )
+        : undefined;
+
+      const ruleTraces: TroubleshootStreamSelectionTrace = {
+        profileName: profile.name,
+        profileSource: 'resolved',
+        rules: [],
+      };
+
+      let selectedAudio: AudioStreamDetails | undefined;
+      let selectedSubtitle: SubtitleStreamDetails | null | undefined;
+      let subtitleReason: string | undefined;
+
+      if (celContext && isNonEmptyArray(audioStreams)) {
+        let matched = false;
+        for (const rule of profile.rules) {
+          const conditionResult = this.celService.evaluate(
+            rule.condition,
+            celContext,
+          );
+          const audioActionDesc = this.describeAudioAction(rule.audioAction);
+          const subtitleActionDesc = this.describeSubtitleAction(
+            rule.subtitleAction,
+          );
+
+          ruleTraces.rules.push({
+            label: rule.label,
+            condition: rule.condition,
+            matched: !!conditionResult,
+            audioAction: audioActionDesc,
+            subtitleAction: subtitleActionDesc,
+          });
+
+          if (conditionResult && !matched) {
+            matched = true;
+            selectedAudio = resolveAudioAction(rule.audioAction, audioStreams);
+
+            if (rule.subtitleAction.type === 'disable') {
+              selectedSubtitle = null;
+              subtitleReason = 'Disabled by stream selection rule';
+            } else if (rule.subtitleAction.type === 'default') {
+              selectedSubtitle =
+                subtitleStreams?.find((s) => s.default) ?? null;
+              subtitleReason = selectedSubtitle
+                ? 'Default subtitle stream'
+                : 'No default subtitle stream found';
+            } else {
+              selectedSubtitle = null;
+              subtitleReason = `No subtitle found for languages: ${rule.subtitleAction.languages.join(', ')}`;
+              const match = findSubtitleForLanguages(
+                subtitleStreams,
+                rule.subtitleAction.languages,
+              );
+              if (match) {
+                selectedSubtitle = match.stream;
+                subtitleReason = `Matched language: ${match.language}`;
+              }
+            }
+          }
+        }
+
+        if (!matched) {
+          selectedAudio = audioStreams[0];
+          subtitleReason = 'No rule matched, using defaults (no subtitles)';
+        }
+      } else {
+        subtitleReason = 'No audio streams available';
+      }
+
+      if (selectedAudio) {
+        ruleTraces.selectedAudioStream = {
+          index: selectedAudio.index,
+          codec: selectedAudio.codec ?? 'unknown',
+          language:
+            selectedAudio.languageCodeISO6392 ??
+            selectedAudio.languageCodeISO6391 ??
+            selectedAudio.language,
+          channels: selectedAudio.channels,
+          title: selectedAudio.title,
+          default: selectedAudio.default,
+        };
+      }
+
+      if (selectedSubtitle) {
+        ruleTraces.selectedSubtitleStream = {
+          index: selectedSubtitle.index ?? 0,
+          codec: selectedSubtitle.codec ?? 'unknown',
+          language:
+            selectedSubtitle.languageCodeISO6392 ??
+            selectedSubtitle.languageCodeISO6391 ??
+            selectedSubtitle.language,
+          type: selectedSubtitle.type,
+          default: selectedSubtitle.default,
+          forced: selectedSubtitle.forced,
+          sdh: selectedSubtitle.sdh,
+        };
+      } else {
+        ruleTraces.selectedSubtitleStream = null;
+      }
+
+      ruleTraces.subtitleReason = subtitleReason;
+      result.streamSelection = ruleTraces;
+    } catch (err) {
+      errors.push(`Stream selection: ${String(err)}`);
+    }
+  }
+
   /**
    * Runs the diagnostic transcode through the ErsatzTV next worker instead of
    * Tunarr's own pipeline.
@@ -631,10 +654,6 @@ export class TroubleshootService {
    * the command the worker resolved rather than one Tunarr built, and the
    * settings the backend drops are reported as errors so a config that streams
    * differently than it reads says so.
-   *
-   * No stream-selection trace is produced. The playout writer does not yet
-   * send the selected track indices to the worker, so a trace here would
-   * report a choice nothing acts on.
    */
   private async troubleshootEtvNext({
     request,
@@ -642,16 +661,29 @@ export class TroubleshootService {
     errors,
     channel,
     program,
+    streamDetails,
   }: {
     request: TroubleshootRequest;
     result: TroubleshootResult;
     errors: string[];
     channel: ChannelOrmWithTranscodeConfig;
     program: TroubleshootProgram;
+    streamDetails: ProgramStreamResult;
   }): Promise<TroubleshootResult> {
-    errors.push(
-      'Tunarr does not yet apply audio and subtitle track selection on the ErsatzTV next backend, so this run transcodes the file\u2019s first audio track.',
-    );
+    await this.traceStreamSelection({
+      channel,
+      program,
+      streamDetails,
+      result,
+      errors,
+    });
+
+    // The playout writer drops the subtitle on a channel with subtitles off.
+    if (!channel.subtitlesEnabled && result.streamSelection) {
+      result.streamSelection.selectedSubtitleStream = null;
+      result.streamSelection.subtitleReason =
+        'Subtitles are turned off for this channel';
+    }
 
     const { mediaSourceId } = program;
     if (mediaSourceId === null) {
@@ -690,6 +722,9 @@ export class TroubleshootService {
         baseDirectory: tempDir,
         sessionId,
         timeoutMs: request.testDurationSeconds * 2 * 1000 + 30000,
+        subtitleMode: this.featureFlagService.get('webvttSidecarEnabled')
+          ? 'convert'
+          : 'burn',
       });
 
       this.activeSessions.set(sessionId, run.outputDirectory);
