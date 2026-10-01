@@ -120,7 +120,10 @@ async function makeApp({
     ),
   };
 
-  const etvSession = { stop: vi.fn(() => Promise.resolve()) };
+  const etvSession = {
+    stop: vi.fn(() => Promise.resolve()),
+    recordResolvedItem: vi.fn(),
+  };
   const sessionManager = { getEtvNextSession: vi.fn(() => etvSession) };
 
   const transcodeConfigDB = {
@@ -388,6 +391,35 @@ describe('failure', () => {
     const response = await request(app, bearer(token));
 
     expect(JSON.stringify(response.json())).not.toContain('"dynamic"');
+  });
+});
+
+// The session ends a worker that stops asking for items, so a successful
+// resolve has to tell it when the next request is owed.
+describe('the silence watchdog', () => {
+  test("is fed the resolved item's end", async () => {
+    const { app, token, etvSession } = await makeApp();
+
+    const response = await request(app, {
+      ...bearer(token),
+      'x-etv-now': new Date(nowMs).toISOString(),
+    });
+
+    const { finish } = response.json() as { finish: string };
+    expect(etvSession.recordResolvedItem).toHaveBeenCalledWith(
+      Date.parse(finish),
+    );
+  });
+
+  test('is not fed when no item could be resolved', async () => {
+    const { app, token, etvSession } = await makeApp({
+      scheduleFails: true,
+      errorScreen: 'kill',
+    });
+
+    await request(app, bearer(token));
+
+    expect(etvSession.recordResolvedItem).not.toHaveBeenCalled();
   });
 });
 

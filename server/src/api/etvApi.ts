@@ -203,6 +203,13 @@ export class EtvNextApiController implements ApiController {
             );
           }
 
+          // Feeds the session's silence watchdog. The worker asks again once
+          // it has transcoded this item, so the item's end is when the next
+          // request is owed.
+          req.serverCtx.sessionManager
+            .getEtvNextSession(grant.channelUuid)
+            ?.recordResolvedItem(Date.parse(item.finish));
+
           return res.send(item);
         } catch (e) {
           if (!(e instanceof StreamTerminationRequestedError)) {
