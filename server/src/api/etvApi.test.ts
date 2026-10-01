@@ -625,7 +625,7 @@ describe('transcode config compatibility', () => {
   test('refuses a codec the backend cannot encode, naming the field', async () => {
     const { app } = await makeApp({
       transcodeConfig: {
-        videoFormat: 'mpeg2video',
+        audioFormat: 'mp3',
       } as Partial<TranscodeConfigOrm>,
     });
 
@@ -638,7 +638,7 @@ describe('transcode config compatibility', () => {
     }>();
     expect(body.supported).toBe(false);
     expect(body.unsupported).toEqual([
-      expect.objectContaining({ field: 'videoFormat', value: 'mpeg2video' }),
+      expect.objectContaining({ field: 'audioFormat', value: 'mp3' }),
     ]);
   });
 
