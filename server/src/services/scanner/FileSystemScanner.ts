@@ -4,7 +4,7 @@ import { seq } from '@tunarr/shared/util';
 import type { MediaItem, MediaStream } from '@tunarr/types';
 import dayjs from 'dayjs';
 import glob from 'fast-glob';
-import { head, isNil, orderBy } from 'lodash-es';
+import { head, orderBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename } from 'node:path';
 import { v4 } from 'uuid';
@@ -26,6 +26,7 @@ import { Result } from '../../types/result.js';
 import type { Maybe } from '../../types/util.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { caughtErrorToError, isDefined } from '../../util/index.ts';
+import { configuredLibraries } from '../../util/mediaSources.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import type { Canonicalizer } from '../Canonicalizer.ts';
 import type { ImageCache } from '../ImageCache.ts';
@@ -90,7 +91,7 @@ export abstract class FileSystemScanner {
       );
     }
 
-    const libraries = scannableLibraries(req.mediaSource.libraries);
+    const libraries = configuredLibraries(req.mediaSource.libraries);
 
     if (libraries.length === 0) {
       this.logger.warn('Media source has no paths to scan.');
@@ -564,14 +565,3 @@ export type LocalScanContext = {
   percentCompleteMultiplier: number;
   pathFilter?: string;
 };
-
-/**
- * The libraries a scan should walk. Removing a path leaves its library row in
- * place, flagged `unavailableSince`, so its programs can still be recovered
- * from the trash; scanning it again would only fail on a folder that is gone.
- */
-export function scannableLibraries(
-  libraries: MediaSourceLibrary[],
-): MediaSourceLibrary[] {
-  return libraries.filter((library) => isNil(library.unavailableSince));
-}

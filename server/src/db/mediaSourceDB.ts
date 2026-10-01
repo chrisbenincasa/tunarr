@@ -222,8 +222,14 @@ export class MediaSourceDB {
           mediaSource.libraries,
           (incomingPath, { externalKey }) => incomingPath === externalKey,
         );
+        // A library that is already flagged is not removed again: it keeps its
+        // externalKey, so it would otherwise be re-diffed as newly removed on
+        // every later save, re-stamping the date and rewriting what is already
+        // in the trash.
         const removedLibraries = differenceWith(
-          mediaSource.libraries,
+          mediaSource.libraries.filter((library) =>
+            isNil(library.unavailableSince),
+          ),
           updateReq.paths,
           ({ externalKey }, incomingPath) => externalKey === incomingPath,
         );

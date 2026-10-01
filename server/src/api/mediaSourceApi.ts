@@ -44,7 +44,7 @@ import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefre
 import { MediaSourceProgressService } from '../services/scanner/MediaSourceProgressService.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { fileExists } from '../util/fsUtil.ts';
-import { localSourcePaths } from './mediaSourcePaths.ts';
+import { localSourcePaths } from '../util/mediaSources.ts';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -832,12 +832,24 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         const trashed = await req.serverCtx.mediaSourceDB.updateMediaSource(
           req.body,
         );
-        if (trashed.programIds.length > 0) {
+        const trashedIds = [...trashed.programIds, ...trashed.groupingIds];
+        if (trashedIds.length > 0) {
           // What a removed path held is in the trash now; keep the search index
-          // in step with the database.
-          await req.serverCtx.searchService.updatePrograms(
-            trashed.programIds.map((id) => ({ id, state: 'missing' })),
-          );
+          // in step. Groupings share the index with programs and the Trash page
+          // reads `state` off it, so they go along with the programs.
+          try {
+            await req.serverCtx.searchService.updatePrograms(
+              trashedIds.map((id) => ({ id, state: 'missing' })),
+            );
+          } catch (err) {
+            // The update is committed either way, so a search outage must not
+            // fail the request. The scanners treat the same call the same way.
+            logger.error(
+              err,
+              'Could not mark %d trashed items in the search index.',
+              trashedIds.length,
+            );
+          }
         }
         if (req.body.type === 'local') {
           await req.serverCtx.mediaSourceScanCoordinator.addLocal({
