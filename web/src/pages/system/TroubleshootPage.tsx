@@ -15,6 +15,7 @@ import {
   Chip,
   CircularProgress,
   FormControl,
+  FormHelperText,
   IconButton,
   InputLabel,
   MenuItem,
@@ -42,6 +43,7 @@ import { useCallback, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { ProgramSearchAutocomplete } from '../../components/ProgramSearchAutocomplete.tsx';
 import {
+  getApiEtvChannelsByIdDiagnosticsOptions,
   getApiTranscodeConfigsOptions,
   getChannelsOptions,
 } from '../../generated/@tanstack/react-query.gen.ts';
@@ -181,6 +183,16 @@ export const TroubleshootPage = ({ initialProgram }: Props) => {
   const { data: channels } = useQuery(getChannelsOptions());
   const { data: transcodeConfigs } = useQuery(getApiTranscodeConfigsOptions());
 
+  // The ErsatzTV next worker leaves a bundle per failed item. It is empty for
+  // a channel on Tunarr's own pipeline, which is how the button stays hidden.
+  const { data: diagnostics } = useQuery({
+    ...getApiEtvChannelsByIdDiagnosticsOptions({
+      path: { id: selectedChannelId },
+    }),
+    enabled: selectedChannelId !== '',
+  });
+  const dossierCount = diagnostics?.dossiers.length ?? 0;
+
   // Troubleshoot mutation
   const troubleshootMutation = useMutation({
     mutationFn: async (request: {
@@ -236,6 +248,13 @@ export const TroubleshootPage = ({ initialProgram }: Props) => {
       transcodeConfigId: transcodeConfigOverride || undefined,
       testDurationSeconds: testDuration,
     });
+  };
+
+  const handleDownloadDiagnostics = () => {
+    window.open(
+      `${backendUri}/api/etv/channels/${selectedChannelId}/diagnostics.zip`,
+      '_blank',
+    );
   };
 
   const handleDownload = () => {
@@ -358,6 +377,24 @@ export const TroubleshootPage = ({ initialProgram }: Props) => {
             )}
           </Button>
         </Box>
+
+        {dossierCount > 0 && (
+          <Box>
+            <Button
+              variant="outlined"
+              startIcon={<Download />}
+              onClick={handleDownloadDiagnostics}
+            >
+              <Trans>Download Backend Diagnostics ({dossierCount})</Trans>
+            </Button>
+            <FormHelperText>
+              <Trans>
+                What the ErsatzTV next worker recorded the last few times this
+                channel failed to play an item. Attach it to a bug report.
+              </Trans>
+            </FormHelperText>
+          </Box>
+        )}
       </Stack>
 
       {troubleshootMutation.isError && (

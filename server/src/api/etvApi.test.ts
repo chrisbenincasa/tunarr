@@ -3,7 +3,9 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod';
-import { describe, expect, test, vi } from 'vitest';
+import fsp from 'node:fs/promises';
+import nodePath from 'node:path';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { StreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import type { ChannelOrmWithTranscodeConfig } from '../db/schema/derivedTypes.ts';
 import type { TranscodeConfigOrm } from '../db/schema/TranscodeConfig.ts';
@@ -17,6 +19,15 @@ import { FileStreamSource } from '../stream/types.ts';
 import { Result } from '../types/result.ts';
 import type { ZodTypeProvider } from '../util/zod.ts';
 import { EtvNextApiController } from './etvApi.ts';
+
+// The diagnostics routes read the data directory, which no test server sets.
+// Hoisted above the imports, so it cannot reach `os.tmpdir()`.
+const { databaseDirectory } = vi.hoisted(() => ({
+  databaseDirectory: `${process.env.TMPDIR ?? '/tmp'}/tunarr-etv-api-diagnostics`,
+}));
+vi.mock('../globals.ts', () => ({
+  serverOptions: () => ({ databaseDirectory }),
+}));
 
 const channelUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 const channelNumber = 7;
@@ -420,6 +431,89 @@ describe('the silence watchdog', () => {
     await request(app, bearer(token));
 
     expect(etvSession.recordResolvedItem).not.toHaveBeenCalled();
+  });
+});
+
+// The worker writes a dossier per failed item and tells Tunarr nothing about
+// them, so these routes are the only way anyone gets at them.
+describe('diagnostic dossiers', () => {
+  // These routes key on the path parameter rather than a session token, and
+  // the parameter is validated as a UUID.
+  const diagnosticsChannelUuid = '2f1a6d8e-9c4b-4a7e-8f10-3b5c7d9e0a12';
+  const channelFolder = nodePath.join(
+    databaseDirectory,
+    'etv-diagnostics',
+    diagnosticsChannelUuid,
+  );
+
+  async function writeDossier(name: string) {
+    const full = nodePath.join(channelFolder, name);
+    await fsp.mkdir(full, { recursive: true });
+    await fsp.writeFile(nodePath.join(full, 'ffreport.log'), 'ffmpeg started');
+  }
+
+  afterEach(async () => {
+    await fsp.rm(databaseDirectory, { recursive: true, force: true });
+  });
+
+  test('list what the worker left for a channel', async () => {
+    const { app } = await makeApp();
+    await writeDossier('7_0001');
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/etv/channels/${diagnosticsChannelUuid}/diagnostics`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { dossiers } = response.json() as {
+      dossiers: { name: string; sizeBytes: number }[];
+    };
+    expect(dossiers).toHaveLength(1);
+    expect(dossiers[0]?.name).toBe('7_0001');
+    expect(dossiers[0]?.sizeBytes).toBe('ffmpeg started'.length);
+  });
+
+  test('list nothing for a channel that has never failed', async () => {
+    const { app } = await makeApp();
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/etv/channels/${diagnosticsChannelUuid}/diagnostics`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ dossiers: [] });
+  });
+
+  test('come down as one zip', async () => {
+    const { app } = await makeApp();
+    await writeDossier('7_0001');
+    await writeDossier('7_0002');
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/etv/channels/${diagnosticsChannelUuid}/diagnostics.zip`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('application/zip');
+    expect(response.headers['content-disposition']).toContain('attachment');
+    // The local file header every zip entry starts with.
+    expect(response.rawPayload.subarray(0, 4)).toEqual(
+      Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+    );
+  });
+
+  test('answer 404 rather than an empty zip', async () => {
+    const { app } = await makeApp();
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/etv/channels/${diagnosticsChannelUuid}/diagnostics.zip`,
+    });
+
+    expect(response.statusCode).toBe(404);
   });
 });
 
