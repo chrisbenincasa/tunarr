@@ -127,6 +127,7 @@ async function makeApp({
         Promise.resolve({ audioStream: { index: 1 }, subtitleStream: null }),
       ),
     } as never,
+    { resolve: vi.fn(() => Promise.resolve(undefined)) } as never,
   );
 
   const channel = makeChannel(errorScreen);

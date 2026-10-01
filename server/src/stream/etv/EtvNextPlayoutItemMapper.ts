@@ -1,4 +1,4 @@
-import type { Resolution } from '@tunarr/types';
+import type { Resolution, Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
 import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import type {
@@ -13,6 +13,9 @@ import type {
   SubtitleStreamDetails,
 } from '../types.ts';
 import type {
+  GraphicsLayer,
+  GraphicsLocation,
+  GraphicsTiming,
   PlayoutItem,
   PlayoutItemSource,
   PlayoutItemTracks,
@@ -101,6 +104,85 @@ const fileOrHttpSource = (location: string): PlayoutItemSource =>
   /^https?:\/\//i.test(location)
     ? { source_type: 'http', uri: location }
     : { source_type: 'local', path: location };
+
+/** A watermark whose image `WatermarkResolver` has already located. */
+export type ResolvedWatermark = Watermark & { url: string };
+
+const WatermarkLocations: Record<Watermark['position'], GraphicsLocation> = {
+  'top-left': 'top_left',
+  'top-right': 'top_right',
+  'bottom-left': 'bottom_left',
+  'bottom-right': 'bottom_right',
+};
+
+/** Tunarr fades a watermark in and out over one second. */
+const WatermarkFadeMs = 1_000;
+
+/**
+ * When a watermark is visible.
+ *
+ * - A fade config cycles on wall clock, so every viewer sees the same phase.
+ *   The watermark is visible for one period and hidden for the next.
+ *   `leadingEdge` puts the visible half first.
+ * - `duration` alone shows the watermark for that many seconds from the start
+ *   of the item, then hides it. That is one content-clock appearance with no
+ *   fade, and a cap that stops a second one from starting.
+ *
+ * Like Tunarr's own pipeline, only the first fade config applies.
+ */
+function watermarkTiming(watermark: Watermark): GraphicsTiming | undefined {
+  const durationMs = watermark.duration * 1000;
+  const fade = watermark.fadeConfig?.[0];
+
+  if (fade !== undefined && fade.periodMins > 0) {
+    const periodMs = fade.periodMins * 60_000;
+    return {
+      timing_type: 'periodic',
+      clock: 'wall',
+      frequency_ms: 2 * periodMs,
+      phase_offset_ms: fade.leadingEdge === true ? 0 : periodMs,
+      fade_ms: WatermarkFadeMs,
+      hold_ms: periodMs - WatermarkFadeMs,
+      ...(durationMs > 0 ? { disable_after_ms: durationMs } : {}),
+    };
+  }
+
+  if (durationMs > 0) {
+    return {
+      timing_type: 'periodic',
+      clock: 'content',
+      frequency_ms: durationMs,
+      phase_offset_ms: 0,
+      fade_ms: 0,
+      hold_ms: durationMs,
+      disable_after_ms: 1,
+    };
+  }
+
+  return undefined;
+}
+
+/**
+ * Maps a resolved watermark to the item's graphics layer.
+ *
+ * Margins and width are percentages of the padded output frame, as in Tunarr's
+ * pipeline, so `within_source_content` stays unset.
+ */
+export function toWatermarkLayer(watermark: ResolvedWatermark): GraphicsLayer {
+  const timing = watermarkTiming(watermark);
+
+  return {
+    source: fileOrHttpSource(watermark.url),
+    location: WatermarkLocations[watermark.position],
+    ...(watermark.fixedSize === true
+      ? {}
+      : { width_percent: Math.min(watermark.width, 100) }),
+    horizontal_margin_percent: watermark.horizontalMargin,
+    vertical_margin_percent: watermark.verticalMargin,
+    ...(watermark.opacity < 100 ? { opacity_percent: watermark.opacity } : {}),
+    ...(timing !== undefined ? { timing } : {}),
+  };
+}
 
 const isSet = (value: string | undefined): value is string =>
   value !== undefined && value.length > 0;
@@ -349,6 +431,8 @@ export function toPlayoutItem({
     source: StreamSource;
     details?: StreamDetails;
     selection?: PlayoutTrackSelection;
+    /** Error and flex items never carry one. */
+    watermark?: ResolvedWatermark;
   };
   resolution: Resolution;
   /** `channel.offline.picture`, shown instead of black when the channel sets one. */
@@ -441,6 +525,9 @@ export function toPlayoutItem({
     ...base,
     source: toSource(stream.source, range),
     ...(tracks !== undefined ? { tracks } : {}),
+    ...(stream.watermark !== undefined
+      ? { watermark: toWatermarkLayer(stream.watermark) }
+      : {}),
   });
 
   return { item, ignored };
