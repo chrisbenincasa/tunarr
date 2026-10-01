@@ -122,6 +122,11 @@ async function makeApp({
     streamDetailsFetcher as never,
     mediaSourceDB as never,
     onDemandService as never,
+    {
+      selectAudioAndSubtitleStreams: vi.fn(() =>
+        Promise.resolve({ audioStream: { index: 1 }, subtitleStream: null }),
+      ),
+    } as never,
   );
 
   const channel = makeChannel(errorScreen);

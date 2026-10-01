@@ -212,6 +212,9 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
       ffmpegSettings: this.settingsDB.ffmpegSettings(),
       playoutFolder: this.#workspace.playoutDirectory,
       reportsFolder: await this.#prepareDossierFolder(),
+      subtitleMode: this.featureFlagService.get('webvttSidecarEnabled')
+        ? 'convert'
+        : 'burn',
     });
     await this.#workspace.writeChannelConfig(config);
 

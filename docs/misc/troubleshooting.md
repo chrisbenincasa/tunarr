@@ -109,11 +109,12 @@ The full FFmpeg report log from the test transcode. This contains detailed infor
 
 When the [ErsatzTV next backend](../configure/ffmpeg/ersatztv-next.md) is enabled and the selected channel uses it, the test transcode runs through the `ersatztv-channel` worker rather than Tunarr's own pipeline, so the report describes what actually plays.
 
-Three sections read differently:
+Two sections read differently:
 
 - **Pipeline** holds the FFmpeg command the worker resolved, not one Tunarr built.
 - **FFmpeg Log** comes from the dossier the worker leaves behind.
-- **Stream Selection** is absent, because Tunarr does not yet apply stream selection on this backend. The test transcodes the file's first audio track.
+
+**Stream Selection** shows the same trace as on Tunarr's pipeline. On a channel with subtitles turned off, it shows no subtitle, because the worker is not sent one.
 
 Settings the backend refuses or drops are listed under Errors, so a channel that streams differently than its transcode config reads says why.
 

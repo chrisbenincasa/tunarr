@@ -57,11 +57,19 @@ in. It uses `/dev/dri/renderD128`, the same default the built-in pipeline uses,
 and lets libva choose the driver. An explicit device or driver is passed
 through untouched.
 
+## Audio and subtitles
+
+The channel's stream selection profile picks the audio and subtitle tracks, the same way it does on Tunarr's own pipeline. Tunarr tells the worker which tracks to play for each program.
+
+- **Subtitles** play only when the channel has subtitles turned on.
+- **Image subtitles** (PGS, DVD) are always burned into the picture.
+- **Text subtitles** depend on the sidecar subtitles feature in **Settings > Features**. With it on, they become a WebVTT track that players can toggle. With it off, they are burned in, but only when they come from a separate file. Text subtitles embedded in the media file are skipped.
+- **A file with no audio** plays with silence, so the channel keeps its audio track.
+
 ## Known gaps
 
-The first two gaps are in Tunarr's side of the integration, not in ErsatzTV next. The worker supports both features, and Tunarr does not send them yet.
+The first gap is in Tunarr's side of the integration, not in ErsatzTV next. The worker supports watermarks, and Tunarr does not send them yet.
 
-- **Stream selection profiles are not applied.** Tunarr does not yet tell the worker which audio or subtitle track to use. The worker plays the first audio track in the file, whatever the channel's stream selection profile says.
 - **Watermarks and channel overlays are not applied.** Tunarr does not yet send the watermark to the worker, so none is drawn.
 - **Programming edits land at the next item, not immediately.** The worker asks Tunarr what to play one item at a time, and it transcodes up to 44 seconds ahead of what viewers see. An edit takes effect the next time the worker asks. Anything already transcoded plays as it was.
 
@@ -69,11 +77,10 @@ The first two gaps are in Tunarr's side of the integration, not in ErsatzTV next
 
 The [Stream Troubleshooter](../../misc/troubleshooting.md) runs the same diagnostic transcode it always has, but for a channel on this backend it runs through the worker rather than through Tunarr's pipeline, so the report describes what actually plays.
 
-Three things read differently than they do for a Tunarr-pipeline channel:
+Two things read differently than they do for a Tunarr-pipeline channel:
 
 - **The FFmpeg command** is the one the worker resolved, not one Tunarr built.
 - **The FFmpeg log** comes from the dossier the worker leaves behind, which also holds the pipeline, media info and playout item it resolved.
-- **No stream selection trace is produced**, because Tunarr does not yet apply stream selection on this backend.
 
 Any refused or dropped setting is listed with the errors, so a report from a channel that streams differently than its config reads says why.
 

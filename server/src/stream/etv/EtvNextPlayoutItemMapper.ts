@@ -6,7 +6,12 @@ import type {
   ErrorScreenType,
 } from '@/db/schema/TranscodeConfig.js';
 import type { ChannelOfflineSettings } from '@/db/schema/base.js';
-import type { StreamDetails, StreamSource } from '../types.ts';
+import type {
+  AudioStreamDetails,
+  StreamDetails,
+  StreamSource,
+  SubtitleStreamDetails,
+} from '../types.ts';
 import type {
   PlayoutItem,
   PlayoutItemSource,
@@ -99,6 +104,73 @@ const fileOrHttpSource = (location: string): PlayoutItemSource =>
 
 const isSet = (value: string | undefined): value is string =>
   value !== undefined && value.length > 0;
+
+/**
+ * The tracks a stream selection profile chose for a content item.
+ *
+ * Indices are absolute container indices, which is what upstream matches
+ * `stream_index` against.
+ */
+export type PlayoutTrackSelection = {
+  audioStream?: AudioStreamDetails;
+  subtitleStream?: SubtitleStreamDetails;
+};
+
+type MediaRange = { inPointMs: number; outPointMs: number };
+
+/**
+ * Picks the audio and subtitle tracks out of a content item's source.
+ *
+ * A subtitle with a path lives in its own file, an extracted or external one,
+ * so it becomes a separate source seeked with the video. Upstream skips an
+ * embedded text subtitle under burn mode, which is why the extracted file is
+ * preferred whenever the selector found one.
+ *
+ * Upstream errors to its fallback card on a source with no audio stream (B8),
+ * so a video-only file gets silence sourced separately.
+ */
+function contentTracks(
+  details: StreamDetails | undefined,
+  selection: PlayoutTrackSelection | undefined,
+  range: MediaRange,
+): PlayoutItemTracks | undefined {
+  const tracks: PlayoutItemTracks = {};
+
+  if (details !== undefined && details.audioDetails === undefined) {
+    tracks.audio = { source: silentAudio };
+  } else if (selection?.audioStream !== undefined) {
+    tracks.audio = { stream_index: selection.audioStream.index };
+  }
+
+  const subtitle = selection?.subtitleStream;
+  if (subtitle !== undefined) {
+    tracks.subtitle = isSet(subtitle.path)
+      ? { source: seekableSource(subtitle.path, range) }
+      : { stream_index: subtitle.index ?? 0 };
+  }
+
+  return tracks.audio !== undefined || tracks.subtitle !== undefined
+    ? tracks
+    : undefined;
+}
+
+const seekableSource = (
+  location: string,
+  { inPointMs, outPointMs }: MediaRange,
+): PlayoutItemSource =>
+  /^https?:\/\//i.test(location)
+    ? {
+        source_type: 'http',
+        uri: location,
+        in_point_ms: inPointMs,
+        out_point_ms: outPointMs,
+      }
+    : {
+        source_type: 'local',
+        path: location,
+        in_point_ms: inPointMs,
+        out_point_ms: outPointMs,
+      };
 
 /** Long enough to carry a real message, short enough to stay on screen. */
 const MAX_ERROR_TEXT_LENGTH = 120;
@@ -273,7 +345,11 @@ export function toPlayoutItem({
   id: string;
   startMs: number;
   lineupItem: StreamLineupItem;
-  stream?: { source: StreamSource; details?: StreamDetails };
+  stream?: {
+    source: StreamSource;
+    details?: StreamDetails;
+    selection?: PlayoutTrackSelection;
+  };
   resolution: Resolution;
   /** `channel.offline.picture`, shown instead of black when the channel sets one. */
   offlinePicture?: string;
@@ -358,9 +434,13 @@ export function toPlayoutItem({
     throw new MissingStreamSourceError(lineupItem.type);
   }
 
+  const range = { inPointMs, outPointMs };
+  const tracks = contentTracks(stream.details, stream.selection, range);
+
   const item = PlayoutItemSchema.parse({
     ...base,
-    source: toSource(stream.source, { inPointMs, outPointMs }),
+    source: toSource(stream.source, range),
+    ...(tracks !== undefined ? { tracks } : {}),
   });
 
   return { item, ignored };

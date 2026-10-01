@@ -4,6 +4,7 @@ import type {
   AudioFormat,
   ChannelConfig,
   HardwareAccel,
+  SubtitleMode,
   VaapiDriver,
   VideoFilterOptionsConfig,
   VideoFormat,
@@ -267,10 +268,17 @@ export function toChannelConfig({
   ffmpegSettings,
   playoutFolder,
   reportsFolder,
+  subtitleMode,
 }: {
   transcodeConfig: TranscodeConfigOrm;
   ffmpegSettings: MappedFfmpegSettings;
   playoutFolder: string;
+
+  /**
+   * `convert` turns text subtitles into the WebVTT rendition, `burn` draws
+   * them into the frame. Image subtitles burn either way.
+   */
+  subtitleMode: SubtitleMode;
 
   /**
    * Where the worker writes its diagnostic dossiers. Unset only when the
@@ -355,6 +363,9 @@ export function toChannelConfig({
               },
             }
           : {}),
+      },
+      subtitle: {
+        mode: subtitleMode,
       },
     },
     playout: {

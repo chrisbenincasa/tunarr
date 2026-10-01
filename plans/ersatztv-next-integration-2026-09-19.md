@@ -463,7 +463,7 @@ Two details in upstream's release pipeline are worth banking. The binaries are *
 
 **Phase 5 — playout parity: stream selection and watermarks.** Both features exist in the contract and neither is wired. The mapper fills `tracks` only for synthetic error and flex items, and never fills `watermark` or `graphics`. So a channel on this backend plays each file's first audio track, no chosen subtitles, and no overlay. The shipped docs (`docs/configure/ffmpeg/ersatztv-next.md:78-79,90`, `docs/misc/troubleshooting.md:116`) blame the contract for the track gap. That is wrong, because `PlayoutItemTracks` carries `stream_index` per kind (`generated/playout.ts:183-195`). The docs change with this phase.
 
-_Stream selection._
+_Stream selection._ Done 09/30/2026. `stream_index` is the absolute ffprobe container index (upstream `probe.rs:489`, `pipeline.rs:520` at `091e174`). Embedded text subtitles reach the viewer only in `convert` mode, which Tunarr picks when the sidecar subtitles flag is on. In `burn` mode upstream skips them.
 
 - Run `StreamSelector.selectAudioAndSubtitleStreams` (`ffmpeg/StreamSelector.ts:35`) in `EtvNextPlayoutWriter` for content items. It is async and needs the DB, so it stays out of the pure mapper. Today its only stream-path caller is `FfmpegStreamFactory.ts:515`.
 - Use only this profile-based path. The legacy picker (`SubtitleStreamPicker.pickSubtitles` with `getChannelSubtitlePreferences`) is being retired, so nothing new calls it. `FfmpegStreamFactory.buildPassthroughSubtitles` still does, and this phase does not copy it. Legacy preferences still apply, because `StreamSelectionProfileResolver` turns them into a "Legacy fallback" rule when no profile matches.

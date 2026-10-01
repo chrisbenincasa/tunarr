@@ -1,5 +1,6 @@
 import type { Resolution } from '@tunarr/types';
 import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
 import { describe, expect, test } from 'vitest';
 import type {
   CommercialStreamLineupItem,
@@ -10,7 +11,9 @@ import type {
   RedirectStreamLineupItem,
   StreamLineupProgram,
 } from '@/db/derived_types/StreamLineup.js';
+import type { AudioStreamDetails, SubtitleStreamDetails } from '../types.ts';
 import { FileStreamSource, HttpStreamSource } from '../types.ts';
+import type { PlayoutTrackSelection } from './EtvNextPlayoutItemMapper.ts';
 import {
   MissingStreamSourceError,
   StreamTerminationRequestedError,
@@ -20,6 +23,8 @@ import {
 import { PlayoutItemSchema } from './generated/playout.ts';
 
 const resolution: Resolution = { widthPx: 1920, heightPx: 1080 };
+dayjs.extend(duration);
+
 const startMs = dayjs('2026-02-23T20:00:00.000-05:00').valueOf();
 
 // The mapper only reads the timing fields off a program, so a stub is enough.
@@ -675,6 +680,127 @@ describe('offline modes', () => {
       source_type: 'lavfi',
       params: 'anullsrc',
     });
+  });
+});
+
+describe('track selection', () => {
+  const audio = (index: number): AudioStreamDetails => ({
+    index,
+    codec: 'aac',
+    channels: 2,
+  });
+
+  const subtitle = (
+    overrides: Partial<SubtitleStreamDetails>,
+  ): SubtitleStreamDetails => ({
+    type: 'embedded',
+    codec: 'subrip',
+    default: false,
+    forced: false,
+    sdh: false,
+    ...overrides,
+  });
+
+  const withSelection = (
+    selection: PlayoutTrackSelection,
+    item = programItem(),
+  ) =>
+    map(item, {
+      source: new FileStreamSource('/media/a.mkv'),
+      details: {
+        duration: dayjs.duration({ minutes: 30 }),
+        audioDetails: [audio(1), audio(2)],
+      },
+      selection,
+    }).item;
+
+  test('names the audio track the profile chose by its container index', () => {
+    const item = withSelection({ audioStream: audio(2) });
+
+    expect(item.tracks).toEqual({ audio: { stream_index: 2 } });
+  });
+
+  test('sources a text subtitle from its extracted file, seeked with the video', () => {
+    const item = withSelection(
+      {
+        audioStream: audio(1),
+        subtitleStream: subtitle({ index: 3, path: '/cache/subs/a.srt' }),
+      },
+      programItem({ startOffset: 300_000, streamDuration: 900_000 }),
+    );
+
+    expect(item.tracks?.subtitle).toEqual({
+      source: {
+        source_type: 'local',
+        path: '/cache/subs/a.srt',
+        in_point_ms: 300_000,
+        out_point_ms: 1_200_000,
+      },
+    });
+  });
+
+  test('sources a subtitle served over http as http', () => {
+    const item = withSelection({
+      audioStream: audio(1),
+      subtitleStream: subtitle({
+        type: 'external',
+        path: 'http://plex:32400/library/streams/9?X-Plex-Token=t',
+      }),
+    });
+
+    expect(item.tracks?.subtitle?.source).toMatchObject({
+      source_type: 'http',
+      uri: 'http://plex:32400/library/streams/9?X-Plex-Token=t',
+    });
+  });
+
+  test('names an embedded image subtitle by index, since upstream burns it from the source', () => {
+    const item = withSelection({
+      audioStream: audio(1),
+      subtitleStream: subtitle({ codec: 'hdmv_pgs_subtitle', index: 4 }),
+    });
+
+    expect(item.tracks?.subtitle).toEqual({ stream_index: 4 });
+  });
+
+  test('leaves the subtitle out when the profile chose none', () => {
+    const item = withSelection({ audioStream: audio(1) });
+
+    expect(item.tracks?.subtitle).toBeUndefined();
+  });
+
+  test('adds no tracks without a selection, so the worker keeps its defaults', () => {
+    const { item } = map(programItem(), {
+      source: new FileStreamSource('/media/a.mkv'),
+      details: {
+        duration: dayjs.duration({ minutes: 30 }),
+        audioDetails: [audio(1)],
+      },
+    });
+
+    expect(item.tracks).toBeUndefined();
+  });
+
+  // Upstream errors to its fallback card on a source with no audio (B8).
+  test('plays silence alongside a video-only file', () => {
+    const { item } = map(programItem(), {
+      source: new FileStreamSource('/media/silent-film.mkv'),
+      details: { duration: dayjs.duration({ minutes: 30 }) },
+    });
+
+    expect(item.source).toMatchObject({ path: '/media/silent-film.mkv' });
+    expect(item.tracks).toEqual({
+      audio: { source: { source_type: 'lavfi', params: 'anullsrc' } },
+    });
+  });
+
+  test('every selected item strict-parses', () => {
+    const item = withSelection({
+      audioStream: audio(2),
+      subtitleStream: subtitle({ index: 3, path: '/cache/subs/a.srt' }),
+    });
+
+    expect(() => PlayoutItemSchema.parse(item)).not.toThrow();
   });
 });
 
