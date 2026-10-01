@@ -1,6 +1,6 @@
 # ErsatzTV next — B3 tagged releases
 
-> **Status (10/01/2026):** Planned and grilled. Pin moved to `570d136` in `a21a254bb`. Upstream state re-verified at `570d136`. Nothing filed. Next steps are the "Now" rows in §4 and the upstream conversation in §3, with the workflow PR in §2 ready to send.
+> **Status (10/01/2026):** Planned and grilled. Pin moved to `570d136` in `a21a254bb`, and the exact-string version check landed. Upstream state re-verified at `570d136`. Nothing filed. Next steps are the notices issue in §4 and the upstream conversation in §3, with the workflow PR in §2 ready to send.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md). B3 is the ship gate.
 
@@ -57,15 +57,15 @@ Test by pushing a throwaway tag such as `v0.1.1-rc.1` to a fork with the signing
 
 ### 4.2 Changes
 
-| When                | Change                                                                                                                                                                   | Where                                            |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| Done 10/01          | Pin moved to `570d136`. The channel config now carries `ChannelConfigVersion`, which the worker requires                                                                 | `a21a254bb`                                      |
-| Now                 | Replace `matchesPinnedCommit` with the exact-string check. Keep warning on mismatch. `commit` stays in `package.json` as the vendoring record                            | `server/src/stream/etv/EtvNextBinaryResolver.ts` |
-| Now                 | File the third-party notices issue (decision 5)                                                                                                                          | GitHub issue                                     |
-| After the first tag | Set `releaseTag` and `assetVersion` to the tag. Drop the `note` that says the pin is not durable                                                                         | `server/package.json`                            |
-| After the first tag | Add `sha256` per target, filled from the release API `digest`. Verify after download and fail on mismatch. Hashing a `develop` asset is pointless, because it 404s first | `server/scripts/download-ersatztv-next.ts`       |
-| After the first tag | Flip the resolver from warn to refuse for the bundled binary. Keep warning under `ERSATZTV_NEXT_PATH`                                                                    | `server/src/stream/etv/EtvNextBinaryResolver.ts` |
-| After the first tag | Run the full pin bump from blockers plan §5. Schemas, generated Zod and both version constants move in the same commit                                                   | `server/src/stream/etv/schema/`, `generated/`    |
+| When                | Change                                                                                                                                                                                                 | Where                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| Done 10/01          | Pin moved to `570d136`. The channel config now carries `ChannelConfigVersion`, which the worker requires                                                                                               | `a21a254bb`                                      |
+| Done 10/01          | Replaced `matchesPinnedCommit` with the exact-string check in `EtvNextVersion.ts`, shared with the download script. Keep warning on mismatch. `commit` stays in `package.json` as the vendoring record | `server/src/stream/etv/EtvNextVersion.ts`        |
+| Now                 | File the third-party notices issue (decision 5)                                                                                                                                                        | GitHub issue                                     |
+| After the first tag | Set `releaseTag` and `assetVersion` to the tag. Drop the `note` that says the pin is not durable                                                                                                       | `server/package.json`                            |
+| After the first tag | Add `sha256` per target, filled from the release API `digest`. Verify after download and fail on mismatch. Hashing a `develop` asset is pointless, because it 404s first                               | `server/scripts/download-ersatztv-next.ts`       |
+| After the first tag | Flip the resolver from warn to refuse for the bundled binary. Keep warning under `ERSATZTV_NEXT_PATH`                                                                                                  | `server/src/stream/etv/EtvNextBinaryResolver.ts` |
+| After the first tag | Run the full pin bump from blockers plan §5. Schemas, generated Zod and both version constants move in the same commit                                                                                 | `server/src/stream/etv/schema/`, `generated/`    |
 
 `--version` prints `ersatztv_core::VERSION`, which is `info_version`. A tagged build prints `0.2.0`. A `develop` build prints `0.2.0-<sha>`.
 

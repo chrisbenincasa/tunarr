@@ -13,7 +13,11 @@ import { hideBin } from 'yargs/helpers';
 import serverPackage from '../package.json' with { type: 'json' };
 import { Nullable } from '../src/types/util.ts';
 import { fileExists } from '../src/util/fsUtil.ts';
-import { isNonEmptyString } from '../src/util/index.ts';
+import {
+  matchesPinnedEtvNextVersion,
+  parseEtvNextVersion,
+  pinnedEtvNextVersion,
+} from '../src/stream/etv/EtvNextVersion.ts';
 
 /**
  * Only the channel worker is needed. The `ersatztv` server is the sidecar shape
@@ -76,8 +80,8 @@ async function addExecPermission(targetPath: string) {
 /**
  * Whether the binary on disk already matches the pin.
  *
- * The worker prints `ersatztv-channel 0.1.0-ed95077`, so the short commit is
- * comparable against the pin without any network call.
+ * The worker prints its version, so the check needs no network call. It uses
+ * the same exact-match rule as the server's startup check.
  */
 async function needsToDownloadNewBinary(targetPath: string) {
   if (!(await fileExists(targetPath))) {
@@ -86,19 +90,19 @@ async function needsToDownloadNewBinary(targetPath: string) {
 
   try {
     await addExecPermission(targetPath);
-    const out = execSync(`"${targetPath}" --version`, {
-      encoding: 'utf-8',
-    }).trim();
-    const found = /(\d+\.\d+\.\d+(?:-[0-9a-f]{7,40})?)/.exec(out)?.[1];
+    const found = parseEtvNextVersion(
+      execSync(`"${targetPath}" --version`, { encoding: 'utf-8' }),
+    );
 
-    if (!isNonEmptyString(found)) {
+    if (!found) {
       console.log(`Could not read a version from ${targetPath}, redownloading`);
       return true;
     }
 
-    const wanted = assetVersion.replace(/^v/, '');
-    if (found !== wanted) {
-      console.log(`Found ${BINARY_NAME} ${found}, want ${wanted}`);
+    if (!matchesPinnedEtvNextVersion(found)) {
+      console.log(
+        `Found ${BINARY_NAME} ${found}, want ${pinnedEtvNextVersion}`,
+      );
       return true;
     }
 
