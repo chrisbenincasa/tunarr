@@ -336,6 +336,53 @@ describe('MediaSourceDB', () => {
     expect(programCountForLibrary(drizzle, removed.uuid)).toBe(2);
   });
 
+  test('a later save does not re-trash a path that is already unavailable', async ({
+    mediaSourceDB,
+    drizzle,
+  }) => {
+    const mediaSourceId = makeLocalMediaSource(drizzle, [
+      '/media/movies',
+      '/media/shows',
+    ]);
+    const removed = drizzle
+      .select()
+      .from(MediaSourceLibrary)
+      .all()
+      .find((library) => library.externalKey === '/media/shows')!;
+    insertPrograms(drizzle, mediaSourceId, removed.uuid, 2);
+
+    const save = (paths: string[], name = 'Test Local Media Source') =>
+      mediaSourceDB.updateMediaSource({
+        id: mediaSourceId,
+        name: tag<MediaSourceName>(name),
+        type: 'local',
+        mediaType: 'movies',
+        pathReplacements: [],
+        paths,
+      });
+
+    const first = await save(['/media/movies']);
+    expect(first.programIds).toHaveLength(2);
+    const flaggedAt = drizzle
+      .select()
+      .from(MediaSourceLibrary)
+      .all()
+      .find((library) => library.uuid === removed.uuid)?.unavailableSince;
+
+    // The flagged row keeps its externalKey, so a plain rename must not flag it
+    // again and rewrite what is already in the trash.
+    const second = await save(['/media/movies'], 'Renamed');
+    expect(second).toEqual({ programIds: [], groupingIds: [] });
+
+    const stillFlagged = drizzle
+      .select()
+      .from(MediaSourceLibrary)
+      .all()
+      .find((library) => library.uuid === removed.uuid);
+    expect(stillFlagged?.unavailableSince).toEqual(flaggedAt);
+    expect(programCountForLibrary(drizzle, removed.uuid)).toBe(2);
+  });
+
   test('adding a path to a local media source creates a new library row', async ({
     mediaSourceDB,
     drizzle,
