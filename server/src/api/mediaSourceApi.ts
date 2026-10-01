@@ -44,6 +44,7 @@ import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefre
 import { MediaSourceProgressService } from '../services/scanner/MediaSourceProgressService.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { fileExists } from '../util/fsUtil.ts';
+import { localSourcePaths } from './mediaSourcePaths.ts';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -828,7 +829,16 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        await req.serverCtx.mediaSourceDB.updateMediaSource(req.body);
+        const trashed = await req.serverCtx.mediaSourceDB.updateMediaSource(
+          req.body,
+        );
+        if (trashed.programIds.length > 0) {
+          // What a removed path held is in the trash now; keep the search index
+          // in step with the database.
+          await req.serverCtx.searchService.updatePrograms(
+            trashed.programIds.map((id) => ({ id, state: 'missing' })),
+          );
+        }
         if (req.body.type === 'local') {
           await req.serverCtx.mediaSourceScanCoordinator.addLocal({
             mediaSourceId: tag(req.body.id),
@@ -976,7 +986,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             type: source.type,
             name: source.name,
             mediaType: source.mediaType,
-            paths: source.libraries?.map((path) => path.externalKey) ?? [],
+            paths: localSourcePaths(source.libraries ?? []),
             libraries: (source.libraries ?? []).map((library) => ({
               id: library.uuid,
               type: source.type,

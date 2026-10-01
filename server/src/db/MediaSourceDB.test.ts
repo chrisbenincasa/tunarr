@@ -10,12 +10,14 @@ import type { MediaSourceLibraryRefresher } from '../services/MediaSourceLibrary
 import { copyPreMigratedDb } from '../testing/testDbFactory.ts';
 import { DBAccess } from './DBAccess.ts';
 import { MediaSourceDB } from './mediaSourceDB.ts';
+import { ProgramStateRepository } from './program/ProgramStateRepository.ts';
 import type { MediaSourceId, MediaSourceName } from './schema/base.ts';
 import type { DB } from './schema/db.ts';
 import type { DrizzleDBAccess } from './schema/index.ts';
 import { MediaSource } from './schema/MediaSource.ts';
 import { MediaSourceLibrary } from './schema/MediaSourceLibrary.ts';
 import { Program } from './schema/Program.ts';
+import { ProgramGrouping } from './schema/ProgramGrouping.ts';
 import { eq } from 'drizzle-orm';
 import type { Kysely } from 'kysely';
 import type { MediaSourceLibrariesUpdate } from './mediaSourceDB.ts';
@@ -64,6 +66,7 @@ const test = baseTest.extend<Fixture>({
         kysely,
         () => instance(mock<MediaSourceLibraryRefresher>()),
         drizzle,
+        new ProgramStateRepository(drizzle),
       ),
     );
   },
@@ -147,6 +150,27 @@ function insertPrograms(
     .run();
 }
 
+function insertGroupings(
+  drizzle: DrizzleDBAccess,
+  mediaSourceId: MediaSourceId,
+  libraryId: string,
+  count: number,
+) {
+  drizzle
+    .insert(ProgramGrouping)
+    .values(
+      Array.from({ length: count }, () => ({
+        uuid: v4(),
+        title: 'Season',
+        type: 'season' as const,
+        sourceType: 'local' as const,
+        mediaSourceId,
+        libraryId,
+      })),
+    )
+    .run();
+}
+
 function programCountForLibrary(drizzle: DrizzleDBAccess, libraryId: string) {
   return drizzle
     .select()
@@ -223,7 +247,7 @@ describe('MediaSourceDB', () => {
     expect(programCountForLibrary(drizzle, library.uuid)).toBe(2);
   });
 
-  test('removing a path from a local media source deletes the library row', async ({
+  test('removing a path flags its library and moves its programs and groupings to the trash', async ({
     mediaSourceDB,
     drizzle,
   }) => {
@@ -231,21 +255,84 @@ describe('MediaSourceDB', () => {
       '/media/movies',
       '/media/shows',
     ]);
+    const removed = drizzle
+      .select()
+      .from(MediaSourceLibrary)
+      .all()
+      .find((library) => library.externalKey === '/media/shows')!;
+    insertPrograms(drizzle, mediaSourceId, removed.uuid, 3);
+    insertGroupings(drizzle, mediaSourceId, removed.uuid, 2);
 
-    await expect(
+    const trashed = await mediaSourceDB.updateMediaSource({
+      id: mediaSourceId,
+      name: tag<MediaSourceName>('Test Local Media Source'),
+      type: 'local',
+      mediaType: 'movies',
+      pathReplacements: [],
+      paths: ['/media/movies'],
+    });
+    expect(trashed.programIds).toHaveLength(3);
+    expect(trashed.groupingIds).toHaveLength(2);
+
+    const libraries = drizzle.select().from(MediaSourceLibrary).all();
+    expect(libraries).toHaveLength(2);
+    const flagged = libraries.find((library) => library.uuid === removed.uuid);
+    expect(flagged?.unavailableSince).toBeInstanceOf(Date);
+
+    // Nothing is deleted: what the removed path held is in the trash, where the
+    // user can still recover it.
+    const programs = drizzle
+      .select()
+      .from(Program)
+      .where(eq(Program.libraryId, removed.uuid))
+      .all();
+    expect(programs).toHaveLength(3);
+    expect(programs.every((program) => program.state === 'missing')).toBe(true);
+
+    const groupings = drizzle
+      .select()
+      .from(ProgramGrouping)
+      .where(eq(ProgramGrouping.libraryId, removed.uuid))
+      .all();
+    expect(groupings).toHaveLength(2);
+    expect(groupings.every((grouping) => grouping.state === 'missing')).toBe(
+      true,
+    );
+  });
+
+  test('adding a removed path back clears its flag instead of adding a second library', async ({
+    mediaSourceDB,
+    drizzle,
+  }) => {
+    const mediaSourceId = makeLocalMediaSource(drizzle, [
+      '/media/movies',
+      '/media/shows',
+    ]);
+    const removed = drizzle
+      .select()
+      .from(MediaSourceLibrary)
+      .all()
+      .find((library) => library.externalKey === '/media/shows')!;
+    insertPrograms(drizzle, mediaSourceId, removed.uuid, 2);
+
+    const update = (paths: string[]) =>
       mediaSourceDB.updateMediaSource({
         id: mediaSourceId,
         name: tag<MediaSourceName>('Test Local Media Source'),
         type: 'local',
         mediaType: 'movies',
         pathReplacements: [],
-        paths: ['/media/movies'],
-      }),
-    ).resolves.toBeUndefined();
+        paths,
+      });
 
-    const remaining = drizzle.select().from(MediaSourceLibrary).all();
-    expect(remaining).toHaveLength(1);
-    expect(remaining[0]?.externalKey).toBe('/media/movies');
+    await update(['/media/movies']);
+    await update(['/media/movies', '/media/shows']);
+
+    const libraries = drizzle.select().from(MediaSourceLibrary).all();
+    expect(libraries).toHaveLength(2);
+    const restored = libraries.find((library) => library.uuid === removed.uuid);
+    expect(restored?.unavailableSince).toBeNull();
+    expect(programCountForLibrary(drizzle, removed.uuid)).toBe(2);
   });
 
   test('adding a path to a local media source creates a new library row', async ({
@@ -254,16 +341,15 @@ describe('MediaSourceDB', () => {
   }) => {
     const mediaSourceId = makeLocalMediaSource(drizzle, ['/media/movies']);
 
-    await expect(
-      mediaSourceDB.updateMediaSource({
-        id: mediaSourceId,
-        name: tag<MediaSourceName>('Test Local Media Source'),
-        type: 'local',
-        mediaType: 'movies',
-        pathReplacements: [],
-        paths: ['/media/movies', '/media/shows'],
-      }),
-    ).resolves.toBeUndefined();
+    const trashed = await mediaSourceDB.updateMediaSource({
+      id: mediaSourceId,
+      name: tag<MediaSourceName>('Test Local Media Source'),
+      type: 'local',
+      mediaType: 'movies',
+      pathReplacements: [],
+      paths: ['/media/movies', '/media/shows'],
+    });
+    expect(trashed).toEqual({ programIds: [], groupingIds: [] });
 
     const remaining = drizzle
       .select({ externalKey: MediaSourceLibrary.externalKey })

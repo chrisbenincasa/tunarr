@@ -25,6 +25,7 @@ import { v4 } from 'uuid';
 import type { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import type { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 
+import type { ProgramStateRepository } from './program/ProgramStateRepository.ts';
 import type {
   MediaSourceId,
   MediaSourceName,
@@ -59,6 +60,8 @@ export class MediaSourceDB {
     private mediaSourceLibraryRefresher: () => MediaSourceLibraryRefresher,
     @inject(KEYS.DrizzleDB)
     private drizzleDB: DrizzleDBAccess,
+    @inject(KEYS.ProgramStateRepository)
+    private programStateRepo: ProgramStateRepository,
   ) {}
 
   async getAll(): Promise<MediaSourceWithRelations[]> {
@@ -202,6 +205,9 @@ export class MediaSourceDB {
     }
 
     if (updateReq.type === 'local') {
+      const trashedProgramIds: string[] = [];
+      const trashedGroupingIds: string[] = [];
+
       this.drizzleDB.transaction((tx) => {
         tx.update(MediaSource)
           .set({
@@ -216,21 +222,58 @@ export class MediaSourceDB {
           mediaSource.libraries,
           (incomingPath, { externalKey }) => incomingPath === externalKey,
         );
-        const deletePaths = differenceWith(
+        const removedLibraries = differenceWith(
           mediaSource.libraries,
           updateReq.paths,
           ({ externalKey }, incomingPath) => externalKey === incomingPath,
-        ).map(({ externalKey }) => externalKey);
+        );
 
-        if (deletePaths.length > 0) {
-          tx.delete(MediaSourceLibrary)
+        // Removing a path keeps its library and moves what it held to the
+        // trash instead of deleting it outright: the library row is flagged so
+        // that scans leave it alone, and the user can still recover its
+        // programs until the trash is emptied.
+        if (removedLibraries.length > 0) {
+          const removedIds = removedLibraries.map(({ uuid }) => uuid);
+
+          tx.update(MediaSourceLibrary)
+            .set({ unavailableSince: new Date() })
+            .where(inArray(MediaSourceLibrary.uuid, removedIds))
+            .run();
+
+          trashedProgramIds.push(
+            ...tx
+              .select({ uuid: Program.uuid })
+              .from(Program)
+              .where(inArray(Program.libraryId, removedIds))
+              .all()
+              .map(({ uuid }) => uuid),
+          );
+          trashedGroupingIds.push(
+            ...tx
+              .select({ uuid: ProgramGrouping.uuid })
+              .from(ProgramGrouping)
+              .where(inArray(ProgramGrouping.libraryId, removedIds))
+              .all()
+              .map(({ uuid }) => uuid),
+          );
+        }
+
+        // A path that comes back is the same library: clear the flag instead of
+        // inserting a second row for it, which would strand the programs the
+        // user is restoring in the trash.
+        const restoredLibraries = mediaSource.libraries.filter(
+          (library) =>
+            !isNil(library.unavailableSince) &&
+            updateReq.paths.includes(library.externalKey),
+        );
+
+        if (restoredLibraries.length > 0) {
+          tx.update(MediaSourceLibrary)
+            .set({ unavailableSince: null })
             .where(
-              and(
-                eq(
-                  MediaSourceLibrary.mediaSourceId,
-                  tag<MediaSourceId>(updateReq.id),
-                ),
-                inArray(MediaSourceLibrary.externalKey, deletePaths),
+              inArray(
+                MediaSourceLibrary.uuid,
+                restoredLibraries.map(({ uuid }) => uuid),
               ),
             )
             .run();
@@ -252,6 +295,24 @@ export class MediaSourceDB {
             .run();
         }
       });
+
+      // The ids are handed back so the caller can refresh the search index: the
+      // DB layer cannot reach the search service (it depends on this class).
+      if (trashedProgramIds.length > 0) {
+        await this.programStateRepo.updateProgramsState(
+          trashedProgramIds,
+          'missing',
+        );
+      }
+
+      if (trashedGroupingIds.length > 0) {
+        await this.programStateRepo.updateGroupingsState(
+          trashedGroupingIds,
+          'missing',
+        );
+      }
+
+      return { programIds: trashedProgramIds, groupingIds: trashedGroupingIds };
     } else {
       const sendGuideUpdates =
         updateReq.type === 'plex'
@@ -293,6 +354,8 @@ export class MediaSourceDB {
       }
 
       this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
+
+      return { programIds: [], groupingIds: [] };
     }
   }
 
