@@ -125,7 +125,7 @@ async function makeRunner({
       );
     }
 
-    if (dossier !== undefined) {
+    if (dossier) {
       const probeDir = path.join(root, '7_20260921T000000_probe');
       await fs.mkdir(probeDir, { recursive: true });
       await fs.writeFile(path.join(probeDir, 'ffreport.log'), dossier);

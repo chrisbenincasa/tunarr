@@ -23,6 +23,7 @@ import path from 'node:path';
 import { toChannelConfig } from '../src/stream/etv/EtvNextChannelConfigMapper.ts';
 import { toWatermarkLayer } from '../src/stream/etv/EtvNextPlayoutItemMapper.ts';
 import { EtvNextWorkspace } from '../src/stream/etv/EtvNextWorkspace.ts';
+import { isNonEmptyString } from '../src/util/index.ts';
 import type {
   PlayoutItem,
   ProbeHint,
@@ -365,7 +366,7 @@ async function run(scenario: Scenario): Promise<boolean> {
 
 let failures = 0;
 for (const scenario of scenarios) {
-  if (only !== undefined && scenario.name !== only) {
+  if (isNonEmptyString(only) && scenario.name !== only) {
     continue;
   }
   if (!(await run(scenario))) {

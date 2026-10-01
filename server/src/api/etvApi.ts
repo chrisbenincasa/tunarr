@@ -19,6 +19,7 @@ import { PlayoutItemSchema } from '../stream/etv/generated/playout.ts';
 import { KEYS } from '../types/inject.ts';
 import type { RouterPluginAsyncCallback } from '../types/serverType.js';
 import type { Maybe } from '../types/util.ts';
+import { isNonEmptyString } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import type { ApiController } from './ApiController.ts';
@@ -50,13 +51,13 @@ const MaxInstantSkewMs = 2 * 24 * 60 * 60 * 1000;
 
 /** Parses an RFC3339 instant the worker sent, or nothing when it is unusable. */
 function parseInstant(value: Maybe<string>, nowMs: number): Maybe<number> {
-  if (value === undefined || !Rfc3339Pattern.test(value)) {
-    return undefined;
+  if (!isNonEmptyString(value) || !Rfc3339Pattern.test(value)) {
+    return;
   }
 
   const parsed = Date.parse(value);
   if (Number.isNaN(parsed) || Math.abs(parsed - nowMs) > MaxInstantSkewMs) {
-    return undefined;
+    return;
   }
 
   return parsed;
@@ -148,7 +149,7 @@ export class EtvNextApiController implements ApiController {
           parseBearerToken(singleHeader(req.headers.authorization)),
         );
 
-        if (grant === undefined) {
+        if (!grant) {
           this.logger.warn(
             'Rejected an ErsatzTV next playout callback from %s with no valid session token',
             req.ip,
@@ -174,7 +175,7 @@ export class EtvNextApiController implements ApiController {
         }
 
         const channel = await this.channelDB.getChannelOrm(grant.channelUuid);
-        if (channel === undefined) {
+        if (!channel) {
           this.logger.error(
             'An ErsatzTV next worker is streaming channel %s, which no longer exists',
             grant.channelUuid,
@@ -200,7 +201,7 @@ export class EtvNextApiController implements ApiController {
 
         const untilHeader = singleHeader(req.headers['x-etv-until']);
         const untilMs = parseInstant(untilHeader, wallClockMs);
-        if (untilHeader !== undefined && untilMs === undefined) {
+        if (isNonEmptyString(untilHeader) && untilMs === undefined) {
           this.logger.warn(
             'An ErsatzTV next worker on channel %s sent an unusable window end (%s). Ignoring it.',
             grant.channelUuid,
@@ -364,7 +365,7 @@ export class EtvNextApiController implements ApiController {
           req.params.id,
         );
 
-        if (transcodeConfig === undefined) {
+        if (!transcodeConfig) {
           return res.status(404).send();
         }
 

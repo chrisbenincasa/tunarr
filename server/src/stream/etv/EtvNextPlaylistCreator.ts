@@ -13,7 +13,7 @@ export const EtvNextOutputFiles = {
   HeartbeatFile: '.heartbeat',
 } as const;
 
-export type EtvNextPlaylistOptions = {
+type EtvNextPlaylistOptions = {
   /** Absolute or root-relative URL the worker's output is served under, with a trailing slash. */
   streamBaseUrl: string;
   videoBitrateKbps: number;
