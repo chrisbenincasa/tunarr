@@ -255,6 +255,13 @@ export function findIgnoredSettings({
 }
 
 /**
+ * The channel config version the vendored schemas describe. The worker rejects
+ * a config without it.
+ */
+export const ChannelConfigVersion =
+  'https://ersatztv.org/channel/version/0.1.0';
+
+/**
  * Builds the `channel.json` a worker is spawned with.
  *
  * Tunarr has no per-channel config deltas — `channel.transcodeConfigId` points
@@ -321,6 +328,7 @@ export function toChannelConfig({
     : undefined;
 
   const config: ChannelConfig = {
+    version: ChannelConfigVersion,
     ffmpeg: {
       ffmpeg_path: ffmpegSettings.ffmpegExecutablePath,
       ffprobe_path: ffmpegSettings.ffprobeExecutablePath,
@@ -334,10 +342,8 @@ export function toChannelConfig({
         buffer_kbps: transcodeConfig.videoBufferSize,
         deinterlace,
 
-        // The backend rejects a config at spawn when a video format is set and
-        // bit_depth is not, an invariant its JSON Schema leaves optional. Tunarr
-        // allows null, so fall back to 8 rather than emitting a config that
-        // parses here and fails there.
+        // The schema rejects a null bit depth. Tunarr allows one, so fall back
+        // to the backend's own default of 8.
         bit_depth: transcodeConfig.videoBitDepth ?? 8,
 
         ...(usesAccel ? { accel } : {}),

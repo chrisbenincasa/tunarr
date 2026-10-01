@@ -149,8 +149,8 @@
   },
   "ersatztvNext": {
     "releaseTag": "develop",
-    "assetVersion": "v0.1.0-091e174",
-    "commit": "091e1743f1ebff76f358cae6a47aab4af20d14a9",
+    "assetVersion": "v0.1.0-570d136",
+    "commit": "570d136068153c6d8140fd3a6e84b5d943f7caa6",
     "note": "Upstream cuts no tags; the develop pre-release replaces its assets on every push to main, so assetVersion is detectable drift, not a durable pin. Schemas under src/stream/etv/schema are vendored from this commit."
   }
 }

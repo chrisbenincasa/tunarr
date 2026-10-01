@@ -3,6 +3,16 @@
 
 import { z } from 'zod/v4';
 
+/** Limited to codecs that mux correctly into HLS MPEG-TS. */
+export const AudioCopyFormatSchema = z.enum([
+  'aac',
+  'ac3',
+  'eac3',
+  'mp2',
+  'mp3',
+]);
+export type AudioCopyFormat = z.infer<typeof AudioCopyFormatSchema>;
+
 export const AudioFormatSchema = z.enum(['aac', 'ac3']);
 export type AudioFormat = z.infer<typeof AudioFormatSchema>;
 
@@ -13,12 +23,17 @@ export const AudioLoudnessConfigSchema = z.strictObject({
 });
 export type AudioLoudnessConfig = z.infer<typeof AudioLoudnessConfigSchema>;
 
+export const StreamModeSchema = z.enum(['transcode', 'copy']);
+export type StreamMode = z.infer<typeof StreamModeSchema>;
+
 export const AudioNormalizationConfigSchema = z.strictObject({
   bitrate_kbps: z.number().int().min(0).nullable().optional(),
   buffer_kbps: z.number().int().min(0).nullable().optional(),
   channels: z.number().int().min(0).nullable().optional(),
-  format: AudioFormatSchema.nullable().optional(),
+  copy_formats: z.array(AudioCopyFormatSchema).nullable().optional(),
+  format: AudioFormatSchema.optional(),
   loudness: AudioLoudnessConfigSchema.nullable().optional(),
+  mode: StreamModeSchema.optional(),
   normalize_loudness: z.boolean().optional(),
   sample_rate_hz: z.number().int().min(0).nullable().optional(),
 });
@@ -91,6 +106,9 @@ export type SubtitleNormalizationConfig = z.infer<
   typeof SubtitleNormalizationConfigSchema
 >;
 
+export const VideoFormatSchema = z.enum(['h264', 'hevc', 'mpeg2video']);
+export type VideoFormat = z.infer<typeof VideoFormatSchema>;
+
 export const TonemapOptionsSchema = z.strictObject({
   tonemap: z.string().nullable().optional(),
 });
@@ -132,9 +150,6 @@ export type VideoFilterOptionsConfig = z.infer<
   typeof VideoFilterOptionsConfigSchema
 >;
 
-export const VideoFormatSchema = z.enum(['h264', 'hevc', 'mpeg2video']);
-export type VideoFormat = z.infer<typeof VideoFormatSchema>;
-
 export const ScalingModeSchema = z.enum(['scale_and_pad', 'stretch', 'crop']);
 export type ScalingMode = z.infer<typeof ScalingModeSchema>;
 
@@ -144,13 +159,15 @@ export type VaapiDriver = z.infer<typeof VaapiDriverSchema>;
 export const VideoNormalizationConfigSchema = z.strictObject({
   accel: HardwareAccelSchema.nullable().optional(),
   amf_device: z.number().int().min(0).nullable().optional(),
-  bit_depth: z.number().int().min(0).max(255).nullable().optional(),
+  bit_depth: z.number().int().min(0).max(255).optional(),
   bitrate_kbps: z.number().int().min(0).nullable().optional(),
   buffer_kbps: z.number().int().min(0).nullable().optional(),
+  copy_formats: z.array(VideoFormatSchema).nullable().optional(),
   deinterlace: z.boolean().optional(),
   filters: VideoFilterOptionsConfigSchema.optional(),
-  format: VideoFormatSchema.nullable().optional(),
+  format: VideoFormatSchema.optional(),
   height: z.number().int().min(0).nullable().optional(),
+  mode: StreamModeSchema.optional(),
   scaling_mode: ScalingModeSchema.optional(),
   vaapi_device: z.string().nullable().optional(),
   vaapi_driver: VaapiDriverSchema.nullable().optional(),
@@ -178,5 +195,6 @@ export const ChannelConfigSchema = z.strictObject({
   ffmpeg: FfmpegConfigSchema,
   normalization: NormalizationConfigSchema,
   playout: PlayoutConfigSchema,
+  version: z.string().optional(),
 });
 export type ChannelConfig = z.infer<typeof ChannelConfigSchema>;

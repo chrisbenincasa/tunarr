@@ -1,4 +1,5 @@
 {
+  "$id": "https://ersatztv.org/channel/version/0.1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ChannelConfig",
   "type": "object",
@@ -17,6 +18,10 @@
     },
     "playout": {
       "$ref": "#/$defs/PlayoutConfig"
+    },
+    "version": {
+      "description": "Schema version URI, e.g. \"https://ersatztv.org/channel/version/0.1.0\". Missing means 0.0.0.",
+      "type": "string"
     }
   },
   "required": [
@@ -25,7 +30,20 @@
     "normalization"
   ],
   "$defs": {
+    "AudioCopyFormat": {
+      "title": "AudioCopyFormat",
+      "description": "Limited to codecs that mux correctly into HLS MPEG-TS.",
+      "type": "string",
+      "enum": [
+        "aac",
+        "ac3",
+        "eac3",
+        "mp2",
+        "mp3"
+      ]
+    },
     "AudioFormat": {
+      "title": "AudioFormat",
       "type": "string",
       "enum": [
         "aac",
@@ -85,15 +103,20 @@
           "format": "uint32",
           "minimum": 0
         },
+        "copy_formats": {
+          "description": "Source codecs to copy when `mode` is `copy`. Default: aac, ac3, eac3, mp3.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/AudioCopyFormat"
+          }
+        },
         "format": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/AudioFormat"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "description": "Codec for transcoded items. When `mode` is `copy`, used only for items that are not copied.",
+          "$ref": "#/$defs/AudioFormat",
+          "default": "aac"
         },
         "loudness": {
           "anyOf": [
@@ -104,6 +127,11 @@
               "type": "null"
             }
           ]
+        },
+        "mode": {
+          "description": "`copy`: copy items with a source codec in `copy_formats`. Transcode all other items.",
+          "$ref": "#/$defs/StreamMode",
+          "default": "transcode"
         },
         "normalize_loudness": {
           "type": "boolean",
@@ -292,7 +320,16 @@
         "crop"
       ]
     },
+    "StreamMode": {
+      "title": "StreamMode",
+      "type": "string",
+      "enum": [
+        "transcode",
+        "copy"
+      ]
+    },
     "SubtitleMode": {
+      "title": "SubtitleMode",
       "type": "string",
       "enum": [
         "burn",
@@ -471,6 +508,7 @@
       "additionalProperties": false
     },
     "VideoFormat": {
+      "title": "VideoFormat",
       "type": "string",
       "enum": [
         "h264",
@@ -502,12 +540,9 @@
           "minimum": 0
         },
         "bit_depth": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": "integer",
           "format": "uint8",
-          "default": null,
+          "default": 8,
           "maximum": 255,
           "minimum": 0
         },
@@ -526,6 +561,16 @@
           ],
           "format": "uint32",
           "minimum": 0
+        },
+        "copy_formats": {
+          "description": "Source codecs to copy when `mode` is `copy`. Default: h264, hevc.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/VideoFormat"
+          }
         },
         "deinterlace": {
           "type": "boolean",
@@ -547,14 +592,9 @@
           }
         },
         "format": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/VideoFormat"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "description": "Codec for transcoded items. When `mode` is `copy`, this and all other video settings apply\nonly to items that are not copied.",
+          "$ref": "#/$defs/VideoFormat",
+          "default": "h264"
         },
         "height": {
           "type": [
@@ -563,6 +603,11 @@
           ],
           "format": "uint32",
           "minimum": 0
+        },
+        "mode": {
+          "description": "`copy`: copy items with a source codec in `copy_formats`. Transcode all other items, and\nitems with graphics, burned-in subtitles, still images, Dolby Vision profile 5 or AVI sources.",
+          "$ref": "#/$defs/StreamMode",
+          "default": "transcode"
         },
         "scaling_mode": {
           "$ref": "#/$defs/ScalingMode",
