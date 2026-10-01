@@ -196,7 +196,7 @@ async function makeSession({
       reportsDirectory,
       windowMs,
       tunarrPort,
-      ...(playoutMode !== null ? { playoutMode } : {}),
+      ...(playoutMode ? { playoutMode } : {}),
     },
     binaryResolver as never,
     playoutWriter as never,
@@ -428,7 +428,7 @@ describe('the playout window', () => {
       'playout',
     );
     const [name] = await fs.readdir(playoutDirectory);
-    if (name === undefined) {
+    if (!name) {
       throw new Error('no playout window on disk');
     }
 
@@ -619,7 +619,7 @@ describe('the dynamic playout window', () => {
     const directory = playoutDirectory(transcodeDirectory);
     const names = await fs.readdir(directory);
     const [name] = names;
-    if (name === undefined) {
+    if (!name) {
       throw new Error('no playout window on disk');
     }
 

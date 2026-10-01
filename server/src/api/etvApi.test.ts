@@ -42,7 +42,7 @@ const makeChannel = (errorScreen?: string) =>
     offline: { mode: 'pic', picture: '/media/offline.png' },
     transcodeConfig: {
       resolution: { widthPx: 1920, heightPx: 1080 },
-      ...(errorScreen !== undefined ? { errorScreen } : {}),
+      ...(errorScreen ? { errorScreen } : {}),
     },
   }) as unknown as ChannelOrmWithTranscodeConfig;
 
@@ -146,9 +146,9 @@ async function makeApp({
   const transcodeConfigDB = {
     getById: vi.fn(() =>
       Promise.resolve(
-        transcodeConfig === undefined
-          ? undefined
-          : { ...supportedTranscodeConfig, ...transcodeConfig },
+        transcodeConfig
+          ? { ...supportedTranscodeConfig, ...transcodeConfig }
+          : undefined,
       ),
     ),
   };
@@ -339,9 +339,7 @@ describe('the requested instant', () => {
 
     expect(response.statusCode).toBe(200);
     const item = response.json<PlayoutItem>();
-    expect(item.start).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/,
-    );
+    expect(item.start).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     expect(item.source ?? item.tracks).toBeDefined();
   });
 

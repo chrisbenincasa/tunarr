@@ -1,4 +1,5 @@
 import { inject, injectable } from 'inversify';
+import dayjs from 'dayjs';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type {
   ContentBackedStreamLineupItem,
@@ -13,6 +14,7 @@ import { OnDemandChannelService } from '../../services/OnDemandChannelService.ts
 import { ProgramStreamDetailsFetcher } from '../ProgramStreamDetailsFetcher.ts';
 import { StreamProgramCalculator } from '../StreamProgramCalculator.ts';
 import type { StreamDetails, StreamSource } from '../types.ts';
+import { isNonEmptyString } from '../../util/index.ts';
 import { makeLocalUrl } from '../../util/serverUtil.ts';
 import { StreamSelector } from '../../ffmpeg/StreamSelector.ts';
 import { WatermarkResolver } from '../WatermarkResolver.ts';
@@ -22,7 +24,6 @@ import type {
   ResolvedWatermark,
 } from './EtvNextPlayoutItemMapper.ts';
 import {
-  rfc3339,
   StreamTerminationRequestedError,
   toPlayoutItem,
 } from './EtvNextPlayoutItemMapper.ts';
@@ -119,8 +120,8 @@ function lastResortErrorItem(id: string): PlayoutItemMapping {
 
   const item: PlayoutItem = {
     id,
-    start: rfc3339(startMs),
-    finish: rfc3339(startMs + ResolverErrorItemMs),
+    start: dayjs(startMs).toISOString(),
+    finish: dayjs(startMs + ResolverErrorItemMs).toISOString(),
     tracks: {
       video: {
         source: { source_type: 'lavfi', params: 'color=c=black:s=1280x720' },
@@ -555,7 +556,7 @@ export class EtvNextPlayoutWriter {
     const nowMs = Date.now();
     const window = this.callbackWindows.get(channelUuid);
 
-    if (window === undefined || nowMs - window.startMs >= CallbackWindowMs) {
+    if (!window || nowMs - window.startMs >= CallbackWindowMs) {
       this.callbackWindows.set(channelUuid, { startMs: nowMs, count: 1 });
       return false;
     }
@@ -714,7 +715,7 @@ export class EtvNextPlayoutWriter {
     | undefined
   > {
     if (!isContentBackedLineupItem(lineupItem)) {
-      return undefined;
+      return;
     }
 
     const contentItem: ContentBackedStreamLineupItem = lineupItem;
@@ -728,7 +729,7 @@ export class EtvNextPlayoutWriter {
         contentItem.program.uuid,
         contentItem.program.mediaSourceId,
       );
-      return undefined;
+      return;
     }
 
     const result = await this.streamDetailsFetcher.getStream({
@@ -742,7 +743,7 @@ export class EtvNextPlayoutWriter {
         'Could not resolve a stream for program %s',
         contentItem.program.uuid,
       );
-      return undefined;
+      return;
     }
 
     const { streamSource, streamDetails } = result.get();
@@ -782,7 +783,7 @@ export class EtvNextPlayoutWriter {
         lineupItem,
       });
 
-      return watermark?.url !== undefined
+      return isNonEmptyString(watermark?.url)
         ? { ...watermark, url: watermark.url }
         : undefined;
     } catch (e) {
@@ -791,7 +792,7 @@ export class EtvNextPlayoutWriter {
         'Playing program %s without a watermark, because it could not be resolved',
         lineupItem.program.uuid,
       );
-      return undefined;
+      return;
     }
   }
 
@@ -806,8 +807,8 @@ export class EtvNextPlayoutWriter {
     lineupItem: ContentBackedStreamLineupItem,
     details: StreamDetails,
   ): Promise<PlayoutTrackSelection | undefined> {
-    if (details.audioDetails === undefined) {
-      return undefined;
+    if (!details.audioDetails) {
+      return;
     }
 
     try {
@@ -822,7 +823,7 @@ export class EtvNextPlayoutWriter {
       return {
         audioStream,
         subtitleStream:
-          channel.subtitlesEnabled && subtitleStream !== null
+          channel.subtitlesEnabled && subtitleStream
             ? subtitleStream
             : undefined,
       };
@@ -832,7 +833,7 @@ export class EtvNextPlayoutWriter {
         'Stream selection failed for program %s, so the worker picks its own tracks',
         lineupItem.program.uuid,
       );
-      return undefined;
+      return;
     }
   }
 }

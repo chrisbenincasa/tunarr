@@ -43,8 +43,8 @@ export function parseVersion(output: string): EtvNextVersion | undefined {
   const raw = output.trim();
   const match = /(\d+\.\d+\.\d+)(?:-([0-9a-f]{7,40}))?/.exec(raw);
   const semver = match?.[1];
-  if (semver === undefined) {
-    return undefined;
+  if (!isNonEmptyString(semver)) {
+    return;
   }
 
   return { raw, semver, commit: match?.[2] };
@@ -52,7 +52,7 @@ export function parseVersion(output: string): EtvNextVersion | undefined {
 
 /** Whether a worker was built from the commit the vendored schemas came from. */
 export function matchesPinnedCommit(version: EtvNextVersion): boolean {
-  if (version.commit === undefined) {
+  if (!isNonEmptyString(version.commit)) {
     return false;
   }
 
@@ -110,7 +110,7 @@ export class EtvNextBinaryResolver {
    * this as "the backend is not installed" rather than retrying.
    */
   async resolve(): Promise<string> {
-    if (this.#resolved !== undefined) {
+    if (this.#resolved) {
       return this.#resolved;
     }
 
@@ -147,7 +147,7 @@ export class EtvNextBinaryResolver {
     const executablePath = await this.resolve();
     const version = await this.getVersion();
 
-    if (version === undefined) {
+    if (!version) {
       this.logger.warn(
         'Could not read a version from %s. Continuing, but the worker may not match the schemas Tunarr generated against commit %s.',
         executablePath,

@@ -224,7 +224,7 @@ export class EtvNextTroubleshootRunner {
     );
 
     const child = wrapper.process;
-    if (child === undefined) {
+    if (!child) {
       return { code: null, signal: null, stderr: 'The worker did not start.' };
     }
 
@@ -286,8 +286,8 @@ export class EtvNextTroubleshootRunner {
       const dossier = entries.find(
         (e) => e.isDirectory() && e.name.endsWith(ProbeDossierSuffix),
       );
-      if (dossier === undefined) {
-        return undefined;
+      if (!dossier) {
+        return;
       }
 
       return await fs.readFile(
@@ -295,7 +295,7 @@ export class EtvNextTroubleshootRunner {
         'utf-8',
       );
     } catch {
-      return undefined;
+      return;
     }
   }
 }

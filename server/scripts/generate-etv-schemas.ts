@@ -67,7 +67,7 @@ const isNullBranch = (node: JsonSchema) => node.type === 'null';
 /** `{ oneOf: [X, { type: "null" }] }` is nullable X, not a union with a null arm. */
 const nullableBranch = (branches: JsonSchema[]) => {
   if (branches.length !== 2) {
-    return undefined;
+    return;
   }
   const nulls = branches.filter(isNullBranch);
   const rest = branches.filter((b) => !isNullBranch(b));

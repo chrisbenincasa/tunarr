@@ -1,10 +1,11 @@
+import { isNonEmptyString } from '@tunarr/shared/util';
 import { bindingScopeValues, injectable } from 'inversify';
 import { randomBytes } from 'node:crypto';
 import type { Maybe } from '../../types/util.ts';
 import { safeEqual } from '../../util/basicAuth.ts';
 
 /** What a valid token grants access to. */
-export type EtvNextTokenGrant = {
+type EtvNextTokenGrant = {
   channelUuid: string;
   channelNumber: number;
 };
@@ -48,9 +49,9 @@ export class EtvNextDynamicTokenRegistry {
    * Every candidate is compared in constant time, so a caller cannot learn a
    * token by measuring how long a rejection takes.
    */
-  resolve(token: string | undefined): Maybe<EtvNextTokenGrant> {
-    if (token === undefined || token.length === 0) {
-      return undefined;
+  resolve(token: Maybe<string>): Maybe<EtvNextTokenGrant> {
+    if (!isNonEmptyString(token)) {
+      return;
     }
 
     for (const registration of this.#byChannel.values()) {
@@ -62,19 +63,19 @@ export class EtvNextDynamicTokenRegistry {
       }
     }
 
-    return undefined;
+    return;
   }
 }
 
 /** Pulls the credential out of an `Authorization: Bearer <token>` header. */
-export function parseBearerToken(header: string | undefined): Maybe<string> {
-  if (header === undefined) {
-    return undefined;
+export function parseBearerToken(header: Maybe<string>): Maybe<string> {
+  if (!isNonEmptyString(header)) {
+    return;
   }
 
   const prefix = 'bearer ';
   if (!header.toLowerCase().startsWith(prefix)) {
-    return undefined;
+    return;
   }
 
   const token = header.slice(prefix.length).trim();

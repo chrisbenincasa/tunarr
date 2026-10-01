@@ -13,6 +13,7 @@ import { hideBin } from 'yargs/helpers';
 import serverPackage from '../package.json' with { type: 'json' };
 import { Nullable } from '../src/types/util.ts';
 import { fileExists } from '../src/util/fsUtil.ts';
+import { isNonEmptyString } from '../src/util/index.ts';
 
 /**
  * Only the channel worker is needed. The `ersatztv` server is the sidecar shape
@@ -90,7 +91,7 @@ async function needsToDownloadNewBinary(targetPath: string) {
     }).trim();
     const found = /(\d+\.\d+\.\d+(?:-[0-9a-f]{7,40})?)/.exec(out)?.[1];
 
-    if (found === undefined) {
+    if (!isNonEmptyString(found)) {
       console.log(`Could not read a version from ${targetPath}, redownloading`);
       return true;
     }
@@ -128,7 +129,7 @@ export async function grabEtvNext(
   arch: string = os.arch(),
 ): Promise<Nullable<string>> {
   const etvTarget = etvTargetFor(platform, arch);
-  if (etvTarget === null) {
+  if (!etvTarget) {
     console.error(
       `No ErsatzTV next release target for platform ${platform}, arch ${arch}`,
     );
@@ -155,7 +156,7 @@ export async function grabEtvNext(
         ? await extractZip(response.data, dir.path)
         : await extractTarGz(response.data, dir.path);
 
-      if (extractedBinary === null) {
+      if (!extractedBinary) {
         console.error(`${archiveName} did not contain ${BINARY_NAME}`);
         return null;
       }
@@ -234,7 +235,7 @@ if (invokedDirectly) {
   );
 
   const result = await grabEtvNext(args.outPath, args.platform, args.arch);
-  if (result === null) {
+  if (!result) {
     process.exit(1);
   }
 }

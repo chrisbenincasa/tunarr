@@ -62,14 +62,12 @@ const map = (
   });
 
 describe('timing', () => {
-  test('emits RFC3339 bounds with an explicit offset and millisecond precision', () => {
+  test('emits RFC3339 bounds in UTC with millisecond precision', () => {
     const { item } = map(programItem(), {
       source: new FileStreamSource('/media/a.mkv'),
     });
 
-    expect(item.start).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/,
-    );
+    expect(item.start).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     expect(dayjs(item.finish).valueOf() - dayjs(item.start).valueOf()).toBe(
       1_800_000,
     );

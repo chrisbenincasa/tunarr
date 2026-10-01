@@ -305,7 +305,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     this.#itemsEmitted = window.items.length;
     this.#recordIgnored(window.ignored);
 
-    return undefined;
+    return;
   }
 
   /** Replaces the window with one placeholder covering the next 12 hours. */
@@ -390,7 +390,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
 
   #isProcessAlive(): boolean {
     const underlying = this.#process?.process;
-    return underlying !== undefined && underlying.exitCode === null;
+    return !!underlying && underlying.exitCode === null;
   }
 
   get #windowMs(): number {
@@ -458,7 +458,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
         'Could not prepare the ErsatzTV next diagnostics folder for channel %s. This session will not leave one behind.',
         this.channel.uuid,
       );
-      return undefined;
+      return;
     }
   }
 
@@ -504,7 +504,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
   }
 
   #stopResolverWatchdog(): void {
-    if (this.#watchdogTimer !== undefined) {
+    if (this.#watchdogTimer) {
       clearInterval(this.#watchdogTimer);
       this.#watchdogTimer = undefined;
     }
@@ -576,7 +576,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
   }
 
   #stopWindowRefresh(): void {
-    if (this.#refreshTimer !== undefined) {
+    if (this.#refreshTimer) {
       clearInterval(this.#refreshTimer);
       this.#refreshTimer = undefined;
     }
@@ -658,8 +658,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
         (item) =>
           Date.parse(item.start) <= nowMs && Date.parse(item.finish) > nowMs,
       );
-      const rebuildFromMs =
-        playing !== undefined ? Date.parse(playing.finish) : nowMs;
+      const rebuildFromMs = playing ? Date.parse(playing.finish) : nowMs;
       const targetFinishMs = nowMs + this.#windowMs;
 
       // A program longer than the window covers the lead on its own. There is
@@ -689,7 +688,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
       const writtenFinishMs = this.#windowItems.at(-1)?.finish;
       if (
         window.finishMs < targetFinishMs &&
-        writtenFinishMs !== undefined &&
+        isNonEmptyString(writtenFinishMs) &&
         window.finishMs < Date.parse(writtenFinishMs)
       ) {
         this.logger.warn(
@@ -701,11 +700,10 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
         return;
       }
 
-      const items =
-        playing !== undefined ? [playing, ...window.items] : window.items;
+      const items = playing ? [playing, ...window.items] : window.items;
 
       this.#inFlightWindowWrite = this.#workspace.writePlayoutWindow(
-        playing !== undefined ? Date.parse(playing.start) : window.startMs,
+        playing ? Date.parse(playing.start) : window.startMs,
         window.finishMs,
         items,
       );

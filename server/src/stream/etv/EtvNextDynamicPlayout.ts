@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { TUNARR_ENV_VARS } from '../../util/env.ts';
+import { boundInterfaceHost } from '../../util/serverUtil.ts';
 import type { PlayoutItem } from './generated/playout.ts';
 import { PlayoutItemSchema } from './generated/playout.ts';
 
@@ -32,43 +33,17 @@ export const DynamicResolverPath = '/api/etv/playout-item';
  */
 export const DynamicTokenEnvVar = 'TUNARR_ETV_TOKEN';
 
-/** `next` parses these with `DateTime::parse_from_rfc3339`. */
-const rfc3339 = (ms: number) => dayjs(ms).format('YYYY-MM-DDTHH:mm:ss.SSSZ');
-
-/** Bind addresses that mean every interface, where loopback also answers. */
-const WildcardBindAddrs = new Set([
-  '',
-  '*',
-  '0.0.0.0',
-  '::',
-  '[::]',
-  '::0',
-  '0:0:0:0:0:0:0:0',
-]);
-
 /**
- * The host the worker dials Tunarr back on.
+ * The URI the worker dials Tunarr back on.
  *
- * Loopback only answers when Tunarr listens on every interface. A bind address
- * naming one interface leaves nothing on 127.0.0.1, and upstream turns a
- * refused callback into silent black video.
+ * Upstream turns a refused callback into silent black video, so the host must
+ * be one Tunarr actually listens on.
  */
-export function dynamicResolverHost(bindAddr: string | undefined): string {
-  const trimmed = (bindAddr ?? '').trim();
-  if (WildcardBindAddrs.has(trimmed.toLowerCase())) {
-    return '127.0.0.1';
-  }
-
-  // An IPv6 literal needs brackets to sit in a URL authority.
-  const bare = trimmed.replace(/^\[|\]$/g, '');
-  return bare.includes(':') ? `[${bare}]` : bare;
-}
-
 export function dynamicResolverUri(
   tunarrPort: number,
   bindAddr: string | undefined = process.env[TUNARR_ENV_VARS.BIND_ADDR_ENV_VAR],
 ): string {
-  const host = dynamicResolverHost(bindAddr);
+  const host = boundInterfaceHost(bindAddr) ?? '127.0.0.1';
   return `http://${host}:${tunarrPort}${DynamicResolverPath}`;
 }
 
@@ -102,8 +77,8 @@ export function createDynamicPlaceholder({
 }): PlayoutItem {
   return PlayoutItemSchema.parse({
     id: dynamicPlaceholderId(channelUuid),
-    start: rfc3339(startMs),
-    finish: rfc3339(finishMs),
+    start: dayjs(startMs).toISOString(),
+    finish: dayjs(finishMs).toISOString(),
     source: {
       source_type: 'dynamic',
       uri: resolverUri,

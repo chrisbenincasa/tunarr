@@ -6,6 +6,8 @@ import type {
   ErrorScreenType,
 } from '@/db/schema/TranscodeConfig.js';
 import type { ChannelOfflineSettings } from '@/db/schema/base.js';
+import { titleTextFilter } from '@/ffmpeg/builder/filter/TitleTextFilter.js';
+import { isHttpUrl, isNonEmptyString } from '@/util/index.js';
 import type {
   AudioStreamDetails,
   StreamDetails,
@@ -63,14 +65,6 @@ export type PlayoutItemMapping = {
   ignored: string[];
 };
 
-/**
- * `next` parses these with `DateTime::parse_from_rfc3339`. Millisecond
- * precision is kept because item bounds must not overlap — item selection is an
- * `rfind`, so on overlap the last item silently wins.
- */
-export const rfc3339 = (ms: number) =>
-  dayjs(ms).format('YYYY-MM-DDTHH:mm:ss.SSSZ');
-
 const lavfi = (params: string): PlayoutItemSource => ({
   source_type: 'lavfi',
   params,
@@ -101,7 +95,7 @@ const whiteNoiseAudio: PlayoutItemSource = lavfi('anoisesrc=c=white:a=0.7');
  * of a screen Tunarr serves itself.
  */
 const fileOrHttpSource = (location: string): PlayoutItemSource =>
-  /^https?:\/\//i.test(location)
+  isHttpUrl(location)
     ? { source_type: 'http', uri: location }
     : { source_type: 'local', path: location };
 
@@ -134,7 +128,7 @@ function watermarkTiming(watermark: Watermark): GraphicsTiming | undefined {
   const durationMs = watermark.duration * 1000;
   const fade = watermark.fadeConfig?.[0];
 
-  if (fade !== undefined && fade.periodMins > 0) {
+  if (fade && fade.periodMins > 0) {
     const periodMs = fade.periodMins * 60_000;
     return {
       timing_type: 'periodic',
@@ -159,7 +153,7 @@ function watermarkTiming(watermark: Watermark): GraphicsTiming | undefined {
     };
   }
 
-  return undefined;
+  return;
 }
 
 /**
@@ -180,12 +174,9 @@ export function toWatermarkLayer(watermark: ResolvedWatermark): GraphicsLayer {
     horizontal_margin_percent: watermark.horizontalMargin,
     vertical_margin_percent: watermark.verticalMargin,
     ...(watermark.opacity < 100 ? { opacity_percent: watermark.opacity } : {}),
-    ...(timing !== undefined ? { timing } : {}),
+    ...(timing ? { timing } : {}),
   };
 }
-
-const isSet = (value: string | undefined): value is string =>
-  value !== undefined && value.length > 0;
 
 /**
  * The tracks a stream selection profile chose for a content item.
@@ -218,29 +209,27 @@ function contentTracks(
 ): PlayoutItemTracks | undefined {
   const tracks: PlayoutItemTracks = {};
 
-  if (details !== undefined && details.audioDetails === undefined) {
+  if (details && !details.audioDetails) {
     tracks.audio = { source: silentAudio };
-  } else if (selection?.audioStream !== undefined) {
+  } else if (selection?.audioStream) {
     tracks.audio = { stream_index: selection.audioStream.index };
   }
 
   const subtitle = selection?.subtitleStream;
-  if (subtitle !== undefined) {
-    tracks.subtitle = isSet(subtitle.path)
+  if (subtitle) {
+    tracks.subtitle = isNonEmptyString(subtitle.path)
       ? { source: seekableSource(subtitle.path, range) }
       : { stream_index: subtitle.index ?? 0 };
   }
 
-  return tracks.audio !== undefined || tracks.subtitle !== undefined
-    ? tracks
-    : undefined;
+  return tracks.audio || tracks.subtitle ? tracks : undefined;
 }
 
 const seekableSource = (
   location: string,
   { inPointMs, outPointMs }: MediaRange,
 ): PlayoutItemSource =>
-  /^https?:\/\//i.test(location)
+  isHttpUrl(location)
     ? {
         source_type: 'http',
         uri: location,
@@ -254,26 +243,6 @@ const seekableSource = (
         out_point_ms: outPointMs,
       };
 
-/** Long enough to carry a real message, short enough to stay on screen. */
-const MAX_ERROR_TEXT_LENGTH = 120;
-
-/**
- * Error text is interpolated into a `drawtext` value that sits inside single
- * quotes, and inside those quotes only `'` can end the quoting and let a
- * crafted message append its own filters. Quotes and backslashes are therefore
- * dropped outright, `%` goes with them so text expansion has nothing to chew
- * on, and control characters become spaces. Everything else — `:` `,` `[` `]`
- * `;` and friends — stays literal because the quoting holds.
- */
-function sanitizeDrawText(raw: string): string {
-  return raw
-    .replace(/[\p{Cc}\p{Cf}]/gu, ' ')
-    .replace(/['\\%]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, MAX_ERROR_TEXT_LENGTH);
-}
-
 function errorMessage(error: Error | string | boolean): string {
   if (error instanceof Error) {
     return error.message;
@@ -282,33 +251,14 @@ function errorMessage(error: Error | string | boolean): string {
   return typeof error === 'string' ? error : '';
 }
 
-/**
- * Mirrors `TitleTextFilter`, down to the derived font sizes and placement, so
- * the worker draws the screen Tunarr's own pipeline draws.
- *
- * `expansion=none` is the one addition. Tunarr leaves drawtext's default
- * expansion on, which would let `%{...}` in a message reach the expression
- * evaluator.
- */
-function errorTextVideo(
+const errorTextVideo = (
   resolution: Resolution,
   title: string,
   subtitle: string,
-): PlayoutItemSource {
-  const subtitleSize = Math.ceil(resolution.heightPx / 33);
-  const titleSize = Math.ceil((subtitleSize * 3) / 2);
-  const gap = 2 * subtitleSize;
-  const draw = (size: number, y: string, text: string) =>
-    `drawtext=expansion=none:fontsize=${size}:fontcolor=white:x=(w-text_w)/2:y=${y}:text='${text}'`;
-
-  return lavfi(
-    [
-      `color=c=black:s=${resolution.widthPx}x${resolution.heightPx}`,
-      draw(titleSize, '(h-text_h)/2', sanitizeDrawText(title)),
-      draw(subtitleSize, `(h+text_h+${gap})/2`, sanitizeDrawText(subtitle)),
-    ].join(','),
+): PlayoutItemSource =>
+  lavfi(
+    `color=c=black:s=${resolution.widthPx}x${resolution.heightPx},${titleTextFilter(resolution.heightPx, title, subtitle)}`,
   );
-}
 
 function errorAudio(audioType: ErrorScreenAudioType): PlayoutItemSource {
   switch (audioType) {
@@ -344,7 +294,7 @@ function errorVideo(
       // Tunarr titles its error stream 'Error' and puts the detail underneath.
       return errorTextVideo(resolution, 'Error', message);
     case 'pic': {
-      if (isSet(errorPicture)) {
+      if (isNonEmptyString(errorPicture)) {
         return fileOrHttpSource(errorPicture);
       }
 
@@ -458,8 +408,8 @@ export function toPlayoutItem({
 
   const base = {
     id,
-    start: rfc3339(startMs),
-    finish: rfc3339(startMs + lineupItem.streamDuration),
+    start: dayjs(startMs).toISOString(),
+    finish: dayjs(startMs + lineupItem.streamDuration).toISOString(),
   };
 
   // Sourcing audio separately sidesteps the backend erroring out on a
@@ -488,7 +438,7 @@ export function toPlayoutItem({
   }
 
   if (lineupItem.type === 'offline') {
-    const soundtrack = isSet(offlineSoundtrack)
+    const soundtrack = isNonEmptyString(offlineSoundtrack)
       ? fileOrHttpSource(offlineSoundtrack)
       : undefined;
 
@@ -504,7 +454,7 @@ export function toPlayoutItem({
     const item = PlayoutItemSchema.parse({
       ...base,
       tracks: asTracks(
-        isSet(offlinePicture)
+        isNonEmptyString(offlinePicture)
           ? fileOrHttpSource(offlinePicture)
           : blackVideo(resolution),
         soundtrack ?? silentAudio,
@@ -514,7 +464,7 @@ export function toPlayoutItem({
     return { item, ignored };
   }
 
-  if (stream === undefined) {
+  if (!stream) {
     throw new MissingStreamSourceError(lineupItem.type);
   }
 
@@ -524,8 +474,8 @@ export function toPlayoutItem({
   const item = PlayoutItemSchema.parse({
     ...base,
     source: toSource(stream.source, range),
-    ...(tracks !== undefined ? { tracks } : {}),
-    ...(stream.watermark !== undefined
+    ...(tracks ? { tracks } : {}),
+    ...(stream.watermark
       ? { watermark: toWatermarkLayer(stream.watermark) }
       : {}),
   });

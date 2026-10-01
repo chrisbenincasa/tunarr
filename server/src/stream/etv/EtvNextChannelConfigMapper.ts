@@ -91,9 +91,14 @@ const isSupportedVaapiDriver = (value: string): value is VaapiDriver =>
 
 /**
  * Tunarr's deinterlace filter is one string naming both the filter and its
- * mode; `next` splits it into a per-filter options object.
+ * mode; `next` splits it into a per-filter options object. `none` falls back to
+ * `yadif=1`, as it does in Tunarr's own pipeline.
  */
-const deinterlaceFilters: Record<string, VideoFilterOptionsConfig> = {
+const deinterlaceFilters: Record<
+  FfmpegSettings['deinterlaceFilter'],
+  VideoFilterOptionsConfig
+> = {
+  none: { yadif: { mode: '1' } },
   'bwdif=0': { bwdif: { mode: '0' } },
   'bwdif=1': { bwdif: { mode: '1' } },
   w3fdif: { w3fdif: {} },
@@ -197,10 +202,10 @@ export function findIgnoredSettings({
   if (transcodeConfig.threadCount !== 0) {
     note('threadCount', 'the backend does not expose a thread count');
   }
-  if (transcodeConfig.videoPreset !== null) {
+  if (isNonEmptyString(transcodeConfig.videoPreset)) {
     note('videoPreset', 'the backend has no encoder preset surface yet');
   }
-  if (transcodeConfig.videoProfile !== null) {
+  if (isNonEmptyString(transcodeConfig.videoProfile)) {
     note('videoProfile', 'the backend has no encoder profile surface yet');
   }
   if (transcodeConfig.audioVolumePercent !== 100) {
@@ -294,7 +299,7 @@ export function toChannelConfig({
   const { videoFormat, audioFormat, accel } = check.codecs;
 
   const ignored = findIgnoredSettings({ transcodeConfig, ffmpegSettings });
-  const usesAccel = accel !== undefined;
+  const usesAccel = !!accel;
 
   // Unset, the backend uses /dev/dri/renderD128 and lets libva pick the
   // driver, which is what Tunarr's null device and `system` driver mean.
@@ -336,13 +341,13 @@ export function toChannelConfig({
         bit_depth: transcodeConfig.videoBitDepth ?? 8,
 
         ...(usesAccel ? { accel } : {}),
-        ...(usesAccel && vaapi.device !== undefined
+        ...(usesAccel && isNonEmptyString(vaapi.device)
           ? { vaapi_device: vaapi.device }
           : {}),
-        ...(usesAccel && vaapi.driver !== undefined
+        ...(usesAccel && isNonEmptyString(vaapi.driver)
           ? { vaapi_driver: vaapi.driver }
           : {}),
-        ...(filters !== undefined ? { filters } : {}),
+        ...(filters ? { filters } : {}),
       },
       audio: {
         format: audioFormat,
@@ -353,7 +358,7 @@ export function toChannelConfig({
         // Tunarr stores kilohertz and emits `-ar 48k`; the backend passes this
         // field to ffmpeg as a raw hertz value.
         sample_rate_hz: transcodeConfig.audioSampleRate * 1000,
-        ...(transcodeConfig.audioLoudnormConfig !== null
+        ...(transcodeConfig.audioLoudnormConfig
           ? {
               normalize_loudness: true,
               loudness: {
@@ -381,7 +386,7 @@ export function toChannelConfig({
 
   // Always on, capped by retention. Left off, the first line of every bug
   // report is "turn this on and reproduce."
-  if (reportsFolder !== undefined) {
+  if (isNonEmptyString(reportsFolder)) {
     config.ffmpeg.reports_folder = reportsFolder;
   }
 

@@ -149,6 +149,7 @@ describe('toChannelConfig', () => {
     ['bwdif=0', { bwdif: { mode: '0' } }],
     ['bwdif=1', { bwdif: { mode: '1' } }],
     ['w3fdif', { w3fdif: {} }],
+    ['none', { yadif: { mode: '1' } }],
   ])(
     'splits the global deinterlace filter %s into per-filter options',
     (filter, expected) => {
