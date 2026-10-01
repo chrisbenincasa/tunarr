@@ -68,12 +68,14 @@ const map = (
   tc: Partial<TranscodeConfigOrm> = {},
   fs: Partial<FfmpegSettings> = {},
   resolveVaapiDriver: VaapiDriverResolver = noGpu,
+  reportsFolder?: string,
 ) =>
   toChannelConfig({
     transcodeConfig: transcodeConfig(tc),
     ffmpegSettings: ffmpegSettings(fs),
     playoutFolder: '/var/lib/tunarr/transcode/etv_abc/playout',
     resolveVaapiDriver,
+    reportsFolder,
   });
 
 describe('toChannelConfig', () => {
@@ -241,13 +243,16 @@ describe('toChannelConfig', () => {
     expect(config.normalization.audio.loudness).toBeUndefined();
   });
 
-  test('sets the reports folder only when file logging is on', () => {
-    expect(
-      map({}, { enableFileLogging: false }).config.ffmpeg.reports_folder,
-    ).toBeUndefined();
+  // Dossiers are on by default, so this follows the folder the caller
+  // prepared rather than the file-logging setting.
+  test('writes dossiers wherever the caller asked, whatever file logging says', () => {
     expect(
       map({}, { enableFileLogging: true }).config.ffmpeg.reports_folder,
-    ).toBe('/var/lib/tunarr/transcode');
+    ).toBeUndefined();
+    expect(
+      map({}, { enableFileLogging: false }, noGpu, '/var/lib/tunarr/etv-diag')
+        .config.ffmpeg.reports_folder,
+    ).toBe('/var/lib/tunarr/etv-diag');
   });
 
   test('asks the backend to burn the failure reason into frame unless the screen is blank', () => {

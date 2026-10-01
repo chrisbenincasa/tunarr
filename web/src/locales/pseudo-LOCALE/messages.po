@@ -906,6 +906,10 @@ msgstr ""
 msgid "Channels M3U Link:"
 msgstr ""
 
+#: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
+msgid "Channels using this config cannot stream on the ErsatzTV next backend"
+msgstr ""
+
 #: src/pages/system/SystemDebugPage.tsx
 #: src/pages/system/SystemDebugPage.tsx
 msgid "Check"
@@ -1370,6 +1374,10 @@ msgstr ""
 
 #: src/pages/system/SystemLogsPage.tsx
 msgid "Download all logs"
+msgstr ""
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Download Backend Diagnostics ({dossierCount})"
 msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
@@ -3747,6 +3755,10 @@ msgstr ""
 msgid "Stream Selection"
 msgstr ""
 
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Stream this channel through the experimental ErsatzTV next backend instead of Tunarr's own pipeline. Use this to move channels over one at a time. Turning on the global ErsatzTV next feature flag enrolls every channel and replaces this setting."
+msgstr ""
+
 #: src/components/channel_config/EditChannelForm.tsx
 msgid "Streaming"
 msgstr ""
@@ -3867,6 +3879,14 @@ msgstr ""
 
 #: src/components/channel_config/MediaItemGrid.tsx
 msgid "The End."
+msgstr ""
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "The ErsatzTV next backend does not serve this stream mode. It supports HLS, HLS Direct v2 and MPEG-TS."
+msgstr ""
+
+#: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
+msgid "The ErsatzTV next backend ignores some of these settings"
 msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
@@ -4198,6 +4218,10 @@ msgstr ""
 msgid "Use channel default"
 msgstr ""
 
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Use ErsatzTV next Backend (Experimental)"
+msgstr ""
+
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Use schedule default"
@@ -4353,6 +4377,10 @@ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Welcome to Tunarr!"
+msgstr ""
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "What the ErsatzTV next worker recorded the last few times this channel failed to play an item. Attach it to a bug report."
 msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx

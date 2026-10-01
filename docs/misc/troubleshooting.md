@@ -113,9 +113,11 @@ Three sections read differently:
 
 - **Pipeline** holds the FFmpeg command the worker resolved, not one Tunarr built.
 - **FFmpeg Log** comes from the dossier the worker leaves behind.
-- **Stream Selection** is absent, because track selection does not reach the worker. The test transcodes the file's default tracks.
+- **Stream Selection** is absent, because Tunarr does not yet apply stream selection on this backend. The test transcodes the file's first audio track.
 
 Settings the backend refuses or drops are listed under Errors, so a channel that streams differently than its transcode config reads says why.
+
+A **Download Backend Diagnostics** button appears beside **Run Troubleshooter** when the selected channel has bundles to give. The worker writes one every time it cannot play an item, and the button hands back the five most recent as a zip. Attach it to a bug report; it carries the FFmpeg report, the resolved pipeline, the playout item, the probe output and the channel config for each failure.
 
 ## Producing a Troubleshoot Report for Bug Reports
 

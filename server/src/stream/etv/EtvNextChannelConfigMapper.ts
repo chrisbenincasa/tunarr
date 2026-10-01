@@ -300,9 +300,9 @@ export function toChannelConfig({
   resolveVaapiDriver?: VaapiDriverResolver;
 
   /**
-   * Where the worker writes its FFmpeg report, overriding the transcode
-   * directory. A diagnostic run wants the dossier whether or not the user
-   * turned on file logging.
+   * Where the worker writes its diagnostic dossiers. Unset only when the
+   * folder could not be prepared, which costs the dossiers rather than the
+   * stream.
    */
   reportsFolder?: string;
 }): ChannelConfigMapping {
@@ -398,14 +398,10 @@ export function toChannelConfig({
     },
   };
 
-  const { transcodeDirectory } = ffmpegSettings;
+  // Always on, capped by retention. Left off, the first line of every bug
+  // report is "turn this on and reproduce."
   if (reportsFolder !== undefined) {
     config.ffmpeg.reports_folder = reportsFolder;
-  } else if (
-    ffmpegSettings.enableFileLogging &&
-    transcodeDirectory !== undefined
-  ) {
-    config.ffmpeg.reports_folder = transcodeDirectory;
   }
 
   return { config: ChannelConfigSchema.parse(config), ignored };

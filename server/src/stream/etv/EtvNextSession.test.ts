@@ -10,6 +10,7 @@ import {
   DynamicTokenEnvVar,
   DynamicWindowMs,
 } from './EtvNextDynamicPlayout.ts';
+import { DossierRetentionCount } from './EtvNextDossiers.ts';
 import { EtvNextDynamicTokenRegistry } from './EtvNextDynamicTokenRegistry.ts';
 import type { EtvNextPlayoutMode } from './EtvNextSession.ts';
 import {
@@ -92,6 +93,7 @@ async function makeSession({
   windowMs,
   playoutMode = 'materialized',
   spawnFails = false,
+  reportsDirectory,
 }: {
   items?: PlayoutItem[];
   publishesReady?: boolean;
@@ -104,6 +106,9 @@ async function makeSession({
 
   /** `null` leaves the option unset, so the session's own default applies. */
   playoutMode?: EtvNextPlayoutMode | null;
+
+  /** Stands in for the folder beside the database that production uses. */
+  reportsDirectory?: string;
 } = {}) {
   const transcodeDirectory = await makeTempDir();
   const outputDirectory = path.join(
@@ -188,6 +193,7 @@ async function makeSession({
     channel,
     {
       transcodeDirectory,
+      reportsDirectory,
       windowMs,
       tunarrPort,
       ...(playoutMode !== null ? { playoutMode } : {}),
@@ -804,6 +810,74 @@ describe('the dynamic playout window', () => {
     await session.stop();
 
     expect(tokenRegistry.size).toBe(0);
+  });
+});
+
+// The worker writes one dossier per failed item, and tells Tunarr nothing
+// about them, so the folder is prepared and capped at spawn.
+describe('diagnostic dossiers', () => {
+  test('point the worker at a folder outside the workspace', async () => {
+    const reportsDirectory = await makeTempDir();
+    const { session, transcodeDirectory } = await makeSession({
+      reportsDirectory,
+    });
+
+    await session.start();
+
+    const config = JSON.parse(
+      await fs.readFile(
+        path.join(transcodeDirectory, `etv_${channelUuid}`, 'channel.json'),
+        'utf-8',
+      ),
+    ) as { ffmpeg: { reports_folder?: string } };
+
+    expect(config.ffmpeg.reports_folder).toBe(
+      path.join(reportsDirectory, channelUuid),
+    );
+  });
+
+  test('survive the workspace being torn down', async () => {
+    const reportsDirectory = await makeTempDir();
+    const { session } = await makeSession({ reportsDirectory });
+    await session.start();
+
+    const channelFolder = path.join(reportsDirectory, channelUuid);
+    await fs.mkdir(path.join(channelFolder, '7_0001'), { recursive: true });
+
+    await session.stop();
+
+    await expect(fs.readdir(channelFolder)).resolves.toEqual(['7_0001']);
+  });
+
+  test('are trimmed to the retention cap before the worker spawns', async () => {
+    const reportsDirectory = await makeTempDir();
+    const channelFolder = path.join(reportsDirectory, channelUuid);
+
+    for (let i = 1; i <= DossierRetentionCount + 3; i++) {
+      const dossier = path.join(channelFolder, `7_000${i}`);
+      await fs.mkdir(dossier, { recursive: true });
+      const when = new Date(i * 1_000_000);
+      await fs.utimes(dossier, when, when);
+    }
+
+    const { session } = await makeSession({ reportsDirectory });
+    await session.start();
+
+    await expect(fs.readdir(channelFolder)).resolves.toHaveLength(
+      DossierRetentionCount,
+    );
+  });
+
+  // A channel that cannot write diagnostics should still stream.
+  test('do not stop a channel whose folder cannot be made', async () => {
+    const reportsDirectory = await makeTempDir();
+    // A file where the folder needs to go, so mkdir fails.
+    await fs.writeFile(path.join(reportsDirectory, channelUuid), '');
+
+    const { session } = await makeSession({ reportsDirectory });
+    await session.start();
+
+    expect(session.state).toBe('started');
   });
 });
 

@@ -14989,6 +14989,30 @@ export type GetApiEtvPlayoutItemResponses = {
 
 export type GetApiEtvPlayoutItemResponse = GetApiEtvPlayoutItemResponses[keyof GetApiEtvPlayoutItemResponses];
 
+export type GetApiEtvChannelsByIdDiagnosticsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/etv/channels/{id}/diagnostics';
+};
+
+export type GetApiEtvChannelsByIdDiagnosticsResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        dossiers: Array<{
+            name: string;
+            capturedAt: string;
+            sizeBytes: number;
+        }>;
+    };
+};
+
+export type GetApiEtvChannelsByIdDiagnosticsResponse = GetApiEtvChannelsByIdDiagnosticsResponses[keyof GetApiEtvChannelsByIdDiagnosticsResponses];
+
 export type GetApiEtvTranscodeConfigsByIdCompatibilityData = {
     body?: never;
     path: {

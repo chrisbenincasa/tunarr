@@ -12,3 +12,4 @@ export const ImagesFolderName = 'images';
 export const ChannelLineupsFolderName = 'channel-lineups';
 export const SearchSnapshotsFolderName = 'ms-snapshots';
 export const TroubleshootSessionFolderName = 'tunarr-troubleshoot';
+export const EtvNextDossierFolderName = 'etv-diagnostics';

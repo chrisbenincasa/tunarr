@@ -1,9 +1,11 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import type { ChannelOrmWithTranscodeConfig } from '../../db/schema/derivedTypes.ts';
 import { serverOptions } from '../../globals.ts';
 import type { FeatureFlagService } from '../../services/FeatureFlagService.ts';
 import { Result } from '../../types/result.ts';
+import type { Maybe } from '../../types/util.ts';
 import type { ChildProcessWrapper } from '../../util/ChildProcessHelper.ts';
 import type { ChildProcessHelper } from '../../util/ChildProcessHelper.ts';
 import { isNonEmptyString } from '../../util/index.ts';
@@ -20,6 +22,7 @@ import {
   DynamicWindowMs,
   dynamicResolverUri,
 } from './EtvNextDynamicPlayout.ts';
+import { dossierDirectory, pruneDossiers } from './EtvNextDossiers.ts';
 import type { EtvNextDynamicTokenRegistry } from './EtvNextDynamicTokenRegistry.ts';
 import { StreamTerminationRequestedError } from './EtvNextPlayoutItemMapper.ts';
 import { createMultivariantPlaylist } from './EtvNextPlaylistCreator.ts';
@@ -55,6 +58,12 @@ export const ResolverWatchdogIntervalMs = 30_000;
 
 export type EtvNextSessionOptions = SessionOptions & {
   transcodeDirectory?: string;
+
+  /**
+   * Where per-channel diagnostic dossiers accumulate. Defaults to a folder
+   * beside the database, outside the workspace that teardown removes.
+   */
+  reportsDirectory?: string;
 
   /**
    * How the worker learns what to play.
@@ -202,6 +211,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
       transcodeConfig: this.channel.transcodeConfig,
       ffmpegSettings: this.settingsDB.ffmpegSettings(),
       playoutFolder: this.#workspace.playoutDirectory,
+      reportsFolder: await this.#prepareDossierFolder(),
     });
     await this.#workspace.writeChannelConfig(config);
 
@@ -418,6 +428,35 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
         'Could not stop the session after the worker exited',
       );
     });
+  }
+
+  /**
+   * Makes this channel's dossier folder and trims it back to the retention
+   * cap.
+   *
+   * The folder outlives the workspace on purpose. The workspace is removed at
+   * teardown, and a session that failed is exactly the one whose diagnostics
+   * someone wants afterwards.
+   *
+   * Never fatal. A channel that cannot write diagnostics should still stream,
+   * so a failure here costs the dossier rather than the session.
+   */
+  async #prepareDossierFolder(): Promise<Maybe<string>> {
+    const { reportsDirectory } = this.sessionOptions;
+
+    try {
+      const directory = dossierDirectory(this.channel.uuid, reportsDirectory);
+      await fs.mkdir(directory, { recursive: true });
+      await pruneDossiers(directory);
+      return directory;
+    } catch (e) {
+      this.logger.warn(
+        e,
+        'Could not prepare the ErsatzTV next diagnostics folder for channel %s. This session will not leave one behind.',
+        this.channel.uuid,
+      );
+      return undefined;
+    }
   }
 
   /**
