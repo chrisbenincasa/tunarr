@@ -1,9 +1,11 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
+import type { Watermark } from '@tunarr/types';
 import type { NonEmptyArray } from 'ts-essentials';
 import { describe, expect, test, vi } from 'vitest';
 import type { StreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
 import type { GetCurrentLineupItemRequest } from '../StreamProgramCalculator.ts';
+import type { ChannelOrm } from '../../db/schema/Channel.ts';
 import type { ChannelOrmWithTranscodeConfig } from '../../db/schema/derivedTypes.ts';
 import { Result } from '../../types/result.ts';
 import type { StreamSelectionResult } from '../../ffmpeg/StreamSelectionEvaluator.ts';
@@ -63,6 +65,9 @@ function makeWriter({
   streamDetails = { duration: tenMinutes },
   selection,
   selectionFails = false,
+  watermark,
+  watermarkFails = false,
+  channelContext = channel,
 }: {
   items: StreamLineupItem[];
   streamFails?: boolean;
@@ -70,6 +75,9 @@ function makeWriter({
   streamDetails?: StreamDetails;
   selection?: StreamSelectionResult;
   selectionFails?: boolean;
+  watermark?: Watermark;
+  watermarkFails?: boolean;
+  channelContext?: ChannelOrm;
 }) {
   let call = 0;
   const programCalculator = {
@@ -78,7 +86,7 @@ function makeWriter({
       return Promise.resolve(
         item === undefined
           ? Result.failure<never>('no lineup')
-          : Result.success({ lineupItem: item }),
+          : Result.success({ lineupItem: item, channelContext }),
       );
     }),
   };
@@ -116,12 +124,21 @@ function makeWriter({
     ),
   };
 
+  const watermarkResolver = {
+    resolve: vi.fn((_request: { channel: ChannelOrm }) =>
+      watermarkFails
+        ? Promise.reject(new Error('image cache unavailable'))
+        : Promise.resolve(watermark),
+    ),
+  };
+
   const writer = new EtvNextPlayoutWriter(
     programCalculator as never,
     streamDetailsFetcher as never,
     mediaSourceDB as never,
     onDemandService as never,
     streamSelector as never,
+    watermarkResolver as never,
   );
 
   // The logger is normally supplied by the DI decorator.
@@ -139,6 +156,7 @@ function makeWriter({
     streamDetailsFetcher,
     onDemandService,
     streamSelector,
+    watermarkResolver,
     logger,
   };
 }
@@ -379,6 +397,86 @@ describe('stream selection', () => {
     });
 
     expect(window.items[0]?.tracks).toEqual({ audio: { stream_index: 2 } });
+  });
+});
+
+describe('watermarks', () => {
+  const watermark: Watermark = {
+    enabled: true,
+    url: '/cache/logo.png',
+    position: 'top-right',
+    width: 10,
+    verticalMargin: 2,
+    horizontalMargin: 3,
+    duration: 0,
+    opacity: 100,
+  };
+
+  test('draws the watermark the resolver chose over a program', async () => {
+    const { writer } = makeWriter({
+      items: [programItem(600_000)],
+      watermark,
+    });
+
+    const { item } = await writer.resolveDynamicItem({ channel, startMs });
+
+    expect(item.watermark).toMatchObject({
+      source: { source_type: 'local', path: '/cache/logo.png' },
+      location: 'top_right',
+    });
+  });
+
+  test('takes the watermark from the redirect target, not the tuned channel', async () => {
+    const target = { uuid: 'chan-target' } as ChannelOrm;
+    const { writer, watermarkResolver } = makeWriter({
+      items: [programItem(600_000)],
+      watermark,
+      channelContext: target,
+    });
+
+    await writer.materializeWindow({ channel, startMs, windowMs: 600_000 });
+
+    expect(watermarkResolver.resolve).toHaveBeenCalledWith(
+      expect.objectContaining({ channel: target }),
+    );
+  });
+
+  test('draws none over flex', async () => {
+    const { writer, watermarkResolver } = makeWriter({
+      items: [offlineItem(600_000)],
+      watermark,
+    });
+
+    const { item } = await writer.resolveDynamicItem({ channel, startMs });
+
+    expect(item.watermark).toBeUndefined();
+    expect(watermarkResolver.resolve).not.toHaveBeenCalled();
+  });
+
+  test('draws none over an error screen', async () => {
+    const { writer } = makeWriter({
+      items: [programItem(600_000)],
+      watermark,
+      streamFails: true,
+    });
+
+    const { item } = await writer.resolveDynamicItem({ channel, startMs });
+
+    expect(item.tracks?.video?.source).toMatchObject({ source_type: 'lavfi' });
+    expect(item.watermark).toBeUndefined();
+  });
+
+  test('keeps the program when the watermark cannot be resolved', async () => {
+    const { writer, logger } = makeWriter({
+      items: [programItem(600_000)],
+      watermarkFails: true,
+    });
+
+    const { item } = await writer.resolveDynamicItem({ channel, startMs });
+
+    expect(item.source).toMatchObject({ path: '/media/a.mkv' });
+    expect(item.watermark).toBeUndefined();
+    expect(logger.warn).toHaveBeenCalled();
   });
 });
 

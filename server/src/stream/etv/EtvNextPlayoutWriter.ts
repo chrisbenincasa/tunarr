@@ -5,6 +5,7 @@ import type {
   StreamLineupItem,
 } from '../../db/derived_types/StreamLineup.ts';
 import { isContentBackedLineupItem } from '../../db/derived_types/StreamLineup.ts';
+import type { ChannelOrm } from '../../db/schema/Channel.ts';
 import type { ChannelOrmWithTranscodeConfig } from '../../db/schema/derivedTypes.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
@@ -14,9 +15,11 @@ import { StreamProgramCalculator } from '../StreamProgramCalculator.ts';
 import type { StreamDetails, StreamSource } from '../types.ts';
 import { makeLocalUrl } from '../../util/serverUtil.ts';
 import { StreamSelector } from '../../ffmpeg/StreamSelector.ts';
+import { WatermarkResolver } from '../WatermarkResolver.ts';
 import type {
   PlayoutItemMapping,
   PlayoutTrackSelection,
+  ResolvedWatermark,
 } from './EtvNextPlayoutItemMapper.ts';
 import {
   rfc3339,
@@ -89,7 +92,7 @@ export const MaxSkipAheadMs = 2_000;
 
 /** What one walk of the schedule produced for a dynamic callback. */
 type DynamicResolution =
-  | { lineupItem: StreamLineupItem }
+  | { lineupItem: StreamLineupItem; channelContext: ChannelOrm }
   | { failure: 'unreadable' | 'all-too-short' };
 
 /** How long a channel's callback budget runs before it resets. */
@@ -179,6 +182,7 @@ export class EtvNextPlayoutWriter {
     @inject(OnDemandChannelService)
     private onDemandService: OnDemandChannelService,
     @inject(StreamSelector) private streamSelector: StreamSelector,
+    @inject(WatermarkResolver) private watermarkResolver: WatermarkResolver,
   ) {}
 
   /**
@@ -274,7 +278,7 @@ export class EtvNextPlayoutWriter {
         break;
       }
 
-      const { lineupItem } = lineupResult.get();
+      const { lineupItem, channelContext } = lineupResult.get();
 
       // A non-advancing item would spin this loop forever, and upstream picks
       // overlapping items by rfind, so a zero-length one could also mask its
@@ -289,7 +293,11 @@ export class EtvNextPlayoutWriter {
         break;
       }
 
-      const stream = await this.resolveStream(channel, lineupItem);
+      const stream = await this.resolveStream(
+        channel,
+        lineupItem,
+        channelContext,
+      );
       const id = `${channel.uuid}-${idSeed + items.length}`;
       const mapping = this.mapOrDegrade({
         ...screens,
@@ -413,8 +421,12 @@ export class EtvNextPlayoutWriter {
         });
       }
 
-      const { lineupItem } = resolution;
-      const stream = await this.resolveStream(channel, lineupItem);
+      const { lineupItem, channelContext } = resolution;
+      const stream = await this.resolveStream(
+        channel,
+        lineupItem,
+        channelContext,
+      );
 
       return this.mapOrDegrade({
         ...screens,
@@ -493,7 +505,7 @@ export class EtvNextPlayoutWriter {
         return { failure: 'unreadable' };
       }
 
-      const { lineupItem } = lineupResult.get();
+      const { lineupItem, channelContext } = lineupResult.get();
 
       if (lineupItem.streamDuration >= MinResolvedItemMs) {
         if (skips > 0) {
@@ -506,7 +518,7 @@ export class EtvNextPlayoutWriter {
           );
         }
 
-        return { lineupItem };
+        return { lineupItem, channelContext };
       }
 
       // A zero-length item resolves to itself, so the cursor moves regardless.
@@ -684,15 +696,20 @@ export class EtvNextPlayoutWriter {
    * Offline and error items carry no media, and a failed resolution is left
    * undefined so the mapper surfaces it rather than this method inventing a
    * substitute.
+   *
+   * @param scheduleChannel The channel whose schedule produced the item. It
+   *   differs from `channel` only under a redirect, and it owns the watermark.
    */
   private async resolveStream(
     channel: ChannelOrmWithTranscodeConfig,
     lineupItem: StreamLineupItem,
+    scheduleChannel: ChannelOrm = channel,
   ): Promise<
     | {
         source: StreamSource;
         details?: StreamDetails;
         selection?: PlayoutTrackSelection;
+        watermark?: ResolvedWatermark;
       }
     | undefined
   > {
@@ -735,7 +752,47 @@ export class EtvNextPlayoutWriter {
       streamDetails,
     );
 
-    return { source: streamSource, details: streamDetails, selection };
+    const watermark = await this.resolveWatermark(
+      channel,
+      scheduleChannel,
+      contentItem,
+    );
+
+    return {
+      source: streamSource,
+      details: streamDetails,
+      selection,
+      watermark,
+    };
+  }
+
+  /**
+   * A failure costs the watermark rather than the item, like a failed stream
+   * selection does.
+   */
+  private async resolveWatermark(
+    channel: ChannelOrmWithTranscodeConfig,
+    scheduleChannel: ChannelOrm,
+    lineupItem: ContentBackedStreamLineupItem,
+  ): Promise<ResolvedWatermark | undefined> {
+    try {
+      const watermark = await this.watermarkResolver.resolve({
+        channel: scheduleChannel,
+        transcodeConfig: channel.transcodeConfig,
+        lineupItem,
+      });
+
+      return watermark?.url !== undefined
+        ? { ...watermark, url: watermark.url }
+        : undefined;
+    } catch (e) {
+      this.logger.warn(
+        e,
+        'Playing program %s without a watermark, because it could not be resolved',
+        lineupItem.program.uuid,
+      );
+      return undefined;
+    }
   }
 
   /**
