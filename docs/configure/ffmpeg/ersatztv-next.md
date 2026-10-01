@@ -75,8 +75,10 @@ the channel will transcode in software.
 
 ## Known gaps
 
-- **Audio and subtitle track selection does not reach the worker.** The playout contract carries no track indices, so a channel on this backend plays the file's default tracks regardless of the stream selection profile that would otherwise apply.
-- **Watermarks and channel overlays are not applied.** The worker draws neither.
+The first two gaps are in Tunarr's side of the integration, not in ErsatzTV next. The worker supports both features, and Tunarr does not send them yet.
+
+- **Stream selection profiles are not applied.** Tunarr does not yet tell the worker which audio or subtitle track to use. The worker plays the first audio track in the file, whatever the channel's stream selection profile says.
+- **Watermarks and channel overlays are not applied.** Tunarr does not yet send the watermark to the worker, so none is drawn.
 - **Programming edits land at the next item, not immediately.** The worker asks Tunarr what to play one item at a time, and it transcodes up to 44 seconds ahead of what viewers see. An edit takes effect the next time the worker asks. Anything already transcoded plays as it was.
 
 ## Troubleshooting a channel
@@ -87,8 +89,16 @@ Three things read differently than they do for a Tunarr-pipeline channel:
 
 - **The FFmpeg command** is the one the worker resolved, not one Tunarr built.
 - **The FFmpeg log** comes from the dossier the worker leaves behind, which also holds the pipeline, media info and playout item it resolved.
-- **No stream selection trace is produced**, because track selection does not reach the worker.
+- **No stream selection trace is produced**, because Tunarr does not yet apply stream selection on this backend.
 
 Any refused or dropped setting is listed with the errors, so a report from a channel that streams differently than its config reads says why.
 
 Media server tokens are stripped from the command, the log and the report, so a troubleshoot report is safe to attach to a bug report.
+
+## Diagnostic bundles
+
+Every time the worker cannot play an item it writes a bundle to `etv-diagnostics/<channel id>/` under Tunarr's data directory. Each one holds the FFmpeg report or its stderr tail, the resolved pipeline and hardware acceleration, the playout item, the probe output, the merged channel config the worker actually ran with, and the outcome.
+
+This is on and needs no setting. A channel keeps its five most recent bundles; older ones are removed when the channel next starts. Turning off file logging does not turn it off, because the bundle is what a bug report needs and asking for it after the fact means asking someone to reproduce a failure they have already had.
+
+The [Stream Troubleshooter](../../misc/troubleshooting.md) offers **Download Backend Diagnostics** for a channel that has any, which hands back all five as one zip.

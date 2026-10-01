@@ -1,6 +1,12 @@
+import archiver from 'archiver';
 import { inject, injectable } from 'inversify';
+import path from 'node:path';
 import { z } from 'zod/v4';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
+import {
+  dossierDirectory,
+  listDossiers,
+} from '../stream/etv/EtvNextDossiers.ts';
 import { EtvNextDynamicTokenRegistry } from '../stream/etv/EtvNextDynamicTokenRegistry.ts';
 import { parseBearerToken } from '../stream/etv/EtvNextDynamicTokenRegistry.ts';
 import {
@@ -55,6 +61,22 @@ function parseInstant(value: Maybe<string>, nowMs: number): Maybe<number> {
 
   return parsed;
 }
+
+/**
+ * What the worker left behind for a channel, newest first.
+ *
+ * Only the index. The bundles themselves come down as one zip, since a dossier
+ * is a directory of five files and nobody wants them one at a time.
+ */
+const EtvNextDiagnosticsSchema = z.object({
+  dossiers: z.array(
+    z.object({
+      name: z.string(),
+      capturedAt: z.iso.datetime(),
+      sizeBytes: z.number(),
+    }),
+  ),
+});
 
 /**
  * What a transcode config costs under the ErsatzTV next backend.
@@ -236,6 +258,88 @@ export class EtvNextApiController implements ApiController {
 
           return res.status(503).send();
         }
+      },
+    );
+
+    fastify.get(
+      '/etv/channels/:id/diagnostics',
+      {
+        schema: {
+          tags: ['Streaming', 'Channels'],
+          description:
+            'Lists the diagnostic dossiers the ErsatzTV next worker left for a channel.',
+          params: z.object({
+            id: z.uuid(),
+          }),
+          response: {
+            200: EtvNextDiagnosticsSchema,
+          },
+        },
+      },
+      async (req, res) => {
+        const dossiers = await listDossiers(dossierDirectory(req.params.id));
+
+        return res.send({
+          dossiers: dossiers.map((dossier) => ({
+            name: dossier.name,
+            capturedAt: dossier.capturedAt.toISOString(),
+            sizeBytes: dossier.sizeBytes,
+          })),
+        });
+      },
+    );
+
+    fastify.get(
+      '/etv/channels/:id/diagnostics.zip',
+      {
+        schema: {
+          // A binary download, so it has no place in the generated client.
+          hide: true,
+          params: z.object({
+            id: z.uuid(),
+          }),
+        },
+      },
+      async (req, res) => {
+        const directory = dossierDirectory(req.params.id);
+        const dossiers = await listDossiers(directory);
+
+        if (dossiers.length === 0) {
+          return res.status(404).send();
+        }
+
+        const archive = archiver('zip');
+        archive.on('warning', (warning) => {
+          this.logger.warn(
+            warning,
+            'The diagnostics archive for channel %s is missing an entry',
+            req.params.id,
+          );
+        });
+        archive.on('error', (e) => {
+          this.logger.error(
+            e,
+            'Could not build the diagnostics archive for channel %s',
+            req.params.id,
+          );
+          archive.destroy();
+        });
+
+        for (const dossier of dossiers) {
+          archive.directory(path.join(directory, dossier.name), dossier.name);
+        }
+
+        // Finalize is not awaited. Fastify consumes the archive as the response
+        // body, so awaiting it here would deadlock on a backpressured stream.
+        void archive.finalize();
+
+        return res
+          .type('application/zip')
+          .header(
+            'Content-Disposition',
+            `attachment; filename="tunarr-etv-diagnostics-${req.params.id}.zip"`,
+          )
+          .send(archive);
       },
     );
 
