@@ -39,6 +39,10 @@ export const VideoHintSchema = z.strictObject({
   color_primaries: z.string().nullable().optional(),
   dv_profile: z.number().int().min(0).nullable().optional(),
   has_hdr10_metadata: z.boolean().nullable().optional(),
+  rotation: z
+    .union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)])
+    .nullable()
+    .optional(),
 });
 export type VideoHint = z.infer<typeof VideoHintSchema>;
 

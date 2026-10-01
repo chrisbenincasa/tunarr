@@ -30,7 +30,6 @@ A transcode config with any of these cannot back a channel on this backend. The 
 
 | Setting | Accepted values |
 | ------- | --------------- |
-| Video format | `h264`, `hevc` |
 | Audio format | `aac`, `ac3` |
 | Hardware acceleration | `none`, `cuda`, `qsv`, `vaapi`, `videotoolbox` |
 
@@ -51,27 +50,12 @@ These translate to nothing on the worker. The channel streams; it streams withou
 
 Tunarr logs the dropped settings once when a channel starts, and the transcode config editor lists them.
 
-### VAAPI needs a named driver
+### VAAPI defaults
 
-The worker accelerates only when its config names both a render node and a VAAPI
-driver, and it falls back to software encoding when either is missing
-([ErsatzTV/next#246](https://github.com/ErsatzTV/next/issues/246)). Tunarr's own
-pipeline instead lets libva choose, which is what the `system` driver setting
-means, so that setting has nothing to translate to.
-
-Rather than let a hardware channel quietly become a software one, Tunarr fills
-both in:
-
-- **Device.** An unset VAAPI device becomes `/dev/dri/renderD128` on Linux, the
-  same default the built-in pipeline uses.
-- **Driver.** A driver of `system` is resolved by reading the render node's PCI
-  vendor id from `/sys/class/drm/<node>/device/vendor` — Intel becomes `ihd` and
-  AMD becomes `radeonsi`.
-
-Set the driver explicitly if the guess is wrong for your hardware; an explicit
-choice is always passed through untouched. On an NVIDIA card, or where the
-vendor cannot be read, no driver is sent, and the transcode config editor says
-the channel will transcode in software.
+An unset VAAPI device and a driver of `system` are left for the worker to fill
+in. It uses `/dev/dri/renderD128`, the same default the built-in pipeline uses,
+and lets libva choose the driver. An explicit device or driver is passed
+through untouched.
 
 ## Known gaps
 

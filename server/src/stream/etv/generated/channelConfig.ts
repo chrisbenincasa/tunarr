@@ -132,7 +132,7 @@ export type VideoFilterOptionsConfig = z.infer<
   typeof VideoFilterOptionsConfigSchema
 >;
 
-export const VideoFormatSchema = z.enum(['h264', 'hevc']);
+export const VideoFormatSchema = z.enum(['h264', 'hevc', 'mpeg2video']);
 export type VideoFormat = z.infer<typeof VideoFormatSchema>;
 
 export const ScalingModeSchema = z.enum(['scale_and_pad', 'stretch', 'crop']);

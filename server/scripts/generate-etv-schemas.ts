@@ -142,8 +142,25 @@ function render(node: JsonSchema, ctx: string): string {
     return `z.literal(${JSON.stringify(node.const)})`;
   }
 
+  // A `null` member is how a nullable enum is spelled, as in `rotation`.
   if (node.enum !== undefined) {
-    return `z.enum([${node.enum.map((v) => JSON.stringify(v)).join(', ')}])`;
+    const values = node.enum.filter((v) => v !== null);
+    const nullable = values.length !== node.enum.length ? '.nullable()' : '';
+    const invalid = values.find(
+      (v) => typeof v !== 'string' && typeof v !== 'number',
+    );
+    if (invalid !== undefined || values.length === 0) {
+      throw new Error(`${ctx}: unsupported enum ${JSON.stringify(node.enum)}`);
+    }
+    const literals = values.map((v) => JSON.stringify(v));
+    if (values.every((v) => typeof v === 'string')) {
+      return `z.enum([${literals.join(', ')}])${nullable}`;
+    }
+    const union =
+      literals.length === 1
+        ? `z.literal(${literals[0]})`
+        : `z.union([${literals.map((l) => `z.literal(${l})`).join(', ')}])`;
+    return `${union}${nullable}`;
   }
 
   // `["integer", "null"]` is a nullable integer.
