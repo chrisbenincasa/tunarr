@@ -58,6 +58,7 @@ const { config, ignored } = toChannelConfig({
     enableFileLogging: false,
   } as never,
   playoutFolder: workspace.playoutDirectory,
+  subtitleMode: 'burn',
 });
 
 await workspace.writeChannelConfig(config);

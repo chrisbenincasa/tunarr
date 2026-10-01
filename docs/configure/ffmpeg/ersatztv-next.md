@@ -66,11 +66,17 @@ The channel's stream selection profile picks the audio and subtitle tracks, the 
 - **Text subtitles** depend on the sidecar subtitles feature in **Settings > Features**. With it on, they become a WebVTT track that players can toggle. With it off, they are burned in, but only when they come from a separate file. Text subtitles embedded in the media file are skipped.
 - **A file with no audio** plays with silence, so the channel keeps its audio track.
 
+## Watermarks
+
+The channel watermark is drawn by the worker, with the same image, position, size, margins and opacity as on Tunarr's own pipeline. The **Disable Watermarks** transcode setting and the channel's **Hide watermark during filler** switch work the same way, and a channel without a watermark URL falls back to its icon. Flex and error screens carry no watermark.
+
+Two timing settings behave a little differently:
+
+- **Fade cycles follow the clock**, not the start of each program. Every viewer sees the watermark fade in and out at the same moment, and the cycle does not restart when a new program begins. **Leading edge** decides whether the visible half of each cycle comes first.
+- **Duration** still shows the watermark for that many seconds from the start of each program. With a fade cycle also set, a fade already in progress when the duration runs out finishes before the watermark hides.
+
 ## Known gaps
 
-The first gap is in Tunarr's side of the integration, not in ErsatzTV next. The worker supports watermarks, and Tunarr does not send them yet.
-
-- **Watermarks and channel overlays are not applied.** Tunarr does not yet send the watermark to the worker, so none is drawn.
 - **Programming edits land at the next item, not immediately.** The worker asks Tunarr what to play one item at a time, and it transcodes up to 44 seconds ahead of what viewers see. An edit takes effect the next time the worker asks. Anything already transcoded plays as it was.
 
 ## Troubleshooting a channel

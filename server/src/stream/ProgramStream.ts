@@ -2,12 +2,9 @@ import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import type { TranscodeSessionResult } from '@/ffmpeg/types.js';
-import { CacheImageService } from '@/services/cacheImageService.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
-import { resolveIconUrl } from '@/util/iconUtil.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
-import { makeLocalUrl } from '@/util/serverUtil.js';
 import type { Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
@@ -24,17 +21,13 @@ import type { FFmpegAssistedFactory } from '../ffmpeg/FFmpegModule.ts';
 import type { StreamOptions } from '../ffmpeg/types.ts';
 import { KEYS } from '../types/inject.ts';
 import { assisted, injected, multiInjected } from '../util/assistedInject.ts';
-import {
-  attempt,
-  isDefined,
-  isNonEmptyString,
-  isSuccess,
-} from '../util/index.ts';
+import { isDefined } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { PlayerContext } from './PlayerStreamContext.ts';
 import { ProgramStreamDetailsFetcher } from './ProgramStreamDetailsFetcher.ts';
 import type { ProgramStreamPlugin } from './plugins/ProgramStreamPlugin.ts';
 import type { StreamRenditions } from './types.ts';
+import { WatermarkResolver } from './WatermarkResolver.ts';
 
 type ProgramStreamEvents = {
   // Emitted when the stream has reached a fatal error point
@@ -56,7 +49,7 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
 
   constructor(
     @injected(KEYS.SettingsDB) protected settingsDB: ISettingsDB,
-    @injected(CacheImageService) private cacheImageService: CacheImageService,
+    @injected(WatermarkResolver) private watermarkResolver: WatermarkResolver,
     @injected(KEYS.FFmpegFactory)
     protected ffmpegFactory: FFmpegAssistedFactory,
     @injected(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
@@ -343,60 +336,10 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
   }
 
   protected async getWatermark(): Promise<Maybe<Watermark>> {
-    const channel = this.context.targetChannel;
-
-    if (this.context.transcodeConfig.disableChannelOverlay) {
-      return;
-    }
-
-    if (
-      this.context.lineupItem.type === 'commercial' &&
-      this.context.targetChannel.disableFillerOverlay
-    ) {
-      return;
-    }
-
-    if (channel.watermark?.enabled) {
-      const watermark = { ...channel.watermark };
-      let icon: string;
-      // Capture this so it can't change asynchronously.
-      const watermarkUrl = watermark.url;
-      if (isNonEmptyString(watermarkUrl) && URL.canParse(watermarkUrl)) {
-        const parsed = new URL(watermarkUrl);
-        if (parsed.host.includes('localhost')) {
-          icon = watermarkUrl;
-        } else {
-          const cachedWatermarkUrl = await attempt(() =>
-            this.cacheImageService.getOrDownloadImageUrl(watermarkUrl),
-          );
-
-          if (
-            isSuccess(cachedWatermarkUrl) &&
-            isNonEmptyString(cachedWatermarkUrl?.path)
-          ) {
-            icon = cachedWatermarkUrl.path;
-          } else {
-            icon = makeLocalUrl('/images/tunarr.png');
-          }
-        }
-      } else {
-        const resolvedIcon = resolveIconUrl(
-          channel.icon,
-          makeLocalUrl('/images/tunarr.png'),
-        );
-        if (!resolvedIcon) {
-          return;
-        }
-        icon = resolvedIcon;
-      }
-
-      return {
-        ...watermark,
-        enabled: true,
-        url: icon,
-      };
-    }
-
-    return;
+    return this.watermarkResolver.resolve({
+      channel: this.context.targetChannel,
+      transcodeConfig: this.context.transcodeConfig,
+      lineupItem: this.context.lineupItem,
+    });
   }
 }

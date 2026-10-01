@@ -13,14 +13,18 @@ import type {
 } from '@/db/derived_types/StreamLineup.js';
 import type { AudioStreamDetails, SubtitleStreamDetails } from '../types.ts';
 import { FileStreamSource, HttpStreamSource } from '../types.ts';
-import type { PlayoutTrackSelection } from './EtvNextPlayoutItemMapper.ts';
+import type {
+  PlayoutTrackSelection,
+  ResolvedWatermark,
+} from './EtvNextPlayoutItemMapper.ts';
 import {
   MissingStreamSourceError,
   StreamTerminationRequestedError,
   UnresolvedRedirectError,
   toPlayoutItem,
+  toWatermarkLayer,
 } from './EtvNextPlayoutItemMapper.ts';
-import { PlayoutItemSchema } from './generated/playout.ts';
+import { GraphicsLayerSchema, PlayoutItemSchema } from './generated/playout.ts';
 
 const resolution: Resolution = { widthPx: 1920, heightPx: 1080 };
 dayjs.extend(duration);
@@ -839,5 +843,141 @@ describe('schema conformance of the screen variants', () => {
     for (const { item } of cases) {
       expect(PlayoutItemSchema.safeParse(item).error?.issues).toBeUndefined();
     }
+  });
+});
+
+describe('watermarks', () => {
+  const watermark: ResolvedWatermark = {
+    enabled: true,
+    url: '/cache/logo.png',
+    position: 'bottom-right',
+    width: 12.5,
+    verticalMargin: 4,
+    horizontalMargin: 6,
+    duration: 0,
+    opacity: 100,
+  };
+
+  const layer = (overrides: Partial<ResolvedWatermark> = {}) => {
+    const result = toWatermarkLayer({ ...watermark, ...overrides });
+    GraphicsLayerSchema.parse(result);
+    return result;
+  };
+
+  test('places, sizes and offsets the layer by percentages of the frame', () => {
+    expect(layer()).toEqual({
+      source: { source_type: 'local', path: '/cache/logo.png' },
+      location: 'bottom_right',
+      width_percent: 12.5,
+      horizontal_margin_percent: 6,
+      vertical_margin_percent: 4,
+    });
+  });
+
+  test.each([
+    ['top-left', 'top_left'],
+    ['top-right', 'top_right'],
+    ['bottom-left', 'bottom_left'],
+    ['bottom-right', 'bottom_right'],
+  ] as const)('maps the %s corner', (position, location) => {
+    expect(layer({ position }).location).toBe(location);
+  });
+
+  test('fetches a URL watermark over http', () => {
+    const url = 'http://localhost:8000/images/tunarr.png';
+
+    expect(layer({ url }).source).toEqual({ source_type: 'http', uri: url });
+  });
+
+  test('keeps the image at its own size when fixedSize is set', () => {
+    expect(layer({ fixedSize: true })).not.toHaveProperty('width_percent');
+  });
+
+  test('carries opacity only when the watermark is translucent', () => {
+    expect(layer({ opacity: 40 }).opacity_percent).toBe(40);
+    expect(layer()).not.toHaveProperty('opacity_percent');
+  });
+
+  test('is always on without a duration or a fade', () => {
+    expect(layer()).not.toHaveProperty('timing');
+  });
+
+  // One appearance at the item start, held for the duration with hard cuts.
+  // The 1 ms cap stops a second appearance from starting.
+  test('shows for the first duration seconds of the item, then hides', () => {
+    expect(layer({ duration: 30 }).timing).toEqual({
+      timing_type: 'periodic',
+      clock: 'content',
+      frequency_ms: 30_000,
+      phase_offset_ms: 0,
+      fade_ms: 0,
+      hold_ms: 30_000,
+      disable_after_ms: 1,
+    });
+  });
+
+  // Visible for one period, hidden for the next. The fade-out starts one
+  // period after the fade-in, as in Tunarr's pipeline.
+  test('cycles a fade config on wall clock, visible half first on a leading edge', () => {
+    expect(
+      layer({ fadeConfig: [{ periodMins: 5, leadingEdge: true }] }).timing,
+    ).toEqual({
+      timing_type: 'periodic',
+      clock: 'wall',
+      frequency_ms: 600_000,
+      phase_offset_ms: 0,
+      fade_ms: 1_000,
+      hold_ms: 299_000,
+    });
+  });
+
+  test('shifts the cycle by one period without a leading edge', () => {
+    const trailing = layer({ fadeConfig: [{ periodMins: 5 }] }).timing;
+
+    expect(trailing?.phase_offset_ms).toBe(300_000);
+  });
+
+  test('stops new fades after the duration when both are set', () => {
+    const timing = layer({
+      duration: 120,
+      fadeConfig: [{ periodMins: 1, leadingEdge: true }],
+    }).timing;
+
+    expect(timing).toMatchObject({ clock: 'wall', disable_after_ms: 120_000 });
+  });
+
+  test('uses only the first fade config, as the built-in pipeline does', () => {
+    const timing = layer({
+      fadeConfig: [{ periodMins: 2 }, { periodMins: 9, programType: 'movie' }],
+    }).timing;
+
+    expect(timing?.frequency_ms).toBe(240_000);
+  });
+
+  test('rides on a content item as its watermark', () => {
+    const { item } = map(programItem(), {
+      source: new FileStreamSource('/media/a.mkv'),
+      watermark,
+    });
+
+    expect(PlayoutItemSchema.parse(item).watermark?.location).toBe(
+      'bottom_right',
+    );
+  });
+
+  test('stays off error items even when a watermark is passed', () => {
+    const { item } = map(
+      {
+        type: 'error',
+        error: 'boom',
+        programBeginMs: startMs,
+        duration: 30_000,
+        streamDuration: 30_000,
+        startOffset: 0,
+      },
+      { source: new FileStreamSource('/media/a.mkv'), watermark },
+    );
+
+    expect(item.watermark).toBeUndefined();
   });
 });
