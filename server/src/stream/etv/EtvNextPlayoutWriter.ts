@@ -13,7 +13,11 @@ import { ProgramStreamDetailsFetcher } from '../ProgramStreamDetailsFetcher.ts';
 import { StreamProgramCalculator } from '../StreamProgramCalculator.ts';
 import type { StreamDetails, StreamSource } from '../types.ts';
 import { makeLocalUrl } from '../../util/serverUtil.ts';
-import type { PlayoutItemMapping } from './EtvNextPlayoutItemMapper.ts';
+import { StreamSelector } from '../../ffmpeg/StreamSelector.ts';
+import type {
+  PlayoutItemMapping,
+  PlayoutTrackSelection,
+} from './EtvNextPlayoutItemMapper.ts';
 import {
   rfc3339,
   StreamTerminationRequestedError,
@@ -174,6 +178,7 @@ export class EtvNextPlayoutWriter {
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(OnDemandChannelService)
     private onDemandService: OnDemandChannelService,
+    @inject(StreamSelector) private streamSelector: StreamSelector,
   ) {}
 
   /**
@@ -206,7 +211,7 @@ export class EtvNextPlayoutWriter {
     lineupItem: StreamLineupItem;
     startMs: number;
   }): Promise<MaterializedWindow> {
-    const stream = await this.resolveStream(lineupItem);
+    const stream = await this.resolveStream(channel, lineupItem);
     const { item, ignored } = this.mapOrDegrade({
       ...this.screenOptions(channel),
       id: `${channel.uuid}-troubleshoot`,
@@ -284,7 +289,7 @@ export class EtvNextPlayoutWriter {
         break;
       }
 
-      const stream = await this.resolveStream(lineupItem);
+      const stream = await this.resolveStream(channel, lineupItem);
       const id = `${channel.uuid}-${idSeed + items.length}`;
       const mapping = this.mapOrDegrade({
         ...screens,
@@ -409,7 +414,7 @@ export class EtvNextPlayoutWriter {
       }
 
       const { lineupItem } = resolution;
-      const stream = await this.resolveStream(lineupItem);
+      const stream = await this.resolveStream(channel, lineupItem);
 
       return this.mapOrDegrade({
         ...screens,
@@ -681,8 +686,16 @@ export class EtvNextPlayoutWriter {
    * substitute.
    */
   private async resolveStream(
+    channel: ChannelOrmWithTranscodeConfig,
     lineupItem: StreamLineupItem,
-  ): Promise<{ source: StreamSource; details?: StreamDetails } | undefined> {
+  ): Promise<
+    | {
+        source: StreamSource;
+        details?: StreamDetails;
+        selection?: PlayoutTrackSelection;
+      }
+    | undefined
+  > {
     if (!isContentBackedLineupItem(lineupItem)) {
       return undefined;
     }
@@ -716,6 +729,53 @@ export class EtvNextPlayoutWriter {
     }
 
     const { streamSource, streamDetails } = result.get();
-    return { source: streamSource, details: streamDetails };
+    const selection = await this.selectTracks(
+      channel,
+      contentItem,
+      streamDetails,
+    );
+
+    return { source: streamSource, details: streamDetails, selection };
+  }
+
+  /**
+   * Runs the channel's stream selection profile over a content item's tracks.
+   *
+   * A failure costs the selection rather than the item, so the worker falls
+   * back to its own defaults instead of the slot playing an error screen.
+   */
+  private async selectTracks(
+    channel: ChannelOrmWithTranscodeConfig,
+    lineupItem: ContentBackedStreamLineupItem,
+    details: StreamDetails,
+  ): Promise<PlayoutTrackSelection | undefined> {
+    if (details.audioDetails === undefined) {
+      return undefined;
+    }
+
+    try {
+      const { audioStream, subtitleStream } =
+        await this.streamSelector.selectAudioAndSubtitleStreams({
+          channel,
+          lineupItem,
+          audioStreams: details.audioDetails,
+          subtitleStreams: details.subtitleDetails ?? [],
+        });
+
+      return {
+        audioStream,
+        subtitleStream:
+          channel.subtitlesEnabled && subtitleStream !== null
+            ? subtitleStream
+            : undefined,
+      };
+    } catch (e) {
+      this.logger.warn(
+        e,
+        'Stream selection failed for program %s, so the worker picks its own tracks',
+        lineupItem.program.uuid,
+      );
+      return undefined;
+    }
   }
 }

@@ -13,7 +13,7 @@ import {
 } from './EtvNextChannelConfigMapper.ts';
 import { StreamTerminationRequestedError } from './EtvNextPlayoutItemMapper.ts';
 import { EtvNextOutputFiles } from './EtvNextPlaylistCreator.ts';
-import type { ChannelConfig } from './generated/channelConfig.ts';
+import type { ChannelConfig, SubtitleMode } from './generated/channelConfig.ts';
 import type {
   EtvNextPlayoutWriter,
   MaterializedWindow,
@@ -92,6 +92,7 @@ export class EtvNextTroubleshootRunner {
     baseDirectory,
     sessionId,
     timeoutMs,
+    subtitleMode,
   }: {
     channel: ChannelOrmWithTranscodeConfig;
     lineupItem: StreamLineupItem;
@@ -99,6 +100,9 @@ export class EtvNextTroubleshootRunner {
     baseDirectory: string;
     sessionId: string;
     timeoutMs: number;
+
+    /** Matches the live channel, so the run burns or converts as it would. */
+    subtitleMode: SubtitleMode;
   }): Promise<EtvNextTroubleshootRun> {
     const workspace = new EtvNextWorkspace(baseDirectory, sessionId);
     await workspace.initialize();
@@ -125,6 +129,7 @@ export class EtvNextTroubleshootRunner {
         ffmpegSettings,
         playoutFolder: workspace.playoutDirectory,
         reportsFolder: workspace.root,
+        subtitleMode,
       });
       config = mapping.config;
       notes.push(

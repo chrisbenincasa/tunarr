@@ -1,8 +1,17 @@
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
+import type { NonEmptyArray } from 'ts-essentials';
 import { describe, expect, test, vi } from 'vitest';
 import type { StreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
 import type { GetCurrentLineupItemRequest } from '../StreamProgramCalculator.ts';
 import type { ChannelOrmWithTranscodeConfig } from '../../db/schema/derivedTypes.ts';
 import { Result } from '../../types/result.ts';
+import type { StreamSelectionResult } from '../../ffmpeg/StreamSelectionEvaluator.ts';
+import type {
+  AudioStreamDetails,
+  StreamDetails,
+  SubtitleStreamDetails,
+} from '../types.ts';
 import { FileStreamSource } from '../types.ts';
 import { StreamTerminationRequestedError } from './EtvNextPlayoutItemMapper.ts';
 import {
@@ -14,6 +23,10 @@ import {
   ResolverErrorItemMs,
 } from './EtvNextPlayoutWriter.ts';
 import { PlayoutItemSchema } from './generated/playout.ts';
+
+dayjs.extend(duration);
+
+const tenMinutes = dayjs.duration({ minutes: 10 });
 
 const startMs = Date.parse('2026-02-23T20:00:00.000-05:00');
 
@@ -42,15 +55,21 @@ const offlineItem = (streamDuration: number): StreamLineupItem => ({
   startOffset: 0,
 });
 
-/** Builds a writer whose four collaborators are fakes. */
+/** Builds a writer whose five collaborators are fakes. */
 function makeWriter({
   items,
   streamFails = false,
   noMediaSource = false,
+  streamDetails = { duration: tenMinutes },
+  selection,
+  selectionFails = false,
 }: {
   items: StreamLineupItem[];
   streamFails?: boolean;
   noMediaSource?: boolean;
+  streamDetails?: StreamDetails;
+  selection?: StreamSelectionResult;
+  selectionFails?: boolean;
 }) {
   let call = 0;
   const programCalculator = {
@@ -71,7 +90,7 @@ function makeWriter({
           ? Result.failure<never>('unreadable')
           : Result.success({
               streamSource: new FileStreamSource('/media/a.mkv'),
-              streamDetails: {},
+              streamDetails,
             }),
       ),
     ),
@@ -87,11 +106,22 @@ function makeWriter({
     getLiveTimestamp: vi.fn((_id: string, t: number) => Promise.resolve(t)),
   };
 
+  const streamSelector = {
+    selectAudioAndSubtitleStreams: vi.fn(() =>
+      selectionFails
+        ? Promise.reject(new Error('profile did not evaluate'))
+        : Promise.resolve(
+            selection ?? { audioStream: { index: 1 }, subtitleStream: null },
+          ),
+    ),
+  };
+
   const writer = new EtvNextPlayoutWriter(
     programCalculator as never,
     streamDetailsFetcher as never,
     mediaSourceDB as never,
     onDemandService as never,
+    streamSelector as never,
   );
 
   // The logger is normally supplied by the DI decorator.
@@ -108,6 +138,7 @@ function makeWriter({
     programCalculator,
     streamDetailsFetcher,
     onDemandService,
+    streamSelector,
     logger,
   };
 }
@@ -226,6 +257,128 @@ describe('materializeWindow', () => {
     await writer.materializeWindow({ channel, startMs, windowMs: 600_000 });
 
     expect(streamDetailsFetcher.getStream).not.toHaveBeenCalled();
+  });
+});
+
+describe('stream selection', () => {
+  const japanese: AudioStreamDetails = {
+    index: 1,
+    codec: 'aac',
+    language: 'jpn',
+  };
+  const english: AudioStreamDetails = {
+    index: 2,
+    codec: 'aac',
+    language: 'eng',
+  };
+  const audioDetails: NonEmptyArray<AudioStreamDetails> = [japanese, english];
+
+  const pgs: SubtitleStreamDetails = {
+    type: 'embedded',
+    codec: 'hdmv_pgs_subtitle',
+    index: 4,
+    default: false,
+    forced: false,
+    sdh: false,
+  };
+
+  const subtitledChannel = {
+    ...channel,
+    subtitlesEnabled: true,
+  } as ChannelOrmWithTranscodeConfig;
+
+  const resolveOne = (
+    writer: EtvNextPlayoutWriter,
+    target = subtitledChannel,
+  ) => writer.resolveDynamicItem({ channel: target, startMs });
+
+  test('sends the tracks the channel profile chose', async () => {
+    const { writer, streamSelector } = makeWriter({
+      items: [programItem(600_000)],
+      streamDetails: {
+        duration: tenMinutes,
+        audioDetails,
+        subtitleDetails: [pgs],
+      },
+      selection: { audioStream: english, subtitleStream: pgs },
+    });
+
+    const { item } = await resolveOne(writer);
+
+    expect(streamSelector.selectAudioAndSubtitleStreams).toHaveBeenCalledWith(
+      expect.objectContaining({
+        audioStreams: audioDetails,
+        subtitleStreams: [pgs],
+      }),
+    );
+    expect(item.tracks).toEqual({
+      audio: { stream_index: 2 },
+      subtitle: { stream_index: 4 },
+    });
+  });
+
+  test('drops the subtitle on a channel with subtitles turned off', async () => {
+    const { writer } = makeWriter({
+      items: [programItem(600_000)],
+      streamDetails: {
+        duration: tenMinutes,
+        audioDetails,
+        subtitleDetails: [pgs],
+      },
+      selection: { audioStream: english, subtitleStream: pgs },
+    });
+
+    const { item } = await resolveOne(writer, {
+      ...channel,
+      subtitlesEnabled: false,
+    } as ChannelOrmWithTranscodeConfig);
+
+    expect(item.tracks).toEqual({ audio: { stream_index: 2 } });
+  });
+
+  test('keeps the item when the profile fails, leaving tracks to the worker', async () => {
+    const { writer, logger } = makeWriter({
+      items: [programItem(600_000)],
+      streamDetails: { duration: tenMinutes, audioDetails },
+      selectionFails: true,
+    });
+
+    const { item } = await resolveOne(writer);
+
+    expect(item.source).toMatchObject({ path: '/media/a.mkv' });
+    expect(item.tracks).toBeUndefined();
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
+  test('skips selection for a file with no audio and plays silence beside it', async () => {
+    const { writer, streamSelector } = makeWriter({
+      items: [programItem(600_000)],
+      streamDetails: { duration: tenMinutes },
+    });
+
+    const { item } = await resolveOne(writer);
+
+    expect(streamSelector.selectAudioAndSubtitleStreams).not.toHaveBeenCalled();
+    expect(item.tracks?.audio?.source).toEqual({
+      source_type: 'lavfi',
+      params: 'anullsrc',
+    });
+  });
+
+  test('selects on the materialized path too', async () => {
+    const { writer } = makeWriter({
+      items: [programItem(600_000)],
+      streamDetails: { duration: tenMinutes, audioDetails },
+      selection: { audioStream: english, subtitleStream: null },
+    });
+
+    const window = await writer.materializeWindow({
+      channel: subtitledChannel,
+      startMs,
+      windowMs: 600_000,
+    });
+
+    expect(window.items[0]?.tracks).toEqual({ audio: { stream_index: 2 } });
   });
 });
 
