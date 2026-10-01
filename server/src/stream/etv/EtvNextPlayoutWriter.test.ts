@@ -84,9 +84,9 @@ function makeWriter({
     getCurrentLineupItem: vi.fn((_request: GetCurrentLineupItemRequest) => {
       const item = items[Math.min(call++, items.length - 1)];
       return Promise.resolve(
-        item === undefined
-          ? Result.failure<never>('no lineup')
-          : Result.success({ lineupItem: item, channelContext }),
+        item
+          ? Result.success({ lineupItem: item, channelContext })
+          : Result.failure<never>('no lineup'),
       );
     }),
   };

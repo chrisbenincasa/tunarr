@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileExists } from '../../util/fsUtil.ts';
+import { fileExists, writeFileAtomic } from '../../util/fsUtil.ts';
 import { EtvNextOutputFiles } from './EtvNextPlaylistCreator.ts';
 import type { ChannelConfig } from './generated/channelConfig.ts';
 import type { PlayoutItem } from './generated/playout.ts';
@@ -92,7 +92,7 @@ export class EtvNextWorkspace {
   }
 
   async writeChannelConfig(config: ChannelConfig): Promise<void> {
-    await writeAtomically(
+    await writeFileAtomic(
       this.channelConfigPath,
       JSON.stringify(config, undefined, 2),
     );
@@ -117,7 +117,7 @@ export class EtvNextWorkspace {
 
     // Written to a temp name and renamed, so the worker — which re-reads the
     // directory every transcode iteration — never parses a partial document.
-    await writeAtomically(
+    await writeFileAtomic(
       target,
       JSON.stringify({ version: PlayoutVersion, items }, undefined, 2),
     );
@@ -179,14 +179,4 @@ export class EtvNextWorkspace {
       await handle?.close();
     }
   }
-}
-
-/** Writes via a sibling temp file and renames, so no reader sees a partial write. */
-async function writeAtomically(
-  target: string,
-  contents: string,
-): Promise<void> {
-  const scratch = `${target}.${process.pid}.tmp`;
-  await fs.writeFile(scratch, contents, 'utf-8');
-  await fs.rename(scratch, target);
 }

@@ -6,7 +6,6 @@ import {
   DynamicTokenEnvVar,
   DynamicWindowMs,
   dynamicPlaceholderId,
-  dynamicResolverHost,
   dynamicResolverUri,
 } from './EtvNextDynamicPlayout.ts';
 import { PlayoutItemSchema } from './generated/playout.ts';
@@ -60,30 +59,20 @@ describe('the dynamic placeholder', () => {
   });
 });
 
-// Tunarr binds TUNARR_BIND_ADDR, so loopback is only reachable when that is a
-// wildcard. Upstream answers a refused callback with black video and no log.
-describe('the resolver host', () => {
+describe('the resolver URI', () => {
   test('is loopback when Tunarr listens on every interface', () => {
-    for (const wildcard of ['0.0.0.0', '::', '[::]', '*', ' ']) {
-      expect(dynamicResolverHost(wildcard)).toBe('127.0.0.1');
-    }
-  });
-
-  test('is loopback when no bind address is set', () => {
-    expect(dynamicResolverHost(undefined)).toBe('127.0.0.1');
-    expect(dynamicResolverHost('')).toBe('127.0.0.1');
+    expect(dynamicResolverUri(8000, '0.0.0.0')).toBe(
+      `http://127.0.0.1:8000${DynamicResolverPath}`,
+    );
   });
 
   test('follows a bind address naming one interface', () => {
-    expect(dynamicResolverHost('192.168.1.10')).toBe('192.168.1.10');
     expect(dynamicResolverUri(8000, '192.168.1.10')).toBe(
       `http://192.168.1.10:8000${DynamicResolverPath}`,
     );
   });
 
   test('brackets an IPv6 literal so it can sit in a URL', () => {
-    expect(dynamicResolverHost('fd00::1')).toBe('[fd00::1]');
-    expect(dynamicResolverHost('[fd00::1]')).toBe('[fd00::1]');
     expect(dynamicResolverUri(8000, '::1')).toBe(
       `http://[::1]:8000${DynamicResolverPath}`,
     );
