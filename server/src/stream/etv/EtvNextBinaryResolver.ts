@@ -2,13 +2,17 @@ import { inject, injectable } from 'inversify';
 import { compact } from 'lodash-es';
 import os from 'node:os';
 import path from 'node:path';
-import serverPackage from '../../../package.json' with { type: 'json' };
 import { ChildProcessHelper } from '../../util/ChildProcessHelper.ts';
 import { TUNARR_ENV_VARS, getEnvVar } from '../../util/env.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { isNonEmptyString } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
+import {
+  matchesPinnedEtvNextVersion,
+  parseEtvNextVersion,
+  pinnedEtvNextVersion,
+} from './EtvNextVersion.ts';
 
 export const ETV_NEXT_BINARY_NAME = 'ersatztv-channel';
 
@@ -19,46 +23,6 @@ export class EtvNextBinaryNotFoundError extends Error {
     );
     this.name = 'EtvNextBinaryNotFoundError';
   }
-}
-
-/**
- * The commit the vendored schemas were generated from. The worker's version
- * string carries the same short SHA, which is what makes a mismatch detectable.
- */
-export const pinnedCommit = serverPackage.ersatztvNext.commit;
-
-export type EtvNextVersion = {
-  raw: string;
-  semver: string;
-  commit: string | undefined;
-};
-
-/**
- * Parses `ersatztv-channel 0.1.0-ed95077`.
- *
- * Upstream builds the string from a tag plus a short SHA, so the commit half is
- * absent on a build made from a clean tag.
- */
-export function parseVersion(output: string): EtvNextVersion | undefined {
-  const raw = output.trim();
-  const match = /(\d+\.\d+\.\d+)(?:-([0-9a-f]{7,40}))?/.exec(raw);
-  const semver = match?.[1];
-  if (!isNonEmptyString(semver)) {
-    return;
-  }
-
-  return { raw, semver, commit: match?.[2] };
-}
-
-/** Whether a worker was built from the commit the vendored schemas came from. */
-export function matchesPinnedCommit(version: EtvNextVersion): boolean {
-  if (!isNonEmptyString(version.commit)) {
-    return false;
-  }
-
-  // Upstream abbreviates to 7 characters in the version string and the pin is
-  // the full SHA, so compare on the shorter of the two.
-  return pinnedCommit.startsWith(version.commit);
 }
 
 /**
@@ -126,18 +90,18 @@ export class EtvNextBinaryResolver {
     throw new EtvNextBinaryNotFoundError(testPaths);
   }
 
-  /** Reads the worker's own version string. */
-  async getVersion(): Promise<EtvNextVersion | undefined> {
+  /** Reads the worker's own version string, e.g. `0.1.0-570d136`. */
+  async getVersion(): Promise<string | undefined> {
     const executablePath = await this.resolve();
     const stdout = await this.childProcessHelper.getStdout(executablePath, [
       '--version',
     ]);
 
-    return parseVersion(stdout);
+    return parseEtvNextVersion(stdout);
   }
 
   /**
-   * Resolves the binary and warns when it was not built from the pinned commit.
+   * Resolves the binary and warns when its version differs from the pin.
    *
    * A mismatch is logged rather than refused. Upstream publishes no tagged
    * release, so the only artifact available is a rolling one, and refusing to
@@ -149,18 +113,19 @@ export class EtvNextBinaryResolver {
 
     if (!version) {
       this.logger.warn(
-        'Could not read a version from %s. Continuing, but the worker may not match the schemas Tunarr generated against commit %s.',
+        'Could not read a version from %s. Continuing, but the worker may not match the schemas Tunarr pinned at %s.',
         executablePath,
-        pinnedCommit.slice(0, 7),
+        pinnedEtvNextVersion,
       );
       return executablePath;
     }
 
-    if (!matchesPinnedCommit(version)) {
+    if (!matchesPinnedEtvNextVersion(version)) {
       this.logger.warn(
-        'The ErsatzTV next worker reports "%s" but Tunarr generated its schemas against commit %s. Streams may fail in ways the schema cannot catch.',
-        version.raw,
-        pinnedCommit.slice(0, 7),
+        'The ErsatzTV next worker at %s reports %s, but Tunarr pinned %s. Streams may fail in ways the schema cannot catch.',
+        executablePath,
+        version,
+        pinnedEtvNextVersion,
       );
     }
 

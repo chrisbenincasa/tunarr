@@ -3,70 +3,12 @@ import { afterEach, describe, expect, test } from 'vitest';
 import {
   ETV_NEXT_BINARY_NAME,
   EtvNextBinaryResolver,
-  matchesPinnedCommit,
-  parseVersion,
-  pinnedCommit,
 } from './EtvNextBinaryResolver.ts';
 
 const ENV_VAR = 'TUNARR_ERSATZTV_NEXT_PATH';
 
 afterEach(() => {
   delete process.env[ENV_VAR];
-});
-
-describe('parseVersion', () => {
-  test('reads the semver and commit out of the worker version string', () => {
-    expect(parseVersion('ersatztv-channel 0.1.0-ed95077')).toEqual({
-      raw: 'ersatztv-channel 0.1.0-ed95077',
-      semver: '0.1.0',
-      commit: 'ed95077',
-    });
-  });
-
-  test('accepts a build made from a clean tag, which carries no commit', () => {
-    expect(parseVersion('ersatztv-channel 1.2.3')).toEqual({
-      raw: 'ersatztv-channel 1.2.3',
-      semver: '1.2.3',
-      commit: undefined,
-    });
-  });
-
-  test('tolerates surrounding whitespace from the process pipe', () => {
-    expect(parseVersion('  ersatztv-channel 0.1.0-ed95077\n')?.semver).toBe(
-      '0.1.0',
-    );
-  });
-
-  test('returns nothing when the output carries no version at all', () => {
-    expect(parseVersion('command not found')).toBeUndefined();
-    expect(parseVersion('')).toBeUndefined();
-  });
-});
-
-describe('matchesPinnedCommit', () => {
-  test('matches the abbreviated commit against the full pinned sha', () => {
-    expect(
-      matchesPinnedCommit({
-        raw: '',
-        semver: '0.1.0',
-        commit: pinnedCommit.slice(0, 7),
-      }),
-    ).toBe(true);
-  });
-
-  test('rejects a worker built from a different commit', () => {
-    expect(
-      matchesPinnedCommit({ raw: '', semver: '0.1.0', commit: 'deadbee' }),
-    ).toBe(false);
-  });
-
-  // A tagged build cannot be proven to match, and upstream ships no tags yet,
-  // so this is the case that will start warning the day they cut one.
-  test('cannot confirm a build that reports no commit', () => {
-    expect(
-      matchesPinnedCommit({ raw: '', semver: '0.1.0', commit: undefined }),
-    ).toBe(false);
-  });
 });
 
 describe('candidatePaths', () => {
