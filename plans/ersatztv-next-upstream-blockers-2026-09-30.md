@@ -63,9 +63,9 @@ Start the two slow conversations on day one, then send the small PRs while those
 
 ### 3.1 B3 — tagged releases
 
-- **Ask** for version tags cut through the existing `artifacts.yml`. The asset-delete step already runs only when `release_tag == 'develop'`, so a tagged release keeps its assets with no pipeline change.
-- **Offer** to cut a tag after each batch of Tunarr-relevant fixes, so the cadence costs the maintainer nothing extra.
-- **Fallback** if tags don't come: mirror a SHA-256-verified `develop` asset into storage Tunarr controls (main plan §12). That works, but it makes Tunarr the release manager for someone else's binary.
+- **Ask** for version tags, plus a small `release.yml` that creates a draft release, calls `artifacts.yml`, and publishes once all six targets upload. No step creates a release today, so a bare tag is not enough.
+- **Offer** to request a tag after each batch of Tunarr-relevant fixes, so the cadence costs the maintainer nothing extra.
+- **Fallback** if no tag by 10/31/2026: copy upstream's signed `develop` assets into releases on a separate Tunarr-owned repo. Details in the [B3 plan](ersatztv-next-b3-tagged-releases-2026-09-30.md) §5.
 
 ### 3.2 B2 — callback retry and failure budget
 
@@ -116,7 +116,7 @@ Upstream fixes reach users only through a pin bump. Every bump moves the followi
 
 | ID  | Tunarr change once the pinned binary carries the fix                                                                                                                                                                                                                                          |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B3  | Pin by tag plus SHA-256. Verify `--version` at startup and refuse the backend on mismatch                                                                                                                                                                                                     |
+| B3  | Pin by tag plus SHA-256. Refuse the bundled binary when `--version` differs from `assetVersion`. Warn only under `ERSATZTV_NEXT_PATH`                                                                                                                                                         |
 | B2  | Map `errorScreen: kill` to "budget expires, don't restart." Remove the resolver-silence watchdog                                                                                                                                                                                              |
 | B6  | Map `ffmpegSettings.scalingAlgorithm` to the new field. Drop it from the ignored-settings list                                                                                                                                                                                                |
 | B8  | Decide whether to keep Phase 5's `anullsrc` stopgap. It still guards against a probe that missed audio                                                                                                                                                                                        |
