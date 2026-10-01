@@ -40,6 +40,19 @@ const RefreshFraction = 0.25;
 /** A floor on the rebuild cadence, so a very short window cannot spin. */
 const MinRefreshIntervalMs = 60_000;
 
+/**
+ * How long past an item's end the worker may go without resolving another
+ * before its session is treated as failed.
+ *
+ * A failed callback costs the worker 60 seconds of black before it tries
+ * again, so the grace has to clear several of those. Anything shorter ends
+ * sessions that were about to recover.
+ */
+export const ResolverSilenceGraceMs = 5 * 60 * 1000;
+
+/** How often the silence is checked. Two comparisons, so it can run often. */
+export const ResolverWatchdogIntervalMs = 30_000;
+
 export type EtvNextSessionOptions = SessionOptions & {
   transcodeDirectory?: string;
 
@@ -105,6 +118,19 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
   #refreshTimer?: NodeJS.Timeout;
   #refreshing = false;
   #stopping = false;
+
+  /**
+   * When the worker is next due to resolve an item, on the dynamic path.
+   *
+   * Undefined outside dynamic mode and before the worker starts. See
+   * `#checkResolverSilence` for what passing it means.
+   */
+  #resolverDeadlineMs?: number;
+
+  /** The last item the resolver answered with, for the log when it goes quiet. */
+  #lastResolvedAtMs?: number;
+
+  #watchdogTimer?: NodeJS.Timeout;
 
   /**
    * The window write currently running, so teardown can wait it out.
@@ -221,6 +247,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     );
 
     this.#startWindowRefresh();
+    this.#startResolverWatchdog();
   }
 
   /**
@@ -294,6 +321,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     // Set before the kill so the exit listener knows this one was deliberate.
     this.#stopping = true;
     this.#stopWindowRefresh();
+    this.#stopResolverWatchdog();
 
     // The token dies with the session, so a worker that outlives its kill
     // cannot keep resolving items.
@@ -388,6 +416,102 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
       this.logger.error(
         e,
         'Could not stop the session after the worker exited',
+      );
+    });
+  }
+
+  /**
+   * Records that the resolver answered this channel, and when the next call is
+   * due.
+   *
+   * The worker asks for one item at a time and asks again once it has
+   * transcoded that item, so the item's own end is when the next request is
+   * owed. Working ahead only makes it early.
+   *
+   * Called by the resolver route on a successful resolve. A failed resolve
+   * deliberately does not move the deadline, so a worker that keeps asking and
+   * keeps being refused still trips the watchdog.
+   */
+  recordResolvedItem(itemFinishMs: number): void {
+    if (this.#playoutMode !== 'dynamic') {
+      return;
+    }
+
+    const nowMs = Date.now();
+    this.#lastResolvedAtMs = nowMs;
+
+    const finishMs = Number.isFinite(itemFinishMs) ? itemFinishMs : nowMs;
+    this.#resolverDeadlineMs =
+      Math.max(finishMs, nowMs) + ResolverSilenceGraceMs;
+  }
+
+  #startResolverWatchdog(): void {
+    if (this.#playoutMode !== 'dynamic') {
+      return;
+    }
+
+    // The worker resolves its first item as soon as it starts, so the same
+    // grace covers the spawn.
+    this.#resolverDeadlineMs = Date.now() + ResolverSilenceGraceMs;
+
+    this.#watchdogTimer = setInterval(() => {
+      this.#checkResolverSilence();
+    }, ResolverWatchdogIntervalMs);
+
+    this.#watchdogTimer.unref();
+  }
+
+  #stopResolverWatchdog(): void {
+    if (this.#watchdogTimer !== undefined) {
+      clearInterval(this.#watchdogTimer);
+      this.#watchdogTimer = undefined;
+    }
+
+    this.#resolverDeadlineMs = undefined;
+  }
+
+  /**
+   * Ends the session when the worker stops resolving items.
+   *
+   * Upstream answers a failed callback with 60 seconds of black and tries
+   * again, forever, and those black segments keep clients polling — which
+   * keeps the connection tracker from ever calling the session idle. So a
+   * channel that can no longer reach its schedule plays black indefinitely
+   * with nothing reported. Ending the session surfaces it as a broken channel
+   * and lets the next viewer get a fresh worker.
+   *
+   * A stopgap. The real fix is a failure budget in the worker that exits
+   * non-zero (plan §F7, upstream B2), which `#onWorkerExit` already handles.
+   */
+  #checkResolverSilence(): void {
+    const deadlineMs = this.#resolverDeadlineMs;
+
+    // `#stopping` is raised before teardown starts; `state` only afterwards.
+    if (
+      this.#stopping ||
+      this.state !== 'started' ||
+      deadlineMs === undefined ||
+      Date.now() <= deadlineMs
+    ) {
+      return;
+    }
+
+    // Disarmed here rather than in teardown, so the interval cannot fire again
+    // while `stop()` waits on the session lock.
+    this.#resolverDeadlineMs = undefined;
+
+    this.logger.error(
+      'The ErsatzTV next worker on channel %s has not resolved a playout item since %s, so it is most likely showing black. Ending the session.',
+      this.channel.uuid,
+      this.#lastResolvedAtMs !== undefined
+        ? new Date(this.#lastResolvedAtMs).toISOString()
+        : 'it started',
+    );
+
+    this.stop().catch((e: unknown) => {
+      this.logger.error(
+        e,
+        'Could not stop the session after the ErsatzTV next worker went quiet',
       );
     });
   }

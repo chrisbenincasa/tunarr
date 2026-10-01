@@ -12,7 +12,11 @@ import {
 } from './EtvNextDynamicPlayout.ts';
 import { EtvNextDynamicTokenRegistry } from './EtvNextDynamicTokenRegistry.ts';
 import type { EtvNextPlayoutMode } from './EtvNextSession.ts';
-import { EtvNextSession } from './EtvNextSession.ts';
+import {
+  EtvNextSession,
+  ResolverSilenceGraceMs,
+  ResolverWatchdogIntervalMs,
+} from './EtvNextSession.ts';
 import { DefaultStalenessMs } from './EtvNextWorkspace.ts';
 
 const channelUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
@@ -733,6 +737,10 @@ describe('the dynamic playout window', () => {
     await session.start();
     const before = await readWindow(transcodeDirectory);
 
+    // A roll is far enough out that the silence watchdog would end the session
+    // first. Stand in for the worker resolving a program that covers the span.
+    session.recordResolvedItem(startMs + DynamicWindowMs);
+
     await vi.advanceTimersByTimeAsync(
       DynamicWindowMs - DynamicRollThresholdMs + 60_000,
     );
@@ -796,5 +804,95 @@ describe('the dynamic playout window', () => {
     await session.stop();
 
     expect(tokenRegistry.size).toBe(0);
+  });
+});
+
+/**
+ * A worker that cannot reach Tunarr shows black and keeps writing segments,
+ * and clients polling those segments keep the session from ever going idle.
+ */
+describe('the resolver silence watchdog', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Enough to cross the deadline and reach the next check after it. */
+  const pastDeadlineMs = ResolverSilenceGraceMs + ResolverWatchdogIntervalMs;
+
+  test('ends a session whose worker never resolves an item', async () => {
+    const { session, startMs } = await makeSession({ playoutMode: 'dynamic' });
+    vi.setSystemTime(startMs);
+    await session.start();
+    expect(session.state).toBe('started');
+
+    await vi.advanceTimersByTimeAsync(pastDeadlineMs);
+
+    await vi.waitFor(() => {
+      expect(session.state).toBe('stopped');
+    });
+  });
+
+  test('kills the worker it gave up on', async () => {
+    const { session, killed, startMs } = await makeSession({
+      playoutMode: 'dynamic',
+    });
+    vi.setSystemTime(startMs);
+    await session.start();
+
+    await vi.advanceTimersByTimeAsync(pastDeadlineMs);
+
+    await vi.waitFor(() => {
+      expect(killed).toHaveBeenCalled();
+    });
+  });
+
+  // The worker asks again only once it has transcoded what it was given, so a
+  // long program is a long silence and must not read as a failure.
+  test('waits out an item longer than the grace', async () => {
+    const { session, startMs } = await makeSession({ playoutMode: 'dynamic' });
+    vi.setSystemTime(startMs);
+    await session.start();
+
+    const twoHours = 2 * 60 * 60 * 1000;
+    session.recordResolvedItem(startMs + twoHours);
+
+    await vi.advanceTimersByTimeAsync(twoHours);
+    expect(session.state).toBe('started');
+
+    await vi.advanceTimersByTimeAsync(pastDeadlineMs);
+
+    await vi.waitFor(() => {
+      expect(session.state).toBe('stopped');
+    });
+  });
+
+  // An item already over still buys the full grace, so a worker catching up
+  // after a stall is not ended mid-recovery.
+  test('grants the grace from now when the item has already finished', async () => {
+    const { session, startMs } = await makeSession({ playoutMode: 'dynamic' });
+    vi.setSystemTime(startMs);
+    await session.start();
+
+    vi.setSystemTime(startMs + ResolverSilenceGraceMs / 2);
+    session.recordResolvedItem(startMs - 60_000);
+
+    await vi.advanceTimersByTimeAsync(ResolverSilenceGraceMs);
+    expect(session.state).toBe('started');
+  });
+
+  test('leaves the materialized path alone', async () => {
+    const { session, startMs } = await makeSession({
+      playoutMode: 'materialized',
+    });
+    vi.setSystemTime(startMs);
+    await session.start();
+
+    await vi.advanceTimersByTimeAsync(pastDeadlineMs);
+
+    expect(session.state).toBe('started');
   });
 });
