@@ -474,7 +474,8 @@
       "type": "string",
       "enum": [
         "h264",
-        "hevc"
+        "hevc",
+        "mpeg2video"
       ]
     },
     "VideoNormalizationConfig": {
@@ -568,12 +569,14 @@
           "default": "scale_and_pad"
         },
         "vaapi_device": {
+          "description": "Unset uses `/dev/dri/renderD128`.",
           "type": [
             "string",
             "null"
           ]
         },
         "vaapi_driver": {
+          "description": "Unset lets libva select the driver for `vaapi_device`.",
           "anyOf": [
             {
               "$ref": "#/$defs/VaapiDriver"

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ersatztv.org/playout/version/0.0.4",
+  "$id": "https://ersatztv.org/playout/version/0.0.5",
   "title": "Playout",
   "description": "A playout schedule for a single time window.\n\nFiles should be named `{start}_{finish}.json` using compact ISO 8601 (no separators), e.g. `20260413T000000.000000000-0500_20260414T002131.620000000-0500.json`, so that the channel can locate the correct file for the current time.",
   "type": "object",
@@ -806,6 +806,20 @@
             "null"
           ],
           "description": "Whether the stream carries HDR10 static metadata (mastering display colour volume or content light level), at the container level or in per-frame SEI. Hardware tonemappers that read that metadata (Intel vpp_qsv) are only used when this is true; omitting it is treated as false and falls back to software tonemapping for \"smpte2084\" content."
+        },
+        "rotation": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "enum": [
+            0,
+            90,
+            180,
+            270,
+            null
+          ],
+          "description": "Display rotation in counter-clockwise degrees from the stream's display matrix, normalized to 0, 90, 180, or 270. The channel rotates frames explicitly after deinterlacing and before scaling, using hardware filters when supported and software otherwise. A 90/270 rotation swaps width and height and inverts pixel and display aspect ratios. Omit when unknown; for local sources the channel then reads it from the file header."
         }
       }
     },

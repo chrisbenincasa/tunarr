@@ -9,7 +9,7 @@ import {
 } from '../../../scripts/generate-etv-schemas.ts';
 import { ChannelConfigSchema } from './generated/channelConfig.ts';
 import { LineupConfigSchema } from './generated/lineupConfig.ts';
-import { PlayoutSchema } from './generated/playout.ts';
+import { PlayoutSchema, VideoHintSchema } from './generated/playout.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const schemaDir = path.join(here, 'schema');
@@ -146,6 +146,27 @@ describe('PlayoutSchema', () => {
 
       expect(result.error?.issues, source.source_type).toBeUndefined();
     }
+  });
+
+  // A nullable integer enum, which the generator renders as a literal union.
+  test('limits a video hint rotation to the four right angles', () => {
+    const hint = {
+      stream_index: 0,
+      codec: 'h264',
+      width: 1920,
+      height: 1080,
+      pix_fmt: 'yuv420p',
+    };
+
+    for (const rotation of [0, 90, 180, 270, null]) {
+      expect(
+        VideoHintSchema.safeParse({ ...hint, rotation }).success,
+        `${rotation}`,
+      ).toBe(true);
+    }
+    expect(VideoHintSchema.safeParse({ ...hint, rotation: 45 }).success).toBe(
+      false,
+    );
   });
 });
 
