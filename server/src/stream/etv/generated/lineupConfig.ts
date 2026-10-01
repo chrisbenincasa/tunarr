@@ -34,6 +34,7 @@ export const LineupConfigSchema = z.strictObject({
   channels: z.array(ChannelConfigSchema),
   output: OutputConfigSchema,
   server: ServerConfigSchema.optional(),
+  version: z.string().optional(),
   xmltv: XmltvConfigSchema.nullable().optional(),
 });
 export type LineupConfig = z.infer<typeof LineupConfigSchema>;

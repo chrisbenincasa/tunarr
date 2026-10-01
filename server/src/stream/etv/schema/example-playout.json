@@ -1,7 +1,6 @@
 {
   "$schema": "../../schema/playout.json",
-  "version": "https://ersatztv.org/playout/version/0.0.3",
-  "generated_at": "2026-02-23T18:02:00-05:00",
+  "version": "https://ersatztv.org/playout/version/0.0.5",
   "items": [
     {
       "id": "1",
@@ -16,26 +15,28 @@
           "stream_index": 1
         }
       },
-      "watermark": {
-        "source": {
-          "source_type": "local",
-          "path": "~/Pictures/network-logo.png"
-        },
-        "location": "bottom_right",
-        "width_percent": 10,
-        "horizontal_margin_percent": 2,
-        "vertical_margin_percent": 2,
-        "opacity_percent": 80,
-        "timing": {
-          "timing_type": "periodic",
-          "clock": "wall",
-          "frequency_ms": 300000,
-          "phase_offset_ms": 0,
-          "disable_after_ms": 3000000,
-          "fade_ms": 1000,
-          "hold_ms": 8000
+      "graphics": [
+        {
+          "source": {
+            "source_type": "local",
+            "path": "~/Pictures/network-logo.png"
+          },
+          "location": "bottom_right",
+          "width_percent": 10,
+          "horizontal_margin_percent": 2,
+          "vertical_margin_percent": 2,
+          "opacity_percent": 80,
+          "timing": {
+            "timing_type": "periodic",
+            "clock": "wall",
+            "frequency_ms": 300000,
+            "phase_offset_ms": 0,
+            "disable_after_ms": 3000000,
+            "fade_ms": 1000,
+            "hold_ms": 8000
+          }
         }
-      }
+      ]
     },
     {
       "id": "2",
@@ -51,7 +52,7 @@
         "video": {
           "source": {
             "source_type": "local",
-            "path": "/home/jason/Pictures/be-right-back.png"
+            "path": "~/Pictures/be-right-back.png"
           }
         }
       }

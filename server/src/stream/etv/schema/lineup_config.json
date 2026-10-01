@@ -1,4 +1,5 @@
 {
+  "$id": "https://ersatztv.org/lineup/version/0.0.1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "LineupConfig",
   "type": "object",
@@ -18,6 +19,10 @@
         "bind_address": "0.0.0.0",
         "port": 8409
       }
+    },
+    "version": {
+      "description": "Schema version URI, e.g. \"https://ersatztv.org/lineup/version/0.0.1\"; missing is 0.0.0.",
+      "type": "string"
     },
     "xmltv": {
       "anyOf": [
