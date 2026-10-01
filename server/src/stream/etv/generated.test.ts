@@ -25,16 +25,12 @@ const loadExample = async () =>
   >;
 
 /**
- * `$schema` and `generated_at` are in upstream's example but in neither the
- * schema nor the Rust `Playout` struct, so `next` discards them. Strip them to
- * get the document the Rust side actually models.
+ * `$schema` is in upstream's example but in neither the schema nor the Rust
+ * `Playout` struct, so `next` discards it. Strip it to get the document the
+ * Rust side actually models.
  */
 const exampleAsModelled = async () => {
-  const {
-    $schema: _schema,
-    generated_at: _generatedAt,
-    ...rest
-  } = await loadExample();
+  const { $schema: _schema, ...rest } = await loadExample();
   return rest;
 };
 
@@ -75,13 +71,13 @@ describe('PlayoutSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  test('rejects the undeclared keys upstream ships in that example', async () => {
+  test('rejects the undeclared key upstream ships in that example', async () => {
     const result = PlayoutSchema.safeParse(await loadExample());
 
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]).toMatchObject({
       code: 'unrecognized_keys',
-      keys: ['$schema', 'generated_at'],
+      keys: ['$schema'],
     });
   });
 
@@ -133,7 +129,7 @@ describe('PlayoutSchema', () => {
 
     for (const source of sources) {
       const result = PlayoutSchema.safeParse({
-        version: 'https://ersatztv.org/playout/version/0.0.3',
+        version: 'https://ersatztv.org/playout/version/0.0.5',
         items: [
           {
             id: '1',

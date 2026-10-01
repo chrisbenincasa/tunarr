@@ -1,6 +1,6 @@
 # ErsatzTV next — B6 scaling algorithm
 
-> **Status (09/30/2026):** Planned. Verified against upstream `091e174`. Nothing filed. Next step is the PR in §2. No issue first, because the default stays the same.
+> **Status (10/01/2026):** Planned. Verified against upstream `091e174`. At `570d136` the hardcoded flag is still at `video_filter.rs:234` and `:599`, but #278–#283 rewrote `pipeline.rs` and `channel_session.rs`, so re-verify those line numbers before the PR. Nothing filed. Next step is the PR in §2. No issue first, because the default stays the same.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md).
 

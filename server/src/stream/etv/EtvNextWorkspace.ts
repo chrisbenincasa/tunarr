@@ -9,7 +9,7 @@ import type { PlayoutItem } from './generated/playout.ts';
  * The playout document version the vendored schemas describe. Upstream reads it
  * to decide how to parse the file.
  */
-export const PlayoutVersion = 'https://ersatztv.org/playout/version/0.0.3';
+export const PlayoutVersion = 'https://ersatztv.org/playout/version/0.0.5';
 
 /** Upstream's `.ready` deadline. The worker publishes it after four segments. */
 export const ReadyTimeoutMs = 30_000;

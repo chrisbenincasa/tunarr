@@ -3,6 +3,7 @@ import { FfmpegSettingsSchema } from '@tunarr/types/schemas';
 import { describe, expect, test } from 'vitest';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import {
+  ChannelConfigVersion,
   UnsupportedTranscodeConfigError,
   findUnsupportedSettings,
   toChannelConfig,
@@ -93,6 +94,10 @@ describe('toChannelConfig', () => {
     expect(config.playout.folder).toBe(
       '/var/lib/tunarr/transcode/etv_abc/playout',
     );
+  });
+
+  test('stamps the channel config version the worker requires', () => {
+    expect(map().config.version).toBe(ChannelConfigVersion);
   });
 
   test('omits accel entirely when hardware acceleration is off', () => {
