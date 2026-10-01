@@ -1,6 +1,6 @@
 # ErsatzTV next — upstream blockers track
 
-> **Status (09/30/2026):** Drafted. Nothing filed yet under this plan. The ship gate (B3) and the five blockers B2, B5–B8 are open upstream. G5 is fixed upstream (#249). Next step is to open the B3 release conversation and the B2 design issue, then send the B6 PR.
+> **Status (09/30/2026):** Per-item implementation plans written and linked in §4, verified against upstream `091e174`. Nothing filed yet. B5 is re-scoped as not a blocker (see its plan). G5 and the `mpeg2video` half of D2 are done. The pin moved to `091e174` on 09/30, and the VAAPI workaround is gone. Next step is to open the B3 release conversation and the B2 design issue, then send the B6 PR.
 
 Offshoot of [`ersatztv-next-integration-2026-09-19.md`](ersatztv-next-integration-2026-09-19.md), called "the main plan" below. The main plan owns the Tunarr side. This plan owns everything that has to change in [ErsatzTV/next](https://github.com/ErsatzTV/next) before Tunarr can ship the backend.
 
@@ -14,14 +14,16 @@ Offshoot of [`ersatztv-next-integration-2026-09-19.md`](ersatztv-next-integratio
 
 The register was verified against `next` at `ed95077` (09/16/2026). Upstream has landed 27 commits since then, almost all on the hardware pipeline.
 
-| Item | At `ed95077`                  | Now (09/30/2026)                                                                           | Effect on Tunarr                                                              |
-| ---- | ----------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| G5   | VAAPI dropped without driver  | Fixed in `f2a981b` (#249). Issue #246 closed 09/23                                         | `EtvNextVaapi.ts` workaround can go once the pin moves past `f2a981b`         |
-| D2   | No `mpeg2video`, no `mp3`     | `mpeg2video` encoder added (#272). `mp3` still missing                                     | The `mpeg2video` refusal lifts when the next pin bump regenerates the schemas |
-| A6   | Playlist version mismatch     | Filed by another user as #213. Open                                                        | None. Comment on #213 rather than filing again                                |
-| A9   | `linux-arm` tests never run   | `linux-arm` (arm32v7) dropped entirely (#257)                                              | None. `download-ersatztv-next.ts` never requested `linux-arm`                 |
-| A2   | `read_dir` errors swallowed   | Possible overlap with open PR #217 ("name the operation and the path on every io failure") | Check #217 before filing A2                                                   |
-| B3   | `develop` is the only release | Unchanged. `develop` is still the only release                                             | Still the gate                                                                |
+| Item | At `ed95077`                  | Now (09/30/2026)                                                                           | Effect on Tunarr                                                                                                         |
+| ---- | ----------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| G5   | VAAPI dropped without driver  | Fixed in `f2a981b` (#249). Issue #246 closed 09/23                                         | Done. Pin moved to `091e174` on 09/30, `EtvNextVaapi.ts` deleted, smoke trace shows `h264_vaapi` with neither field sent |
+| D2   | No `mpeg2video`, no `mp3`     | `mpeg2video` encoder added (#272). `mp3` still missing                                     | Done for `mpeg2video` at pin `091e174`. `mp3` still refused                                                              |
+| A6   | Playlist version mismatch     | Filed by another user as #213. Open                                                        | None. Comment on #213 rather than filing again                                                                           |
+| A9   | `linux-arm` tests never run   | `linux-arm` (arm32v7) dropped entirely (#257)                                              | None. `download-ersatztv-next.ts` never requested `linux-arm`                                                            |
+| A2   | `read_dir` errors swallowed   | Possible overlap with open PR #217 ("name the operation and the path on every io failure") | Check #217 before filing A2                                                                                              |
+| B3   | `develop` is the only release | Unchanged. Tag `v0.1.0` exists with no release object, and no workflow creates releases    | Still the gate. Needs a small `release.yml`, not just a tag                                                              |
+| B5   | Lavfi in-point ignored        | `Lavfi`, `Rtsp`, `Script` have no in/out-point fields at all, here or at `ed95077`         | Not a Tunarr blocker. Folds into C2                                                                                      |
+| B6   | `video_filter.rs:228`, `:540` | Now `:234` and `:599`. The second site scales image subtitles, not video                   | None                                                                                                                     |
 
 **Re-verify every row before filing it.** The register's file:line citations point at `ed95077`. Check each one against upstream HEAD first, because upstream moves fast enough that a row can go stale in a week.
 
@@ -50,11 +52,11 @@ Start the two slow conversations on day one, then send the small PRs while those
 | 1    | B2   | Design issue            | It adds config knobs and an exit-code contract, so the shape needs agreement. Pair it with B1's work-ahead knobs        |
 | 2    | B6   | PR                      | The most visible regression, since every scaled frame degrades. Small: one config enum plus a format string             |
 | 3    | B8   | PR                      | Small, because the `anullsrc` primitive already exists upstream. Video-only files fail on this backend today            |
-| 4    | B5   | PR                      | Small. A lavfi item with an in-point silently seeks to zero                                                             |
+| 4    | B5   | Re-scoped               | Not a blocker. Fold into C2, and send the graphics in-point one-liner with any small PR                                 |
 | 5    | B7   | PR                      | Not reachable from Tunarr today, because the mapper refuses copy audio (main plan §9). Must land before copy is allowed |
 | 6    | B2   | PR                      | After step 1's issue settles the shape                                                                                  |
 | 7    | C9   | Design issue            | Not a ship gate. Once it exists, Tunarr derives its validation from the binary instead of hardcoding it                 |
-| 8    | B3   | Pin bump                | After a tagged release contains steps 2–6. See §5                                                                       |
+| 8    | B3   | Pin bump                | After a tagged release contains steps 2, 3, 5 and 6. See §5                                                             |
 
 ### 3.1 B3 — tagged releases
 
@@ -64,10 +66,10 @@ Start the two slow conversations on day one, then send the small PRs while those
 
 ### 3.2 B2 — callback retry and failure budget
 
-The issue should propose:
+Only retry gates shipping (B2 plan, D1 and D6). The issue should propose:
 
 - retry with backoff on a failed dynamic callback
-- a configurable fallback quantum, replacing the hardcoded 60 seconds
+- a configurable fallback duration, replacing the hardcoded 60 seconds
 - a failure budget, N consecutive failures or M seconds of continuous fallback, after which the worker exits non-zero.
 
 Make the case without Tunarr. A backend that cannot tell "this item failed" from "this channel is dead" gives no other consumer an outage signal either. The full argument is in main plan §15.B, "B2 in full."
@@ -87,16 +89,16 @@ Make the case without Tunarr. A backend that cannot tell "this item failed" from
 
 ## 4. Tracker
 
-| ID  | Change                                | Form      | Upstream | Status        | Tunarr stopgap today                                                                                 |
-| --- | ------------------------------------- | --------- | -------- | ------------- | ---------------------------------------------------------------------------------------------------- |
-| B3  | Tagged releases                       | Ask       | —        | open          | `server/package.json` `ersatztvNext` records drift but doesn't pin. Its own `note` says so           |
-| B2  | Retry, backoff, failure budget        | Issue, PR | —        | open          | Resolver-silence watchdog, `EtvNextSession.ts:54` (5-minute grace)                                   |
-| B6  | Scaling-algorithm field               | PR        | —        | open          | Compatibility notice lists `scalingAlgorithm` as ignored (`EtvNextChannelConfigMapper.ts:216`)       |
-| B8  | Silent audio for video-only sources   | PR        | —        | open          | None for content items. `anullsrc` covers only error and flex items. Phase 5 adds the stopgap        |
-| B5  | In/out points on every source variant | PR        | —        | open          | Mapper attaches in/out points only to `local` and `http` sources (`EtvNextPlayoutItemMapper.ts:208`) |
-| B7  | DTS/TrueHD → AC-3 under copy          | PR        | —        | open          | Copy audio refused, because the generated `AudioFormatSchema` has no `copy` value                    |
-| C9  | `--describe` capability handshake     | Issue     | —        | open          | Hardcoded validation rules in the mapper                                                             |
-| G5  | VAAPI device and driver defaults      | Issue     | #246     | fixed in #249 | `EtvNextVaapi.ts` infers both                                                                        |
+| ID  | Change                                | Form      | Upstream | Status    | Plan                                                           | Tunarr stopgap today                                                                                 |
+| --- | ------------------------------------- | --------- | -------- | --------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| B3  | Tagged releases                       | Ask       | —        | open      | [plan](ersatztv-next-b3-tagged-releases-2026-09-30.md)         | `server/package.json` `ersatztvNext` records drift but doesn't pin. Its own `note` says so           |
+| B2  | Retry, backoff, failure budget        | Issue, PR | —        | open      | [plan](ersatztv-next-b2-callback-failure-budget-2026-09-30.md) | Resolver-silence watchdog, `EtvNextSession.ts:54` (5-minute grace)                                   |
+| B6  | Scaling-algorithm field               | PR        | —        | open      | [plan](ersatztv-next-b6-scaling-algorithm-2026-09-30.md)       | Compatibility notice lists `scalingAlgorithm` as ignored (`EtvNextChannelConfigMapper.ts:216`)       |
+| B8  | Silent audio for video-only sources   | PR        | —        | open      | [plan](ersatztv-next-b8-silent-audio-2026-09-30.md)            | None for content items. `anullsrc` covers only error and flex items. Phase 5 adds the stopgap        |
+| B5  | In/out points on every source variant | PR        | —        | re-scoped | [plan](ersatztv-next-b5-in-out-points-2026-09-30.md)           | Mapper attaches in/out points only to `local` and `http` sources (`EtvNextPlayoutItemMapper.ts:208`) |
+| B7  | DTS/TrueHD → AC-3 under copy          | PR        | —        | open      | [plan](ersatztv-next-b7-copy-audio-rewrite-2026-09-30.md)      | Copy audio refused, because the generated `AudioFormatSchema` has no `copy` value                    |
+| C9  | `--describe` capability handshake     | Issue     | —        | open      | [plan](ersatztv-next-c9-describe-handshake-2026-09-30.md)      | Hardcoded validation rules in the mapper                                                             |
+| G5  | VAAPI device and driver defaults      | Issue     | #246     | done      | —                                                              | None. Workaround deleted at pin `091e174`                                                            |
 
 ---
 
@@ -109,21 +111,21 @@ Upstream fixes reach users only through a pin bump. Every bump moves the followi
 - the generated Zod (`pnpm generate-etv-schemas`)
 - the emitted playout schema version constant.
 
-| ID  | Tunarr change once the pinned binary carries the fix                                                   |
-| --- | ------------------------------------------------------------------------------------------------------ |
-| B3  | Pin by tag plus SHA-256. Verify `--version` at startup and refuse the backend on mismatch              |
-| B2  | Map `errorScreen: kill` to "budget expires, don't restart." Remove the resolver-silence watchdog       |
-| B6  | Map `ffmpegSettings.scalingAlgorithm` to the new field. Drop it from the ignored-settings list         |
-| B8  | Decide whether to keep Phase 5's `anullsrc` stopgap. It still guards against a probe that missed audio |
-| B5  | None needed. Add a mapper test that pins the in-point on a lavfi item                                  |
-| B7  | Lift the copy-audio refusal, together with D1 planning                                                 |
-| G5  | Delete `EtvNextVaapi.ts` and its compatibility-notice branch                                           |
-| D2  | Nothing by hand. The refusal reads the generated enum, so regenerating the schemas lifts it            |
+| ID  | Tunarr change once the pinned binary carries the fix                                                              |
+| --- | ----------------------------------------------------------------------------------------------------------------- |
+| B3  | Pin by tag plus SHA-256. Verify `--version` at startup and refuse the backend on mismatch                         |
+| B2  | Map `errorScreen: kill` to "budget expires, don't restart." Remove the resolver-silence watchdog                  |
+| B6  | Map `ffmpegSettings.scalingAlgorithm` to the new field. Drop it from the ignored-settings list                    |
+| B8  | Decide whether to keep Phase 5's `anullsrc` stopgap. It still guards against a probe that missed audio            |
+| B5  | Re-scoped. Add a mapper test asserting no `lavfi` source carries in/out points                                    |
+| B7  | Lift the copy-audio refusal, together with D1 planning                                                            |
+| G5  | Done 09/30. `EtvNextVaapi.ts` deleted, and the mapper passes an unset device and `system` driver through as unset |
+| D2  | Done 09/30 for `mpeg2video`. The refusal lifted when the schemas were regenerated                                 |
 
 ---
 
 ## 6. Done when
 
-- A tagged upstream release contains B2, B5, B6, B7 and B8.
+- A tagged upstream release contains B2, B6, B7 and B8. B5 was re-scoped out (see its plan).
 - Tunarr pins that release by SHA-256, and §5's follow-ups are done or deliberately declined.
 - Main plan §12 is marked passed, and its status block points here for the record.
