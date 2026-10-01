@@ -65,6 +65,7 @@ const map = (
     transcodeConfig: transcodeConfig(tc),
     ffmpegSettings: ffmpegSettings(fs),
     playoutFolder: '/var/lib/tunarr/transcode/etv_abc/playout',
+    subtitleMode: 'burn',
     reportsFolder,
   });
 
@@ -202,6 +203,18 @@ describe('toChannelConfig', () => {
     ).toBe('/var/lib/tunarr/etv-diag');
   });
 
+  test('carries the subtitle mode the caller chose', () => {
+    expect(map().config.normalization.subtitle?.mode).toBe('burn');
+
+    const { config } = toChannelConfig({
+      transcodeConfig: transcodeConfig({}),
+      ffmpegSettings: ffmpegSettings({}),
+      playoutFolder: '/var/lib/tunarr/transcode/etv_abc/playout',
+      subtitleMode: 'convert',
+    });
+    expect(config.normalization.subtitle?.mode).toBe('convert');
+  });
+
   test('asks the backend to burn the failure reason into frame unless the screen is blank', () => {
     expect(map({ errorScreen: 'pic' }).config.fallback?.show_error).toBe(true);
     expect(map({ errorScreen: 'blank' }).config.fallback?.show_error).toBe(
@@ -303,8 +316,8 @@ describe('unsupported transcode configs', () => {
       );
 
       expect(settings).toHaveLength(1);
-      expect(settings[0].field).toBe('audioFormat');
-      expect(settings[0].reason).toContain('aac, ac3');
+      expect(settings[0]?.field).toBe('audioFormat');
+      expect(settings[0]?.reason).toContain('aac, ac3');
     },
   );
 
