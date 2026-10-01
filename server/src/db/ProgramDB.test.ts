@@ -5,13 +5,17 @@ import { eq, sql, SQL } from 'drizzle-orm';
 import { SelectResultFields } from 'drizzle-orm/query-builders/select.types';
 import { SelectedFields } from 'drizzle-orm/sqlite-core';
 import { range } from 'lodash-es';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import tmp from 'tmp-promise';
 import { copyPreMigratedDb } from '../testing/testDbFactory.ts';
 import { StrictOmit } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { test as baseTest } from 'vitest';
 import { bootstrapTunarr } from '../bootstrap.ts';
-import { setGlobalOptions } from '../globals.ts';
+import { globalOptions, setGlobalOptions } from '../globals.ts';
+import { FileSystemService } from '../services/FileSystemService.ts';
+import { fileExists } from '../util/fsUtil.ts';
 import { DBAccess } from './DBAccess.ts';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
 import { ProgramDB } from './ProgramDB.ts';
@@ -109,7 +113,10 @@ const test = baseTest.extend<Fixture>({
   programDb: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
 
-    const metadataRepo = new ProgramMetadataRepository(dbAccess.drizzle!);
+    const metadataRepo = new ProgramMetadataRepository(
+      dbAccess.drizzle!,
+      new FileSystemService(globalOptions()),
+    );
     const externalIdRepo = new ProgramExternalIdRepository(
       dbAccess.db!,
       dbAccess.drizzle!,
@@ -3087,6 +3094,161 @@ describe('ProgramDB', () => {
 
         expect(subs).toHaveLength(1);
         expect(subs[0]!.isExtracted).toBe(false);
+      });
+
+      describe('sidecar cache files', () => {
+        async function writeFile(dir: string, name: string) {
+          await fs.mkdir(dir, { recursive: true });
+          const filePath = path.join(dir, name);
+          await fs.writeFile(
+            filePath,
+            '1\n00:00:01,000 --> 00:00:02,000\nhi\n',
+          );
+          return filePath;
+        }
+
+        function cacheDir() {
+          return path.join(
+            new FileSystemService(globalOptions()).getSubtitleCacheFolder(),
+            'ab',
+            'cd',
+          );
+        }
+
+        function sidecar(programId: string, filePath: string) {
+          return createSubtitle(programId, {
+            subtitleType: 'sidecar',
+            streamIndex: null,
+            codec: 'srt',
+            language: 'eng',
+            path: filePath,
+          });
+        }
+
+        async function upsertSidecars(
+          programDb: IProgramDB,
+          drizzle: DrizzleDBAccess,
+          first: (programId: string) => NewProgramSubtitles[],
+          second: (programId: string) => NewProgramSubtitles[],
+        ) {
+          const library = await createTestMediaSourceLibrary(drizzle);
+          const programData = createBaseProgram(
+            'movie',
+            library.uuid,
+            'jellyfin',
+            { mediaSourceId: library.mediaSourceId },
+          );
+          const base = {
+            externalIds: [],
+            genres: [],
+            studios: [],
+            artwork: [],
+            credits: [],
+            versions: [],
+            tags: [],
+          };
+
+          const [inserted] = await programDb.upsertPrograms([
+            {
+              ...base,
+              program: programData,
+              subtitles: first(programData.uuid),
+            },
+          ]);
+          if (!inserted) {
+            throw new Error('Expected the first upsert to return a program');
+          }
+
+          // A rescan mints a fresh UUID; the upsert keeps the stored one.
+          await programDb.upsertPrograms([
+            {
+              ...base,
+              program: { ...programData, uuid: v4() },
+              subtitles: second(v4()),
+            },
+          ]);
+
+          return await drizzle.query.programSubtitles.findMany({
+            where: (fields, { eq }) => eq(fields.programId, inserted.uuid),
+          });
+        }
+
+        test('deletes the cached copy a rescan replaces', async ({
+          programDb,
+          drizzle,
+        }) => {
+          const oldCopy = await writeFile(cacheDir(), 'old.srt');
+          const newCopy = await writeFile(cacheDir(), 'new.srt');
+
+          const subs = await upsertSidecars(
+            programDb,
+            drizzle,
+            (id) => [sidecar(id, oldCopy)],
+            (id) => [sidecar(id, newCopy)],
+          );
+
+          expect(subs.map((s) => s.path)).toEqual([newCopy]);
+          expect(await fileExists(oldCopy)).toBe(false);
+          expect(await fileExists(newCopy)).toBe(true);
+        });
+
+        test('keeps a cached copy the rescan still points at', async ({
+          programDb,
+          drizzle,
+        }) => {
+          const copy = await writeFile(cacheDir(), 'same.srt');
+
+          await upsertSidecars(
+            programDb,
+            drizzle,
+            (id) => [sidecar(id, copy)],
+            (id) => [sidecar(id, copy)],
+          );
+
+          expect(await fileExists(copy)).toBe(true);
+        });
+
+        test('deletes the cached copy of a sidecar the source dropped', async ({
+          programDb,
+          drizzle,
+        }) => {
+          const copy = await writeFile(cacheDir(), 'dropped.srt');
+
+          const subs = await upsertSidecars(
+            programDb,
+            drizzle,
+            (id) => [
+              sidecar(id, copy),
+              createSubtitle(id, { streamIndex: 2, codec: 'srt' }),
+            ],
+            (id) => [createSubtitle(id, { streamIndex: 2, codec: 'srt' })],
+          );
+
+          expect(subs.map((s) => s.subtitleType)).toEqual(['embedded']);
+          expect(await fileExists(copy)).toBe(false);
+        });
+
+        test('never deletes a sidecar outside the subtitle cache', async ({
+          programDb,
+          drizzle,
+        }) => {
+          const sharedDir = await tmp.dir({ unsafeCleanup: true });
+          try {
+            const shared = await writeFile(sharedDir.path, 'Movie.en.srt');
+            const newCopy = await writeFile(cacheDir(), 'replacement.srt');
+
+            await upsertSidecars(
+              programDb,
+              drizzle,
+              (id) => [sidecar(id, shared)],
+              (id) => [sidecar(id, newCopy)],
+            );
+
+            expect(await fileExists(shared)).toBe(true);
+          } finally {
+            await sharedDir.cleanup();
+          }
+        });
       });
     });
   });
