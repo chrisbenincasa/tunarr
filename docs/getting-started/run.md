@@ -94,7 +94,7 @@ Tunarr has various command line / environment variables for configuration. These
 
 | Environment Variable | Command Line Flag | Default | Description |
 | -------------------- | ----------------- | ------- | ----------- |
-| `TUNARR_USE_WORKER_POOL` | N/A | `false` | Enables experimental worker thread pool for background tasks. **NOTE** This is experimental. |
+| `TUNARR_USE_WORKER_POOL` | N/A | `false` | Enables experimental worker thread pool for background tasks. A worker that misses a task's deadline is terminated and replaced, and its queued tasks fail. **NOTE** This is experimental. |
 | `TUNARR_WORKER_POOL_SIZE` | N/A | (CPU count) | Number of worker threads in the pool. Recommended: no more than the number of CPUs on the host. |
 
 ### Debug

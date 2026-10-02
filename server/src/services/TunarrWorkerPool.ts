@@ -216,7 +216,7 @@ export class TunarrWorkerPool implements IWorkerPool {
     const requestId = v4();
     const reqWithId: WorkerRequest = { ...request, requestId };
     const fut = new Future<Out>();
-    await retry(async () => {
+    const { idx, worker } = await retry(async () => {
       return this.#mu.runExclusive(() => {
         const idx = this.#last;
         const pooled = this.#pool[idx];
@@ -241,14 +241,54 @@ export class TunarrWorkerPool implements IWorkerPool {
           );
           performance.mark(requestId);
           worker.postMessage(reqWithId);
-          return;
+          return { idx, worker };
         } else {
           throw new Error(`Worker at ${idx} is not ready yet`);
         }
       });
     });
 
-    return timeoutPromise(fut.promise, timeout);
+    const timer = setTimeout(
+      () => this.timeOutTask(requestId, idx, worker, timeout),
+      timeout,
+    );
+    return fut.promise.finally(() => clearTimeout(timer));
+  }
+
+  private timeOutTask(
+    requestId: string,
+    idx: number,
+    worker: Worker,
+    timeout: number,
+  ) {
+    const fut = this.#listeners.get(requestId);
+    this.#listeners.delete(requestId);
+    this.#outstandingByIndex.set(
+      idx,
+      reject(this.#outstandingByIndex.get(idx), (id) => id === requestId),
+    );
+    if (fut === undefined || fut.state !== 'pending') {
+      return;
+    }
+    fut.reject(new Error(`Timeout after ${timeout}ms`));
+
+    // A worker that misses its deadline may be stuck in a loop it cannot leave.
+    // Terminating it frees the slot, and the exit handler rejects the worker's
+    // other tasks and starts a replacement.
+    const pooled = this.#pool[idx];
+    if (pooled === undefined || pooled.worker !== worker) {
+      return;
+    }
+    pooled.ready = false;
+    this.logger.warn(
+      'Worker %d missed the %d ms deadline for request %s. Replacing it.',
+      idx,
+      timeout,
+      requestId,
+    );
+    worker.terminate().catch((err: unknown) => {
+      this.logger.error(err, 'Failed to terminate worker %d', idx);
+    });
   }
 
   private async setupWorker(idx: number): Promise<boolean> {
