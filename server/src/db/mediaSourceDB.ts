@@ -94,6 +94,12 @@ export class MediaSourceDB {
       with: {
         mediaSource: {
           with: {
+            // The library detail route builds a LOCAL source's `paths` from
+            // this relation, and the response schema requires that array to be
+            // non-empty. Without it the route serialized `paths: []`, failed
+            // schema validation and answered 500 for every local library
+            // (#2200). Every other reader of this relation already asks for it.
+            libraries: true,
             paths: true,
             replacePaths: true,
           },
