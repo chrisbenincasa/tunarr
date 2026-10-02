@@ -131,6 +131,45 @@ describe('XmlTvWriter', () => {
         vi.useRealTimers();
       }
     });
+
+    // @iptv/xmltv drops its declaration or DOCTYPE when the content already
+    // contains `?xml` or `!DOCTYPE`, so batches can arrive without a prefix.
+    function channelWithTitles(titles: string[]): MaterializedChannelPrograms {
+      return {
+        channel: createChannelOrm({ number: 1, name: 'Channel 1' }),
+        programs: titles.map((title, i) => {
+          const program = makeProgram({ title });
+          return {
+            programming: { type: 'program' as const, program },
+            title,
+            start: i * 1_800_000,
+            stop: (i + 1) * 1_800_000,
+            durationMs: 1_800_000,
+          };
+        }),
+      };
+    }
+
+    it('keeps the header when a title contains ?xml', async () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const xml = await writer.serialize([
+        channelWithTitles(['Parsing <?xml in Python']),
+      ]);
+
+      expect(xml.startsWith('<?xml')).toBe(true);
+      expect(parseXmltv(xml).programmes?.[0]?.title[0]?._value).toBe(
+        'Parsing &lt;?xml in Python',
+      );
+    });
+
+    it('does not throw when a title contains !DOCTYPE', async () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const xml = await writer.serialize([
+        channelWithTitles(['The <!DOCTYPE story']),
+      ]);
+
+      expect(xml.startsWith('<?xml')).toBe(true);
+    });
   });
 
   describe('serialized program order', () => {

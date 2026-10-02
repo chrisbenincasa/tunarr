@@ -500,6 +500,54 @@ describe('TVGuideService', () => {
       expect(writeChannelIds).toContain(channelA.channel.uuid);
       expect(writeChannelIds).not.toContain(channelB.channel.uuid);
     });
+
+    it('does not let an older write overwrite a newer one', async () => {
+      const channelA = makeChannelWithLineup({ number: 1, name: 'Channel A' });
+      const channelB = makeChannelWithLineup({ number: 2, name: 'Channel B' });
+
+      const mockLoadAllLineups = vi.fn().mockResolvedValue({
+        [channelA.channel.uuid]: channelA,
+        [channelB.channel.uuid]: channelB,
+      });
+
+      const mockGetProgramsByIds = vi.fn().mockResolvedValue([]);
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { loadAllLineups: mockLoadAllLineups } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getGuideProgramsByIds: mockGetProgramsByIds } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+
+      await service.buildAllChannels(dayjs.duration({ hours: 4 }), true);
+      expect(mockWrite).toHaveBeenCalledTimes(1);
+
+      // Hold the older write's program load until the newer write is done.
+      let releaseOlder: (programs: never[]) => void = () => {};
+      mockGetProgramsByIds.mockReturnValueOnce(
+        new Promise((resolve) => (releaseOlder = resolve)),
+      );
+      const older = service.removeCachedChannel(channelB.channel.uuid);
+      await service.removeCachedChannel(channelA.channel.uuid);
+      releaseOlder([]);
+      await older;
+
+      expect(mockWrite).toHaveBeenCalledTimes(2);
+      expect(mockWrite.mock.lastCall?.[0]).toEqual([]);
+    });
   });
 
   describe('buildChannelGuideWithRetries', () => {
