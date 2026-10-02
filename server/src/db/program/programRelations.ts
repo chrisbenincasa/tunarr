@@ -143,6 +143,69 @@ export const ProgramStreamRelations = {
   },
 } as const;
 
+type GuideCredits = true | { with: { artwork: true } };
+
+const guideProgramRelations = <CreditsT extends GuideCredits>(
+  credits: CreditsT,
+) =>
+  ({
+    artwork: true,
+    credits,
+    genres: { with: { genre: true } },
+    tags: { with: { tag: true } },
+    season: { with: { externalIds: true } },
+    album: { with: { externalIds: true, artwork: true } },
+  }) as const;
+
+const guideShowRelations = <CreditsT extends GuideCredits>(credits: CreditsT) =>
+  ({
+    externalIds: true,
+    artwork: true,
+    credits,
+    genres: { with: { genre: true } },
+    tags: { with: { tag: true } },
+  }) as const;
+
+/**
+ * The relations the XMLTV writer reads off a program. The hourly guide rebuild
+ * loads every program in the EPG window at once, so this leaves out what the
+ * writer never touches: studios, versions, subtitles and the artist. The
+ * writer never reads grouping external ids either, but
+ * `ProgramGroupingOrmWithRelations` requires them.
+ *
+ * The show is absent on purpose. Loading it here would copy the show's cast
+ * into every episode row, so it loads once per show with
+ * {@link GuideShowRelations} instead.
+ */
+export const GuideProgramRelations = guideProgramRelations(true);
+
+/** {@link GuideProgramRelations} plus credit headshots, for XMLTV credit images. */
+export const GuideProgramRelationsWithCreditArtwork = guideProgramRelations({
+  with: { artwork: true },
+});
+
+/**
+ * The relations the XMLTV writer reads off an episode's show. Show credits
+ * stay because the writer falls back to them when an episode has none.
+ */
+export const GuideShowRelations = guideShowRelations(true);
+
+/** {@link GuideShowRelations} plus credit headshots, for XMLTV credit images. */
+export const GuideShowRelationsWithCreditArtwork = guideShowRelations({
+  with: { artwork: true },
+});
+
+/**
+ * The relations a program needs to start streaming. Stream code reads media
+ * versions, subtitles and external ids, and nothing else. Every stream start
+ * and program transition loads this, so parent groupings and their cast stay
+ * out.
+ */
+export const StreamProgramRelations = {
+  externalIds: true,
+  ...ProgramStreamRelations,
+} as const;
+
 /**
  * The relations a program needs when it is added to or listed in a lineup.
  *

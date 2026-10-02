@@ -15,7 +15,8 @@ import {
 } from '@iptv/xmltv';
 import { Mutex } from 'async-mutex';
 import { inject, injectable } from 'inversify';
-import { compact, escape, flatMap, isNil, map, round } from 'lodash-es';
+import throttle from '@/util/throttle.js';
+import { chunk, compact, escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
 import { match } from 'ts-pattern';
 import { type ArtworkType } from '../db/schema/Artwork.ts';
@@ -25,6 +26,13 @@ import { parseAirDate } from '../util/airDate.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
 
 const lock = new Mutex();
+
+// Batch cost grows with credits per programme. At 100, the perf seed with
+// credit images on keeps every slice under 25ms; at 250 slices reached 50ms.
+const SerializeBatchSize = 100;
+
+const TvOpen = '<tv>';
+const TvClose = '</tv>';
 
 /**
  * The fields `ArtworkService` needs to build a remote artwork URL for an item
@@ -86,9 +94,49 @@ export class XmlTvWriter {
   }
 
   private async writeInternal(channels: MaterializedChannelPrograms[]) {
-    const content = writeXmltv(this.generateXmltv(channels));
+    const content = await this.serialize(channels);
 
     return await writeFile(this.settingsDB.xmlTvSettings().outputPath, content);
+  }
+
+  /**
+   * Serializes the same document as `writeXmltv(generateXmltv(channels))`,
+   * yielding to the event loop between batches of programmes.
+   *
+   * A full guide is thousands of programmes, and building and serializing
+   * them in one call blocks every other request, HLS segments included, for
+   * hundreds of milliseconds. Each batch serializes as its own document, and
+   * its programmes are spliced between the shared header and `</tv>`.
+   */
+  async serialize(channels: MaterializedChannelPrograms[]): Promise<string> {
+    const header = writeXmltv(
+      this.generateXmltv(channels.map((c) => ({ ...c, programs: [] }))),
+    );
+    if (!header.endsWith(TvClose)) {
+      throw new Error('Unexpected XMLTV header shape from @iptv/xmltv');
+    }
+
+    const parts = [header.slice(0, -TvClose.length)];
+    for (const { channel, programs } of channels) {
+      const xmlChannelId = getChannelId(channel.number);
+      for (const batch of chunk(programs, SerializeBatchSize)) {
+        await throttle();
+        const body = writeXmltv({
+          programmes: batch.map((p) => this.makeXmlTvProgram(p, xmlChannelId)),
+        });
+
+        // The declaration and DOCTYPE before <tv> come and go with the content,
+        // so cut at <tv> itself. Batch documents carry no <tv> attributes.
+        const open = body.indexOf(TvOpen);
+        if (open === -1 || !body.endsWith(TvClose)) {
+          throw new Error('Unexpected XMLTV batch shape from @iptv/xmltv');
+        }
+        parts.push(body.slice(open + TvOpen.length, -TvClose.length));
+      }
+    }
+    parts.push(TvClose);
+
+    return parts.join('');
   }
 
   generateXmltv(channels: MaterializedChannelPrograms[]) {

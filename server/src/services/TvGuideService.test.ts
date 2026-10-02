@@ -94,11 +94,11 @@ describe('TVGuideService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { loadAllLineups: mockLoadAllLineups } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: mockGetProgramsByIds } as any,
+        { getGuideProgramsByIds: mockGetProgramsByIds } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any, // ProgramConverter (not used in this path)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any, // ISettingsDB (not used in this path)
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any, // ISettingsDB (not used in this path)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any, // Kysely<DB> (not used in this path)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -173,11 +173,11 @@ describe('TVGuideService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { loadAllLineups: mockLoadAllLineups } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -224,11 +224,11 @@ describe('TVGuideService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { loadAllLineups: vi.fn().mockResolvedValue({}) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -473,11 +473,11 @@ describe('TVGuideService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { loadAllLineups: mockLoadAllLineups } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: mockGetProgramsByIds } as any,
+        { getGuideProgramsByIds: mockGetProgramsByIds } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -499,6 +499,54 @@ describe('TVGuideService', () => {
       ).map((entry) => entry.channel.uuid);
       expect(writeChannelIds).toContain(channelA.channel.uuid);
       expect(writeChannelIds).not.toContain(channelB.channel.uuid);
+    });
+
+    it('does not let an older write overwrite a newer one', async () => {
+      const channelA = makeChannelWithLineup({ number: 1, name: 'Channel A' });
+      const channelB = makeChannelWithLineup({ number: 2, name: 'Channel B' });
+
+      const mockLoadAllLineups = vi.fn().mockResolvedValue({
+        [channelA.channel.uuid]: channelA,
+        [channelB.channel.uuid]: channelB,
+      });
+
+      const mockGetProgramsByIds = vi.fn().mockResolvedValue([]);
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { loadAllLineups: mockLoadAllLineups } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getGuideProgramsByIds: mockGetProgramsByIds } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+
+      await service.buildAllChannels(dayjs.duration({ hours: 4 }), true);
+      expect(mockWrite).toHaveBeenCalledTimes(1);
+
+      // Hold the older write's program load until the newer write is done.
+      let releaseOlder: (programs: never[]) => void = () => {};
+      mockGetProgramsByIds.mockReturnValueOnce(
+        new Promise((resolve) => (releaseOlder = resolve)),
+      );
+      const older = service.removeCachedChannel(channelB.channel.uuid);
+      await service.removeCachedChannel(channelA.channel.uuid);
+      releaseOlder([]);
+      await older;
+
+      expect(mockWrite).toHaveBeenCalledTimes(2);
+      expect(mockWrite.mock.lastCall?.[0]).toEqual([]);
     });
   });
 
@@ -552,11 +600,11 @@ describe('TVGuideService', () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -683,10 +731,12 @@ describe('TVGuideService', () => {
           loadAllLineups: vi.fn().mockResolvedValue(channels),
         } as unknown as ServiceDeps[2],
         {
-          getProgramsByIds: vi.fn().mockResolvedValue([]),
+          getGuideProgramsByIds: vi.fn().mockResolvedValue([]),
         } as unknown as ServiceDeps[3],
         {} as ServiceDeps[4],
-        {} as ServiceDeps[5],
+        {
+          featureFlags: () => ({ xmltvCreditImagesEnabled: false }),
+        } as ServiceDeps[5],
         {} as ServiceDeps[6],
         {} as ServiceDeps[7],
         {} as ServiceDeps[8],
@@ -801,11 +851,11 @@ describe('TVGuideService', () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -930,11 +980,11 @@ describe('TVGuideService', () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -996,10 +1046,11 @@ describe('TVGuideService', () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         {
+          featureFlags: () => ({ xmltvCreditImagesEnabled: false }),
           xmlTvSettings: () => ({ programmingHours: 4 }),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,

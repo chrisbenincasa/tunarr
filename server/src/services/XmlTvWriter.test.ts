@@ -98,6 +98,80 @@ function makeGrouping(
 }
 
 describe('XmlTvWriter', () => {
+  describe('serialize', () => {
+    it('matches serializing the whole document at once', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(Date.parse('2026-09-22T00:00:00Z'));
+      try {
+        const writer = new XmlTvWriter(inMemorySettingsDB());
+        // Enough programmes per channel to span several serialize batches.
+        const channels: MaterializedChannelPrograms[] = [1, 2, 3].map(
+          (number) => ({
+            channel: createChannelOrm({ number, name: `Channel ${number}` }),
+            programs: Array.from({ length: 600 }, (_, i) => {
+              const program = makeProgram({
+                title: `Program ${number}-${i} <&>`,
+                summary: 'A "quoted" summary',
+              });
+              return {
+                programming: { type: 'program' as const, program },
+                title: program.title,
+                start: i * 1_800_000,
+                stop: (i + 1) * 1_800_000,
+                durationMs: 1_800_000,
+              };
+            }),
+          }),
+        );
+
+        expect(await writer.serialize(channels)).toEqual(
+          writeXmltv(writer.generateXmltv(channels)),
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    // @iptv/xmltv drops its declaration or DOCTYPE when the content already
+    // contains `?xml` or `!DOCTYPE`, so batches can arrive without a prefix.
+    function channelWithTitles(titles: string[]): MaterializedChannelPrograms {
+      return {
+        channel: createChannelOrm({ number: 1, name: 'Channel 1' }),
+        programs: titles.map((title, i) => {
+          const program = makeProgram({ title });
+          return {
+            programming: { type: 'program' as const, program },
+            title,
+            start: i * 1_800_000,
+            stop: (i + 1) * 1_800_000,
+            durationMs: 1_800_000,
+          };
+        }),
+      };
+    }
+
+    it('keeps the header when a title contains ?xml', async () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const xml = await writer.serialize([
+        channelWithTitles(['Parsing <?xml in Python']),
+      ]);
+
+      expect(xml.startsWith('<?xml')).toBe(true);
+      expect(parseXmltv(xml).programmes?.[0]?.title[0]?._value).toBe(
+        'Parsing &lt;?xml in Python',
+      );
+    });
+
+    it('does not throw when a title contains !DOCTYPE', async () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const xml = await writer.serialize([
+        channelWithTitles(['The <!DOCTYPE story']),
+      ]);
+
+      expect(xml.startsWith('<?xml')).toBe(true);
+    });
+  });
+
   describe('serialized program order', () => {
     function serializeProgram(program: ProgramWithRelationsOrm) {
       const writer = new XmlTvWriter(inMemorySettingsDB());
