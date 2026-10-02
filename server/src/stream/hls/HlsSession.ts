@@ -35,6 +35,14 @@ import type {
   HlsPlaylistFilterOptions,
 } from './HlsPlaylistMutator.js';
 import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
+import type { Cue } from './HlsSubtitlePlaylist.js';
+import {
+  firstNeededCueFile,
+  parseCues,
+  segmentWindows,
+  subtitlePlaylistFromVideo,
+  subtitleWindowVtt,
+} from './HlsSubtitlePlaylist.js';
 
 export type HlsSessionProvider = (
   channel: ChannelOrmWithTranscodeConfig,
@@ -60,6 +68,8 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #lastSubtitleDelete: Dayjs = dayjs().subtract(1, 'year');
+  #lastServedPlaylist: string | undefined;
+  #cueFiles = new Map<number, Cue[]>();
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
   #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
@@ -138,6 +148,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
             },
           );
           this.#lastDiscontinuitySequence = trimResult.discontinuitySequence;
+          this.#lastServedPlaylist = trimResult.playlist;
           const now = dayjs();
           if (now.isAfter(this.#lastDelete.add(30, 'seconds'))) {
             this.logger.debug(
@@ -162,6 +173,102 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         return;
       });
     });
+  }
+
+  /**
+   * Subtitle playlist aligned segment for segment with the last video playlist
+   * served. The segment muxer only writes a .vtt when there is a cue, so its
+   * own playlist covers far less time than the video and players that lay
+   * segments out by EXTINF (AVPlayer) never show the cues. Transcoded HLS
+   * only: hls_direct_v2 keeps cues on the source clock (-copyts).
+   */
+  async alignedSubtitlePlaylist() {
+    if (this.#lastServedPlaylist === undefined) {
+      const trimmed = await this.trimPlaylist();
+      if (trimmed.isFailure()) {
+        throw trimmed.error;
+      }
+    }
+    const served = this.#lastServedPlaylist;
+    if (served === undefined) {
+      return;
+    }
+    await this.pruneCueFiles(served);
+    return subtitlePlaylistFromVideo(served);
+  }
+
+  /** WebVTT holding the cues that start inside video segment `segmentNumber`. */
+  async subtitleWindow(segmentNumber: number) {
+    const window = await this.segmentWindow(segmentNumber);
+    if (!window) {
+      return;
+    }
+    const cueFiles = await this.readCueFiles();
+    return subtitleWindowVtt([...cueFiles.values()].flat(), ...window);
+  }
+
+  private async segmentWindow(segmentNumber: number) {
+    const playlistLines = await this.readPlaylist();
+    return playlistLines
+      ? segmentWindows(playlistLines.join('\n')).get(segmentNumber)
+      : undefined;
+  }
+
+  private async readCueFiles() {
+    const files = seq.collect(
+      await fs.readdir(this._workingDirectory),
+      (file) => {
+        const n = file.match(/^sub(\d+)\.vtt$/)?.[1];
+        return n === undefined ? undefined : ([parseInt(n), file] as const);
+      },
+    );
+    const newest = Math.max(...files.map(([n]) => n));
+    const cueFiles = new Map<number, Cue[]>();
+    for (const [n, file] of files) {
+      // ffmpeg may still be writing the newest file; older ones are final.
+      const cues =
+        (n === newest ? undefined : this.#cueFiles.get(n)) ??
+        parseCues(
+          await fs
+            .readFile(path.join(this._workingDirectory, file), 'utf-8')
+            .catch(() => ''),
+        );
+      if (n !== newest) {
+        this.#cueFiles.set(n, cues);
+      }
+      cueFiles.set(n, cues);
+    }
+    return cueFiles;
+  }
+
+  private async pruneCueFiles(servedPlaylist: string) {
+    const now = dayjs();
+    if (!now.isAfter(this.#lastSubtitleDelete.add(30, 'seconds'))) {
+      return;
+    }
+    this.#lastSubtitleDelete = now;
+    const firstSegment = servedPlaylist.match(
+      /#EXT-X-MEDIA-SEQUENCE:(\d+)/,
+    )?.[1];
+    const window =
+      firstSegment === undefined
+        ? undefined
+        : await this.segmentWindow(parseInt(firstSegment));
+    if (!window) {
+      return;
+    }
+    const keepFrom = firstNeededCueFile(await this.readCueFiles(), window[0]);
+    if (keepFrom === undefined) {
+      return;
+    }
+    for (const n of this.#cueFiles.keys()) {
+      if (n < keepFrom) {
+        this.#cueFiles.delete(n);
+      }
+    }
+    this.deleteOldSegmentFiles(keepFrom, ['.vtt']).catch((e) =>
+      this.logger.error(e),
+    );
   }
 
   async trimSubtitlePlaylist(filterOpts?: FilterBeforeSegmentNumber) {
