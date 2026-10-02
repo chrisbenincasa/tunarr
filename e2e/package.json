@@ -1,0 +1,20 @@
+{
+  "name": "@tunarr/e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pree2e": "turbo run build --filter=@tunarr/types --filter=@tunarr/shared --output-logs=errors-only",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report",
+    "e2e:install-browsers": "playwright install chromium",
+    "e2e:serve": "tsx fixture/startServer.ts",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "22.10.7",
+    "@typescript/native-preview": "catalog:",
+    "tsx": "^4.20.5"
+  }
+}
