@@ -4,6 +4,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { chunk, difference, groupBy, isNil, keys, partition } from 'lodash-es';
 import type { Dictionary } from 'ts-essentials';
+import { FileSystemService } from '../../services/FileSystemService.ts';
 import { groupByUniq, isDefined, isNonEmptyString } from '../../util/index.ts';
 import { Artwork, type NewArtwork } from '../schema/Artwork.ts';
 import { Credit, type NewCredit } from '../schema/Credit.ts';
@@ -23,7 +24,10 @@ import type { DrizzleDBAccess } from '../schema/index.ts';
 
 @injectable()
 export class ProgramMetadataRepository {
-  constructor(@inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess) {}
+  constructor(
+    @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
+    @inject(FileSystemService) private fileSystemService: FileSystemService,
+  ) {}
 
   upsertArtwork(artwork: NewArtwork[]) {
     if (artwork.length === 0) {
@@ -301,7 +305,7 @@ export class ProgramMetadataRepository {
           where: (fields, { eq }) => eq(fields.programId, programId),
         });
 
-      const [existingEmbedded, _] = partition(
+      const [existingEmbedded, existingExternal] = partition(
         existingSubsForProgram,
         (sub) => !isNil(sub.streamIndex),
       );
@@ -419,6 +423,20 @@ export class ProgramMetadataRepository {
         },
         { behavior: 'immediate' },
       );
+
+      // A rescan downloads each sidecar again under a new cache name, so the
+      // copy the replaced row pointed at is now unreferenced.
+      const incomingPaths = new Set(
+        seq.collect(incomingExternal, (sub) => sub.path),
+      );
+      const replacedPaths = seq.collect(existingExternal, (sub) =>
+        sub.subtitleType === 'sidecar' &&
+        isNonEmptyString(sub.path) &&
+        !incomingPaths.has(sub.path)
+          ? sub.path
+          : undefined,
+      );
+      await this.fileSystemService.removeSubtitleCacheFiles(replacedPaths);
     }
   }
 

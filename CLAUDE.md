@@ -41,9 +41,9 @@ This is a monorepo with four main packages:
 
 The maintainer cannot approve their own PRs on GitHub, so review agents record their verdict with labels.
 
-| Label | Meaning |
-|---|---|
-| `approved` | Reviewed and ready to merge |
+| Label               | Meaning                                        |
+| ------------------- | ---------------------------------------------- |
+| `approved`          | Reviewed and ready to merge                    |
 | `changes requested` | Review found issues; the PR needs another pass |
 
 - A reviewer sets exactly one of these labels and removes the other.
@@ -122,7 +122,7 @@ pnpm regen-routes     # Regenerate TanStack Router routes
   - `scheduling/` - Channel scheduling logic
   - `startup/` - Startup tasks
 - `stream/` - Video streaming pipeline (HLS, concat streams, FFmpeg integration)
-  - Organized by media source (plex/, jellyfin/, emby/, local/)
+  - Organized by session type (`hls/`, `ConcatSession`); source-specific logic lives in stream details fetchers and `plugins/`
 - `ffmpeg/` - FFmpeg wrapper and pipeline builder
 - `external/` - External API clients for Plex, Jellyfin, Emby
 - `tasks/` - Background tasks and fixers
@@ -221,7 +221,7 @@ The web app uses a generated API client (`generated/`) created from the server's
 
 - Streaming logic is complex - see `stream/` directory
 - Sessions are managed by `SessionManager`
-- Different stream types: `VideoStream`, `ConcatStream`, `DirectStreamSession`
+- Different stream types: `VideoStream`, `ConcatSession`, `DirectStreamSession`
 - FFmpeg pipeline is built using builder pattern in `ffmpeg/builder/`
 
 ### When Working with External Media Sources:

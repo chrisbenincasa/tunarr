@@ -398,9 +398,7 @@ export class LocalMovieScanner extends FileSystemScanner {
       );
     }
 
-    const parseResult = await new MovieNfoParser().parse(
-      await fs.readFile(nfoPath, 'utf-8'),
-    );
+    const parseResult = await new MovieNfoParser().parseFile(nfoPath);
     if (parseResult.isFailure()) {
       return parseResult.recast();
     }
