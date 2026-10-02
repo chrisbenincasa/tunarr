@@ -131,8 +131,9 @@ export class MediaSourceScanCoordinator {
     // Scanning a library the server no longer reports would mark all of its
     // programs missing.
     if (library.unavailableSince !== null) {
-      this.logger.debug(
-        'Skipping scan of library %s: unavailable since %s',
+      this.logger.warn(
+        "Skipping scan of library '%s' (ID = %s): unavailable since %s",
+        library.name,
         library.uuid,
         library.unavailableSince.toISOString(),
       );
