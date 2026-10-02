@@ -51,7 +51,7 @@ import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
 import type { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { KnownAudioFileExtensions } from './constants.ts';
-import type { LocalScanContext } from './FileSystemScanner.ts';
+import type { ArtworkOwnerRow, LocalScanContext } from './FileSystemScanner.ts';
 import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
@@ -233,11 +233,17 @@ export class LocalMusicScanner extends FileSystemScanner {
     const artistMetadata = artistResult.get();
 
     // Scan artwork
+    const existingArtist = await this.localMediaDB.findExistingLocalGrouping(
+      context.mediaSource.uuid,
+      context.library.uuid,
+      fullPath,
+      'artist',
+    );
     const artworkResults = await Promise.all([
-      this.scanMusicArtistArtwork(fullPath, 'poster'),
-      this.scanMusicArtistArtwork(fullPath, 'fanart'),
+      this.scanMusicArtistArtwork(fullPath, 'poster', existingArtist),
+      this.scanMusicArtistArtwork(fullPath, 'fanart', existingArtist),
       // this.scanMusicArtistArtwork(fullPath, 'thumbnail'),
-      this.scanMusicArtistArtwork(fullPath, 'banner'),
+      this.scanMusicArtistArtwork(fullPath, 'banner', existingArtist),
     ]);
 
     const artist: MusicArtist = {
@@ -366,8 +372,14 @@ export class LocalMusicScanner extends FileSystemScanner {
     }
 
     // Artwork
+    const existingAlbum = await this.localMediaDB.findExistingLocalGrouping(
+      context.mediaSource.uuid,
+      context.library.uuid,
+      albumDir,
+      'album',
+    );
     const artworkResults = await Promise.all([
-      this.scanMusicAlbumArtwork(albumDir, 'poster'),
+      this.scanMusicAlbumArtwork(albumDir, 'poster', existingAlbum),
     ]);
 
     const album: AlbumWithArtist = {
@@ -634,6 +646,7 @@ export class LocalMusicScanner extends FileSystemScanner {
   private async scanMusicArtistArtwork(
     artistFullPath: string,
     artworkType: ArtworkType,
+    existingArtist: Maybe<ArtworkOwnerRow>,
     force: boolean = false,
   ) {
     const artworkFileNames = match(artworkType)
@@ -647,6 +660,7 @@ export class LocalMusicScanner extends FileSystemScanner {
       artistFullPath,
       artworkType,
       artworkFileNames,
+      existingArtist,
       force,
     );
   }
@@ -654,6 +668,7 @@ export class LocalMusicScanner extends FileSystemScanner {
   private async scanMusicAlbumArtwork(
     albumFullPath: string,
     artworkType: ArtworkType,
+    existingAlbum: Maybe<ArtworkOwnerRow>,
     force: boolean = false,
   ) {
     const artworkFileNames = match(artworkType)
@@ -667,6 +682,7 @@ export class LocalMusicScanner extends FileSystemScanner {
       albumFullPath,
       artworkType,
       artworkFileNames,
+      existingAlbum,
       force,
     );
   }

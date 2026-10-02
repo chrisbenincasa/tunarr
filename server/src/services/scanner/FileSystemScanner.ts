@@ -20,7 +20,6 @@ import type {
 } from '../../db/schema/Artwork.ts';
 import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
 import type { MediaLibraryType } from '../../db/schema/MediaSource.ts';
-import type { ProgramOrm } from '../../db/schema/Program.ts';
 import type { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { Result } from '../../types/result.js';
 import type { Maybe } from '../../types/util.ts';
@@ -65,6 +64,14 @@ export type GenericLocalMediaSourceScanner = FileSystemScanner;
 export type GenericLocalMediaSourceScannerFactory = (
   libraryType: MediaLibraryType,
 ) => GenericLocalMediaSourceScanner;
+
+/**
+ * The persisted row (program or grouping) that owns artwork rows. A scan only
+ * reads its artwork: their `updatedAt` says whether the image on disk has
+ * changed since it was last cached, and reusing the row keeps the artwork's
+ * uuid stable across scans.
+ */
+export type ArtworkOwnerRow = { artwork: Artwork[] };
 
 export abstract class FileSystemScanner {
   protected state: RunState = 'starting';
@@ -284,7 +291,7 @@ export abstract class FileSystemScanner {
   protected async scanArtwork(
     artworkFilePath: string,
     artworkType: ArtworkType,
-    existingArtwork: Maybe<ProgramOrm & { artwork: Artwork[] }>,
+    existingArtwork: Maybe<ArtworkOwnerRow>,
     force: boolean = false,
   ): Promise<Result<Maybe<NewArtwork>>> {
     return Result.attemptAsync(async () => {
@@ -481,6 +488,7 @@ export abstract class FileSystemScanner {
     fullPath: string,
     artworkType: ArtworkType,
     possibleArtworkNames: string[],
+    existingArtwork: Maybe<ArtworkOwnerRow>,
     force: boolean = false,
   ) {
     if (possibleArtworkNames.length === 0) {
@@ -508,7 +516,7 @@ export abstract class FileSystemScanner {
     const scanResult = await this.scanArtwork(
       artPath,
       artworkType,
-      undefined,
+      existingArtwork,
       force,
     );
 

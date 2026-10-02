@@ -37,7 +37,7 @@ import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
 import type { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { KnownVideoFileExtensions } from './constants.ts';
-import type { LocalScanContext } from './FileSystemScanner.ts';
+import type { ArtworkOwnerRow, LocalScanContext } from './FileSystemScanner.ts';
 import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
@@ -334,9 +334,16 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
     metadata.tags.push(file.parentPath);
 
     // Artwork
+    const existingVideo = await this.localMediaDB.findExistingLocalProgram(
+      context.mediaSource.uuid,
+      context.library.uuid,
+      fullFilePath,
+      'music_video',
+    );
     const artworkResult = await this.scanVideoArtwork(
       file,
       'thumbnail',
+      existingVideo,
       context.force,
     );
 
@@ -509,6 +516,7 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
   private async scanVideoArtwork(
     file: Dirent,
     artworkType: ArtworkType,
+    existingVideo: Maybe<ArtworkOwnerRow>,
     forceScan: boolean,
   ) {
     const artworkFileNames = match(artworkType)
@@ -546,7 +554,7 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
     const scanResult = await this.scanArtwork(
       foundPath,
       artworkType,
-      undefined,
+      existingVideo,
       forceScan,
     );
 

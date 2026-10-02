@@ -30,6 +30,7 @@ import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { KEYS } from '../../types/inject.ts';
 import type { HasMediaSourceInfo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
+import type { Maybe } from '../../types/util.ts';
 import { changeFileExtension, fileExists } from '../../util/fsUtil.ts';
 import { isDefined, wait } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
@@ -43,7 +44,7 @@ import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
 import type { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { KnownVideoFileExtensions } from './constants.ts';
-import type { LocalScanContext } from './FileSystemScanner.ts';
+import type { ArtworkOwnerRow, LocalScanContext } from './FileSystemScanner.ts';
 import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
@@ -333,9 +334,16 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
     metadata.tags.push(file.parentPath);
 
     // Artwork
+    const existingVideo = await this.localMediaDB.findExistingLocalProgram(
+      context.mediaSource.uuid,
+      context.library.uuid,
+      fullFilePath,
+      'other_video',
+    );
     const artworkResult = await this.scanVideoArtwork(
       file,
       'thumbnail',
+      existingVideo,
       context.force,
     );
 
@@ -490,6 +498,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
   private async scanVideoArtwork(
     file: Dirent,
     artworkType: ArtworkType,
+    existingVideo: Maybe<ArtworkOwnerRow>,
     forceScan: boolean,
   ) {
     const artworkFileNames = match(artworkType)
@@ -527,7 +536,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
     const scanResult = await this.scanArtwork(
       foundPath,
       artworkType,
-      undefined,
+      existingVideo,
       forceScan,
     );
 
