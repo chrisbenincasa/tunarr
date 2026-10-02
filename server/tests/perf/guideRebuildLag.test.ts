@@ -33,7 +33,7 @@ import { initTestApp } from '../testServer.js';
  * cost of the program loads behind it and behind each stream start.
  *
  * The guide rebuild materializes every program in the EPG window through
- * `getProgramsByIds`. That query's relation set decides how much it pulls, so
+ * `getGuideProgramsByIds`. That query's relation set decides how much it pulls, so
  * the seed uses TV shows with cast, genres and artwork. Bare movies would hide
  * the cost of copying each show's cast into every episode.
  *
@@ -70,6 +70,9 @@ const SCHEDULE_DAYS = envInt('TUNARR_PERF_DAYS', 14);
 const PROGRAMMING_HOURS = envInt('TUNARR_PERF_EPG_HOURS', 168);
 const STREAM_LOOKUPS = envInt('TUNARR_PERF_STREAM_LOOKUPS', 200);
 const SETTLE_MS = envInt('TUNARR_PERF_SETTLE_MS', 8_000);
+
+// The fix measures 16-34ms locally and the one-shot write stalled 560-863ms.
+const MAX_ACCEPTABLE_PROBE_MS = envInt('TUNARR_PERF_MAX_PROBE_MS', 250);
 
 const PROBE_URL = '/api/xmltv-last-refresh';
 
@@ -238,6 +241,26 @@ describe('guide rebuild', () => {
     }
   }, 120_000);
 
+  test('stream relation set loads what stream code reads', async () => {
+    const programDB = container.get<IProgramDB>(KEYS.ProgramDB);
+    const id = episodeIds[0];
+    if (id === undefined) {
+      throw new Error('No seeded episodes');
+    }
+
+    const full = await programDB.getProgramById(id);
+    const stream = await programDB.getStreamProgramById(id);
+    const pick = (p: ProgramWithRelationsOrm | undefined) => ({
+      externalIds: sortBy(p?.externalIds, (e) => e.uuid),
+      versions: p?.versions,
+      subtitles: p?.subtitles,
+    });
+
+    // The seed has no versions or subtitles, so this catches a dropped
+    // relation (undefined instead of []) but not a dropped nested one.
+    expect(pick(stream)).toEqual(pick(full));
+  });
+
   test('guide relation set writes the same XMLTV as the full set', async () => {
     const programDB = container.get<IProgramDB>(KEYS.ProgramDB);
     const settingsDB = container.get<ISettingsDB>(KEYS.SettingsDB);
@@ -268,23 +291,27 @@ describe('guide rebuild', () => {
       sortBy(programs, (p) => p.uuid);
     const full = byUuid(await programDB.getProgramsByIds(episodeIds));
 
-    for (const includeCreditArtwork of [false, true]) {
-      await settingsDB.updateSettings('featureFlags', {
-        ...settingsDB.featureFlags(),
-        xmltvCreditImagesEnabled: includeCreditArtwork,
+    const setCreditImages = (enabled: boolean) =>
+      settingsDB.updateBaseSettings('featureFlags', {
+        xmltvCreditImagesEnabled: enabled,
       });
-      const guide = byUuid(
-        await programDB.getGuideProgramsByIds(episodeIds, {
+    const original = settingsDB.featureFlags().xmltvCreditImagesEnabled;
+    try {
+      for (const includeCreditArtwork of [false, true]) {
+        await setCreditImages(includeCreditArtwork);
+        expect(settingsDB.featureFlags().xmltvCreditImagesEnabled).toBe(
           includeCreditArtwork,
-        }),
-      );
-      expect(programmes(guide)).toEqual(programmes(full));
+        );
+        const guide = byUuid(
+          await programDB.getGuideProgramsByIds(episodeIds, {
+            includeCreditArtwork,
+          }),
+        );
+        expect(programmes(guide)).toEqual(programmes(full));
+      }
+    } finally {
+      await setCreditImages(original);
     }
-
-    await settingsDB.updateSettings('featureFlags', {
-      ...settingsDB.featureFlags(),
-      xmltvCreditImagesEnabled: false,
-    });
   }, 120_000);
 
   test('hourly all-channel rebuild does not stall concurrent requests', async () => {
@@ -311,5 +338,7 @@ describe('guide rebuild', () => {
       formatProbeSummary(probe),
       formatLagSummary(lag),
     );
+
+    expect(probe.maxMs).toBeLessThan(MAX_ACCEPTABLE_PROBE_MS);
   }, 600_000);
 });

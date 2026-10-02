@@ -27,13 +27,12 @@ import { loggingDef } from '../util/logging/loggingDef.ts';
 
 const lock = new Mutex();
 
-// About 10ms of build and serialize work per batch.
-const SerializeBatchSize = 250;
+// Batch cost grows with credits per programme. At 100, the perf seed with
+// credit images on keeps every slice under 25ms; at 250 slices reached 50ms.
+const SerializeBatchSize = 100;
 
+const TvOpen = '<tv>';
 const TvClose = '</tv>';
-
-// Everything before the programmes of a document with no <tv> attributes.
-const EmptyDocOpen = writeXmltv({ programmes: [] }).slice(0, -TvClose.length);
 
 /**
  * The fields `ArtworkService` needs to build a remote artwork URL for an item
@@ -125,10 +124,14 @@ export class XmlTvWriter {
         const body = writeXmltv({
           programmes: batch.map((p) => this.makeXmlTvProgram(p, xmlChannelId)),
         });
-        if (!body.startsWith(EmptyDocOpen) || !body.endsWith(TvClose)) {
+
+        // The declaration and DOCTYPE before <tv> come and go with the content,
+        // so cut at <tv> itself. Batch documents carry no <tv> attributes.
+        const open = body.indexOf(TvOpen);
+        if (open === -1 || !body.endsWith(TvClose)) {
           throw new Error('Unexpected XMLTV batch shape from @iptv/xmltv');
         }
-        parts.push(body.slice(EmptyDocOpen.length, -TvClose.length));
+        parts.push(body.slice(open + TvOpen.length, -TvClose.length));
       }
     }
     parts.push(TvClose);

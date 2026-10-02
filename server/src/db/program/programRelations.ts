@@ -169,7 +169,9 @@ const guideShowRelations = <CreditsT extends GuideCredits>(credits: CreditsT) =>
 /**
  * The relations the XMLTV writer reads off a program. The hourly guide rebuild
  * loads every program in the EPG window at once, so this leaves out what the
- * writer never touches: studios, artist, and season and album metadata.
+ * writer never touches: studios, versions, subtitles and the artist. The
+ * writer never reads grouping external ids either, but
+ * `ProgramGroupingOrmWithRelations` requires them.
  *
  * The show is absent on purpose. Loading it here would copy the show's cast
  * into every episode row, so it loads once per show with

@@ -153,6 +153,7 @@ export class TVGuideService {
   private eventService: EventService;
   private programConverter: ProgramConverter;
   private cachedGuide: Record<ChannelId, ChannelPrograms>;
+  private xmltvGeneration = 0;
 
   private lastUpdateTime: Record<string, number>;
   private lastEndTime: Record<string, number>;
@@ -1110,15 +1111,20 @@ export class TVGuideService {
     // regardless, so the per-channel split bought nothing and cost plenty:
     // deduplication was scoped to a channel, so a program scheduled on several
     // channels had its whole relation graph fetched and rebuilt once per
-    // channel. getProgramsByIds dedupes and chunks internally.
+    // channel. getGuideProgramsByIds dedupes and chunks internally.
+    //
+    // This yields while it builds, so a newer call may start and finish first.
+    // Read the cache once, and leave the file to the newer call if one starts.
+    const generation = ++this.xmltvGeneration;
+    const guides = Object.values(this.cachedGuide);
     const allProgramsById = await this.getAllCurrentGuidePrograms(
-      Object.values(this.cachedGuide).flatMap(({ programs }) => programs),
+      guides.flatMap(({ programs }) => programs),
     );
 
     // Yield per channel: every channel's guide items together are tens of
     // milliseconds of synchronous work on a large guide.
     const materializedGuide: MaterializedChannelPrograms[] = [];
-    for (const { channel, programs } of Object.values(this.cachedGuide)) {
+    for (const { channel, programs } of guides) {
       await throttle();
       materializedGuide.push({
         channel,
@@ -1128,6 +1134,9 @@ export class TVGuideService {
       });
     }
 
+    if (generation !== this.xmltvGeneration) {
+      return;
+    }
     await this.xmltv.write(materializedGuide);
 
     const now = dayjs();
