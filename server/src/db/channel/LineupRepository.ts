@@ -407,42 +407,45 @@ export class LineupRepository {
 
     const allIds = uniq(map(filter(lineup, isContentItem), 'id'));
 
-    return this.drizzleDB.transaction((tx) => {
-      const updatedChannel = tx
-        .update(Channel)
-        .set({
-          duration: sumBy(lineup, typedProperty('durationMs')),
-          startTime: isDefined(startTime) ? startTime : undefined,
-        })
-        .where(eq(Channel.uuid, loadedChannel.uuid))
-        .returning()
-        .get();
+    return this.drizzleDB.transaction(
+      (tx) => {
+        const updatedChannel = tx
+          .update(Channel)
+          .set({
+            duration: sumBy(lineup, typedProperty('durationMs')),
+            startTime: isDefined(startTime) ? startTime : undefined,
+          })
+          .where(eq(Channel.uuid, loadedChannel.uuid))
+          .returning()
+          .get();
 
-      for (const idChunk of chunk(allIds, 500)) {
-        tx.delete(ChannelPrograms)
-          .where(
-            and(
-              eq(ChannelPrograms.channelUuid, loadedChannel.uuid),
-              notInArray(ChannelPrograms.programUuid, idChunk),
-            ),
-          )
-          .run();
-      }
+        for (const idChunk of chunk(allIds, 500)) {
+          tx.delete(ChannelPrograms)
+            .where(
+              and(
+                eq(ChannelPrograms.channelUuid, loadedChannel.uuid),
+                notInArray(ChannelPrograms.programUuid, idChunk),
+              ),
+            )
+            .run();
+        }
 
-      for (const idChunk of chunk(allIds, 500)) {
-        tx.insert(ChannelPrograms)
-          .values(
-            map(idChunk, (id) => ({
-              programUuid: id,
-              channelUuid: loadedChannel.uuid,
-            })),
-          )
-          .onConflictDoNothing()
-          .run();
-      }
+        for (const idChunk of chunk(allIds, 500)) {
+          tx.insert(ChannelPrograms)
+            .values(
+              map(idChunk, (id) => ({
+                programUuid: id,
+                channelUuid: loadedChannel.uuid,
+              })),
+            )
+            .onConflictDoNothing()
+            .run();
+        }
 
-      return updatedChannel ?? null;
-    });
+        return updatedChannel ?? null;
+      },
+      { behavior: 'immediate' },
+    );
   }
 
   async removeProgramsFromLineup(
@@ -882,78 +885,81 @@ export class LineupRepository {
     }
 
     const updateChannel = (lineup: readonly LineupItem[]) => {
-      return this.drizzleDB.transaction((tx) => {
-        tx.update(Channel)
-          .set({
-            duration: sumBy(lineup, typedProperty('durationMs')),
-          })
-          .where(eq(Channel.uuid, id))
-          .run();
+      return this.drizzleDB.transaction(
+        (tx) => {
+          tx.update(Channel)
+            .set({
+              duration: sumBy(lineup, typedProperty('durationMs')),
+            })
+            .where(eq(Channel.uuid, id))
+            .run();
 
-        const allNewIds = new Set([
-          ...uniq(map(filter(lineup, isContentItem), (p) => p.id)),
-        ]);
+          const allNewIds = new Set([
+            ...uniq(map(filter(lineup, isContentItem), (p) => p.id)),
+          ]);
 
-        const existingIds = new Set([
-          ...channel.channelPrograms.map((cp) => cp.programUuid),
-        ]);
+          const existingIds = new Set([
+            ...channel.channelPrograms.map((cp) => cp.programUuid),
+          ]);
 
-        const removeOperations: ProgramRelationOperation[] = map(
-          reject([...existingIds], (existingId) => allNewIds.has(existingId)),
-          (removalId) => ({
-            operation: 'remove' as const,
-            id: removalId,
-          }),
-        );
-
-        const addOperations: ProgramRelationOperation[] = map(
-          reject([...allNewIds], (newId) => existingIds.has(newId)),
-          (addId) => ({
-            operation: 'add' as const,
-            id: addId,
-          }),
-        );
-
-        for (const ops of chunk(
-          [...addOperations, ...removeOperations],
-          SqliteMaxDepthLimit / 2,
-        )) {
-          const [adds, removes] = partition(
-            ops,
-            ({ operation }) => operation === 'add',
+          const removeOperations: ProgramRelationOperation[] = map(
+            reject([...existingIds], (existingId) => allNewIds.has(existingId)),
+            (removalId) => ({
+              operation: 'remove' as const,
+              id: removalId,
+            }),
           );
 
-          if (!isEmpty(removes)) {
-            tx.delete(ChannelPrograms)
-              .where(
-                and(
-                  inArray(
-                    ChannelPrograms.programUuid,
-                    map(removes, typedProperty('id')),
-                  ),
-                  eq(ChannelPrograms.channelUuid, id),
-                ),
-              )
-              .run();
-          }
+          const addOperations: ProgramRelationOperation[] = map(
+            reject([...allNewIds], (newId) => existingIds.has(newId)),
+            (addId) => ({
+              operation: 'add' as const,
+              id: addId,
+            }),
+          );
 
-          if (!isEmpty(adds)) {
-            tx.insert(ChannelPrograms)
-              .values(
-                map(
-                  adds,
-                  ({ id }) =>
-                    ({
-                      channelUuid: channel.uuid,
-                      programUuid: id,
-                    }) satisfies NewChannelProgram,
-                ),
-              )
-              .run();
+          for (const ops of chunk(
+            [...addOperations, ...removeOperations],
+            SqliteMaxDepthLimit / 2,
+          )) {
+            const [adds, removes] = partition(
+              ops,
+              ({ operation }) => operation === 'add',
+            );
+
+            if (!isEmpty(removes)) {
+              tx.delete(ChannelPrograms)
+                .where(
+                  and(
+                    inArray(
+                      ChannelPrograms.programUuid,
+                      map(removes, typedProperty('id')),
+                    ),
+                    eq(ChannelPrograms.channelUuid, id),
+                  ),
+                )
+                .run();
+            }
+
+            if (!isEmpty(adds)) {
+              tx.insert(ChannelPrograms)
+                .values(
+                  map(
+                    adds,
+                    ({ id }) =>
+                      ({
+                        channelUuid: channel.uuid,
+                        programUuid: id,
+                      }) satisfies NewChannelProgram,
+                  ),
+                )
+                .run();
+            }
           }
-        }
-        return channel;
-      });
+          return channel;
+        },
+        { behavior: 'immediate' },
+      );
     };
 
     const createNewLineup = (

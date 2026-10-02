@@ -370,16 +370,21 @@ export class ChannelProgramRepository {
 
   replaceChannelPrograms(channelId: string, programIds: string[]): void {
     const uniqueIds = uniq(programIds);
-    this.drizzleDB.transaction((tx) => {
-      tx.delete(ChannelPrograms)
-        .where(eq(ChannelPrograms.channelUuid, channelId))
-        .run();
-      for (const c of chunk(uniqueIds, 250)) {
-        tx.insert(ChannelPrograms)
-          .values(c.map((id) => ({ channelUuid: channelId, programUuid: id })))
+    this.drizzleDB.transaction(
+      (tx) => {
+        tx.delete(ChannelPrograms)
+          .where(eq(ChannelPrograms.channelUuid, channelId))
           .run();
-      }
-    });
+        for (const c of chunk(uniqueIds, 250)) {
+          tx.insert(ChannelPrograms)
+            .values(
+              c.map((id) => ({ channelUuid: channelId, programUuid: id })),
+            )
+            .run();
+        }
+      },
+      { behavior: 'immediate' },
+    );
   }
 
   findChannelsForProgramId(programId: string): Promise<ChannelOrm[]> {
