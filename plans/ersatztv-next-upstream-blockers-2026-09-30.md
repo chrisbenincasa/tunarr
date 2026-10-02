@@ -53,7 +53,7 @@ Start the two slow conversations on day one, then send the small PRs while those
 | ---- | ---- | ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | 1    | B3   | Issue or direct message | Longest lead time, and it gates shipping. It asks for a release habit, not code                                  |
 | 1    | B2   | Design issue            | It adds config knobs and an exit-code contract, so the shape needs agreement. Pair it with B1's work-ahead knobs |
-| 2    | B6   | PR                      | The most visible regression, since every scaled frame degrades. Small: one config enum plus a format string      |
+| 2    | B6   | PR                      | The most visible regression, since every scaled frame degrades. Small: one filter option plus a format string    |
 | 3    | B8   | PR                      | Small, because the `anullsrc` primitive already exists upstream. Video-only files fail on this backend today     |
 | 4    | B5   | Re-scoped               | Not a blocker. Fold into C2, and send the graphics in-point one-liner with any small PR                          |
 | 5    | B7   | Resolved upstream       | Copy mode (#280, #281) transcodes any codec not in `copy_formats`. Only the Tunarr follow-up in §5 remains       |
@@ -79,9 +79,9 @@ Make the case without Tunarr. A backend that cannot tell "this item failed" from
 
 ### 3.3 B6 — scaling algorithm
 
-- Add a scaling-algorithm field to `VideoNormalizationConfig`, defaulting to today's `fast_bilinear` so existing configs keep their behavior.
-- Replace the literal at both scale sites (`video_filter.rs:228`, `:540` at `ed95077`, which needs re-verifying).
-- Regenerate `schema/channel_config.json` with `gen-channel-config-schema`.
+- Add `filters.scale.flags` to the channel config, following the #132 filter-options convention. Unset means today's `fast_bilinear`.
+- Replace the literal at both scale sites (`video_filter.rs:234`, `:599` at `570d136`).
+- Bump the channel schema to `0.1.1` and regenerate `schema/channel_config.json`. Details in the B6 plan.
 
 ### 3.4 B8 and B7 — audio
 
@@ -118,7 +118,7 @@ Upstream fixes reach users only through a pin bump. Every bump moves the followi
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | B3  | Pin by tag plus SHA-256. Refuse the bundled binary when `--version` differs from `assetVersion`. Warn only under `ERSATZTV_NEXT_PATH`                                                                                                                                                         |
 | B2  | Map `errorScreen: kill` to "budget expires, don't restart." Remove the resolver-silence watchdog                                                                                                                                                                                              |
-| B6  | Map `ffmpegSettings.scalingAlgorithm` to the new field. Drop it from the ignored-settings list                                                                                                                                                                                                |
+| B6  | Always emit `filters.scale.flags` from `ffmpegSettings.scalingAlgorithm`. Drop it from the ignored-settings list                                                                                                                                                                              |
 | B8  | Decide whether to keep Phase 5's `anullsrc` stopgap. It still guards against a probe that missed audio                                                                                                                                                                                        |
 | B5  | Re-scoped. Add a mapper test asserting no `lavfi` source carries in/out points                                                                                                                                                                                                                |
 | B7  | Lift the copy refusal. Map Tunarr's `copy` to `mode: "copy"` with a fallback `format` (`aac`, `h264`), drop loudness under copy because upstream rejects it, and keep `channels` set so a TrueHD 7.1 fallback to `ac3` gets 6 channels. Add mapper tests for all three. Plan together with D1 |
