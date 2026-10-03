@@ -26,6 +26,7 @@ import { Result } from '../../types/result.js';
 import type { Maybe } from '../../types/util.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { caughtErrorToError, isDefined } from '../../util/index.ts';
+import { configuredLibraries } from '../../util/mediaSources.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import type { Canonicalizer } from '../Canonicalizer.ts';
 import type { ImageCache } from '../ImageCache.ts';
@@ -90,7 +91,9 @@ export abstract class FileSystemScanner {
       );
     }
 
-    if (req.mediaSource.libraries.length === 0) {
+    const libraries = configuredLibraries(req.mediaSource.libraries);
+
+    if (libraries.length === 0) {
       this.logger.warn('Media source has no paths to scan.');
       return;
     }
@@ -103,18 +106,17 @@ export abstract class FileSystemScanner {
       req.force ?? false,
     );
 
-    for (let i = 0; i < req.mediaSource.libraries.length; i++) {
-      const localPath = req.mediaSource.libraries[i]!;
+    for (let i = 0; i < libraries.length; i++) {
+      const localPath = libraries[i]!;
       this.mediaSourceProgressService.scanStarted(req.mediaSource.uuid);
       try {
         await this.scanPath({
           mediaSource: req.mediaSource,
           library: localPath,
           force: req.force ?? false,
-          percentMin: i / req.mediaSource.libraries.length,
+          percentMin: i / libraries.length,
           percentCompleteMultiplier:
-            (i + 1) / req.mediaSource.libraries.length -
-            i / req.mediaSource.libraries.length,
+            (i + 1) / libraries.length - i / libraries.length,
           pathFilter: req.pathFilter,
         });
       } catch (e) {

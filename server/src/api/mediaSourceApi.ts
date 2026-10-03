@@ -44,6 +44,7 @@ import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefre
 import { MediaSourceProgressService } from '../services/scanner/MediaSourceProgressService.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { fileExists } from '../util/fsUtil.ts';
+import { localSourcePaths } from '../util/mediaSources.ts';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -828,7 +829,28 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        await req.serverCtx.mediaSourceDB.updateMediaSource(req.body);
+        const trashed = await req.serverCtx.mediaSourceDB.updateMediaSource(
+          req.body,
+        );
+        const trashedIds = [...trashed.programIds, ...trashed.groupingIds];
+        if (trashedIds.length > 0) {
+          // What a removed path held is in the trash now; keep the search index
+          // in step. Groupings share the index with programs and the Trash page
+          // reads `state` off it, so they go along with the programs.
+          try {
+            await req.serverCtx.searchService.updatePrograms(
+              trashedIds.map((id) => ({ id, state: 'missing' })),
+            );
+          } catch (err) {
+            // The update is committed either way, so a search outage must not
+            // fail the request. The scanners treat the same call the same way.
+            logger.error(
+              err,
+              'Could not mark %d trashed items in the search index.',
+              trashedIds.length,
+            );
+          }
+        }
         if (req.body.type === 'local') {
           await req.serverCtx.mediaSourceScanCoordinator.addLocal({
             mediaSourceId: tag(req.body.id),
@@ -976,7 +998,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             type: source.type,
             name: source.name,
             mediaType: source.mediaType,
-            paths: source.libraries?.map((path) => path.externalKey) ?? [],
+            paths: localSourcePaths(source.libraries ?? []),
             libraries: (source.libraries ?? []).map((library) => ({
               id: library.uuid,
               type: source.type,
