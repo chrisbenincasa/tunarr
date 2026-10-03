@@ -1,8 +1,12 @@
 import type { ChannelProgram } from '@tunarr/types';
 import { isContentProgram } from '@tunarr/types';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
+import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import { materializedProgramListSelector } from '../../store/selectors.ts';
+import {
+  materializedProgramListSelector,
+  useCustomShowEditor,
+} from '../../store/selectors.ts';
 import type { SortOrder } from '../../types/index.ts';
 
 export function useAlphaSort() {
@@ -12,6 +16,16 @@ export function useAlphaSort() {
     const { newProgramSort } = sortPrograms(programs, sortOrder);
 
     setCurrentLineup(newProgramSort, true);
+  };
+}
+
+export function useCustomShowAlphaSort() {
+  const { programList } = useCustomShowEditor();
+
+  return (sortOrder: SortOrder) => {
+    const { newProgramSort } = sortPrograms(programList, sortOrder);
+
+    setCurrentCustomShowProgramming(newProgramSort.filter(isContentProgram));
   };
 }
 
