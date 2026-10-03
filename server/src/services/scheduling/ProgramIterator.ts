@@ -287,7 +287,9 @@ export function getProgramOrderer(
 export function slotIteratorKey<T extends BaseSlot>(slot: T): SlotIteratorKey {
   switch (slot.type) {
     case 'movie':
-      return `movie_${slot.order}`;
+      return slot.groupBy
+        ? `movie_${slot.order}_grouped`
+        : `movie_${slot.order}`;
     case 'show':
       return `tv_${slot.showId}_${slot.order}`;
     case 'redirect':
@@ -297,7 +299,9 @@ export function slotIteratorKey<T extends BaseSlot>(slot: T): SlotIteratorKey {
     case 'filler':
       return `filler_${slot.fillerListId}_${slot.order}`;
     case 'smart-collection':
-      return `smart_collection_${slot.smartCollectionId}_${slot.order}`;
+      return slot.groupBy
+        ? `smart_collection_${slot.smartCollectionId}_${slot.order}_grouped`
+        : `smart_collection_${slot.smartCollectionId}_${slot.order}`;
     case 'flex':
       return 'flex';
   }

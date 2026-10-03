@@ -53,7 +53,8 @@ export class ChannelProgramRepository {
       where: (fields, { eq }) => eq(fields.uuid, uuid),
       // Deliberately narrower than MaterializedProgramRelations: these programs
       // feed slot scheduling, which reads only show.uuid/title,
-      // season.index and artist.uuid/title, and the debug endpoints. Nothing
+      // season.index, artist.uuid/title and tags (for slot tag grouping), and
+      // the debug endpoints. Nothing
       // here reaches ApiProgramConverters — the slot-schedule response
       // re-fetches its programs through getProgramsByIds. Load the shared
       // relations instead if that ever stops being true.
@@ -67,6 +68,7 @@ export class ChannelProgramRepository {
                 artist: { with: { externalIds: true } },
                 album: { with: { externalIds: true } },
                 externalIds: true,
+                tags: { with: { tag: true } },
               },
             },
           },
