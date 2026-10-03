@@ -174,7 +174,10 @@ export class HlsSlowerSession extends BaseHlsSession {
   }
 
   protected async stopInternal(): Promise<void> {
-    this.#concatSession?.kill();
+    if (this.#concatSession) {
+      this.#concatSession.kill();
+      await this.waitForExit(this.#concatSession);
+    }
 
     this.logger.debug(
       `Cleaning out stream path for session: %s`,

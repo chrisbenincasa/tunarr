@@ -90,4 +90,8 @@ export class FfmpegTranscodeSession extends events.EventEmitter<FfmpegEvents> {
     this.state = State.Ended;
     return this.process.kill();
   }
+
+  get exited(): Promise<void> {
+    return this.process.exited;
+  }
 }

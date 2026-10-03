@@ -45,6 +45,7 @@ import { TimeSlotSchedulerService } from './services/scheduling/TimeSlotSchedule
 import { SearchParser } from './services/search/SearchParser.ts';
 import { ChannelLineupMigratorStartupTask } from './services/startup/ChannelLineupMigratorStartupTask.ts';
 import { ClearM3uCacheStartupTask } from './services/startup/ClearM3uCacheStartupTask.ts';
+import { ClearStreamDirectoriesStartupTask } from './services/startup/ClearStreamDirectoriesStartupTask.ts';
 import { GenerateGuideStartupTask } from './services/startup/GenerateGuideStartupTask.ts';
 import { RefreshLibrariesStartupTask } from './services/startup/RefreshLibrariesStartupTask.ts';
 import { ScheduleJobsStartupTask } from './services/startup/ScheduleJobsStartupTask.ts';
@@ -142,6 +143,9 @@ const RootModule = new ContainerModule(({ bind }) => {
 
   bind(KEYS.StartupTask).to(SeedSystemDevicesStartupTask).inSingletonScope();
   bind(KEYS.StartupTask).to(ClearM3uCacheStartupTask).inSingletonScope();
+  bind(KEYS.StartupTask)
+    .to(ClearStreamDirectoriesStartupTask)
+    .inSingletonScope();
   bind(KEYS.StartupTask)
     .to(ChannelLineupMigratorStartupTask)
     .inSingletonScope();
