@@ -49,7 +49,6 @@ import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
 import type { MarkRequired } from 'ts-essentials';
-import { match } from 'ts-pattern';
 import { MaterializeLineupCommand } from '../../commands/MaterializeLineupCommand.ts';
 import { MaterializeProgramsCommand } from '../../commands/MaterializeProgramsCommand.ts';
 import type { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
@@ -96,6 +95,7 @@ import type {
 } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
 import type { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
+import { condensedProgramToLineupItem } from './lineupItemConversion.ts';
 
 // Module-level cache shared within this module
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
@@ -104,43 +104,6 @@ const fileDbLocks = new MutexMap();
 const SqliteMaxDepthLimit = 1000;
 
 type ProgramRelationOperation = { operation: 'add' | 'remove'; id: string };
-
-function channelProgramToLineupItemFunc(
-  p: CondensedChannelProgram,
-): LineupItem {
-  return match(p)
-    .returnType<LineupItem>()
-    .with({ type: 'content' }, (program) => ({
-      type: 'content',
-      id: program.id,
-      durationMs: program.duration,
-      startOffsetMs: program.startOffsetMs,
-    }))
-    .with({ type: 'custom' }, (program) => ({
-      type: 'content',
-      durationMs: program.duration,
-      id: program.id,
-      customShowId: program.customShowId,
-    }))
-    .with({ type: 'filler' }, (program) => ({
-      type: 'content',
-      durationMs: program.duration,
-      id: program.id,
-      fillerListId: program.fillerListId,
-      fillerType: program.fillerType,
-    }))
-    .with({ type: 'redirect' }, (program) => ({
-      type: 'redirect',
-      channel: program.channel,
-      durationMs: program.duration,
-    }))
-    .with({ type: 'flex' }, (program) => ({
-      type: 'offline',
-      durationMs: program.duration,
-      fillerConfig: program.fillerConfig,
-    }))
-    .exhaustive();
-}
 
 /**
  * The outcome of a lineup update.
@@ -960,12 +923,12 @@ export class LineupRepository {
       programs: ChannelProgram[],
       lineupPrograms: ChannelProgram[] = programs,
     ) => {
-      return map(lineupPrograms, channelProgramToLineupItemFunc);
+      return map(lineupPrograms, condensedProgramToLineupItem);
     };
 
     if (req.type === 'manual') {
       const newLineupItems = await run(async () => {
-        const newItems = req.lineup.map(channelProgramToLineupItemFunc);
+        const newItems = req.lineup.map(condensedProgramToLineupItem);
         if (req.append) {
           const existingLineup = await this.loadLineup(channel.uuid);
           return [...existingLineup.items, ...newItems];
@@ -1186,6 +1149,7 @@ export class LineupRepository {
           duration: item.durationMs,
           index: customShowIndexes[item.customShowId]![item.id] ?? -1,
           id: item.id,
+          startOffsetMs: item.startOffsetMs,
         };
       } else if (isNonEmptyString(item.fillerListId)) {
         p = {
