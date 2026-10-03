@@ -587,21 +587,20 @@ export class Server {
       this.logger.error(e, 'Error pausing on-demand channels');
     }
 
+    // In parallel, because each stop can wait up to 30s for its ffmpeg to exit.
     this.logger.info('Shutting down all sessions');
-    for (const session of values(
-      this.serverContext.sessionManager.allSessions(),
-    )) {
-      try {
-        await session.stop();
-      } catch (e) {
-        this.logger.error(
-          e,
-          'Error shutting down session (id=%s, type%s)',
-          session.id,
-          session.sessionType,
-        );
-      }
-    }
+    await Promise.all(
+      values(this.serverContext.sessionManager.allSessions()).map((session) =>
+        session.stop().catch((e) => {
+          this.logger.error(
+            e,
+            'Error shutting down session (id=%s, type%s)',
+            session.id,
+            session.sessionType,
+          );
+        }),
+      ),
+    );
 
     // TODO: This is a bug because in theory
     // sessions can override this. But for the most part,
