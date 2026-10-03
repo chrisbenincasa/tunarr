@@ -562,6 +562,11 @@ export class ProgramGroupingRepository {
           },
         },
         externalIds: true,
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
       },
     });
 

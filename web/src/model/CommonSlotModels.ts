@@ -2,6 +2,7 @@ import {
   BaseSlotOrdering,
   MidRollConfigSchema,
   SlotFiller,
+  SlotGroupBySchema,
   SlotProgrammingFillerOrder,
 } from '@tunarr/types/api';
 import {
@@ -42,6 +43,7 @@ export const CommonMovieSlotViewModel = z.object({
   ...BaseSlotOrdering.shape,
   ...WithSlotFiller.shape,
   type: z.literal('movie'),
+  groupBy: SlotGroupBySchema.optional(),
 });
 
 export const CommonCustomShowSlotViewModel = z.object({
@@ -112,6 +114,7 @@ export const CommonSmartCollectionViewModel = z.object({
   smartCollectionId: z.uuid(),
   smartCollection: SmartCollection.nullable(),
   isMissing: z.boolean().optional().default(false),
+  groupBy: SlotGroupBySchema.optional(),
 });
 
 export type CommonSmartCollectionViewModel = z.infer<

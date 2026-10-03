@@ -6,6 +6,7 @@ import { Controller, useFormContext } from 'react-hook-form';
 import type { SmartCollectionOption } from '../../helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import type { CommonSmartCollectionViewModel } from '../../model/CommonSlotModels.ts';
+import { SlotGroupByFormControl } from './SlotGroupByFormControl.tsx';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
 export const SmartCollectionSlotProgrammingForm = () => {
@@ -55,6 +56,7 @@ export const SmartCollectionSlotProgrammingForm = () => {
         )}
       />
       <SlotOrderFormControl />
+      <SlotGroupByFormControl />
     </>
   );
 };

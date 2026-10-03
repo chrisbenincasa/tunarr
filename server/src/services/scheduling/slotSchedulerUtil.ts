@@ -1,5 +1,5 @@
 import constants from '@tunarr/shared/constants';
-import { isNonEmptyString } from '@tunarr/shared/util';
+import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import {
   isContentProgram,
   isFlexProgram,
@@ -17,6 +17,7 @@ import {
   type FillerProgrammingSlot,
   type MidRollConfig,
   type SlotFillerTypes,
+  type SlotGroupBy,
 } from '@tunarr/types/api';
 import type { OfflineFillerConfig } from '@tunarr/types/schemas';
 import { FillerTypes } from '@tunarr/types/schemas';
@@ -371,6 +372,14 @@ export function createSlotProgramIterator(
         programBySlotType.smartCollection[
           smartCollectionId(slot.smartCollectionId)
         ] ?? [];
+      if (slot.groupBy) {
+        return createGroupedProgramIterator(
+          programs,
+          slot.groupBy,
+          slot.order,
+          random,
+        );
+      }
       switch (slot.order) {
         case 'next':
         case 'alphanumeric':
@@ -620,6 +629,15 @@ function getContentProgramIterator(
     }
   }
 
+  if (slot.type === 'movie' && slot.groupBy) {
+    return createGroupedProgramIterator(
+      programs,
+      slot.groupBy,
+      slot.order,
+      random,
+    );
+  }
+
   switch (slot.order) {
     case 'next':
     case 'alphanumeric':
@@ -640,6 +658,102 @@ function getContentProgramIterator(
   }
 }
 
+/**
+ * Groups programs by their tags for marathon-style playback and returns an
+ * iterator over the grouped lineup. Programs within each group always play
+ * chronologically. Group order is determined by the slot's order setting:
+ *
+ * - 'alphanumeric': groups sorted A-Z by tag name
+ * - 'next' / 'chronological': groups sorted by their earliest program
+ * - 'shuffle': groups shuffled
+ * - 'ordered_shuffle': groups sorted by earliest program, then rotated
+ *   to a random starting group
+ *
+ * Tags are sorted A-Z before use, so 'first' always picks the same tag for a
+ * program. With 'all', a program plays in the marathon of every tag it has.
+ * With 'all_unique', a program plays only in the first of its marathons to
+ * come up, which keeps overlapping or redundant tags from repeating it.
+ */
+function createGroupedProgramIterator(
+  programs: SlotSchedulerProgram[],
+  groupBy: SlotGroupBy,
+  order: GroupableSlotOrder,
+  random: Random,
+) {
+  const chronological = getProgramOrderer('chronological');
+  const groups = new Map<string, SlotSchedulerProgram[]>();
+  const ungrouped: SlotSchedulerProgram[] = [];
+
+  for (const program of programs) {
+    const tags = uniq(
+      seq.collect(program.tags, (t) =>
+        isNonEmptyString(t.tag.tag) ? t.tag.tag : undefined,
+      ),
+    ).sort();
+
+    if (tags.length === 0 && groupBy.ungrouped === 'include') {
+      ungrouped.push(program);
+    }
+
+    const tagsToUse =
+      groupBy.multiTagBehavior === 'first' ? tags.slice(0, 1) : tags;
+
+    for (const tag of tagsToUse) {
+      const existing = groups.get(tag) ?? [];
+      existing.push(program);
+      groups.set(tag, existing);
+    }
+  }
+
+  for (const [tag, groupPrograms] of groups) {
+    groups.set(tag, sortBy(groupPrograms, chronological));
+  }
+
+  const earliestInGroup = (tag: string) => {
+    const head = first(groups.get(tag));
+    return head ? chronological(head) : 0;
+  };
+
+  let orderedGroupKeys = [...groups.keys()];
+  switch (order) {
+    case 'alphanumeric':
+      orderedGroupKeys.sort();
+      break;
+    case 'next':
+    case 'chronological':
+      orderedGroupKeys = sortBy(orderedGroupKeys, earliestInGroup);
+      break;
+    case 'shuffle':
+      orderedGroupKeys = random.shuffle(orderedGroupKeys);
+      break;
+    case 'ordered_shuffle': {
+      orderedGroupKeys = sortBy(orderedGroupKeys, earliestInGroup);
+      if (orderedGroupKeys.length > 1) {
+        const rotation = random.integer(0, orderedGroupKeys.length - 1);
+        orderedGroupKeys = [
+          ...orderedGroupKeys.slice(rotation),
+          ...orderedGroupKeys.slice(0, rotation),
+        ];
+      }
+      break;
+    }
+  }
+
+  let lineup = orderedGroupKeys
+    .flatMap((tag) => groups.get(tag) ?? [])
+    .concat(ungrouped);
+  if (groupBy.multiTagBehavior === 'all_unique') {
+    lineup = uniqBy(lineup, (p) => p.uuid);
+  }
+
+  // The lineup is already in its final order, and may contain the same
+  // program more than once (multiTagBehavior 'all'). A constant orderer keeps
+  // it as-is, since the underlying sort is stable.
+  return new ContentProgramOrderedIterator(lineup, () => 0, true);
+}
+
+type GroupableSlotOrder = BaseMovieProgrammingSlot['order'];
+
 type SlotTypeWithOrdering = StrictExclude<
   BaseSlot['type'],
   'redirect' | 'flex'
@@ -649,11 +763,13 @@ export type SlotOrder = SlotWithOrdering['order'];
 
 export type SlotIteratorKey =
   | `movie_${SlotOrder}`
+  | `movie_${SlotOrder}_grouped`
   | `tv_${string}_${SlotOrder}`
   | `redirect_${string}`
   | `custom-show_${string}_${SlotOrder}`
   | `filler_${string}_${SlotOrder}`
   | `smart_collection_${string}_${SlotOrder}`
+  | `smart_collection_${string}_${SlotOrder}_grouped`
   | 'flex';
 
 // Adds flex time to the end of a programs array.

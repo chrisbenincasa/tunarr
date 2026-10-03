@@ -143,6 +143,14 @@ export const Slot = z.object({
   ...SlotWithFiller.shape,
 });
 
+export const SlotGroupBySchema = z.object({
+  type: z.literal('tag'),
+  ungrouped: z.enum(['include', 'exclude']),
+  multiTagBehavior: z.enum(['first', 'all', 'all_unique']),
+});
+
+export type SlotGroupBy = z.infer<typeof SlotGroupBySchema>;
+
 //
 // Base slots
 //
@@ -151,6 +159,7 @@ export const MovieProgrammingSlotSchema = z.object({
   type: z.literal('movie'),
   ...BaseSlotOrdering.shape,
   ...Slot.shape,
+  groupBy: SlotGroupBySchema.optional(),
 });
 
 export type BaseMovieProgrammingSlot = z.infer<
@@ -206,6 +215,7 @@ export const SmartCollectionProgrammingSlot = z.object({
   smartCollectionId: z.uuid(),
   ...BaseSlotOrdering.shape,
   ...Slot.shape,
+  groupBy: SlotGroupBySchema.optional(),
 });
 
 export const BaseSlotSchema = z.discriminatedUnion('type', [
