@@ -295,10 +295,12 @@ msgid "A root path to scan for media. Local sources can search many different pa
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "A-Z (asc)"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "A-Z (desc)"
 msgstr ""
 
@@ -533,6 +535,7 @@ msgid "Alphabetical"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Alphabetically"
 msgstr ""
 
@@ -3713,6 +3716,7 @@ msgid "Sort TV Shows (desc)"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Sorts alphabetically by program title"
 msgstr ""
 

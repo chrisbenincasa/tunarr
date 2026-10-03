@@ -295,10 +295,12 @@ msgid "A root path to scan for media. Local sources can search many different pa
 msgstr "要扫描媒体文件的根路径。本地媒体源可以配置多个路径。"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "A-Z (asc)"
 msgstr "A-Z（升序）"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "A-Z (desc)"
 msgstr "A-Z（降序）"
 
@@ -533,6 +535,7 @@ msgid "Alphabetical"
 msgstr "按字母顺序"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Alphabetically"
 msgstr "按字母顺序"
 
@@ -3715,6 +3718,7 @@ msgid "Sort TV Shows (desc)"
 msgstr "剧集排序（降序）"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Sorts alphabetically by program title"
 msgstr "按节目名称的字母顺序排序"
 
