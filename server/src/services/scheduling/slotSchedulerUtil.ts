@@ -1,7 +1,6 @@
 import constants from '@tunarr/shared/constants';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import {
-  isContentProgram,
   isFlexProgram,
   type CondensedChannelProgram,
   type CondensedContentProgram,
@@ -18,7 +17,10 @@ import {
   type MidRollConfig,
   type SlotFillerTypes,
 } from '@tunarr/types/api';
-import type { OfflineFillerConfig } from '@tunarr/types/schemas';
+import type {
+  CondensedCustomProgram,
+  OfflineFillerConfig,
+} from '@tunarr/types/schemas';
 import { FillerTypes } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import {
@@ -964,6 +966,9 @@ export function createIndexByIdMap(
   );
 }
 
+// Programs a mid-roll break can split into segments.
+type SplittableProgram = CondensedContentProgram | CondensedCustomProgram;
+
 export function applyMidRollBreaks(
   paddedProgram: PaddedProgram,
   slot: SlotImpl<BaseSlot>,
@@ -975,13 +980,15 @@ export function applyMidRollBreaks(
     return [paddedProgram];
   }
 
+  // Custom show programs are split the same way as plain content: a playlist
+  // of movies is the usual way to schedule movies with mid-roll breaks.
   const program = paddedProgram.program;
-  if (!isContentProgram(program)) return [paddedProgram];
+  if (program.type !== 'content' && program.type !== 'custom') {
+    return [paddedProgram];
+  }
 
   if (midRollConfig.programTypes) {
-    const programType = (
-      program as CondensedContentProgram & { subtype?: string }
-    ).subtype;
+    const programType = (program as { subtype?: string }).subtype;
     if (
       programType &&
       !midRollConfig.programTypes.includes(programType as never)
@@ -997,6 +1004,7 @@ export function applyMidRollBreaks(
   if (midRollConfig.strategy === 'lazy') {
     return buildLazyBreaks(
       paddedProgram,
+      program,
       breakPoints,
       midRollConfig,
       slot,
@@ -1005,6 +1013,7 @@ export function applyMidRollBreaks(
   }
   return buildEagerBreaks(
     paddedProgram,
+    program,
     breakPoints,
     midRollConfig,
     slot,
@@ -1015,13 +1024,13 @@ export function applyMidRollBreaks(
 
 function buildEagerBreaks(
   paddedProgram: PaddedProgram,
+  program: SplittableProgram,
   breakPoints: { offsetMs: number }[],
   config: MidRollConfig,
   slot: SlotImpl<BaseSlot>,
   random: Random,
   timeCursor: number,
 ): PaddedProgram[] {
-  const program = paddedProgram.program as CondensedContentProgram;
   const baseOffset = program.startOffsetMs ?? 0;
   const result: PaddedProgram[] = [];
   let segmentStart = 0;
@@ -1084,12 +1093,12 @@ function buildEagerBreaks(
 
 function buildLazyBreaks(
   paddedProgram: PaddedProgram,
+  program: SplittableProgram,
   breakPoints: { offsetMs: number }[],
   config: MidRollConfig,
   slot: SlotImpl<BaseSlot>,
   random: Random,
 ): PaddedProgram[] {
-  const program = paddedProgram.program as CondensedContentProgram;
   const baseOffset = program.startOffsetMs ?? 0;
   const midFillerListIds = slot.getMidFillerListIds();
   const result: PaddedProgram[] = [];

@@ -469,6 +469,54 @@ describe('ChannelDB', () => {
       expect(reloaded.items[0].durationMs).toBe(1000);
     });
 
+    test('should keep where a custom show mid-roll segment resumes', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, {
+          name: 'Custom Show Mid-roll Channel',
+          number: 604,
+        }),
+      );
+
+      const programId = v4();
+      const customShowId = v4();
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [
+          {
+            type: 'content' as const,
+            id: programId,
+            customShowId,
+            durationMs: 1000,
+          },
+          {
+            type: 'content' as const,
+            id: programId,
+            customShowId,
+            durationMs: 2000,
+            startOffsetMs: 1000,
+          },
+        ],
+        startTimeOffsets: [0, 1000],
+      });
+
+      const condensed = await channelDb.loadCondensedLineup(
+        created.channel.uuid,
+      );
+
+      expect(
+        condensed?.lineup.map((p) =>
+          p.type === 'custom'
+            ? { type: p.type, startOffsetMs: p.startOffsetMs }
+            : { type: p.type },
+        ),
+      ).toEqual([
+        { type: 'custom', startOffsetMs: undefined },
+        { type: 'custom', startOffsetMs: 1000 },
+      ]);
+    });
+
     test('should load channel and lineup together', async ({
       channelDb,
       defaultTranscodeConfigId,

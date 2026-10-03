@@ -3741,6 +3741,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
         } | {
             type: 'filler';
             duration: number;
@@ -4358,6 +4359,7 @@ export type PostApiChannelsByIdProgrammingData = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
         } | {
             type: 'filler';
             duration: number;
@@ -5010,6 +5012,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
         } | {
             type: 'filler';
             duration: number;
@@ -5704,6 +5707,7 @@ export type GetApiChannelsAllLineupsResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -5813,6 +5817,7 @@ export type GetApiChannelsByIdLineupResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -5907,6 +5912,7 @@ export type GetApiChannelsByIdNowPlayingResponses = {
         id: string;
         customShowId: string;
         index: number;
+        startOffsetMs?: number;
         program?: {
             type: 'content';
             duration: number;
@@ -6331,6 +6337,7 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
         } | {
             type: 'filler';
             duration: number;
@@ -6695,6 +6702,7 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
         } | {
             type: 'filler';
             duration: number;
@@ -7677,6 +7685,7 @@ export type GetApiCustomShowsResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -7732,6 +7741,7 @@ export type CreateCustomShowResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -7811,6 +7821,7 @@ export type GetApiCustomShowsByIdResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -7882,6 +7893,7 @@ export type PutApiCustomShowsByIdResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -7929,6 +7941,7 @@ export type GetApiCustomShowsByIdProgramsResponses = {
         id: string;
         customShowId: string;
         index: number;
+        startOffsetMs?: number;
         program?: {
             type: 'content';
             duration: number;
@@ -7982,6 +7995,7 @@ export type SyncCustomShowResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8031,6 +8045,7 @@ export type GetApiFillerListsResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8062,6 +8077,7 @@ export type PostApiFillerListsData = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8149,6 +8165,7 @@ export type GetApiFillerListsByIdResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8180,6 +8197,7 @@ export type PutApiFillerListsByIdData = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8226,6 +8244,7 @@ export type PutApiFillerListsByIdResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8274,6 +8293,7 @@ export type GetApiFillerListsByIdProgramsResponses = {
         id: string;
         customShowId: string;
         index: number;
+        startOffsetMs?: number;
         program?: {
             type: 'content';
             duration: number;
@@ -11266,6 +11286,7 @@ export type GetApiGuideChannelsResponses = {
                 id: string;
                 customShowId: string;
                 index: number;
+                startOffsetMs?: number;
                 program?: {
                     type: 'content';
                     duration: number;
