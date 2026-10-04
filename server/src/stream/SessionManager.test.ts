@@ -201,6 +201,49 @@ describe('SessionManager', () => {
       expect(manager.getHlsSession(channelUuid)).toBe(sessionB);
     });
 
+    it('endSession does not block a tune-in while the old session stops', async () => {
+      class SlowStopHlsSession extends StubHlsSession {
+        readonly stopGate = Promise.withResolvers<void>();
+
+        protected override async stopInternal() {
+          await this.stopGate.promise;
+        }
+      }
+
+      const sessions: SlowStopHlsSession[] = [];
+      const manager = makeSessionManager((channel, options) => {
+        const s = new SlowStopHlsSession(channel, options);
+        sessions.push(s);
+        return s;
+      });
+
+      await manager.getOrCreateHlsSession(channelUuid, 'token-a', connection, {
+        streamMode: 'hls',
+      });
+      const sessionA = sessions[0];
+      expect(sessionA).toBeDefined();
+      if (!sessionA) return;
+
+      const endA = manager.endSession(channelUuid, 'hls');
+      await vi.waitFor(() => expect(sessionA.state).toBe('stopping'));
+      expect(manager.getHlsSession(channelUuid)).toBeUndefined();
+
+      // Must resolve while Session A's stop is still pending.
+      const resultB = await manager.getOrCreateHlsSession(
+        channelUuid,
+        'token-b',
+        connection,
+        { streamMode: 'hls' },
+      );
+      expect(resultB.isSuccess()).toBe(true);
+      expect(manager.getHlsSession(channelUuid)).toBe(sessions[1]);
+
+      sessionA.stopGate.resolve();
+      await endA;
+      expect(sessionA.state).toBe('stopped');
+      expect(manager.getHlsSession(channelUuid)).toBe(sessions[1]);
+    });
+
     it('stop event from Session A does not delete Session B at the same key', async () => {
       // Track which sessions the factory creates so we can reference them
       const sessions: StubHlsSession[] = [];

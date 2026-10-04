@@ -1,5 +1,5 @@
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import type { SessionOptions } from '@/stream/Session.js';
+import type { SessionOptions, StopOptions } from '@/stream/Session.js';
 import { Session } from '@/stream/Session.js';
 import { Result } from '@/types/result.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
@@ -169,7 +169,13 @@ export abstract class BaseHlsSession<
    * writes. Bounded because SIGKILL cannot interrupt a process stuck in a
    * driver call.
    */
-  protected async waitForExit(transcode: FfmpegTranscodeSession) {
+  protected async waitForExit(
+    transcode: FfmpegTranscodeSession,
+    options: StopOptions,
+  ) {
+    if (options.waitForExit === false) {
+      return;
+    }
     try {
       await timeoutPromise(transcode.exited, ExitWaitTimeoutMs);
     } catch {

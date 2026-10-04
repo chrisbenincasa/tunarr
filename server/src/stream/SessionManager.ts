@@ -154,14 +154,16 @@ export class SessionManager {
     }
 
     const lock = await this.#sessionLocker.getOrCreateLock(id);
-    return await lock.runExclusive(async () => {
+    const session = await lock.runExclusive(() => {
       const session = this.getSession(id, sessionType);
-      if (isNil(session)) {
-        return;
-      }
-      await session.stop();
       delete this.#sessions[sessionCacheKey(id, sessionType)];
+      return session;
     });
+
+    // Stop outside the channel lock. A stop can wait up to 30s for ffmpeg to
+    // exit, and each session has its own directory, so a new tune-in on this
+    // channel need not wait for it.
+    await session?.stop();
   }
 
   cleanupStaleSessions() {

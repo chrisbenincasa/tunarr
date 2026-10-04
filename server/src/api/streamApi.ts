@@ -300,7 +300,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             );
       }
 
-      if (isUndefined(session)) {
+      // A stopping session holds its lock until ffmpeg exits, so requests to
+      // it would block. Fail fast so the client re-tunes to its replacement.
+      if (isUndefined(session) || session.stoppingOrStopped) {
         return res.status(404).send('No session found');
       }
 

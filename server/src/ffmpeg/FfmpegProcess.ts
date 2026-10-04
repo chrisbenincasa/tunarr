@@ -107,10 +107,12 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
       env,
     });
 
+    // A failed spawn (e.g. ENOENT) emits 'close' but never 'exit'.
     const handle = this.#processHandle;
-    this.#exited = new Promise((resolve) =>
-      handle.once('exit', () => resolve()),
-    );
+    this.#exited = new Promise((resolve) => {
+      handle.once('exit', () => resolve());
+      handle.once('close', () => resolve());
+    });
 
     this.#running = true;
 

@@ -9,6 +9,7 @@ import {
 } from '@/ffmpeg/builder/constants.js';
 import type { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
+import type { StopOptions } from '@/stream/Session.js';
 import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
 import type { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
 import type {
@@ -246,13 +247,11 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     }
   }
 
-  protected async stopInternal(): Promise<void> {
+  protected async stopInternal(options: StopOptions): Promise<void> {
     try {
-      await this.stopStream();
+      await this.stopStream(options);
     } catch (e) {
       this.logger.error(e, 'Error while shutting down session');
-    } finally {
-      this.state = 'stopped';
     }
   }
 
@@ -576,10 +575,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     }
   }
 
-  protected async stopStream(): Promise<void> {
+  protected async stopStream(options: StopOptions): Promise<void> {
     if (this.#currentSession) {
       this.#currentSession.kill();
-      await this.waitForExit(this.#currentSession);
+      await this.waitForExit(this.#currentSession, options);
     }
 
     this.logger.debug(

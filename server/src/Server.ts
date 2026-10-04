@@ -587,11 +587,13 @@ export class Server {
       this.logger.error(e, 'Error pausing on-demand channels');
     }
 
-    // In parallel, because each stop can wait up to 30s for its ffmpeg to exit.
+    // Skip waiting for ffmpeg to exit: SIGKILL only lands 15s after SIGTERM,
+    // which would outlast the graceful-shutdown timeout. The startup sweep
+    // removes any directory a still-running ffmpeg leaves behind.
     this.logger.info('Shutting down all sessions');
     await Promise.all(
       values(this.serverContext.sessionManager.allSessions()).map((session) =>
-        session.stop().catch((e) => {
+        session.stop({ waitForExit: false }).catch((e) => {
           this.logger.error(
             e,
             'Error shutting down session (id=%s, type%s)',
