@@ -48,6 +48,15 @@ class TestHlsSession extends BaseHlsSession {
 
 // Mirrors HlsSession.stopStream: kill, wait for exit, then remove the directory.
 class StoppableHlsSession extends TestHlsSession {
+  // Counts teardown starts. A directory check alone can't tell "not started"
+  // from "fs.rm still in flight".
+  cleanupCalls = 0;
+
+  protected override async cleanupDirectory() {
+    this.cleanupCalls++;
+    await super.cleanupDirectory();
+  }
+
   async setUp() {
     await this.initDirectories();
   }
@@ -298,6 +307,7 @@ describe('BaseHlsSession', () => {
       await vi.advanceTimersByTimeAsync(10_000);
 
       expect(transcode.kill).toHaveBeenCalled();
+      expect(stoppable.cleanupCalls).toBe(0);
       expect(await exists(stoppable.workingDirectory)).toBe(true);
 
       exited.resolve();

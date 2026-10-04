@@ -153,17 +153,39 @@ export class SessionManager {
       }
     }
 
+    // Stop outside the channel lock. A stop can wait up to 30s for ffmpeg to
+    // exit, and each session has its own directory, so a new tune-in on this
+    // channel need not wait for it.
+    const session = await this.removeSession(id, sessionType);
+    await session?.stop();
+  }
+
+  /**
+   * Like {@link endSession}, but resolves once the session is out of the map
+   * and lets its stop (which can wait up to 30s for ffmpeg) finish in the
+   * background.
+   */
+  async endSessionInBackground(session: Session): Promise<void> {
+    const { id, sessionType } = session.keyObj;
+    const removed = await this.removeSession(id, sessionType);
+    removed?.stop().catch((e) => {
+      this.logger.error(
+        this.getLoggerContext(id, e),
+        'Error shutting down session',
+      );
+    });
+  }
+
+  private async removeSession(
+    id: string,
+    sessionType: SessionType,
+  ): Promise<Maybe<Session>> {
     const lock = await this.#sessionLocker.getOrCreateLock(id);
-    const session = await lock.runExclusive(() => {
+    return lock.runExclusive(() => {
       const session = this.getSession(id, sessionType);
       delete this.#sessions[sessionCacheKey(id, sessionType)];
       return session;
     });
-
-    // Stop outside the channel lock. A stop can wait up to 30s for ffmpeg to
-    // exit, and each session has its own directory, so a new tune-in on this
-    // channel need not wait for it.
-    await session?.stop();
   }
 
   cleanupStaleSessions() {

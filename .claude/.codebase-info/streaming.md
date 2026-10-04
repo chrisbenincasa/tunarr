@@ -29,7 +29,8 @@ api/streamApi.ts
   (`BaseHlsSession`). Stop kills ffmpeg, waits up to 30s for it to exit, then deletes the
   directory. Server shutdown skips the wait (`stop({ waitForExit: false })`).
   `SessionManager.endSession` drops the session from the map under the channel lock but stops it
-  outside the lock, so re-tunes don't queue behind a slow ffmpeg exit. Fragment requests to a
+  outside the lock, so re-tunes don't queue behind a slow ffmpeg exit. The sessions API's stop
+  endpoint uses `endSessionInBackground`, which responds once the session is out of the map. Fragment requests to a
   stopping session get a 404. `services/startup/ClearStreamDirectoriesStartupTask.ts` sweeps
   leftover `stream_<uuid>[_<uuid>]` directories before the server listens.
 - Playlists: `stream/hls/HlsPlaylistCreator.ts`, `HlsPlaylistMutator.ts`,

@@ -244,6 +244,39 @@ describe('SessionManager', () => {
       expect(manager.getHlsSession(channelUuid)).toBe(sessions[1]);
     });
 
+    it('endSessionInBackground resolves before the session finishes stopping', async () => {
+      class SlowStopHlsSession extends StubHlsSession {
+        readonly stopGate = Promise.withResolvers<void>();
+
+        protected override async stopInternal() {
+          await this.stopGate.promise;
+        }
+      }
+
+      const sessions: SlowStopHlsSession[] = [];
+      const manager = makeSessionManager((channel, options) => {
+        const s = new SlowStopHlsSession(channel, options);
+        sessions.push(s);
+        return s;
+      });
+
+      await manager.getOrCreateHlsSession(channelUuid, 'token-a', connection, {
+        streamMode: 'hls',
+      });
+      const sessionA = sessions[0];
+      expect(sessionA).toBeDefined();
+      if (!sessionA) return;
+
+      // Would hang if this awaited the stop, which is gated below.
+      await manager.endSessionInBackground(sessionA);
+
+      expect(manager.getHlsSession(channelUuid)).toBeUndefined();
+      await vi.waitFor(() => expect(sessionA.state).toBe('stopping'));
+
+      sessionA.stopGate.resolve();
+      await vi.waitFor(() => expect(sessionA.state).toBe('stopped'));
+    });
+
     it('stop event from Session A does not delete Session B at the same key', async () => {
       // Track which sessions the factory creates so we can reference them
       const sessions: StubHlsSession[] = [];
