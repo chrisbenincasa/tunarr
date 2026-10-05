@@ -76,6 +76,15 @@ async function api(base, method, route, body) {
   return text ? JSON.parse(text) : null;
 }
 
+// /api/channels/:id only takes a uuid, so a channel number is resolved from the list.
+async function findChannel(base, numberOrId) {
+  if (!/^\d+$/.test(numberOrId)) return api(base, 'GET', `/api/channels/${numberOrId}`);
+  const channels = await api(base, 'GET', '/api/channels');
+  const ch = channels.find((c) => c.number === Number(numberOrId));
+  if (!ch) throw new Error(`no channel with number ${numberOrId}`);
+  return ch;
+}
+
 async function until(label, fn, timeoutMs, everyMs = 1000) {
   const end = Date.now() + timeoutMs;
   let lastErr;
@@ -490,7 +499,7 @@ try {
     log('copying database');
     prepareDbCopy();
     server = await startServer();
-    const ch = await api(server.base, 'GET', `/api/channels/${opt.channel}`);
+    const ch = await findChannel(server.base, opt.channel);
     channel = { channelId: ch.id, startTime: ch.startTime, lineup: null };
   } else {
     throw new Error(`unknown --source ${opt.source}`);
