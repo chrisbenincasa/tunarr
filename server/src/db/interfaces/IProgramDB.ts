@@ -27,12 +27,7 @@ import type {
   TvSeasonOrm,
 } from '@/db/schema/derivedTypes.js';
 import type { Maybe, Nullable, PagedResult } from '@/types/util.js';
-import type {
-  Dictionary,
-  MarkOptional,
-  MarkRequired,
-  StrictExclude,
-} from 'ts-essentials';
+import type { Dictionary, MarkOptional, StrictExclude } from 'ts-essentials';
 import type { NewArtwork } from '../schema/Artwork.ts';
 import type { NewGenre } from '../schema/Genre.ts';
 import type { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
@@ -41,25 +36,19 @@ import type { PageParams } from './IChannelDB.ts';
 
 export interface IProgramDB {
   // TODO: Allow null narrowing on mediaSourceId
-  getProgramById(
-    id: string,
-  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>>;
+  getProgramById(id: string): Promise<Maybe<ProgramOrmWithExternalIds>>;
 
   /**
    * Loads a program with only the relations a lineup needs. See
    * `LineupProgramRelations`.
    */
-  getLineupProgramById(
-    id: string,
-  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>>;
+  getLineupProgramById(id: string): Promise<Maybe<ProgramOrmWithExternalIds>>;
 
   /**
    * Loads a program with only the relations streaming needs. See
    * `StreamProgramRelations`.
    */
-  getStreamProgramById(
-    id: string,
-  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>>;
+  getStreamProgramById(id: string): Promise<Maybe<ProgramOrmWithExternalIds>>;
 
   getProgramExternalIds(
     id: string,
@@ -77,7 +66,7 @@ export interface IProgramDB {
   getProgramsByIds(
     ids: string[] | readonly string[],
     batchSize?: number,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
+  ): Promise<ProgramOrmWithExternalIds[]>;
 
   /**
    * Loads programs with only the relations the XMLTV writer reads. See
@@ -96,7 +85,7 @@ export interface IProgramDB {
   getLineupProgramsByIds(
     ids: string[] | readonly string[],
     batchSize?: number,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
+  ): Promise<ProgramOrmWithExternalIds[]>;
 
   getProgramGrouping(
     id: string,
@@ -150,14 +139,14 @@ export interface IProgramDB {
     sourceType: RemoteSourceType;
     externalSourceId: string;
     externalKey: string;
-  }): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>>;
+  }): Promise<Maybe<ProgramOrmWithExternalIds>>;
 
   lookupByExternalIds(
     ids:
       | Set<[RemoteSourceType, MediaSourceId, string]>
       | Set<readonly [RemoteSourceType, MediaSourceId, string]>,
     chunkSize?: number,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
+  ): Promise<ProgramOrmWithExternalIds[]>;
 
   programIdsByExternalIds(
     ids: Set<[string, string, string]>,
@@ -259,7 +248,7 @@ export interface IProgramDB {
   getProgramGroupingDescendants(
     groupId: string,
     groupTypeHint?: ProgramGroupingType,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
+  ): Promise<ProgramOrmWithExternalIds[]>;
 
   updateProgramsState(
     programIds: string[],

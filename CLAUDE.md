@@ -55,6 +55,9 @@ The maintainer cannot approve their own PRs on GitHub, so review agents record t
 
 ### Common Commands
 
+- Build and typecheck through Turbo (`pnpm turbo build`, `pnpm turbo typecheck`). Turbo rebuilds the packages a package depends on first.
+- To check a single package directly, run its own script (`pnpm typecheck` / `pnpm build` inside the package). These use `tsgo -p tsconfig.build.json`. Never run `npx tsc` directly, because it uses the wrong compiler and pulls in test files the build excludes.
+
 ```bash
 # Install dependencies
 pnpm i

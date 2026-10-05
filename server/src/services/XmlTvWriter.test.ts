@@ -99,6 +99,85 @@ function makeGrouping(
 
 describe('XmlTvWriter', () => {
   describe('serialize', () => {
+    // Rotates through the shapes the writer branches on, so batch splicing is
+    // checked against credits, categories, icons and episode numbers.
+    function richProgram(i: number): ProgramWithRelationsOrm {
+      const genres = [
+        {
+          genre: { uuid: v4(), name: 'Comedy' },
+          genreId: '',
+          groupId: '',
+          programId: '',
+        },
+      ];
+      const tags = [
+        {
+          tag: { uuid: v4(), tag: 'Keyword & <Tag>' },
+          tagId: v4(),
+          programId: null,
+          source: 'media' as const,
+          groupingId: null,
+        },
+      ];
+      const credits = [
+        {
+          uuid: v4(),
+          name: `Actor ${i}`,
+          type: 'cast' as const,
+          role: 'Lead',
+          index: 0,
+          createdAt: null,
+          updatedAt: null,
+          programId: null,
+          groupingId: null,
+        },
+      ];
+
+      switch (i % 3) {
+        case 0:
+          return makeProgram({
+            type: 'movie',
+            title: `Movie ${i} <&>`,
+            summary: 'A "quoted" summary',
+            year: 2001,
+            rating: 'PG',
+            artwork: [makeArtwork('poster')],
+            credits,
+            genres,
+            tags,
+          });
+        case 1:
+          return makeProgram({
+            type: 'episode',
+            title: `Episode ${i}`,
+            seasonNumber: 2,
+            episode: i,
+            artwork: [makeArtwork('thumbnail')],
+            show: makeGrouping({
+              type: 'show',
+              title: 'Show "A" & B',
+              artwork: [makeArtwork('poster')],
+              credits,
+              genres,
+              tags,
+            }),
+            season: makeGrouping({ type: 'season', index: 2 }),
+          });
+        default:
+          return makeProgram({
+            type: 'track',
+            title: `Track ${i}`,
+            episode: i,
+            album: makeGrouping({
+              type: 'album',
+              index: 1,
+              artwork: [makeArtwork('poster')],
+            }),
+            artist: makeGrouping({ type: 'artist', title: 'Artist' }),
+          });
+      }
+    }
+
     it('matches serializing the whole document at once', async () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(Date.parse('2026-09-22T00:00:00Z'));
@@ -109,10 +188,7 @@ describe('XmlTvWriter', () => {
           (number) => ({
             channel: createChannelOrm({ number, name: `Channel ${number}` }),
             programs: Array.from({ length: 600 }, (_, i) => {
-              const program = makeProgram({
-                title: `Program ${number}-${i} <&>`,
-                summary: 'A "quoted" summary',
-              });
+              const program = richProgram(number * 1000 + i);
               return {
                 programming: { type: 'program' as const, program },
                 title: program.title,
@@ -124,9 +200,18 @@ describe('XmlTvWriter', () => {
           }),
         );
 
-        expect(await writer.serialize(channels)).toEqual(
-          writeXmltv(writer.generateXmltv(channels)),
-        );
+        const xml = await writer.serialize(channels);
+        expect(xml).toEqual(writeXmltv(writer.generateXmltv(channels)));
+
+        // Guards the fixture: each element below comes from a different shape.
+        for (const element of [
+          '<credits>',
+          '<category',
+          '<icon',
+          '<episode-num',
+        ]) {
+          expect(xml).toContain(element);
+        }
       } finally {
         vi.useRealTimers();
       }
