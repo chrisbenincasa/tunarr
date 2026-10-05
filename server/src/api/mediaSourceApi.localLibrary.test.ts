@@ -122,10 +122,11 @@ describe('GET /media-libraries/:libraryId for a local source (issue #2200)', () 
     expect(body.mediaSource.libraries).toHaveLength(1);
   });
 
-  it('answers 500 when the source arrives without its libraries', async () => {
+  it('names the cause when the source arrives without its libraries', async () => {
     // The pre-fix shape: the relation was not loaded, the DTO projected an
-    // empty `paths`, and the schema's nonempty() rule turned the route into a
-    // 500 instead of the library the caller asked for.
+    // empty `paths`, and the response failed at serialization with an opaque
+    // zod path. The route now throws a named error where the cause is known
+    // (#2205 review).
     getLibraryResult = localLibrary(false);
 
     const res = await app.inject({
@@ -134,5 +135,6 @@ describe('GET /media-libraries/:libraryId for a local source (issue #2200)', () 
     });
 
     expect(res.statusCode).toBe(500);
+    expect(res.json().message).toContain('no libraries loaded');
   });
 });

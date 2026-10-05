@@ -98,6 +98,12 @@ export class MediaSourceDB {
             // schema validation and answered 500 for every local library
             // (#2200). Every other reader of this relation already asks for it.
             libraries: true,
+            // `paths` stays loaded for now even though the DTO's `paths` is a
+            // projection of `libraries` and no reader of this method touches the
+            // relation: dropping it pushes the narrower type through the scanner
+            // `getApiClient` signatures and the api factory (none of which reads
+            // it, but all of which currently require it). That cleanup is its
+            // own change (#2205 review).
             paths: true,
             replacePaths: true,
           },
