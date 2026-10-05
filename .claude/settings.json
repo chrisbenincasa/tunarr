@@ -28,5 +28,10 @@
       "Bash(gh pr list:*)",
       "Bash(gh pr checks:*)"
     ]
+  },
+  "enabledPlugins": {
+    "codebase-mapper@eigenwise-toolshed": true,
+    "live-rules@eigenwise-toolshed": true,
+    "model-gateway@eigenwise-toolshed": true
   }
 }

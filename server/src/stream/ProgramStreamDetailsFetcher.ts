@@ -11,26 +11,26 @@ import {
   trimStart,
 } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
-import { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
-import { Nilable } from '../types/util.ts';
+import type { Maybe, Nilable } from '../types/util.ts';
 import { fileExists } from '../util/fsUtil.ts';
 import { isNonEmptyArray, isNonEmptyString } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
-import { StreamFetchRequest } from './ExternalStreamDetailsFetcher.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
+import type { StreamFetchRequest } from './ExternalStreamDetailsFetcher.ts';
 import { PathCalculator } from './PathCalculator.ts';
-import {
+import type {
   AudioStreamDetails,
-  HttpStreamSource,
   ProgramStreamResult,
   StreamDetails,
   StreamSource,
   SubtitleStreamDetails,
   VideoStreamDetails,
 } from './types.ts';
+import { HttpStreamSource } from './types.ts';
 import { extractIsAnamorphic } from './util.ts';
 
 @injectable()
@@ -43,7 +43,7 @@ export class ProgramStreamDetailsFetcher {
     lineupItem,
     server,
   }: StreamFetchRequest): Promise<Result<ProgramStreamResult>> {
-    const program = await this.programDB.getProgramById(lineupItem.uuid);
+    const program = await this.programDB.getStreamProgramById(lineupItem.uuid);
 
     if (!program) {
       return Result.forError(
@@ -114,6 +114,12 @@ export class ProgramStreamDetailsFetcher {
           }) satisfies AudioStreamDetails,
       ) ?? [];
 
+    // NOTE: 'external_subtitles' media streams are deliberately not included
+    // here. They carry no path (program_media_stream has no such column) and
+    // their index is relative to the container, so they are not addressable as
+    // an ffmpeg input. Every external subtitle is also recorded as a 'sidecar'
+    // row on program_subtitles, which does have a path, and those are handled
+    // below.
     const subtitleStreamDetails: SubtitleStreamDetails[] =
       streamsByType['subtitles']?.map(
         (subtitle) =>
@@ -130,12 +136,42 @@ export class ProgramStreamDetailsFetcher {
 
     const usableSubtitles = await Promise.all(
       (program.subtitles ?? []).map(async (subtitle) => {
-        const pathOnDisk =
+        let pathOnDisk: Maybe<string>;
+        if (
           isNonEmptyString(subtitle.path) &&
-          (await fileExists(subtitle.path));
-        if (subtitle.subtitleType === 'sidecar') {
-          return pathOnDisk ? subtitle : null;
+          (await fileExists(subtitle.path))
+        ) {
+          pathOnDisk = subtitle.path;
         }
+
+        if (subtitle.subtitleType === 'sidecar') {
+          // External subtitles are always handed to ffmpeg as a local file:
+          // either a sidecar from a local library, a copy downloaded during
+          // scanning, or a file on storage Tunarr shares with the media source.
+          if (pathOnDisk) {
+            return { subtitle, path: pathOnDisk };
+          }
+
+          // Re-checked here rather than trusting the scan, so a mount that
+          // appeared later is picked up without a rescan.
+          const sharedPath = await PathCalculator.findLocalPath(
+            subtitle.sourcePath,
+            server.replacePaths,
+          );
+          if (sharedPath) {
+            return { subtitle, path: sharedPath };
+          }
+
+          this.logger.debug(
+            'Dropping sidecar subtitle %s for program %s: not on disk (%s) and not on shared storage (%s). It should be downloaded on the next scan of this library.',
+            subtitle.uuid,
+            program.uuid,
+            subtitle.path ?? '<no path>',
+            subtitle.sourcePath ?? '<no source path>',
+          );
+          return null;
+        }
+
         if (!subtitle.isExtracted) {
           return null;
         }
@@ -149,21 +185,21 @@ export class ProgramStreamDetailsFetcher {
           await this.programDB.clearExtractedSubtitle(subtitle.uuid);
           return null;
         }
-        return subtitle;
+        return { subtitle, path: pathOnDisk };
       }),
     );
 
     subtitleStreamDetails.push(
-      ...seq.collect(usableSubtitles, (subtitle) => {
-        if (!subtitle) return null;
+      ...seq.collect(usableSubtitles, (usable) => {
+        if (!usable) return null;
+        const { subtitle, path } = usable;
         return {
           ...subtitle,
           index: nullToUndefined(subtitle.streamIndex),
-          type:
-            subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
+          type: subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
           languageCodeISO6392: subtitle.language,
           sdh: subtitle.sdh,
-          path: nullToUndefined(subtitle.path),
+          path,
         } satisfies SubtitleStreamDetails;
       }),
     );

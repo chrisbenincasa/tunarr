@@ -1,43 +1,44 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import { Director, MusicVideo, MusicVideoMetadata } from '@tunarr/types';
+import type { Director, MusicVideo, MusicVideoMetadata } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { chunk, compact, isNil } from 'lodash-es';
-import { Dirent } from 'node:fs';
+import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import {
+import type {
   IProgramDB,
   ProgramCanonicalIdLookupResult,
 } from '../../db/interfaces/IProgramDB.ts';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { ArtworkType } from '../../db/schema/Artwork.ts';
+import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import { MusicVideoNfoParser } from '../../nfo/MusicVideoNfoParser.ts';
-import { MusicVideoNfo } from '../../nfo/NfoSchemas.ts';
+import type { MusicVideoNfo } from '../../nfo/NfoSchemas.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { KEYS } from '../../types/inject.ts';
-import { HasMediaSourceInfo } from '../../types/Media.ts';
+import type { HasMediaSourceInfo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { Maybe } from '../../types/util.ts';
+import type { Maybe } from '../../types/util.ts';
 import { changeFileExtension, fileExists } from '../../util/fsUtil.ts';
 import { isDefined, wait } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { titleToSortTitle } from '../../util/programs.ts';
-import { Canonicalizer } from '../Canonicalizer.ts';
+import type { Canonicalizer } from '../Canonicalizer.ts';
 import { ImageCache } from '../ImageCache.ts';
 import { FallbackMetadataService } from '../local/FallbackMetadataService.ts';
 import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
-import { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
-import { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
+import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
+import type { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { KnownVideoFileExtensions } from './constants.ts';
-import { FileSystemScanner, LocalScanContext } from './FileSystemScanner.ts';
+import type { LocalScanContext } from './FileSystemScanner.ts';
+import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
 @injectable()
@@ -47,7 +48,7 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
   private nfoParser = new MusicVideoNfoParser();
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.LocalFolderCanonicalizer)
@@ -318,13 +319,17 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
     await wait();
 
-    const mediaItem = (await this.getMediaItem(fullFilePath)).getOrThrow();
+    const { mediaItem, formatTags } = (
+      await this.getMediaItem(fullFilePath)
+    ).getOrThrow();
 
     if (isNil(mediaItem.duration)) {
       throw new Error(`Could not derive duration for item: ${fullFilePath}`);
     }
 
-    const metadata = (await this.loadVideoMetadata(fullFilePath)).getOrThrow();
+    const metadata = (
+      await this.loadVideoMetadata(fullFilePath, formatTags)
+    ).getOrThrow();
 
     metadata.tags.push(file.parentPath);
 
@@ -380,16 +385,24 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
   private async loadVideoMetadata(
     fullVideoFilePath: string,
+    formatTags?: Record<string, string>,
   ): Promise<Result<MusicVideoMetadata>> {
+    const probeMeta = this.extractMetadataFromFormatTags(formatTags);
     const nfoPath = await this.findNfoFile(fullVideoFilePath);
+
     if (!isNonEmptyString(nfoPath)) {
-      return Result.attemptAsync(() =>
-        Promise.resolve(
-          this.fallbackMetadataService.getMusicVideoFallbackMetadata(
-            fullVideoFilePath,
-          ),
-        ),
-      );
+      const fallback =
+        this.fallbackMetadataService.getMusicVideoFallbackMetadata(
+          fullVideoFilePath,
+        );
+      return Result.success({
+        ...fallback,
+        title: probeMeta.title ?? fallback.title,
+        sortTitle: titleToSortTitle(probeMeta.title ?? fallback.title),
+        artistName: probeMeta.artistName ?? null,
+        albumName: probeMeta.albumName ?? null,
+        year: probeMeta.year ?? fallback.year,
+      });
     }
 
     const parseResult = await this.nfoParser.parse(
@@ -400,11 +413,52 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
       return parseResult.recast();
     }
 
-    const parsed = parseResult.get();
+    const nfoMetadata = this.nfoToMusicVideo(parseResult.get().musicvideo);
 
-    return Result.attemptAsync(() =>
-      Promise.resolve(this.nfoToMusicVideo(parsed.musicvideo)),
-    );
+    return Result.success({
+      ...nfoMetadata,
+      artistName: nfoMetadata.artistName ?? probeMeta.artistName ?? null,
+      albumName: nfoMetadata.albumName ?? probeMeta.albumName ?? null,
+      year: nfoMetadata.year ?? probeMeta.year ?? null,
+    });
+  }
+
+  private extractMetadataFromFormatTags(formatTags?: Record<string, string>): {
+    title?: string;
+    artistName?: string;
+    albumName?: string;
+    year?: number;
+  } {
+    if (formatTags === undefined) {
+      return {};
+    }
+
+    const getTag = (...keys: string[]): string | undefined => {
+      for (const key of keys) {
+        const val =
+          formatTags[key] ??
+          formatTags[key.toLowerCase()] ??
+          formatTags[key.toUpperCase()];
+        if (val !== undefined) return val;
+      }
+      return undefined;
+    };
+
+    let year: number | undefined;
+    const dateStr = getTag('date', 'DATE', 'year', 'YEAR');
+    if (dateStr !== undefined) {
+      const parsed = parseInt(dateStr, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        year = parsed;
+      }
+    }
+
+    return {
+      title: getTag('title', 'TITLE'),
+      artistName: getTag('artist', 'ARTIST', 'album_artist', 'ALBUM_ARTIST'),
+      albumName: getTag('album', 'ALBUM'),
+      year,
+    };
   }
 
   private async findNfoFile(videoPath: string) {
@@ -440,6 +494,8 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
       year: releaseDate?.year() ?? null,
       actors: [],
       tags: nfo.tag ?? [],
+      artistName: nfo.artist?.join(', ') ?? null,
+      albumName: nfo.album ?? null,
       type: 'music_video',
       directors,
       studios: nfo.studio ? [{ name: nfo.studio }] : [],

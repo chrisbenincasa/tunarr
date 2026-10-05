@@ -3,12 +3,10 @@ import { isNonEmptyString } from '@tunarr/shared/util';
 import { and, eq, gt, gte, lt, lte } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { v4 } from 'uuid';
-import { OpenDateTimeRange } from '../types/OpenDateTimeRange.ts';
-import {
-  NewProgramPlayHistoryDrizzle,
-  ProgramPlayHistory,
-} from './schema/ProgramPlayHistory.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
+import type { OpenDateTimeRange } from '../types/OpenDateTimeRange.ts';
+import type { NewProgramPlayHistoryDrizzle } from './schema/ProgramPlayHistory.ts';
+import { ProgramPlayHistory } from './schema/ProgramPlayHistory.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()
 export class ProgramPlayHistoryDB {

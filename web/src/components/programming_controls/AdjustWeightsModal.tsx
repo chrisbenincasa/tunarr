@@ -18,20 +18,30 @@ const AdjustWeightsModal = ({ open, onClose }: AdjustWeightsModalProps) => {
 
   return (
     <Dialog open={open}>
-      <DialogTitle><Trans>Adjust Weights</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Adjust Weights</Trans>
+      </DialogTitle>
       <DialogContent>
         <DialogContentText>
-          <Trans>This allows you to pick the weights for each of the shows, so you can
-          decide that some shows should be less frequent than other shows.</Trans>
+          <Trans>
+            This allows you to pick the weights for each of the shows, so you
+            can decide that some shows should be less frequent than other shows.
+          </Trans>
         </DialogContentText>
         <ButtonGroup>
-          <Button variant="contained"><Trans>Manual</Trans></Button>
-          <Button><Trans>Automatic</Trans></Button>
+          <Button variant="contained">
+            <Trans>Manual</Trans>
+          </Button>
+          <Button>
+            <Trans>Automatic</Trans>
+          </Button>
         </ButtonGroup>
         <Box sx={{ display: 'flex', my: 1 }}>{/* To do */}</Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button variant="contained" onClick={() => adjustWeightProgramming()}>
           <Trans>Save</Trans>
         </Button>

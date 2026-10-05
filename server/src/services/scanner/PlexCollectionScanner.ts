@@ -1,7 +1,7 @@
 import type { Collection, ProgramOrFolder } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { ExternalCollectionRepo } from '../../db/ExternalCollectionRepo.ts';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { RemoteSourceType } from '../../db/schema/base.ts';
 import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
@@ -10,7 +10,7 @@ import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import type { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { KEYS } from '../../types/inject.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { ExternalCollectionScanner } from './ExternalCollectionScanner.ts';
 

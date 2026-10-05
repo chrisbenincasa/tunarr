@@ -1,5 +1,5 @@
 import { seq } from '@tunarr/shared/util';
-import {
+import type {
   ChannelProgram,
   CondensedChannelProgram,
   ContentProgram,
@@ -7,7 +7,7 @@ import {
 import { inject, injectable } from 'inversify';
 import { match, P } from 'ts-pattern';
 import { ProgramConverter } from '../db/converters/ProgramConverter.ts';
-import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { KEYS } from '../types/inject.ts';
 import { groupByUniq } from '../util/index.ts';
 import { MaterializeProgramsCommand } from './MaterializeProgramsCommand.ts';
@@ -39,7 +39,9 @@ export class MaterializeLineupCommand {
       }),
     );
 
-    const dbPrograms = await this.programDB.getProgramsByIds([...programIds]);
+    const dbPrograms = await this.programDB.getLineupProgramsByIds([
+      ...programIds,
+    ]);
     const materializedPrograms =
       await this.materializePrograms.execute(dbPrograms);
 

@@ -107,11 +107,11 @@ pnpm regen-routes     # Regenerate TanStack Router routes
 
 ### Making Changes
 
-1. Create a new branch from `dev`:
+1. Create a new branch from `main`, or from `dev` for a large feature (see [base branch](#pull-request-guidelines)):
 
     ```bash
-    git checkout dev
-    git pull origin dev
+    git checkout main
+    git pull origin main
     git checkout -b feature/your-feature-name
     ```
 
@@ -126,7 +126,7 @@ pnpm regen-routes     # Regenerate TanStack Router routes
     ```
 
 4. Commit your changes using [conventional commit](#commit-messages) format
-5. Push your branch and open a Pull Request against `dev`
+5. Push your branch and open a Pull Request against the branch you started from
 
 ### Adding API Endpoints
 
@@ -175,7 +175,7 @@ When adding new services or components that need dependency injection:
 - **TypeScript**: All code must be written in TypeScript
 - **No `as any`**: Never cast types using `as any`
 - **Formatting**: Prettier handles formatting (run `pnpm fmt`)
-- **Linting**: ESLint 9.x with flat config
+- **Linting**: oxlint (config in `.oxlintrc.json`)
 - **Pre-commit hooks**: Husky + lint-staged run automatically
 
 ### Import Aliases
@@ -192,7 +192,7 @@ Tunarr uses [Husky](https://typicode.github.io/husky/) and [lint-staged](https:/
 When you commit, the following checks run automatically on staged files:
 
 - **Prettier** - Formats code and auto-fixes formatting issues
-- **ESLint** - Lints code and reports errors
+- **oxlint** - Lints code and reports errors
 
 If any check fails, the commit will be blocked. Fix the reported issues and try again.
 
@@ -357,8 +357,8 @@ Key directories:
 ## Pull Request Guidelines
 
 1. **Base branch** 
-    1. **Target the `main` branch** for all non-`feat` commits, i.e.g `fix`, `chore`, `refactor`, etc.
-    2. **Target the `dev` branch** for all `feat` commits or `fix` PRs that require DB schema updates.
+    1. **Target the `main` branch** by default. This includes fixes, chores, refactors, and small to medium features, even when they add a database migration.
+    2. **Target the `dev` branch** only for large features that will need many prerelease iterations before they reach stable, such as infinite schedules or remote streaming sources. Ask in the issue or on Discord if you're unsure.
 2. **Keep PRs focused** - one feature or fix per PR
 3. **Use conventional commits** - follow the [commit message format](#commit-messages)
 4. **Ensure all checks pass** before requesting review

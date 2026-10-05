@@ -111,7 +111,9 @@ export const EditSmartCollectionDialog = (props: Props) => {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={props.onClose}><Trans>Cancel</Trans></Button>
+          <Button onClick={props.onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
           <Button
             disabled={!isValid || !isDirty}
             startIcon={<Save />}

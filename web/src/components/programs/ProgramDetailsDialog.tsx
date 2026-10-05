@@ -165,7 +165,9 @@ function ProgramDetailsDialogContent({
             allowScrollButtonsMobile
             sx={{ mb: 2 }}
           >
-            {visibility.metadata && <Tab value={'metadata'} label={t`Overview`} />}
+            {visibility.metadata && (
+              <Tab value={'metadata'} label={t`Overview`} />
+            )}
 
             {visibility.stream_details &&
               programId &&
@@ -257,7 +259,11 @@ function ProgramDetailsDialogContent({
             <>
               <ErrorBoundary
                 fallback={
-                  <><Trans>Failed to load stream details! Check logs for details</Trans></>
+                  <>
+                    <Trans>
+                      Failed to load stream details! Check logs for details
+                    </Trans>
+                  </>
                 }
               >
                 <Suspense fallback={<LinearProgress />}>
@@ -272,7 +278,11 @@ function ProgramDetailsDialogContent({
           {visibility.program_details && programData?.uuid ? (
             <ErrorBoundary
               fallback={
-                <><Trans>Failed to load item details! Check logs for details</Trans></>
+                <>
+                  <Trans>
+                    Failed to load item details! Check logs for details
+                  </Trans>
+                </>
               }
             >
               <Suspense fallback={<LinearProgress />}>

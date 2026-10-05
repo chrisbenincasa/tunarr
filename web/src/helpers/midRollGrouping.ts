@@ -25,8 +25,24 @@ function isMidRollBreak(p: UIChannelProgram): boolean {
   return false;
 }
 
+/**
+ * A break is rarely filled to the millisecond: whatever the mid filler cannot
+ * cover is emitted as plain flex. Those leftovers carry no mid-roll marker of
+ * their own, so they only count as break time when they sit between two
+ * segments of the same program.
+ */
+function isBreakFiller(p: UIChannelProgram): boolean {
+  return isMidRollBreak(p) || p.type === 'flex';
+}
+
+function isContentLike(
+  p: UIChannelProgram,
+): p is UIChannelProgram & { id: string } {
+  return p.type === 'content' || p.type === 'custom';
+}
+
 function getContentId(p: UIChannelProgram): string | undefined {
-  if (p.type === 'content' || p.type === 'custom') {
+  if (isContentLike(p)) {
     return p.id;
   }
   return;
@@ -41,35 +57,38 @@ export function groupMidRollItems(
   while (i < programs.length) {
     const current = programs[i];
 
-    if (
-      (current.type === 'content' || current.type === 'custom') &&
-      i + 1 < programs.length &&
-      isMidRollBreak(programs[i + 1])
-    ) {
+    if (isContentLike(current)) {
       const contentId = getContentId(current);
       const groupItems: UIChannelProgram[] = [current];
       let j = i + 1;
 
       while (j < programs.length) {
-        const next = programs[j];
-        if (isMidRollBreak(next)) {
-          groupItems.push(next);
-          j++;
-        } else if (
-          (next.type === 'content' || next.type === 'custom') &&
-          getContentId(next) === contentId
+        // Collect the run of break items that follows the current segment. It
+        // only belongs to this program if it contains a real mid-roll break
+        // and another segment of the same program picks up after it.
+        let k = j;
+        let sawMidRollBreak = false;
+        while (k < programs.length && isBreakFiller(programs[k])) {
+          sawMidRollBreak ||= isMidRollBreak(programs[k]);
+          k++;
+        }
+
+        const nextSegment = k < programs.length ? programs[k] : undefined;
+        if (
+          k === j ||
+          !sawMidRollBreak ||
+          !nextSegment ||
+          getContentId(nextSegment) !== contentId
         ) {
-          groupItems.push(next);
-          j++;
-        } else {
           break;
         }
+
+        groupItems.push(...programs.slice(j, k + 1));
+        j = k + 1;
       }
 
       if (groupItems.length > 1) {
-        const contentSegments = groupItems.filter(
-          (p) => p.type === 'content' || p.type === 'custom',
-        );
+        const contentSegments = groupItems.filter(isContentLike);
         result.push({
           kind: 'mid-roll-group',
           group: {
@@ -82,14 +101,12 @@ export function groupMidRollItems(
           },
         });
         i = j;
-      } else {
-        result.push({ kind: 'program', program: current });
-        i++;
+        continue;
       }
-    } else {
-      result.push({ kind: 'program', program: current });
-      i++;
     }
+
+    result.push({ kind: 'program', program: current });
+    i++;
   }
 
   return result;

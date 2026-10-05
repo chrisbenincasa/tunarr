@@ -1,7 +1,8 @@
+import { zip } from 'lodash-es';
 import { describe, expect, it, vi } from 'vitest';
 import { v4 } from 'uuid';
 import type { ChannelOrm } from '../db/schema/Channel.ts';
-import type { Lineup } from '../db/derived_types/Lineup.ts';
+import type { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
 import type { MaterializedChannelPrograms } from './XmlTvWriter.ts';
 import type { ChannelPrograms } from './TvGuideService.ts';
 import dayjsBase from 'dayjs';
@@ -40,6 +41,14 @@ function makeChannelOrm(overrides?: Partial<ChannelOrm>): ChannelOrm {
     subtitlesEnabled: false,
     ...overrides,
   };
+}
+
+function makeLineup(items: LineupItem[]): Lineup {
+  const startTimeOffsets = [0];
+  for (const item of items) {
+    startTimeOffsets.push(startTimeOffsets.at(-1)! + item.durationMs);
+  }
+  return { version: 6, lastUpdated: Date.now(), items, startTimeOffsets };
 }
 
 function makeEmptyLineup(): Lineup {
@@ -85,11 +94,11 @@ describe('TVGuideService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { loadAllLineups: mockLoadAllLineups } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: mockGetProgramsByIds } as any,
+        { getGuideProgramsByIds: mockGetProgramsByIds } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any, // ProgramConverter (not used in this path)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any, // ISettingsDB (not used in this path)
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any, // ISettingsDB (not used in this path)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any, // Kysely<DB> (not used in this path)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,11 +173,11 @@ describe('TVGuideService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { loadAllLineups: mockLoadAllLineups } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -215,11 +224,11 @@ describe('TVGuideService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { loadAllLineups: vi.fn().mockResolvedValue({}) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -464,11 +473,11 @@ describe('TVGuideService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { loadAllLineups: mockLoadAllLineups } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: mockGetProgramsByIds } as any,
+        { getGuideProgramsByIds: mockGetProgramsByIds } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -490,6 +499,54 @@ describe('TVGuideService', () => {
       ).map((entry) => entry.channel.uuid);
       expect(writeChannelIds).toContain(channelA.channel.uuid);
       expect(writeChannelIds).not.toContain(channelB.channel.uuid);
+    });
+
+    it('does not let an older write overwrite a newer one', async () => {
+      const channelA = makeChannelWithLineup({ number: 1, name: 'Channel A' });
+      const channelB = makeChannelWithLineup({ number: 2, name: 'Channel B' });
+
+      const mockLoadAllLineups = vi.fn().mockResolvedValue({
+        [channelA.channel.uuid]: channelA,
+        [channelB.channel.uuid]: channelB,
+      });
+
+      const mockGetProgramsByIds = vi.fn().mockResolvedValue([]);
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { loadAllLineups: mockLoadAllLineups } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getGuideProgramsByIds: mockGetProgramsByIds } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+
+      await service.buildAllChannels(dayjs.duration({ hours: 4 }), true);
+      expect(mockWrite).toHaveBeenCalledTimes(1);
+
+      // Hold the older write's program load until the newer write is done.
+      let releaseOlder: (programs: never[]) => void = () => {};
+      mockGetProgramsByIds.mockReturnValueOnce(
+        new Promise((resolve) => (releaseOlder = resolve)),
+      );
+      const older = service.removeCachedChannel(channelB.channel.uuid);
+      await service.removeCachedChannel(channelA.channel.uuid);
+      releaseOlder([]);
+      await older;
+
+      expect(mockWrite).toHaveBeenCalledTimes(2);
+      expect(mockWrite.mock.lastCall?.[0]).toEqual([]);
     });
   });
 
@@ -543,11 +600,11 @@ describe('TVGuideService', () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { getProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -613,6 +670,415 @@ describe('TVGuideService', () => {
       ).map((entry) => entry.channel.uuid);
       expect(written).toContain(healthy.channel.uuid);
       expect(written).not.toContain(broken.channel.uuid);
+    });
+  });
+
+  describe('redirect slots', () => {
+    const T0 = new Date('2024-01-01T00:00:00Z').getTime();
+    const MIN = 60_000;
+    const HOUR = 60 * MIN;
+
+    type ServiceDeps = ConstructorParameters<typeof TVGuideService>;
+
+    function makeChannel(items: LineupItem[]) {
+      let total = 0;
+      const offsets = [total];
+      for (const item of items) {
+        total += item.durationMs;
+        offsets.push(total);
+      }
+      const channel = makeChannelOrm({ startTime: T0, duration: total });
+      const lineup: Lineup = {
+        version: 4,
+        lastUpdated: T0,
+        items,
+        startTimeOffsets: offsets,
+      };
+      return { channel, lineup };
+    }
+
+    const content = (id: string, durationMs: number): LineupItem => ({
+      type: 'content',
+      id,
+      durationMs,
+    });
+
+    const redirect = (channel: string, durationMs: number): LineupItem => ({
+      type: 'redirect',
+      channel,
+      durationMs,
+    });
+
+    /**
+     * Builds a 12 hour guide from T0 for both channels and returns the source
+     * channel's guide as (start offset from T0, duration, program id) tuples.
+     * Fails if the guide has gaps or overlaps.
+     */
+    async function buildGuide(
+      source: ReturnType<typeof makeChannel>,
+      target: ReturnType<typeof makeChannel>,
+    ) {
+      const channels = {
+        [source.channel.uuid]: source,
+        [target.channel.uuid]: target,
+      };
+      const service = new TVGuideService(
+        {
+          write: vi.fn().mockResolvedValue(undefined),
+        } as unknown as ServiceDeps[0],
+        { push: vi.fn() } as unknown as ServiceDeps[1],
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(channels),
+        } as unknown as ServiceDeps[2],
+        {
+          getGuideProgramsByIds: vi.fn().mockResolvedValue([]),
+        } as unknown as ServiceDeps[3],
+        {} as ServiceDeps[4],
+        {
+          featureFlags: () => ({ xmltvCreditImagesEnabled: false }),
+        } as ServiceDeps[5],
+        {} as ServiceDeps[6],
+        {} as ServiceDeps[7],
+        {} as ServiceDeps[8],
+      );
+      // The logger is shared across instances, so drop calls from other tests
+      const errorSpy = vi.spyOn(service['logger'], 'error');
+      errorSpy.mockClear();
+
+      await service.buildAllChannels(dayjs.duration({ hours: 12 }), true, T0);
+
+      const guide = service['cachedGuide'][source.channel.uuid];
+      if (!guide) {
+        throw new Error('Guide was not built for the source channel');
+      }
+      // Each program must start exactly where the previous one ended
+      for (const [prev, next] of zip(guide.programs, guide.programs.slice(1))) {
+        if (prev && next) {
+          expect(next.startTimeMs).toBe(
+            prev.startTimeMs + prev.lineupItem.durationMs,
+          );
+        }
+      }
+
+      // Epoch timestamps only hold fractional milliseconds to about 1e-4, so
+      // compare offsets at microsecond precision.
+      const toMicros = (ms: number) => Math.round(ms * 1000) / 1000;
+      const programs = guide.programs.map((p) => [
+        toMicros(p.startTimeMs - T0),
+        toMicros(p.lineupItem.durationMs),
+        p.lineupItem.type === 'content' ? p.lineupItem.id : p.lineupItem.type,
+      ]);
+      return { programs, errorSpy };
+    }
+
+    // Rounding the capped duration to a whole millisecond ended the item just
+    // short of the slot, so the next lookup found the same slot again and
+    // trimmed it to a zero-length program.
+    it('ends a fractional redirect slot exactly where the slot ends', async () => {
+      const target = makeChannel([content('target', 8 * HOUR)]);
+      const source = makeChannel([
+        redirect(target.channel.uuid, HOUR + 0.4),
+        content('after', 11 * HOUR),
+      ]);
+
+      const { programs, errorSpy } = await buildGuide(source, target);
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(programs.slice(0, 2)).toEqual([
+        [0, HOUR + 0.4, 'target'],
+        [HOUR + 0.4, 11 * HOUR, 'after'],
+      ]);
+    });
+
+    it('ends a redirected program with a fractional duration exactly where it ends', async () => {
+      const target = makeChannel([
+        content('first', 30 * MIN + 0.3),
+        content('second', 12 * HOUR),
+      ]);
+      const source = makeChannel([
+        redirect(target.channel.uuid, 3 * HOUR),
+        content('after', 10 * HOUR),
+      ]);
+
+      const { programs, errorSpy } = await buildGuide(source, target);
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(programs.slice(0, 3)).toEqual([
+        [0, 30 * MIN + 0.3, 'first'],
+        [30 * MIN + 0.3, 3 * HOUR - (30 * MIN + 0.3), 'second'],
+        [3 * HOUR, 10 * HOUR, 'after'],
+      ]);
+    });
+
+    it('ends a redirected program that began before the slot when the program ends', async () => {
+      const target = makeChannel([
+        content('first', 45 * MIN),
+        content('second', 12 * HOUR),
+      ]);
+      const source = makeChannel([
+        content('before', 30 * MIN),
+        redirect(target.channel.uuid, HOUR),
+        content('after', 11 * HOUR),
+      ]);
+
+      const { programs, errorSpy } = await buildGuide(source, target);
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(programs.slice(0, 4)).toEqual([
+        [0, 30 * MIN, 'before'],
+        [30 * MIN, 15 * MIN, 'first'],
+        [45 * MIN, 45 * MIN, 'second'],
+        [90 * MIN, 11 * HOUR, 'after'],
+      ]);
+    });
+  });
+
+  describe('channel redirects', () => {
+    const MIN = 60_000;
+    // Fixed so the lineup grids line up the same way on every run.
+    const BASE = new Date('2024-01-01T00:00:00Z').getTime();
+
+    function makeService(channels: Record<string, unknown>) {
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(channels),
+          syncChannelDuration: vi.fn().mockResolvedValue(false),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+      return { service, mockWrite };
+    }
+
+    /**
+     * A time-slot schedule with padded starts: each 22 minute episode is
+     * followed by an 8 minute pad onto the next half hour.
+     */
+    function makePaddedSlotChannel(name: string, number: number) {
+      const items: LineupItem[] = [];
+      for (let i = 0; i < 400; i++) {
+        items.push({
+          type: 'content',
+          id: `${name}-${i}`,
+          durationMs: 22 * MIN,
+        });
+        items.push({ type: 'offline', durationMs: 8 * MIN });
+      }
+      return {
+        channel: makeChannelOrm({ number, name, startTime: BASE }),
+        lineup: makeLineup(items),
+      };
+    }
+
+    /**
+     * Flex melding folds a short offline block into the entry before it. It
+     * used to pick that entry by the item's position in the *channel lineup*,
+     * which is a different index space from the guide output being built. On a
+     * redirecting channel every entry inside one redirect block carries the
+     * same lineup index, so each pad inside the block was folded into one
+     * arbitrary early entry: that entry ran long and the pad's time vanished
+     * from the guide, leaving holes that grew with the EPG window. See #1798.
+     */
+    it('produces a gap-free guide for a channel that redirects', async () => {
+      const target = makePaddedSlotChannel('Target', 2);
+
+      // Redirect slots deliberately offset from the target's half hour grid,
+      // so slot boundaries land in the middle of the target's programs.
+      const mainItems: LineupItem[] = [];
+      for (let i = 0; i < 100; i++) {
+        mainItems.push({ type: 'offline', durationMs: 10 * MIN });
+        mainItems.push({
+          type: 'redirect',
+          channel: target.channel.uuid,
+          durationMs: 110 * MIN,
+        });
+      }
+      const main = {
+        channel: makeChannelOrm({ number: 1, name: 'Main', startTime: BASE }),
+        lineup: makeLineup(mainItems),
+      };
+
+      const { service, mockWrite } = makeService({
+        [main.channel.uuid]: main,
+        [target.channel.uuid]: target,
+      });
+
+      // The reporter's EPG setting. A longer window folds in more pads, so
+      // the shorter default hides how bad the drift gets.
+      await service.buildAllChannels(
+        dayjs.duration({ hours: 192 }),
+        true,
+        BASE,
+      );
+
+      const written = mockWrite.mock.calls.at(
+        -1,
+      )![0] as MaterializedChannelPrograms[];
+      const programs = written.find(
+        (entry) => entry.channel.uuid === main.channel.uuid,
+      )!.programs;
+
+      expect(programs.length).toBeGreaterThan(0);
+
+      const discontinuities = programs
+        .slice(1)
+        .map((program, i) => ({ previous: programs[i]!, program }))
+        .filter(({ previous, program }) => previous.stop !== program.start)
+        .map(
+          ({ previous, program }) =>
+            `entry ends ${new Date(previous.stop).toISOString()} but the next starts ${new Date(program.start).toISOString()}`,
+        );
+
+      expect(discontinuities).toEqual([]);
+    });
+  });
+
+  describe('redirect to a deleted channel', () => {
+    it('lists the slot as flex in XMLTV', async () => {
+      const channel = makeChannelOrm({
+        name: 'Main',
+        guideFlexTitle: 'Off Air',
+      });
+      const lineups = {
+        [channel.uuid]: {
+          channel,
+          lineup: makeLineup([
+            {
+              type: 'redirect',
+              channel: v4(),
+              durationMs: 24 * 60 * 60 * 1000,
+            },
+          ]),
+        },
+      };
+
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(lineups),
+          syncChannelDuration: vi.fn().mockResolvedValue(false),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+
+      await service.buildAllChannels(dayjs.duration({ hours: 4 }), true);
+
+      const written = mockWrite.mock.calls.at(
+        -1,
+      )?.[0] as MaterializedChannelPrograms[];
+      const programs = written.flatMap((entry) => entry.programs);
+
+      expect(programs.length).toBeGreaterThan(0);
+      for (const program of programs) {
+        expect(program.programming.type).toBe('flex');
+        expect(program.title).toBe('Off Air');
+      }
+    });
+  });
+
+  describe('updateCachedChannel', () => {
+    /**
+     * A guide item stays a redirect when the redirect can't be followed, for
+     * example in a loop. XMLTV writes that happen after a guide build must
+     * still resolve the redirect target's channel.
+     */
+    it('rewrites XMLTV for a guide that holds an unresolved redirect', async () => {
+      const HOUR = 60 * 60 * 1000;
+      const a = makeChannelOrm({ number: 1, name: 'Channel A' });
+      const b = makeChannelOrm({ number: 2, name: 'Channel B' });
+      const channels = {
+        [a.uuid]: {
+          channel: a,
+          lineup: makeLineup([
+            { type: 'redirect', channel: b.uuid, durationMs: 24 * HOUR },
+          ]),
+        },
+        [b.uuid]: {
+          channel: b,
+          lineup: makeLineup([
+            { type: 'redirect', channel: a.uuid, durationMs: 24 * HOUR },
+          ]),
+        },
+      };
+
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(channels),
+          getChannelOrm: vi.fn().mockResolvedValue(a),
+          syncChannelDuration: vi.fn().mockResolvedValue(false),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        {
+          featureFlags: () => ({ xmltvCreditImagesEnabled: false }),
+          xmlTvSettings: () => ({ programmingHours: 4 }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+
+      await service.buildAllChannels(dayjs.duration({ hours: 4 }), true);
+
+      // A start time change regenerates the lineup and recalculates the guide
+      await service.updateCachedChannel(a.uuid, true);
+
+      const written = mockWrite.mock.calls.at(
+        -1,
+      )?.[0] as MaterializedChannelPrograms[];
+      const redirects = written
+        .flatMap((entry) => entry.programs)
+        .map((program) => program.programming)
+        .filter((programming) => programming.type === 'redirect');
+
+      expect(redirects.length).toBeGreaterThan(0);
+      for (const redirect of redirects) {
+        expect([a.uuid, b.uuid]).toContain(redirect.channelId);
+      }
     });
   });
 });

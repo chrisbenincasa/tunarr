@@ -60,9 +60,22 @@ Break duration can be configured in two modes:
 | Setting | Description | Default |
 |---------|-------------|---------|
 | **Max Breaks** | Maximum number of breaks per program. 0 = unlimited. | 0 |
-| **Minimum Program Duration** | Programs shorter than this are skipped entirely. | 60 minutes |
+| **Minimum Program Duration** | Programs shorter than this are skipped entirely. | Fitted to the slot |
 | **Tail Buffer** | Minimum amount of content preserved at the end of the program before the credits. No breaks are inserted within this window. | 0 |
 | **Program Types** | Restrict mid-roll to specific content types (Movies, Episodes, Music Tracks, Music Videos, Other Videos). Empty = all types. | All |
+
+### Starting Values
+
+When mid-roll is first enabled on a slot, the interval and minimum program
+duration are fitted to the programs that slot actually draws from: the interval
+aims for about two breaks in a program of typical length, and the minimum sits
+at or below the shortest program in the pool, so none of the slot's own content
+is skipped. A slot whose pool cannot be measured — a smart collection, or a
+channel whose programs have not loaded — starts at a 15 minute interval and a
+20 minute minimum.
+
+These are starting values, not rules. Raise the minimum to leave shorter
+programs whole.
 
 ## Scheduling Strategy
 
@@ -74,6 +87,8 @@ Filler is selected at **schedule generation time**. The specific filler programs
 
 - The TV guide shows the actual filler titles during breaks.
 - Filler selection uses cooldown state from the time the schedule was generated.
+- Any part of a break that the filler lists cannot fill becomes flex. It is still
+  break time, so the TV guide labels it "Commercial Break".
 
 ### Lazy
 
@@ -85,6 +100,13 @@ Filler selection is deferred to **stream time** — the moment a viewer is actua
 
 !!! tip
     Use the **Lazy** strategy if you want the most variety in your filler content. Because filler is picked at playback time, the system has up-to-date knowledge of what has recently played and can avoid repeats more effectively.
+
+## In the Lineup Editor
+
+A program that was split by mid-roll breaks appears as a single collapsed row in
+the channel's program list, labelled with the number of breaks and showing where
+they fall across the program. Expand the row to see each segment and each break
+on its own line. This applies to both strategies.
 
 ## Example Configuration
 

@@ -1,13 +1,15 @@
 import { container } from '@/container.js';
 import { KEYS } from '@/types/inject.js';
 import type { ServerType } from '@/types/serverType.js';
+import { allowNullInEnums } from '@/util/openapiUtil.js';
 import { getTunarrVersion } from '@/util/version.js';
 import cors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
 import glob from 'fast-glob';
-import fastify, { FastifySchema } from 'fastify';
+import type { FastifySchema } from 'fastify';
+import fastify from 'fastify';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import fp from 'fastify-plugin';
 import fastifyPrintRoutes from 'fastify-print-routes';
@@ -40,9 +42,10 @@ import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
+import { createTunarrBasicAuthHook } from './util/basicAuth.js';
 import { defaultHlsOptions } from './ffmpeg/builder/constants.ts';
 import { type ServerOptions, serverOptions } from './globals.js';
-import { IWorkerPool } from './interfaces/IWorkerPool.ts';
+import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { Result } from './types/result.ts';
 import { getBooleanEnvVar, getEnvVar, TUNARR_ENV_VARS } from './util/env.ts';
@@ -111,6 +114,21 @@ export class Server {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       .setSerializerCompiler(serializerCompiler)
       .withTypeProvider<ZodTypeProvider>();
+
+    const basicAuthUser = getEnvVar(TUNARR_ENV_VARS.BASIC_AUTH_USER_ENV_VAR);
+    const basicAuthPassword = getEnvVar(
+      TUNARR_ENV_VARS.BASIC_AUTH_PASSWORD_ENV_VAR,
+    );
+
+    if (basicAuthUser && basicAuthPassword) {
+      this.app.addHook(
+        'onRequest',
+        createTunarrBasicAuthHook({
+          username: basicAuthUser,
+          password: basicAuthPassword,
+        }),
+      );
+    }
 
     if (serverOptions().printRoutes) {
       await this.app.register(
@@ -195,9 +213,10 @@ export class Server {
           if (schema && schema.body && schema.body['anyOf']) {
             schema.body['required'] = ['true'];
           }
-          return { schema, url };
+          return { schema: allowNullInEnums(schema), url };
         },
-        transformObject: jsonSchemaTransformObject,
+        transformObject: (input) =>
+          allowNullInEnums(jsonSchemaTransformObject(input)),
       })
       // .register(fastifySwaggerUi, {
       //   routePrefix: '/docs',
@@ -312,6 +331,7 @@ export class Server {
           if (!route.config) {
             route.config = {};
           }
+          route.config.authRequired = false;
           route.config.swaggerTransform = ({ schema, url }) => {
             const transformedSchema: FastifySchema = isUndefined(schema)
               ? {}
@@ -365,6 +385,9 @@ export class Server {
             schema: {
               hide: true,
               params: z.object({ hash: z.string() }),
+            },
+            config: {
+              authRequired: false,
             },
             // Workaround for https://github.com/fastify/fastify/issues/4859
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -564,21 +587,22 @@ export class Server {
       this.logger.error(e, 'Error pausing on-demand channels');
     }
 
+    // Skip waiting for ffmpeg to exit: SIGKILL only lands 15s after SIGTERM,
+    // which would outlast the graceful-shutdown timeout. The startup sweep
+    // removes any directory a still-running ffmpeg leaves behind.
     this.logger.info('Shutting down all sessions');
-    for (const session of values(
-      this.serverContext.sessionManager.allSessions(),
-    )) {
-      try {
-        await session.stop();
-      } catch (e) {
-        this.logger.error(
-          e,
-          'Error shutting down session (id=%s, type%s)',
-          session.id,
-          session.sessionType,
-        );
-      }
-    }
+    await Promise.all(
+      values(this.serverContext.sessionManager.allSessions()).map((session) =>
+        session.stop({ waitForExit: false }).catch((e) => {
+          this.logger.error(
+            e,
+            'Error shutting down session (id=%s, type%s)',
+            session.id,
+            session.sessionType,
+          );
+        }),
+      ),
+    );
 
     // TODO: This is a bug because in theory
     // sessions can override this. But for the most part,

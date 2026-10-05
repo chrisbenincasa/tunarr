@@ -65,8 +65,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootPage,
   notFoundComponent: () => (
     <div>
-      <p><Trans>Not found!</Trans></p>
-      <RouterLink to="/"><Trans>Go Home</Trans></RouterLink>
+      <p>
+        <Trans>Not found!</Trans>
+      </p>
+      <RouterLink to="/">
+        <Trans>Go Home</Trans>
+      </RouterLink>
     </div>
   ),
   errorComponent: ({ error, reset }) => {

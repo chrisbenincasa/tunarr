@@ -212,6 +212,25 @@ describe('PlexMediaCanonicalizer - movie', () => {
     );
   });
 
+  it('changes id when a label is added', () => {
+    expect(canonicalizer.getCanonicalId(baseMovie)).not.toBe(
+      canonicalizer.getCanonicalId({
+        ...baseMovie,
+        Label: [{ tag: 'Favorites' }],
+      }),
+    );
+  });
+
+  it('changes id when a label tag changes', () => {
+    const labeled = { ...baseMovie, Label: [{ tag: 'Favorites' }] };
+    expect(canonicalizer.getCanonicalId(labeled)).not.toBe(
+      canonicalizer.getCanonicalId({
+        ...labeled,
+        Label: [{ tag: 'Watch Later' }],
+      }),
+    );
+  });
+
   it('changes id when a second media entry is added', () => {
     const secondMedia: PlexMediaDescription = {
       id: 20,
@@ -348,6 +367,15 @@ describe('PlexMediaCanonicalizer - show', () => {
       canonicalizer.getCanonicalId({
         ...baseShow,
         Collection: [{ tag: 'Collection X' }, { tag: 'Collection Y' }],
+      }),
+    );
+  });
+
+  it('changes id when a label is added', () => {
+    expect(canonicalizer.getCanonicalId(baseShow)).not.toBe(
+      canonicalizer.getCanonicalId({
+        ...baseShow,
+        Label: [{ tag: 'Favorites' }],
       }),
     );
   });
@@ -849,6 +877,25 @@ describe('PlexMediaCanonicalizer - episode', () => {
         ...baseEpisode,
         Director: [],
         Role: [{ tag: 'X' }],
+      }),
+    );
+  });
+
+  it('changes id when a label is added', () => {
+    expect(canonicalizer.getCanonicalId(baseEpisode)).not.toBe(
+      canonicalizer.getCanonicalId({
+        ...baseEpisode,
+        Label: [{ tag: 'Favorites' }],
+      }),
+    );
+  });
+
+  it('changes id when a label tag changes', () => {
+    const labeled = { ...baseEpisode, Label: [{ tag: 'Favorites' }] };
+    expect(canonicalizer.getCanonicalId(labeled)).not.toBe(
+      canonicalizer.getCanonicalId({
+        ...labeled,
+        Label: [{ tag: 'Watch Later' }],
       }),
     );
   });

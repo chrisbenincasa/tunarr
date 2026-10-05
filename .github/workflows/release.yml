@@ -1,0 +1,170 @@
+name: Release (CalVer)
+
+# CalVer release flow. See .claude/plans/versioning-repair-plan.md for why.
+# release-comment.yml comments on shipped PRs and issues once this publishes.
+#
+# Versions are YYYY.M.PATCH, unpadded, because that form is still valid semver:
+# docker/metadata-action's type=semver, the docs spec sort, and the Docker tag
+# trigger v[0-9]+.[0-9]+.[0-9]+* all keep working unchanged.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Compute the version and notes, but do not tag or publish"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute version
+        id: version
+        run: |
+          set -euo pipefail
+
+          # UTC so the version does not depend on where this runs.
+          YEAR="$(date -u +%Y)"
+          MONTH="$(date -u +%-m)"
+          PREFIX="v${YEAR}.${MONTH}."
+
+          # Stable tags for this month only. The suffix filter drops
+          # prereleases, so v2026.8.0-dev.1 never counts as a stable release.
+          #
+          # A month with no tags makes grep exit 1, which pipefail turns into
+          # a step failure. `|| true` lets that case fall through to patch 0.
+          LAST_PATCH="$(git tag --list "${PREFIX}*" \
+            | sed "s|^${PREFIX}||" \
+            | grep -E '^[0-9]+$' \
+            | sort -n \
+            | tail -1 || true)"
+
+          if [ -z "${LAST_PATCH}" ]; then
+            PATCH=0
+          else
+            PATCH=$((LAST_PATCH + 1))
+          fi
+
+          BASE="${YEAR}.${MONTH}.${PATCH}"
+
+          if [ "${GITHUB_REF_NAME}" = "dev" ]; then
+            # Prereleases hang off the next stable version.
+            LAST_DEV="$(git tag --list "v${BASE}-dev.*" \
+              | sed "s|^v${BASE}-dev\.||" \
+              | grep -E '^[0-9]+$' \
+              | sort -n \
+              | tail -1 || true)"
+
+            if [ -z "${LAST_DEV}" ]; then
+              DEV=0
+            else
+              DEV=$((LAST_DEV + 1))
+            fi
+
+            VERSION="${BASE}-dev.${DEV}"
+            PRERELEASE=true
+          else
+            VERSION="${BASE}"
+            PRERELEASE=false
+          fi
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "prerelease=${PRERELEASE}" >> "$GITHUB_OUTPUT"
+          echo "Computed version ${VERSION} from branch ${GITHUB_REF_NAME}"
+
+      - name: Refuse to reuse an existing tag
+        run: |
+          set -euo pipefail
+          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.version.outputs.tag }} already exists." >&2
+            exit 1
+          fi
+
+      - name: Generate release notes
+        run: |
+          set -euo pipefail
+          # Grouped Features / Bug Fixes sections, the same shape
+          # semantic-release produced. The tag does not exist yet, so the
+          # version and range are passed explicitly; left to itself the CLI
+          # titles the notes with the stale package.json version.
+          #
+          # Stable releases cover everything since the last stable tag, so
+          # they roll up any dev prereleases in between. Dev prereleases only
+          # cover what changed since the nearest tag of either kind.
+          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then
+            PREV_TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD 2>/dev/null || true)"
+          else
+            PREV_TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude 'v*-*' HEAD 2>/dev/null || true)"
+          fi
+          echo "Previous tag: ${PREV_TAG:-<none>}"
+
+          CONTEXT="${RUNNER_TEMP}/changelog-context.json"
+          jq -n \
+            --arg version "${{ steps.version.outputs.version }}" \
+            --arg currentTag "${{ steps.version.outputs.tag }}" \
+            --arg previousTag "${PREV_TAG}" \
+            '{version: $version, currentTag: $currentTag, previousTag: $previousTag}' \
+            > "${CONTEXT}"
+
+          # -i /dev/null: the CLI otherwise prepends CHANGELOG.md to the output.
+          npx -y \
+            -p conventional-changelog@8.1.3 \
+            -p conventional-changelog-conventionalcommits@10.4.0 \
+            -- conventional-changelog \
+            -p conventionalcommits \
+            --context "${CONTEXT}" \
+            ${PREV_TAG:+--from "${PREV_TAG}"} \
+            --to HEAD \
+            -i /dev/null \
+            --stdout > RELEASE_NOTES.md
+
+          if ! grep -q '^\* ' RELEASE_NOTES.md; then
+            echo "No conventional commits found since ${PREV_TAG:-the first commit}." > RELEASE_NOTES.md
+          fi
+
+          echo "--- notes ---"
+          cat RELEASE_NOTES.md
+
+      - name: Create release
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        env:
+          # A PAT, not GITHUB_TOKEN: tags pushed with the default token do not
+          # trigger other workflows, and build-and-push-docker.yml runs on tag
+          # push.
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --notes-file RELEASE_NOTES.md \
+            --target "${GITHUB_SHA}" \
+            ${{ steps.version.outputs.prerelease == 'true' && '--prerelease' || '' }}
+
+      - name: Dry run summary
+        if: ${{ github.event.inputs.dry_run != 'false' }}
+        run: |
+          {
+            echo "### Dry run"
+            echo
+            echo "Would create tag \`${{ steps.version.outputs.tag }}\` on \`${GITHUB_SHA}\`."
+            echo "Prerelease: \`${{ steps.version.outputs.prerelease }}\`"
+            echo
+            echo "#### Notes"
+            echo
+            cat RELEASE_NOTES.md
+          } >> "$GITHUB_STEP_SUMMARY"

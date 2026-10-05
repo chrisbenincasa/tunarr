@@ -90,6 +90,70 @@ curl -X POST "http://localhost:8000/api/tasks/BackupTask/run?background=true"
 
 When a new backup is created and the total number of backups exceeds the `maxBackups` setting, the oldest backups are automatically deleted. This helps prevent disk space from filling up over time.
 
+## Pre-Migration Snapshots
+
+Tunarr migrates its database schema automatically on startup when you upgrade to a version that requires it. Before the first pending migration runs, the database is copied to a snapshot in the data directory:
+
+```
+db-pre-migration-<epoch>.bak
+```
+
+`<epoch>` is the snapshot time in milliseconds since the Unix epoch. Snapshots are written next to `db.db` — for example `~/.local/share/tunarr/db-pre-migration-1750000000000.bak` — and **not** in the `backups/` directory. They are not part of the regular backup archive described above; they exist so that a single upgrade can be undone. A fresh install has no earlier database to protect, so no snapshot is taken; likewise, starting an already up-to-date database takes none.
+
+If the snapshot cannot be written, Tunarr stops rather than migrating, so a copy of the pre-upgrade database is always available.
+
+### Rotation
+
+Only the **3 newest** pre-migration snapshots are kept. The per-migration `db-<epoch>.bak` files that full-copy migrations produce are trimmed to the newest **3** as well. The two pools rotate independently: with a single shared pool, an upgrade that ran three or more full-copy migrations would push out the snapshot taken before any of them — the one worth keeping.
+
+Snapshots contain only the database. `settings.json`, images, and other files are not copied.
+
+### Rolling Back an Upgrade
+
+If a new version misbehaves after upgrading:
+
+1. **Stop Tunarr**
+
+2. **Find the newest snapshot** next to `db.db` in your data directory (see [Backup Storage Locations](#backup-storage-locations) for platform paths):
+
+    ```bash
+    ls -1t /path/to/tunarr/data/db-pre-migration-*.bak | head -1
+    ```
+
+3. **Replace the database with it**:
+
+    ```bash
+    cd /path/to/tunarr/data
+    mv db.db db.db.upgraded
+    cp db-pre-migration-1750000000000.bak db.db
+    ```
+
+4. **Start the previous version of Tunarr** — the version that was running before the upgrade
+
+Once you are satisfied with the rollback, you can delete `db.db.upgraded`. Keep the snapshot itself until you no longer need the escape hatch.
+
+## Running an Older Version Against a Newer Database
+
+Tunarr refuses to start if the database records migrations that the running build does not know about, which means a newer Tunarr has already migrated it:
+
+```
+The database at /path/to/db.db was created by a newer version of Tunarr and cannot be
+used by this one. It has 1 migration(s) this version does not know about, starting with
+"20260901120000_add_something". Either run the newer version of Tunarr again, or restore
+the snapshot taken before that upgrade — look for a file named *-pre-migration-*.bak next
+to the database and copy it over /path/to/db.db.
+```
+
+This normally means you rolled back to an older Tunarr (an old Docker tag or binary) while keeping a database that the newer version had already migrated. The check runs before the pending-migration check, so such a database is never migrated further — an upgrade from the future has nothing left pending, and would otherwise pass straight through.
+
+To recover:
+
+- **Run the newer version again.** The database is intact — it was simply written by that version.
+- **Or restore the pre-migration snapshot**, following [Rolling Back an Upgrade](#rolling-back-an-upgrade), then run the older version.
+
+!!! warning "Do not edit the migrations table"
+    Deleting rows from the `migrations` table to get past this error does not help. The schema on disk still matches the newer version, so the older Tunarr would read data it does not understand.
+
 ## Restore
 
 !!! warning "Manual Process"

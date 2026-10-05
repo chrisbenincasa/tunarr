@@ -1,16 +1,17 @@
 import { ChannelLineupMigration } from '@/migration/lineups/ChannelLineupMigration.js';
 import { injectable } from 'inversify';
 import { isArray, isUndefined } from 'lodash-es';
-import { isJsonObject, Json, JsonObject } from '../../types/schemas.ts';
+import type { Json, JsonObject } from '../../types/schemas.ts';
+import { isJsonObject } from '../../types/schemas.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 
 @injectable()
 export class RandomSlotDurationSpecMigration extends ChannelLineupMigration<
   2,
   3
 > {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   readonly from = 2;
   readonly to = 3;

@@ -1,6 +1,7 @@
 import type { z } from 'zod/v4';
 import type {
   ChannelScheduleChangedEventSchema,
+  EmptyTrashEventSchema,
   EventTypeSchema,
   HeartbeatEventSchema,
   LifecycleEventSchema,
@@ -20,6 +21,7 @@ export type StreamSessionEvent = z.infer<typeof StreamSessionEventSchema>;
 export type ChannelScheduleChangedEvent = z.infer<
   typeof ChannelScheduleChangedEventSchema
 >;
+export type EmptyTrashEvent = z.infer<typeof EmptyTrashEventSchema>;
 
 export type EventByType = {
   [K in EventType]: Extract<TunarrEvent, { type: K }>;

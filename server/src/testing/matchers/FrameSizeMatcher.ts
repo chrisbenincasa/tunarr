@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { FrameSize } from '../../ffmpeg/builder/types.ts';
+import type { FrameSize } from '../../ffmpeg/builder/types.ts';
 
 expect.extend({
   toMatchFrameSize(received: FrameSize, expected: FrameSize) {

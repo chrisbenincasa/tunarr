@@ -2,7 +2,8 @@ import { SessionManager } from '@/stream/SessionManager.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
-import { SimpleTask, TaskId } from './Task.js';
+import type { TaskId } from './Task.js';
+import { SimpleTask } from './Task.js';
 import { simpleTaskDef } from './TaskRegistry.ts';
 
 @injectable()
@@ -10,15 +11,13 @@ import { simpleTaskDef } from './TaskRegistry.ts';
   description: 'Cleans stale sessions from the stream session manager',
 })
 export class CleanupSessionsTask extends SimpleTask {
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   static KEY = Symbol.for(CleanupSessionsTask.name);
   public static ID: TaskId = 'cleanup-sessions';
   public ID = CleanupSessionsTask.ID;
 
-  constructor(
-    @inject(SessionManager) private sessionManager: SessionManager,
-  ) {
+  constructor(@inject(SessionManager) private sessionManager: SessionManager) {
     super();
   }
 

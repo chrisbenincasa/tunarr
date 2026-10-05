@@ -32,7 +32,9 @@ function MediaSourceBrowserPage() {
       <Breadcrumbs thisRouteName={mediaSource.name} />
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" sx={{ display: 'inline-flex', width: '100%' }}>
-          <span><Trans>Media Source: "{mediaSource.name}"</Trans></span>
+          <span>
+            <Trans>Media Source: "{mediaSource.name}"</Trans>
+          </span>
           <ProgramViewToggleButton sx={{ ml: { sm: undefined, md: 'auto' } }} />
         </Typography>
         <Typography>

@@ -1,4 +1,5 @@
 import { SlotProgrammingTooLongWarningDetails } from '@/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx';
+import { SlotUnavailableCustomShowWarningDetails } from '@/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx';
 import { Trans } from '@lingui/react/macro';
 import {
   Button,
@@ -31,13 +32,22 @@ export const TimeSlotWarningsDialog = ({ slot, onClose }: Props) => {
               slotType="time"
             />
           );
+        case 'custom_show_unavailable':
+          return (
+            <SlotUnavailableCustomShowWarningDetails
+              key={warning.type}
+              warning={warning}
+            />
+          );
       }
     });
   };
 
   return (
     <Dialog open={!!slot} onClose={() => onClose()} fullWidth maxWidth="md">
-      <DialogTitle><Trans>Slot Warnings</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Slot Warnings</Trans>
+      </DialogTitle>
       <DialogContent>{renderWarnings()}</DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()} variant="contained">

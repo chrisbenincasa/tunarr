@@ -1,11 +1,16 @@
 import { defineConfig } from '@lingui/cli';
+import { formatter } from '@lingui/format-po';
 
 export default defineConfig({
   sourceLocale: 'en',
-  locales: ['en', 'es', 'pseudo-LOCALE'],
+  // Keep file origins but drop line numbers, so editing a component doesn't
+  // rewrite every catalog entry below the edit.
+  format: formatter({ lineNumbers: false }),
+  locales: ['en', 'es', 'zh-CN', 'pseudo-LOCALE'],
   pseudoLocale: 'pseudo-LOCALE',
   fallbackLocales: {
     es: 'en',
+    'zh-CN': 'en',
     'pseudo-LOCALE': 'en',
     default: 'en',
   },

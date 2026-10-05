@@ -17,6 +17,7 @@ import type { DB } from '../schema/db.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
 import { isDefined } from '../../util/index.ts';
 import type { ProgramDao } from '../schema/Program.ts';
+import { MaterializedProgramRelations } from './programRelations.ts';
 
 @injectable()
 export class ProgramSearchRepository {
@@ -48,29 +49,7 @@ export class ProgramSearchRepository {
   async getMediaSourceLibraryPrograms(libraryId: string) {
     return this.drizzleDB.query.program.findMany({
       where: (fields, { eq }) => eq(fields.libraryId, libraryId),
-      with: {
-        album: {
-          with: {
-            externalIds: true,
-          },
-        },
-        artist: {
-          with: {
-            externalIds: true,
-          },
-        },
-        season: {
-          with: {
-            externalIds: true,
-          },
-        },
-        show: {
-          with: {
-            externalIds: true,
-          },
-        },
-        externalIds: true,
-      },
+      with: MaterializedProgramRelations,
     });
   }
 

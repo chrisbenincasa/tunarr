@@ -106,7 +106,9 @@ export function ChannelProgrammingSort() {
               setSort(sort === 'release-asc' ? 'release-desc' : 'release-asc');
             }}
           >
-            {sort === 'release-asc' ? t`Release Date (asc)` : t`Release Date (desc)`}
+            {sort === 'release-asc'
+              ? t`Release Date (asc)`
+              : t`Release Date (desc)`}
           </Button>
         )}
         {(sort === 'episode-asc' || sort === 'episode-desc') && (
@@ -117,7 +119,9 @@ export function ChannelProgrammingSort() {
               setSort(sort === 'episode-asc' ? 'episode-desc' : 'episode-asc');
             }}
           >
-            {sort === 'episode-asc' ? t`Sort TV Shows (asc)` : t`Sort TV Shows (desc)`}
+            {sort === 'episode-asc'
+              ? t`Sort TV Shows (asc)`
+              : t`Sort TV Shows (desc)`}
           </Button>
         )}
         {sort === 'block' && (

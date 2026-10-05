@@ -6,7 +6,7 @@ import type { GenericExternalCollectionScanner } from '../services/scanner/Exter
 import { KEYS } from '../types/inject.ts';
 import type { Maybe } from '../types/util.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import type { TaskMetadata } from './Task.ts';
 import { SimpleTask } from './Task.ts';
 import { simpleTaskDef } from './TaskRegistry.ts';

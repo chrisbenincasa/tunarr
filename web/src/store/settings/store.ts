@@ -3,7 +3,7 @@ import type { DeepPartial } from 'ts-essentials';
 import { z } from 'zod';
 import type { StateCreator } from 'zustand';
 
-export const SupportedLocales = ['en', 'es', 'pseudo-LOCALE'] as const;
+export const SupportedLocales = ['en', 'es', 'zh-CN', 'pseudo-LOCALE'] as const;
 export type SupportedLocales = TupleToUnion<typeof SupportedLocales>;
 export type TimeFormat = '12h' | '24h' | 'auto';
 
@@ -56,9 +56,12 @@ export type PersistedSettingsState = DeepPartial<SettingsState>;
 // 5173. In 'prod' we assume that by default the user wants
 // their web UI to hit their self-hosted instance of Tunarr,
 // which will be on the same host/port.
-export const DefaultBackendUri = import.meta.env.DEV
-  ? 'http://localhost:8000'
-  : '';
+//
+// VITE_TUNARR_BACKEND_URI overrides both. The e2e suite uses it to point
+// the app at its own isolated server.
+export const DefaultBackendUri =
+  import.meta.env.VITE_TUNARR_BACKEND_URI ??
+  (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 export const createSettingsSlice: StateCreator<SettingsState> = () => ({
   settings: {

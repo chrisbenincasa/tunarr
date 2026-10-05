@@ -138,7 +138,7 @@ export class ApiProgramMinter {
           case 'tmdb':
           case 'imdb':
           case 'tvdb':
-            source = normalizedType as SingleExternalIdType;
+            source = normalizedType;
             break;
           default:
             return null;
@@ -178,7 +178,7 @@ export class ApiProgramMinter {
           case 'tmdb':
           case 'imdb':
           case 'tvdb':
-            source = normalizedType as SingleExternalIdType;
+            source = normalizedType;
             break;
           default:
             return null;

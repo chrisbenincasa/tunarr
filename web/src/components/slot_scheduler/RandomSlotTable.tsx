@@ -8,7 +8,11 @@ import {
   UnlockedWeightScale,
 } from '@/components/slot_scheduler/RandomSlotsWeightAdjustDialog';
 import { betterHumanize } from '@/helpers/dayjs';
-import { getRandomSlotId } from '@/helpers/slotSchedulerUtil.ts';
+import {
+  customShowAvailability,
+  getRandomSlotId,
+} from '@/helpers/slotSchedulerUtil.ts';
+import { useSlotProgramOptionsContext } from '@/hooks/programming_controls/useSlotProgramOptions';
 
 import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
@@ -213,7 +217,24 @@ export const RandomSlotTable = () => {
               </Tooltip>
             );
           }
-          return null;
+          return match(row.original)
+            .with(
+              {
+                type: P.union('custom-show', 'filler', 'smart-collection'),
+                isMissing: true,
+              },
+              (slot) => (
+                <Tooltip
+                  title={t`This ${slot.type
+                    .split('-')
+                    .map((s) => capitalize(s))
+                    .join(' ')} is marked as missing in the database.`}
+                >
+                  <Warning sx={{ fontSize: 'inherit' }} color="warning" />
+                </Tooltip>
+              ),
+            )
+            .otherwise(() => null);
         },
         size: 40,
         enableHiding: false,
@@ -435,6 +456,7 @@ export const RandomSlotTable = () => {
   };
 
   const detailsBySlotId = useScheduledSlotProgramDetails(slotIds);
+  const slotProgramOptions = useSlotProgramOptionsContext();
 
   const rows = useMemo<RandomSlotTableRowType[]>(() => {
     return map(currentSlots, (slot, idx) => {
@@ -460,6 +482,19 @@ export const RandomSlotTable = () => {
 
         programCount = slotDetails.programCount;
       }
+
+      if (slot.type === 'custom-show') {
+        const availability = customShowAvailability(
+          slotProgramOptions,
+          slot.customShowId,
+        );
+        if (availability !== 'available') {
+          warnings.push({
+            type: 'custom_show_unavailable',
+            reason: availability,
+          });
+        }
+      }
       return {
         ...slot,
         id: slotArray.fields[idx].id,
@@ -467,7 +502,7 @@ export const RandomSlotTable = () => {
         warnings,
       } satisfies RandomSlotTableRowType;
     });
-  }, [currentSlots, detailsBySlotId, slotArray.fields]);
+  }, [currentSlots, detailsBySlotId, slotArray.fields, slotProgramOptions]);
 
   const table = useMaterialReactTable({
     columns,

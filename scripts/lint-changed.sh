@@ -2,14 +2,13 @@
 #
 # Lint the TypeScript files you have actually touched.
 #
-# Replaces `eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)`,
+# Replaces `oxlint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)`,
 # which had two failure modes:
 #
-#   * An empty file list left eslint with no path arguments, so it fell back to
-#     linting the entire monorepo. That exhausts the V8 heap (abort, exit 134)
-#     and, because `--fix` rewrites files as it goes, it reformats whatever it
-#     reached on the way down.
-#   * Deleted paths were passed straight through and eslint died on the missing
+#   * An empty file list left oxlint with no path arguments, so it fell back to
+#     linting the entire monorepo and, because `--fix` rewrites files as it
+#     goes, it reformats whatever it reached on the way down.
+#   * Deleted paths were passed straight through and oxlint died on the missing
 #     file.
 #
 # Scope is the working tree by default: staged edits, unstaged edits, and
@@ -88,7 +87,7 @@ if [ -z "$files_list" ]; then
   exit 0
 fi
 
-# Build an argv array rather than piping to xargs, so eslint's own exit code
+# Build an argv array rather than piping to xargs, so oxlint's own exit code
 # survives (xargs reports its own 123 for any non-zero child).
 files=()
 while IFS= read -r file; do
@@ -101,4 +100,4 @@ if [ "$include_branch" -eq 1 ]; then
 fi
 echo "lint-changed: linting ${#files[@]} file(s) [${scope}]"
 
-exec eslint --fix --no-warn-ignored "${files[@]}"
+exec oxlint --fix "${files[@]}"

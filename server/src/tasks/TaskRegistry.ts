@@ -49,14 +49,14 @@ type SimpleTaskDefinition = Partial<
   StrictOmit<TaskDefintion<z.ZodUndefined>, 'schema'>
 >;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 type ExtractTaskType<Constructor extends TaskConstructor<any, unknown>> =
+  // oxlint-disable-next-line typescript/no-explicit-any
   Constructor extends TaskConstructor<any, unknown, infer OutT> ? OutT : never;
 
 export function taskDef<Schema extends z.ZodType, OutTypeT>(
   def: ProvidedTaskDefinition<Schema>,
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function <T extends TaskConstructor<Schema, OutTypeT>>(
     constructor: T,
   ) {

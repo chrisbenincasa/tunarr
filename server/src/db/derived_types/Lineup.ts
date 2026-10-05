@@ -83,7 +83,7 @@ const OnDemandChannelConfigSchema = z.object({
 
 export type OnDemandChannelConfig = z.infer<typeof OnDemandChannelConfigSchema>;
 
-export const CurrentLineupSchemaVersion = 5;
+export const CurrentLineupSchemaVersion = 6;
 
 export const LineupSchema = z.object({
   version: z

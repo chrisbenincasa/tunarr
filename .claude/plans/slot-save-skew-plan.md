@@ -40,12 +40,12 @@ GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
 
 Two things to verify before writing it: that runNow's request argument actually reaches runInternal's request param, and that refreshGuide(duration, channelId, true) still rewrites XMLTV for the other channels' cached entries correctly (it should — cachedGuide retains them). This is the whole "all channels at once" symptom, and it's low-risk. Target main.
 
-2. Stop double-validating and double-reading on save — fix
+2. Validate before mutation and avoid unnecessary reads — fix
 
-- SchemaBackedJsonDBAdapter.ts:77 re-runs a full Zod safeParseAsync over the entire lineup on write, after the same data was already validated by Fastify's request schema. Skip revalidation on write, or gate it behind a debug flag.
+- Preserve saved-lineup validation and validate the derived lineup before mutation, as specified in [the issue 2087 plan](issue-2087-scheduling-safety-plan.md#2-validate-requests-and-derived-lineups-before-mutation). Request and persisted schemas differ; manual content duration zero passes the request schema but fails the persisted lineup schema. Removing the latter check is unsafe.
 - channelsApi.ts:570 re-reads and re-materializes the lineup it just wrote, purely to build the response. The comment there already lists "invalidate on the frontend and reload" as option 2 — take it, or return the in-memory result.
 
-Both are pure deletions of redundant work. Target main.
+The issue 2087 plan owns validation ordering. Investigate the response re-read separately. Target main.
 
 3. Break up the slot-scheduling loop — feat
 

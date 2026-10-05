@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { MeilisearchService } from '../services/MeilisearchService.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { ReconcileProgramDurationsTask } from './ReconcileProgramDurationsTask.ts';
 import { SimpleTask } from './Task.ts';
 import { simpleTaskDef } from './TaskRegistry.ts';
@@ -17,7 +17,7 @@ export class RemoveDanglingProgramsFromSearchTask extends SimpleTask {
   static ID = ReconcileProgramDurationsTask.name;
   public ID = ReconcileProgramDurationsTask.name;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,

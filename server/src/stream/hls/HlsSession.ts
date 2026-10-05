@@ -9,6 +9,7 @@ import {
 } from '@/ffmpeg/builder/constants.js';
 import type { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
+import type { StopOptions } from '@/stream/Session.js';
 import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
 import type { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
 import type {
@@ -26,11 +27,14 @@ import { filter, isEmpty, last, maxBy, sortBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
-import { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
+import type { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
-import { BaseHlsSession } from './BaseHlsSession.js';
+import { BaseHlsSession, SegmentNameRegex } from './BaseHlsSession.js';
 import { HlsMasterPlaylistMutator } from './HlsMasterPlaylistMutator.js';
-import type { HlsPlaylistFilterOptions } from './HlsPlaylistMutator.js';
+import type {
+  FilterBeforeSegmentNumber,
+  HlsPlaylistFilterOptions,
+} from './HlsPlaylistMutator.js';
 import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
 
 export type HlsSessionProvider = (
@@ -56,6 +60,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #hlsPlaylistMutator: HlsPlaylistMutator = new HlsPlaylistMutator();
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
+  #lastSubtitleDelete: Dayjs = dayjs().subtract(1, 'year');
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
   #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
@@ -141,9 +146,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
               this.channel.uuid,
               this.channel.number,
             );
-            this.deleteOldSegments(trimResult.sequence).catch((e) =>
-              this.logger.error(e),
-            );
+            this.deleteOldSegmentFiles(trimResult.sequence, [
+              '.ts',
+              '.mp4',
+            ]).catch((e) => this.logger.error(e));
             this.#lastDelete = now;
           }
 
@@ -153,6 +159,42 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         this.logger.trace(
           'No playlist for HLS sessions at %s',
           this._m3u8PlaylistPath,
+        );
+        return;
+      });
+    });
+  }
+
+  async trimSubtitlePlaylist(filterOpts?: FilterBeforeSegmentNumber) {
+    filterOpts ??= {
+      type: 'before_segment_number',
+      segmentNumber: this.minSubtitleSegmentRequested,
+      segmentsToKeepBefore: 10,
+    };
+    return Result.attemptAsync(async () => {
+      return await this.lock.runExclusive(async () => {
+        const playlistLines = await this.readSubtitlePlaylist();
+        if (playlistLines) {
+          const trimResult = this.#hlsPlaylistMutator.trimSubtitlePlaylist(
+            playlistLines,
+            filterOpts,
+            { maxSegmentsToKeep: 20 },
+          );
+
+          const now = dayjs();
+          if (now.isAfter(this.#lastSubtitleDelete.add(30, 'seconds'))) {
+            this.deleteOldSegmentFiles(trimResult.sequence, ['.vtt']).catch(
+              (e) => this.logger.error(e),
+            );
+            this.#lastSubtitleDelete = now;
+          }
+
+          return trimResult;
+        }
+
+        this.logger.trace(
+          'No subtitle playlist for HLS sessions at %s',
+          this._subtitlePlaylistPath,
         );
         return;
       });
@@ -200,18 +242,16 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     // (e.g. via endSession). If the session is already stopped, its cleanup
     // has been handled and scheduling another timer would risk deleting a
     // replacement session that now occupies the same map key.
-    if (this.state !== 'stopped') {
+    if (!this.stoppingOrStopped) {
       this.scheduleCleanup();
     }
   }
 
-  protected async stopInternal(): Promise<void> {
+  protected async stopInternal(options: StopOptions): Promise<void> {
     try {
-      await this.stopStream();
+      await this.stopStream(options);
     } catch (e) {
       this.logger.error(e, 'Error while shutting down session');
-    } finally {
-      this.state = 'stopped';
     }
   }
 
@@ -221,6 +261,13 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       this.sessionOptions.streamMode === 'hls_direct_v2'
         ? 0
         : await this.getPtsOffset();
+    // Unlike ptsOffset, this applies regardless of isFirstTranscode/
+    // streamMode: scanning a fresh/empty working directory already
+    // naturally yields 0, and hls_direct_v2's subs.m3u8 has the same
+    // restart-numbering problem as hls (only the video/audio -copyts
+    // handling is hls_direct_v2-specific).
+    const subtitleSegmentStartNumber =
+      await this.getLastSubtitleSegmentNumber();
 
     const lineupItemResult = await this.programCalculator.getCurrentLineupItem({
       allowSkip: true,
@@ -248,7 +295,11 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         },
       );
 
-      let programStream = this.getProgramStream(context, ptsOffset);
+      let programStream = this.getProgramStream(
+        context,
+        ptsOffset,
+        subtitleSegmentStartNumber,
+      );
 
       programStream.on('error', () => {
         this.state = 'error';
@@ -277,6 +328,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
             this.sessionType,
           ),
           ptsOffset,
+          subtitleSegmentStartNumber,
         );
 
         transcodeSessionResult = await programStream.setup();
@@ -286,6 +338,12 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           this.error = transcodeSessionResult.error;
           this.emit('error', this.error);
         }
+      }
+
+      // A stop that landed during setup has already killed the previous
+      // transcode. Starting this one would leave an ffmpeg nothing kills.
+      if (this.state !== 'started') {
+        return;
       }
 
       transcodeSessionResult.forEach((transcodeSession) => {
@@ -336,7 +394,11 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     };
   }
 
-  private getProgramStream(context: PlayerContext, ptsOffset: Maybe<number>) {
+  private getProgramStream(
+    context: PlayerContext,
+    ptsOffset: Maybe<number>,
+    subtitleSegmentStartNumber: Maybe<number>,
+  ) {
     const hlsOptions = this.getHlsOptions();
 
     const outputFormat =
@@ -347,6 +409,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     return this.programStreamFactory(context, outputFormat, {
       ptsOffset,
       isFirstTranscode: this.#isFirstTranscode,
+      subtitleSegmentStartNumber,
     });
   }
 
@@ -404,9 +467,45 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     return;
   }
 
+  private async getLastSubtitleSegmentNumber(): Promise<number> {
+    const workingDirectoryFiles = await Result.attemptAsync(() =>
+      fs.readdir(this._workingDirectory),
+    );
+
+    if (workingDirectoryFiles.isFailure()) {
+      this.logger.error(workingDirectoryFiles.error);
+      return 0;
+    }
+
+    const numbers = seq.collect(
+      filter(workingDirectoryFiles.get(), (f) => extname(f) === '.vtt'),
+      (file) => {
+        const matches = file.match(SegmentNameRegex);
+        if (!matches || matches.length < 2) {
+          return;
+        }
+        const n = parseInt(matches[1]!);
+        return isNaN(n) ? undefined : n;
+      },
+    );
+
+    if (isEmpty(numbers)) {
+      return 0;
+    }
+
+    return Math.max(...numbers) + 1;
+  }
+
   isStale(): boolean {
     const remainingConnections = this.removeStaleConnections();
     return isEmpty(remainingConnections);
+  }
+
+  private get _subtitlePlaylistPath() {
+    return path.join(
+      this._workingDirectory,
+      this.getHlsOptions().subtitleStreamNameFormat,
+    );
   }
 
   private async readPlaylist() {
@@ -421,23 +520,39 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     return playlistContents.toString().split('\n');
   }
 
-  private async deleteOldSegments(sequenceNum: number) {
+  private async readSubtitlePlaylist() {
+    if (!(await fileExists(this._subtitlePlaylistPath))) {
+      return;
+    }
+
+    const playlistContents = await fs.readFile(this._subtitlePlaylistPath, {
+      encoding: 'utf-8',
+    });
+
+    return playlistContents.toString().split('\n');
+  }
+
+  private async deleteOldSegmentFiles(
+    sequenceNum: number,
+    extensions: string[],
+  ) {
     const workingDirectoryFiles = await fs.readdir(this._workingDirectory);
     const segments = filter(
       seq.collect(
-        filter(workingDirectoryFiles, (f) => {
-          const ext = extname(f);
-          return ext === '.ts' || ext === '.mp4' || ext === '.vtt';
-        }),
+        filter(workingDirectoryFiles, (f) => extensions.includes(extname(f))),
         (file) => {
-          const matches = file.match(/[A-z/]+(\d+)\.[ts|mp4]/);
-          if (matches && matches.length > 0) {
-            return {
-              file,
-              seq: parseInt(matches[1]!),
-            };
+          const matches = file.match(SegmentNameRegex);
+          if (!matches || matches.length < 2) {
+            return;
           }
-          return;
+          const n = parseInt(matches[1]!);
+          if (isNaN(n)) {
+            return;
+          }
+          return {
+            file,
+            seq: n,
+          };
         },
       ),
       ({ seq }) => seq < sequenceNum,
@@ -460,9 +575,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     }
   }
 
-  protected async stopStream(): Promise<void> {
+  protected async stopStream(options: StopOptions): Promise<void> {
     if (this.#currentSession) {
       this.#currentSession.kill();
+      await this.waitForExit(this.#currentSession, options);
     }
 
     this.logger.debug(

@@ -27,7 +27,9 @@ type AddPaddingModalProps = {
   onClose: () => void;
 };
 
-const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
+const AddPaddingModalContent = ({
+  onClose,
+}: Omit<AddPaddingModalProps, 'open'>) => {
   const { t } = useLingui();
   const [currentPadding, setCurrentPadding] = useState<StartTimePadding | null>(
     null,
@@ -46,16 +48,22 @@ const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
   );
 
   return (
-    <Dialog open={open}>
-      <DialogTitle><Trans>Pad Start Times</Trans></DialogTitle>
+    <>
+      <DialogTitle>
+        <Trans>Pad Start Times</Trans>
+      </DialogTitle>
       <DialogContent sx={{ py: 0 }}>
         <DialogContentText>
-          <Trans>Adds Flex breaks after each TV episode or movie to ensure that the
-          program starts at one of the allowed minute marks.</Trans>
+          <Trans>
+            Adds Flex breaks after each TV episode or movie to ensure that the
+            program starts at one of the allowed minute marks.
+          </Trans>
         </DialogContentText>
         <FormGroup sx={{ flexGrow: 1, flexWrap: 'nowrap' }}>
           <FormControl fullWidth sx={{ my: 1 }}>
-            <InputLabel><Trans>Pad Start Times</Trans></InputLabel>
+            <InputLabel>
+              <Trans>Pad Start Times</Trans>
+            </InputLabel>
             <Select<StartTimePadding['key']>
               value={currentPadding?.key ?? -1}
               label={t`Pad Start Times`}
@@ -75,7 +83,9 @@ const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
         </FormGroup>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button
           onClick={() => {
             padStartTimes(currentPadding);
@@ -87,8 +97,15 @@ const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
           <Trans>Add Padding</Trans>
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+// The content mounts only while the dialog is open, so it does no work when closed.
+const AddPaddingModal = ({ open, ...props }: AddPaddingModalProps) => (
+  <Dialog open={open}>
+    <AddPaddingModalContent {...props} />
+  </Dialog>
+);
 
 export default AddPaddingModal;

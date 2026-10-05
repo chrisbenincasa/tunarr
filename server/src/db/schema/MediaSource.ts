@@ -31,12 +31,16 @@ export const MediaSource = sqliteTable(
     name: text().notNull().$type<MediaSourceName>(),
     sendChannelUpdates: integer({ mode: 'boolean' }).default(false),
     sendGuideUpdates: integer({ mode: 'boolean' }).default(false),
-    // sendPlayStatusUpdates: integer({ mode: 'boolean' }).default(false),
+    sendPlayStatusUpdates: integer({ mode: 'boolean' }).default(false),
     type: text({ enum: MediaSourceTypes }).notNull(),
     uri: text().notNull(),
     username: text(),
     userId: text(),
     mediaType: text({ enum: MediaLibraryTypes }), // Only present for local media sources
+
+    // Consecutive refreshes whose credentials the server rejected. Any
+    // successful library fetch resets it.
+    consecutiveAuthFailures: integer().default(0).notNull(),
   },
   (table) => [
     check(

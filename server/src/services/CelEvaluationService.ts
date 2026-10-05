@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { BadRequestError } from '../types/errors.ts';
 import type { Maybe } from '../types/util.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { LanguageService } from './LanguageService.ts';
 
 export type StreamSelectionCelContext = {

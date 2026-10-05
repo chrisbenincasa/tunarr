@@ -369,9 +369,9 @@ export default function ChannelLineupList(props: Props) {
       setFocusedProgramDetails(program);
       const start = dayjs(startTimeDate);
       if (startTimeDate) {
-        const programOffset =
-          program.type === 'content' ? (program.startOffsetMs ?? 0) : 0;
-        const stop = start.add(program.duration - programOffset);
+        // `duration` is this entry's own length, already net of any
+        // `startOffsetMs` the entry carries.
+        const stop = start.add(program.duration);
         setStartStop({ start, stop });
       }
     },

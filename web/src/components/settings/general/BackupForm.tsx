@@ -94,7 +94,9 @@ export const BackupForm = () => {
       </Grid>
       <Grid size={{ xs: 3 }}>
         <FormControl fullWidth>
-          <InputLabel><Trans>Archive Format</Trans></InputLabel>
+          <InputLabel>
+            <Trans>Archive Format</Trans>
+          </InputLabel>
           <Controller
             control={control}
             name="backup.configurations.0.outputs.0.archiveFormat"
@@ -120,7 +122,9 @@ export const BackupForm = () => {
       </Grid>
       <Grid size={{ xs: 6 }}>
         <Stack direction="row" alignItems="center" spacing={2}>
-          <Typography><Trans>Every</Trans></Typography>
+          <Typography>
+            <Trans>Every</Trans>
+          </Typography>
           <NumericFormControllerText
             control={control}
             name="backup.configurations.0.schedule.increment"
@@ -144,10 +148,16 @@ export const BackupForm = () => {
                 sx={{ minWidth: '25%' }}
               >
                 <MenuItem value="hour">
-                  {plural(currentBackupSchedule!.increment, { one: 'Hour', other: 'Hours' })}
+                  {plural(currentBackupSchedule!.increment, {
+                    one: 'Hour',
+                    other: 'Hours',
+                  })}
                 </MenuItem>
                 <MenuItem value="day">
-                  {plural(currentBackupSchedule!.increment, { one: 'Day', other: 'Days' })}
+                  {plural(currentBackupSchedule!.increment, {
+                    one: 'Day',
+                    other: 'Days',
+                  })}
                 </MenuItem>
               </Select>
             )}

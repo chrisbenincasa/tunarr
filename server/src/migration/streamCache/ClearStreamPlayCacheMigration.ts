@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { JsonObject } from '../../types/schemas.ts';
-import { MigrationStep } from '../JsonFileMigrator.ts';
+import type { JsonObject } from '../../types/schemas.ts';
+import type { MigrationStep } from '../JsonFileMigrator.ts';
 
 @injectable()
 export class ClearStreamPlayCacheMigration implements MigrationStep {

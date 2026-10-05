@@ -1,5 +1,6 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import { FfmpegInfo, FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
+import type { FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
+import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { KEYS } from '@/types/inject.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { inject, injectable } from 'inversify';

@@ -1,12 +1,12 @@
+// Must stay first. Zod only compiles schemas constructed after this loads.
+import 'zod/compile';
+
 import dotenv from '@dotenvx/dotenvx';
 dotenv.config({ debug: false, quiet: true, ignore: ['MISSING_ENV_FILE'] });
 
 import { bootstrapTunarr } from '@/bootstrap.js';
 import { setGlobalOptions } from '@/globals.js';
-import {
-  getDefaultDatabaseDirectory,
-  getDefaultLogLevel,
-} from '@/util/defaults.js';
+import { getDefaultDatabaseDirectory } from '@/util/defaults.js';
 import type { LogLevels } from '@/util/logging/LoggerFactory.js';
 import { ValidLogLevels } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
@@ -54,7 +54,7 @@ yargs(hideBin(process.argv))
   .option('log_level', {
     type: 'string',
     choices: ValidLogLevels,
-    default: getDefaultLogLevel(),
+    default: undefined,
     coerce(arg) {
       return arg as LogLevels;
     },

@@ -269,7 +269,10 @@ export function GeneralSettingsForm({
               label={t`Enable Backups`}
             />
             <FormHelperText>
-              <Trans>When enabling, Tunarr will generate an initial backup immediately</Trans>
+              <Trans>
+                When enabling, Tunarr will generate an initial backup
+                immediately
+              </Trans>
             </FormHelperText>
           </FormControl>
         </Grid>
@@ -349,7 +352,9 @@ export function GeneralSettingsForm({
                     width: ['100%', '50%'],
                   }}
                 >
-                  <InputLabel id="log-level-label"><Trans>Log Level</Trans></InputLabel>
+                  <InputLabel id="log-level-label">
+                    <Trans>Log Level</Trans>
+                  </InputLabel>
                   <Controller
                     name="logLevel"
                     control={control}
@@ -370,20 +375,24 @@ export function GeneralSettingsForm({
                   />
                   <FormHelperText>
                     <Trans>
-                    Set the log level for the Tunarr server.
-                    <br />
-                    Selecting <strong>"Use environment settings"</strong> will
-                    instruct the server to use the <code>LOG_LEVEL</code>{' '}
-                    environment variable, if set, or system default "info".
+                      Set the log level for the Tunarr server.
+                      <br />
+                      Selecting <strong>"Use environment settings"</strong> will
+                      instruct the server to use the <code>LOG_LEVEL</code>{' '}
+                      environment variable, if set, or system default "info".
                     </Trans>
                   </FormHelperText>
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <Typography sx={{ mb: 1 }}><Trans>Category Log Levels</Trans></Typography>
+                <Typography sx={{ mb: 1 }}>
+                  <Trans>Category Log Levels</Trans>
+                </Typography>
                 <Typography variant="subtitle2">
-                  <Trans>Change the verbosity of specific categories of logs. Useful if
-                  debugging a specific feature.</Trans>
+                  <Trans>
+                    Change the verbosity of specific categories of logs. Useful
+                    if debugging a specific feature.
+                  </Trans>
                 </Typography>
               </Grid>
               {LogCategorySelectInputs.map((category) => (
@@ -451,7 +460,9 @@ export function GeneralSettingsForm({
                   }
                   label={
                     <span>
-                      <Trans><strong>Experimental:</strong> Enable Plex Request Cache</Trans>{' '}
+                      <Trans>
+                        <strong>Experimental:</strong> Enable Plex Request Cache
+                      </Trans>{' '}
                       <Tooltip
                         title={t`Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing.`}
                         placement="top"
@@ -464,8 +475,10 @@ export function GeneralSettingsForm({
                   }
                 />
                 <FormHelperText>
-                  <Trans>This feature is currently experimental. Proceed with caution
-                  and if you experience an issue, try disabling caching.</Trans>
+                  <Trans>
+                    This feature is currently experimental. Proceed with caution
+                    and if you experience an issue, try disabling caching.
+                  </Trans>
                 </FormHelperText>
               </FormControl>
             </Box>

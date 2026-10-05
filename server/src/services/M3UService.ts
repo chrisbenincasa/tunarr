@@ -59,9 +59,11 @@ export class M3uService {
         continue;
       }
       const channelId = getChannelId(channel.number);
-      const logoUrl = resolveIconUrl(channel.icon, '{{host}}/images/tunarr.png');
-      const logoAttr =
-        logoUrl != null ? ` tvg-logo="${logoUrl}"` : '';
+      const logoUrl = resolveIconUrl(
+        channel.icon,
+        '{{host}}/images/tunarr.png',
+      );
+      const logoAttr = logoUrl != null ? ` tvg-logo="${logoUrl}"` : '';
       data += `#EXTINF:-1 tvg-id="${channelId}" channel-id="${channelId}" CUID="${channelId}" tvg-chno="${channel.number}" tvg-name="${channel.name}"${logoAttr} group-title="${channel.groupTitle}",${channel.name}\n`;
 
       data += `{{host}}/stream/channels/${channel.uuid}?streamMode=${channel.streamMode}\n`;

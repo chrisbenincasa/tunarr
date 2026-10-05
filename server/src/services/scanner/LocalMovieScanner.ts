@@ -1,6 +1,6 @@
-import { MovieNfo } from '@/nfo/NfoSchemas.js';
+import type { MovieNfo } from '@/nfo/NfoSchemas.js';
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import { Actor, Director, Identifier, MovieMetadata } from '@tunarr/types';
+import type { Actor, Director, Identifier, MovieMetadata } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { chunk, compact, isEmpty, isUndefined } from 'lodash-es';
@@ -10,44 +10,44 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import {
+import type {
   IProgramDB,
   ProgramCanonicalIdLookupResult,
 } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { Artwork, ArtworkType } from '../../db/schema/Artwork.ts';
-import { ProgramOrm, ProgramType } from '../../db/schema/Program.ts';
+import type { Artwork, ArtworkType } from '../../db/schema/Artwork.ts';
+import type { ProgramOrm } from '../../db/schema/Program.ts';
+import { ProgramType } from '../../db/schema/Program.ts';
 import { MovieNfoParser } from '../../nfo/MovieNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
-import { MediaSourceMovie } from '../../types/Media.ts';
+import type { MediaSourceMovie } from '../../types/Media.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.js';
-import { Maybe } from '../../types/util.ts';
+import type { Maybe } from '../../types/util.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { caughtErrorToError, isDefined } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { titleToSortTitle } from '../../util/programs.ts';
-import { Canonicalizer } from '../Canonicalizer.ts';
+import type { Canonicalizer } from '../Canonicalizer.ts';
 import { ImageCache } from '../ImageCache.ts';
-import { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
-import { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
+import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
+import type { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
 import { FallbackMetadataService } from '../local/FallbackMetadataService.ts';
 import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
-import { FileSystemScanner, LocalScanContext } from './FileSystemScanner.ts';
+import type { LocalScanContext } from './FileSystemScanner.ts';
+import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import {
-  KnownImageFileExtensions,
-  KnownVideoFileExtensions,
-} from './constants.ts';
+import { KnownVideoFileExtensions } from './constants.ts';
+import { locateImageFile } from './imageFileLookup.ts';
 
 @injectable()
 export class LocalMovieScanner extends FileSystemScanner {
   #pathsComplete: number = 0;
   #pathCount: number = 0;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.LocalFolderCanonicalizer)
@@ -307,6 +307,8 @@ export class LocalMovieScanner extends FileSystemScanner {
         return mediaItemResult.mapPure(() => void 0);
       }
 
+      const { mediaItem } = mediaItemResult.get();
+
       const metadataResult = await this.loadMovieMetadata(fullVideoFilePath);
       if (metadataResult.isFailure()) {
         return metadataResult.recast();
@@ -339,8 +341,8 @@ export class LocalMovieScanner extends FileSystemScanner {
         ...metadataResult.get(),
         mediaSourceId: context.mediaSource.uuid,
         libraryId: context.library.uuid,
-        duration: mediaItemResult.get().duration,
-        mediaItem: mediaItemResult.get(),
+        duration: mediaItem.duration,
+        mediaItem,
         externalId: fullVideoFilePath,
         canonicalId: '',
         externalSubtitles: subtitlesResult.getOrElse([]),
@@ -396,9 +398,7 @@ export class LocalMovieScanner extends FileSystemScanner {
       );
     }
 
-    const parseResult = await new MovieNfoParser().parse(
-      await fs.readFile(nfoPath, 'utf-8'),
-    );
+    const parseResult = await new MovieNfoParser().parseFile(nfoPath);
     if (parseResult.isFailure()) {
       return parseResult.recast();
     }
@@ -536,33 +536,18 @@ export class LocalMovieScanner extends FileSystemScanner {
     }
 
     const folder = dirname(fullMoviePath);
-    const possibleArtworkPaths = KnownImageFileExtensions.values()
-      .flatMap((ext) => [
-        `${filename}.${ext}`,
-        `${basename(fullMoviePath, extname(fullMoviePath))}-${filename}.${ext}`,
-      ])
-      .map((name) => path.join(folder, name));
-    let foundPath: Maybe<string>;
-    for (const possiblePath of possibleArtworkPaths) {
-      if (await fileExists(possiblePath)) {
-        foundPath = possiblePath;
-        break;
-      }
+    const stemPaths = [
+      path.join(folder, filename),
+      path.join(
+        folder,
+        `${basename(fullMoviePath, extname(fullMoviePath))}-${filename}`,
+      ),
+    ];
+    const found = await locateImageFile(stemPaths);
+    if (found || artworkType !== 'poster') {
+      return found;
     }
 
-    // Check for folder.exr
-    if (!foundPath && artworkType === 'poster') {
-      const folderPaths = KnownImageFileExtensions.values()
-        .map((ext) => `folder.${ext}`)
-        .map((name) => path.join(folder, name));
-      for (const possiblePath of folderPaths) {
-        if (await fileExists(possiblePath)) {
-          foundPath = possiblePath;
-          break;
-        }
-      }
-    }
-
-    return foundPath;
+    return locateImageFile([path.join(folder, 'folder')]);
   }
 }

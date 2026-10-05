@@ -1,28 +1,70 @@
-import { SettingsDB } from '@/db/SettingsDB.js';
-import { ChannelOrm } from '@/db/schema/Channel.js';
+import type { SettingsDB } from '@/db/SettingsDB.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
 import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
-import { firstDefined, groupByFunc, isNonEmptyString } from '@/util/index.js';
 import { resolveIconUrl } from '@/util/iconUtil.js';
+import { firstDefined, groupByFunc, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import type { Xmltv } from '@iptv/xmltv';
 import {
   writeXmltv,
-  Xmltv,
   type XmltvChannel,
+  type XmltvCreditImage,
+  type XmltvPerson,
   type XmltvProgramme,
 } from '@iptv/xmltv';
 import { Mutex } from 'async-mutex';
 import { inject, injectable } from 'inversify';
-import { compact, escape, flatMap, isNil, map, round } from 'lodash-es';
+import throttle from '@/util/throttle.js';
+import { chunk, compact, escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
 import { match } from 'ts-pattern';
 import { type ArtworkType } from '../db/schema/Artwork.ts';
-import { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
-import { MaterializedGuideItem } from '../types/guide.ts';
+import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
+import type { MaterializedGuideItem } from '../types/guide.ts';
 import { parseAirDate } from '../util/airDate.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
 
 const lock = new Mutex();
+
+// Batch cost grows with credits per programme. At 100, the perf seed with
+// credit images on keeps every slice under 25ms; at 250 slices reached 50ms.
+const SerializeBatchSize = 100;
+
+const TvOpen = '<tv>';
+const TvClose = '</tv>';
+
+/**
+ * The fields `ArtworkService` needs to build a remote artwork URL for an item
+ * that has no stored `artwork` row. Both `Program` and `ProgramGrouping` carry
+ * them, so a program, its show and its album are all checked the same way.
+ */
+type ArtworkSourceRef = {
+  sourceType?: string | null;
+  externalKey?: string | null;
+  mediaSourceId?: string | null;
+};
+
+// The source types `buildArtworkSourcePath` knows how to build a URL for.
+// Anything else (`local`, or a source type added later) derives to nothing.
+const DERIVABLE_SOURCE_TYPES: readonly string[] = ['plex', 'jellyfin', 'emby'];
+
+/**
+ * Mirrors the guard in `ArtworkService.deriveArtworkFromSource`. If these are
+ * present the endpoint can build the URL, so emitting one here is safe; if they
+ * are not, the endpoint would 404 and dropping the <icon> is honest.
+ */
+function isDerivableArtworkSource(
+  source: ArtworkSourceRef | null | undefined,
+): boolean {
+  return (
+    !isNil(source) &&
+    isNonEmptyString(source.sourceType) &&
+    DERIVABLE_SOURCE_TYPES.includes(source.sourceType) &&
+    isNonEmptyString(source.externalKey) &&
+    isNonEmptyString(source.mediaSourceId)
+  );
+}
 
 export type MaterializedChannelPrograms = {
   channel: ChannelOrm;
@@ -52,9 +94,49 @@ export class XmlTvWriter {
   }
 
   private async writeInternal(channels: MaterializedChannelPrograms[]) {
-    const content = writeXmltv(this.generateXmltv(channels));
+    const content = await this.serialize(channels);
 
     return await writeFile(this.settingsDB.xmlTvSettings().outputPath, content);
+  }
+
+  /**
+   * Serializes the same document as `writeXmltv(generateXmltv(channels))`,
+   * yielding to the event loop between batches of programmes.
+   *
+   * A full guide is thousands of programmes, and building and serializing
+   * them in one call blocks every other request, HLS segments included, for
+   * hundreds of milliseconds. Each batch serializes as its own document, and
+   * its programmes are spliced between the shared header and `</tv>`.
+   */
+  async serialize(channels: MaterializedChannelPrograms[]): Promise<string> {
+    const header = writeXmltv(
+      this.generateXmltv(channels.map((c) => ({ ...c, programs: [] }))),
+    );
+    if (!header.endsWith(TvClose)) {
+      throw new Error('Unexpected XMLTV header shape from @iptv/xmltv');
+    }
+
+    const parts = [header.slice(0, -TvClose.length)];
+    for (const { channel, programs } of channels) {
+      const xmlChannelId = getChannelId(channel.number);
+      for (const batch of chunk(programs, SerializeBatchSize)) {
+        await throttle();
+        const body = writeXmltv({
+          programmes: batch.map((p) => this.makeXmlTvProgram(p, xmlChannelId)),
+        });
+
+        // The declaration and DOCTYPE before <tv> come and go with the content,
+        // so cut at <tv> itself. Batch documents carry no <tv> attributes.
+        const open = body.indexOf(TvOpen);
+        if (open === -1 || !body.endsWith(TvClose)) {
+          throw new Error('Unexpected XMLTV batch shape from @iptv/xmltv');
+        }
+        parts.push(body.slice(open + TvOpen.length, -TvClose.length));
+      }
+    }
+    parts.push(TvClose);
+
+    return parts.join('');
   }
 
   generateXmltv(channels: MaterializedChannelPrograms[]) {
@@ -65,6 +147,10 @@ export class XmlTvWriter {
     );
     return {
       generatorInfoName: 'tunarr',
+      generatorInfoUrl: 'https://tunarr.com',
+      sourceInfoName: 'tunarr',
+      sourceInfoUrl: `{{host}}/web`,
+      sourceDataUrl: `{{host}}/api/xmltv.xml`,
       date: new Date(),
       channels: map(channels, ({ channel }) =>
         this.makeXmlTvChannel(channel, xmlChannelIdById[channel.uuid]!),
@@ -157,11 +243,12 @@ export class XmlTvWriter {
       // )
       .otherwise(() => undefined);
 
+    // @iptv/xmltv emits children in property insertion order. Keep direct
+    // program children in DTD order: icon before episode-num, image last.
     const partial: XmltvProgramme = {
       start: new Date(guideItem.start),
       stop: new Date(guideItem.stop),
       title: [{ _value: escape(title) }],
-      previouslyShown: {},
       channel: xmlChannelId,
     };
 
@@ -191,14 +278,42 @@ export class XmlTvWriter {
         ];
       }
 
-      const rating = firstDefined(program.rating, program.show?.rating);
-      if (rating) {
-        partial.rating ??= [
-          {
-            system: 'MPAA',
-            value: rating,
-          },
-        ];
+      const credits = program.credits?.length
+        ? program.credits
+        : program.show?.credits;
+
+      for (const credit of credits ?? []) {
+        partial.credits ??= {};
+        let xmlCreditList: XmltvPerson[] | undefined;
+        switch (credit.type) {
+          case 'cast':
+            xmlCreditList = partial.credits.actor ??= [];
+            break;
+          case 'director':
+            xmlCreditList = partial.credits.director ??= [];
+            break;
+          case 'writer':
+            xmlCreditList = partial.credits.writer ??= [];
+            break;
+          case 'producer':
+            xmlCreditList = partial.credits.producer ??= [];
+            break;
+        }
+
+        xmlCreditList.push({
+          _value: escape(credit.name),
+          ...(credit.role?.length && { role: escape(credit.role) }),
+          ...(this.settingsDB.featureFlags().xmltvCreditImagesEnabled &&
+            credit.artwork?.length && {
+              image: credit.artwork.map(
+                (a) =>
+                  ({
+                    _value: `{{host}}/api/credits/${credit.uuid}/artwork/${a.artworkType}`,
+                    type: 'person',
+                  }) as XmltvCreditImage,
+              ),
+            }),
+        });
       }
 
       const airDate = parseAirDate(program.originalAirDate);
@@ -206,35 +321,31 @@ export class XmlTvWriter {
         partial.date ??= airDate.toDate();
       }
 
-      partial.category = [];
-      for (const { genre } of program.genres ?? []) {
-        partial.category.push({
-          _value: genre.name,
-        });
+      const genres = [
+        ...(program.genres ?? []),
+        ...(program.show?.genres ?? []),
+      ];
+      const uniqueCategories: Set<string> = new Set();
+      for (const { genre } of genres ?? []) {
+        uniqueCategories.add(genre.name);
       }
 
-      const [seasonNumber, episodeNumber] = match(program)
-        .with({ type: 'episode' }, (ep) => {
-          return [ep.season?.index ?? ep.seasonNumber, ep.episode];
-        })
-        .with({ type: 'track' }, (track) => [track.album?.index, track.episode])
-        .otherwise(() => [null, null]);
+      partial.category = Array.from(uniqueCategories).map((c) => ({
+        _value: escape(c),
+      }));
 
-      if (!isNil(seasonNumber) && !isNil(episodeNumber)) {
-        partial.episodeNum = [
-          {
-            system: 'onscreen',
-            _value: `S${seasonNumber}E${episodeNumber}`,
-          },
-        ];
-        // Simply drop the xmltv notation system for specials (seasonn == 0)
-        // or for any epipsode number that would lead to invalid syntax
-        if (seasonNumber > 0 && episodeNumber > 0) {
-          partial.episodeNum.push({
-            system: 'xmltv_ns',
-            _value: `${seasonNumber - 1}.${episodeNumber - 1}.0/1`,
-          });
-        }
+      const tags = [...(program.tags ?? []), ...(program.show?.tags ?? [])];
+      const uniqueKeywords: Set<string> = new Set();
+      for (const { tag } of tags ?? []) {
+        uniqueKeywords.add(tag.tag);
+      }
+      partial.keyword = Array.from(uniqueKeywords).map((k) => ({
+        _value: escape(k),
+      }));
+
+      if (program.duration > 0) {
+        // length only supports seconds minutes or hours so convert duration from ms to seconds
+        partial.length = { _value: program.duration * 0.001, units: 'seconds' };
       }
 
       const useShowPoster =
@@ -244,8 +355,61 @@ export class XmlTvWriter {
       });
 
       if (url) {
-        partial.image = [{ _value: url, size: 3 }];
         partial.icon = [{ src: url }];
+      }
+
+      const [seasonNumber, episodeNumber] = match(program)
+        .with({ type: 'episode' }, (ep) => {
+          return [ep.season?.index ?? ep.seasonNumber, ep.episode];
+        })
+        .with({ type: 'track' }, (track) => [track.album?.index, track.episode])
+        .otherwise(() => [null, null]);
+
+      partial.episodeNum = [];
+      if (!isNil(episodeNumber)) {
+        const seasonString = isNil(seasonNumber)
+          ? ''
+          : `S${seasonNumber.toString().padStart(2, '0')}`;
+        partial.episodeNum = [
+          {
+            system: 'onscreen',
+            _value: `${seasonString}E${episodeNumber.toString().padStart(2, '0')}`,
+          },
+        ];
+      }
+
+      // xmltv_ns string is of the format SeasonIndex.EpisodeIndex.PartIndex/PartCount
+      // where indexes are 0-based and each portion is optional if unknown
+      // we don't have part information right now so we always omit it
+      // we also omit the season number for season 0 as that is used for specials which don't have a valid representation in this format
+      if (episodeNumber || seasonNumber) {
+        partial.episodeNum.push({
+          system: 'xmltv_ns',
+          _value: `${seasonNumber ? seasonNumber - 1 : ''}.${episodeNumber ? episodeNumber - 1 : ''}.`,
+        });
+      }
+
+      if (program.type === 'track') {
+        partial.video = { present: false };
+      }
+
+      const rating = firstDefined(program.rating, program.show?.rating);
+      if (rating) {
+        partial.rating ??= [
+          {
+            system:
+              program.type === 'movie'
+                ? 'MPAA'
+                : program.type === 'track'
+                  ? 'RIAA'
+                  : 'VCHIP',
+            value: escape(rating),
+          },
+        ];
+      }
+
+      if (url) {
+        partial.image = [{ _value: url, size: 3, type: 'poster' }];
       }
     }
 
@@ -260,6 +424,9 @@ export class XmlTvWriter {
       id: string | null | undefined;
       artwork: { artworkType: ArtworkType | null }[] | undefined;
       types: ArtworkType[];
+      // The item the id points at, so a candidate with no stored artwork row
+      // can still be checked for a derivable one.
+      source: ArtworkSourceRef | null | undefined;
     };
 
     const candidates: ArtworkCandidate[] = [];
@@ -270,12 +437,14 @@ export class XmlTvWriter {
           id: program.show?.uuid ?? program.tvShowUuid,
           artwork: program.show?.artwork ?? undefined,
           types: ['poster'],
+          source: program.show,
         });
       }
       candidates.push({
         id: program.uuid,
         artwork: program.artwork,
         types: ['poster', 'thumbnail'],
+        source: program,
       });
     }
 
@@ -284,6 +453,7 @@ export class XmlTvWriter {
         id: program.album?.uuid ?? program.albumUuid,
         artwork: program.album?.artwork ?? undefined,
         types: ['poster'],
+        source: program.album,
       });
     }
 
@@ -292,6 +462,7 @@ export class XmlTvWriter {
       id: program.uuid,
       artwork: program.artwork,
       types: ['poster'],
+      source: program,
     });
 
     for (const candidate of candidates) {
@@ -302,6 +473,18 @@ export class XmlTvWriter {
       if (art?.artworkType) {
         return `{{host}}/api/programs/${candidate.id}/artwork/${art.artworkType}`;
       }
+    }
+
+    // Nothing stored yet. `BackfillProgramArtworkFixer` may not have reached
+    // this item, and it never reaches one whose artwork was never scanned at
+    // all. The artwork endpoint derives the remote URL from the item's own
+    // media source on request, so emit the URL it can answer rather than
+    // dropping the <icon> — the same precedence, one layer later.
+    for (const candidate of candidates) {
+      if (!candidate.id || !isDerivableArtworkSource(candidate.source)) {
+        continue;
+      }
+      return `{{host}}/api/programs/${candidate.id}/artwork/poster`;
     }
 
     return undefined;

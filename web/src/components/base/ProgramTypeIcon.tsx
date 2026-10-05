@@ -10,7 +10,7 @@ import {
   Tv,
   VideoFile,
 } from '@mui/icons-material';
-import { ProgramOrFolder } from '@tunarr/types';
+import type { ProgramOrFolder } from '@tunarr/types';
 import React from 'react';
 import { match } from 'ts-pattern';
 

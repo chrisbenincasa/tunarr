@@ -31,7 +31,9 @@ type FormValues = {
   type: ReplicationType;
 };
 
-const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
+const AddReplicateModalContent = ({
+  onClose,
+}: Omit<AddReplicateModalProps, 'open'>) => {
   const { t } = useLingui();
   const replicateProgram = useReplicatePrograms();
 
@@ -58,8 +60,10 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
   };
 
   return (
-    <Dialog open={open}>
-      <DialogTitle><Trans>Replicate Programs</Trans></DialogTitle>
+    <>
+      <DialogTitle>
+        <Trans>Replicate Programs</Trans>
+      </DialogTitle>
       <DialogContent>
         <Box
           component="form"
@@ -67,7 +71,9 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
           onSubmit={handleSubmit(onSubmit)}
         >
           <DialogContentText>
-            <Trans>Makes multiple copies of the schedule and plays them in sequence</Trans>
+            <Trans>
+              Makes multiple copies of the schedule and plays them in sequence
+            </Trans>
           </DialogContentText>
 
           <NumericFormControllerText
@@ -87,7 +93,9 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
           />
 
           <FormControl fullWidth>
-            <InputLabel><Trans>Type</Trans></InputLabel>
+            <InputLabel>
+              <Trans>Type</Trans>
+            </InputLabel>
             <Controller
               name="type"
               control={control}
@@ -106,13 +114,22 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button variant="contained" form="replication-form" type="submit">
           <Trans>Save</Trans>
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+// The content mounts only while the dialog is open, so it does no work when closed.
+const AddReplicateModal = ({ open, ...props }: AddReplicateModalProps) => (
+  <Dialog open={open}>
+    <AddReplicateModalContent {...props} />
+  </Dialog>
+);
 
 export default AddReplicateModal;

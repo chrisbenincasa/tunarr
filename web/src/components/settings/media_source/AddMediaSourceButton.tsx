@@ -102,7 +102,9 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
               <PlexIcon />
             </SvgIcon>
           </ListItemIcon>
-          <ListItemText><Trans>Plex (Auto)</Trans></ListItemText>
+          <ListItemText>
+            <Trans>Plex (Auto)</Trans>
+          </ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleOpenMediaSourceDialog('plex')}>
           <ListItemIcon>
@@ -110,7 +112,9 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
               <PlexIcon />
             </SvgIcon>
           </ListItemIcon>
-          <ListItemText><Trans>Plex (Manual)</Trans></ListItemText>
+          <ListItemText>
+            <Trans>Plex (Manual)</Trans>
+          </ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleOpenMediaSourceDialog('jellyfin')}>
           <ListItemIcon>
@@ -118,7 +122,9 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
               <JellyfinIcon />
             </SvgIcon>
           </ListItemIcon>
-          <ListItemText><Trans>Jellyfin</Trans></ListItemText>
+          <ListItemText>
+            <Trans>Jellyfin</Trans>
+          </ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleOpenMediaSourceDialog('emby')}>
           <ListItemIcon>
@@ -126,13 +132,17 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
               <EmbyIcon />
             </SvgIcon>
           </ListItemIcon>
-          <ListItemText><Trans>Emby</Trans></ListItemText>
+          <ListItemText>
+            <Trans>Emby</Trans>
+          </ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleOpenMediaSourceDialog('local')}>
           <ListItemIcon>
             <Computer />
           </ListItemIcon>
-          <ListItemText><Trans>Local</Trans></ListItemText>
+          <ListItemText>
+            <Trans>Local</Trans>
+          </ListItemText>
         </MenuItem>
       </Menu>
       <PlexServerEditDialog

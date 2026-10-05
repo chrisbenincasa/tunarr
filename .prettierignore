@@ -3,7 +3,6 @@
 .husky/
 .claude/
 .serena/
-CHANGELOG.md
 mkdocs.yml
 pnpm-*.yaml
 

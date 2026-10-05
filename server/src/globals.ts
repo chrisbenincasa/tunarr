@@ -29,7 +29,7 @@ let _serverOptions: ServerOptions | undefined;
 
 // Can overrwrite global options! Used only for tests!
 export const setGlobalOptionsUnchecked = (runtimeOptions: GlobalArgsType) => {
-  let logLevel: LogLevels = runtimeOptions.log_level;
+  let logLevel: LogLevels | undefined = runtimeOptions.log_level;
   if (!isUndefined(runtimeOptions.verbose) && runtimeOptions.verbose > 0) {
     const level = Math.max(runtimeOptions.verbose, 4);
     const levelKey = findKey(
@@ -58,7 +58,10 @@ export const globalOptions = () => {
   return _globalOptions;
 };
 
-const setServerOptionsUnchecked = (runtimeOptions: ServerArgsType) => {
+// Can overwrite server options! Used by tests and by worker threads, which
+// need to apply options inherited from the parent after the CLI middleware has
+// already consumed the once()-guarded setter.
+export const setServerOptionsUnchecked = (runtimeOptions: ServerArgsType) => {
   setGlobalOptions(runtimeOptions);
   _serverOptions = {
     ...globalOptions(),

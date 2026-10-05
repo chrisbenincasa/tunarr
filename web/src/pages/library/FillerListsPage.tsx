@@ -100,13 +100,16 @@ export default function FillerListsPage() {
         aria-describedby="delete-filler-list-description"
       >
         <DialogTitle id="delete-filler-list-title">
-          <Trans>Delete Filler List "{find(fillerLists, { id: deleteConfirmationId })?.name}"?</Trans>
+          <Trans>
+            Delete Filler List "
+            {find(fillerLists, { id: deleteConfirmationId })?.name}"?
+          </Trans>
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-filler-list-description">
             <Trans>
-              Deleting a Filler will remove all programming from the channel. This
-              action cannot be undone.
+              Deleting a Filler will remove all programming from the channel.
+              This action cannot be undone.
             </Trans>
           </DialogContentText>
         </DialogContent>
@@ -221,8 +224,8 @@ export default function FillerListsPage() {
           <Typography maxWidth={'800px'}>
             <Trans>
               Filler lists are collections of videos that you may want to play
-              during 'flex' time segments. Flex is time within a channel that does
-              not have a program scheduled (usually used for padding).
+              during 'flex' time segments. Flex is time within a channel that
+              does not have a program scheduled (usually used for padding).
             </Trans>
           </Typography>
         </Box>

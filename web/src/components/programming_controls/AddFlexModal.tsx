@@ -87,7 +87,11 @@ const AddFlexModal = ({
   return (
     <Dialog open={open}>
       <DialogTitle>
-        {!isUndefined(initialProgram) ? <Trans>Edit Flex Time</Trans> : <Trans>Add Flex Time</Trans>}
+        {!isUndefined(initialProgram) ? (
+          <Trans>Edit Flex Time</Trans>
+        ) : (
+          <Trans>Add Flex Time</Trans>
+        )}
       </DialogTitle>
       <DialogContent>
         <TextField
@@ -107,7 +111,9 @@ const AddFlexModal = ({
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button variant="contained" onClick={() => addFlex()}>
           <Trans>Save</Trans>
         </Button>

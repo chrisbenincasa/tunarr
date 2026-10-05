@@ -1,12 +1,12 @@
-import { ProgramGrouping } from '@tunarr/types';
+import type { ProgramGrouping } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { DrizzleDBAccess } from '../db/schema/index.ts';
+import type { DrizzleDBAccess } from '../db/schema/index.ts';
 
 import { head } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { ProgramGroupingType } from '../db/schema/ProgramGrouping.ts';
 import { KEYS } from '../types/inject.ts';
-import { Maybe } from '../types/util.ts';
+import type { Maybe } from '../types/util.ts';
 import { GetProgramGroupingChildren } from './GetProgramGroupingChildren.ts';
 import { MaterializeProgramGroupings } from './MaterializeProgramGroupings.ts';
 

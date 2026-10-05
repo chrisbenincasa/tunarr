@@ -1,8 +1,8 @@
-import { ChannelOrm } from '@/db/schema/Channel.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
 import type { ProgramOrmWithExternalIds } from '@/db/schema/derivedTypes.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
-import { Maybe, Nullable } from '@/types/util.js';
+import type { Maybe, Nullable } from '@/types/util.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
@@ -10,21 +10,23 @@ import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { inRange, isNil, isNull, sumBy } from 'lodash-es';
-import { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
-import {
+import type { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
+import type {
   CommercialStreamLineupItem,
-  createOfflineStreamLineupItem,
   FallbackStreamLineupItem,
-  isContentBackedLineupItem,
   ProgramStreamLineupItem,
   StreamLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
-import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
-import { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
-import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import {
+  createOfflineStreamLineupItem,
+  isContentBackedLineupItem,
+} from '../db/derived_types/StreamLineup.ts';
+import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
+import type { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { ProgramPlayHistoryDB } from '../db/ProgramPlayHistoryDB.ts';
-import { OneDayMillis } from '../ffmpeg/builder/constants.ts';
-import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
+import { OneWeekMillis } from '../ffmpeg/builder/constants.ts';
+import type { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import { WrappedError } from '../types/errors.ts';
 import { devAssert } from '../util/debug.ts';
 import { isNonEmptyString } from '../util/index.js';
@@ -326,7 +328,7 @@ export class StreamProgramCalculator {
     } else {
       lineupItem = {
         type: 'offline',
-        durationMs: OneDayMillis,
+        durationMs: OneWeekMillis,
       };
     }
 
@@ -334,7 +336,9 @@ export class StreamProgramCalculator {
     switch (lineupItem.type) {
       case 'content': {
         // Defer program lookup
-        const backingItem = await this.programDB.getProgramById(lineupItem.id);
+        const backingItem = await this.programDB.getStreamProgramById(
+          lineupItem.id,
+        );
 
         program = {
           duration: lineupItem.durationMs,
@@ -502,7 +506,9 @@ export class StreamProgramCalculator {
       if (!isNil(filler)) {
         // TODO: This stinks right now, but re-materialize the program
         // to get the shiny new type.
-        const fillerProgram = await this.programDB.getProgramById(filler.uuid);
+        const fillerProgram = await this.programDB.getStreamProgramById(
+          filler.uuid,
+        );
         if (!fillerProgram) {
           throw new Error(`Expected program with ID ${filler.uuid}`);
         } else if (!isNonEmptyString(fillerProgram.mediaSourceId)) {
@@ -574,9 +580,17 @@ export class StreamProgramCalculator {
     const mediaStartOffset = timeElapsed;
 
     if (program.type === 'commercial') {
+      const offset = mediaStartOffset + (program.startOffset ?? 0);
+      const clipDuration = program.program.duration;
+
+      // A looping filler clip can be scheduled for longer than the clip itself,
+      // so seek to the matching position within the current loop.
       return {
         ...program,
-        startOffset: mediaStartOffset + (program.startOffset ?? 0),
+        startOffset:
+          program.infiniteLoop && clipDuration > 0
+            ? offset % clipDuration
+            : offset,
         streamDuration,
       };
     }
@@ -600,7 +614,7 @@ export function calculateStreamDuration(
   devAssert(now >= channelStartTime);
   if (lineup.items.length === 0) {
     return {
-      streamDuration: OneDayMillis,
+      streamDuration: OneWeekMillis,
       timeElapsed: 0,
       currentProgramIndex: -1,
     };

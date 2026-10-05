@@ -38,17 +38,14 @@ export const restrictHours = (
   const newPrograms: CondensedChannelProgram[] = [];
 
   if (workingPrograms.length === 0) {
-    return { newStartTime: null, newPrograms };
+    return { newStartTime: null, newPrograms: programs };
   }
 
   let idx = 0;
-  // let currOffset = dayjs(channelStartTime).mod({days: 1}).asMilliseconds();
   while (idx < workingPrograms.length) {
     const program = workingPrograms[idx];
     const timeLeft = maxDuration - currOffset;
     if (program.duration > timeLeft) {
-      // Put the program back and try tomorrow.
-      // workingPrograms.unshift(program);
       // Flex until the following day's start time
       newPrograms.push(
         createFlexProgram(timeLeft + OneDayMillis - maxDuration),
@@ -60,6 +57,13 @@ export const restrictHours = (
     newPrograms.push(program);
     currOffset += program.duration;
     idx++;
+  }
+
+  // Pad the tail to a whole day. The guide repeats the lineup on a cycle equal
+  // to its total duration, so an unpadded tail shifts the restricted window
+  // forward on every repeat.
+  if (currOffset < OneDayMillis) {
+    newPrograms.push(createFlexProgram(OneDayMillis - currOffset));
   }
 
   return { newStartTime, newPrograms };
@@ -77,7 +81,7 @@ export const useRestrictHours = () => {
 
     if (newStartTime) {
       updateCurrentChannel({ startTime: +newStartTime });
+      setCurrentLineup(newPrograms, true);
     }
-    setCurrentLineup(newPrograms, true);
   };
 };

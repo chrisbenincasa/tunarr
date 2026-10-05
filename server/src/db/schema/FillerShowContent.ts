@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm';
 import {
+  index,
   integer,
   primaryKey,
   sqliteTable,
@@ -23,6 +24,7 @@ export const FillerShowContent = sqliteTable(
   },
   (table) => [
     primaryKey({ columns: [table.fillerShowUuid, table.programUuid] }),
+    index('filler_show_content_program_uuid_idx').on(table.programUuid),
   ],
 );
 

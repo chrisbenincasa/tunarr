@@ -22,6 +22,7 @@ export default defineConfig({
       '**/*.local.test.ts',
     ],
     setupFiles: [
+      'zod/compile',
       'src/testing/matchers/PixelFormatMatcher.ts',
       'src/testing/matchers/FrameSizeMatcher.ts',
     ],
@@ -29,12 +30,22 @@ export default defineConfig({
       provider: 'v8',
     },
     typecheck: {
+      checker: 'tsgo',
       tsconfig: 'tsconfig.test.json',
     },
     silent: true,
     reporters: ['dot'],
     env: {
       NODE_ENV: 'test',
+      // The worker pool cannot run under vitest. A worker re-executes
+      // `process.argv[1]`, which in a test run is vitest's own entry point, so
+      // every worker boots a second vitest instead of a Tunarr worker and the
+      // pool never reports ready. Any test that starts a real server would hang
+      // in its beforeAll until the hook timed out.
+      //
+      // Tests therefore opt out, and the pool is covered out of band by
+      // `scripts/worker-smoke-test.ts`, which spawns a real server.
+      TUNARR_USE_WORKER_POOL: 'false',
     },
   },
   define: {

@@ -5,6 +5,7 @@ import {
 import { globalOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { validateSlotGroups } from '@/services/scheduling/slotGroupValidator.js';
+import type { UpdateXmlTvTaskRequest } from '@/tasks/UpdateXmlTvTask.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -17,9 +18,9 @@ import {
   BasicPagingSchema,
   MaterializedSchedule,
   PagedResult,
-  RandomSlotScheduleSchema,
   SlotScheduleWithPrograms,
-  TimeSlotScheduleSchema,
+  StrictRandomSlotScheduleSchema,
+  StrictTimeSlotScheduleSchema,
   TimeSlotScheduleWithPrograms,
   UpdateChannelProgrammingRequestSchema,
 } from '@tunarr/types/api';
@@ -62,6 +63,7 @@ import { sessionToApiSession } from '../db/converters/sessionConverter.ts';
 import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import type { ChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
 import type { ChannelOrmWithRelations } from '../db/schema/derivedTypes.ts';
+import { findBadRequestError, unwrapError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams, TruthyQueryParam } from '../types/schemas.ts';
 
@@ -530,6 +532,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/programming',
     {
       bodyLimit: 1024 * 1024 * 100,
+      // Fastify's own validation error is an object, which the string 400
+      // schema cannot serialize, so answer it here.
+      attachValidation: true,
       schema: {
         params: BasicIdParamSchema,
         tags: ['Channels'],
@@ -544,6 +549,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
+      if (req.validationError) {
+        return res.status(400).send(req.validationError.message);
+      }
+
       if (isNil(await req.serverCtx.channelDB.getChannel(req.params.id))) {
         return res.status(404).send();
       }
@@ -556,6 +565,18 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       // and then regenerated badly by RegenerateChannelLineupCommand.
       let programmingRequest = req.body;
       if (req.body.type === 'time') {
+        const strictSchedule = StrictTimeSlotScheduleSchema.safeParse(
+          req.body.schedule,
+        );
+        if (!strictSchedule.success) {
+          return res
+            .status(400)
+            .send(
+              strictSchedule.error.issues
+                .map((issue) => issue.message)
+                .join('; '),
+            );
+        }
         const groupValidation = validateSlotGroups(req.body.schedule.slots, {
           scheduleType: 'time',
         });
@@ -570,6 +591,18 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           },
         };
       } else if (req.body.type === 'random') {
+        const strictSchedule = StrictRandomSlotScheduleSchema.safeParse(
+          req.body.schedule,
+        );
+        if (!strictSchedule.success) {
+          return res
+            .status(400)
+            .send(
+              strictSchedule.error.issues
+                .map((issue) => issue.message)
+                .join('; '),
+            );
+        }
         const groupValidation = validateSlotGroups(req.body.schedule.slots, {
           scheduleType: 'random',
         });
@@ -585,36 +618,55 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         };
       }
 
-      const result = await req.serverCtx.channelDB.updateLineup(
-        req.params.id,
-        programmingRequest,
+      const updateResult = await Result.attemptAsync(() =>
+        req.serverCtx.channelDB.updateLineup(req.params.id, programmingRequest),
       );
+      if (updateResult.isFailure()) {
+        const badRequest = findBadRequestError(updateResult.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw unwrapError(updateResult.error);
+      }
+      const result = updateResult.get();
 
       if (isNil(result)) {
         return res.status(500).send();
       }
 
       try {
+        // Scope the refresh to the channel we just saved. Without a channel id
+        // the task rebuilds every channel's guide and regenerates the whole
+        // XMLTV document, which blocks the event loop long enough to stall
+        // in-flight HLS segment requests on every other live channel.
         GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
-          .runNow(true)
+          .runNow(true, {
+            channelId: req.params.id,
+          } satisfies UpdateXmlTvTaskRequest)
           .catch((err) => logger.error(err, 'Error regenerating guide'));
       } catch (e) {
         logger.error(e, 'Unable to update guide after lineup update');
       }
 
-      // Potentially more DB queries than just building from the result,
-      // this way we don't have to worry about what entities may or may not
-      // be completely loaded by the ORM. It's cheap enough, so just do a wholesale
-      // reload of the lineup and rebuild it to return to the frontend.
-      // Alternatively:
-      //  1. We can figure out a simple way to refresh the affected entities
-      //     from the updateLineup call above. If performance suffers we can look into this
-      //  2. We can just remove this completely and invalidate the lineup on the frontend
-      //     and make it reload. Also not very clean, but not the end of the world.
+      // Schedule-generated updates already materialized every program in order
+      // to build the lineup, so the response is assembled from that rather than
+      // loading it all again. Reloading meant a second relational query over
+      // every program plus a second full materialization — about 200ms of
+      // blocked event loop on a 2200 item lineup, which is what option (1) in
+      // the note that used to live here was worried about.
+      //
+      // Manual edits still take the long path: the request carries program ids
+      // rather than program details, so nothing was materialized.
       const newLineup = await timeNamedAsync(
         'build fresh lineup',
         LoggerFactory.root,
-        () => req.serverCtx.channelDB.loadCondensedLineup(req.params.id),
+        () =>
+          result.materializedPrograms
+            ? req.serverCtx.channelDB.condensedLineupFromMaterialized(
+                req.params.id,
+                result.materializedPrograms,
+              )
+            : req.serverCtx.channelDB.loadCondensedLineup(req.params.id),
       );
 
       if (isNil(newLineup)) {
@@ -781,7 +833,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           channelId: z.string(),
         }),
         body: z.object({
-          schedule: TimeSlotScheduleSchema,
+          schedule: StrictTimeSlotScheduleSchema,
         }),
         response: {
           200: TimeSlotScheduleWithPrograms,
@@ -813,15 +865,26 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         slots: groupValidation.sanitizedSlots,
       };
 
-      const { result } = await req.serverCtx.workerPool.queueTask({
-        request: {
-          type: 'channel',
-          channelId: req.params.channelId,
-          schedule: sanitizedSchedule,
-          startTime: channel.startTime,
-        },
-        type: 'time-slots',
-      });
+      const scheduleResult = await Result.attemptAsync(() =>
+        req.serverCtx.workerPool.queueTask({
+          request: {
+            type: 'channel',
+            channelId: req.params.channelId,
+            schedule: sanitizedSchedule,
+            startTime: channel.startTime,
+            strictValidation: true,
+          },
+          type: 'time-slots',
+        }),
+      );
+      if (scheduleResult.isFailure()) {
+        const badRequest = findBadRequestError(scheduleResult.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw unwrapError(scheduleResult.error);
+      }
+      const { result } = scheduleResult.get();
 
       const programsById = await container
         .get(MaterializeLineupCommand)
@@ -845,7 +908,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           channelId: z.string(),
         }),
         body: z.object({
-          schedule: RandomSlotScheduleSchema,
+          schedule: StrictRandomSlotScheduleSchema,
         }),
         response: {
           200: SlotScheduleWithPrograms,
@@ -877,15 +940,26 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         slots: groupValidation.sanitizedSlots,
       };
 
-      const { result } = await req.serverCtx.workerPool.queueTask({
-        request: {
-          type: 'channel',
-          channelId: req.params.channelId,
-          schedule: sanitizedSchedule,
-          startTime: channel.startTime,
-        },
-        type: 'schedule-slots',
-      });
+      const scheduleResult = await Result.attemptAsync(() =>
+        req.serverCtx.workerPool.queueTask({
+          request: {
+            type: 'channel',
+            channelId: req.params.channelId,
+            schedule: sanitizedSchedule,
+            startTime: channel.startTime,
+            strictValidation: true,
+          },
+          type: 'schedule-slots',
+        }),
+      );
+      if (scheduleResult.isFailure()) {
+        const badRequest = findBadRequestError(scheduleResult.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw unwrapError(scheduleResult.error);
+      }
+      const { result } = scheduleResult.get();
 
       const programsById = await container
         .get(MaterializeLineupCommand)

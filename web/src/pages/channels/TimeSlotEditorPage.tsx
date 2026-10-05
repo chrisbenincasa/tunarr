@@ -2,11 +2,17 @@ import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
 import ChannelLineupList from '@/components/channel_config/ChannelLineupList.tsx';
 import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormProvider.tsx';
 import { TimeSlotTable } from '@/components/slot_scheduler/TimeSlotTable.tsx';
-import type { DropdownOption } from '@/helpers/DropdownOption.ts';
 import {
   OneDayMillis,
   OneWeekMillis,
+  dropdownValueToOverflow,
+  flexOptions,
+  latenessOptions,
   lineupItemAppearsInSchedule,
+  overflowOptions,
+  overflowToDropdownValue,
+  padOptions,
+  unavailableCustomShowSlotIndexes,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { v4 } from 'uuid';
 import type {
@@ -14,6 +20,7 @@ import type {
   TimeSlotViewModel,
 } from '@/model/TimeSlotModels.ts';
 import { useChannelEditorLazy } from '@/store/selectors.ts';
+import { plural } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { ArrowBack, Autorenew, ExpandMore } from '@mui/icons-material';
 import type { SelectChangeEvent } from '@mui/material';
@@ -59,15 +66,17 @@ import {
   values,
 } from 'lodash-es';
 import { useCallback, useState } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { useSnackbar } from 'notistack';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { SlotProgrammingOptionsProvider } from '../../components/slot_scheduler/SlotProgrammingOptionsProvider.tsx';
+import { getApiErrorMessage } from '../../helpers/apiError.ts';
+import { useSlotProgramOptions } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
-import { flexOptions, padOptions } from '../../helpers/slotSchedulerUtil.ts';
 import { toggle } from '../../helpers/util.ts';
 import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
 import { useChannelSchedule } from '../../hooks/useChannelSchedule.ts';
@@ -79,30 +88,12 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(dayjsMod);
 
-const latenessOptions: DropdownOption<number>[] = [
-  dayjs.duration(5, 'minutes'),
-  dayjs.duration(10, 'minutes'),
-  dayjs.duration(15, 'minutes'),
-  dayjs.duration(30, 'minutes'),
-  dayjs.duration(1, 'hour'),
-  dayjs.duration(2, 'hours'),
-  dayjs.duration(4, 'hours'),
-  dayjs.duration(8, 'hours'),
-]
-  .map((dur) => ({ value: dur.asMilliseconds(), description: dur.humanize() }))
-  .concat([
-    { value: 0, description: 'Do not allow' },
-    {
-      value: dayjs.duration(1, 'day').asMilliseconds(),
-      description: 'Any amount',
-    },
-  ]);
-
 const defaultTimeSlotSchedule: TimeSlotSchedule = {
   type: 'time',
   flexPreference: 'distribute',
   latenessMs: 0,
   maxDays: 365,
+  overflow: { type: 'duration', maxMs: 0 },
   padMs: 1,
   slots: [],
   period: 'day',
@@ -167,8 +158,15 @@ export default function TimeSlotEditorPage() {
       required: true,
     },
   });
+  const { dropdownOpts: programOptions } = useSlotProgramOptions();
+  const slots = useWatch({ control, name: 'slots' });
+  const unavailableSlotCount = unavailableCustomShowSlotIndexes(
+    slots,
+    programOptions,
+  ).length;
 
   const queryClient = useQueryClient();
+  const snackbar = useSnackbar();
   const updateLineupMutation = useUpdateLineup({
     onSuccess() {
       queryClient
@@ -176,6 +174,12 @@ export default function TimeSlotEditorPage() {
           predicate: invalidateTaggedQueries('Channels'),
         })
         .catch(console.error);
+    },
+    onError(error) {
+      const message = getApiErrorMessage(error) ?? error.message;
+      snackbar.enqueueSnackbar(t`Error saving schedule. ${message}`, {
+        variant: 'error',
+      });
     },
   });
 
@@ -297,6 +301,15 @@ export default function TimeSlotEditorPage() {
         {errors.slots?.message && (
           <Alert severity="error">{errors.slots.message}</Alert>
         )}
+        {unavailableSlotCount > 0 && (
+          <Alert severity="error">
+            {plural(unavailableSlotCount, {
+              one: '# slot uses a custom show that is empty or deleted. Fix or remove it before saving.',
+              other:
+                '# slots use a custom show that is empty or deleted. Fix or remove them before saving.',
+            })}
+          </Alert>
+        )}
         <PaddedPaper>
           <Stack direction="row" alignItems="center">
             <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
@@ -383,9 +396,44 @@ export default function TimeSlotEditorPage() {
 
                     <FormHelperText>
                       <Trans>
-                        Allows programs to play a bit late if the previous
-                        program took longer than usual. If a program is too
-                        late, Flex is scheduled instead.
+                        If a previous slot ran long, should this slot still
+                        play? Controls how late a slot can start.
+                      </Trans>
+                    </FormHelperText>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ sm: 16, md: 5 }}>
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel>
+                      <Trans>Max Overflow</Trans>
+                    </InputLabel>
+                    <Controller
+                      control={control}
+                      name="overflow"
+                      render={({ field }) => (
+                        <Select
+                          label={t`Max Overflow`}
+                          value={overflowToDropdownValue(field.value)}
+                          onChange={(e) =>
+                            field.onChange(
+                              dropdownValueToOverflow(e.target.value),
+                            )
+                          }
+                        >
+                          {overflowOptions.map((opt) => (
+                            <MenuItem key={opt.value} value={opt.value}>
+                              {opt.description}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+
+                    <FormHelperText>
+                      <Trans>
+                        How far past its boundary can a slot's content extend?
+                        'One extra item' allows exactly one more program that
+                        crosses the boundary.
                       </Trans>
                     </FormHelperText>
                   </FormControl>
@@ -539,6 +587,7 @@ export default function TimeSlotEditorPage() {
         <Button
           variant="contained"
           // disabled={(!isValid || !isDirty) && !programsDirty}
+          disabled={unavailableSlotCount > 0}
           onClick={() => onSave()}
         >
           <Trans>Save</Trans>

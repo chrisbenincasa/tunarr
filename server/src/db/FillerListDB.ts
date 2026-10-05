@@ -1,12 +1,13 @@
 import { KEYS } from '@/types/inject.js';
-import {
+import { seq } from '@tunarr/shared/util';
+import type {
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
@@ -27,25 +28,26 @@ import {
   values,
 } from 'lodash-es';
 import { v4 } from 'uuid';
-import { Maybe, Nilable } from '../types/util.ts';
+import type { Maybe, Nilable } from '../types/util.ts';
 import { caseWhen } from './DrizzleSqlCaseWhen.ts';
-import {
+import type {
   FillerShowWithContent,
   IFillerListDB,
 } from './interfaces/IFillerListDB.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
 import { ChannelFillerShow } from './schema/ChannelFillerShow.ts';
-import { FillerShow, NewFillerShow } from './schema/FillerShow.ts';
+import type { NewFillerShow } from './schema/FillerShow.ts';
+import { FillerShow } from './schema/FillerShow.ts';
 import {
   FillerShowContent,
   type NewFillerShowContent,
 } from './schema/FillerShowContent.ts';
-import { DB } from './schema/db.ts';
+import type { DB } from './schema/db.ts';
 import type {
   ChannelFillerShowWithContent,
   ProgramOrmWithExternalIds,
 } from './schema/derivedTypes.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()
 export class FillerDB implements IFillerListDB {
@@ -70,10 +72,14 @@ export class FillerDB implements IFillerListDB {
 
     return {
       ...result,
-      fillerContent: result.fillerShowContent.map((content, idx) => ({
-        ...content.program,
-        index: idx,
-      })),
+      // Skip content rows that no longer point at a program -- they would
+      // otherwise show up as empty entries in the list editor.
+      fillerContent: seq
+        .collect(result.fillerShowContent, (content) => content.program)
+        .map((program, idx) => ({
+          ...program,
+          index: idx,
+        })),
     } satisfies FillerShowWithContent;
   }
 
@@ -299,6 +305,14 @@ export class FillerDB implements IFillerListDB {
         jsonArrayFrom(
           eb
             .selectFrom('fillerShowContent')
+            // Only count content that still resolves to a program, so callers
+            // (e.g. the slot editor) don't treat a list as usable when the
+            // scheduler would find nothing in it.
+            .innerJoin(
+              'program',
+              'program.uuid',
+              'fillerShowContent.programUuid',
+            )
             .whereRef(
               'fillerShowContent.fillerShowUuid',
               '=',
@@ -313,38 +327,41 @@ export class FillerDB implements IFillerListDB {
   }
 
   async getFillerPrograms(id: string): Promise<ProgramOrmWithExternalIds[]> {
-    return (
-      await this.drizzle.query.fillerShowContent.findMany({
-        where: (fields, { eq }) => eq(fields.fillerShowUuid, id),
-        with: {
-          program: {
-            with: {
-              album: {
-                with: {
-                  externalIds: true,
-                },
+    const content = await this.drizzle.query.fillerShowContent.findMany({
+      where: (fields, { eq }) => eq(fields.fillerShowUuid, id),
+      with: {
+        program: {
+          with: {
+            album: {
+              with: {
+                externalIds: true,
               },
-              artist: {
-                with: {
-                  externalIds: true,
-                },
-              },
-              show: {
-                with: {
-                  externalIds: true,
-                },
-              },
-              season: {
-                with: {
-                  externalIds: true,
-                },
-              },
-              externalIds: true,
             },
+            artist: {
+              with: {
+                externalIds: true,
+              },
+            },
+            show: {
+              with: {
+                externalIds: true,
+              },
+            },
+            season: {
+              with: {
+                externalIds: true,
+              },
+            },
+            externalIds: true,
           },
         },
-      })
-    ).map(({ program }) => program);
+      },
+    });
+
+    // A content row whose program row is gone (e.g. its media source was
+    // deleted) joins to nothing. Drop it so callers get what the signature
+    // promises rather than a null masquerading as a program.
+    return seq.collect(content, ({ program }) => program);
   }
 
   async getFillersFromChannel(

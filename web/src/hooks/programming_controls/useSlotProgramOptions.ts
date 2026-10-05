@@ -30,7 +30,7 @@ function useCustomShowOptions() {
           value: `custom-show.${show.id}`,
           customShowId: show.id,
           type: 'custom-show',
-          programCount: show.contentCount,
+          schedulableProgramCount: show.schedulableContentCount,
         }) satisfies ProgramOption,
     );
   }, [customShows]);

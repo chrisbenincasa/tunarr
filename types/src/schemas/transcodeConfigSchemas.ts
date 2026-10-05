@@ -31,6 +31,8 @@ export const SupportedTranscodeAudioOutputFormats = [
   'ac3',
   'copy',
   'mp3',
+  'libopus',
+  'eac3',
 ] as const;
 
 export type SupportedTranscodeAudioOutputFormats = TupleToUnion<

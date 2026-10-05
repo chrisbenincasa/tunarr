@@ -26,6 +26,9 @@ vi.mock('@/stream/VideoStream.js', () => ({ VideoStream: class {} }));
 
 import { streamApi } from './streamApi.js';
 
+const MASTER_PLAYLIST = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nstream.m3u8\n';
+const VARIANT_PLAYLIST = '#EXTM3U\n#EXTINF:4.0,\n/test/data000000.ts\n';
+
 class TestHlsSession extends BaseHlsSession {
   public readonly sessionType = 'hls' as const;
 
@@ -38,7 +41,11 @@ class TestHlsSession extends BaseHlsSession {
   }
 
   async getMasterPlaylist() {
-    return Result.success<string | undefined>('#EXTM3U\n');
+    return Result.success<string | undefined>(MASTER_PLAYLIST);
+  }
+
+  async trimPlaylist() {
+    return Result.success({ playlist: VARIANT_PLAYLIST });
   }
 
   protected getHlsOptions(): DeepRequired<HlsOptions> {
@@ -72,6 +79,29 @@ const baseOptions: BaseHlsSessionOptions = {
   stalenessMs: 120_000,
 };
 
+async function buildApp(sessionManager: unknown) {
+  const app: ReturnType<typeof Fastify> = Fastify()
+    .setValidatorCompiler(validatorCompiler)
+    .setSerializerCompiler(serializerCompiler)
+    .withTypeProvider<ZodTypeProvider>();
+  app.decorateRequest('serverCtx', null);
+  app.addHook('onRequest', (req, _res, done) => {
+    (req as unknown as { serverCtx: unknown }).serverCtx = {
+      channelDB: {
+        getChannel: async () => ({
+          uuid: makeChannel().uuid,
+          streamMode: 'hls',
+        }),
+      },
+      sessionManager,
+    };
+    done();
+  });
+  await app.register(streamApi);
+  await app.ready();
+  return app;
+}
+
 describe('streamApi HLS connection registration (issue #2045 invariant)', () => {
   let session: TestHlsSession;
   let app: ReturnType<typeof Fastify>;
@@ -95,25 +125,7 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
       getHlsSlowerSession: vi.fn(() => undefined),
     };
 
-    app = Fastify()
-      .setValidatorCompiler(validatorCompiler)
-      .setSerializerCompiler(serializerCompiler)
-      .withTypeProvider<ZodTypeProvider>();
-    app.decorateRequest('serverCtx', null);
-    app.addHook('onRequest', (req, _res, done) => {
-      (req as unknown as { serverCtx: unknown }).serverCtx = {
-        channelDB: {
-          getChannel: async () => ({
-            uuid: makeChannel().uuid,
-            streamMode: 'hls',
-          }),
-        },
-        sessionManager,
-      };
-      done();
-    });
-    await app.register(streamApi);
-    await app.ready();
+    app = await buildApp(sessionManager);
   });
 
   afterEach(async () => {
@@ -155,8 +167,8 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
     for (const [token, conn] of Object.entries(session.connections())) {
       expect(token).toBe(conn.ip);
     }
-    expect(session.minByIp.get('203.0.113.10')).toBe(100);
-    expect(session.minByIp.get('203.0.113.20')).toBe(10);
+    expect(session.minByIp.get('203.0.113.10')?.video).toBe(100);
+    expect(session.minByIp.get('203.0.113.20')?.video).toBe(10);
     expect(session.minSegment).toBe(10); // window anchored to departed client
 
     // B goes quiet past the staleness window; A keeps heartbeating
@@ -170,5 +182,42 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
     expect(session.connections()).not.toHaveProperty('203.0.113.20');
     expect(session.minByIp.has('203.0.113.20')).toBe(false);
     expect(session.minSegment).toBe(100);
+  });
+});
+
+describe('streamApi channel playlist variant flag', () => {
+  let app: ReturnType<typeof Fastify>;
+
+  beforeEach(async () => {
+    const session = new TestHlsSession(makeChannel(), baseOptions);
+    app = await buildApp({
+      getOrCreateHlsSession: vi.fn(async () => Result.success(session)),
+      getHlsSession: vi.fn(() => session),
+      getHlsSlowerSession: vi.fn(() => undefined),
+    });
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('serves the master playlist by default', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}.m3u8?mode=hls`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBe(MASTER_PLAYLIST);
+  });
+
+  it('serves the variant playlist when variant=true', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}.m3u8?mode=hls&variant=true`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBe(VARIANT_PLAYLIST);
   });
 });

@@ -9,7 +9,6 @@ import type {
   ProgramWithRelations,
 } from '../../db/schema/derivedTypes.ts';
 import { type ProgramPlayHistoryOrm } from '../../db/schema/ProgramPlayHistory.ts';
-import { OneDayMillis } from '../../ffmpeg/builder/constants.ts';
 import {
   DefaultFillerCooldownMillis,
   EmptyFillerPickResult,
@@ -250,20 +249,91 @@ describe('FillerPickerV2', () => {
       expect(result.filler).not.toBeNull();
     });
 
-    it('treats never-played filler as having OneDayMillis time since played', async () => {
+    it('picks a never-played filler no matter how long the cooldown is', async () => {
+      // A never-played filler cannot be inside a cooldown, so an arbitrarily
+      // large cooldown must not block it. Previously the "never played" time
+      // was a finite sentinel, so any cooldown above it blocked every filler
+      // on the channel permanently.
       const filler = createFiller({
-        cooldown: Math.floor(OneDayMillis / 1000) + 1, // Just over 1 day cooldown (in seconds)
-      }); // Cooldown longer than default "never played" time
+        cooldown: dayjs.duration({ days: 30 }).asSeconds(),
+      });
 
-      // No play history
       vi.mocked(mockPlayHistoryDB.getFillerHistory).mockResolvedValue([]);
-
       vi.mocked(random.bool).mockReturnValue(true);
 
       const result = await picker.pickFiller(mockChannel, [filler], 60000);
 
-      // Should not pick because cooldown > OneDayMillis (default for never played)
-      expect(result.filler).toBeNull();
+      expect(result.filler).not.toBeNull();
+    });
+
+    it('widens the history lookback to cover a cooldown longer than the default window', async () => {
+      const filler = createFiller({
+        cooldown: dayjs.duration({ days: 5 }).asSeconds(),
+      });
+      const now = Date.now();
+
+      vi.mocked(mockPlayHistoryDB.getFillerHistory).mockResolvedValue([]);
+      vi.mocked(random.bool).mockReturnValue(true);
+
+      await picker.pickFiller(mockChannel, [filler], 60000, now);
+
+      const range = vi.mocked(mockPlayHistoryDB.getFillerHistory).mock
+        .calls[0]?.[1];
+      expect(range?.from?.valueOf()).toEqual(
+        dayjs(now).subtract(5, 'days').valueOf(),
+      );
+    });
+
+    it('weights programs by staleness rank, so the stalest outweighs the freshest', async () => {
+      const now = Date.now();
+      const freshest = createProgram({ duration: 30000 });
+      const middle = createProgram({ duration: 30000 });
+      const stalest = createProgram({ duration: 30000 });
+      const neverPlayed = createProgram({ duration: 30000 });
+      const filler = createFiller({
+        fillerContent: [middle, neverPlayed, stalest, freshest],
+      });
+
+      vi.mocked(mockPlayHistoryDB.getFillerHistory).mockResolvedValue([
+        createPlayHistory(
+          freshest.uuid,
+          new Date(now - 60_000),
+          filler.fillerShowUuid,
+        ),
+        createPlayHistory(
+          middle.uuid,
+          new Date(now - 600_000),
+          filler.fillerShowUuid,
+        ),
+        createPlayHistory(
+          stalest.uuid,
+          new Date(now - 3_600_000),
+          filler.fillerShowUuid,
+        ),
+      ]);
+
+      const programWeights: number[] = [];
+      vi.spyOn(picker, 'weightedPick').mockImplementation(
+        (reason, numerator) => {
+          if (reason === 'program') {
+            programWeights.push(numerator);
+          }
+          return reason === 'filler';
+        },
+      );
+
+      await picker.pickFiller(
+        { ...mockChannel, fillerRepeatCooldown: 30_000 },
+        [filler],
+        60000,
+        now,
+      );
+
+      // Visited freshest-first, so each weight must exceed the one before it.
+      // Equal durations, so rank alone drives the ordering.
+      expect(programWeights).toHaveLength(4);
+      expect(programWeights).toEqual([...programWeights].sort((a, b) => a - b));
+      expect(new Set(programWeights).size).toEqual(4);
     });
 
     it('accumulates weight across eligible fillers for reservoir sampling', async () => {
@@ -836,7 +906,7 @@ describe('FillerPickerV2', () => {
       // Regression test: previously, the code used timeSincePlayed (for the program)
       // instead of timeSincePlayedFiller (for the list) when calculating timeUntilListIsCandidate.
       // This caused a large negative minimumWait when the program never played
-      // (timeSincePlayed defaults to OneDayMillis) but the filler list was in cooldown.
+      // (timeSincePlayed has no upper bound) but the filler list was in cooldown.
       const now = Date.now();
       const programUuid = v4();
       const listCooldown = dayjs.duration({ minutes: 1 }).asSeconds();

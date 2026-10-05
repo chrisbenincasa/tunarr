@@ -9,14 +9,14 @@ import { KEYS } from '@/types/inject.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { isNonEmptyString, mapAsyncSeq } from '@/util/index.js';
 import { InjectLogger } from '@/util/inject.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
-import { PlexDvr } from '@tunarr/types/plex';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
+import type { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import z from 'zod';
 import { EventService } from '../services/EventService.ts';
 import { GlobalScheduler } from '../services/Scheduler.ts';
-import { Maybe } from '../types/util.ts';
+import type { Maybe } from '../types/util.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
 import { Task2 } from './Task.js';
 import { taskDef } from './TaskRegistry.ts';
@@ -27,7 +27,7 @@ const UpdateXmlTvTaskRequest = z
   })
   .optional();
 
-type UpdateXmlTvTaskRequest = z.infer<typeof UpdateXmlTvTaskRequest>;
+export type UpdateXmlTvTaskRequest = z.infer<typeof UpdateXmlTvTaskRequest>;
 
 @injectable()
 @taskDef({
@@ -39,7 +39,7 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
   public ID = UpdateXmlTvTask.ID;
   schema = UpdateXmlTvTaskRequest;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
@@ -79,25 +79,30 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
         xmltvSettings = this.settingsDB.xmlTvSettings();
       }
 
+      // Round start time down to the nearest hour so guide boundaries align
+      // with the hour-granular requests made by the UI and other consumers.
+      // Extend the duration by the fractional hour we went back so the guide
+      // end time — and therefore coverage before the next scheduled run — is
+      // identical to what it would have been without rounding.
+      const now = dayjs();
+      const startTime = now.startOf('hour');
+      const extraDuration = dayjs.duration(now.diff(startTime));
+      const guideDuration = dayjs
+        .duration({ hours: xmltvSettings.programmingHours })
+        .add(extraDuration);
+
       if (isNonEmptyString(channelId)) {
+        // Force the rebuild: a targeted refresh is only requested when that
+        // channel's programming actually changed, so the staleness guard in
+        // buildChannelGuide would only be able to skip work we know is needed.
         await this.guideService.refreshGuide(
-          dayjs.duration({ hours: xmltvSettings.programmingHours }),
+          guideDuration,
           channelId,
           true,
+          true,
+          startTime.valueOf(),
         );
       } else {
-        // Round start time down to the nearest hour so guide boundaries align
-        // with the hour-granular requests made by the UI and other consumers.
-        // Extend the duration by the fractional hour we went back so the guide
-        // end time — and therefore coverage before the next scheduled run — is
-        // identical to what it would have been without rounding.
-        const now = dayjs();
-        const startTime = now.startOf('hour');
-        const extraDuration = dayjs.duration(now.diff(startTime));
-        const guideDuration = dayjs
-          .duration({ hours: xmltvSettings.programmingHours })
-          .add(extraDuration);
-
         await this.guideService.buildAllChannels(
           guideDuration,
           false,

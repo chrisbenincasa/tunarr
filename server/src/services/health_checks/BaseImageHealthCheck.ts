@@ -1,10 +1,7 @@
 import { injectable } from 'inversify';
 import { BASE_IMAGE_TAG_ENV_VAR, getEnvVar } from '../../util/env.ts';
-import {
-  HealthCheck,
-  healthCheckResult,
-  HealthCheckResult,
-} from './HealthCheck.ts';
+import type { HealthCheck, HealthCheckResult } from './HealthCheck.ts';
+import { healthCheckResult } from './HealthCheck.ts';
 
 @injectable()
 export class BaseImageHealthCheck implements HealthCheck {

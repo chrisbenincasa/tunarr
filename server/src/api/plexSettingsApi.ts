@@ -30,8 +30,7 @@ export const plexSettingsRouter: RouterPluginCallback = (
     },
     async (req, res) => {
       try {
-        const plex: PlexStreamSettings =
-          req.serverCtx.settings.plexSettings() as DeepWritable<PlexStreamSettings>;
+        const plex: PlexStreamSettings = req.serverCtx.settings.plexSettings();
         // This is super hackyyyyyy
         return res.send(plex);
       } catch (err) {

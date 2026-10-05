@@ -89,6 +89,16 @@ export const SearchFieldSpecs: NonEmptyArray<
     >,
   } satisfies SearchFieldSpec<'string'>,
   {
+    key: 'seasonIndex',
+    name: 'season',
+    type: 'numeric' as const,
+    displayName: 'Season',
+    uiVisible: true,
+    visibleForLibraryTypes: ['shows'] as NoInfer<
+      ReadonlyArray<MediaSourceLibrary['mediaType']>
+    >,
+  } satisfies SearchFieldSpec<'numeric'>,
+  {
     key: 'genres.name',
     name: 'genre',
     type: 'faceted_string' as const,

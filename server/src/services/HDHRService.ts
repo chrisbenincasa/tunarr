@@ -1,4 +1,4 @@
-import { SettingsDB } from '@/db/SettingsDB.js';
+import type { SettingsDB } from '@/db/SettingsDB.js';
 import { serverOptions } from '@/globals.js';
 import { KEYS } from '@/types/inject.js';
 import { inject, injectable } from 'inversify';

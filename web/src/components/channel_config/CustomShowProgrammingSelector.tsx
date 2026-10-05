@@ -104,7 +104,13 @@ function CustomShowListItem({
         <ListItemText
           // TODO add season and episode number?
           primary={customShow.name}
-          secondary={<Plural value={customShow.contentCount} one="# Program" other="# Programs" />}
+          secondary={
+            <Plural
+              value={customShow.contentCount}
+              one="# Program"
+              other="# Programs"
+            />
+          }
         />
         <Button onClick={(e) => onClick(e, customShow)} variant="contained">
           <Trans>Add Show</Trans>

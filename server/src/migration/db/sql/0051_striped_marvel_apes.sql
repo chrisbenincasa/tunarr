@@ -1,0 +1,1 @@
+ALTER TABLE `media_source` ADD `consecutive_auth_failures` integer DEFAULT 0 NOT NULL;

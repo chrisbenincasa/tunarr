@@ -1,12 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { KEYS } from '../types/inject.ts';
-import { MediaSourceId } from './schema/base.ts';
-import {
-  ExternalCollection,
-  NewExternalCollection,
-} from './schema/ExternalCollection.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
+import type { MediaSourceId } from './schema/base.ts';
+import type { NewExternalCollection } from './schema/ExternalCollection.ts';
+import { ExternalCollection } from './schema/ExternalCollection.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()
 export class ExternalCollectionRepo {

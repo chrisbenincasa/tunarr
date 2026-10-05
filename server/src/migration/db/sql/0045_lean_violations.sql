@@ -1,0 +1,1 @@
+ALTER TABLE `media_source` ADD `send_play_status_updates` integer DEFAULT false;

@@ -22,10 +22,6 @@ function getRuntimeSpecificPrefix(): string {
   return prefix;
 }
 
-export function getDefaultLogDirectory(): string {
-  return path.join(getDefaultDatabaseDirectory(), 'logs');
-}
-
 export function getDefaultLogLevel(useEnvVar: boolean = true): LogLevels {
   if (useEnvVar) {
     const level = getEnvironmentLogLevel();

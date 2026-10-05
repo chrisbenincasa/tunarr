@@ -5,18 +5,24 @@ import type {
   CondensedChannelProgram,
   ContentProgram,
 } from '@tunarr/types';
-import type { BaseSlot, RandomSlot } from '@tunarr/types/api';
+import type { BaseSlot, OverflowConfig, RandomSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { some } from 'lodash-es';
 import type { StrictExclude, StrictExtract } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import type { DropdownOption } from './DropdownOption.ts';
 import { extractProgramGrandparent } from './programUtil.ts';
 
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
+
 export type CustomShowProgramOption = DropdownOption<string> & {
   type: 'custom-show';
   customShowId: string;
-  programCount: number;
+  // Members the server can schedule, i.e. those with a positive duration.
+  schedulableProgramCount: number;
 };
 
 export type RedirectProgramOption = DropdownOption<string> & {
@@ -76,6 +82,46 @@ export const flexOptions: DropdownOption<'end' | 'distribute'>[] = [
   { value: 'distribute', description: 'Between videos' },
   { value: 'end', description: 'End of the slot' },
 ];
+
+export const latenessOptions: DropdownOption<number>[] = [
+  dayjs.duration(5, 'minutes'),
+  dayjs.duration(10, 'minutes'),
+  dayjs.duration(15, 'minutes'),
+  dayjs.duration(30, 'minutes'),
+  dayjs.duration(1, 'hour'),
+  dayjs.duration(2, 'hours'),
+  dayjs.duration(4, 'hours'),
+  dayjs.duration(8, 'hours'),
+]
+  .map((dur) => ({ value: dur.asMilliseconds(), description: dur.humanize() }))
+  .concat([
+    { value: 0, description: 'Do not allow' },
+    {
+      value: dayjs.duration(1, 'day').asMilliseconds(),
+      description: 'Any amount',
+    },
+  ]);
+
+export const overflowOptions: DropdownOption<string>[] = [
+  { value: '0', description: 'Do not allow' },
+  { value: String(5 * 60 * 1000), description: '5 minutes' },
+  { value: String(10 * 60 * 1000), description: '10 minutes' },
+  { value: String(15 * 60 * 1000), description: '15 minutes' },
+  { value: String(30 * 60 * 1000), description: '30 minutes' },
+  { value: String(60 * 60 * 1000), description: '1 hour' },
+  { value: String(2 * 60 * 60 * 1000), description: '2 hours' },
+  { value: 'oneExtra', description: 'One extra item' },
+];
+
+export function overflowToDropdownValue(config: OverflowConfig): string {
+  return config.type === 'oneExtra' ? 'oneExtra' : String(config.maxMs);
+}
+
+export function dropdownValueToOverflow(value: string): OverflowConfig {
+  return value === 'oneExtra'
+    ? { type: 'oneExtra' }
+    : { type: 'duration', maxMs: Number(value) };
+}
 
 export const lineupItemAppearsInSchedule = (
   slots: BaseSlot[],
@@ -152,6 +198,89 @@ export const slotOptionIsScheduled = (
 export const OneDayMillis = dayjs.duration(1, 'day').asMilliseconds();
 export const OneWeekMillis = dayjs.duration(1, 'week').asMilliseconds();
 
+const OneHourMillis = dayjs.duration(1, 'hour').asMilliseconds();
+
+export type SlotPeriod = 'day' | 'week';
+
+/** Milliseconds spanned by one repetition of a schedule. */
+export function slotPeriodMillis(period: SlotPeriod): number {
+  return period === 'week' ? OneWeekMillis : OneDayMillis;
+}
+
+/**
+ * The slots an "add slot" control should consider. A weekly schedule shows one
+ * column per day and only the slots in that column are relevant; a daily
+ * schedule has a single column, so every slot is.
+ */
+export function slotsForDayColumn<T extends { startTime: number }>(
+  slots: readonly T[],
+  period: SlotPeriod,
+  dayOffset: number,
+): readonly T[] {
+  if (period !== 'week') {
+    return slots;
+  }
+  const start = OneDayMillis * dayOffset;
+  const end = start + OneDayMillis;
+  return slots.filter(
+    (slot) => slot.startTime >= start && slot.startTime < end,
+  );
+}
+
+/**
+ * Offset for a newly added slot: an hour after the latest one already present,
+ * or the start of the column when there are none.
+ */
+export function nextSlotStartTime(
+  existingStartTimes: readonly number[],
+  period: SlotPeriod,
+  dayOffset: number,
+): number {
+  if (existingStartTimes.length > 0) {
+    // Wrap rather than run past the end of the period. Building an hourly day
+    // takes 24 additions, and the 25th used to land on exactly 24h -- an offset
+    // the scheduler cannot match, which either throws or collapses the channel
+    // into a single flex block.
+    return (
+      (Math.max(...existingStartTimes) + OneHourMillis) %
+      slotPeriodMillis(period)
+    );
+  }
+  return period === 'week' ? OneDayMillis * dayOffset : 0;
+}
+
+/** The day index a weekly slot offset encodes. */
+export function slotDayOfWeek(startTime: number): number {
+  return Math.floor(startTime / OneDayMillis);
+}
+
+/** Move a slot to another day of the week, keeping its time of day. */
+export function withSlotDayOfWeek(
+  startTime: number,
+  dayOfWeek: number,
+): number {
+  return (startTime % OneDayMillis) + dayOfWeek * OneDayMillis;
+}
+
+/**
+ * Set a slot's time of day, keeping the day a weekly offset encodes.
+ *
+ * Only a weekly schedule has a day to keep. Carrying one over in a daily
+ * schedule is how a slot ends up at an offset outside its own period, and the
+ * editor hides the day control in that mode, so nothing on screen would show
+ * what happened.
+ */
+export function withSlotTimeOfDay(
+  startTime: number,
+  hours: number,
+  minutes: number,
+  period: SlotPeriod,
+): number {
+  const dayOfWeek = period === 'week' ? slotDayOfWeek(startTime) : 0;
+  const timeOfDay = dayjs.duration({ hours, minutes }).asMilliseconds();
+  return timeOfDay + dayOfWeek * OneDayMillis;
+}
+
 type SlotTypeWithOrdering = StrictExclude<
   BaseSlot['type'],
   'redirect' | 'flex'
@@ -222,6 +351,47 @@ export function slotOrderOptions(
       OrderedShuffleSortOpt,
     ])
     .exhaustive();
+}
+
+export type CustomShowAvailability = 'available' | 'empty' | 'missing';
+
+// Custom shows load through a suspense query, so an absent option means the
+// show was deleted rather than still loading.
+export function customShowAvailability(
+  programOptions: ProgramOption[],
+  customShowId: string,
+): CustomShowAvailability {
+  const option = programOptions.find(
+    (opt): opt is CustomShowProgramOption =>
+      opt.type === 'custom-show' && opt.customShowId === customShowId,
+  );
+  if (option === undefined) {
+    return 'missing';
+  }
+  return option.schedulableProgramCount > 0 ? 'available' : 'empty';
+}
+
+// An empty custom show cannot fill a slot, so it is never offered for a new one.
+export function isSelectableForNewSlot(option: ProgramOption): boolean {
+  return option.type !== 'custom-show' || option.schedulableProgramCount > 0;
+}
+
+export function unavailableCustomShowSlotIndexes(
+  slots: readonly { type: string; customShowId?: string }[],
+  programOptions: ProgramOption[],
+): number[] {
+  const indexes: number[] = [];
+  slots.forEach((slot, index) => {
+    if (
+      slot.type === 'custom-show' &&
+      (slot.customShowId === undefined ||
+        customShowAvailability(programOptions, slot.customShowId) !==
+          'available')
+    ) {
+      indexes.push(index);
+    }
+  });
+  return indexes;
 }
 
 export const ProgramOptionTypes: DropdownOption<ProgramOptionType>[] = [

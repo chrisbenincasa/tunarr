@@ -38,10 +38,12 @@ import type { DB } from '../schema/db.ts';
 import type {
   MusicAlbumOrm,
   ProgramGroupingOrmWithRelations,
+  ProgramOrmWithExternalIds,
   ProgramWithRelationsOrm,
   TvSeasonOrm,
 } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
+import { LineupProgramRelations } from './programRelations.ts';
 
 @injectable()
 export class ProgramGroupingRepository {
@@ -517,7 +519,7 @@ export class ProgramGroupingRepository {
   async getProgramGroupingDescendants(
     groupId: string,
     groupTypeHint?: ProgramGroupingType,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+  ): Promise<ProgramOrmWithExternalIds[]> {
     const programs = await this.drizzleDB.query.program.findMany({
       where: (fields, { or, eq }) => {
         if (groupTypeHint) {
@@ -540,29 +542,7 @@ export class ProgramGroupingRepository {
           );
         }
       },
-      with: {
-        album: {
-          with: {
-            externalIds: true,
-          },
-        },
-        artist: {
-          with: {
-            externalIds: true,
-          },
-        },
-        season: {
-          with: {
-            externalIds: true,
-          },
-        },
-        show: {
-          with: {
-            externalIds: true,
-          },
-        },
-        externalIds: true,
-      },
+      with: LineupProgramRelations,
     });
 
     return orderBy(

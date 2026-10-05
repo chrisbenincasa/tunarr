@@ -6,12 +6,12 @@ import {
   type JsonObject,
 } from '../../types/schemas.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 
 @injectable()
 export class SlotProgrammingMigration extends ChannelLineupMigration<3, 4> {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   readonly from = 3;
   readonly to = 4;

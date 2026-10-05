@@ -30,7 +30,7 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
     async (req, res) => {
       try {
         const hdhr = req.serverCtx.settings.hdhrSettings();
-        return res.send(hdhr as DeepWritable<HdhrSettings>);
+        return res.send(hdhr);
       } catch (err) {
         logger.error(err);
         return res.status(500).send({ message: 'error' });

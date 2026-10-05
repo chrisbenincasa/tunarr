@@ -54,15 +54,32 @@ export class BackupTask extends SimpleTask {
       return;
     }
 
+    let failures = 0;
     for (const output of validOutputs) {
       try {
         const result = await this.dbBackupFactory().backup(output);
         if (result.type === 'success') {
           this.logger.info('Successfully generated backup to %s', result.data);
+        } else {
+          failures++;
+          this.logger.error(
+            'Backup output %O did not produce an archive',
+            output,
+          );
         }
       } catch (e) {
+        failures++;
         this.logger.error(e, 'Error creating backup');
       }
+    }
+
+    // Without this the task reports success while having written nothing, which
+    // is the worst possible outcome for a backup: it is only discovered at
+    // restore time.
+    if (failures > 0) {
+      throw new Error(
+        `${failures} of ${validOutputs.length} backup output(s) failed`,
+      );
     }
 
     return;

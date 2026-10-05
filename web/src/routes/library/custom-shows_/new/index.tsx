@@ -10,6 +10,7 @@ export const Route = createFileRoute('/library/custom-shows_/new/')({
       id: UnsavedId,
       name: '',
       contentCount: 0,
+      schedulableContentCount: 0,
       totalDuration: 0,
       isSyncing: false,
     };

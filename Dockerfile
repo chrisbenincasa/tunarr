@@ -52,7 +52,6 @@ COPY shared/ ./shared
 COPY types ./types
 COPY web ./web
 COPY patches ./patches
-COPY CHANGELOG.md CHANGELOG.md
 
 # Dev container
 FROM ffmpeg-base AS dev

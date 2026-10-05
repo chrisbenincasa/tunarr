@@ -113,6 +113,9 @@ export class CreditsApiController {
             404: z.void(),
           },
         },
+        config: {
+          authRequired: false,
+        },
       },
       async (req, res) => {
         const result = await this.artworkService.resolveArtwork(

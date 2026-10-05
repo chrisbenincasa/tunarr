@@ -78,9 +78,16 @@ export default function HdhrSettingsPage() {
   };
 
   if (isPending) {
-    return <h1><Trans>HDHR: Loading...</Trans></h1>;
+    return (
+      <h1>
+        <Trans>HDHR: Loading...</Trans>
+      </h1>
+    );
   } else if (error) {
-    return <h1>HDHR: {error.message}</h1>; {/* Error messages are technical */}
+    return <h1>HDHR: {error.message}</h1>;
+    {
+      /* Error messages are technical */
+    }
   }
 
   return (
@@ -96,7 +103,9 @@ export default function HdhrSettingsPage() {
             }
             label={t`Enable SSDP server`}
           />
-          <FormHelperText><Trans>* Restart required</Trans></FormHelperText>
+          <FormHelperText>
+            <Trans>* Restart required</Trans>
+          </FormHelperText>
         </FormControl>
       </Grid>
       <NumericFormControllerText

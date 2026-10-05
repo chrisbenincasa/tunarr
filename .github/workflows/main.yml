@@ -39,6 +39,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check the generated OpenAPI spec and web client are current
+        run: |
+          pnpm turbo build --filter=@tunarr/types --filter=@tunarr/shared
+          TUNARR_DATABASE_PATH="$(mktemp -d)" pnpm --filter @tunarr/server generate-openapi
+          pnpm --filter @tunarr/web generate-client
+          if [ -n "$(git status --porcelain -- web/src/generated docs/generated)" ]; then
+            echo "::error::The committed OpenAPI spec or web client is out of date."
+            echo "Run 'pnpm --filter @tunarr/server generate-openapi' and 'pnpm --filter @tunarr/web generate-client' and commit the result."
+            git status --porcelain -- web/src/generated docs/generated
+            git diff -- web/src/generated docs/generated | head -200
+            exit 1
+          fi
+
       - name: Build server
         run: pnpm turbo typecheck --filter=@tunarr/server
 

@@ -9,6 +9,7 @@ import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.ts';
 import {
   AudioFormats,
   HlsDirectOutputFormat,
+  HlsOutputFormat,
   MpegTsOutputFormat,
   VideoFormats,
   VideoPresets,
@@ -701,6 +702,86 @@ describe('FfmpegStreamFactory', () => {
       expect(frameState.scaledSize.height).toBe(2160);
       expect(frameState.paddedSize.width).toBe(3840);
       expect(frameState.paddedSize.height).toBe(2160);
+    });
+  });
+
+  describe('audio renditions', () => {
+    function makeMultiAudioStreamDetails(): StreamDetails {
+      return {
+        ...makeStreamDetails(),
+        audioDetails: [
+          {
+            codec: 'aac',
+            channels: 2,
+            index: 1,
+            language: 'Japanese',
+            languageCodeISO6392: 'jpn',
+          },
+          {
+            codec: 'aac',
+            channels: 2,
+            index: 2,
+            language: 'English',
+            languageCodeISO6392: 'eng',
+          },
+        ],
+      };
+    }
+
+    function makeSut() {
+      return new FfmpegStreamFactory(
+        makeMockFfmpegInfo(),
+        makeMockSettingsDB(makeFfmpegSettings()),
+        createCapturingPipelineBuilderFactory().factory,
+        makeMockChannelDB(),
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        makeTranscodeConfig(),
+        makeChannel(),
+      );
+    }
+
+    test('transcode mode advertises no audio renditions', async () => {
+      const result = await makeSut().createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details: makeMultiAudioStreamDetails(),
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: HlsOutputFormat(defaultHlsOptions),
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls',
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      expect(result?.renditions.audio).toEqual([]);
+    });
+
+    test('passthrough mode advertises every source audio track', async () => {
+      const result = await makeSut().createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details: makeMultiAudioStreamDetails(),
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: HlsDirectOutputFormat(defaultHlsOptions),
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls_direct_v2',
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      expect(result?.renditions.audio.map((r) => r.language)).toEqual([
+        'jpn',
+        'eng',
+      ]);
     });
   });
 

@@ -16,6 +16,7 @@ import { DBAccess } from './DBAccess.ts';
 import { ContentItem } from './derived_types/Lineup.ts';
 import type { IChannelDB } from './interfaces/IChannelDB.ts';
 import { ChannelPrograms } from './schema/ChannelPrograms.ts';
+import { FillerShow } from './schema/FillerShow.ts';
 import { Program } from './schema/Program.ts';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
 import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
@@ -296,6 +297,41 @@ describe('ChannelDB', () => {
       const channels = await channelDb.getAllChannels();
       expect(channels.length).toBeGreaterThanOrEqual(3);
     });
+
+    test('should clear filler collections when updating with an empty list', async ({
+      channelDb,
+      drizzle,
+      defaultTranscodeConfigId,
+    }) => {
+      const fillerShowId = v4();
+
+      await drizzle.insert(FillerShow).values({
+        uuid: fillerShowId,
+        name: 'Test Filler',
+      });
+
+      const channelData = createSaveableChannel(defaultTranscodeConfigId, {
+        name: 'Filler Clear Test Channel',
+        fillerCollections: [
+          {
+            id: fillerShowId,
+            weight: 1,
+            cooldownSeconds: 0,
+          },
+        ],
+      });
+
+      const created = await channelDb.saveChannel(channelData);
+
+      expect(created.channel.fillerShows).toHaveLength(1);
+
+      const updated = await channelDb.updateChannel(created.channel.uuid, {
+        ...channelData,
+        fillerCollections: [],
+      });
+
+      expect(updated.channel.fillerShows).toHaveLength(0);
+    });
   });
 
   describe('Channel Lineup Operations', () => {
@@ -326,6 +362,159 @@ describe('ChannelDB', () => {
 
       expect(lineup.items).toHaveLength(1);
       expect(lineup.items[0].type).toBe('offline');
+    });
+
+    test('should not hand out the cached lineup by reference', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, {
+          name: 'Lineup Aliasing Channel',
+          number: 601,
+        }),
+      );
+
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [
+          { type: 'offline' as const, durationMs: 1000 },
+          { type: 'offline' as const, durationMs: 2000 },
+          { type: 'offline' as const, durationMs: 3000 },
+        ],
+        startTimeOffsets: [0, 1000, 3000],
+      });
+
+      // A reader takes the lineup and then yields, as the guide build does.
+      const readerLineup = await channelDb.loadLineup(created.channel.uuid);
+      const itemsAtReadTime = readerLineup.items;
+      const offsetsAtReadTime = readerLineup.startTimeOffsets;
+
+      // A writer replaces the lineup while the reader still holds its copy.
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [{ type: 'offline' as const, durationMs: 5000 }],
+        startTimeOffsets: [0],
+      });
+
+      // The reader's view must be the one it read, not the writer's.
+      expect(readerLineup.items).toBe(itemsAtReadTime);
+      expect(readerLineup.items).toHaveLength(3);
+      expect(readerLineup.startTimeOffsets).toBe(offsetsAtReadTime);
+      expect(readerLineup.startTimeOffsets).toHaveLength(3);
+
+      // A fresh load sees the write.
+      const afterWrite = await channelDb.loadLineup(created.channel.uuid);
+      expect(afterWrite).not.toBe(readerLineup);
+      expect(afterWrite.items).toHaveLength(1);
+    });
+
+    test('should not let a mutated loaded lineup leak into the cache', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, {
+          name: 'Lineup Mutation Channel',
+          number: 602,
+        }),
+      );
+
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [
+          { type: 'offline' as const, durationMs: 1000 },
+          { type: 'offline' as const, durationMs: 2000 },
+        ],
+        startTimeOffsets: [0, 1000],
+      });
+
+      const lineup = await channelDb.loadLineup(created.channel.uuid);
+      lineup.items = [];
+      lineup.startTimeOffsets = [];
+
+      const reloaded = await channelDb.loadLineup(created.channel.uuid);
+      expect(reloaded.items).toHaveLength(2);
+      expect(reloaded.startTimeOffsets).toHaveLength(2);
+    });
+
+    test('should still persist removeProgramsFromLineup edits', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, {
+          name: 'Lineup Removal Channel',
+          number: 603,
+        }),
+      );
+
+      const programId = v4();
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [
+          {
+            type: 'content' as const,
+            id: programId,
+            durationMs: 1000,
+          } as ContentItem,
+          { type: 'offline' as const, durationMs: 2000 },
+        ],
+        startTimeOffsets: [0, 1000],
+      });
+
+      await channelDb.removeProgramsFromLineup(created.channel.uuid, [
+        programId,
+      ]);
+
+      const reloaded = await channelDb.loadLineup(created.channel.uuid);
+      expect(reloaded.items).toHaveLength(2);
+      expect(reloaded.items[0].type).toBe('offline');
+      expect(reloaded.items[0].durationMs).toBe(1000);
+    });
+
+    test('should keep where a custom show mid-roll segment resumes', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, {
+          name: 'Custom Show Mid-roll Channel',
+          number: 604,
+        }),
+      );
+
+      const programId = v4();
+      const customShowId = v4();
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [
+          {
+            type: 'content' as const,
+            id: programId,
+            customShowId,
+            durationMs: 1000,
+          },
+          {
+            type: 'content' as const,
+            id: programId,
+            customShowId,
+            durationMs: 2000,
+            startOffsetMs: 1000,
+          },
+        ],
+        startTimeOffsets: [0, 1000],
+      });
+
+      const condensed = await channelDb.loadCondensedLineup(
+        created.channel.uuid,
+      );
+
+      expect(
+        condensed?.lineup.map((p) =>
+          p.type === 'custom'
+            ? { type: p.type, startOffsetMs: p.startOffsetMs }
+            : { type: p.type },
+        ),
+      ).toEqual([
+        { type: 'custom', startOffsetMs: undefined },
+        { type: 'custom', startOffsetMs: 1000 },
+      ]);
     });
 
     test('should load channel and lineup together', async ({
@@ -611,6 +800,111 @@ describe('ChannelDB', () => {
 
       const rawLineups = await channelDb.loadAllRawLineups();
       expect(Object.keys(rawLineups).length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('removeProgramsFromAllLineups', () => {
+    async function createProgram(drizzle: any, durationMs: number) {
+      const programId = v4();
+      await drizzle.insert(Program).values({
+        uuid: programId,
+        duration: durationMs,
+        type: 'movie',
+        sourceType: 'plex',
+        externalKey: faker.string.alphanumeric({ length: 16 }),
+        externalSourceId: faker.string.alphanumeric({ length: 16 }),
+        title: faker.word.words(3),
+        year: 2020,
+      });
+      return programId;
+    }
+
+    test('rewrites matching content items to flex and leaves the rest alone', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+      drizzle,
+    }) => {
+      const target = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, { number: 810 }),
+      );
+      const other = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, { number: 811 }),
+      );
+
+      const trashedId = await createProgram(drizzle, 30000);
+      const keptId = await createProgram(drizzle, 45000);
+
+      await channelDb.saveLineup(target.channel.uuid, {
+        items: [
+          { type: 'content', id: trashedId, durationMs: 30000 },
+          { type: 'content', id: keptId, durationMs: 45000 },
+          { type: 'offline', durationMs: 5000 },
+          {
+            type: 'redirect',
+            channel: other.channel.uuid,
+            durationMs: 10000,
+          },
+        ],
+      });
+
+      const changed = await channelDb.removeProgramsFromAllLineups(
+        new Set([trashedId]),
+      );
+
+      expect(changed).toBe(1);
+
+      const lineup = await channelDb.loadLineup(target.channel.uuid, true);
+      expect(lineup.items).toHaveLength(4);
+      expect(lineup.items[0]).toEqual({ type: 'offline', durationMs: 30000 });
+      expect(lineup.items[1]).toEqual({
+        type: 'content',
+        id: keptId,
+        durationMs: 45000,
+      });
+      expect(lineup.items[2].type).toBe('offline');
+      expect(lineup.items[3].type).toBe('redirect');
+
+      // Flex preserves durationMs, so total channel duration is unchanged.
+      const channel = await channelDb.getChannel(target.channel.uuid);
+      expect(channel?.duration).toBe(90000);
+    });
+
+    test('does not rewrite lineups of unaffected channels', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+      drizzle,
+    }) => {
+      const affected = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, { number: 820 }),
+      );
+      const untouched = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, { number: 821 }),
+      );
+
+      const trashedId = await createProgram(drizzle, 30000);
+      const unrelatedId = await createProgram(drizzle, 30000);
+
+      await channelDb.saveLineup(affected.channel.uuid, {
+        items: [{ type: 'content', id: trashedId, durationMs: 30000 }],
+      });
+      await channelDb.saveLineup(untouched.channel.uuid, {
+        items: [{ type: 'content', id: unrelatedId, durationMs: 30000 }],
+      });
+
+      const before = await channelDb.loadLineup(untouched.channel.uuid, true);
+
+      const changed = await channelDb.removeProgramsFromAllLineups([trashedId]);
+
+      expect(changed).toBe(1);
+
+      const after = await channelDb.loadLineup(untouched.channel.uuid, true);
+      expect(after.items).toEqual(before.items);
+      expect(after.lastUpdated).toBe(before.lastUpdated);
+    });
+
+    test('is a no-op for an empty id set', async ({ channelDb }) => {
+      expect(await channelDb.removeProgramsFromAllLineups([])).toBe(0);
+      expect(await channelDb.removeProgramsFromAllLineups(new Set())).toBe(0);
     });
   });
 

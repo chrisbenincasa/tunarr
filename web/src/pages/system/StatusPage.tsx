@@ -226,7 +226,9 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong><Trans>Tunarr Backend URL:</Trans></strong>
+                        <strong>
+                          <Trans>Tunarr Backend URL:</Trans>
+                        </strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -241,7 +243,9 @@ export const StatusPage = () => {
                   <TableRow>
                     <TableCell>
                       <Typography>
-                        <strong><Trans>Search Server URL:</Trans></strong>
+                        <strong>
+                          <Trans>Search Server URL:</Trans>
+                        </strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -261,7 +265,9 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong><Trans>XMLTV Link:</Trans></strong>
+                        <strong>
+                          <Trans>XMLTV Link:</Trans>
+                        </strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -276,7 +282,9 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong><Trans>Channels M3U Link:</Trans></strong>
+                        <strong>
+                          <Trans>Channels M3U Link:</Trans>
+                        </strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -291,7 +299,9 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong><Trans>Data Directory:</Trans></strong>
+                        <strong>
+                          <Trans>Data Directory:</Trans>
+                        </strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -308,7 +318,9 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong><Trans>Logs Directory:</Trans></strong>
+                        <strong>
+                          <Trans>Logs Directory:</Trans>
+                        </strong>
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -325,7 +337,9 @@ export const StatusPage = () => {
                   <TableRow hover>
                     <TableCell>
                       <Typography>
-                        <strong><Trans>Backups:</Trans></strong>
+                        <strong>
+                          <Trans>Backups:</Trans>
+                        </strong>
                       </Typography>
                     </TableCell>
                     <TableCell>

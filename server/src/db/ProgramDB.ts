@@ -10,22 +10,17 @@ import type {
 import { KEYS } from '@/types/inject.js';
 import type { Maybe, PagedResult } from '@/types/util.js';
 import { inject, injectable } from 'inversify';
-import type {
-  Dictionary,
-  MarkOptional,
-  MarkRequired,
-  StrictExclude,
-} from 'ts-essentials';
+import type { Dictionary, MarkOptional, StrictExclude } from 'ts-essentials';
 import type { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
 import type { PageParams } from './interfaces/IChannelDB.js';
-import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
-import { ProgramExternalIdRepository } from './program/ProgramExternalIdRepository.ts';
-import { ProgramGroupingRepository } from './program/ProgramGroupingRepository.ts';
-import { ProgramGroupingUpsertRepository } from './program/ProgramGroupingUpsertRepository.ts';
-import { ProgramMetadataRepository } from './program/ProgramMetadataRepository.ts';
-import { ProgramSearchRepository } from './program/ProgramSearchRepository.ts';
-import { ProgramStateRepository } from './program/ProgramStateRepository.ts';
-import { ProgramUpsertRepository } from './program/ProgramUpsertRepository.ts';
+import type { BasicProgramRepository } from './program/BasicProgramRepository.ts';
+import type { ProgramExternalIdRepository } from './program/ProgramExternalIdRepository.ts';
+import type { ProgramGroupingRepository } from './program/ProgramGroupingRepository.ts';
+import type { ProgramGroupingUpsertRepository } from './program/ProgramGroupingUpsertRepository.ts';
+import type { ProgramMetadataRepository } from './program/ProgramMetadataRepository.ts';
+import type { ProgramSearchRepository } from './program/ProgramSearchRepository.ts';
+import type { ProgramStateRepository } from './program/ProgramStateRepository.ts';
+import type { ProgramUpsertRepository } from './program/ProgramUpsertRepository.ts';
 import type { NewArtwork } from './schema/Artwork.js';
 import type { NewGenre } from './schema/Genre.js';
 import type { ProgramDao, ProgramType } from './schema/Program.js';
@@ -75,10 +70,16 @@ export class ProgramDB implements IProgramDB {
     private readonly stateRepo: ProgramStateRepository,
   ) {}
 
-  getProgramById(
-    id: string,
-  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+  getProgramById(id: string): Promise<Maybe<ProgramOrmWithExternalIds>> {
     return this.basicProg.getProgramById(id);
+  }
+
+  getLineupProgramById(id: string): Promise<Maybe<ProgramOrmWithExternalIds>> {
+    return this.basicProg.getLineupProgramById(id);
+  }
+
+  getStreamProgramById(id: string): Promise<Maybe<ProgramOrmWithExternalIds>> {
+    return this.basicProg.getStreamProgramById(id);
   }
 
   getProgramExternalIds(
@@ -100,11 +101,30 @@ export class ProgramDB implements IProgramDB {
     return this.metadataRepo.clearExtractedSubtitle(uuid);
   }
 
+  setSubtitlePath(uuid: string, path: string): Promise<void> {
+    return this.metadataRepo.setSubtitlePath(uuid, path);
+  }
+
   getProgramsByIds(
     ids: string[] | readonly string[],
     batchSize?: number,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+  ): Promise<ProgramOrmWithExternalIds[]> {
     return this.basicProg.getProgramsByIds(ids, batchSize);
+  }
+
+  getGuideProgramsByIds(
+    ids: string[] | readonly string[],
+    opts: { includeCreditArtwork: boolean },
+    batchSize?: number,
+  ): Promise<ProgramWithRelationsOrm[]> {
+    return this.basicProg.getGuideProgramsByIds(ids, opts, batchSize);
+  }
+
+  getLineupProgramsByIds(
+    ids: string[] | readonly string[],
+    batchSize?: number,
+  ): Promise<ProgramOrmWithExternalIds[]> {
+    return this.basicProg.getLineupProgramsByIds(ids, batchSize);
   }
 
   getProgramGrouping(
@@ -173,7 +193,7 @@ export class ProgramDB implements IProgramDB {
     sourceType: RemoteSourceType;
     externalSourceId: string;
     externalKey: string;
-  }): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+  }): Promise<Maybe<ProgramOrmWithExternalIds>> {
     return this.externalIdRepo.lookupByExternalId(
       eid as Parameters<typeof this.externalIdRepo.lookupByExternalId>[0],
     );
@@ -184,7 +204,7 @@ export class ProgramDB implements IProgramDB {
       | Set<[RemoteSourceType, MediaSourceId, string]>
       | Set<readonly [RemoteSourceType, MediaSourceId, string]>,
     chunkSize?: number,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+  ): Promise<ProgramOrmWithExternalIds[]> {
     return this.externalIdRepo.lookupByExternalIds(ids, chunkSize);
   }
 
@@ -197,9 +217,7 @@ export class ProgramDB implements IProgramDB {
     return this.externalIdRepo.programIdsByExternalIds(
       ids as Set<[string, MediaSourceId, string]>,
       chunkSize ?? 50,
-    ) as Promise<
-      Record<`${ProgramExternalIdSourceType}.${string}.${string}`, string>
-    >;
+    );
   }
 
   updateProgramPlexRatingKey(
@@ -358,7 +376,7 @@ export class ProgramDB implements IProgramDB {
   getProgramGroupingDescendants(
     groupId: string,
     groupTypeHint?: ProgramGroupingType,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+  ): Promise<ProgramOrmWithExternalIds[]> {
     return this.progGrouping.getProgramGroupingDescendants(
       groupId,
       groupTypeHint,
@@ -377,9 +395,5 @@ export class ProgramDB implements IProgramDB {
     newState: ProgramState,
   ): Promise<void> {
     return this.stateRepo.updateGroupingsState(groupingIds, newState);
-  }
-
-  emptyTrashPrograms(): Promise<void> {
-    return this.stateRepo.emptyTrashPrograms();
   }
 }

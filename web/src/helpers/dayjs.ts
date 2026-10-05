@@ -71,13 +71,17 @@ export function betterHumanize(
 
   if (days >= 1) {
     const d =
-      mergedOpts.style === 'full' ? ' ' + pluralizeUnit(daysStr, days) : daysStr;
+      mergedOpts.style === 'full'
+        ? ' ' + pluralizeUnit(daysStr, days)
+        : daysStr;
     builder.push(`${days}${d}`);
   }
 
   if (hrs >= 1) {
     const d =
-      mergedOpts.style === 'full' ? ' ' + pluralizeUnit(hoursStr, hrs) : hoursStr;
+      mergedOpts.style === 'full'
+        ? ' ' + pluralizeUnit(hoursStr, hrs)
+        : hoursStr;
     builder.push(`${hrs}${d}`);
   }
 
@@ -97,7 +101,9 @@ export function betterHumanize(
     if (seconds > 0) {
       const secN = Math.round(seconds);
       const d =
-        mergedOpts.style === 'full' ? ' ' + pluralizeUnit(secStr, secN) : secStr;
+        mergedOpts.style === 'full'
+          ? ' ' + pluralizeUnit(secStr, secN)
+          : secStr;
       return `${padStart(secN.toString(), 2, '0')}${d}`;
     }
 

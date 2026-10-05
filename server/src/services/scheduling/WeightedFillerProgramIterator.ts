@@ -70,6 +70,7 @@ export class WeightedFillerProgramIterator
 
   private static fromState(
     weightedPrograms: NonEmptyArray<WeightedProgram>,
+    lastSeenTimestampById: Map<string, number>,
     weightsById: Map<string, number>,
     maxDuration: number,
     slotDef: FillerProgrammingSlot,
@@ -82,7 +83,7 @@ export class WeightedFillerProgramIterator
       WeightedFillerProgramIterator.prototype,
     ) as WeightedFillerProgramIterator;
     instance.weightedPrograms = weightedPrograms;
-    instance.lastSeenTimestampById = new Map();
+    instance.lastSeenTimestampById = lastSeenTimestampById;
     instance.weightsById = weightsById;
     instance.maxDuration = maxDuration;
     instance.slotDef = slotDef;
@@ -102,6 +103,9 @@ export class WeightedFillerProgramIterator
 
     return WeightedFillerProgramIterator.fromState(
       copiedPrograms,
+      // Forks share this map, so a program aired by any of them is on
+      // cooldown for all. Each fork still keeps its own weights.
+      this.lastSeenTimestampById,
       this.weightsById,
       this.maxDuration,
       this.slotDef,

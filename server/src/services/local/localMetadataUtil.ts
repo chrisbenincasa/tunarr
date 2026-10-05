@@ -79,12 +79,17 @@ export function extractSeasonAndEpisodeNumber(fileName: string) {
   return;
 }
 
-export function mapNfoToNamedEntity(names: Nilable<Array<string | NfoFieldWithAttrs>>) {
-  return seq.collect(names?.filter(n => !!n), (name) => {
-    return {
-      name: typeof name === 'string' ? name : name['#text'],
-    } satisfies NamedEntity;
-  });
+export function mapNfoToNamedEntity(
+  names: Nilable<Array<string | NfoFieldWithAttrs>>,
+) {
+  return seq.collect(
+    names?.filter((n) => !!n),
+    (name) => {
+      return {
+        name: typeof name === 'string' ? name : name['#text'],
+      } satisfies NamedEntity;
+    },
+  );
 }
 
 export function mapNfoActors(actors: Nilable<NfoActor[]>) {

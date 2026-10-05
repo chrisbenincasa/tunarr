@@ -4,6 +4,7 @@ import {
   Delete,
   KeyboardArrowDown,
   Shuffle,
+  SortByAlpha,
   Widgets,
 } from '@mui/icons-material';
 import {
@@ -14,6 +15,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import React, { useState } from 'react';
+import { useCustomShowAlphaSort } from '../../hooks/programming_controls/useAlphaSort.ts';
 import { useCustomShowBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
 import { useProgramShuffle } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useCustomShowReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
@@ -29,7 +31,11 @@ import {
 } from '../programming_controls/ShuffleProgrammingModal.tsx';
 
 type OrdereredSort<T extends string> = `${T}-asc` | `${T}-desc`;
-type PossibleSorts = 'random' | OrdereredSort<'release'> | 'block';
+type PossibleSorts =
+  | 'random'
+  | OrdereredSort<'alpha'>
+  | OrdereredSort<'release'>
+  | 'block';
 
 export const CustomShowSortToolsMenu = () => {
   const { t } = useLingui();
@@ -51,6 +57,7 @@ export const CustomShowSortToolsMenu = () => {
   };
   const [shuffleType, setShuffleType] = useState<ShuffleGroupingValue>('none');
   const { blockShuffle, canUsePerfectSync } = useCustomShowBlockShuffle();
+  const alphaSort = useCustomShowAlphaSort();
   const releaseDateSort = useCustomShowReleaseDateSort();
   const shuffler = useProgramShuffle();
 
@@ -77,7 +84,31 @@ export const CustomShowSortToolsMenu = () => {
       case 'random':
         button.unshift(
           <Button startIcon={<Shuffle />} onClick={() => shuffler(shuffleType)}>
-            {shuffleType === 'show' ? <Trans>Random (by show)</Trans> : <Trans>Random</Trans>}
+            {shuffleType === 'show' ? (
+              <Trans>Random (by show)</Trans>
+            ) : (
+              <Trans>Random</Trans>
+            )}
+          </Button>,
+        );
+        break;
+      case 'alpha-asc':
+      case 'alpha-desc':
+        button.unshift(
+          <Button
+            startIcon={<SortByAlpha />}
+            onClick={() => {
+              alphaSort(selectedSort === 'alpha-asc' ? 'desc' : 'asc');
+              setSelectedSort(
+                selectedSort === 'alpha-asc' ? 'alpha-desc' : 'alpha-asc',
+              );
+            }}
+          >
+            {selectedSort === 'alpha-asc' ? (
+              <Trans>A-Z (asc)</Trans>
+            ) : (
+              <Trans>A-Z (desc)</Trans>
+            )}
           </Button>,
         );
         break;
@@ -93,7 +124,11 @@ export const CustomShowSortToolsMenu = () => {
               );
             }}
           >
-            {selectedSort === 'release-asc' ? <Trans>Release Date (asc)</Trans> : <Trans>Release Date (desc)</Trans>}
+            {selectedSort === 'release-asc' ? (
+              <Trans>Release Date (asc)</Trans>
+            ) : (
+              <Trans>Release Date (desc)</Trans>
+            )}
           </Button>,
         );
         break;
@@ -141,7 +176,30 @@ export const CustomShowSortToolsMenu = () => {
             <ListItemIcon>
               <Shuffle />
             </ListItemIcon>
-            <ListItemText><Trans>Random&hellip;</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Random&hellip;</Trans>
+            </ListItemText>
+          </MenuItem>
+        </ElevatedTooltip>
+        <ElevatedTooltip
+          title={t`Sorts alphabetically by program title`}
+          placement="right"
+          elevation={10}
+        >
+          <MenuItem
+            disableRipple
+            onClick={() => {
+              alphaSort('asc');
+              setSelectedSort('alpha-asc');
+              handleClose();
+            }}
+          >
+            <ListItemIcon>
+              <SortByAlpha />
+            </ListItemIcon>
+            <ListItemText>
+              <Trans>Alphabetically</Trans>
+            </ListItemText>
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip
@@ -152,7 +210,9 @@ export const CustomShowSortToolsMenu = () => {
           <MenuItem
             disableRipple
             onClick={() => {
-              releaseDateSort(selectedSort === 'release-asc' ? 'desc' : 'asc');
+              // Picking a sort from the menu always starts ascending. The
+              // button it leaves behind flips the direction.
+              releaseDateSort('asc');
               setSelectedSort('release-asc');
               handleClose();
             }}
@@ -160,7 +220,9 @@ export const CustomShowSortToolsMenu = () => {
             <ListItemIcon>
               <CalendarMonth />
             </ListItemIcon>
-            <ListItemText><Trans>Release Date</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Release Date</Trans>
+            </ListItemText>
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip
@@ -179,7 +241,9 @@ export const CustomShowSortToolsMenu = () => {
             <ListItemIcon>
               <Widgets />
             </ListItemIcon>
-            <ListItemText><Trans>Block Shuffle</Trans></ListItemText>
+            <ListItemText>
+              <Trans>Block Shuffle</Trans>
+            </ListItemText>
           </MenuItem>
         </ElevatedTooltip>
         <MenuItem divider disabled>

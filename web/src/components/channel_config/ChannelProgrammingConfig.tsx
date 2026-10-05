@@ -1,4 +1,5 @@
 import { useUpdateChannel } from '@/hooks/useUpdateChannel.ts';
+import { getApiErrorMessage } from '@/helpers/apiError.ts';
 import { useUpdateLineup } from '@/hooks/useUpdateLineup.ts';
 import { resetLineup } from '@/store/channelEditor/actions.ts';
 import useStore from '@/store/index.ts';
@@ -83,7 +84,8 @@ export function ChannelProgrammingConfig() {
       });
     },
     onError: (error, vars) => {
-      snackbar.enqueueSnackbar(t`Error saving programs. ${error.message}`, {
+      const message = getApiErrorMessage(error) ?? error.message;
+      snackbar.enqueueSnackbar(t`Error saving programs. ${message}`, {
         variant: 'error',
       });
 

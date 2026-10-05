@@ -2,18 +2,18 @@ import { inject, injectable } from 'inversify';
 import PQueue from 'p-queue';
 import { parentPort } from 'worker_threads';
 
+import { TypedError, unwrapError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
-import {
+import type {
   WorkerReply,
-  WorkerRequest,
   WorkerScheduleSlotsRequest,
   WorkerScheduleTimeSlotsRequest,
   WorkerSuccessReply,
   WorkerTimeSlotScheduleReply,
-  type WorkerEvent,
 } from '../types/worker_schemas.ts';
+import { WorkerRequest, type WorkerEvent } from '../types/worker_schemas.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { SlotSchedulerService } from './scheduling/RandomSlotSchedulerService.ts';
 import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.ts';
 
@@ -21,7 +21,7 @@ import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.
 export class TunarrWorker {
   #queue: PQueue;
 
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(TimeSlotSchedulerService)
@@ -80,12 +80,7 @@ export class TunarrWorker {
     );
 
     if (result.isFailure()) {
-      this.logger.error(result.error);
-      this.sendReply({
-        type: 'error',
-        requestId: req.requestId,
-        message: result.error.message,
-      });
+      this.replyWithError(req.requestId, result.error);
       return;
     }
 
@@ -101,12 +96,7 @@ export class TunarrWorker {
     );
 
     if (result.isFailure()) {
-      this.logger.error(result.error);
-      this.sendReply({
-        type: 'error',
-        requestId: req.requestId,
-        message: result.error.message,
-      });
+      this.replyWithError(req.requestId, result.error);
       return;
     }
 
@@ -124,6 +114,17 @@ export class TunarrWorker {
       type: 'success',
       data,
       requestId,
+    });
+  }
+
+  private replyWithError(requestId: string, wrapped: Error) {
+    const error = unwrapError(wrapped);
+    this.logger.error(error);
+    this.sendReply({
+      type: 'error',
+      requestId,
+      message: error.message,
+      httpCode: error instanceof TypedError ? error.httpCode : undefined,
     });
   }
 

@@ -2,18 +2,19 @@ import type {
   Bind,
   BindWhenOnFluentSyntax,
   Factory,
-  ServiceIdentifier} from 'inversify';
-import {
-  inject
+  ServiceIdentifier,
 } from 'inversify';
+import { inject, multiInject } from 'inversify';
 import 'reflect-metadata';
 
 const INJECT_META = Symbol('assistedInject:inject');
+const MULTI_INJECT_META = Symbol('assistedInject:multiInject');
 const ASSISTED_META = Symbol('assistedInject:assisted');
 
-// Our own @inject — stores tokens in our own metadata, not inversify's internals
-export function injected(serviceId: ServiceIdentifier<unknown>) {
-  const injectFn = inject(serviceId);
+function commonInjectedWrapper<T>(
+  serviceId: ServiceIdentifier<T>,
+  decorator: MethodDecorator & ParameterDecorator & PropertyDecorator,
+): ParameterDecorator {
   return (
     target: object,
     propertyKey: string | symbol | undefined,
@@ -26,7 +27,32 @@ export function injected(serviceId: ServiceIdentifier<unknown>) {
     ) ?? new Map();
     map.set(index, serviceId);
     Reflect.defineMetadata(INJECT_META, map, target);
-    injectFn(target, propertyKey, index);
+    decorator(target, propertyKey, index);
+  };
+}
+
+// Our own @inject — stores tokens in our own metadata, not inversify's internals
+export function injected(serviceId: ServiceIdentifier<unknown>) {
+  const injectFn = inject(serviceId);
+  return commonInjectedWrapper(serviceId, injectFn);
+}
+
+// Our own @inject — stores tokens in our own metadata, not inversify's internals
+export function multiInjected<T extends unknown[]>(
+  serviceId: ServiceIdentifier<T>,
+) {
+  const injectFn = multiInject(serviceId);
+  return (
+    target: object,
+    propertyKey: string | symbol | undefined,
+    index: number,
+  ) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const set: Set<number> =
+      Reflect.getOwnMetadata(MULTI_INJECT_META, target) ?? new Set();
+    set.add(index);
+    Reflect.defineMetadata(MULTI_INJECT_META, set, target);
+    commonInjectedWrapper(serviceId, injectFn)(target, propertyKey, index);
   };
 }
 
@@ -60,6 +86,9 @@ export function bindAssistedFactory<
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const assistedSet: Set<number> =
     Reflect.getOwnMetadata(ASSISTED_META, Target) || new Set();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const multiInjectSet: Set<number> =
+    Reflect.getOwnMetadata(MULTI_INJECT_META, Target) || new Set();
   const paramCount = Target.length;
 
   // Validate: every param must be either injected or assisted
@@ -77,7 +106,10 @@ export function bindAssistedFactory<
       let aIdx = 0;
       for (let i = 0; i < paramCount; i++) {
         if (injectMap.has(i)) {
-          args.push(context.get(injectMap.get(i)!));
+          const id = injectMap.get(i)!;
+          args.push(
+            multiInjectSet.has(i) ? context.getAll(id) : context.get(id),
+          );
         } else {
           args.push(assistedArgs[aIdx++]);
         }

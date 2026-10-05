@@ -119,7 +119,11 @@ export default function Video({ channelId }: VideoProps) {
           onClick={() => reloadStream()}
           startIcon={loadedStream ? <Replay /> : <PlayArrow />}
         >
-          {loadedStream ? <Trans>Reload Stream</Trans> : <Trans>Load Stream</Trans>}
+          {loadedStream ? (
+            <Trans>Reload Stream</Trans>
+          ) : (
+            <Trans>Load Stream</Trans>
+          )}
         </Button>
       </Box>
     );

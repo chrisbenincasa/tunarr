@@ -1,16 +1,17 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import { CondensedChannelProgram } from '@tunarr/types';
+import type { CondensedChannelProgram } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { sum } from 'lodash-es';
-import { match, P } from 'ts-pattern';
-import { LineupItem } from '../db/derived_types/Lineup.ts';
-import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
-import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import { match } from 'ts-pattern';
+import { condensedProgramToLineupItem } from '../db/channel/lineupItemConversion.ts';
+import type { LineupItem } from '../db/derived_types/Lineup.ts';
+import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
+import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
 import { KEYS } from '../types/inject.ts';
-import { Nullable } from '../types/util.ts';
+import type { Nullable } from '../types/util.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 type Request = {
   channelId: string;
@@ -104,36 +105,8 @@ export class RegenerateChannelLineupCommand {
 function channelProgramToLineupItem(
   p: CondensedChannelProgram,
 ): Nullable<LineupItem> {
-  return match(p)
-    .returnType<LineupItem | null>()
-    .with({ type: 'content', id: P.when(isNonEmptyString) }, (program) => ({
-      type: 'content',
-      id: program.id,
-      durationMs: program.duration,
-      startOffsetMs: program.startOffsetMs,
-    }))
-    .with({ type: 'custom' }, (program) => ({
-      type: 'content', // Custom program
-      durationMs: program.duration,
-      id: program.id,
-      customShowId: program.customShowId,
-    }))
-    .with({ type: 'filler' }, (program) => ({
-      type: 'content',
-      durationMs: program.duration,
-      id: program.id,
-      fillerListId: program.fillerListId,
-      fillerType: program.fillerType,
-    }))
-    .with({ type: 'redirect' }, (program) => ({
-      type: 'redirect',
-      channel: program.channel,
-      durationMs: program.duration,
-    }))
-    .with({ type: 'flex' }, (program) => ({
-      type: 'offline',
-      durationMs: program.duration,
-      fillerConfig: program.fillerConfig,
-    }))
-    .otherwise(() => null);
+  if (p.type === 'content' && !isNonEmptyString(p.id)) {
+    return null;
+  }
+  return condensedProgramToLineupItem(p);
 }

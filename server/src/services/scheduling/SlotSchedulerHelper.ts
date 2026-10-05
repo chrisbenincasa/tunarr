@@ -1,9 +1,10 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
-import { BaseSlot } from '@tunarr/types/api';
+import type { BaseSlot } from '@tunarr/types/api';
 import { inject, injectable } from 'inversify';
 import {
   flatten,
   isError,
+  isNil,
   isNumber,
   partition,
   reduce,
@@ -12,29 +13,31 @@ import {
 } from 'lodash-es';
 import { CustomShowDB } from '../../db/CustomShowDB.ts';
 import { FillerDB } from '../../db/FillerListDB.ts';
-import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
-import { ProgramDB } from '../../db/ProgramDB.ts';
-import { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
+import type { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import type { ProgramDB } from '../../db/ProgramDB.ts';
+import type { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
 import { SmartCollectionsDB } from '../../db/SmartCollectionsDB.ts';
 import { KEYS } from '../../types/inject.ts';
 import { zipWithIndex } from '../../util/index.ts';
+import { ScheduleValidationError } from '../../types/errors.ts';
 import { InjectLogger } from '../../util/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import {
   isProgramGroupingDocument,
   isTerminalProgramDocument,
 } from '../../util/search.ts';
 import { filterValues, flipMap } from '../../util/seq.ts';
-import { SlotScheduleServiceRequest } from './RandomSlotSchedulerService.ts';
-import {
+import type { SlotScheduleServiceRequest } from './RandomSlotSchedulerService.ts';
+import type {
   CustomShowContext,
   SlotSchedulerProgram,
 } from './slotSchedulerUtil.ts';
-import { TimeSlotScheduleServiceRequest } from './TimeSlotSchedulerService.ts';
+import { hasSchedulableDuration } from './slotSchedulerUtil.ts';
+import type { TimeSlotScheduleServiceRequest } from './TimeSlotSchedulerService.ts';
 
 @injectable()
 export class SlotSchedulerHelper {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(CustomShowDB) private customShowDB: CustomShowDB,
@@ -102,6 +105,7 @@ export class SlotSchedulerHelper {
       if (seenContentIds.has(program.uuid)) {
         continue;
       }
+      seenContentIds.add(program.uuid);
 
       slotPrograms.push({
         ...program,
@@ -112,6 +116,124 @@ export class SlotSchedulerHelper {
     }
 
     return slotPrograms;
+  }
+
+  // New requests must not reference a custom show with nothing to schedule.
+  // Saved schedules skip this check so regeneration can fall back to flex.
+  async assertSlotReferences(
+    slots: BaseSlot[],
+    slotPrograms: SlotSchedulerProgram[],
+  ) {
+    const schedulableShowIds = new Set<string>();
+    for (const program of slotPrograms) {
+      if (!hasSchedulableDuration(program.duration)) {
+        continue;
+      }
+      for (const { customShowId } of program.parentCustomShows) {
+        schedulableShowIds.add(customShowId);
+      }
+    }
+
+    const fillerListIds = uniq(
+      slots.flatMap((slot) => {
+        switch (slot.type) {
+          case 'filler':
+            return [slot.fillerListId];
+          case 'flex':
+          case 'redirect':
+            return [];
+          case 'movie':
+          case 'show':
+          case 'custom-show':
+          case 'smart-collection':
+            return slot.filler?.map(({ fillerListId }) => fillerListId) ?? [];
+        }
+      }),
+    );
+    const showIds = uniq(
+      seq.collect(slots, (slot) =>
+        slot.type === 'show' ? slot.showId : undefined,
+      ),
+    );
+    const smartCollectionIds = uniq(
+      seq.collect(slots, (slot) =>
+        slot.type === 'smart-collection' ? slot.smartCollectionId : undefined,
+      ),
+    );
+    const channelIds = uniq(
+      seq.collect(slots, (slot) =>
+        slot.type === 'redirect' ? slot.channelId : undefined,
+      ),
+    );
+
+    const [fillerLists, shows, smartCollections, channels] = await Promise.all([
+      this.fillerDB.getFillerListsByIds(fillerListIds),
+      this.programDB.getProgramGroupings(showIds),
+      this.smartCollectionsDB.getByIds(smartCollectionIds),
+      Promise.all(channelIds.map((id) => this.channelDB.getChannel(id))),
+    ]);
+    const existingFillerListIds = new Set(fillerLists.map((l) => l.uuid));
+    const existingSmartCollectionIds = new Set(
+      smartCollections.map((c) => c.uuid),
+    );
+    const existingChannelIds = new Set(
+      seq.collect(channels, (channel) => channel?.uuid),
+    );
+
+    const problems = [...zipWithIndex(slots)].flatMap(([slot, index]) => {
+      const slotProblems: string[] = [];
+      const missing = (entity: string, id: string) =>
+        slotProblems.push(
+          `Slot ${index} references ${entity} ${id}, which does not exist`,
+        );
+
+      switch (slot.type) {
+        case 'custom-show':
+          if (!schedulableShowIds.has(slot.customShowId)) {
+            slotProblems.push(
+              `Slot ${index} references custom show ${slot.customShowId}, which has no content to schedule`,
+            );
+          }
+          break;
+        case 'filler':
+          if (!existingFillerListIds.has(slot.fillerListId)) {
+            missing('filler list', slot.fillerListId);
+          }
+          break;
+        case 'show':
+          if (shows[slot.showId] === undefined) {
+            missing('show', slot.showId);
+          }
+          break;
+        case 'smart-collection':
+          if (!existingSmartCollectionIds.has(slot.smartCollectionId)) {
+            missing('smart collection', slot.smartCollectionId);
+          }
+          break;
+        case 'redirect':
+          if (!existingChannelIds.has(slot.channelId)) {
+            missing('channel', slot.channelId);
+          }
+          break;
+        case 'movie':
+        case 'flex':
+          break;
+      }
+
+      if (slot.type !== 'filler' && 'filler' in slot) {
+        for (const { fillerListId } of slot.filler ?? []) {
+          if (!existingFillerListIds.has(fillerListId)) {
+            missing('filler list', fillerListId);
+          }
+        }
+      }
+
+      return slotProblems;
+    });
+
+    if (problems.length > 0) {
+      throw new ScheduleValidationError(problems.join('; '));
+    }
   }
 
   async materializeCustomShowPrograms(slots: BaseSlot[]) {
@@ -173,15 +295,52 @@ export class SlotSchedulerHelper {
     slotFiller.forEach((id) => slottedFillerLists.add(id));
 
     // Query
-    return Object.fromEntries(
-      await Promise.all(
-        [...slottedFillerLists].map((list) =>
-          this.fillerDB
-            .getFillerPrograms(list)
-            .then((programs) => [list, programs] as const),
+    const programsByFillerList: Record<string, ProgramWithRelationsOrm[]> =
+      Object.fromEntries(
+        await Promise.all(
+          [...slottedFillerLists].map((list) =>
+            this.fillerDB
+              .getFillerPrograms(list)
+              .then((programs) => [list, programs] as const),
+          ),
         ),
-      ),
-    );
+      );
+
+    await this.warnOnUnusableFillerLists(programsByFillerList);
+
+    return programsByFillerList;
+  }
+
+  /**
+   * A filler list referenced by the schedule that yields no programs is
+   * skipped by the scheduler. Name it in the logs -- including whether the
+   * list still exists at all -- since there is nothing in the UI that would
+   * otherwise explain the missing filler.
+   */
+  private async warnOnUnusableFillerLists(
+    programsByFillerList: Record<string, ProgramWithRelationsOrm[]>,
+  ) {
+    for (const [fillerListId, programs] of Object.entries(
+      programsByFillerList,
+    )) {
+      if (programs.length > 0) {
+        continue;
+      }
+
+      const fillerList = await this.fillerDB.getFiller(fillerListId);
+      if (isNil(fillerList)) {
+        this.logger.warn(
+          'Slot schedule references filler list %s, which no longer exists. It will be ignored.',
+          fillerListId,
+        );
+      } else {
+        this.logger.warn(
+          'Filler list "%s" (%s) has no programs, so slots referencing it will not get filler from it.',
+          fillerList.name,
+          fillerListId,
+        );
+      }
+    }
   }
 
   async materializeShows(slots: BaseSlot[]) {

@@ -1,0 +1,71 @@
+name: Extract Lingui messages
+
+# Contributors don't run `lingui extract` in their PRs. After a merge, this
+# refreshes the .po catalogs and commits them back to the branch.
+#
+# Release bundles don't wait on this commit: `turbo bundle` runs extraction
+# itself, so a build from the merge commit already has every string.
+#
+# Pushes made with GITHUB_TOKEN don't trigger workflows, so the commit below
+# can't re-trigger this one.
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - web/src/**
+      - '!web/src/locales/**'
+      - web/lingui.config.ts
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Serialize runs per branch; a queued run checks out the branch tip, so it
+# covers every push that landed while it waited.
+concurrency:
+  group: lingui-extract-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Use Latest Corepack
+        run: |
+          npm install -g corepack@latest
+          corepack enable && corepack enable pnpm
+          pnpm --version
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.13.0
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Extract messages
+        run: cd web && pnpm run extract-messages
+
+      - name: Commit updated catalogs
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if git diff --quiet -- web/src/locales/; then
+            echo "Catalogs are already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/src/locales/
+          git commit --no-verify -m "chore(web): extract lingui messages"
+          # The branch may have moved while extraction ran.
+          git pull --rebase origin "$BRANCH"
+          git push origin "HEAD:$BRANCH"

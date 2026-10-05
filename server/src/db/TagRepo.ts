@@ -3,7 +3,7 @@ import { inject, injectable } from 'inversify';
 import { head, uniq } from 'lodash-es';
 import { v4 } from 'uuid';
 import { KEYS } from '../types/inject.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
 import { Tag, TagRelations } from './schema/Tag.ts';
 
 @injectable()

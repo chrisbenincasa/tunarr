@@ -6,13 +6,14 @@ import { merge } from 'lodash-es';
 import { Low, LowSync } from 'lowdb';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { DeepPartial } from 'ts-essentials';
+import { isMainThread } from 'node:worker_threads';
+import type { DeepPartial } from 'ts-essentials';
 import { SchemaBackedDbAdapter } from './json/SchemaBackedJsonDBAdapter.ts';
 import { SyncSchemaBackedDbAdapter } from './json/SyncSchemaBackedJSONDBAdapter.ts';
+import type { SettingsFile } from './SettingsDB.ts';
 import {
   CURRENT_VERSION,
   SettingsDB,
-  SettingsFile,
   SettingsFileSchema,
   defaultSettings,
 } from './SettingsDB.ts';
@@ -56,16 +57,23 @@ export class SettingsDBFactory {
     );
 
     db.read();
-    db.update((data) => {
-      data.migration.isFreshSettings = freshSettings;
-      // Redefine thie variable... it came before "isFreshSettings".
-      // If this is a fresh run, mark legacyMigration as false
-      if (freshSettings) {
-        data.migration.legacyMigration = false;
-      }
-      // New installs are fresh and have effectively "migrated"
-      data.migration.hasMigratedTo1_0 = freshSettings;
-    });
+    // Only the main thread records startup state. Workers bootstrap through
+    // the same entry point, all at once, and lowdb writes through one fixed
+    // scratch file (.settings.json.tmp) before renaming it into place, so
+    // concurrent writers race on the rename and fail with ENOENT. The parent
+    // has already written this file before it spawns any workers.
+    if (isMainThread) {
+      db.update((data) => {
+        data.migration.isFreshSettings = freshSettings;
+        // Redefine thie variable... it came before "isFreshSettings".
+        // If this is a fresh run, mark legacyMigration as false
+        if (freshSettings) {
+          data.migration.legacyMigration = false;
+        }
+        // New installs are fresh and have effectively "migrated"
+        data.migration.hasMigratedTo1_0 = freshSettings;
+      });
+    }
 
     const settingsDB = new SettingsDB(
       new Low<SettingsFile>(

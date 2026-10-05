@@ -140,7 +140,8 @@ const FfprobeChapter = z.object({
   start_time: z.string(),
   end: z.number(),
   end_time: z.string(),
-  tags: z.record(z.string(), z.string()),
+  // ffprobe omits `tags` entirely for chapters without tags
+  tags: z.record(z.string(), z.string()).optional(),
 });
 
 export const FfprobeMediaInfoSchema = z.object({

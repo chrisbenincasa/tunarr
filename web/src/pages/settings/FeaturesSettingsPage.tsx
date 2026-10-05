@@ -75,7 +75,10 @@ function FlagSection({
                 )}
               />
               {meta.envOverride && (
-                <Chip label={<Trans>Set by environment variable</Trans>} size="small" />
+                <Chip
+                  label={<Trans>Set by environment variable</Trans>}
+                  size="small"
+                />
               )}
             </Stack>
             <FormHelperText sx={{ ml: 0 }}>{meta.description}</FormHelperText>
@@ -108,7 +111,7 @@ export default function FeaturesSettingsPage() {
     ...putApiSystemFeatureFlagsMutation(),
     onSuccess: (result) => {
       snackbar.enqueueSnackbar(t`Feature flags saved!`, { variant: 'success' });
-      reset(result.flags as FlagFormValues, { keepValues: true });
+      reset(result.flags, { keepValues: true });
       return queryClient.invalidateQueries({
         queryKey: getApiSystemFeatureFlagsQueryKey(),
       });
@@ -130,7 +133,9 @@ export default function FeaturesSettingsPage() {
 
   if (error) {
     return (
-      <Typography color="error"><Trans>Failed to load feature flags.</Trans></Typography>
+      <Typography color="error">
+        <Trans>Failed to load feature flags.</Trans>
+      </Typography>
     );
   }
 
@@ -156,7 +161,7 @@ export default function FeaturesSettingsPage() {
         {isDirty && (
           <Button
             variant="outlined"
-            onClick={() => reset(data?.flags as FlagFormValues)}
+            onClick={() => reset(data?.flags)}
             disabled={isSubmitting}
           >
             <Trans>Reset Changes</Trans>

@@ -128,7 +128,9 @@ export function ChannelPropertiesEditor() {
         <Box>
           <Stack spacing={3} divider={<Divider />}>
             <Box>
-              <Typography variant="h5"><Trans>General</Trans></Typography>
+              <Typography variant="h5">
+                <Trans>General</Trans>
+              </Typography>
               <NumericFormControllerText
                 name="number"
                 control={control}
@@ -153,7 +155,9 @@ export function ChannelPropertiesEditor() {
                     fullWidth
                     label={t`Channel Name`}
                     margin="normal"
-                    helperText={errors.name ? t`Channel name is required` : null}
+                    helperText={
+                      errors.name ? t`Channel name is required` : null
+                    }
                     {...field}
                   />
                 )}
@@ -281,7 +285,9 @@ export function ChannelPropertiesEditor() {
               </Box>
             </Box>
             <Stack gap={2}>
-              <Typography variant="h5"><Trans>On-Demand</Trans></Typography>
+              <Typography variant="h5">
+                <Trans>On-Demand</Trans>
+              </Typography>
               <Typography variant="body2">
                 <Trans>
                   On-Demand channels resume from where you left off. Programming

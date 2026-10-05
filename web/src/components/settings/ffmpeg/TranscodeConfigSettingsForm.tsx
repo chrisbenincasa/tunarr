@@ -80,7 +80,11 @@ export const TranscodeConfigSettingsForm = ({
               ) : (
                 <Check sx={{ mr: 0.5 }} />
               )}{' '}
-              {showAdvancedSettings ? <Trans>Hide Advanced</Trans> : <Trans>Show Advanced</Trans>}
+              {showAdvancedSettings ? (
+                <Trans>Hide Advanced</Trans>
+              ) : (
+                <Trans>Show Advanced</Trans>
+              )}
             </ToggleButton>
           </Stack>
           <Box>
@@ -200,8 +204,10 @@ export const TranscodeConfigSettingsForm = ({
                     label={t`Disable Watermarks`}
                   />
                   <FormHelperText>
-                    <Trans>If set, all watermark overlays will be disabled for channels
-                    assigned this transcode config.</Trans>
+                    <Trans>
+                      If set, all watermark overlays will be disabled for
+                      channels assigned this transcode config.
+                    </Trans>
                   </FormHelperText>
                 </FormControl>
               </Grid>
@@ -223,11 +229,13 @@ export const TranscodeConfigSettingsForm = ({
                       <Trans>Advanced Video Options</Trans>
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 2 }}>
-                      <Trans>Advanced options relating to transcoding. In general, do
-                      not change these unless you know what you are doing! These
-                      settings exist in order to leave some parity with the old
-                      dizqueTV transcode pipeline as well as to provide
-                      mechanisms to aid in debugging streaming issues.</Trans>
+                      <Trans>
+                        Advanced options relating to transcoding. In general, do
+                        not change these unless you know what you are doing!
+                        These settings exist in order to leave some parity with
+                        the old dizqueTV transcode pipeline as well as to
+                        provide mechanisms to aid in debugging streaming issues.
+                      </Trans>
                     </Typography>
                     <TranscodeConfigAdvancedOptions
                       initialConfig={initialConfig}
@@ -273,7 +281,11 @@ export const TranscodeConfigSettingsForm = ({
                     disabled={!canSubmit}
                     type="submit"
                   >
-                    {isSubmitting ? <Trans>Submitting...</Trans> : <Trans>Submit</Trans>}
+                    {isSubmitting ? (
+                      <Trans>Submitting...</Trans>
+                    ) : (
+                      <Trans>Submit</Trans>
+                    )}
                   </Button>
                 </>
               )}

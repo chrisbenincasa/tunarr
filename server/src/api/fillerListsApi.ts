@@ -85,7 +85,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
       if (isNil(filler)) {
         return res.status(404).send();
       }
-      await req.serverCtx.fillerDB.deleteFiller(req.params.id);
+      req.serverCtx.fillerDB.deleteFiller(req.params.id);
       return res.send();
     },
   );

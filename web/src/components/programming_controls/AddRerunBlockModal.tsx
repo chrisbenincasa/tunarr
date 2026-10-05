@@ -28,15 +28,21 @@ const AddRerunBlockModal = ({ open, onClose }: AddRerunModalProps) => {
 
   return (
     <Dialog open={open}>
-      <DialogTitle><Trans>Create Rerun Block</Trans></DialogTitle>
+      <DialogTitle>
+        <Trans>Create Rerun Block</Trans>
+      </DialogTitle>
       <DialogContent>
         <DialogContentText>
-          <Trans>Divides the programming in blocks of 4, 6, 8 or 12 hours then repeats
-          each of the blocks the specified number of times.</Trans>
+          <Trans>
+            Divides the programming in blocks of 4, 6, 8 or 12 hours then
+            repeats each of the blocks the specified number of times.
+          </Trans>
         </DialogContentText>
         <FormGroup>
           <FormControl sx={{ my: 1, flexGrow: 1 }}>
-            <InputLabel id="rerun-hours-start-label"><Trans>Start</Trans></InputLabel>
+            <InputLabel id="rerun-hours-start-label">
+              <Trans>Start</Trans>
+            </InputLabel>
             <Select
               value={'fixed'}
               label={'Type'}
@@ -52,7 +58,9 @@ const AddRerunBlockModal = ({ open, onClose }: AddRerunModalProps) => {
             </Select>
           </FormControl>
           <FormControl sx={{ my: 1, flexGrow: 1 }}>
-            <InputLabel id="rerun-block-label"><Trans>Block</Trans></InputLabel>
+            <InputLabel id="rerun-block-label">
+              <Trans>Block</Trans>
+            </InputLabel>
             <Select
               value={'fixed'}
               label={'Type'}
@@ -67,7 +75,9 @@ const AddRerunBlockModal = ({ open, onClose }: AddRerunModalProps) => {
             </Select>
           </FormControl>
           <FormControl sx={{ my: 1, display: 'flex', flexGrow: 1 }}>
-            <InputLabel id="rerun-repeats-label"><Trans>Repeats</Trans></InputLabel>
+            <InputLabel id="rerun-repeats-label">
+              <Trans>Repeats</Trans>
+            </InputLabel>
             <Select
               value={'fixed'}
               label={'Type'}
@@ -84,7 +94,9 @@ const AddRerunBlockModal = ({ open, onClose }: AddRerunModalProps) => {
         </FormGroup>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button variant="contained" onClick={() => rerunBlockProgramming()}>
           <Trans>Save</Trans>
         </Button>

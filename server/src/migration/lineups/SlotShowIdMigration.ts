@@ -1,8 +1,8 @@
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
 
 import { inject, injectable } from 'inversify';
 import { JSONPath } from 'jsonpath-plus';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { KEYS } from '../../types/inject.ts';
 import type { JsonObject } from '../../types/schemas.ts';
 import { InjectLogger } from '../../util/inject.ts';
@@ -13,14 +13,12 @@ export const uuidRegex =
 
 @injectable()
 export class SlotShowIdMigration extends ChannelLineupMigration<1, 2> {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   readonly from = 1;
   readonly to = 2;
 
-  constructor(
-    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
-  ) {
+  constructor(@inject(KEYS.ProgramDB) private programDB: IProgramDB) {
     super();
   }
 

@@ -3,22 +3,17 @@ import { Box, LinearProgress, Typography } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type {
-  MediaSourceContentType,
   MediaSourceLibrary,
   MediaSourceSettings,
   ProgramOrFolder,
 } from '@tunarr/types';
-import { type ProgramLike } from '@tunarr/types';
 import { type ProgramSearchResponse } from '@tunarr/types/api';
-import type {
-  SearchFilter,
-  SearchRequest,
-  SearchSort,
-} from '@tunarr/types/schemas';
+import type { SearchRequest, SearchSort } from '@tunarr/types/schemas';
 import { groupBy, isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo } from 'react';
 import { match, P } from 'ts-pattern';
 import { postApiProgramsSearch } from '../../generated/sdk.gen.ts';
+import { defaultLibrarySearchFilter } from '../../helpers/programUtil.ts';
 import { useProgramHierarchy } from '../../hooks/channel_config/useProgramHierarchy.ts';
 import { getChildSearchFilter } from '../../hooks/useProgramSearch.ts';
 import useStore from '../../store/index.ts';
@@ -42,36 +37,6 @@ type Props = {
   parentContext?: ProgramOrFolder[];
   searchRequest?: SearchRequest;
 };
-
-function searchItemTypeFromContentType(
-  mediaType: MediaSourceContentType,
-): ProgramLike['type'] {
-  switch (mediaType) {
-    case 'movies':
-      return 'movie';
-    case 'shows':
-      return 'show';
-    case 'tracks':
-      return 'artist';
-    case 'other_videos':
-      return 'other_video';
-    case 'music_videos':
-      return 'music_video';
-  }
-}
-
-function typeFilter(mediaType: MediaSourceContentType): SearchFilter {
-  return {
-    type: 'value',
-    fieldSpec: {
-      key: 'type',
-      name: 'Type',
-      op: '=',
-      type: 'string',
-      value: [searchItemTypeFromContentType(mediaType)],
-    },
-  };
-}
 
 export const LibraryProgramGrid = ({
   mediaSource,
@@ -111,16 +76,8 @@ export const LibraryProgramGrid = ({
       return staticSearchRequest;
     }
 
-    const filter = match([searchRequest?.filter, mediaSource, library])
-      .returnType<SearchFilter | null>()
-      .with([P.select(P.nonNullable), P._, P._], (filter) => filter)
-      .with([P._, { mediaType: P.select(P.nonNullable) }, P.nullish], (typ) =>
-        typeFilter(typ),
-      )
-      .with([P._, P._, P.select(P.nonNullable)], ({ mediaType }) =>
-        typeFilter(mediaType),
-      )
-      .otherwise(() => null);
+    const filter =
+      searchRequest?.filter ?? defaultLibrarySearchFilter(mediaSource, library);
 
     return {
       query: searchRequest?.query,
@@ -230,10 +187,12 @@ export const LibraryProgramGrid = ({
     <Box sx={{ mt: 1 }}>
       {depth === 0 && !isUndefined(totalHits) && (
         <Typography textAlign="right" variant="subtitle2">
-          <Trans>Total hits:{' '}
-          {isNonEmptyString(query.query) && totalHits >= 1000
-            ? '>1000'
-            : totalHits}</Trans>
+          <Trans>
+            Total hits:{' '}
+            {isNonEmptyString(query.query) && totalHits >= 1000
+              ? '>1000'
+              : totalHits}
+          </Trans>
         </Typography>
       )}
       {search.isLoading && <LinearProgress />}

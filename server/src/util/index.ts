@@ -213,12 +213,13 @@ export function timeoutPromise<T>(
   ms: number | Duration,
 ): Promise<T> {
   ms = dayjs.isDuration(ms) ? +ms : ms;
+  let timer: Maybe<NodeJS.Timeout>;
   return Promise.race([
     promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms),
-    ),
-  ]);
+    new Promise<T>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
 }
 
 function deepCopyArray<T>(value: T[] | undefined): T[] | undefined {

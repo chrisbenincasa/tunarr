@@ -1,4 +1,5 @@
 import { forEach } from 'lodash-es';
+import throttle from './throttle.ts';
 
 // K -> V => V -> K[]
 export function flipMap<K extends string, V, K2 extends PropertyKey>(
@@ -30,4 +31,30 @@ export function filterValues<K extends PropertyKey, V>(
     out[key] = val.filter(filter);
   }
   return out;
+}
+
+export async function throttledLoop<T, U = void>(
+  input: Array<T>,
+  cb: (element: T) => Promise<U>,
+  leading: boolean = true,
+): Promise<void> {
+  for (const element of input) {
+    if (leading) await throttle();
+    await cb(element);
+    if (!leading) await throttle();
+  }
+}
+
+export async function throttledAccumulate<T, U>(
+  input: Array<T>,
+  cb: (element: T) => Promise<Array<U>>,
+  accFunc: (acc: Array<U>, result: Array<U>) => void = (acc, res) =>
+    acc.push(...res),
+): Promise<Array<U>> {
+  const results: Array<U> = [];
+  await throttledLoop(input, async (element) => {
+    const res = await cb(element);
+    accFunc(results, res);
+  });
+  return results;
 }

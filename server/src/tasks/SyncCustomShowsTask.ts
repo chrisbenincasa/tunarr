@@ -2,7 +2,7 @@ import type { Tag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { CustomShowSyncService } from '../services/CustomShowSyncService.ts';
 import { InjectLogger } from '../util/inject.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import type { Logger } from '../util/logging/LoggerFactory.ts';
 import type { TaskMetadata } from './Task.ts';
 import { SimpleTask } from './Task.ts';
 import { simpleTaskDef } from './TaskRegistry.ts';
@@ -19,7 +19,7 @@ export class SyncCustomShowsTask extends SimpleTask {
     TaskMetadata
   >;
 
-  @InjectLogger() protected declare readonly logger: Logger;
+  @InjectLogger() declare protected readonly logger: Logger;
 
   constructor(
     @inject(CustomShowSyncService)

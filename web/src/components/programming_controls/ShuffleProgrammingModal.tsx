@@ -24,12 +24,11 @@ type Props = {
 
 export type ShuffleGroupingValue = 'none' | 'show';
 
-export const ShuffleProgrammingModal = ({
-  open,
+const ShuffleProgrammingModalContent = ({
   onClose,
   onShuffleTypeChange,
   shuffleType,
-}: Props) => {
+}: Omit<Props, 'open'>) => {
   const { t } = useLingui();
   const shuffler = useProgramShuffle();
 
@@ -39,12 +38,16 @@ export const ShuffleProgrammingModal = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth>
-      <DialogTitle><Trans>Shuffle Programming</Trans></DialogTitle>
+    <>
+      <DialogTitle>
+        <Trans>Shuffle Programming</Trans>
+      </DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
           <FormControl sx={{ width: '100%' }}>
-            <InputLabel><Trans>Shuffle Grouping</Trans></InputLabel>
+            <InputLabel>
+              <Trans>Shuffle Grouping</Trans>
+            </InputLabel>
             <Select
               label={t`Shuffle Grouping`}
               value={shuffleType}
@@ -52,20 +55,31 @@ export const ShuffleProgrammingModal = ({
                 onShuffleTypeChange(v.target.value as ShuffleGroupingValue)
               }
             >
-              <MenuItem value={'none'}><Trans>None</Trans></MenuItem>
-              <MenuItem value={'show'}><Trans>Show</Trans></MenuItem>
+              <MenuItem value={'none'}>
+                <Trans>None</Trans>
+              </MenuItem>
+              <MenuItem value={'show'}>
+                <Trans>Show</Trans>
+              </MenuItem>
             </Select>
             <FormHelperText>
-              <Trans>Shuffle programming in a channel, optionally grouping programs by
-              certain criteria.</Trans>
+              <Trans>
+                Shuffle programming in a channel, optionally grouping programs
+                by certain criteria.
+              </Trans>
               <br />
               <ul>
                 <li>
-                  <strong><Trans>None:</Trans></strong>{' '}<Trans>Do not group programs at all. Normal
-                  shuffle.</Trans>
+                  <strong>
+                    <Trans>None:</Trans>
+                  </strong>{' '}
+                  <Trans>Do not group programs at all. Normal shuffle.</Trans>
                 </li>
                 <li>
-                  <strong><Trans>Show:</Trans></strong>{' '}<Trans>Group episode programs by their show.</Trans>
+                  <strong>
+                    <Trans>Show:</Trans>
+                  </strong>{' '}
+                  <Trans>Group episode programs by their show.</Trans>
                 </li>
               </ul>
             </FormHelperText>
@@ -73,7 +87,9 @@ export const ShuffleProgrammingModal = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}><Trans>Cancel</Trans></Button>
+        <Button onClick={() => onClose()}>
+          <Trans>Cancel</Trans>
+        </Button>
         <Button
           onClick={() => handleShuffle()}
           startIcon={<Shuffle />}
@@ -82,6 +98,13 @@ export const ShuffleProgrammingModal = ({
           <Trans>Shuffle</Trans>
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+// The content mounts only while the dialog is open, so it does no work when closed.
+export const ShuffleProgrammingModal = ({ open, ...props }: Props) => (
+  <Dialog open={open} onClose={props.onClose} fullWidth>
+    <ShuffleProgrammingModalContent {...props} />
+  </Dialog>
+);

@@ -11,6 +11,8 @@ export const CustomShowSchema = z.object({
   id: z.string(),
   name: z.string(),
   contentCount: z.number(),
+  // Members with a positive duration. A custom show slot needs at least one.
+  schedulableContentCount: z.number(),
   programs: z.array(CustomProgramSchema).optional(),
   totalDuration: z.number().nonnegative(),
   syncMediaSourceId: z.string().nullish(),

@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable } from 'kysely';
 import { Channel } from './Channel.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
@@ -15,7 +15,10 @@ export const ChannelPrograms = sqliteTable(
       .notNull()
       .references(() => Program.uuid, { onDelete: 'cascade' }),
   },
-  (table) => [primaryKey({ columns: [table.channelUuid, table.programUuid] })],
+  (table) => [
+    primaryKey({ columns: [table.channelUuid, table.programUuid] }),
+    index('channel_programs_program_uuid_idx').on(table.programUuid),
+  ],
 );
 
 export type ChannelProgramsTable = KyselifyBetter<typeof ChannelPrograms>;

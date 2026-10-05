@@ -30,6 +30,8 @@ Expand the menu on the right to view a summary of your changes, then select "ADD
 
 To use a filler list with your channels, edit your channel and select the [Flex](/configure/channels/flex) tab.
 
+For how Tunarr decides which clip to play at each break, see [How Filler Is Chosen](/configure/library/filler-selection).
+
 ## Filler Types
 
 When using slot-based scheduling tools ([Slot Editor](/configure/scheduling/random-slots), [Time Slots](/configure/scheduling/time-slots)), filler lists can be assigned to specific positions within a slot:

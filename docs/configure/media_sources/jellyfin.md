@@ -54,6 +54,8 @@ You will be presented with the Jellyfin libraries that Tunarr is able to sync:
 
 Upon selecting libraries, they will be queued for synchronization. Tunarr will only sync one library per-source at a time. By default, Media Source libraries are all synchronized once every 6 hours. This period can be configured on the Media Source settings page.
 
+Tunarr checks the Jellyfin library list every hour. If Jellyfin stops reporting a library, Tunarr marks it **Unavailable** instead of deleting it. The library's programs and channel schedules are kept, and Tunarr skips the library during scans. When Jellyfin reports the library again, Tunarr marks it available and resumes scanning. Your choice to enable or disable the library does not change. See [Library shows as Unavailable](../../misc/common-issues.md#library-shows-as-unavailable) for common causes.
+
 ## Stream from Disk
 
 When using external Media Sources, it is recommended to ensure Tunarr has access to the underlying media files, which can greatly improve streaming performance and stability while reducing network activity. There are 2 ways to achieve this:

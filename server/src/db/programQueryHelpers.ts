@@ -1,21 +1,14 @@
 import { mapToObj } from '@/util/index.js';
-import { seq } from '@tunarr/shared/util';
 import { type TupleToUnion } from '@tunarr/types';
 import { sql } from 'drizzle-orm';
 import { toSnakeCase } from 'drizzle-orm/casing';
 import type { ExpressionBuilder } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
-import { isUndefined } from 'lodash-es';
 import type { StrictExclude } from 'ts-essentials';
 import type { Replace } from '../types/util.ts';
 import type { ProgramTable as RawProgram } from './schema/Program.ts';
 import type { ProgramExternalId } from './schema/ProgramExternalId.ts';
 import { ProgramExternalIdFieldsWithAlias } from './schema/ProgramExternalId.ts';
-import type {
-  ProgramGrouping,
-  ProgramGroupingFields,
-  ProgramGroupingUpdate,
-} from './schema/ProgramGrouping.ts';
 import type { DB } from './schema/db.ts';
 
 export function withProgramExternalIds(
@@ -35,17 +28,7 @@ export function withProgramExternalIds(
   ).as('externalIds');
 }
 
-export type ProgramJoins = {
-  trackAlbum: boolean | ProgramGroupingFields;
-  trackArtist: boolean | ProgramGroupingFields;
-  tvShow: boolean | ProgramGroupingFields;
-  tvSeason: boolean | ProgramGroupingFields;
-  customShows: boolean;
-  programVersions: boolean;
-};
-
 type ProgramField = `program.${keyof RawProgram}`;
-type ProgramFields = readonly ProgramField[];
 
 export const AllProgramFields = [
   'program.uuid',
@@ -118,12 +101,6 @@ export const ProgramUpsertSetClause = mapToObj(ProgramUpsertFields, (f) => ({
   [f]: sql`excluded.${sql.identifier(toSnakeCase(f))}`,
 }));
 
-type ProgramGroupingField = `programGrouping.${keyof ProgramGrouping}`;
-type ProgramGroupingUpsertFields = StrictExclude<
-  Replace<ProgramGroupingField, 'programGrouping', 'excluded'>,
-  'excluded.uuid' | 'excluded.createdAt'
->;
-
 export const AllProgramGroupingFields = [
   'programGrouping.uuid',
   'programGrouping.canonicalId',
@@ -146,47 +123,3 @@ export const AllProgramGroupingFields = [
   'programGrouping.tagline',
   'programGrouping.plot',
 ] as const;
-
-const ProgramGroupingUpsertIgnoreFields = [
-  'programGrouping.uuid',
-  'programGrouping.createdAt',
-] as const;
-
-type KnownProgramGroupingUpsertFields = StrictExclude<
-  TupleToUnion<typeof AllProgramGroupingFields>,
-  TupleToUnion<typeof ProgramGroupingUpsertIgnoreFields>
->;
-
-export function getProgramGroupingUpsertFields(
-  update: ProgramGroupingUpdate,
-): ProgramGroupingUpsertFields[] {
-  const withoutExcluded = AllProgramGroupingFields.filter(
-    (f): f is KnownProgramGroupingUpsertFields => {
-      return !(
-        ProgramGroupingUpsertIgnoreFields as ReadonlyArray<ProgramGroupingField>
-      ).includes(f);
-    },
-  );
-
-  return seq.collect(withoutExcluded, (field) => {
-    const name = field.replace('programGrouping.', '') as Replace<
-      KnownProgramGroupingUpsertFields,
-      'programGrouping.',
-      ''
-    >;
-    if (isUndefined(update[name])) {
-      return;
-    }
-    return `excluded.${name}` as Replace<
-      typeof field,
-      'programGrouping',
-      'excluded'
-    >;
-  });
-}
-
-export type WithProgramsOptions = {
-  joins?: Partial<ProgramJoins>;
-  fields?: ProgramFields;
-  includeGroupingExternalIds?: boolean;
-};

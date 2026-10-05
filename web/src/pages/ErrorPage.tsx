@@ -52,7 +52,9 @@ export function ErrorPage({ error }: Props) {
         <Typography variant="h2" sx={{ pb: 1 }}>
           <Trans>Oops!</Trans>
         </Typography>
-        <Typography><Trans>Looks like something went wrong.</Trans></Typography>
+        <Typography>
+          <Trans>Looks like something went wrong.</Trans>
+        </Typography>
       </div>
       <Stack direction="row" sx={{ justifyContent: 'center' }} gap={2}>
         <Button
@@ -70,9 +72,11 @@ export function ErrorPage({ error }: Props) {
           startIcon={versionLoading ? <RotatingLoopIcon /> : <GitHub />}
           disabled={versionLoading}
         >
-          {versionLoading
-            ? <Trans>Generating Bug Report Link...</Trans>
-            : <Trans>File a Bug Report</Trans>}
+          {versionLoading ? (
+            <Trans>Generating Bug Report Link...</Trans>
+          ) : (
+            <Trans>File a Bug Report</Trans>
+          )}
         </Button>
       </Stack>
       {stack && (

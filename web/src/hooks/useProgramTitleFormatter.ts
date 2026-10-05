@@ -97,18 +97,15 @@ export const useProgramTitleFormatter = () => {
         title += ` ${baseItemTitleFormatter(program.program)}`;
       }
 
-      let dur: string;
-      if (program.type === 'content' && program.startOffsetMs) {
-        dur = betterHumanize(
-          dayjs.duration(program.duration - program.startOffsetMs),
-          { exact: true },
-        );
-      } else {
-        dur = betterHumanize(
-          dayjs.duration({ milliseconds: program.duration }),
-          { exact: true },
-        );
-      }
+      // `duration` is the length of this lineup entry, not of the whole
+      // program: a mid-roll segment carries the length of that segment and a
+      // `startOffsetMs` saying where in the program it picks up. Subtracting
+      // the offset here rendered every segment after the first as shorter than
+      // it is -- the second 12 minute segment of a program showed as 0 minutes.
+      const dur = betterHumanize(
+        dayjs.duration({ milliseconds: program.duration }),
+        { exact: true },
+      );
 
       return `${title} - (${dur})`;
     },

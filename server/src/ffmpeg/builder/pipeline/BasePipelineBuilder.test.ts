@@ -1,16 +1,31 @@
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
 import { FileStreamSource } from '../../../stream/types.ts';
 import { EmptyFfmpegCapabilities } from '../capabilities/FfmpegCapabilities.ts';
+import {
+  defaultHlsOptions,
+  HlsDirectOutputFormat,
+  HlsOutputFormat,
+} from '../constants.ts';
 import { AudioVolumeFilter } from '../filter/AudioVolumeFilter.ts';
 import { LoudnormFilter } from '../filter/LoudnormFilter.ts';
 import { PixelFormatYuv420P } from '../format/PixelFormat.ts';
 import { AudioInputSource } from '../input/AudioInputSource.ts';
+import { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
 import { VideoInputSource } from '../input/VideoInputSource.ts';
-import { AudioStream, VideoStream } from '../MediaStream.ts';
+import {
+  AudioStream,
+  ExternalSubtitleStream,
+  SubtitleMethods,
+  VideoStream,
+} from '../MediaStream.ts';
 import { AudioState } from '../state/AudioState.ts';
 import { DefaultPipelineOptions, FfmpegState } from '../state/FfmpegState.ts';
 import { FrameState } from '../state/FrameState.ts';
 import { FrameSize } from '../types.ts';
 import { BasePipelineBuilder } from './BasePipelineBuilder.ts';
+
+dayjs.extend(duration);
 
 class NoopPipelineBuilder extends BasePipelineBuilder {
   protected setupVideoFilters(): void {}
@@ -386,5 +401,148 @@ describe('BasePipelineBuilder', () => {
     );
 
     expect(loudnormFilter).toBeUndefined();
+  });
+
+  test('always add channel count for Opus', () => {
+    const audio = AudioInputSource.withStream(
+      new FileStreamSource('/path/to/movie.mkv'),
+      AudioStream.create({
+        channels: 6,
+        codec: 'ac3',
+        index: 0,
+      }),
+      AudioState.create({
+        audioEncoder: 'libopus',
+        audioChannels: 6,
+      }),
+    );
+
+    const pipeline = new NoopPipelineBuilder(
+      video,
+      audio,
+      null,
+      null,
+      null,
+      EmptyFfmpegCapabilities,
+    );
+
+    const result = pipeline.build(state, frameState, DefaultPipelineOptions);
+    const commandArgs = result.getCommandArgs();
+    const channelIdx = commandArgs?.indexOf('-ac');
+    expect(channelIdx).toBeDefined();
+    expect(commandArgs?.at(channelIdx + 1)).toBe('6');
+  });
+
+  // Fresh video/audio input sources per seek test: BasePipelineBuilder
+  // mutates the input sources it's given (addOptions), so reusing the
+  // describe-level `video`/`audio` here would leak `-ss` flags added by
+  // one test's build() into another test's assertions.
+  function makeVideo() {
+    return VideoInputSource.withStream(
+      new FileStreamSource('/path/to/video.mkv'),
+      VideoStream.create({
+        codec: 'h264',
+        displayAspectRatio: '16:9',
+        frameSize: FrameSize.withDimensions(1920, 900),
+        index: 0,
+        pixelFormat: new PixelFormatYuv420P(),
+        providedSampleAspectRatio: null,
+      }),
+    );
+  }
+
+  function makeAudio() {
+    return AudioInputSource.withStream(
+      new FileStreamSource('/path/to/song.flac'),
+      AudioStream.create({
+        channels: 2,
+        codec: 'flac',
+        index: 0,
+      }),
+      AudioState.create({
+        audioBitrate: 192,
+        audioBufferSize: 192 * 2,
+        audioChannels: 2,
+        audioVolume: 150,
+      }),
+    );
+  }
+
+  test('apply the stream seek offset to an external sidecar subtitle input on the hls (transcode) output', () => {
+    const seekState = FfmpegState.create({
+      version: state.version,
+      start: dayjs.duration(90_000),
+      outputFormat: HlsOutputFormat(defaultHlsOptions),
+    });
+
+    const subtitle = new SubtitlesInputSource(
+      new FileStreamSource('/path/to/movie.srt'),
+      [new ExternalSubtitleStream('subrip', SubtitleMethods.Convert)],
+      SubtitleMethods.Convert,
+    );
+
+    const pipeline = new NoopPipelineBuilder(
+      makeVideo(),
+      makeAudio(),
+      null,
+      subtitle,
+      null,
+      EmptyFfmpegCapabilities,
+    );
+
+    const result = pipeline.build(
+      seekState,
+      frameState,
+      DefaultPipelineOptions,
+    );
+    const commandArgs = result.getCommandArgs();
+
+    const subtitleInputIdx = commandArgs.indexOf('/path/to/movie.srt');
+    expect(subtitleInputIdx).toBeGreaterThan(0);
+    expect(commandArgs[subtitleInputIdx - 1]).toBe('-i');
+    expect(commandArgs[subtitleInputIdx - 2]).toBe('90000ms');
+    expect(commandArgs[subtitleInputIdx - 3]).toBe('-ss');
+    expect(commandArgs[subtitleInputIdx - 4]).toBe('1');
+    expect(commandArgs[subtitleInputIdx - 5]).toBe('-seek_timestamp');
+  });
+
+  test('do not seek the external sidecar subtitle input on the hls_direct_v2 output', () => {
+    const seekState = FfmpegState.create({
+      version: state.version,
+      start: dayjs.duration(90_000),
+      outputFormat: HlsDirectOutputFormat(defaultHlsOptions),
+    });
+
+    const subtitle = new SubtitlesInputSource(
+      new FileStreamSource('/path/to/movie.srt'),
+      [new ExternalSubtitleStream('subrip', SubtitleMethods.Convert)],
+      SubtitleMethods.Convert,
+    );
+
+    const pipeline = new NoopPipelineBuilder(
+      makeVideo(),
+      makeAudio(),
+      null,
+      subtitle,
+      null,
+      EmptyFfmpegCapabilities,
+    );
+
+    const result = pipeline.build(
+      seekState,
+      frameState,
+      DefaultPipelineOptions,
+    );
+    const commandArgs = result.getCommandArgs();
+
+    const subtitleInputIdx = commandArgs.indexOf('/path/to/movie.srt');
+    expect(subtitleInputIdx).toBeGreaterThan(0);
+    expect(commandArgs[subtitleInputIdx - 1]).toBe('-i');
+    expect(commandArgs).not.toContain('-seek_timestamp');
+    expect(commandArgs[subtitleInputIdx - 2]).not.toBe('-ss');
+
+    // video/audio are still seeked (subtitle is not, so only 2 -ss flags)
+    const seekCount = commandArgs.filter((arg) => arg === '-ss').length;
+    expect(seekCount).toBe(2);
   });
 });

@@ -3,7 +3,7 @@ import { FileSystemService } from '@/services/FileSystemService.js';
 import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
 import { jsonSchema } from '@/types/schemas.js';
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import dayjs from '@/util/dayjs.js';
@@ -11,18 +11,18 @@ import { fileExists, writeFileAtomic } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { seq } from '@tunarr/shared/util';
-import {
+import type {
   ChannelProgram,
   CondensedChannelProgram,
   CondensedChannelProgramming,
   CondensedContentProgram,
   ContentProgram,
 } from '@tunarr/types';
-import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
-import { CondensedFillerProgram } from '@tunarr/types/schemas';
+import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
+import type { CondensedFillerProgram } from '@tunarr/types/schemas';
 import { and, eq, inArray, notInArray } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import {
   chunk,
   drop,
@@ -48,11 +48,11 @@ import {
 import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
-import { MarkRequired } from 'ts-essentials';
-import { match } from 'ts-pattern';
+import type { MarkRequired } from 'ts-essentials';
 import { MaterializeLineupCommand } from '../../commands/MaterializeLineupCommand.ts';
 import { MaterializeProgramsCommand } from '../../commands/MaterializeProgramsCommand.ts';
-import { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
+import type { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
+import { ScheduleValidationError } from '../../types/errors.ts';
 import {
   asyncMapToRecord,
   groupByUniqProp,
@@ -60,38 +60,42 @@ import {
   isNonEmptyString,
   mapReduceAsyncSeq,
   run,
+  wait,
 } from '../../util/index.ts';
 import { ProgramConverter } from '../converters/ProgramConverter.ts';
-import {
+import { LineupProgramRelations } from '../program/programRelations.ts';
+import type {
   ContentItem,
+  Lineup,
+  LineupConfig,
+  LineupItem,
+} from '../derived_types/Lineup.ts';
+import {
   CurrentLineupSchemaVersion,
   isContentItem,
   isOfflineItem,
   isRedirectItem,
-  Lineup,
-  LineupConfig,
-  LineupItem,
   LineupSchema,
 } from '../derived_types/Lineup.ts';
-import {
+import type {
   ChannelAndLineup,
   ChannelAndRawLineup,
   UpdateChannelLineupRequest,
 } from '../interfaces/IChannelDB.ts';
 import { SchemaBackedDbAdapter } from '../json/SchemaBackedJsonDBAdapter.ts';
 import { calculateStartTimeOffsets } from '../lineupUtil.ts';
-import { Channel, ChannelOrm } from '../schema/Channel.ts';
-import {
-  ChannelPrograms,
-  NewChannelProgram,
-} from '../schema/ChannelPrograms.ts';
-import { DB } from '../schema/db.ts';
-import {
+import type { ChannelOrm } from '../schema/Channel.ts';
+import { Channel } from '../schema/Channel.ts';
+import type { NewChannelProgram } from '../schema/ChannelPrograms.ts';
+import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
+import type { DB } from '../schema/db.ts';
+import type {
   ChannelOrmWithPrograms,
   ChannelOrmWithRelations,
 } from '../schema/derivedTypes.ts';
-import { DrizzleDBAccess } from '../schema/index.ts';
-import { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
+import type { DrizzleDBAccess } from '../schema/index.ts';
+import type { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
+import { condensedProgramToLineupItem } from './lineupItemConversion.ts';
 
 // Module-level cache shared within this module
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
@@ -101,42 +105,24 @@ const SqliteMaxDepthLimit = 1000;
 
 type ProgramRelationOperation = { operation: 'add' | 'remove'; id: string };
 
-function channelProgramToLineupItemFunc(
-  p: CondensedChannelProgram,
-): LineupItem {
-  return match(p)
-    .returnType<LineupItem>()
-    .with({ type: 'content' }, (program) => ({
-      type: 'content',
-      id: program.id,
-      durationMs: program.duration,
-      startOffsetMs: program.startOffsetMs,
-    }))
-    .with({ type: 'custom' }, (program) => ({
-      type: 'content',
-      durationMs: program.duration,
-      id: program.id,
-      customShowId: program.customShowId,
-    }))
-    .with({ type: 'filler' }, (program) => ({
-      type: 'content',
-      durationMs: program.duration,
-      id: program.id,
-      fillerListId: program.fillerListId,
-      fillerType: program.fillerType,
-    }))
-    .with({ type: 'redirect' }, (program) => ({
-      type: 'redirect',
-      channel: program.channel,
-      durationMs: program.duration,
-    }))
-    .with({ type: 'flex' }, (program) => ({
-      type: 'offline',
-      durationMs: program.duration,
-      fillerConfig: program.fillerConfig,
-    }))
-    .exhaustive();
-}
+/**
+ * The outcome of a lineup update.
+ *
+ * `materializedPrograms` is present only for schedule-generated updates (time
+ * and random slots), where the programs had to be loaded and converted anyway
+ * in order to build the lineup. It is handed back so the caller can construct
+ * its API response without repeating that work — it is the single most
+ * expensive part of the save, and it used to be done twice.
+ *
+ * Manual lineup edits do not populate it: the request carries program ids
+ * rather than program details, so nothing was materialized and the caller has
+ * to load the lineup the long way.
+ */
+export type UpdateLineupResult = {
+  channel: ChannelOrm;
+  newLineup: LineupItem[];
+  materializedPrograms?: Record<string, ContentProgram>;
+};
 
 @injectable()
 export class LineupRepository {
@@ -296,7 +282,7 @@ export class LineupRepository {
       const newDur = sum(newLineup.items.map((item) => item.durationMs));
       await this.updateChannelDuration(channelId, newDur);
     }
-    return db.data;
+    return LineupRepository.snapshotLineup(db.data);
   }
 
   static applyUpdateLineupRequest(
@@ -445,19 +431,33 @@ export class LineupRepository {
     await this.saveLineup(channelId, lineup);
   }
 
-  async removeProgramsFromAllLineups(programIds: string[]): Promise<void> {
-    if (isEmpty(programIds)) {
-      return;
+  /**
+   * Rewrites every reference to the given programs as flex, across all channel
+   * lineups. Returns the number of channels that actually changed.
+   *
+   * Accepts a Set so large callers (the empty-trash drain) can avoid rebuilding
+   * one per call.
+   */
+  async removeProgramsFromAllLineups(
+    programIds: ReadonlySet<string> | string[],
+  ): Promise<number> {
+    const programsToRemove =
+      programIds instanceof Set ? programIds : new Set(programIds);
+
+    if (programsToRemove.size === 0) {
+      return 0;
     }
 
     const lineups = await this.loadAllLineups();
 
-    const programsToRemove = new Set(programIds);
+    let changedChannels = 0;
     for (const [channelId, { lineup }] of Object.entries(lineups)) {
+      let changed = false;
       const newLineupItems: LineupItem[] = lineup.items.map((item) => {
         switch (item.type) {
           case 'content': {
             if (programsToRemove.has(item.id)) {
+              changed = true;
               return {
                 type: 'offline',
                 durationMs: item.durationMs,
@@ -471,20 +471,20 @@ export class LineupRepository {
         }
       });
 
-      await this.saveLineup(channelId, {
-        ...lineup,
-        items: newLineupItems,
-      });
+      if (changed) {
+        // saveLineup recalculates and persists channel.duration itself.
+        await this.saveLineup(channelId, {
+          ...lineup,
+          items: newLineupItems,
+        });
+        changedChannels++;
+      }
 
-      const duration = sum(newLineupItems.map((item) => item.durationMs));
-
-      await this.db
-        .updateTable('channel')
-        .set({ duration })
-        .where('uuid', '=', channelId)
-        .limit(1)
-        .executeTakeFirst();
+      // Give the event loop a turn so a large install stays responsive.
+      await wait(0);
     }
+
+    return changedChannels;
   }
 
   async loadAllLineups(): Promise<
@@ -503,7 +503,7 @@ export class LineupRepository {
         prev[channel.uuid] = { channel, lineup };
         return prev;
       },
-      {} as Record<string, { channel: ChannelOrm; lineup: Lineup }>,
+      {},
     );
   }
 
@@ -560,7 +560,18 @@ export class LineupRepository {
     forceRead: boolean = false,
   ): Promise<Lineup> {
     const db = await this.getFileDb(channelId, forceRead);
-    return db.data;
+    return LineupRepository.snapshotLineup(db.data);
+  }
+
+  /**
+   * Callers hold a lineup across await boundaries (the guide build reads
+   * `items` and `startTimeOffsets` interleaved with DB writes), so they must
+   * not be handed the cached `Low.data`. Every writer rebinds whole properties
+   * on `Low.data` rather than mutating the arrays in place, so a top-level copy
+   * is enough to pin a caller to the lineup it actually read.
+   */
+  private static snapshotLineup(data: Lineup): Lineup {
+    return { ...data };
   }
 
   async loadLineupConfig(channelId: string): Promise<LineupConfig> {
@@ -679,13 +690,7 @@ export class LineupRepository {
           where: (fields, { eq }) => eq(fields.channelUuid, channelId),
           with: {
             program: {
-              with: {
-                show: { with: { externalIds: true } },
-                season: { with: { externalIds: true } },
-                album: { with: { externalIds: true } },
-                artist: { with: { externalIds: true } },
-                externalIds: true,
-              },
+              with: LineupProgramRelations,
             },
           },
         }),
@@ -720,14 +725,79 @@ export class LineupRepository {
       return ret;
     });
 
+    return this.assembleCondensedLineup({
+      channel,
+      lineup,
+      pagedLineup,
+      totalPrograms: len,
+      materializedPrograms,
+      knownProgramIds: new Set([...Object.keys(programsById)]),
+      cleanOffset,
+      cleanLimit,
+    });
+  }
+
+  /**
+   * Builds a condensed lineup response for a channel whose programs have
+   * already been materialized.
+   *
+   * Skips the two expensive steps in `loadCondensedLineup` — the relational
+   * program query and MaterializeProgramsCommand — which together were about
+   * 175ms of a 200ms stall on a 2200 item lineup. Everything else is cheap: the
+   * lineup itself comes from a file, and the remaining queries are small.
+   */
+  async condensedLineupFromMaterialized(
+    channelId: string,
+    materializedPrograms: Record<string, ContentProgram>,
+  ): Promise<CondensedChannelProgramming | null> {
+    const lineup = await this.loadLineup(channelId);
+
+    const channel = await this.db
+      .selectFrom('channel')
+      .where('channel.uuid', '=', channelId)
+      .selectAll()
+      .executeTakeFirst();
+
+    if (isNil(channel)) {
+      return null;
+    }
+
+    return this.assembleCondensedLineup({
+      channel,
+      lineup,
+      // Copied because the lineup is exposed as readonly; buildCondensedLineup
+      // takes a mutable array. Trivial next to the work this call avoids.
+      pagedLineup: [...lineup.items],
+      totalPrograms: lineup.items.length,
+      materializedPrograms,
+      knownProgramIds: new Set(Object.keys(materializedPrograms)),
+      cleanOffset: 0,
+      cleanLimit: lineup.items.length,
+    });
+  }
+
+  private async assembleCondensedLineup({
+    channel,
+    lineup,
+    pagedLineup,
+    totalPrograms,
+    materializedPrograms,
+    knownProgramIds,
+    cleanOffset,
+    cleanLimit,
+  }: {
+    channel: Channel;
+    lineup: Lineup;
+    pagedLineup: LineupItem[];
+    totalPrograms: number;
+    materializedPrograms: Record<string, ContentProgram>;
+    knownProgramIds: Set<string>;
+    cleanOffset: number;
+    cleanLimit: number;
+  }): Promise<CondensedChannelProgramming> {
     const { lineup: condensedLineup, offsets } = await this.timer.timeAsync(
       'build condensed lineup',
-      () =>
-        this.buildCondensedLineup(
-          channel,
-          new Set([...Object.keys(programsById)]),
-          pagedLineup,
-        ),
+      () => this.buildCondensedLineup(channel, knownProgramIds, pagedLineup),
     );
 
     let apiOffsets: number[];
@@ -745,7 +815,7 @@ export class LineupRepository {
       icon: channel.icon,
       name: channel.name,
       number: channel.number,
-      totalPrograms: len,
+      totalPrograms,
       programs: omitBy(materializedPrograms, isNil),
       lineup: condensedLineup,
       startTimeOffsets: apiOffsets,
@@ -756,7 +826,7 @@ export class LineupRepository {
   async updateLineup(
     id: string,
     req: UpdateChannelProgrammingRequest,
-  ): Promise<Nullable<{ channel: ChannelOrm; newLineup: LineupItem[] }>> {
+  ): Promise<Nullable<UpdateLineupResult>> {
     const channel = await this.drizzleDB.query.channels.findFirst({
       where: (fields, { eq }) => eq(fields.uuid, id),
       with: {
@@ -853,12 +923,12 @@ export class LineupRepository {
       programs: ChannelProgram[],
       lineupPrograms: ChannelProgram[] = programs,
     ) => {
-      return map(lineupPrograms, channelProgramToLineupItemFunc);
+      return map(lineupPrograms, condensedProgramToLineupItem);
     };
 
     if (req.type === 'manual') {
       const newLineupItems = await run(async () => {
-        const newItems = req.lineup.map(channelProgramToLineupItemFunc);
+        const newItems = req.lineup.map(condensedProgramToLineupItem);
         if (req.append) {
           const existingLineup = await this.loadLineup(channel.uuid);
           return [...existingLineup.items, ...newItems];
@@ -866,6 +936,11 @@ export class LineupRepository {
           return newItems;
         }
       });
+
+      // Check the merged lineup, so an append cannot carry forward a stored
+      // item that no longer resolves.
+      await this.assertProgramsExist(newLineupItems);
+      this.assertValidLineup(lineup, newLineupItems, lineup.schedule);
 
       const updatedChannel = this.timer.timeSync('updateChannel', () =>
         updateChannel(newLineupItems),
@@ -889,6 +964,9 @@ export class LineupRepository {
       };
     } else if (req.type === 'time' || req.type === 'random') {
       let programs: ChannelProgram[];
+      // Held onto so the caller can build its response without re-querying and
+      // re-materializing every program. See UpdateLineupResult.
+      let materializedPrograms: Record<string, ContentProgram>;
       if (req.type === 'time') {
         const { result } = await this.workerPoolProvider().queueTask({
           type: 'time-slots',
@@ -898,14 +976,16 @@ export class LineupRepository {
             schedule: req.schedule,
             seed: req.seed,
             startTime: channel.startTime,
+            strictValidation: true,
           },
         });
 
+        materializedPrograms = await this.materializeLineupCommand.execute({
+          lineup: result.lineup,
+        });
         programs = MaterializeLineupCommand.expandLineup(
           result.lineup,
-          await this.materializeLineupCommand.execute({
-            lineup: result.lineup,
-          }),
+          materializedPrograms,
         );
       } else {
         const { result } = await this.workerPoolProvider().queueTask({
@@ -916,17 +996,20 @@ export class LineupRepository {
             startTime: channel.startTime,
             schedule: req.schedule,
             seed: req.seed,
+            strictValidation: true,
           },
+        });
+        materializedPrograms = await this.materializeLineupCommand.execute({
+          lineup: result.lineup,
         });
         programs = MaterializeLineupCommand.expandLineup(
           result.lineup,
-          await this.materializeLineupCommand.execute({
-            lineup: result.lineup,
-          }),
+          materializedPrograms,
         );
       }
 
       const newLineup = createNewLineup(programs);
+      this.assertValidLineup(lineup, newLineup, req.schedule);
 
       const updatedChannel = updateChannel(newLineup);
       await this.saveLineup(id, {
@@ -937,10 +1020,57 @@ export class LineupRepository {
       return {
         channel: updatedChannel,
         newLineup,
+        materializedPrograms,
       };
     }
 
     return null;
+  }
+
+  // The saved-lineup schema also runs on write, but by then channel SQL has
+  // changed and the cached lineup is already mutated. Check first.
+  private assertValidLineup(
+    current: Lineup,
+    items: LineupItem[],
+    schedule: Lineup['schedule'],
+  ) {
+    const result = LineupSchema.safeParse({
+      ...current,
+      items,
+      startTimeOffsets: calculateStartTimeOffsets(items),
+      schedule,
+    });
+
+    if (!result.success) {
+      const details = result.error.issues
+        .slice(0, 5)
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('; ');
+      throw new ScheduleValidationError(
+        `The new lineup is invalid: ${details}`,
+      );
+    }
+  }
+
+  private async assertProgramsExist(items: readonly LineupItem[]) {
+    const ids = uniq(map(filter(items, isContentItem), (item) => item.id));
+    const found = new Set<string>();
+    for (const idChunk of chunk(ids, 500)) {
+      const rows = await this.drizzleDB.query.program.findMany({
+        where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
+        columns: { uuid: true },
+      });
+      for (const row of rows) {
+        found.add(row.uuid);
+      }
+    }
+
+    const missing = ids.filter((id) => !found.has(id));
+    if (missing.length > 0) {
+      throw new ScheduleValidationError(
+        `The lineup references ${missing.length} program(s) that do not exist: ${missing.slice(0, 10).join(', ')}`,
+      );
+    }
   }
 
   private async buildCondensedLineup(
@@ -1019,6 +1149,7 @@ export class LineupRepository {
           duration: item.durationMs,
           index: customShowIndexes[item.customShowId]![item.id] ?? -1,
           id: item.id,
+          startOffsetMs: item.startOffsetMs,
         };
       } else if (isNonEmptyString(item.fillerListId)) {
         p = {

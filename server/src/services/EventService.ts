@@ -1,6 +1,6 @@
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { TunarrEvent } from '@tunarr/types';
-import { FastifyInstance } from 'fastify';
+import type { TunarrEvent } from '@tunarr/types';
+import type { FastifyInstance } from 'fastify';
 import { injectable } from 'inversify';
 import { isString } from 'lodash-es';
 import events from 'node:events';

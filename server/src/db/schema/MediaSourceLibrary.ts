@@ -19,6 +19,10 @@ export const MediaSourceLibrary = sqliteTable(
     lastScannedAt: integer({ mode: 'timestamp_ms' }),
     externalKey: text().notNull(),
     enabled: integer({ mode: 'boolean' }).default(false).notNull(),
+
+    // Set when the media server stops reporting this library. Independent of
+    // `enabled`, which is owned by the user.
+    unavailableSince: integer({ mode: 'timestamp_ms' }),
   },
   (table) => [
     check(
@@ -47,6 +51,7 @@ export const MediaSourceLibraryColumns: (keyof MediaSourceLibraryTable)[] = [
   'mediaType',
   'uuid',
   'name',
+  'unavailableSince',
 ];
 
 export type MediaSourceLibraryTable = KyselifyBetter<typeof MediaSourceLibrary>;

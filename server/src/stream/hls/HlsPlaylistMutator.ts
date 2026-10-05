@@ -7,6 +7,7 @@ import {
   first,
   isEmpty,
   last,
+  max,
   nth,
   reject,
   take,
@@ -29,7 +30,7 @@ type FilterBeforeDate = {
   before: Dayjs;
 };
 
-type FilterBeforeSegmentNumber = {
+export type FilterBeforeSegmentNumber = {
   type: 'before_segment_number';
   segmentNumber: number;
   segmentsToKeepBefore: number;
@@ -284,6 +285,95 @@ export class HlsPlaylistMutator {
       discontinuitySequence,
     };
   }
+
+  // The WebVTT subtitle sidecar (`HlsSubtitleOutputFormat`, ffmpeg's
+  // `segment` muxer) produces a structurally simpler playlist than the
+  // video/audio `hls` muxer output above: just `#EXTINF:<dur>,` + filename
+  // pairs, with no `#EXT-X-PROGRAM-DATE-TIME` lines and no discontinuity
+  // tags (that muxer has no equivalent of `discont_start`). It also never
+  // needs date-based filtering, so this only supports segment-number-based
+  // trimming, unlike the general `HlsPlaylistFilterOptions` union above.
+  parseSubtitlePlaylist(playlistLines: string[]): SubtitlePlaylistSegment[] {
+    const items: SubtitlePlaylistSegment[] = [];
+
+    let i = 0;
+    while (
+      i < playlistLines.length &&
+      !playlistLines[i]!.startsWith('#EXTINF:')
+    ) {
+      i++;
+    }
+
+    while (i < playlistLines.length) {
+      const line = playlistLines[i];
+      if (!isNonEmptyString(line) || !line.startsWith('#EXTINF:')) {
+        i++;
+        continue;
+      }
+
+      const fileLine = playlistLines[i + 1];
+      if (!isNonEmptyString(fileLine)) {
+        break;
+      }
+
+      items.push(new SubtitlePlaylistSegment(line, fileLine));
+      i += 2;
+    }
+
+    return items;
+  }
+
+  trimSubtitlePlaylist(
+    playlistLines: string[],
+    filterOptions: FilterBeforeSegmentNumber,
+    opts: SubtitleTrimOptions,
+  ): SubtitleTrimResult {
+    let allSegments = this.parseSubtitlePlaylist(playlistLines);
+
+    if (allSegments.length > opts.maxSegmentsToKeep) {
+      const minSeg = Math.max(
+        filterOptions.segmentNumber - filterOptions.segmentsToKeepBefore,
+        filterOptions.segmentFloor ?? 0,
+      );
+      const filtered = filter(allSegments, (segment) => {
+        const n = segment.segmentNumber;
+        return n !== null && n >= minSeg;
+      });
+
+      allSegments =
+        filtered.length >= opts.maxSegmentsToKeep
+          ? take(filtered, opts.maxSegmentsToKeep)
+          : takeRight(allSegments, opts.maxSegmentsToKeep);
+    }
+
+    const startSequence = first(allSegments)?.segmentNumber ?? 0;
+
+    // Segment durations here are genuinely variable (unlike the fixed-cadence
+    // video segments above), so the target duration must be derived from the
+    // actual retained segments rather than the nominal segment_time -- an
+    // under-reported #EXT-X-TARGETDURATION is a spec violation.
+    const targetDuration = Math.max(
+      1,
+      Math.ceil(max(allSegments.map((s) => s.duration)) ?? 0),
+    );
+
+    const lines = [
+      '#EXTM3U',
+      '#EXT-X-VERSION:3',
+      `#EXT-X-TARGETDURATION:${targetDuration}`,
+      `#EXT-X-MEDIA-SEQUENCE:${startSequence}`,
+    ];
+
+    for (const segment of allSegments) {
+      lines.push(segment.extInf, segment.line);
+    }
+
+    return {
+      playlist: lines.join('\n'),
+      sequence: startSequence,
+      segmentCount: allSegments.length,
+    };
+  }
 }
 
 class PlaylistSegment {
@@ -296,7 +386,7 @@ class PlaylistSegment {
   ) {}
 
   get startSequence() {
-    const matches = this.line.match(/[A-z/]+(\d+)\.(ts|mp4)/);
+    const matches = basename(this.line).match(SegmentNameRegex);
     const match = nth(matches, 1);
     return match ? parseInt(match) : null;
   }
@@ -310,6 +400,33 @@ class PlaylistSegment {
     );
   }
 }
+
+export class SubtitlePlaylistSegment {
+  public readonly duration: number;
+
+  constructor(
+    public extInf: string,
+    public line: string,
+  ) {
+    this.duration = parseFloat(trimEnd(extInf.trim(), ',').split(':')[1]!);
+  }
+
+  get segmentNumber(): number | null {
+    const matches = basename(this.line).match(SegmentNameRegex);
+    const match = nth(matches, 1);
+    return match ? parseInt(match) : null;
+  }
+}
+
+export type SubtitleTrimOptions = {
+  maxSegmentsToKeep: number;
+};
+
+export type SubtitleTrimResult = {
+  playlist: string;
+  sequence: number;
+  segmentCount: number;
+};
 
 type PlaylistDiscontinuity = {
   type: 'discontinuity';

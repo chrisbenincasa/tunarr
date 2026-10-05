@@ -1,12 +1,12 @@
-import { MediaSourceId } from '@tunarr/shared';
+import type { MediaSourceId } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import { inject, injectable } from 'inversify';
 import { chunk } from 'lodash-es';
-import { MarkRequired } from 'ts-essentials';
+import type { MarkRequired } from 'ts-essentials';
 import { KEYS } from '../types/inject.ts';
-import { RemoteSourceType } from './schema/base.ts';
-import { ProgramGroupingOrmWithRelations } from './schema/derivedTypes.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
+import type { RemoteSourceType } from './schema/base.ts';
+import type { ProgramGroupingOrmWithRelations } from './schema/derivedTypes.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()
 export class ProgramGroupingDB {

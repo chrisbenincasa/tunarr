@@ -64,6 +64,10 @@ export abstract class IndexBasedProgramIterator<
   }
 
   next(): void {
+    if (this.programs.length === 0) {
+      // Modulo zero yields NaN, which would permanently poison the position.
+      return;
+    }
     this.position = (this.position + 1) % this.programs.length;
   }
 

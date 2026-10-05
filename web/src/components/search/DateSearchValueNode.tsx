@@ -173,7 +173,7 @@ export function DateSearchValueNode({ formKey }: Props) {
                   size: 'small',
                 },
               }}
-              value={dayjs(field.value as number)}
+              value={dayjs(field.value)}
               onChange={(e) => handleDateValueChange(e, field.onChange)}
             />
           )}

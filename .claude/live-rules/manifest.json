@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "path": "rules/implementation-baseline.md",
+      "hash": "775c4679dea973c169d4d9724059882b7c3a56f50cda2c5cb05123236483768f",
+      "description": "Tunarr implementation baseline",
+      "globs": [
+        "server/src/**",
+        "web/src/**",
+        "shared/src/**",
+        "types/src/**"
+      ],
+      "dirs": [],
+      "prompt": [],
+      "priority": 80,
+      "enabled": true,
+      "include": []
+    },
+    {
+      "path": "rules/self-improvement.md",
+      "hash": "3e07f782c44fd8af4a5e9cb4aac03d761d9bad387cfd2763c2fbb7e3b17fb72e",
+      "description": "Self-improvement: build the capability that makes the next goal cheaper",
+      "globs": [],
+      "dirs": [],
+      "prompt": [],
+      "priority": 40,
+      "enabled": true,
+      "include": []
+    }
+  ]
+}

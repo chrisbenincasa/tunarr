@@ -1,4 +1,4 @@
-import type { TimeSlotSchedule } from '@tunarr/types/api';
+import { OverflowConfig, type TimeSlotSchedule } from '@tunarr/types/api';
 import z from 'zod';
 import {
   CommonCustomShowSlotViewModel,
@@ -13,6 +13,8 @@ import {
 const BaseTimeSlot = z.object({
   startTime: z.number(), // Offset from midnight in millis
   padMs: z.number().optional(),
+  overflow: OverflowConfig.optional(),
+  latenessMs: z.number().optional(),
 });
 
 const MovieTimeSlotViewModel = z.object({
@@ -79,6 +81,7 @@ export type TimeSlotForm = {
   flexPreference: TimeSlotSchedule['flexPreference'];
   latenessMs: number;
   maxDays: number;
+  overflow: OverflowConfig;
   padMs: number;
   period: 'day' | 'week';
   slots: TimeSlotViewModel[];

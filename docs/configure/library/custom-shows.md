@@ -5,6 +5,19 @@
 
 Custom Shows are akin to classic playlists. Any ordering operations in scheduling tools will use the ordering as defined in the Custom Show. Custom Shows can be schedule as if they were "regular" shows in slot editors. Content within are grouped by the Custom Show and not their _actual_ show. This allows creating more complex groupings of content for use in channels.
 
+A Custom Show can be created empty, but slot editors only offer it once it has programs with a duration greater than zero. Programs with no duration cannot be scheduled, so a show made only of them counts as empty. See [Time Slots](../scheduling/time-slots.md#empty-or-deleted-custom-shows) and the [Slots Editor](../scheduling/random-slots.md#empty-or-deleted-custom-shows).
+
+## Updating Content Through the API
+
+`PUT /api/custom-shows/{id}` treats the `programs` field as follows.
+
+| `programs` value | Result |
+|------------------|--------|
+| Omitted | Content is unchanged |
+| Empty array | All content is removed |
+| Non-empty array | Content is replaced, in the given order |
+| Contains an unknown program ID | HTTP 400; name and content are unchanged |
+
 ## External Sync
 
 Custom Shows can be linked to an external playlist from a connected media source. When synced, the custom show's content is automatically kept in sync with the upstream playlist.
@@ -34,5 +47,6 @@ On an existing synced Custom Show, click **Sync Now** to trigger an immediate sy
 
 - While a Custom Show is linked to an external playlist, its content is **read-only** — the "Add Media" button and drag-to-reorder controls are hidden.
 - To manage content manually, disable the sync toggle and save.
-- If the upstream playlist is empty at sync time, the Custom Show's existing content is left unchanged and a warning is logged.
+- If the upstream playlist is empty at sync time, the Custom Show is emptied to match and a warning is logged. Slots that use the show then show an empty-show warning.
+- Saving a synced Custom Show from the editor does not change its content. Only a sync does.
 - Deleting the linked media source from Tunarr sets the sync reference to `null`; the Custom Show retains its last-synced content.
