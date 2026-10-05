@@ -31,7 +31,7 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isEmpty, isError, isNil, isNull } from 'lodash-es';
-import type { MarkOptional, StrictExtract } from 'ts-essentials';
+import type { StrictExtract } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
@@ -912,7 +912,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   // TODO put this in its own class.
   function convertToApiMediaSource(
     entityLocker: EntityMutex,
-    source: MarkOptional<MediaSourceWithRelations, 'libraries' | 'paths'>,
+    source: MediaSourceWithRelations,
   ): MediaSourceSettings {
     return match(source)
       .returnType<MediaSourceSettings>()
@@ -928,7 +928,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             accessToken: undefined, // Do not expose access token in API response
             clientIdentifier: nullToUndefined(source.clientIdentifier),
             sendGuideUpdates: source.sendGuideUpdates ?? false,
-            libraries: (source.libraries ?? []).map((library) => ({
+            libraries: source.libraries.map((library) => ({
               id: library.uuid,
               type: source.type,
               enabled: library.enabled,
@@ -959,8 +959,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             type: source.type,
             name: source.name,
             mediaType: source.mediaType,
-            paths: source.libraries?.map((path) => path.externalKey) ?? [],
-            libraries: (source.libraries ?? []).map((library) => ({
+            paths: source.libraries.map((path) => path.externalKey),
+            libraries: source.libraries.map((library) => ({
               id: library.uuid,
               type: source.type,
               enabled: library.enabled,

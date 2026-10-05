@@ -168,11 +168,15 @@ describe('MediaSourceDB', () => {
     // failed schema validation and answered 500 for every local library
     // (#2200) — the bug is here, in the query, not in the converter.
     const mediaSourceId = makeLocalMediaSource(drizzle, ['/media/movies']);
-    const libraryId = drizzle
+    const [libraryRow] = drizzle
       .select({ uuid: MediaSourceLibrary.uuid })
       .from(MediaSourceLibrary)
       .where(eq(MediaSourceLibrary.mediaSourceId, mediaSourceId))
-      .all()[0]!.uuid;
+      .all();
+    if (!libraryRow) {
+      throw new Error('expected the local media source to have a library row');
+    }
+    const libraryId = libraryRow.uuid;
 
     const found = await mediaSourceDB.getLibrary(libraryId);
 
