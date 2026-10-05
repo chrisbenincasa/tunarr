@@ -2,6 +2,7 @@ import useStore from '@/store';
 import { setCurrentLineup } from '@/store/channelEditor/actions';
 import { materializedProgramListSelector } from '@/store/selectors';
 import type { ChannelProgram } from '@tunarr/types';
+import { last } from 'lodash-es';
 
 export const useConsolidatePrograms = () => {
   const programs = useStore(materializedProgramListSelector);
@@ -10,32 +11,33 @@ export const useConsolidatePrograms = () => {
   };
 };
 
-const consolidatePrograms = (programs: ChannelProgram[]) => {
-  const newPrograms: ChannelProgram[] = [];
+// Filler and content items point at a specific media file whose length is
+// fixed, so only flex and same-channel redirects can be merged.
+function canMerge(a: ChannelProgram, b: ChannelProgram) {
+  if (a.type === 'flex' && b.type === 'flex') {
+    return true;
+  }
 
-  let i = 0;
-  while (i < programs.length) {
-    const program = programs[i];
-    if (program.type === 'content' || program.type === 'custom') {
+  return (
+    a.type === 'redirect' && b.type === 'redirect' && a.channel === b.channel
+  );
+}
+
+export const consolidatePrograms = <T extends ChannelProgram>(
+  programs: T[],
+): T[] => {
+  const newPrograms: T[] = [];
+
+  for (const program of programs) {
+    const previous = last(newPrograms);
+    if (previous !== undefined && canMerge(previous, program)) {
+      newPrograms[newPrograms.length - 1] = {
+        ...previous,
+        duration: previous.duration + program.duration,
+      };
+    } else {
       newPrograms.push(program);
-      i++;
-      continue;
     }
-
-    let j = i + 1;
-    const newProgram = { ...program };
-    while (j < programs.length) {
-      const nextProgram = programs[j];
-      if (nextProgram.type === newProgram.type) {
-        newProgram.duration += nextProgram.duration;
-      } else {
-        break;
-      }
-      j++;
-    }
-    newPrograms.push(newProgram);
-
-    i = j;
   }
 
   return newPrograms;
