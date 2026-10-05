@@ -52,3 +52,6 @@ web/.tanstack
 
 .claude/worktrees
 .pnpm-store/
+
+.review-*
+.pr-*
