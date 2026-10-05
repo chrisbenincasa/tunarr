@@ -354,7 +354,8 @@ describe('StreamProgramCalculator', () => {
       program: { uuid: programId1 },
       infiniteLoop: true,
       programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
-      startOffset: +dayjs.duration(16, 'minutes'),
+      // 16 minutes into the item wraps to the start of the 2 minute clip.
+      startOffset: 0,
       fillerListId: fillerListId,
       type: 'commercial',
       duration: +dayjs.duration(22, 'minutes'),
@@ -700,6 +701,110 @@ describe('StreamProgramCalculator', () => {
       });
     },
   );
+
+  describe('filler items longer than their clip', () => {
+    async function tuneIntoFiller(
+      clipDurationMs: number,
+      itemDurationMs: number,
+      elapsedMs: number,
+    ) {
+      const fillerDB = mock<IFillerListDB>();
+      const channelDB = mock<IChannelDB>();
+      const programDB = mock<IProgramDB>();
+      const fillerPicker = mock<IFillerPicker>();
+      const playHistoryDB = mock<ProgramPlayHistoryDB>();
+
+      const startTime = dayjs(new Date(2025, 8, 17, 8));
+      const channelId = faker.string.uuid();
+      const programId = faker.string.uuid();
+
+      const lineup: LineupItem[] = [
+        {
+          type: 'content',
+          durationMs: itemDurationMs,
+          id: programId,
+          fillerListId: faker.string.uuid(),
+        },
+      ];
+
+      when(programDB.getStreamProgramById(programId)).thenReturn(
+        Promise.resolve(
+          createFakeProgram({
+            uuid: programId,
+            duration: clipDurationMs,
+            mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+          }),
+        ),
+      );
+
+      const channel = createChannelOrm({
+        uuid: channelId,
+        number: 1,
+        startTime: +startTime - elapsedMs,
+        duration: itemDurationMs,
+      });
+
+      when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
+      when(channelDB.loadLineup(channelId)).thenReturn(
+        Promise.resolve({
+          version: 1,
+          items: lineup,
+          startTimeOffsets: calculateStartTimeOffsets(lineup),
+          lastUpdated: now(),
+        }),
+      );
+      when(
+        playHistoryDB.isProgramCurrentlyPlaying(
+          anything(),
+          anything(),
+          anything(),
+        ),
+      ).thenReturn(Promise.resolve(false));
+      when(playHistoryDB.create(anything())).thenReturn(
+        Promise.resolve(undefined),
+      );
+
+      const calc = new StreamProgramCalculator(
+        instance(fillerDB),
+        instance(channelDB),
+        instance(programDB),
+        instance(fillerPicker),
+        instance(playHistoryDB),
+      );
+
+      return (
+        await calc.getCurrentLineupItem({
+          allowSkip: false,
+          channelId: 1,
+          startTime: +startTime,
+        })
+      ).get().lineupItem;
+    }
+
+    test('wraps the seek into the clip and loops it', async () => {
+      // A 7s clip stretched over an 8 minute item (e.g. merged filler items),
+      // tuned in 366s into the item.
+      const out = await tuneIntoFiller(7021, 479252, 366272);
+
+      expect(out).toMatchObject<DeepPartial<StreamLineupItem>>({
+        type: 'commercial',
+        startOffset: 366272 % 7021,
+        streamDuration: 479252 - 366272,
+        infiniteLoop: true,
+      });
+    });
+
+    test('leaves a filler item that matches its clip unchanged', async () => {
+      const out = await tuneIntoFiller(30000, 30000, 5000);
+
+      expect(out).toMatchObject<DeepPartial<StreamLineupItem>>({
+        type: 'commercial',
+        startOffset: 5000,
+        streamDuration: 25000,
+        infiniteLoop: false,
+      });
+    });
+  });
 
   describe('calculateStreamDuration', () => {
     test('first channel cycle', () => {

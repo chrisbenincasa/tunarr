@@ -580,9 +580,19 @@ export class StreamProgramCalculator {
     const mediaStartOffset = timeElapsed;
 
     if (program.type === 'commercial') {
+      // A filler lineup item can be longer than its clip, e.g. when adjacent
+      // filler items were merged. Seeking past the end of the clip produces no
+      // output at all, so wrap the seek into the clip and loop it to cover the
+      // rest of the item.
+      const clipDuration = program.program.duration;
+      let startOffset = mediaStartOffset + (program.startOffset ?? 0);
+      if (clipDuration > 0) {
+        startOffset %= clipDuration;
+      }
       return {
         ...program,
-        startOffset: mediaStartOffset + (program.startOffset ?? 0),
+        startOffset,
+        infiniteLoop: clipDuration - startOffset < streamDuration,
         streamDuration,
       };
     }

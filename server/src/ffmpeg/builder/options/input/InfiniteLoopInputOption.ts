@@ -15,7 +15,8 @@ export class InfiniteLoopInputOption extends InputOption {
       return ['-loop', '1'];
     }
 
-    return ['-stream_loop', '1'];
+    // -1 loops forever; the output duration (-t) bounds the stream.
+    return ['-stream_loop', '-1'];
   }
 
   appliesToInput(): boolean {
