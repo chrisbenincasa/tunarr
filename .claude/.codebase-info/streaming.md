@@ -1,6 +1,6 @@
 # Streaming
 
-*Last Updated: 2026-09-29*
+*Last Updated: 2026-10-02*
 
 Streaming code is organized by session type, not by media source. Source-specific behavior lives
 in stream details fetchers and play-status plugins.
@@ -23,6 +23,16 @@ api/streamApi.ts
 
 - Base classes: `stream/Session.ts` → `stream/DirectStreamSession.ts` (shared direct stream) and
   `stream/hls/BaseHlsSession.ts`.
+- Session lifecycle: `init → starting → started → stopping → stopped` (or `error`).
+  `SessionManager` replaces a `stopping`/`stopped` session instead of handing it to new viewers.
+- HLS working directories are per session instance: `stream_<channelUuid>_<instanceId>`
+  (`BaseHlsSession`). Stop kills ffmpeg, waits up to 30s for it to exit, then deletes the
+  directory. Server shutdown skips the wait (`stop({ waitForExit: false })`).
+  `SessionManager.endSession` drops the session from the map under the channel lock but stops it
+  outside the lock, so re-tunes don't queue behind a slow ffmpeg exit. The sessions API's stop
+  endpoint uses `endSessionInBackground`, which responds once the session is out of the map. Fragment requests to a
+  stopping session get a 404. `services/startup/ClearStreamDirectoriesStartupTask.ts` sweeps
+  leftover `stream_<uuid>[_<uuid>]` directories before the server listens.
 - Playlists: `stream/hls/HlsPlaylistCreator.ts`, `HlsPlaylistMutator.ts`,
   `HlsMasterPlaylistMutator.ts`.
 - Viewer tracking: `stream/ConnectionTracker.ts`. Rate control: `stream/StreamThrottler.ts`.

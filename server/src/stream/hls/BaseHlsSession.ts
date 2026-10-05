@@ -1,8 +1,9 @@
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import type { SessionOptions } from '@/stream/Session.js';
+import type { SessionOptions, StopOptions } from '@/stream/Session.js';
 import { Session } from '@/stream/Session.js';
 import { Result } from '@/types/result.js';
-import { isNonEmptyString } from '@/util/index.js';
+import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import { isNonEmptyString, timeoutPromise } from '@/util/index.js';
 import retry from 'async-retry';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
@@ -13,9 +14,12 @@ import type { DeepRequired } from 'ts-essentials';
 import type { HlsOptions } from '../../ffmpeg/builder/constants.ts';
 import { defaultHlsOptions } from '../../ffmpeg/builder/constants.ts';
 import { serverOptions } from '../../globals.ts';
-import { fileExists } from '../../util/fsUtil.ts';
 
 export const SegmentNameRegex = /\D+(\d+)\.(ts|mp4|vtt)/;
+
+// FfmpegProcess escalates to SIGKILL after 15s, so this leaves room for the
+// kill to land.
+const ExitWaitTimeoutMs = 30_000;
 
 // Tracks the most recently requested segment number per client IP, split by
 // numbering space: video (.ts/.mp4) and subtitle (.vtt) segments are produced
@@ -71,9 +75,11 @@ export abstract class BaseHlsSession<
   ) {
     super(channel, options);
 
+    // Per instance, so a replacement session never shares a directory with a
+    // predecessor whose ffmpeg is still shutting down.
     this._workingDirectory = path.join(
       this.baseDirectory,
-      `stream_${this.channel.uuid}`,
+      `stream_${this.channel.uuid}_${this.instanceId}`,
     );
     this._m3u8PlaylistPath = path.join(this._workingDirectory, 'stream.m3u8');
     this._masterPlaylistPath = path.join(
@@ -136,27 +142,15 @@ export abstract class BaseHlsSession<
   }
 
   protected async initDirectories() {
-    if (!(await fileExists(this.baseDirectory))) {
-      this.logger.debug(
-        `Creating stream base directory: ${this.baseDirectory}`,
-      );
-      await fs.mkdir(this.baseDirectory);
-    }
-
-    if (!(await fileExists(this.workingDirectory))) {
-      this.logger.debug(`Creating stream directory: ${this.workingDirectory}`);
-      await fs.mkdir(this.workingDirectory);
-    } else {
-      await this.cleanupDirectory();
-    }
-
+    this.logger.debug(`Creating stream directory: ${this.workingDirectory}`);
+    await fs.mkdir(this.workingDirectory, { recursive: true });
     this.transcodedUntil = dayjs();
   }
 
   protected async cleanupDirectory() {
     try {
       this.logger.debug(
-        'Cleaning up existing working directory: %s',
+        'Removing working directory: %s',
         this._workingDirectory,
       );
       await fs.rm(this._workingDirectory, {
@@ -164,10 +158,31 @@ export abstract class BaseHlsSession<
         force: true,
         maxRetries: 2,
       });
-      await fs.mkdir(this._workingDirectory);
     } catch (err) {
       this.logger.error(err, 'Failed to cleanup stream: %s', this.channel.uuid);
       throw err;
+    }
+  }
+
+  /**
+   * Waits for a killed transcode to exit, so cleanup does not race its last
+   * writes. Bounded because SIGKILL cannot interrupt a process stuck in a
+   * driver call.
+   */
+  protected async waitForExit(
+    transcode: FfmpegTranscodeSession,
+    options: StopOptions,
+  ) {
+    if (options.waitForExit === false) {
+      return;
+    }
+    try {
+      await timeoutPromise(transcode.exited, ExitWaitTimeoutMs);
+    } catch {
+      this.logger.warn(
+        'ffmpeg did not exit %dms after kill. Removing its directory anyway.',
+        ExitWaitTimeoutMs,
+      );
     }
   }
 

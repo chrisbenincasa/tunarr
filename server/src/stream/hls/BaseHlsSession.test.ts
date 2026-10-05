@@ -2,7 +2,12 @@ import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js'
 import type { StreamConnectionDetails } from '@tunarr/types/api';
 import type { DeepRequired } from 'ts-essentials';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import type { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.ts';
 import type { HlsOptions } from '../../ffmpeg/builder/constants.ts';
+import type { StopOptions } from '../Session.ts';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.ts';
 import { BaseHlsSession } from './BaseHlsSession.ts';
 
@@ -39,6 +44,45 @@ class TestHlsSession extends BaseHlsSession {
 
   protected async startInternal(): Promise<void> {}
   protected async stopInternal(): Promise<void> {}
+}
+
+// Mirrors HlsSession.stopStream: kill, wait for exit, then remove the directory.
+class StoppableHlsSession extends TestHlsSession {
+  // Counts teardown starts. A directory check alone can't tell "not started"
+  // from "fs.rm still in flight".
+  cleanupCalls = 0;
+
+  protected override async cleanupDirectory() {
+    this.cleanupCalls++;
+    await super.cleanupDirectory();
+  }
+
+  async setUp() {
+    await this.initDirectories();
+  }
+
+  async stopTranscode(
+    transcode: FfmpegTranscodeSession,
+    options: StopOptions = {},
+  ) {
+    transcode.kill();
+    await this.waitForExit(transcode, options);
+    await this.cleanupDirectory();
+  }
+}
+
+function makeTranscode(exited: Promise<void>) {
+  return {
+    kill: vi.fn(),
+    exited,
+  } as unknown as FfmpegTranscodeSession;
+}
+
+async function exists(p: string) {
+  return fs.access(p).then(
+    () => true,
+    () => false,
+  );
 }
 
 function makeChannel(
@@ -229,6 +273,65 @@ describe('BaseHlsSession', () => {
       // high video number inflate the subtitle floor.
       expect(session.minSegment).toBe(100);
       expect(session.minSubtitleSegment).toBe(3);
+    });
+  });
+
+  describe('stop waits for ffmpeg before removing the working directory', () => {
+    let transcodeDirectory: string;
+    let stoppable: StoppableHlsSession;
+
+    beforeEach(async () => {
+      transcodeDirectory = await fs.mkdtemp(
+        path.join(os.tmpdir(), 'tunarr-hls-'),
+      );
+      stoppable = new StoppableHlsSession(makeChannel(), {
+        ...baseOptions,
+        transcodeDirectory,
+      });
+      await stoppable.setUp();
+      await fs.writeFile(
+        path.join(stoppable.workingDirectory, 'stream.m3u8'),
+        '',
+      );
+    });
+
+    afterEach(async () => {
+      await fs.rm(transcodeDirectory, { recursive: true, force: true });
+    });
+
+    it('keeps the directory until the killed process exits', async () => {
+      const exited = Promise.withResolvers<void>();
+      const transcode = makeTranscode(exited.promise);
+
+      const stop = stoppable.stopTranscode(transcode);
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      expect(transcode.kill).toHaveBeenCalled();
+      expect(stoppable.cleanupCalls).toBe(0);
+      expect(await exists(stoppable.workingDirectory)).toBe(true);
+
+      exited.resolve();
+      await stop;
+
+      expect(await exists(stoppable.workingDirectory)).toBe(false);
+    });
+
+    it('removes the directory after the timeout if the process never exits', async () => {
+      const transcode = makeTranscode(new Promise<void>(() => {}));
+
+      const stop = stoppable.stopTranscode(transcode);
+      await vi.advanceTimersByTimeAsync(30_000);
+      await stop;
+
+      expect(await exists(stoppable.workingDirectory)).toBe(false);
+    });
+
+    it('does not wait when waitForExit is false', async () => {
+      const transcode = makeTranscode(new Promise<void>(() => {}));
+
+      await stoppable.stopTranscode(transcode, { waitForExit: false });
+
+      expect(await exists(stoppable.workingDirectory)).toBe(false);
     });
   });
 });

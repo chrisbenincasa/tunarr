@@ -153,14 +153,38 @@ export class SessionManager {
       }
     }
 
+    // Stop outside the channel lock. A stop can wait up to 30s for ffmpeg to
+    // exit, and each session has its own directory, so a new tune-in on this
+    // channel need not wait for it.
+    const session = await this.removeSession(id, sessionType);
+    await session?.stop();
+  }
+
+  /**
+   * Like {@link endSession}, but resolves once the session is out of the map
+   * and lets its stop (which can wait up to 30s for ffmpeg) finish in the
+   * background.
+   */
+  async endSessionInBackground(session: Session): Promise<void> {
+    const { id, sessionType } = session.keyObj;
+    const removed = await this.removeSession(id, sessionType);
+    removed?.stop().catch((e) => {
+      this.logger.error(
+        this.getLoggerContext(id, e),
+        'Error shutting down session',
+      );
+    });
+  }
+
+  private async removeSession(
+    id: string,
+    sessionType: SessionType,
+  ): Promise<Maybe<Session>> {
     const lock = await this.#sessionLocker.getOrCreateLock(id);
-    return await lock.runExclusive(async () => {
+    return lock.runExclusive(() => {
       const session = this.getSession(id, sessionType);
-      if (isNil(session)) {
-        return;
-      }
-      await session.stop();
       delete this.#sessions[sessionCacheKey(id, sessionType)];
+      return session;
     });
   }
 
@@ -189,7 +213,8 @@ export class SessionManager {
       const underlyingSessionType = sessionTypeFromConcatType(
         options.sessionType,
       );
-      if (isUndefined(this.getSession(channelId, underlyingSessionType))) {
+      const underlying = this.getSession(channelId, underlyingSessionType);
+      if (isUndefined(underlying) || underlying.stoppingOrStopped) {
         this.logger.debug(
           'No underlying session of type %s found for existing concat session (channel id = %s). Removing dangling session and recreating',
           underlyingSessionType,
@@ -275,7 +300,9 @@ export class SessionManager {
           sessionType,
         ) as Maybe<TSession>;
 
-        if (isNil(session)) {
+        // A stopping session keeps its own working directory until its
+        // process exits, so a replacement can start alongside it.
+        if (isNil(session) || session.stoppingOrStopped) {
           const channel = await this.channelDB.getChannelOrm(channelId);
 
           if (!channel?.transcodeConfig) {
@@ -297,7 +324,9 @@ export class SessionManager {
                 'Error while shutting down session. Things are bad!',
               );
             });
-            this.shutdownChildSessions(channelId, sessionType);
+            if (this.getSession(channelId, sessionType) === session) {
+              this.shutdownChildSessions(channelId, sessionType);
+            }
             this.eventService.push({
               type: 'stream',
               action: 'error',

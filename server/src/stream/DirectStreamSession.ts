@@ -33,10 +33,8 @@ export abstract class DirectStreamSession<
             reject(caughtErrorToError(e));
           })
           .finally(() => {
-            const oldState = this.state;
-            this.state = 'stopped';
+            // Session.stop() marks the session stopped once this resolves.
             this.emit('stop');
-            this.emit('state', 'stopped', oldState);
             resolve(void 0);
           });
       });

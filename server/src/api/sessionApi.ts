@@ -137,9 +137,13 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send('No session found for channel ID');
       }
 
-      for (const session of sessions) {
-        await req.serverCtx.sessionManager.endSession(session);
-      }
+      // Respond once the sessions are out of the map. Each stop can wait up to
+      // 30s for its ffmpeg to exit, and nothing here depends on that.
+      await Promise.all(
+        sessions.map((session) =>
+          req.serverCtx.sessionManager.endSessionInBackground(session),
+        ),
+      );
 
       return res.status(201).send();
     },
