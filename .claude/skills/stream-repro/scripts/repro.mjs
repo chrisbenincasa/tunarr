@@ -21,8 +21,8 @@ const { values: opt } = parseArgs({
     mode: { type: 'string', default: 'hls' },
     seconds: { type: 'string', default: '60' },
     out: { type: 'string' },
-    ffmpeg: { type: 'string', default: 'ffmpeg' },
-    ffprobe: { type: 'string', default: 'ffprobe' },
+    ffmpeg: { type: 'string' },
+    ffprobe: { type: 'string' },
     'keep-server': { type: 'boolean', default: false },
     reanalyze: { type: 'string' },
   },
@@ -50,6 +50,34 @@ if (opt.source === 'synthetic' && Number(opt['clip-seconds']) < 30) {
   console.error('[repro] warning: clips under 30s get skipped; Tunarr jumps to the next program when <10s remain (SLACK in shared/src/util/constants.ts)');
 }
 const log = (...a) => console.error('[repro]', ...a);
+
+// Resolve both binaries to absolute paths once. The server needs absolute
+// paths (a fresh database defaults to /usr/bin/ffmpeg, which is wrong on
+// macOS), and clip generation, the server, and analysis should all use the
+// same build. ffprobe defaults to the one next to ffmpeg, so --ffmpeg alone
+// is enough to test a specific build end to end.
+function resolveBinary(name, given, siblingOf) {
+  if (given) {
+    if (!given.includes(path.sep)) return which(given, name);
+    const p = path.resolve(given);
+    if (!fs.existsSync(p)) throw new Error(`--${name} ${given} does not exist`);
+    return p;
+  }
+  if (siblingOf) {
+    const sibling = path.join(path.dirname(siblingOf), name);
+    if (fs.existsSync(sibling)) return sibling;
+  }
+  return which(name, name);
+}
+function which(bin, name) {
+  try {
+    return execFileSync('which', [bin], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    throw new Error(`${bin} not found on PATH; pass --${name} /path/to/${name}`);
+  }
+}
+opt.ffmpeg = resolveBinary('ffmpeg', opt.ffmpeg);
+opt.ffprobe = resolveBinary('ffprobe', opt.ffprobe, opt.ffmpeg);
 
 // ---------- helpers ----------
 
@@ -230,7 +258,20 @@ async function startServer() {
   process.on('exit', () => !opt['keep-server'] && stop());
   const base = `http://127.0.0.1:${port}`;
   await until('server ready', async () => (await fetch(`${base}/api/channels`)).ok, 180_000);
+  await useFfmpeg(base);
   return { base, stop, pid: child.pid };
+}
+
+// Point the server at the resolved binaries before anything scans or streams.
+async function useFfmpeg(base) {
+  const settings = await api(base, 'GET', '/api/ffmpeg-settings');
+  await api(base, 'PUT', '/api/ffmpeg-settings', {
+    ...settings,
+    ffmpegExecutablePath: opt.ffmpeg,
+    ffprobeExecutablePath: opt.ffprobe,
+  });
+  const version = execFileSync(opt.ffmpeg, ['-version'], { encoding: 'utf8' }).split('\n')[0];
+  log(`server using ${opt.ffmpeg} (${version})`);
 }
 
 async function buildSyntheticChannel(base, clipsDir) {

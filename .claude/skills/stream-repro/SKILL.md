@@ -13,7 +13,8 @@ show the symptom is gone.
 ## Run it
 
 Run from anywhere inside the repo. It needs `ffmpeg`/`ffprobe` on PATH (or `--ffmpeg`/`--ffprobe`) and the
-Meilisearch binary that already ships in `server/bin/`.
+Meilisearch binary that already ships in `server/bin/`. The resolved binaries generate the clips, run the
+server's transcodes, and analyze the capture, so a run tests exactly one ffmpeg build.
 
 ```bash
 node .claude/skills/stream-repro/scripts/repro.mjs [options]
@@ -30,6 +31,8 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--seconds S` | `60` | How much stream to capture |
 | `--out DIR` | temp dir | Where clips, database, capture, and `report.json` go |
 | `--keep-server` | off | Leave the server running afterward for manual poking |
+| `--ffmpeg PATH` | `which ffmpeg` | ffmpeg build to test, e.g. a specific version the reporter runs |
+| `--ffprobe PATH` | next to ffmpeg, else `which ffprobe` | ffprobe build to use |
 | `--reanalyze DIR` | | Re-score an existing capture without booting a server |
 
 Pick the layout that matches the report. `dup-lang` has two `eng` audio tracks, one titled
@@ -51,6 +54,9 @@ A run takes one to three minutes. Most of that is server boot and real-time stre
 - `TUNARR_USE_WORKER_POOL=false`. Eight `tsx` workers booting at once starve ffmpeg of CPU, and HLS startup
   then times out after 15 retries. That failure is an artifact, not a repro.
 - `TUNARR_LOG_LEVEL=debug`, so every ffmpeg command line lands in `<out>/db/logs/tunarr.log`.
+- The server's ffmpeg settings are set to the resolved `--ffmpeg`/`--ffprobe` paths before anything scans.
+  A fresh database otherwise defaults to `/usr/bin/ffmpeg`, which does not exist on macOS, and the scan then
+  finds no programs. In `copy` mode this overrides the copied database's ffmpeg paths too.
 - `copy` mode copies the database directory except logs, backups, cache, and streams. It rewrites the
   copied `settings.json` logs path so the copy never writes into the original.
 
