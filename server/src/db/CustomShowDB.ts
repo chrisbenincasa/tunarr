@@ -11,7 +11,6 @@ import { and, count, eq, gt, lte, sum } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import { chunk, isNil } from 'lodash-es';
-import type { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { GenericBadRequestError } from '../types/errors.ts';
 import { InjectLogger } from '../util/inject.ts';
@@ -23,7 +22,7 @@ import {
   type NewCustomShowContent,
 } from './schema/CustomShowContent.ts';
 import type { DB } from './schema/db.ts';
-import type { ProgramWithRelationsOrm } from './schema/derivedTypes.ts';
+import type { ProgramOrmWithExternalIds } from './schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from './schema/index.ts';
 import { Program } from './schema/Program.ts';
 
@@ -76,9 +75,7 @@ export class CustomShowDB {
       });
   }
 
-  async getShowPrograms(
-    id: string,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+  async getShowPrograms(id: string): Promise<ProgramOrmWithExternalIds[]> {
     const result = await this.drizzle.query.customShowContent.findMany({
       where: (fields, { eq }) => eq(fields.customShowUuid, id),
       orderBy: (fields, { asc }) => asc(fields.index),

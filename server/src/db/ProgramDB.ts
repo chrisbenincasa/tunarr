@@ -10,12 +10,7 @@ import type {
 import { KEYS } from '@/types/inject.js';
 import type { Maybe, PagedResult } from '@/types/util.js';
 import { inject, injectable } from 'inversify';
-import type {
-  Dictionary,
-  MarkOptional,
-  MarkRequired,
-  StrictExclude,
-} from 'ts-essentials';
+import type { Dictionary, MarkOptional, StrictExclude } from 'ts-essentials';
 import type { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
 import type { PageParams } from './interfaces/IChannelDB.js';
 import type { BasicProgramRepository } from './program/BasicProgramRepository.ts';
@@ -75,21 +70,15 @@ export class ProgramDB implements IProgramDB {
     private readonly stateRepo: ProgramStateRepository,
   ) {}
 
-  getProgramById(
-    id: string,
-  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+  getProgramById(id: string): Promise<Maybe<ProgramOrmWithExternalIds>> {
     return this.basicProg.getProgramById(id);
   }
 
-  getLineupProgramById(
-    id: string,
-  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+  getLineupProgramById(id: string): Promise<Maybe<ProgramOrmWithExternalIds>> {
     return this.basicProg.getLineupProgramById(id);
   }
 
-  getStreamProgramById(
-    id: string,
-  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+  getStreamProgramById(id: string): Promise<Maybe<ProgramOrmWithExternalIds>> {
     return this.basicProg.getStreamProgramById(id);
   }
 
@@ -119,7 +108,7 @@ export class ProgramDB implements IProgramDB {
   getProgramsByIds(
     ids: string[] | readonly string[],
     batchSize?: number,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+  ): Promise<ProgramOrmWithExternalIds[]> {
     return this.basicProg.getProgramsByIds(ids, batchSize);
   }
 
@@ -134,7 +123,7 @@ export class ProgramDB implements IProgramDB {
   getLineupProgramsByIds(
     ids: string[] | readonly string[],
     batchSize?: number,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+  ): Promise<ProgramOrmWithExternalIds[]> {
     return this.basicProg.getLineupProgramsByIds(ids, batchSize);
   }
 
@@ -204,7 +193,7 @@ export class ProgramDB implements IProgramDB {
     sourceType: RemoteSourceType;
     externalSourceId: string;
     externalKey: string;
-  }): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+  }): Promise<Maybe<ProgramOrmWithExternalIds>> {
     return this.externalIdRepo.lookupByExternalId(
       eid as Parameters<typeof this.externalIdRepo.lookupByExternalId>[0],
     );
@@ -215,7 +204,7 @@ export class ProgramDB implements IProgramDB {
       | Set<[RemoteSourceType, MediaSourceId, string]>
       | Set<readonly [RemoteSourceType, MediaSourceId, string]>,
     chunkSize?: number,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+  ): Promise<ProgramOrmWithExternalIds[]> {
     return this.externalIdRepo.lookupByExternalIds(ids, chunkSize);
   }
 
@@ -387,7 +376,7 @@ export class ProgramDB implements IProgramDB {
   getProgramGroupingDescendants(
     groupId: string,
     groupTypeHint?: ProgramGroupingType,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
+  ): Promise<ProgramOrmWithExternalIds[]> {
     return this.progGrouping.getProgramGroupingDescendants(
       groupId,
       groupTypeHint,

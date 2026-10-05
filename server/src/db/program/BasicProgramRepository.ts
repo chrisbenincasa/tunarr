@@ -2,16 +2,16 @@ import type { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdT
 import { KEYS } from '@/types/inject.js';
 import type { Maybe } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
-import throttle from '@/util/throttle.js';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import { chunk, isEmpty, uniq } from 'lodash-es';
-import type { MarkRequired } from 'ts-essentials';
+import { throttledAccumulate, throttledLoop } from '../../util/seq.ts';
 import type { ProgramExternalId } from '../schema/ProgramExternalId.ts';
 import { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
 import type { DB } from '../schema/db.ts';
 import type {
   ProgramGroupingOrmWithRelations,
+  ProgramOrmWithExternalIds,
   ProgramWithRelationsOrm,
 } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
@@ -33,9 +33,7 @@ export class BasicProgramRepository {
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
   ) {}
 
-  async getProgramById(
-    id: string,
-  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+  async getProgramById(id: string): Promise<Maybe<ProgramOrmWithExternalIds>> {
     return this.drizzleDB.query.program.findFirst({
       where: (fields, { eq }) => eq(fields.uuid, id),
       with: {
@@ -47,7 +45,7 @@ export class BasicProgramRepository {
 
   async getLineupProgramById(
     id: string,
-  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+  ): Promise<Maybe<ProgramOrmWithExternalIds>> {
     return this.drizzleDB.query.program.findFirst({
       where: (fields, { eq }) => eq(fields.uuid, id),
       with: LineupProgramRelations,
@@ -56,7 +54,7 @@ export class BasicProgramRepository {
 
   async getStreamProgramById(
     id: string,
-  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+  ): Promise<Maybe<ProgramOrmWithExternalIds>> {
     return this.drizzleDB.query.program.findFirst({
       where: (fields, { eq }) => eq(fields.uuid, id),
       with: StreamProgramRelations,
@@ -104,16 +102,16 @@ export class BasicProgramRepository {
   async getProgramsByIds(
     ids: string[] | readonly string[],
     batchSize: number = 500,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
-    const results: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[] = [];
-    for (const idChunk of chunk(uniq(ids), batchSize)) {
-      const res = await this.drizzleDB.query.program.findMany({
-        where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
-        with: MaterializedProgramRelations,
-      });
-      results.push(...res);
-    }
-    return results;
+  ): Promise<ProgramOrmWithExternalIds[]> {
+    return await throttledAccumulate(
+      chunk(uniq(ids), batchSize),
+      async (idChunk) => {
+        return await this.drizzleDB.query.program.findMany({
+          where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
+          with: MaterializedProgramRelations,
+        });
+      },
+    );
   }
 
   async getGuideProgramsByIds(
@@ -124,8 +122,7 @@ export class BasicProgramRepository {
     // better-sqlite3 is synchronous, so awaiting a query never lets other
     // requests in. Yield between chunks so the load runs as short slices.
     const programs: Omit<ProgramWithRelationsOrm, 'show'>[] = [];
-    for (const idChunk of chunk(uniq(ids), batchSize)) {
-      await throttle();
+    await throttledLoop(chunk(uniq(ids), batchSize), async (idChunk) => {
       const res = includeCreditArtwork
         ? await this.drizzleDB.query.program.findMany({
             where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
@@ -136,7 +133,7 @@ export class BasicProgramRepository {
             with: GuideProgramRelations,
           });
       programs.push(...res);
-    }
+    });
 
     // Each show loads once and is shared by its episodes.
     const showIds = uniq(
@@ -144,9 +141,8 @@ export class BasicProgramRepository {
         isNonEmptyString(tvShowUuid) ? [tvShowUuid] : [],
       ),
     );
-    const showsById: Record<string, ProgramGroupingOrmWithRelations> = {};
-    for (const idChunk of chunk(showIds, batchSize)) {
-      await throttle();
+    const showsById = new Map<string, ProgramGroupingOrmWithRelations>();
+    await throttledLoop(chunk(showIds, batchSize), async (idChunk) => {
       const res = includeCreditArtwork
         ? await this.drizzleDB.query.programGrouping.findMany({
             where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
@@ -157,14 +153,14 @@ export class BasicProgramRepository {
             with: GuideShowRelations,
           });
       for (const show of res) {
-        showsById[show.uuid] = show;
+        showsById.set(show.uuid, show);
       }
-    }
+    });
 
     return programs.map((program) => ({
       ...program,
       show: isNonEmptyString(program.tvShowUuid)
-        ? (showsById[program.tvShowUuid] ?? null)
+        ? (showsById.get(program.tvShowUuid) ?? null)
         : null,
     }));
   }
@@ -172,16 +168,16 @@ export class BasicProgramRepository {
   async getLineupProgramsByIds(
     ids: string[] | readonly string[],
     batchSize: number = 500,
-  ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]> {
-    const results: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[] = [];
-    for (const idChunk of chunk(uniq(ids), batchSize)) {
-      const res = await this.drizzleDB.query.program.findMany({
-        where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
-        with: LineupProgramRelations,
-      });
-      results.push(...res);
-    }
-    return results;
+  ): Promise<ProgramOrmWithExternalIds[]> {
+    return await throttledAccumulate(
+      chunk(uniq(ids), batchSize),
+      async (idChunk) => {
+        return await this.drizzleDB.query.program.findMany({
+          where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
+          with: LineupProgramRelations,
+        });
+      },
+    );
   }
 
   /**

@@ -206,7 +206,7 @@ export type ChannelOrmWithTranscodeConfig = MarkRequired<
 
 export type ChannelFillerShowWithRelations = ChannelFillerShowOrm & {
   fillerShow: MarkNonNullable<DeepNullable<FillerShowOrm>, 'uuid'>;
-  fillerContent?: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[];
+  fillerContent?: ProgramOrmWithExternalIds[];
 };
 
 export type ChannelFillerShowWithContent = MarkRequired<
