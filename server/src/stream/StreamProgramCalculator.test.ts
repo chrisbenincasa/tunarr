@@ -287,7 +287,7 @@ describe('StreamProgramCalculator', () => {
       Promise.resolve(
         createFakeProgram({
           uuid: programId1,
-          duration: +dayjs.duration({ minutes: 2 }),
+          duration: +dayjs.duration({ minutes: 3 }),
           mediaSourceId: tag<MediaSourceId>('mediasource-123'),
         }),
       ),
@@ -354,7 +354,8 @@ describe('StreamProgramCalculator', () => {
       program: { uuid: programId1 },
       infiniteLoop: true,
       programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
-      startOffset: +dayjs.duration(16, 'minutes'),
+      // 16 minutes into the slot is 1 minute into the sixth loop of the 3 minute clip
+      startOffset: +dayjs.duration(1, 'minutes'),
       fillerListId: fillerListId,
       type: 'commercial',
       duration: +dayjs.duration(22, 'minutes'),

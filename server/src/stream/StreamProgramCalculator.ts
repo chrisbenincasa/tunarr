@@ -580,9 +580,17 @@ export class StreamProgramCalculator {
     const mediaStartOffset = timeElapsed;
 
     if (program.type === 'commercial') {
+      const offset = mediaStartOffset + (program.startOffset ?? 0);
+      const clipDuration = program.program.duration;
+
+      // A looping filler clip can be scheduled for longer than the clip itself,
+      // so seek to the matching position within the current loop.
       return {
         ...program,
-        startOffset: mediaStartOffset + (program.startOffset ?? 0),
+        startOffset:
+          program.infiniteLoop && clipDuration > 0
+            ? offset % clipDuration
+            : offset,
         streamDuration,
       };
     }
