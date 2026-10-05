@@ -17,6 +17,20 @@ export class ExternalCollectionRepo {
     return this.drizzleDB.insert(ExternalCollection).values(coll).execute();
   }
 
+  upsertCollection(coll: ExternalCollection) {
+    return this.drizzleDB
+      .insert(ExternalCollection)
+      .values(coll)
+      .onConflictDoUpdate({
+        target: [
+          ExternalCollection.mediaSourceId,
+          ExternalCollection.externalKey,
+        ],
+        set: { libraryId: coll.libraryId, title: coll.title },
+      })
+      .execute();
+  }
+
   getById(id: string) {
     return this.drizzleDB.query.externalCollections
       .findFirst({
