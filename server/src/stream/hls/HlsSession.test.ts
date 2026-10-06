@@ -162,33 +162,75 @@ describe('HlsSession', () => {
       // client B's unrelated low video number (15).
       expect(trimResult!.sequence).toBe(40);
     });
+  });
 
-    test('never lists segments below what pruning already deleted', async () => {
+  describe('trimPlaylist', () => {
+    let dir: tmp.DirResult;
+
+    beforeEach(() => {
+      dir = tmp.dirSync({ unsafeCleanup: true });
+    });
+
+    afterEach(() => {
+      dir.removeCallback();
+    });
+
+    test('never lists a segment below the pruning floor', async () => {
       const session = makeSession(dir.name);
+
+      // startInternal() sets the playlist start that trimPlaylist() needs.
+      // The mocked transcode loop bails on its first call.
+      await (
+        session as unknown as { startInternal(): Promise<void> }
+      ).startInternal();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
       const workingDir = session.workingDirectory;
       await fs.mkdir(workingDir, { recursive: true });
 
+      // ffmpeg writes three lines per segment. A two-line fixture parses to
+      // zero segments.
       const lines = [
         '#EXTM3U',
-        '#EXT-X-VERSION:3',
+        '#EXT-X-VERSION:6',
         '#EXT-X-TARGETDURATION:4',
         '#EXT-X-MEDIA-SEQUENCE:0',
       ];
       for (let i = 0; i < 60; i++) {
-        lines.push('#EXTINF:4.000000,', `sub${String(i).padStart(6, '0')}.vtt`);
+        const name = `data${String(i).padStart(6, '0')}.ts`;
+        lines.push(
+          '#EXTINF:4.000000,',
+          '#EXT-X-PROGRAM-DATE-TIME:2026-01-01T00:00:00.000+0000',
+          name,
+        );
+        await fs.writeFile(path.join(workingDir, name), '');
       }
-      await fs.writeFile(path.join(workingDir, 'subs.m3u8'), lines.join('\n'));
+      await fs.writeFile(
+        path.join(workingDir, 'stream.m3u8'),
+        lines.join('\n'),
+      );
 
-      // This trim deletes everything below 40.
-      session.onSegmentRequested('192.168.1.1', 'sub000050.vtt');
-      const first = await session.trimSubtitlePlaylist();
-      expect(first.get()?.sequence).toBe(40);
+      session.onSegmentRequested('10.0.0.1', 'data000050.ts');
+      expect((await session.trimPlaylist()).get()?.sequence).toBe(40);
 
-      // The client rewinds past the deleted range.
-      session.onSegmentRequested('192.168.1.1', 'sub000020.vtt');
-      const second = await session.trimSubtitlePlaylist();
-      expect(second.get()?.sequence).toBe(40);
-      expect(second.get()?.playlist).not.toContain('sub000039.vtt');
+      // Let the prune finish removing everything below 40.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const onDisk = (await fs.readdir(workingDir))
+        .filter((f) => f.startsWith('data'))
+        .sort();
+      expect(onDisk[0]).toBe('data000040.ts');
+
+      // The client rewinds into the range pruning just deleted.
+      session.onSegmentRequested('10.0.0.1', 'data000020.ts');
+      const playlist = (await session.trimPlaylist()).get()?.playlist ?? '';
+      const listed = [...playlist.matchAll(/data\d{6}\.ts/g)]
+        .map((m) => m[0])
+        .sort();
+      expect(listed.length).toBeGreaterThan(0);
+      expect(listed[0]).toBe('data000040.ts');
+      for (const file of listed) {
+        expect(onDisk).toContain(file);
+      }
     });
   });
 

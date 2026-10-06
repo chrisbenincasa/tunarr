@@ -61,10 +61,12 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #lastSubtitleDelete: Dayjs = dayjs().subtract(1, 'year');
-  // Every segment numbered below these has been deleted. ffmpeg's playlist
-  // still lists them, so trimmed playlists must start at or above the floor.
+  // Every video segment numbered below this has been deleted. ffmpeg's
+  // stream.m3u8 still lists them, so trimmed playlists must start at or above
+  // the floor. Subtitles need no floor. Their muxer keeps a 20-entry window
+  // (HlsSubtitleOutputFormat), and that window is also the deletion boundary,
+  // so subs.m3u8 never lists a pruned .vtt.
   #segmentFloor = 0;
-  #subtitleSegmentFloor = 0;
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
   #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
@@ -150,6 +152,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
               this.channel.uuid,
               this.channel.number,
             );
+
+            // A playlist of 20 or fewer entries skips the filter, so its
+            // sequence can fall below the floor.
             this.#segmentFloor = Math.max(
               this.#segmentFloor,
               trimResult.sequence,
@@ -178,7 +183,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       type: 'before_segment_number',
       segmentNumber: this.minSubtitleSegmentRequested,
       segmentsToKeepBefore: 10,
-      segmentFloor: this.#subtitleSegmentFloor,
     };
     return Result.attemptAsync(async () => {
       return await this.lock.runExclusive(async () => {
@@ -192,10 +196,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
           const now = dayjs();
           if (now.isAfter(this.#lastSubtitleDelete.add(30, 'seconds'))) {
-            this.#subtitleSegmentFloor = Math.max(
-              this.#subtitleSegmentFloor,
-              trimResult.sequence,
-            );
             this.deleteOldSegmentFiles(trimResult.sequence, ['.vtt']).catch(
               (e) => this.logger.error(e),
             );
