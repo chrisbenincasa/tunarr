@@ -61,6 +61,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #lastSubtitleDelete: Dayjs = dayjs().subtract(1, 'year');
+  // Every segment numbered below these has been deleted. ffmpeg's playlist
+  // still lists them, so trimmed playlists must start at or above the floor.
+  #segmentFloor = 0;
+  #subtitleSegmentFloor = 0;
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
   #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
@@ -121,7 +125,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       type: 'before_segment_number',
       segmentNumber: this.minSegmentRequested,
       segmentsToKeepBefore: 10,
-      // segmentFloor: this.#highestDeletedBelow,
+      segmentFloor: this.#segmentFloor,
     };
     return Result.attemptAsync(async () => {
       return await this.lock.runExclusive(async () => {
@@ -145,6 +149,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
               'Deleting old segments from stream (channel id = %s, number = %d)',
               this.channel.uuid,
               this.channel.number,
+            );
+            this.#segmentFloor = Math.max(
+              this.#segmentFloor,
+              trimResult.sequence,
             );
             this.deleteOldSegmentFiles(trimResult.sequence, [
               '.ts',
@@ -170,6 +178,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       type: 'before_segment_number',
       segmentNumber: this.minSubtitleSegmentRequested,
       segmentsToKeepBefore: 10,
+      segmentFloor: this.#subtitleSegmentFloor,
     };
     return Result.attemptAsync(async () => {
       return await this.lock.runExclusive(async () => {
@@ -183,6 +192,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
           const now = dayjs();
           if (now.isAfter(this.#lastSubtitleDelete.add(30, 'seconds'))) {
+            this.#subtitleSegmentFloor = Math.max(
+              this.#subtitleSegmentFloor,
+              trimResult.sequence,
+            );
             this.deleteOldSegmentFiles(trimResult.sequence, ['.vtt']).catch(
               (e) => this.logger.error(e),
             );

@@ -18,6 +18,9 @@ import {
   validatorCompiler,
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import tmp from 'tmp';
 import type { DeepRequired } from 'ts-essentials';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -111,10 +114,24 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
     getHlsSlowerSession: ReturnType<typeof vi.fn>;
   };
 
+  let dir: tmp.DirResult;
+
+  // The fragment route only records segments that exist on disk.
+  async function writeSegments(...names: string[]) {
+    await fs.mkdir(session.workingDirectory, { recursive: true });
+    for (const name of names) {
+      await fs.writeFile(path.join(session.workingDirectory, name), '');
+    }
+  }
+
   beforeEach(async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
 
-    session = new TestHlsSession(makeChannel(), baseOptions);
+    dir = tmp.dirSync({ unsafeCleanup: true });
+    session = new TestHlsSession(makeChannel(), {
+      ...baseOptions,
+      transcodeDirectory: dir.name,
+    });
     sessionManager = {
       getOrCreateHlsSession: vi.fn(async (_id: string, token: string) => {
         // Mirror SessionManager.getOrCreateSession: addConnection(token, ...)
@@ -131,6 +148,7 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
   afterEach(async () => {
     vi.useRealTimers();
     await app.close();
+    dir.removeCallback();
   });
 
   it('master playlist handshake registers the connection under the client IP', async () => {
@@ -149,6 +167,8 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
   });
 
   it('fragment route keys _minByIp and connections by the client IP, and stale cleanup releases the window', async () => {
+    await writeSegments('data000010.ts', 'data000100.ts');
+
     // Client A is an active watcher near the live edge
     await app.inject({
       method: 'GET',
@@ -182,6 +202,25 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
     expect(session.connections()).not.toHaveProperty('203.0.113.20');
     expect(session.minByIp.has('203.0.113.20')).toBe(false);
     expect(session.minSegment).toBe(100);
+  });
+
+  it('a request for a deleted segment returns 404 and does not move the client position', async () => {
+    await writeSegments('data000100.ts');
+
+    await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/hls/data000100.ts`,
+      remoteAddress: '203.0.113.10',
+    });
+    // The client rewinds to a segment that pruning already removed
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/hls/data000035.ts`,
+      remoteAddress: '203.0.113.10',
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect(session.minByIp.get('203.0.113.10')?.video).toBe(100);
   });
 });
 

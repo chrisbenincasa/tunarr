@@ -7,6 +7,7 @@ import type { Result } from '@/types/result.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import type { Maybe } from '@/types/util.js';
+import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import fastifyStatic from '@fastify/static';
@@ -354,22 +355,25 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           .send(playlist.playlist);
       }
 
+      const filePath = resolve(session.workingDirectory, req.params.file);
+      if (!filePath.startsWith(session.workingDirectory + sep)) {
+        return res.status(400).send('Invalid file path');
+      }
+
+      // A request for a missing segment must not move this client's position.
+      // Otherwise its next playlist is built around segments that are gone.
+      if (!(await fileExists(filePath))) {
+        return res.status(404).send('File not found');
+      }
+
       session.onSegmentRequested(req.ip, req.params.file);
 
       if (req.params.file.endsWith('.vtt')) {
-        const filePath = resolve(session.workingDirectory, req.params.file);
-        if (!filePath.startsWith(session.workingDirectory + sep)) {
-          return res.status(400).send('Invalid file path');
-        }
         const content = await fs.readFile(filePath, 'utf-8');
         return res.type('text/vtt').send(injectTimestampMap(content));
       }
 
       if (req.params.file.endsWith('.m3u8')) {
-        const filePath = resolve(session.workingDirectory, req.params.file);
-        if (!filePath.startsWith(session.workingDirectory + sep)) {
-          return res.status(400).send('Invalid file path');
-        }
         const content = await fs.readFile(filePath);
         return res.type('application/vnd.apple.mpegurl').send(content);
       }

@@ -162,6 +162,34 @@ describe('HlsSession', () => {
       // client B's unrelated low video number (15).
       expect(trimResult!.sequence).toBe(40);
     });
+
+    test('never lists segments below what pruning already deleted', async () => {
+      const session = makeSession(dir.name);
+      const workingDir = session.workingDirectory;
+      await fs.mkdir(workingDir, { recursive: true });
+
+      const lines = [
+        '#EXTM3U',
+        '#EXT-X-VERSION:3',
+        '#EXT-X-TARGETDURATION:4',
+        '#EXT-X-MEDIA-SEQUENCE:0',
+      ];
+      for (let i = 0; i < 60; i++) {
+        lines.push('#EXTINF:4.000000,', `sub${String(i).padStart(6, '0')}.vtt`);
+      }
+      await fs.writeFile(path.join(workingDir, 'subs.m3u8'), lines.join('\n'));
+
+      // This trim deletes everything below 40.
+      session.onSegmentRequested('192.168.1.1', 'sub000050.vtt');
+      const first = await session.trimSubtitlePlaylist();
+      expect(first.get()?.sequence).toBe(40);
+
+      // The client rewinds past the deleted range.
+      session.onSegmentRequested('192.168.1.1', 'sub000020.vtt');
+      const second = await session.trimSubtitlePlaylist();
+      expect(second.get()?.sequence).toBe(40);
+      expect(second.get()?.playlist).not.toContain('sub000039.vtt');
+    });
   });
 
   describe('getLastSubtitleSegmentNumber (private)', () => {
