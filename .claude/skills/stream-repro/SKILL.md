@@ -30,6 +30,8 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--seconds S` | `60` | How much stream to capture |
 | `--out DIR` | temp dir | Where clips, database, capture, and `report.json` go |
 | `--keep-server` | off | Leave the server running afterward for manual poking |
+| `--rewind N` | | HLS only. After the capture, jump back N segments, then play on (see below) |
+| `--rewind-polls P` | `8` | Playlist polls after the rewind, 2 s apart |
 | `--reanalyze DIR` | | Re-score an existing capture without booting a server |
 
 Pick the layout that matches the report. `dup-lang` has two `eng` audio tracks, one titled
@@ -73,6 +75,14 @@ A run takes one to three minutes. Most of that is server boot and real-time stre
 | `pts_gap` | Timestamps jump forward by more than 3× the typical frame or packet spacing inside one continuous run. |
 | `pts_overlap` | Many packets share nearly the same timestamp, which is what a backward jump looks like after sorting. `count` says how many. |
 | `hls_session_restarted` | The HLS session died mid-capture. The reason is in `tunarr.log` near that time. |
+| `rewind_target_missing` | The `--rewind` target was already pruned. Expected when N reaches past the retained window. |
+| `playlist_lists_missing_segment` | A playlist after the rewind listed segments that 404. The playlist points at files pruning deleted. |
+
+`--rewind` tests playlist trimming and pruning. Pruning runs at most every 30 s, so capture long enough
+for it to fire, such as `--seconds 120`. The rewind client uses the capture client's IP, so the server
+treats it as the same viewer. It fetches each newly listed segment once, in order, as a player would.
+`report.rewind` records the target, its status, the total segment 404s, and for each poll the listed
+range and the missing files.
 
 Runs are split at discontinuities, so the expected timestamp reset between HLS programs is not flagged.
 MPEG-TS concat captures form a single run. To place a finding in a program, compare its PTS with the lineup

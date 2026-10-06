@@ -24,6 +24,8 @@ const { values: opt } = parseArgs({
     ffmpeg: { type: 'string', default: 'ffmpeg' },
     ffprobe: { type: 'string', default: 'ffprobe' },
     'keep-server': { type: 'boolean', default: false },
+    rewind: { type: 'string' },
+    'rewind-polls': { type: 'string', default: '8' },
     reanalyze: { type: 'string' },
   },
 });
@@ -310,6 +312,76 @@ async function captureTs(base, channelId) {
   return { t0, pieces: [{ file, discontinuityBefore: false }] };
 }
 
+function hlsListUrl(base, channelId) {
+  const sessionType = opt.mode === 'hls_slower' ? 'hls_slower' : opt.mode === 'hls_direct_v2' ? 'hls_direct_v2' : 'hls';
+  return `${base}/stream/channels/${channelId}/${sessionType}/stream.m3u8`;
+}
+
+const SEGMENT_NUMBER = /(\d+)(\.(?:ts|mp4|m4s))$/;
+
+// Rewrites a segment URL to another segment number, keeping the zero padding.
+function segmentUrlAt(url, number) {
+  const u = new URL(url);
+  u.pathname = u.pathname.replace(SEGMENT_NUMBER, (_, digits, ext) => String(number).padStart(digits.length, '0') + ext);
+  return u.toString();
+}
+
+function segmentNumber(url) {
+  const m = new URL(url).pathname.match(SEGMENT_NUMBER);
+  return m ? Number(m[1]) : undefined;
+}
+
+// Acts as the capture client jumping back N segments, then playing on the way
+// a player does. It polls the playlist and fetches each newly listed segment
+// once, in order. A listed segment that 404s means the playlist points at a
+// file that pruning deleted.
+async function rewindHls(base, channelId, seen) {
+  const n = Number(opt.rewind);
+  const polls = Number(opt['rewind-polls']);
+  const listUrl = hlsListUrl(base, channelId);
+  const urls = [...seen].map((l) => new URL(l, listUrl).toString()).filter((u) => segmentNumber(u) !== undefined);
+  if (urls.length === 0) throw new Error('--rewind: the capture saw no numbered segments');
+  const last = urls.reduce((a, b) => (segmentNumber(b) > segmentNumber(a) ? b : a));
+  const from = segmentNumber(last);
+  const target = Math.max(0, from - n);
+  const targetUrl = segmentUrlAt(last, target);
+  const targetStatus = (await fetch(targetUrl)).status;
+
+  const fetched = new Map();
+  const results = [];
+  for (let i = 0; i < polls; i++) {
+    await sleep(2000);
+    const res = await fetch(listUrl);
+    if (!res.ok) {
+      results.push({ poll: i, playlistStatus: res.status });
+      continue;
+    }
+    const text = await res.text();
+    const listed = text
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith('#'))
+      .map((l) => new URL(l, listUrl).toString());
+    const missing = [];
+    for (const url of listed) {
+      if (!fetched.has(url)) fetched.set(url, (await fetch(url)).status);
+      if (fetched.get(url) === 404) missing.push(path.basename(new URL(url).pathname));
+    }
+    const numbers = listed.map(segmentNumber).filter((x) => x !== undefined);
+    results.push({
+      poll: i,
+      mediaSequence: Number(text.match(/#EXT-X-MEDIA-SEQUENCE:(\d+)/)?.[1]),
+      firstListed: numbers.length ? Math.min(...numbers) : null,
+      lastListed: numbers.length ? Math.max(...numbers) : null,
+      listed: listed.length,
+      missing,
+    });
+  }
+
+  const segment404s = [...fetched.values()].filter((s) => s === 404).length;
+  return { n, from, target, targetStatus, segment404s, polls: results };
+}
+
 async function captureHls(base, channelId) {
   const t0 = Date.now();
   await until(
@@ -318,8 +390,7 @@ async function captureHls(base, channelId) {
     90_000,
     1500,
   );
-  const sessionType = opt.mode === 'hls_slower' ? 'hls_slower' : opt.mode === 'hls_direct_v2' ? 'hls_direct_v2' : 'hls';
-  const listUrl = `${base}/stream/channels/${channelId}/${sessionType}/stream.m3u8`;
+  const listUrl = hlsListUrl(base, channelId);
   const segDir = path.join(out, 'segments');
   fs.mkdirSync(segDir, { recursive: true });
   const seen = new Set();
@@ -358,7 +429,7 @@ async function captureHls(base, channelId) {
     }
     await sleep(1000);
   }
-  return { t0, pieces, sessionRestarts };
+  return { t0, pieces, sessionRestarts, seen };
 }
 
 // ---------- analysis ----------
@@ -517,6 +588,18 @@ try {
   log('analyzing');
   Object.assign(report, analyze(cap.pieces));
   for (const at of report.sessionRestarts) report.findings.push({ kind: 'hls_session_restarted', at });
+
+  if (opt.rewind !== undefined) {
+    if (opt.mode === 'mpegts') throw new Error('--rewind needs an HLS mode');
+    log(`rewinding ${opt.rewind} segments`);
+    report.rewind = await rewindHls(server.base, channel.channelId, cap.seen);
+    if (report.rewind.targetStatus === 404) {
+      report.findings.push({ kind: 'rewind_target_missing', segment: report.rewind.target });
+    }
+    for (const p of report.rewind.polls) {
+      if (p.missing?.length) report.findings.push({ kind: 'playlist_lists_missing_segment', poll: p.poll, files: p.missing });
+    }
+  }
   report.ffmpeg = ffmpegCommands();
 } catch (e) {
   report.error = String(e.stack ?? e);
