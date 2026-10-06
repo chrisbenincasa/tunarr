@@ -1,0 +1,1 @@
+CREATE INDEX `program_grouping_media_source_library_external_key_index` ON `program_grouping` (`media_source_id`,`library_id`,`external_key`);
