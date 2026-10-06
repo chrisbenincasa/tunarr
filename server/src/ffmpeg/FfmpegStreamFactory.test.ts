@@ -1,5 +1,4 @@
 import type { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
-import type { IChannelDB } from '@/db/interfaces/IChannelDB.ts';
 import type {
   ISettingsDB,
   ReadableFfmpegSettings,
@@ -251,12 +250,6 @@ function makeMockSettingsDB(
   } as unknown as ISettingsDB;
 }
 
-function makeMockChannelDB(): IChannelDB {
-  return {
-    getChannelSubtitlePreferences: vi.fn().mockResolvedValue([]),
-  } as unknown as IChannelDB;
-}
-
 function makeMockFeatureFlagService(
   flags: Record<string, boolean> = {},
 ): FeatureFlagService {
@@ -274,6 +267,9 @@ function makeMockStreamSelector(
       audioStream: { index: 1, codec: 'aac', channels: 2 },
       subtitleStream,
     })),
+    selectSubtitleStream: vi
+      .fn()
+      .mockImplementation(async () => subtitleStream),
   } as unknown as StreamSelector;
 }
 
@@ -292,7 +288,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -333,7 +328,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -374,7 +368,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -416,7 +409,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -450,7 +442,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -484,7 +475,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(makeFfmpegSettings()),
         capturing.factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -831,7 +821,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(textSubtitleStream),
           config,
@@ -874,7 +863,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: false }),
           makeMockStreamSelector(textSubtitleStream),
           config,
@@ -911,7 +899,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(imageSubtitleStream),
           config,
@@ -948,7 +935,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(textSubtitleStream),
           config,
@@ -984,7 +970,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(null),
           config,
@@ -1020,7 +1005,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(externalSubtitleStream),
           config,
@@ -1085,7 +1069,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(extractedEmbeddedStream),
           config,
@@ -1137,9 +1120,8 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService(),
-          makeMockStreamSelector(),
+          makeMockStreamSelector(textSubtitleStream),
           config,
           makeChannel({ subtitlesEnabled: true }),
         );
@@ -1172,6 +1154,44 @@ describe('FfmpegStreamFactory', () => {
         });
       });
 
+      test('still selects subtitles when the source has no audio streams', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+        const details = makeStreamDetails();
+        details.subtitleDetails = [textSubtitleStream];
+        details.audioDetails = undefined;
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
+          makeMockStreamSelector(textSubtitleStream),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details,
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: hlsDirectV2Format,
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).not.toBeNull();
+        expect(subtitleInput!.method).toBe(SubtitleMethods.Convert);
+      });
+
       test('skips image-based subtitles (cannot sidecar or burn)', async () => {
         const config = makeTranscodeConfig();
         const capturing = createCapturingPipelineBuilderFactory();
@@ -1182,7 +1202,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService(),
           makeMockStreamSelector(),
           config,
@@ -1216,13 +1235,14 @@ describe('FfmpegStreamFactory', () => {
         const details = makeStreamDetails();
         details.subtitleDetails = [textSubtitleStream];
 
+        // The selector returns a usable subtitle, so only subtitlesEnabled
+        // can suppress it.
         const sut = new FfmpegStreamFactory(
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
-          makeMockFeatureFlagService(),
-          makeMockStreamSelector(),
+          makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
+          makeMockStreamSelector(textSubtitleStream),
           config,
           makeChannel({ subtitlesEnabled: false }),
         );
@@ -1258,7 +1278,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService(),
           makeMockStreamSelector(),
           config,
