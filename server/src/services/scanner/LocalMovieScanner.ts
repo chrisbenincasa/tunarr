@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { chunk, compact, isEmpty, isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
-import path, { basename, dirname, extname } from 'node:path';
+import path, { basename, dirname } from 'node:path';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
@@ -39,8 +39,12 @@ import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
 import type { LocalScanContext } from './FileSystemScanner.ts';
 import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import { KnownVideoFileExtensions } from './constants.ts';
-import { findMovieArtwork } from './movieArtworkPaths.ts';
+import {
+  findMovieArtwork,
+  folderHoldsSingleMovie,
+  folderNameMatchesMovie,
+  isVideoFile,
+} from './movieArtworkPaths.ts';
 
 @injectable()
 export class LocalMovieScanner extends FileSystemScanner {
@@ -198,10 +202,7 @@ export class LocalMovieScanner extends FileSystemScanner {
 
     // TODO filter extra files
     const videoFiles = allFiles.filter(
-      (file) =>
-        file.isFile() &&
-        KnownVideoFileExtensions.has(extname(file.name)) &&
-        !basename(file.name).startsWith('._'),
+      (file) => file.isFile() && isVideoFile(file.name),
     );
 
     const canonicalFiles = allFiles.filter(
@@ -314,15 +315,24 @@ export class LocalMovieScanner extends FileSystemScanner {
         return metadataResult.recast();
       }
 
+      // Kodi's gate, computed once per movie and shared by both artwork types
+      // so a second folder read per artwork type is not wasted (#2171).
+      const folder = dirname(fullVideoFilePath);
+      const useFolderLevelArtwork =
+        (await folderHoldsSingleMovie(folder)) ||
+        folderNameMatchesMovie(folder, fullVideoFilePath);
+
       const posterArtResult = await this.scanArtworkForMovie(
         fullVideoFilePath,
         'poster',
+        useFolderLevelArtwork,
         existingMovie,
         context.force,
       );
       const fanartArtResult = await this.scanArtworkForMovie(
         fullVideoFilePath,
         'fanart',
+        useFolderLevelArtwork,
         existingMovie,
         context.force,
       );
@@ -492,10 +502,15 @@ export class LocalMovieScanner extends FileSystemScanner {
   private async scanArtworkForMovie(
     fullMoviePath: string,
     artworkType: ArtworkType,
+    useFolderLevelArtwork: boolean,
     existingItem: Maybe<ProgramOrm & { artwork: Artwork[] }>,
     force: boolean = false,
   ) {
-    const artworkPath = await this.getArtworkPath(fullMoviePath, artworkType);
+    const artworkPath = await this.getArtworkPath(
+      fullMoviePath,
+      artworkType,
+      useFolderLevelArtwork,
+    );
     if (!artworkPath) {
       this.logger.debug(
         'Could not locate artwork type %s for file %s',
@@ -527,6 +542,7 @@ export class LocalMovieScanner extends FileSystemScanner {
   private async getArtworkPath(
     fullMoviePath: string,
     artworkType: ArtworkType,
+    useFolderLevelArtwork: boolean,
   ) {
     const filename = match(artworkType)
       .with(P.union('poster', 'fanart', 'banner', 'landscape'), (s) => s)
@@ -536,12 +552,12 @@ export class LocalMovieScanner extends FileSystemScanner {
     }
 
     // Kodi's order for movie artwork: the file-specific long name first, then
-    // the folder-level short names (#2170). Gating the short names behind a
-    // single-movie folder is the follow-up, so the candidate set stays
-    // identical to main's.
+    // the folder-level short names, which apply only when the folder is a
+    // single movie's own folder or is named after the movie (#2170, #2171).
     return findMovieArtwork({
       movieFilePath: fullMoviePath,
       artworkType: filename,
+      useFolderLevelArtwork,
     });
   }
 }

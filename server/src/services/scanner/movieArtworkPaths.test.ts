@@ -3,7 +3,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import {
+  countMovieFiles,
   findMovieArtwork,
+  folderHoldsSingleMovie,
+  folderNameMatchesMovie,
+  isVideoFile,
   movieArtworkCandidateGroups,
   type MovieArtworkType,
 } from './movieArtworkPaths.ts';
@@ -11,10 +15,12 @@ import {
 /**
  * #2170 — the short name used to outrank the long name, including across
  * extensions (`poster.jpg` beat `Movie (2020)-poster.png`), which is the
- * reverse of Kodi's documented order. This PR only re-prioritises the
- * candidates: the candidate set is unchanged, so nothing on disk can stop
- * being picked up. Gating the folder-level short names behind "a single movie
- * folder" is a separate follow-up.
+ * reverse of Kodi's documented order.
+ * #2171 — the short names are folder-level conventions; gating them behind
+ * "the folder is a single movie's folder or is named after the movie" stops a
+ * flat folder's one `poster.jpg` from becoming every movie's poster, without
+ * stripping a real per-movie folder's artwork because a `sample.mkv`,
+ * featurette or second quality version shares the folder.
  */
 
 let dir: string;
@@ -33,11 +39,37 @@ async function touch(...names: string[]) {
   }
 }
 
+async function touchIn(sub: string, ...names: string[]) {
+  const base = path.join(dir, sub);
+  await fs.mkdir(base, { recursive: true });
+  for (const name of names) {
+    await fs.writeFile(path.join(base, name), '');
+  }
+  return base;
+}
+
+/** What the scanner does: compute Kodi's gate once for the movie, then resolve. */
+async function artworkFor(
+  movieFilePath: string,
+  type: MovieArtworkType = 'poster',
+) {
+  const folder = path.dirname(movieFilePath);
+  const useFolderLevelArtwork =
+    (await folderHoldsSingleMovie(folder)) ||
+    folderNameMatchesMovie(folder, movieFilePath);
+  return findMovieArtwork({
+    movieFilePath,
+    artworkType: type,
+    useFolderLevelArtwork,
+  });
+}
+
 describe('movieArtworkCandidateGroups', () => {
-  test('checks the long name first, then the folder-level names', () => {
+  test('checks the long name first, then the folder-level names when the gate is open', () => {
     const groups = movieArtworkCandidateGroups({
       movieFilePath: '/movies/Movie (2020).mkv',
       artworkType: 'poster',
+      useFolderLevelArtwork: true,
     });
 
     expect(groups).toEqual([
@@ -47,10 +79,21 @@ describe('movieArtworkCandidateGroups', () => {
     ]);
   });
 
+  test('skips the folder-level names when the gate is closed', () => {
+    const groups = movieArtworkCandidateGroups({
+      movieFilePath: '/movies/A.mkv',
+      artworkType: 'poster',
+      useFolderLevelArtwork: false,
+    });
+
+    expect(groups).toEqual([[path.join('/movies', 'A-poster')]]);
+  });
+
   test('never falls back to folder.* for anything but a poster', () => {
     const groups = movieArtworkCandidateGroups({
       movieFilePath: '/movies/Movie/movie.mkv',
       artworkType: 'fanart',
+      useFolderLevelArtwork: true,
     });
 
     expect(groups).toEqual([
@@ -60,77 +103,175 @@ describe('movieArtworkCandidateGroups', () => {
   });
 });
 
-describe('findMovieArtwork', () => {
-  test('the long name beats the short name in another extension (#2170)', async () => {
-    await touch('Movie (2020).mkv', 'Movie (2020)-poster.png', 'poster.jpg');
-
-    await expect(
-      findMovieArtwork({
-        movieFilePath: path.join(dir, 'Movie (2020).mkv'),
-        artworkType: 'poster',
-      }),
-    ).resolves.toBe(path.join(dir, 'Movie (2020)-poster.png'));
+describe('isVideoFile', () => {
+  test('recognises a known lower-case video extension', () => {
+    expect(isVideoFile('Movie.mkv')).toBe(true);
   });
 
-  test('falls back to the short name when there is no long-name artwork', async () => {
+  test('does not match an upper-case extension, exactly as the scanner does not', () => {
+    expect(isVideoFile('clip.MP4')).toBe(false);
+  });
+
+  test('treats an AppleDouble sidecar as not a video file', () => {
+    expect(isVideoFile('._Movie (2020).mkv')).toBe(false);
+  });
+});
+
+describe('countMovieFiles', () => {
+  test('counts only the files the scanner treats as movies', () => {
+    expect(
+      countMovieFiles([
+        'A.mkv',
+        'B.MP4',
+        '._C.mkv',
+        'poster.jpg',
+        'movie.nfo',
+        'sample.mkv',
+      ]),
+    ).toBe(2);
+  });
+});
+
+describe('folderNameMatchesMovie', () => {
+  test('is true for a folder named after the movie', () => {
+    expect(
+      folderNameMatchesMovie(
+        '/movies/Matrix (1999)',
+        '/movies/Matrix (1999)/Matrix (1999).mkv',
+      ),
+    ).toBe(true);
+  });
+
+  test('is true for two quality versions of the same film in one folder', () => {
+    expect(
+      folderNameMatchesMovie(
+        '/movies/Matrix (1999)',
+        '/movies/Matrix (1999)/Matrix (1999)-1080p.mkv',
+      ),
+    ).toBe(true);
+  });
+
+  test('is false for a flat folder', () => {
+    expect(folderNameMatchesMovie('/movies', '/movies/A.mkv')).toBe(false);
+  });
+
+  test('is false when the file name does not start with the folder name', () => {
+    expect(
+      folderNameMatchesMovie(
+        '/movies/Some Movie',
+        '/movies/Some Movie/movie.mkv',
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('findMovieArtwork — gate', () => {
+  test('a single-movie folder still uses the short name', async () => {
     await touch('movie.mkv', 'poster.jpg');
 
-    await expect(
-      findMovieArtwork({
-        movieFilePath: path.join(dir, 'movie.mkv'),
-        artworkType: 'poster',
-      }),
-    ).resolves.toBe(path.join(dir, 'poster.jpg'));
+    await expect(artworkFor(path.join(dir, 'movie.mkv'))).resolves.toBe(
+      path.join(dir, 'poster.jpg'),
+    );
   });
 
-  test('falls back to folder.jpg for a poster', async () => {
-    await touch('movie.mkv', 'folder.jpg');
-
-    await expect(
-      findMovieArtwork({
-        movieFilePath: path.join(dir, 'movie.mkv'),
-        artworkType: 'poster',
-      }),
-    ).resolves.toBe(path.join(dir, 'folder.jpg'));
-  });
-
-  test('a flat folder resolves the shared poster.jpg for every movie, as before', async () => {
-    // Without the gate this is main's behaviour: one folder-level poster.jpg
-    // applies to every movie in the folder. The gate that restricts this to
-    // single-movie folders is the follow-up.
+  test('a flat folder does not share one poster.jpg between movies', async () => {
     await touch('A.mkv', 'B.mkv', 'poster.jpg');
 
+    await expect(artworkFor(path.join(dir, 'A.mkv'))).resolves.toBeUndefined();
+    await expect(artworkFor(path.join(dir, 'B.mkv'))).resolves.toBeUndefined();
+  });
+
+  test('a flat folder still resolves each movie its own long-name artwork', async () => {
+    await touch('A.mkv', 'B.mkv', 'poster.jpg', 'A-poster.jpg');
+
+    await expect(artworkFor(path.join(dir, 'A.mkv'))).resolves.toBe(
+      path.join(dir, 'A-poster.jpg'),
+    );
+    await expect(artworkFor(path.join(dir, 'B.mkv'))).resolves.toBeUndefined();
+  });
+
+  test('a per-movie folder with a sample file keeps its poster (name match)', async () => {
+    const base = await touchIn(
+      'Movie (2020)',
+      'Movie (2020).mkv',
+      'sample.mkv',
+      'poster.jpg',
+    );
+
+    await expect(artworkFor(path.join(base, 'Movie (2020).mkv'))).resolves.toBe(
+      path.join(base, 'poster.jpg'),
+    );
+  });
+
+  test('two quality versions of the same film keep their poster', async () => {
+    const base = await touchIn(
+      'Movie (2020)',
+      'Movie (2020)-1080p.mkv',
+      'Movie (2020)-720p.mkv',
+      'poster.jpg',
+    );
+
     await expect(
-      findMovieArtwork({
-        movieFilePath: path.join(dir, 'A.mkv'),
-        artworkType: 'poster',
-      }),
-    ).resolves.toBe(path.join(dir, 'poster.jpg'));
-    await expect(
-      findMovieArtwork({
-        movieFilePath: path.join(dir, 'B.mkv'),
-        artworkType: 'poster',
-      }),
-    ).resolves.toBe(path.join(dir, 'poster.jpg'));
+      artworkFor(path.join(base, 'Movie (2020)-1080p.mkv')),
+    ).resolves.toBe(path.join(base, 'poster.jpg'));
+  });
+
+  test('a featurette beside the feature keeps the folder poster', async () => {
+    const base = await touchIn(
+      'Movie (2020)',
+      'Movie (2020).mkv',
+      'featurette.mkv',
+      'poster.jpg',
+    );
+
+    await expect(artworkFor(path.join(base, 'Movie (2020).mkv'))).resolves.toBe(
+      path.join(base, 'poster.jpg'),
+    );
+  });
+
+  test('an AppleDouble sidecar or an upper-case clip does not disable the gate', async () => {
+    // Neither `._Movie (2020).mkv` nor `clip.MP4` is a movie file for the
+    // scanner, so the folder still holds exactly one movie and the poster
+    // applies (#2171).
+    const base = await touchIn(
+      'Movie (2020)',
+      'Movie (2020).mkv',
+      '._Movie (2020).mkv',
+      'clip.MP4',
+      'poster.jpg',
+    );
+
+    await expect(artworkFor(path.join(base, 'Movie (2020).mkv'))).resolves.toBe(
+      path.join(base, 'poster.jpg'),
+    );
+  });
+});
+
+describe('findMovieArtwork — order', () => {
+  test('the long name beats the short name in another extension (#2170)', async () => {
+    const base = await touchIn(
+      'Movie (2020)',
+      'Movie (2020).mkv',
+      'Movie (2020)-poster.png',
+      'poster.jpg',
+    );
+
+    await expect(artworkFor(path.join(base, 'Movie (2020).mkv'))).resolves.toBe(
+      path.join(base, 'Movie (2020)-poster.png'),
+    );
   });
 
   test('fanart uses its long name and never folder.*', async () => {
     await touch('movie.mkv', 'folder.jpg', 'movie-fanart.jpg');
 
     await expect(
-      findMovieArtwork({
-        movieFilePath: path.join(dir, 'movie.mkv'),
-        artworkType: 'fanart',
-      }),
+      artworkFor(path.join(dir, 'movie.mkv'), 'fanart'),
     ).resolves.toBe(path.join(dir, 'movie-fanart.jpg'));
 
     await fs.rm(path.join(dir, 'movie-fanart.jpg'));
 
     await expect(
-      findMovieArtwork({
-        movieFilePath: path.join(dir, 'movie.mkv'),
-        artworkType: 'fanart',
-      }),
+      artworkFor(path.join(dir, 'movie.mkv'), 'fanart'),
     ).resolves.toBeUndefined();
   });
 
@@ -138,10 +279,7 @@ describe('findMovieArtwork', () => {
     await touch('movie.mkv');
 
     await expect(
-      findMovieArtwork({
-        movieFilePath: path.join(dir, 'movie.mkv'),
-        artworkType: 'poster',
-      }),
+      artworkFor(path.join(dir, 'movie.mkv')),
     ).resolves.toBeUndefined();
   });
 
@@ -149,8 +287,9 @@ describe('findMovieArtwork', () => {
     const seen: string[][] = [];
     const found = await findMovieArtwork(
       {
-        movieFilePath: '/movies/A.mkv',
+        movieFilePath: '/movies/Movie (2020).mkv',
         artworkType: 'poster',
+        useFolderLevelArtwork: true,
       },
       (candidates) => {
         seen.push(candidates);
@@ -160,7 +299,7 @@ describe('findMovieArtwork', () => {
 
     expect(found).toBeUndefined();
     expect(seen).toEqual([
-      [path.join('/movies', 'A-poster')],
+      [path.join('/movies', 'Movie (2020)-poster')],
       [path.join('/movies', 'poster')],
       [path.join('/movies', 'folder')],
     ]);

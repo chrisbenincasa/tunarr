@@ -1,5 +1,7 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Maybe } from '../../types/util.ts';
+import { KnownVideoFileExtensions } from './constants.ts';
 import { locateImageFile } from './imageFileLookup.ts';
 
 /**
@@ -13,11 +15,11 @@ import { locateImageFile } from './imageFileLookup.ts';
  *    extension loop runs outermost, which is how a stale `poster.jpg` used to
  *    outrank the file-specific poster the Artwork Dump and the *arr tools
  *    write.
- * 2. The short names (`poster.jpg`, `folder.jpg`) are folder-level conventions
- *    and stay eligible as fallbacks. Whether they should apply only when the
- *    folder holds a single movie (Kodi's "movies are in separate folders that
- *    match the movie title") is tracked in the follow-up that gates them, so it
- *    can be reviewed on its own.
+ * 2. The short names (`poster.jpg`, `folder.jpg`) are folder-level conventions.
+ *    Kodi gates them behind "movies are in separate folders that match the
+ *    movie title", so here they are used when the folder holds exactly one
+ *    movie file OR is named after the movie. In a flat folder a single
+ *    `poster.jpg` would otherwise become the poster of every movie in it.
  *
  * The lookup itself stays in `imageFileLookup.ts`: this module only decides
  * which candidate stems to try, in which order.
@@ -29,6 +31,12 @@ export interface MovieArtworkQuery {
   /** Path of the movie file the artwork belongs to. */
   movieFilePath: string;
   artworkType: MovieArtworkType;
+  /**
+   * Whether the folder-level short names may apply. This is Kodi's gate
+   * (`folderHoldsSingleMovie` OR `folderNameMatchesMovie`), computed once per
+   * movie by the caller rather than per artwork type.
+   */
+  useFolderLevelArtwork: boolean;
 }
 
 /**
@@ -47,9 +55,13 @@ export function movieArtworkCandidateGroups(
 
   const groups: string[][] = [
     [path.join(folder, `${stem}-${query.artworkType}`)],
-    [path.join(folder, query.artworkType)],
   ];
 
+  if (!query.useFolderLevelArtwork) {
+    return groups;
+  }
+
+  groups.push([path.join(folder, query.artworkType)]);
   if (query.artworkType === 'poster') {
     groups.push([path.join(folder, 'folder')]);
   }
@@ -73,4 +85,57 @@ export async function findMovieArtwork(
   }
 
   return;
+}
+
+/**
+ * Whether `name` is a movie file for the local scanner: a known video
+ * extension, case-sensitively, that is not an `._` AppleDouble sidecar. Shared
+ * so the artwork gate counts exactly the files the library treats as programs
+ * (`LocalMovieScanner` skips `._` files and does not match upper-case
+ * extensions such as `clip.MP4`).
+ */
+export function isVideoFile(name: string): boolean {
+  const ext = path.extname(name);
+  return (
+    ext.length > 1 &&
+    KnownVideoFileExtensions.has(ext) &&
+    !path.basename(name).startsWith('._')
+  );
+}
+
+/** Number of movie files directly inside a folder list. */
+export function countMovieFiles(names: readonly string[]): number {
+  return names.filter((name) => isVideoFile(name)).length;
+}
+
+/**
+ * Reads the folder, rather than caching a verdict on the scanner: a folder
+ * that gained or lost a movie file since the last scan must get the current
+ * answer, and a stale "single movie" would silently restore the shared
+ * `poster.jpg` this change removes.
+ */
+export async function folderHoldsSingleMovie(folder: string): Promise<boolean> {
+  try {
+    return countMovieFiles(await fs.readdir(folder)) === 1;
+  } catch {
+    // An unreadable folder cannot prove it holds one movie, and the long name
+    // was already tried by the caller.
+    return false;
+  }
+}
+
+/**
+ * Kodi's gate is "movies are in separate folders that match the movie title".
+ * A folder holding several video files is still one movie's own folder when it
+ * is named after that movie: `Sample Movie (2020)/` with a 1080p and a 720p
+ * copy of the same film shares a poster with its twin. The single-file case
+ * (`Some Movie/movie.mkv`) is handled by the count; this is the multi-file
+ * counterpart.
+ */
+export function folderNameMatchesMovie(folder: string, movieFilePath: string) {
+  const stem = path
+    .basename(movieFilePath, path.extname(movieFilePath))
+    .toLowerCase();
+  const folderName = path.basename(folder).toLowerCase();
+  return folderName.length > 0 && stem.startsWith(folderName);
 }
