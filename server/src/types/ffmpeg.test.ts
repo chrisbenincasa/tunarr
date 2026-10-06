@@ -1,6 +1,44 @@
 import { describe, expect, test } from 'vitest';
 import { FfprobeMediaInfoSchema } from './ffmpeg.ts';
 
+const baseProbe = {
+  streams: [
+    {
+      index: 0,
+      codec_name: 'h264',
+      codec_long_name: 'H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10',
+      profile: 'High',
+      codec_type: 'video',
+      width: 1920,
+      height: 1080,
+      coded_width: 1920,
+      coded_height: 1080,
+      has_b_frames: 2,
+      sample_aspect_ratio: '1:1',
+      display_aspect_ratio: '16:9',
+      pix_fmt: 'yuv420p',
+      level: 40,
+      r_frame_rate: '24000/1001',
+      avg_frame_rate: '24000/1001',
+      time_base: '1/1000',
+      start_pts: 0,
+      start_time: '0.000000',
+      bits_per_raw_sample: '8',
+    },
+  ],
+  format: {
+    filename: 'file.mkv',
+    nb_streams: 1,
+    format_name: 'matroska,webm',
+    format_long_name: 'Matroska / WebM',
+    start_time: '0.000000',
+    duration: '1320.810000',
+    size: '1162966026',
+    bit_rate: '7043956',
+    probe_score: 100,
+  },
+} as const;
+
 // Regression tests for https://github.com/chrisbenincasa/tunarr/issues/2078
 //
 // ffprobe omits the `tags` key entirely for chapters that have no tags
@@ -10,44 +48,6 @@ import { FfprobeMediaInfoSchema } from './ffmpeg.ts';
 // the scan failed with "Unable to parse ffprobe output" / "Filter was not a
 // match".
 describe('FfprobeMediaInfoSchema chapters', () => {
-  const baseProbe = {
-    streams: [
-      {
-        index: 0,
-        codec_name: 'h264',
-        codec_long_name: 'H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10',
-        profile: 'High',
-        codec_type: 'video',
-        width: 1920,
-        height: 1080,
-        coded_width: 1920,
-        coded_height: 1080,
-        has_b_frames: 2,
-        sample_aspect_ratio: '1:1',
-        display_aspect_ratio: '16:9',
-        pix_fmt: 'yuv420p',
-        level: 40,
-        r_frame_rate: '24000/1001',
-        avg_frame_rate: '24000/1001',
-        time_base: '1/1000',
-        start_pts: 0,
-        start_time: '0.000000',
-        bits_per_raw_sample: '8',
-      },
-    ],
-    format: {
-      filename: 'file.mkv',
-      nb_streams: 1,
-      format_name: 'matroska,webm',
-      format_long_name: 'Matroska / WebM',
-      start_time: '0.000000',
-      duration: '1320.810000',
-      size: '1162966026',
-      bit_rate: '7043956',
-      probe_score: 100,
-    },
-  } as const;
-
   test('parses chapters without tags and with ids above Int32.MaxValue', () => {
     const result = FfprobeMediaInfoSchema.safeParse({
       ...baseProbe,
@@ -90,6 +90,32 @@ describe('FfprobeMediaInfoSchema chapters', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.chapters?.[0]?.tags).toEqual({ title: 'Opening' });
+    }
+  });
+});
+
+// Regression test for https://github.com/chrisbenincasa/tunarr/issues/2091
+//
+// ffprobe reports VobSub-style tracks without a codec ID with no
+// `codec_name`. One such track must not reject the whole probe.
+describe('FfprobeMediaInfoSchema subtitle streams', () => {
+  test('parses subtitle streams without codec_name', () => {
+    const result = FfprobeMediaInfoSchema.safeParse({
+      ...baseProbe,
+      streams: [
+        ...baseProbe.streams,
+        {
+          index: 1,
+          codec_type: 'subtitle',
+          tags: { language: 'eng' },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const subtitle = result.data.streams[1];
+      expect(subtitle?.codec_type).toBe('subtitle');
     }
   });
 });

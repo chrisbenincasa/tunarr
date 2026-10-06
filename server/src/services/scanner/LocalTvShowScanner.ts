@@ -22,7 +22,6 @@ import {
 import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
-import { format } from 'node:util';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
@@ -701,10 +700,14 @@ export class LocalTvShowScanner extends FileSystemScanner {
     const metadata = await this.tvShowNfoParser.parseFile(nfoFile);
 
     if (metadata.isFailure()) {
-      return Result.forError(
-        new Error(
-          format('Error loading metadata for show at path: %s', fullShowPath),
-          metadata.error,
+      this.logger.warn(
+        metadata.error,
+        'Unable to parse %s, using fallback metadata',
+        nfoFile,
+      );
+      return Result.attemptAsync(() =>
+        Promise.resolve(
+          this.fallbackMetadataService.getShowFallbackMetadata(fullShowPath),
         ),
       );
     }
@@ -757,34 +760,18 @@ export class LocalTvShowScanner extends FileSystemScanner {
       basename(fullEpisodePath, extname(fullEpisodePath)) + '.nfo',
     );
     if (!(await fileExists(nfoPath))) {
-      // Do fallback
       this.logger.debug(
         'No nfo file found for episode %s. Falling back to basic metadata',
         fullEpisodePath,
       );
-      const title = basename(fullEpisodePath, extname(fullEpisodePath));
-      return Result.success({
-        episodeNumber: expectedEpisodeNumber,
-        identifiers: [],
-        originalTitle: null,
-        releaseDate: null,
-        releaseDateString: null,
-        sortTitle: title,
-        sourceType: 'local',
-        summary: null,
-        title,
-        tags: [],
-        type: 'episode',
-        uuid: v4(),
-        year: null,
-        artwork: [],
-        state: 'ok',
-      });
+      return Result.success(
+        this.episodeFallbackMetadata(fullEpisodePath, expectedEpisodeNumber),
+      );
     }
 
     const parseResult = await this.tvEpisodeNfoParser.parseFile(nfoPath);
 
-    return parseResult
+    const nfoMetadata = parseResult
       .flatMapPure<TvEpisodeNfo>(({ episodedetails }) => {
         const matchingEpisode = episodedetails.find(
           (ep) => ep.episode === expectedEpisodeNumber,
@@ -828,6 +815,43 @@ export class LocalTvShowScanner extends FileSystemScanner {
           state: 'ok',
         } satisfies EpisodeMetadata;
       });
+
+    if (nfoMetadata.isFailure()) {
+      this.logger.warn(
+        nfoMetadata.error,
+        'Unable to use %s, falling back to basic metadata',
+        nfoPath,
+      );
+      return Result.success(
+        this.episodeFallbackMetadata(fullEpisodePath, expectedEpisodeNumber),
+      );
+    }
+
+    return nfoMetadata;
+  }
+
+  private episodeFallbackMetadata(
+    fullEpisodePath: string,
+    episodeNumber: number,
+  ): EpisodeMetadata {
+    const title = basename(fullEpisodePath, extname(fullEpisodePath));
+    return {
+      episodeNumber,
+      identifiers: [],
+      originalTitle: null,
+      releaseDate: null,
+      releaseDateString: null,
+      sortTitle: title,
+      sourceType: 'local',
+      summary: null,
+      title,
+      tags: [],
+      type: 'episode',
+      uuid: v4(),
+      year: null,
+      artwork: [],
+      state: 'ok',
+    };
   }
 
   private async scanShowArtwork(
