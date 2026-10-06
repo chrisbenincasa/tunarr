@@ -1,6 +1,6 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { LoggingSettings } from '@tunarr/types';
-import { isString, nth } from 'lodash-es';
+import { isEmpty, isString, isUndefined, nth, omitBy } from 'lodash-es';
 import path, { join } from 'path';
 import type pino from 'pino';
 import type { ChildLoggerOptions, MultiStreamRes } from 'pino';
@@ -25,6 +25,10 @@ interface ILoggerWrapper {
     args: GetChildLoggerArgs,
     opts?: ChildLoggerOptions<LogLevels>,
   ): ILoggerWrapper;
+  withBindings(
+    bindings: pino.Bindings,
+    opts?: ChildLoggerOptions<LogLevels>,
+  ): ILoggerWrapper;
   updateLevel(level: LogLevels, streams: MultiStreamRes<LogLevels>): void;
   updateStreams(streams: MultiStreamRes<LogLevels>): void;
   logger: Logger;
@@ -34,6 +38,11 @@ interface ILoggerWrapper {
 
 abstract class BaseLoggerWrapper implements ILoggerWrapper {
   protected children: Record<string, ILoggerWrapper> = {};
+
+  // Per-instance loggers carry their own bindings, so they can't be cached by
+  // class name. They're held weakly so they die with their owner, but are
+  // still tracked because a pino child copies its parent's level only once.
+  #instances = new Set<WeakRef<Logger>>();
 
   constructor(protected wrappedLogger: Logger) {}
 
@@ -46,6 +55,11 @@ abstract class BaseLoggerWrapper implements ILoggerWrapper {
     this.wrappedLogger.level = level;
     Object.assign(this.wrappedLogger[symbols.streamSym], streams);
 
+    for (const instance of this.liveInstances()) {
+      instance.level = level;
+      Object.assign(instance[symbols.streamSym], streams);
+    }
+
     for (const child of Object.values(this.children)) {
       child.updateLevel(level, streams);
     }
@@ -54,8 +68,32 @@ abstract class BaseLoggerWrapper implements ILoggerWrapper {
   updateStreams(streams: MultiStreamRes<LogLevels>) {
     Object.assign(this.wrappedLogger[symbols.streamSym], streams);
 
+    for (const instance of this.liveInstances()) {
+      Object.assign(instance[symbols.streamSym], streams);
+    }
+
     for (const child of Object.values(this.children)) {
       child.updateStreams(streams);
+    }
+  }
+
+  withBindings(
+    bindings: pino.Bindings,
+    opts?: ChildLoggerOptions<LogLevels>,
+  ): ILoggerWrapper {
+    const instance = this.wrappedLogger.child(bindings, opts) as Logger;
+    this.#instances.add(new WeakRef(instance));
+    return new LoggerWrapper(instance);
+  }
+
+  private *liveInstances() {
+    for (const ref of this.#instances) {
+      const instance = ref.deref();
+      if (instance) {
+        yield instance;
+      } else {
+        this.#instances.delete(ref);
+      }
     }
   }
 
@@ -128,33 +166,25 @@ export class RootLoggerWrapper extends BaseLoggerWrapper {
   ): ILoggerWrapper {
     const { caller, className, category, ...rest } = args;
 
-    const ref = this.children[className]; //?.deref();
-    if (ref) {
-      return ref;
+    const categoryLogger = category
+      ? this.loggerByCategory.get(category)
+      : undefined;
+    if (categoryLogger) {
+      return categoryLogger.child({ caller, className, ...rest }, opts);
     }
 
-    const childOpts = {
-      ...rest,
-      file: isProduction
-        ? undefined
-        : caller
-          ? isString(caller)
-            ? caller
-            : getCaller(caller)
-          : undefined,
-      caller: isProduction ? undefined : className, // Don't include this twice in production
-    };
-    if (category && this.loggerByCategory.has(category)) {
-      const categoryLogger = this.loggerByCategory.get(category)!;
-      delete args.category;
-      const wrapped = categoryLogger.child(args, opts);
-      return wrapped;
-    } else {
-      const newLogger = this.wrappedLogger.child(childOpts, opts) as Logger;
-      const wrapped = new LoggerWrapper(newLogger);
-      this.children[className] = wrapped;
-      return wrapped;
+    let classLogger = this.children[className];
+    if (!classLogger) {
+      classLogger = new LoggerWrapper(
+        this.wrappedLogger.child(
+          classLoggerBindings(caller, className),
+          opts,
+        ) as Logger,
+      );
+      this.children[className] = classLogger;
     }
+
+    return withInstanceBindings(classLogger, rest, opts);
   }
 
   updateCategoryLevel(
@@ -191,28 +221,48 @@ class LoggerWrapper extends BaseLoggerWrapper {
   ): ILoggerWrapper {
     const { caller, className, ...rest } = args;
 
-    const ref = this.children[className]; //?.deref();
-    if (ref) {
-      return ref;
+    let classLogger = this.children[className];
+    if (!classLogger) {
+      classLogger = new LoggerWrapper(
+        this.wrappedLogger.child(
+          classLoggerBindings(caller, className),
+          opts,
+        ) as Logger,
+      );
+      this.children[className] = classLogger;
     }
 
-    const childOpts = {
-      ...rest,
-      file: isProduction
-        ? undefined
-        : caller
-          ? isString(caller)
-            ? caller
-            : getCaller(caller)
-          : undefined,
-      caller: isProduction ? undefined : className, // Don't include this twice in production
-    };
-    const newChild = new LoggerWrapper(
-      this.wrappedLogger.child(childOpts, opts) as Logger,
-    );
-    this.children[className] = newChild;
-    return newChild;
+    return withInstanceBindings(classLogger, rest, opts);
   }
+}
+
+function classLoggerBindings(
+  caller: GetChildLoggerArgs['caller'],
+  className: string,
+): pino.Bindings {
+  return {
+    file: isProduction
+      ? undefined
+      : caller
+        ? isString(caller)
+          ? caller
+          : getCaller(caller)
+        : undefined,
+    caller: isProduction ? undefined : className, // Don't include this twice in production
+  };
+}
+
+// Bindings beyond the class name (session ID, server name, ...) belong to one
+// instance, so they go on a fresh child instead of the cached class logger.
+function withInstanceBindings(
+  classLogger: ILoggerWrapper,
+  bindings: pino.Bindings,
+  opts?: ChildLoggerOptions<LogLevels>,
+): ILoggerWrapper {
+  const instanceBindings = omitBy(bindings, isUndefined);
+  return isEmpty(instanceBindings)
+    ? classLogger
+    : classLogger.withBindings(instanceBindings, opts);
 }
 
 const getCaller = (callingModule: ImportMeta) => {
