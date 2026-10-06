@@ -526,10 +526,15 @@ export class MeilisearchService implements ISearchService {
         // Support the following filenames:
         // 1. meilisearch-{platform}-{arch}(.exe)?
         // 2. meilisearch(.exe)?
-        // Then search for these names against these paths:
-        // 1. the env var value
-        // 2. cwd / bin / bin_name (docker, etc)
-        // 3. cwd / bin_name (macOS bundle)
+        // Then search for these names in these locations, in order:
+        // 1. the env var value, as a file or a directory
+        // 2. the Tunarr executable's directory (packaged builds only)
+        // 3. cwd / bin (docker, etc)
+        // 4. cwd (macOS bundle)
+        //
+        // The executable's directory comes before cwd so a stale binary in the
+        // service's working directory can't shadow the one shipped alongside
+        // this release.
         const baseNames = [
           `meilisearch-${os.platform()}-${os.arch()}`,
           'meilisearch',
@@ -538,12 +543,18 @@ export class MeilisearchService implements ISearchService {
           os.platform() === 'win32' ? `${n}.exe` : n,
         );
         const envPath = getEnvVar(TUNARR_ENV_VARS.MEILISEARCH_PATH);
-        const testPaths = binaryNames.flatMap((binaryName) => [
-          envPath,
-          isNonEmptyString(envPath) ? path.join(envPath, binaryName) : null,
-          path.join(process.cwd(), 'bin', binaryName),
-          path.join(process.cwd(), binaryName),
+        const searchDirs = compact([
+          isNonEmptyString(envPath) ? envPath : null,
+          'pkg' in process ? path.dirname(process.execPath) : null,
+          path.join(process.cwd(), 'bin'),
+          process.cwd(),
         ]);
+        const testPaths = [
+          envPath,
+          ...searchDirs.flatMap((dir) =>
+            binaryNames.map((binaryName) => path.join(dir, binaryName)),
+          ),
+        ];
         for (const testPath of testPaths) {
           if (!testPath) {
             continue;
