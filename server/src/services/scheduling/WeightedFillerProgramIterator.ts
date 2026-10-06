@@ -17,7 +17,6 @@ export class WeightedFillerProgramIterator
 {
   private weightedPrograms: NonEmptyArray<WeightedProgram>;
   private lastSeenTimestampById = new Map<string, number>();
-  private weightsById = new Map<string, number>();
   // Optimization to skip the loop below.
   private maxDuration: number;
 
@@ -57,9 +56,6 @@ export class WeightedFillerProgramIterator
 
     const weightSum = sum(rawWeights);
     const normalizedWeights = rawWeights.map((weight) => weight / weightSum);
-    programs.forEach((p, idx) => {
-      this.weightsById.set(p.uuid, normalizedWeights[idx]!);
-    });
     // TODO: Precalculate slices because we know all of the relevant
     // slot lengths at creation time. Then we don't have to calculate
     // the correct slices each time.
@@ -84,7 +80,6 @@ export class WeightedFillerProgramIterator
   private static fromState(
     weightedPrograms: NonEmptyArray<WeightedProgram>,
     lastSeenTimestampById: Map<string, number>,
-    weightsById: Map<string, number>,
     maxDuration: number,
     slotDef: FillerProgrammingSlot,
     random: Random,
@@ -97,7 +92,6 @@ export class WeightedFillerProgramIterator
     ) as WeightedFillerProgramIterator;
     instance.weightedPrograms = weightedPrograms;
     instance.lastSeenTimestampById = lastSeenTimestampById;
-    instance.weightsById = weightsById;
     instance.maxDuration = maxDuration;
     instance.slotDef = slotDef;
     instance.random = random;
@@ -119,7 +113,6 @@ export class WeightedFillerProgramIterator
       // Forks share this map, so a program aired by any of them is on
       // cooldown for all. Each fork still keeps its own weights.
       this.lastSeenTimestampById,
-      this.weightsById,
       this.maxDuration,
       this.slotDef,
       this.random,
