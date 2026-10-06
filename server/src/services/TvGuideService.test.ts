@@ -501,7 +501,7 @@ describe('TVGuideService', () => {
       expect(writeChannelIds).not.toContain(channelB.channel.uuid);
     });
 
-    it('does not let an older write overwrite a newer one', async () => {
+    it('runs one XMLTV write at a time and coalesces calls made during it', async () => {
       const channelA = makeChannelWithLineup({ number: 1, name: 'Channel A' });
       const channelB = makeChannelWithLineup({ number: 2, name: 'Channel B' });
 
@@ -534,16 +534,67 @@ describe('TVGuideService', () => {
 
       await service.buildAllChannels(dayjs.duration({ hours: 4 }), true);
       expect(mockWrite).toHaveBeenCalledTimes(1);
+      mockGetProgramsByIds.mockClear();
 
-      // Hold the older write's program load until the newer write is done.
-      let releaseOlder: (programs: never[]) => void = () => {};
+      // Hold the first write's program load while more writes are requested.
+      let releaseFirst: (programs: never[]) => void = () => {};
       mockGetProgramsByIds.mockReturnValueOnce(
-        new Promise((resolve) => (releaseOlder = resolve)),
+        new Promise((resolve) => (releaseFirst = resolve)),
       );
-      const older = service.removeCachedChannel(channelB.channel.uuid);
-      await service.removeCachedChannel(channelA.channel.uuid);
-      releaseOlder([]);
-      await older;
+      const first = service.removeCachedChannel(channelB.channel.uuid);
+      const second = service.removeCachedChannel(channelA.channel.uuid);
+      const third = service.removeCachedChannel('nonexistent-id');
+
+      expect(mockGetProgramsByIds).toHaveBeenCalledTimes(1);
+
+      releaseFirst([]);
+      await Promise.all([first, second, third]);
+
+      // The second and third calls share one follow-up write, which sees both
+      // channels removed.
+      expect(mockGetProgramsByIds).toHaveBeenCalledTimes(2);
+      expect(mockWrite).toHaveBeenCalledTimes(3);
+      expect(mockWrite.mock.lastCall?.[0]).toEqual([]);
+    });
+
+    it('still runs a queued XMLTV write when the running one fails', async () => {
+      const channelA = makeChannelWithLineup({ number: 1, name: 'Channel A' });
+
+      const mockGetProgramsByIds = vi.fn().mockResolvedValue([]);
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        {
+          loadAllLineups: vi
+            .fn()
+            .mockResolvedValue({ [channelA.channel.uuid]: channelA }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getGuideProgramsByIds: mockGetProgramsByIds } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+
+      await service.buildAllChannels(dayjs.duration({ hours: 4 }), true);
+      mockWrite.mockClear();
+
+      mockWrite.mockRejectedValueOnce(new Error('disk full'));
+      const first = service.removeCachedChannel('nonexistent-id');
+      const second = service.removeCachedChannel(channelA.channel.uuid);
+
+      await expect(first).rejects.toThrow('disk full');
+      await second;
 
       expect(mockWrite).toHaveBeenCalledTimes(2);
       expect(mockWrite.mock.lastCall?.[0]).toEqual([]);

@@ -153,7 +153,8 @@ export class TVGuideService {
   private eventService: EventService;
   private programConverter: ProgramConverter;
   private cachedGuide: Record<ChannelId, ChannelPrograms>;
-  private xmltvGeneration = 0;
+  private runningXmlTvWrite?: Promise<void>;
+  private queuedXmlTvWrite?: Promise<void>;
 
   private lastUpdateTime: Record<string, number>;
   private lastEndTime: Record<string, number>;
@@ -1105,17 +1106,49 @@ export class TVGuideService {
     }
   }
 
-  private async writeXmlTv() {
+  /**
+   * Writes XMLTV from the guide cache, one write at a time.
+   *
+   * Each write loads every guide program, so overlapping writes multiply peak
+   * memory. A call made while a write runs joins a single follow-up write,
+   * which reads the cache after the running one finishes and so includes
+   * every change its callers made.
+   */
+  private writeXmlTv(): Promise<void> {
+    if (this.queuedXmlTvWrite) {
+      return this.queuedXmlTvWrite;
+    }
+
+    const running = this.runningXmlTvWrite;
+    if (!running) {
+      return this.startXmlTvWrite();
+    }
+
+    const queued = running
+      .catch(() => {})
+      .then(() => {
+        this.queuedXmlTvWrite = undefined;
+        return this.startXmlTvWrite();
+      });
+    this.queuedXmlTvWrite = queued;
+    return queued;
+  }
+
+  private startXmlTvWrite(): Promise<void> {
+    const write = this.writeXmlTvInternal().finally(() => {
+      this.runningXmlTvWrite = undefined;
+    });
+    this.runningXmlTvWrite = write;
+    return write;
+  }
+
+  private async writeXmlTvInternal() {
     // Every channel's programs are fetched in one pass rather than one query
     // per channel. The results were being merged into a single flat map
     // regardless, so the per-channel split bought nothing and cost plenty:
     // deduplication was scoped to a channel, so a program scheduled on several
     // channels had its whole relation graph fetched and rebuilt once per
     // channel. getGuideProgramsByIds dedupes and chunks internally.
-    //
-    // This yields while it builds, so a newer call may start and finish first.
-    // Read the cache once, and leave the file to the newer call if one starts.
-    const generation = ++this.xmltvGeneration;
     const guides = Object.values(this.cachedGuide);
     const allProgramsById = await this.getAllCurrentGuidePrograms(
       guides.flatMap(({ programs }) => programs),
@@ -1134,9 +1167,6 @@ export class TVGuideService {
       });
     }
 
-    if (generation !== this.xmltvGeneration) {
-      return;
-    }
     await this.xmltv.write(materializedGuide);
 
     const now = dayjs();
@@ -1151,7 +1181,7 @@ export class TVGuideService {
     });
   }
 
-  private async getChannelGuides(
+  async getChannelGuides(
     dateRange: OpenDateTimeRange,
     channelIdFilter?: string[],
   ) {
@@ -1198,7 +1228,10 @@ export class TVGuideService {
       ),
     );
 
-    const dbPrograms = await this.programDB.getProgramsByIds(programIds);
+    // Guide responses carry only what the guide grid shows. Credits, genres
+    // and artwork are left out because a guide spans every program in the
+    // window, and clients fetch a program's details by ID when they need them.
+    const dbPrograms = await this.programDB.getLineupProgramsByIds(programIds);
 
     const materializedPrograms =
       await this.materializeProgramsCommand.execute(dbPrograms);

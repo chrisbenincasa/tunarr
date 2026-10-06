@@ -125,34 +125,43 @@ function makeHarness(opts: {
     getSubtitles: getSubtitlesByKey,
   };
 
+  const getChannelGuides = vi.fn((_range: unknown, channelIds: string[]) =>
+    Promise.resolve(
+      channelIds.includes(CHANNEL_ID)
+        ? [
+            {
+              id: CHANNEL_ID,
+              programs: [
+                {
+                  type: 'content',
+                  id: PROGRAM_ID,
+                  program: {
+                    title: 'Test Movie',
+                    externalId: 'jf-item-1',
+                    mediaSourceId: MEDIA_SOURCE_ID,
+                    sourceType,
+                  },
+                },
+              ],
+            },
+          ]
+        : [],
+    ),
+  );
+
   const task = new SubtitleExtractorTask(
     {
       get: () => Promise.resolve({}),
-      getAllChannelGuides: () =>
-        Promise.resolve([
-          {
-            id: CHANNEL_ID,
-            programs: [
-              {
-                type: 'content',
-                id: PROGRAM_ID,
-                program: {
-                  title: 'Test Movie',
-                  externalId: 'jf-item-1',
-                  mediaSourceId: MEDIA_SOURCE_ID,
-                  sourceType,
-                },
-              },
-            ],
-          },
-        ]),
+      getChannelGuides,
     } as never,
     {
-      getChannel: () =>
-        Promise.resolve({
-          uuid: CHANNEL_ID,
-          subtitlesEnabled: opts.subtitlesEnabled ?? true,
-        }),
+      getAllChannels: () =>
+        Promise.resolve([
+          {
+            uuid: CHANNEL_ID,
+            subtitlesEnabled: opts.subtitlesEnabled ?? true,
+          },
+        ]),
     } as never,
     {
       getStream: () => Promise.reject(new Error('should not be called')),
@@ -178,6 +187,7 @@ function makeHarness(opts: {
 
   return {
     task,
+    getChannelGuides,
     dbProgram,
     setSubtitlePath,
     downloadSubtitlesIfNecessary,
@@ -413,6 +423,7 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
 
     await run(harness);
 
+    expect(harness.getChannelGuides).not.toHaveBeenCalled();
     expect(harness.downloadSubtitlesIfNecessary).not.toHaveBeenCalled();
   });
 });
