@@ -825,9 +825,81 @@ describe('random slot pad coverage with a fallback filler', () => {
       'content:movie-2',
       'filler:5min',
     ]);
-    expect(result.lineup.filter((item) => item.type === 'flex')).toHaveLength(0);
+    expect(result.lineup.filter((item) => item.type === 'flex')).toHaveLength(
+      0,
+    );
     // maxDays: 1 fills up to start + (maxDays + 1) days. 96 slots of 30 minutes
     // is 2880 minutes; with the pad covered twice it comes out at 3360.
     expect(sumBy(result.lineup, 'duration')).toBe(2 * oneDay);
+  });
+});
+
+describe('movie slot pool', () => {
+  const oneMin = 60 * 1000;
+
+  const makeProgram = (
+    uuid: string,
+    durationMs: number,
+    parentFillerLists: string[] = [],
+  ): SlotSchedulerProgram => ({
+    ...createFakeProgramOrm({
+      uuid,
+      title: uuid,
+      type: 'movie',
+      duration: durationMs,
+    }),
+    parentFillerLists,
+    parentCustomShows: [],
+    parentSmartCollections: [],
+  });
+
+  test('filler list members are not scheduled as movies', () => {
+    const fillerListId = randomUUID();
+    const movies = [1, 2, 3].map((i) => makeProgram(`movie-${i}`, 90 * oneMin));
+    const commercials = [1, 2, 3, 4].map((i) =>
+      makeProgram(`commercial-${i}`, oneMin, [fillerListId]),
+    );
+
+    const scheduler = new RandomSlotScheduler({
+      type: 'random',
+      flexPreference: 'end',
+      maxDays: 1,
+      padMs: oneMin,
+      padStyle: 'episode',
+      randomDistribution: 'uniform',
+      lockWeights: false,
+      slots: [
+        {
+          weight: 100,
+          cooldownMs: 0,
+          durationSpec: { type: 'dynamic', programCount: 1 },
+          type: 'movie',
+          order: 'shuffle',
+          direction: 'asc',
+          filler: [
+            {
+              types: ['post'],
+              fillerListId,
+              fillerOrder: 'shuffle_prefer_short',
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = scheduler.generateSchedule(
+      [...movies, ...commercials],
+      [42, 99],
+      undefined,
+      dayjs('2024-01-01T00:00:00.000Z'),
+    );
+
+    const contentIds = new Set(
+      result.lineup.flatMap((item) =>
+        item.type === 'content' && 'id' in item ? [item.id] : [],
+      ),
+    );
+    expect([...contentIds].sort()).toEqual(['movie-1', 'movie-2', 'movie-3']);
+    expect(result.lineup.some((item) => item.type === 'filler')).toBe(true);
   });
 });

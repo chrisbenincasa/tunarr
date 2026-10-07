@@ -190,8 +190,14 @@ export function createProgramMap(
     (acc, program) => {
       const id = match(program)
         .returnType<Nullable<ContentSlotId>>()
+        // Filler list members are often typed as movies or other videos.
+        // Keep them out of the movie pool so movie slots don't schedule
+        // commercials and bumpers as programs.
         .with(
-          { type: P.union('movie', 'music_video', 'other_video') },
+          {
+            type: P.union('movie', 'music_video', 'other_video'),
+            parentFillerLists: [],
+          },
           () => 'movie',
         )
         .with(
