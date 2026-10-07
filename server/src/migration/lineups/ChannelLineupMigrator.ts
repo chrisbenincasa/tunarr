@@ -22,6 +22,7 @@ import { JsonFileMigrator } from '../JsonFileMigrator.ts';
 import { AddOverflowMigration } from './AddOverflowMigration.ts';
 import { AddSlotIdMigration } from './AddSlotIdMigration.ts';
 import type { ChannelLineupMigration } from './ChannelLineupMigration.ts';
+import { MovieSlotToCustomShowMigration } from './MovieSlotToCustomShowMigration.ts';
 import { SlotProgrammingMigration } from './SlotProgrammingMigration.ts';
 import { SlotShowIdMigration } from './SlotShowIdMigration.ts';
 
@@ -33,6 +34,7 @@ const MigrationSteps: ServiceIdentifier<
   SlotProgrammingMigration,
   AddSlotIdMigration,
   AddOverflowMigration,
+  MovieSlotToCustomShowMigration,
 ];
 
 /**
@@ -122,7 +124,7 @@ export class ChannelLineupMigrator extends JsonFileMigrator<
           backupPath,
         );
 
-        await migration.migrate(lineup);
+        await migration.migrate(lineup, { channelId });
         currVersion = migration.to;
         lineup['version'] = currVersion;
         migrationIndex++;
