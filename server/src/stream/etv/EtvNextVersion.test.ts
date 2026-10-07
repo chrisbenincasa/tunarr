@@ -12,6 +12,12 @@ describe('parseEtvNextVersion', () => {
     );
   });
 
+  test('keeps the build metadata of a release build', () => {
+    expect(
+      parseEtvNextVersion('ersatztv-channel 0.2.0-96aa6cb6-develop+linux-x64'),
+    ).toBe('0.2.0-96aa6cb6-develop+linux-x64');
+  });
+
   test('reads a clean tag build', () => {
     expect(parseEtvNextVersion('ersatztv-channel 0.2.0')).toBe('0.2.0');
   });
@@ -35,12 +41,21 @@ describe('parseEtvNextVersion', () => {
 });
 
 describe('matchesPinnedEtvNextVersion', () => {
-  test('drops the leading v from assetVersion', () => {
+  test('drops the leading v from releaseTag', () => {
     expect(pinnedEtvNextVersion.startsWith('v')).toBe(false);
   });
 
   test('accepts the pinned version', () => {
     expect(matchesPinnedEtvNextVersion(pinnedEtvNextVersion)).toBe(true);
+  });
+
+  test('ignores the build target', () => {
+    expect(
+      matchesPinnedEtvNextVersion(`${pinnedEtvNextVersion}+linux-x64`),
+    ).toBe(true);
+    expect(matchesPinnedEtvNextVersion(`${pinnedEtvNextVersion}+local`)).toBe(
+      true,
+    );
   });
 
   test('rejects a build with the same semver from another commit', () => {
