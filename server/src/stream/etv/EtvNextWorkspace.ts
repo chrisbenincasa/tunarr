@@ -43,10 +43,13 @@ export class EtvNextNotReadyError extends Error {
 }
 
 /**
- * One channel's directory on disk, and the two files the worker signals with.
+ * One worker's directory on disk, and the two files the worker signals with.
+ *
+ * The key is unique per worker run (a session instance or a troubleshoot run),
+ * so a new worker never shares a directory with one that is still exiting.
  *
  * ```
- * <base>/etv_<channelUuid>/
+ * <base>/etv_<key>/
  *   channel.json                 read by the worker at spawn
  *   playout/<start>_<finish>.json  the window it plays from
  *   out/                         live.m3u8, live%06d.ts, .ready, .heartbeat
@@ -61,8 +64,8 @@ export class EtvNextWorkspace {
   readonly heartbeatFilePath: string;
   readonly mediaPlaylistPath: string;
 
-  constructor(baseDirectory: string, channelUuid: string) {
-    this.root = path.join(baseDirectory, `etv_${channelUuid}`);
+  constructor(baseDirectory: string, key: string) {
+    this.root = path.join(baseDirectory, `etv_${key}`);
     this.channelConfigPath = path.join(this.root, 'channel.json');
     this.playoutDirectory = path.join(this.root, 'playout');
     this.outputDirectory = path.join(this.root, 'out');

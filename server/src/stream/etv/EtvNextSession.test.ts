@@ -19,8 +19,14 @@ import {
   ResolverWatchdogIntervalMs,
 } from './EtvNextSession.ts';
 import { DefaultStalenessMs } from './EtvNextWorkspace.ts';
+import { Session } from '../Session.ts';
 
 const channelUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
+// Pinned so tests can name the per-instance workspace directly.
+const instanceId = 'test-instance';
+vi.spyOn(Session.prototype, 'instanceId', 'get').mockReturnValue(instanceId);
+const workspaceName = `etv_${channelUuid}_${instanceId}`;
 
 const channel = {
   uuid: channelUuid,
@@ -93,6 +99,7 @@ async function makeSession({
   windowMs,
   playoutMode = 'materialized',
   spawnFails = false,
+  exitsOnKill = true,
   reportsDirectory,
 }: {
   items?: PlayoutItem[];
@@ -101,6 +108,9 @@ async function makeSession({
 
   /** Non-null stands for a worker that died instead of becoming ready. */
   processExitCode?: number | null;
+
+  /** False stands for a worker that is slow to honor SIGTERM. */
+  exitsOnKill?: boolean;
   webvttEnabled?: boolean;
   windowMs?: number;
 
@@ -111,11 +121,7 @@ async function makeSession({
   reportsDirectory?: string;
 } = {}) {
   const transcodeDirectory = await makeTempDir();
-  const outputDirectory = path.join(
-    transcodeDirectory,
-    `etv_${channelUuid}`,
-    'out',
-  );
+  const outputDirectory = path.join(transcodeDirectory, workspaceName, 'out');
 
   const binaryResolver = {
     resolveChecked: vi.fn(() => Promise.resolve('/opt/ersatztv-channel')),
@@ -145,11 +151,16 @@ async function makeSession({
     ),
   };
 
-  const killed = vi.fn();
-
   // The session listens for 'exit', so the stand-in has to be a real emitter.
   const workerProcess = Object.assign(new EventEmitter(), {
     exitCode: processExitCode,
+    signalCode: null,
+  });
+
+  const killed = vi.fn(() => {
+    if (exitsOnKill) {
+      workerProcess.emit('exit', null, 'SIGTERM');
+    }
   });
 
   const childProcessHelper = {
@@ -240,7 +251,7 @@ describe('startup', () => {
 
     expect(session.state).toBe('started');
 
-    const root = path.join(transcodeDirectory, `etv_${channelUuid}`);
+    const root = path.join(transcodeDirectory, workspaceName);
     const config = JSON.parse(
       await fs.readFile(path.join(root, 'channel.json'), 'utf-8'),
     ) as { normalization: { audio: { sample_rate_hz: number } } };
@@ -261,7 +272,7 @@ describe('startup', () => {
     expect(executable).toBe('/opt/ersatztv-channel');
     expect(args).toEqual([
       'run',
-      path.join(transcodeDirectory, `etv_${channelUuid}`, 'channel.json'),
+      path.join(transcodeDirectory, workspaceName, 'channel.json'),
       '--output-folder',
       outputDirectory,
       '--number',
@@ -361,8 +372,24 @@ describe('teardown', () => {
 
     expect(killed).toHaveBeenCalled();
     await expect(
-      fs.stat(path.join(transcodeDirectory, `etv_${channelUuid}`)),
+      fs.stat(path.join(transcodeDirectory, workspaceName)),
     ).rejects.toThrow();
+  });
+
+  test('keeps the workspace until the worker exits', async () => {
+    const { session, transcodeDirectory, workerProcess } = await makeSession({
+      exitsOnKill: false,
+    });
+    await session.start();
+    const root = path.join(transcodeDirectory, workspaceName);
+
+    const stopped = session.stop();
+    await vi.waitFor(() => expect(session.state).toBe('stopping'));
+    await expect(fs.stat(root)).resolves.toBeDefined();
+
+    workerProcess.emit('exit', null, 'SIGTERM');
+    await stopped;
+    await expect(fs.stat(root)).rejects.toThrow();
   });
 
   // SessionManager drops the session from its map on 'stop', and reads state
@@ -424,7 +451,7 @@ describe('the playout window', () => {
   async function readWindow(transcodeDirectory: string) {
     const playoutDirectory = path.join(
       transcodeDirectory,
-      `etv_${channelUuid}`,
+      workspaceName,
       'playout',
     );
     const [name] = await fs.readdir(playoutDirectory);
@@ -612,7 +639,7 @@ describe('the dynamic playout window', () => {
   });
 
   function playoutDirectory(transcodeDirectory: string) {
-    return path.join(transcodeDirectory, `etv_${channelUuid}`, 'playout');
+    return path.join(transcodeDirectory, workspaceName, 'playout');
   }
 
   async function readWindow(transcodeDirectory: string) {
@@ -796,7 +823,7 @@ describe('the dynamic playout window', () => {
     ).rollDynamicWindow();
     await Promise.all([rolling, stopping]);
 
-    const root = path.join(transcodeDirectory, `etv_${channelUuid}`);
+    const root = path.join(transcodeDirectory, workspaceName);
     await expect(fs.stat(root)).rejects.toThrow();
   });
 
@@ -826,7 +853,7 @@ describe('diagnostic dossiers', () => {
 
     const config = JSON.parse(
       await fs.readFile(
-        path.join(transcodeDirectory, `etv_${channelUuid}`, 'channel.json'),
+        path.join(transcodeDirectory, workspaceName, 'channel.json'),
         'utf-8',
       ),
     ) as { ffmpeg: { reports_folder?: string } };
