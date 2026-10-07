@@ -1,5 +1,3 @@
-import type { Resolution, Watermark } from '@tunarr/types';
-import dayjs from 'dayjs';
 import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import type {
   ErrorScreenAudioType,
@@ -8,6 +6,9 @@ import type {
 import type { ChannelOfflineSettings } from '@/db/schema/base.js';
 import { titleTextFilter } from '@/ffmpeg/builder/filter/TitleTextFilter.js';
 import { isHttpUrl, isNonEmptyString } from '@/util/index.js';
+import type { Resolution, Watermark } from '@tunarr/types';
+import dayjs from 'dayjs';
+import type { Maybe } from '../../types/util.ts';
 import type {
   AudioStreamDetails,
   StreamDetails,
@@ -278,7 +279,7 @@ function errorVideo(
   screenType: ErrorScreenType,
   resolution: Resolution,
   message: string,
-  errorPicture: string | undefined,
+  errorPicture: Maybe<string>,
   ignored: string[],
 ): PlayoutItemSource {
   switch (screenType) {
@@ -314,7 +315,7 @@ function errorVideo(
  */
 function toSource(
   streamSource: StreamSource,
-  range: { inPointMs: number; outPointMs: number },
+  range: MediaRange,
 ): PlayoutItemSource {
   switch (streamSource.type) {
     case 'file':
@@ -341,6 +342,32 @@ function toSource(
       throw new MissingStreamSourceError(streamSource.type);
   }
 }
+
+export type ToPlayoutItemArgs = {
+  id: string;
+  startMs: number;
+  lineupItem: StreamLineupItem;
+  stream?: {
+    source: StreamSource;
+    details?: StreamDetails;
+    selection?: PlayoutTrackSelection;
+    /** Error and flex items never carry one. */
+    watermark?: ResolvedWatermark;
+  };
+  resolution: Resolution;
+  /** `channel.offline.picture`, shown instead of black when the channel sets one. */
+  offlinePicture?: string;
+  /** `channel.offline.soundtrack`, played instead of silence when set. */
+  offlineSoundtrack?: string;
+  /** `channel.offline.mode`. Defaults to the still-picture screen. */
+  offlineMode?: ChannelOfflineSettings['mode'];
+  /** `transcodeConfig.errorScreen`. Defaults to plain black. */
+  errorScreen?: ErrorScreenType;
+  /** `transcodeConfig.errorScreenAudio`. Defaults to silence. */
+  errorScreenAudio?: ErrorScreenAudioType;
+  /** Picture for the `pic` error screen, usually Tunarr's generic error screen. */
+  errorPicture?: string;
+};
 
 /**
  * Builds one `PlayoutItem` from a resolved lineup item.
@@ -373,31 +400,7 @@ export function toPlayoutItem({
   errorScreen = 'blank',
   errorScreenAudio = 'silent',
   errorPicture,
-}: {
-  id: string;
-  startMs: number;
-  lineupItem: StreamLineupItem;
-  stream?: {
-    source: StreamSource;
-    details?: StreamDetails;
-    selection?: PlayoutTrackSelection;
-    /** Error and flex items never carry one. */
-    watermark?: ResolvedWatermark;
-  };
-  resolution: Resolution;
-  /** `channel.offline.picture`, shown instead of black when the channel sets one. */
-  offlinePicture?: string;
-  /** `channel.offline.soundtrack`, played instead of silence when set. */
-  offlineSoundtrack?: string;
-  /** `channel.offline.mode`. Defaults to the still-picture screen. */
-  offlineMode?: ChannelOfflineSettings['mode'];
-  /** `transcodeConfig.errorScreen`. Defaults to plain black. */
-  errorScreen?: ErrorScreenType;
-  /** `transcodeConfig.errorScreenAudio`. Defaults to silence. */
-  errorScreenAudio?: ErrorScreenAudioType;
-  /** Picture for the `pic` error screen, usually Tunarr's generic error screen. */
-  errorPicture?: string;
-}): PlayoutItemMapping {
+}: ToPlayoutItemArgs): PlayoutItemMapping {
   if (lineupItem.type === 'redirect') {
     throw new UnresolvedRedirectError(lineupItem.channel);
   }
