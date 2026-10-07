@@ -68,15 +68,25 @@ export class SweepOrphanedSubtitleCacheFixer extends Fixer {
       return;
     }
 
+    this.logger.info('Sweeping orphaned files from the subtitle cache...');
+
     const keep = await this.buildKeepSet(cacheFolder);
-    const candidates = await this.findUnreferencedFiles(cacheFolder, keep);
+    const { candidates, skippedRecent } = await this.findUnreferencedFiles(
+      cacheFolder,
+      keep,
+    );
     const removed = await this.removeUnlessReferenced(candidates);
 
-    await fs.writeFile(marker, new Date().toISOString());
+    // Recent unreferenced files may be orphans too, so the sweep runs again
+    // on the next start until none are left.
+    if (skippedRecent === 0) {
+      await fs.writeFile(marker, new Date().toISOString());
+    }
 
     this.logger.info(
-      'Removed %d orphaned files from the subtitle cache',
+      'Removed %d orphaned files from the subtitle cache. Skipped %d unreferenced files modified in the last hour.',
       removed,
+      skippedRecent,
     );
   }
 
@@ -202,9 +212,10 @@ export class SweepOrphanedSubtitleCacheFixer extends Fixer {
   private async findUnreferencedFiles(
     cacheFolder: string,
     keep: Set<string>,
-  ): Promise<string[]> {
+  ): Promise<{ candidates: string[]; skippedRecent: number }> {
     const cutoff = Date.now() - MIN_FILE_AGE_MS;
     const candidates: string[] = [];
+    let skippedRecent = 0;
     let seen = 0;
 
     for (const outer of await readDirs(cacheFolder)) {
@@ -226,14 +237,19 @@ export class SweepOrphanedSubtitleCacheFixer extends Fixer {
 
           const fullPath = path.join(dir, entry.name);
           const stat = await fs.stat(fullPath).catch(() => undefined);
-          if (stat && stat.mtimeMs < cutoff) {
+          if (!stat) {
+            continue;
+          }
+          if (stat.mtimeMs < cutoff) {
             candidates.push(fullPath);
+          } else {
+            skippedRecent++;
           }
         }
       }
     }
 
-    return candidates;
+    return { candidates, skippedRecent };
   }
 
   // Rows written since the keep set was built can point at an old file, for

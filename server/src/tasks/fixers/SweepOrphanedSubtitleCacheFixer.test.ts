@@ -210,6 +210,23 @@ describe('SweepOrphanedSubtitleCacheFixer', () => {
     insertSubtitleStream(drizzle, program.uuid, 4);
 
     const orphan = await writeCacheFile(cacheFolder, 'cc/dd/orphan.srt');
+
+    await fixer.run();
+
+    expect(await fileExists(orphan)).toBe(false);
+    expect(await fileExists(sidecar)).toBe(true);
+    expect(await fileExists(embeddedRow)).toBe(true);
+    expect(await fileExists(embeddedStream)).toBe(true);
+    expect(
+      await fileExists(path.join(cacheFolder, SubtitleCacheSweepMarker)),
+    ).toBe(true);
+  });
+
+  test('keeps recent files and sweeps again until none are left', async ({
+    cacheFolder,
+    fixer,
+  }) => {
+    const marker = path.join(cacheFolder, SubtitleCacheSweepMarker);
     const fresh = await writeCacheFile(
       cacheFolder,
       'cc/dd/fresh.srt',
@@ -218,14 +235,14 @@ describe('SweepOrphanedSubtitleCacheFixer', () => {
 
     await fixer.run();
 
-    expect(await fileExists(orphan)).toBe(false);
-    expect(await fileExists(sidecar)).toBe(true);
-    expect(await fileExists(embeddedRow)).toBe(true);
-    expect(await fileExists(embeddedStream)).toBe(true);
     expect(await fileExists(fresh)).toBe(true);
-    expect(
-      await fileExists(path.join(cacheFolder, SubtitleCacheSweepMarker)),
-    ).toBe(true);
+    expect(await fileExists(marker)).toBe(false);
+
+    await fs.utimes(fresh, TWO_HOURS_AGO, TWO_HOURS_AGO);
+    await fixer.run();
+
+    expect(await fileExists(fresh)).toBe(false);
+    expect(await fileExists(marker)).toBe(true);
   });
 
   test('does nothing once the marker exists', async ({
