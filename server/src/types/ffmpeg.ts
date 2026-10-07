@@ -62,7 +62,7 @@ export type FfprobeAudioStream = z.infer<typeof FfprobeAudioStreamSchema>;
 
 const FfprobeSubtitleStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('subtitle'),
-  codec_name: z.string(),
+  codec_name: z.string().optional(),
   disposition: z
     .object({
       default: z.number().optional(),
