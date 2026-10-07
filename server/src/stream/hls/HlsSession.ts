@@ -200,7 +200,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     // (e.g. via endSession). If the session is already stopped, its cleanup
     // has been handled and scheduling another timer would risk deleting a
     // replacement session that now occupies the same map key.
-    if (this.state !== 'stopped') {
+    if (!this.stoppingOrStopped) {
       this.scheduleCleanup();
     }
   }
@@ -286,6 +286,12 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           this.error = transcodeSessionResult.error;
           this.emit('error', this.error);
         }
+      }
+
+      // A stop that landed during setup has already killed the previous
+      // transcode. Starting this one would leave an ffmpeg nothing kills.
+      if (this.state !== 'started') {
+        return;
       }
 
       transcodeSessionResult.forEach((transcodeSession) => {
@@ -463,6 +469,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   protected async stopStream(): Promise<void> {
     if (this.#currentSession) {
       this.#currentSession.kill();
+      await this.waitForExit(this.#currentSession);
     }
 
     this.logger.debug(

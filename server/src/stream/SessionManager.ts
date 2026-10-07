@@ -192,7 +192,8 @@ export class SessionManager {
       const underlyingSessionType = sessionTypeFromConcatType(
         options.sessionType,
       );
-      if (isUndefined(this.getSession(channelId, underlyingSessionType))) {
+      const underlying = this.getSession(channelId, underlyingSessionType);
+      if (isUndefined(underlying) || underlying.stoppingOrStopped) {
         this.logger.debug(
           'No underlying session of type %s found for existing concat session (channel id = %s). Removing dangling session and recreating',
           underlyingSessionType,
@@ -306,7 +307,9 @@ export class SessionManager {
           sessionType,
         ) as Maybe<TSession>;
 
-        if (isNil(session)) {
+        // A stopping session keeps its own working directory until its
+        // process exits, so a replacement can start alongside it.
+        if (isNil(session) || session.stoppingOrStopped) {
           const channel = await this.channelDB.getChannelOrm(channelId);
 
           if (!channel?.transcodeConfig) {
@@ -328,7 +331,9 @@ export class SessionManager {
                 'Error while shutting down session. Things are bad!',
               );
             });
-            this.shutdownChildSessions(channelId, sessionType);
+            if (this.getSession(channelId, sessionType) === session) {
+              this.shutdownChildSessions(channelId, sessionType);
+            }
             this.eventService.push({
               type: 'stream',
               action: 'error',

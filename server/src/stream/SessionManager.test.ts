@@ -213,6 +213,50 @@ describe('SessionManager', () => {
   });
 
   describe('session replacement race condition', () => {
+    it('replaces a stopping session with one that has its own directory', async () => {
+      class SlowStopHlsSession extends StubHlsSession {
+        readonly stopGate = Promise.withResolvers<void>();
+
+        protected override async stopInternal() {
+          await this.stopGate.promise;
+        }
+      }
+
+      const sessions: SlowStopHlsSession[] = [];
+      const manager = makeSessionManager((channel, options) => {
+        const s = new SlowStopHlsSession(channel, options);
+        sessions.push(s);
+        return s;
+      });
+
+      await manager.getOrCreateHlsSession(channelUuid, 'token-a', connection, {
+        streamMode: 'hls',
+      });
+      const sessionA = sessions[0];
+      expect(sessionA).toBeDefined();
+      if (!sessionA) return;
+
+      // Simulates an ffmpeg that has not exited yet.
+      const stopA = sessionA.stop();
+      await vi.waitFor(() => expect(sessionA.state).toBe('stopping'));
+
+      await manager.getOrCreateHlsSession(channelUuid, 'token-b', connection, {
+        streamMode: 'hls',
+      });
+      const sessionB = sessions[1];
+      expect(sessionB).toBeDefined();
+      if (!sessionB) return;
+
+      expect(manager.getHlsSession(channelUuid)).toBe(sessionB);
+      expect(sessionB.workingDirectory).not.toBe(sessionA.workingDirectory);
+
+      sessionA.stopGate.resolve();
+      await stopA;
+      expect(sessionA.state).toBe('stopped');
+      sessionA.emit('cleanup');
+      expect(manager.getHlsSession(channelUuid)).toBe(sessionB);
+    });
+
     it('stop event from Session A does not delete Session B at the same key', async () => {
       // Track which sessions the factory creates so we can reference them
       const sessions: StubHlsSession[] = [];

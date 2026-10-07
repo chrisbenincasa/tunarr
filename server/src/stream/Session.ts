@@ -21,7 +21,13 @@ import { ConnectionTracker } from './ConnectionTracker.ts';
 
 const ConcatSessionSuffix = '_concat';
 
-type SessionState = 'starting' | 'started' | 'error' | 'stopped' | 'init';
+type SessionState =
+  | 'starting'
+  | 'started'
+  | 'error'
+  | 'stopping'
+  | 'stopped'
+  | 'init';
 
 export type SessionOptions = {
   cleanupDelayMs?: number;
@@ -88,6 +94,11 @@ export abstract class Session<
         })
         .finally(() => this.emit('cleanup'));
     });
+  }
+
+  /** Unique to this session instance, unlike `id`, which is shared by every session for a channel and type. */
+  get instanceId() {
+    return this.#uniqueId;
   }
 
   get key() {
@@ -170,15 +181,15 @@ export abstract class Session<
         case 'starting':
         case 'started':
           this.logger.debug('Stopping stream session: %s', this.channel.uuid);
-          await this.stopInternal();
+          await this.stopAndMarkStopped();
           return;
         case 'error':
           this.logger.debug('Session already in error state. Cleaning it up.');
-          await this.stopInternal();
+          await this.stopAndMarkStopped();
 
-          // stopInternal implementations set 'stopped'. Restore the error so a
-          // caller still deciding whether to serve this session can see that it
-          // failed rather than that it ended.
+          // Stopping sets 'stopped'. Restore the error so a caller still
+          // deciding whether to serve this session can see that it failed
+          // rather than that it ended.
           this.state = 'error';
           return;
         default:
@@ -189,6 +200,17 @@ export abstract class Session<
           return;
       }
     });
+  }
+
+  // SessionManager replaces a stopping session instead of handing it to new
+  // viewers, so the state must flip before teardown starts.
+  private async stopAndMarkStopped() {
+    this.state = 'stopping';
+    try {
+      await this.stopInternal();
+    } finally {
+      this.state = 'stopped';
+    }
   }
 
   protected abstract stopInternal(): Promise<void>;
@@ -221,6 +243,10 @@ export abstract class Session<
 
   get stopped() {
     return this.state === 'stopped';
+  }
+
+  get stoppingOrStopped() {
+    return this.state === 'stopping' || this.state === 'stopped';
   }
 
   get hasError() {

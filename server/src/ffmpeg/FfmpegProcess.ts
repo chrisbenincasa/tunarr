@@ -37,6 +37,7 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
   #processKilled = false;
   #running = false;
   #sentData = false;
+  #exited: Promise<void> = Promise.resolve();
 
   constructor(
     private ffmpegSettings: ReadableFfmpegSettings,
@@ -50,6 +51,11 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
 
   get initialized() {
     return isDefined(this.#processHandle);
+  }
+
+  /** Resolves once the spawned process has exited, or at once if none was spawned. */
+  get exited(): Promise<void> {
+    return this.#exited;
   }
 
   get stdout() {
@@ -100,6 +106,11 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
       stdio: ['ignore', 'pipe', 'pipe'],
       env,
     });
+
+    const handle = this.#processHandle;
+    this.#exited = new Promise((resolve) =>
+      handle.once('exit', () => resolve()),
+    );
 
     this.#running = true;
 
