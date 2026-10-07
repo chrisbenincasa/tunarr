@@ -1,6 +1,7 @@
 name: Release Comments
 
-# Comments on the pull requests and issues that shipped in a stable release.
+# Comments on the pull requests and issues that shipped in a stable release,
+# and closes issues named by a "Closes-on-release: #N" line in a shipped PR.
 # Prereleases are skipped.
 
 on:
