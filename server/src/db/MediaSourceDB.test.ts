@@ -1,4 +1,5 @@
 import { tag } from '@tunarr/types';
+import { eq } from 'drizzle-orm';
 import { instance, mock } from 'ts-mockito';
 import tmp from 'tmp-promise';
 import { v4 } from 'uuid';
@@ -273,5 +274,32 @@ describe('MediaSourceDB', () => {
       '/media/movies',
       '/media/shows',
     ]);
+  });
+
+  test('getLibrary loads the parent source libraries, so a local source keeps its paths', async ({
+    mediaSourceDB,
+    drizzle,
+  }) => {
+    // The library detail route derives a LOCAL source's `paths` from
+    // `mediaSource.libraries`, and the response schema requires that array to be
+    // non-empty. With the relation unloaded the route serialized `paths: []`,
+    // failed schema validation and answered 500 for every local library
+    // (#2200) — the bug is here, in the query, not in the converter.
+    const mediaSourceId = makeLocalMediaSource(drizzle, ['/media/movies']);
+    const [libraryRow] = drizzle
+      .select({ uuid: MediaSourceLibrary.uuid })
+      .from(MediaSourceLibrary)
+      .where(eq(MediaSourceLibrary.mediaSourceId, mediaSourceId))
+      .all();
+    if (!libraryRow) {
+      throw new Error('expected the local media source to have a library row');
+    }
+    const libraryId = libraryRow.uuid;
+
+    const found = await mediaSourceDB.getLibrary(libraryId);
+
+    expect(
+      found?.mediaSource.libraries.map((library) => library.externalKey),
+    ).toEqual(['/media/movies']);
   });
 });
