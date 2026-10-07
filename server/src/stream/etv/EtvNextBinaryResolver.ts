@@ -90,7 +90,7 @@ export class EtvNextBinaryResolver {
     throw new EtvNextBinaryNotFoundError(testPaths);
   }
 
-  /** Reads the worker's own version string, e.g. `0.1.0-570d136`. */
+  /** Reads the worker's own version string, e.g. `0.2.0-96aa6cb6-develop+linux-x64`. */
   async getVersion(): Promise<string | undefined> {
     const executablePath = await this.resolve();
     const stdout = await this.childProcessHelper.getStdout(executablePath, [
