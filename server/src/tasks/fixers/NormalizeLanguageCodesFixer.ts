@@ -146,7 +146,9 @@ export class NormalizeLanguageCodesFixer extends Fixer {
         )
         .run();
       touched += result.changes;
-      await this.refreshSearchDocuments(rows.map(({ programId }) => programId));
+      await this.refreshSearchDocumentsSafely(
+        rows.map(({ programId }) => programId),
+      );
     } while (rows.length === BatchSize);
 
     return touched;
@@ -202,10 +204,33 @@ export class NormalizeLanguageCodesFixer extends Fixer {
         )
         .run();
       touched += result.changes;
-      await this.refreshSearchDocuments(rows.map(({ programId }) => programId));
+      await this.refreshSearchDocumentsSafely(
+        rows.map(({ programId }) => programId),
+      );
     } while (rows.length === BatchSize);
 
     return touched;
+  }
+
+  /**
+   * Refresh the search facets for a batch, isolating a search failure so it
+   * cannot abort the whole run. The DB ``UPDATE`` has already committed and the
+   * rows are already ``/T``, so a throw here would otherwise terminate
+   * ``runInternal`` and - because those rows no longer need normalization - the
+   * fixer would skip them on the next startup, leaving the index entries never
+   * healed. Logging and continuing keeps the batch's DB heal and lets later
+   * batches publish; the touched programs are picked up by the next scan.
+   */
+  private async refreshSearchDocumentsSafely(programIds: string[]) {
+    try {
+      await this.refreshSearchDocuments(programIds);
+    } catch (err) {
+      this.logger.warn(
+        'Failed to refresh the search index for %d program(s); the DB heal is kept and the index catches up on the next scan (%s)',
+        programIds.length,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
   }
 
   /**

@@ -397,8 +397,10 @@ export class MeilisearchService implements ISearchService {
   private port?: number;
   #client?: MeiliSearch;
   private resolveReady: () => void = () => {};
-  private readonly ready = new Promise<void>((resolve) => {
+  private rejectReady: (reason?: unknown) => void = () => {};
+  private readonly ready = new Promise<void>((resolve, reject) => {
     this.resolveReady = resolve;
+    this.rejectReady = reject;
   });
 
   @InjectLogger() declare private readonly logger: Logger;
@@ -783,7 +785,7 @@ export class MeilisearchService implements ISearchService {
     return this.#client;
   }
 
-  async sync() {
+  private async doSync() {
     await this.client().httpRequest.patch({
       path: '/experimental-features',
       body: {
@@ -820,7 +822,16 @@ export class MeilisearchService implements ISearchService {
     }
 
     await Promise.all(processes);
-    this.resolveReady();
+  }
+
+  async sync() {
+    try {
+      await this.doSync();
+      this.resolveReady();
+    } catch (e) {
+      this.rejectReady(e);
+      throw e;
+    }
   }
 
   async getProgram(id: string) {
