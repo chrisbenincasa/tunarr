@@ -66,6 +66,7 @@ import type { ChannelOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { findBadRequestError, unwrapError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams, TruthyQueryParam } from '../types/schemas.ts';
+import { GUIDE_PROGRAM_FIELDS_NOTE } from './guideApi.ts';
 
 dayjs.extend(duration);
 
@@ -721,6 +722,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/all/lineups',
     {
       schema: {
+        description: `Returns every channel's guide. ${GUIDE_PROGRAM_FIELDS_NOTE}`,
         querystring: ChannelLineupQuery,
         tags: ['Channels'],
         response: {
@@ -746,6 +748,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/lineup',
     {
       schema: {
+        description: `Returns a channel's guide. ${GUIDE_PROGRAM_FIELDS_NOTE}`,
         params: BasicIdParamSchema,
         tags: ['Channels'],
         querystring: ChannelLineupQuery,
@@ -780,6 +783,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/now_playing',
     {
       schema: {
+        description: `Returns the program airing now on a channel. ${GUIDE_PROGRAM_FIELDS_NOTE}`,
         params: BasicIdParamSchema,
         tags: ['Channels'],
         response: {

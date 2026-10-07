@@ -460,6 +460,9 @@ export const getApiChannelsAllLineupsQueryKey = (options?: Options<GetApiChannel
     'Channels'
 ]);
 
+/**
+ * Returns every channel's guide. Programs carry guide fields only. Actors, writers, directors, genres and studios are omitted from each program. Tags and artwork are empty, as are the show's and season's genres, actors and studios. Fetch GET /api/programs/{id} for the full program.
+ */
 export const getApiChannelsAllLineupsOptions = (options?: Options<GetApiChannelsAllLineupsData>) => {
     return queryOptions({
         queryFn: async ({ queryKey, signal }) => {
@@ -479,6 +482,9 @@ export const getApiChannelsByIdLineupQueryKey = (options: Options<GetApiChannels
     'Channels'
 ]);
 
+/**
+ * Returns a channel's guide. Programs carry guide fields only. Actors, writers, directors, genres and studios are omitted from each program. Tags and artwork are empty, as are the show's and season's genres, actors and studios. Fetch GET /api/programs/{id} for the full program.
+ */
 export const getApiChannelsByIdLineupOptions = (options: Options<GetApiChannelsByIdLineupData>) => {
     return queryOptions({
         queryFn: async ({ queryKey, signal }) => {
@@ -498,6 +504,9 @@ export const getApiChannelsByIdNowPlayingQueryKey = (options: Options<GetApiChan
     'Channels'
 ]);
 
+/**
+ * Returns the program airing now on a channel. Programs carry guide fields only. Actors, writers, directors, genres and studios are omitted from each program. Tags and artwork are empty, as are the show's and season's genres, actors and studios. Fetch GET /api/programs/{id} for the full program.
+ */
 export const getApiChannelsByIdNowPlayingOptions = (options: Options<GetApiChannelsByIdNowPlayingData>) => {
     return queryOptions({
         queryFn: async ({ queryKey, signal }) => {
@@ -2385,6 +2394,9 @@ export const getApiGuideChannelsQueryKey = (options: Options<GetApiGuideChannels
     'Guide'
 ]);
 
+/**
+ * Returns the guide for every channel, keyed by channel ID. Programs carry guide fields only. Actors, writers, directors, genres and studios are omitted from each program. Tags and artwork are empty, as are the show's and season's genres, actors and studios. Fetch GET /api/programs/{id} for the full program.
+ */
 export const getApiGuideChannelsOptions = (options: Options<GetApiGuideChannelsData>) => {
     return queryOptions({
         queryFn: async ({ queryKey, signal }) => {

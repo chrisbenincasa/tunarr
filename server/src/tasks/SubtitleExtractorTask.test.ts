@@ -37,6 +37,7 @@ vi.mock('../util/fsUtil.ts', () => ({
 const MEDIA_SOURCE_ID = 'media-source-1' as MediaSourceId;
 const PROGRAM_ID = 'program-1';
 const CHANNEL_ID = 'channel-1';
+const OTHER_CHANNEL_ID = 'channel-2';
 const SOURCE_SUBTITLE_PATH = '/data/media/movie.eng.srt';
 const SHARED_SUBTITLE_PATH = '/mnt/media/movie.eng.srt';
 const CACHED_SUBTITLE_PATH = '/tmp/test-tunarr/cache/subtitles/ab/cd/abcd.srt';
@@ -125,34 +126,44 @@ function makeHarness(opts: {
     getSubtitles: getSubtitlesByKey,
   };
 
+  const getChannelGuides = vi.fn((_range: unknown, channelIds: string[]) =>
+    Promise.resolve(
+      channelIds.includes(CHANNEL_ID)
+        ? [
+            {
+              id: CHANNEL_ID,
+              programs: [
+                {
+                  type: 'content',
+                  id: PROGRAM_ID,
+                  program: {
+                    title: 'Test Movie',
+                    externalId: 'jf-item-1',
+                    mediaSourceId: MEDIA_SOURCE_ID,
+                    sourceType,
+                  },
+                },
+              ],
+            },
+          ]
+        : [],
+    ),
+  );
+
   const task = new SubtitleExtractorTask(
     {
       get: () => Promise.resolve({}),
-      getAllChannelGuides: () =>
-        Promise.resolve([
-          {
-            id: CHANNEL_ID,
-            programs: [
-              {
-                type: 'content',
-                id: PROGRAM_ID,
-                program: {
-                  title: 'Test Movie',
-                  externalId: 'jf-item-1',
-                  mediaSourceId: MEDIA_SOURCE_ID,
-                  sourceType,
-                },
-              },
-            ],
-          },
-        ]),
+      getChannelGuides,
     } as never,
     {
-      getChannel: () =>
-        Promise.resolve({
-          uuid: CHANNEL_ID,
-          subtitlesEnabled: opts.subtitlesEnabled ?? true,
-        }),
+      getAllChannels: () =>
+        Promise.resolve([
+          {
+            uuid: CHANNEL_ID,
+            subtitlesEnabled: opts.subtitlesEnabled ?? true,
+          },
+          { uuid: OTHER_CHANNEL_ID, subtitlesEnabled: false },
+        ]),
     } as never,
     {
       getStream: () => Promise.reject(new Error('should not be called')),
@@ -178,6 +189,7 @@ function makeHarness(opts: {
 
   return {
     task,
+    getChannelGuides,
     dbProgram,
     setSubtitlePath,
     downloadSubtitlesIfNecessary,
@@ -413,6 +425,18 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
 
     await run(harness);
 
+    expect(harness.getChannelGuides).not.toHaveBeenCalled();
     expect(harness.downloadSubtitlesIfNecessary).not.toHaveBeenCalled();
+  });
+
+  it('loads guides only for channels with subtitles turned on', async () => {
+    const harness = makeHarness({ subtitles: [] });
+
+    await run(harness);
+
+    expect(harness.getChannelGuides).toHaveBeenCalledExactlyOnceWith(
+      expect.anything(),
+      [CHANNEL_ID],
+    );
   });
 });

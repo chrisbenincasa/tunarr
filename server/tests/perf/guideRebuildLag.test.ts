@@ -1,19 +1,23 @@
+import dayjs from 'dayjs';
 import type { FastifyInstance } from 'fastify';
-import { range, sortBy, sum } from 'lodash-es';
+import { range, sortBy, sum, uniq } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
 import { Session } from 'node:inspector';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { container } from '../../src/container.ts';
 import type { IChannelDB } from '../../src/db/interfaces/IChannelDB.ts';
 import type { IProgramDB } from '../../src/db/interfaces/IProgramDB.ts';
 import type { ISettingsDB } from '../../src/db/interfaces/ISettingsDB.ts';
 import type { ProgramWithRelationsOrm } from '../../src/db/schema/derivedTypes.ts';
 import { GlobalScheduler } from '../../src/services/Scheduler.ts';
+import { TVGuideService } from '../../src/services/TvGuideService.ts';
 import { XmlTvWriter } from '../../src/services/XmlTvWriter.ts';
 import { UpdateXmlTvTask } from '../../src/tasks/UpdateXmlTvTask.ts';
 import { KEYS } from '../../src/types/inject.ts';
+import { OpenDateTimeRange } from '../../src/types/OpenDateTimeRange.ts';
 import { formatLagSummary } from '../../src/util/eventLoopLag.ts';
 import { getAvailablePort } from '../../src/util/net.ts';
+import { formatMb, measurePeakHeap } from '../support/heap.ts';
 import {
   formatProbeSummary,
   measureWithConcurrentProbe,
@@ -50,6 +54,19 @@ import { initTestApp } from '../testServer.js';
  *   shows loaded once, yielding load and write     16-34ms
  *
  * At 40 channels, 2400 episodes and 336h EPG the last row measures 27-31ms.
+ *
+ * Peak heap of getAllChannelGuides above a post-GC baseline:
+ *
+ *                                     full set    lineup set
+ *   defaults                            69 MB        20 MB
+ *   40 channels, 6000 episodes, 336h   136 MB        31 MB
+ *
+ * Four XMLTV writes requested at once ran four program loads before writes
+ * were serialized, and run two now. The larger scale needs a longer setup:
+ *
+ *   TUNARR_PERF_CHANNELS=40 TUNARR_PERF_SHOWS=200 TUNARR_PERF_EPG_HOURS=336 \
+ *     TUNARR_PERF_SETUP_TIMEOUT_MS=1800000 \
+ *     pnpm vitest run tests/perf/guideRebuildLag.test.ts --silent=false
  */
 
 function envInt(name: string, fallback: number): number {
@@ -71,8 +88,19 @@ const PROGRAMMING_HOURS = envInt('TUNARR_PERF_EPG_HOURS', 168);
 const STREAM_LOOKUPS = envInt('TUNARR_PERF_STREAM_LOOKUPS', 200);
 const SETTLE_MS = envInt('TUNARR_PERF_SETTLE_MS', 8_000);
 
+// Each channel save queues a full guide rebuild, so setup grows faster than the
+// channel count. 80 channels does not finish within the default.
+const SETUP_TIMEOUT_MS = envInt('TUNARR_PERF_SETUP_TIMEOUT_MS', 600_000);
+
 // The fix measures 16-34ms locally and the one-shot write stalled 560-863ms.
 const MAX_ACCEPTABLE_PROBE_MS = envInt('TUNARR_PERF_MAX_PROBE_MS', 250);
+
+// Guide reads load the lineup relation set. Its peak heap must stay under this
+// fraction of the full relation set's peak.
+const MAX_GUIDE_HEAP_RATIO = 0.5;
+
+// Concurrent XMLTV writes fired at once, as channel saves during a rebuild do.
+const XMLTV_WRITE_BURST = envInt('TUNARR_PERF_XMLTV_BURST', 4);
 
 const PROBE_URL = '/api/xmltv-last-refresh';
 
@@ -155,7 +183,7 @@ beforeAll(async () => {
   // each rewriting the whole XMLTV file. A foreground run queues last, so it
   // returns once that backlog has drained and cannot leak into a measurement.
   await GlobalScheduler.runScheduledJobNow(UpdateXmlTvTask.ID, false);
-}, 600_000);
+}, SETUP_TIMEOUT_MS);
 
 afterAll(async () => {
   await app?.close();
@@ -313,6 +341,105 @@ describe('guide rebuild', () => {
       await setCreditImages(original);
     }
   }, 120_000);
+
+  test('guide reads hold less heap than the full relation load', async () => {
+    const programDB = container.get<IProgramDB>(KEYS.ProgramDB);
+    const guideService = container.get(TVGuideService);
+    const now = dayjs();
+    const guideRange = OpenDateTimeRange.create(
+      now,
+      now.add(PROGRAMMING_HOURS, 'hours'),
+    );
+    if (!guideRange) {
+      throw new Error('Invalid guide range');
+    }
+
+    const guide = await measurePeakHeap(() =>
+      guideService.getAllChannelGuides(guideRange),
+    );
+    const guideProgramIds = uniq(
+      guide.result.flatMap(({ programs }) =>
+        programs.flatMap((program) =>
+          program.type === 'content' ? [program.id] : [],
+        ),
+      ),
+    );
+    expect(guideProgramIds.length).toBeGreaterThan(0);
+
+    // getProgramsByIds is the load guide reads made before they were narrowed.
+    // It loads the same programs the guide returned, so the comparison holds
+    // at any scale.
+    const full = await measurePeakHeap(() =>
+      programDB.getProgramsByIds(guideProgramIds),
+    );
+    const lineup = await measurePeakHeap(() =>
+      programDB.getLineupProgramsByIds(guideProgramIds),
+    );
+
+    console.log(
+      '[perf] peak heap above baseline (%d guide programs, %d channels, %dh)\n' +
+        '       getProgramsByIds:       %s\n' +
+        '       getLineupProgramsByIds: %s\n' +
+        '       getAllChannelGuides:    %s',
+      guideProgramIds.length,
+      CHANNEL_COUNT,
+      PROGRAMMING_HOURS,
+      formatMb(full.peakDeltaBytes),
+      formatMb(lineup.peakDeltaBytes),
+      formatMb(guide.peakDeltaBytes),
+    );
+
+    expect(lineup.peakDeltaBytes).toBeLessThan(
+      full.peakDeltaBytes * MAX_GUIDE_HEAP_RATIO,
+    );
+    // The whole guide read, conversion included, stays under the bare load
+    // it used to start with.
+    expect(guide.peakDeltaBytes).toBeLessThan(full.peakDeltaBytes);
+  }, 120_000);
+
+  test('concurrent XMLTV writes run one program load at a time', async () => {
+    const programDB = container.get<IProgramDB>(KEYS.ProgramDB);
+    const guideService = container.get(TVGuideService);
+    const channelId = channelIds[0];
+    if (channelId === undefined) {
+      throw new Error('No seeded channels');
+    }
+
+    const loadSpy = vi.spyOn(programDB, 'getGuideProgramsByIds');
+    try {
+      const single = await measurePeakHeap(() =>
+        guideService.updateCachedChannel(channelId),
+      );
+      expect(loadSpy).toHaveBeenCalledTimes(1);
+      loadSpy.mockClear();
+
+      const burst = await measurePeakHeap(() =>
+        Promise.all(
+          range(XMLTV_WRITE_BURST).map(() =>
+            guideService.updateCachedChannel(channelId),
+          ),
+        ),
+      );
+
+      console.log(
+        '[perf] XMLTV write peak heap above baseline\n' +
+          '       1 write:   %s\n' +
+          '       %d writes: %s (%d program loads)',
+        formatMb(single.peakDeltaBytes),
+        XMLTV_WRITE_BURST,
+        formatMb(burst.peakDeltaBytes),
+        loadSpy.mock.calls.length,
+      );
+
+      // One running write, and one follow-up shared by every later call. The
+      // burst's heap is logged but not asserted: heapUsed counts the first
+      // write's uncollected garbage, so at this scale it barely separates
+      // serialized writes (~1.6x a single write) from overlapping ones (~1.75x).
+      expect(loadSpy).toHaveBeenCalledTimes(2);
+    } finally {
+      loadSpy.mockRestore();
+    }
+  }, 300_000);
 
   test('hourly all-channel rebuild does not stall concurrent requests', async () => {
     const { probe, lag } = await measureWithConcurrentProbe({

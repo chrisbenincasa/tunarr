@@ -140,29 +140,24 @@ export class SubtitleExtractorTask extends Task2<
     // On the first run we may have to block if the guide is updating.
     await this.guideService.get();
 
-    const nextHourGuide = await this.guideService.getAllChannelGuides(
+    const channelIds = (await this.channelDB.getAllChannels())
+      .filter((channel) => channel.subtitlesEnabled)
+      .map((channel) => channel.uuid);
+
+    if (channelIds.length === 0) {
+      this.logger.trace(
+        'Skipping subtitle extraction because no channel has subtitles enabled',
+      );
+      return;
+    }
+
+    const nextHourGuide = await this.guideService.getChannelGuides(
       OpenDateTimeRange.create(now, now.add(filter.durationMs))!,
+      channelIds,
     );
     const mediaSources = await this.mediaSourceDB.getAll();
 
-    for (const { id, programs } of nextHourGuide) {
-      const channel = await this.channelDB.getChannel(id);
-      if (!channel) {
-        this.logger.warn(
-          'Could not find channel %s when attempting to extract subtitles',
-          id,
-        );
-        continue;
-      }
-
-      if (!channel.subtitlesEnabled) {
-        this.logger.trace(
-          'Skipping subtitle extraction for channel %s as subtitles are disabled',
-          channel.uuid,
-        );
-        continue;
-      }
-
+    for (const { programs } of nextHourGuide) {
       for (const program of programs) {
         if (program.type !== 'content') {
           continue;

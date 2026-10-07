@@ -141,6 +141,9 @@ export const getChannelFallbacks = <ThrowOnError extends boolean = false>(option
     });
 };
 
+/**
+ * Returns every channel's guide. Programs carry guide fields only. Actors, writers, directors, genres and studios are omitted from each program. Tags and artwork are empty, as are the show's and season's genres, actors and studios. Fetch GET /api/programs/{id} for the full program.
+ */
 export const getApiChannelsAllLineups = <ThrowOnError extends boolean = false>(options?: Options<GetApiChannelsAllLineupsData, ThrowOnError>) => {
     return (options?.client ?? _heyApiClient).get<GetApiChannelsAllLineupsResponses, GetApiChannelsAllLineupsErrors, ThrowOnError>({
         responseType: 'json',
@@ -149,6 +152,9 @@ export const getApiChannelsAllLineups = <ThrowOnError extends boolean = false>(o
     });
 };
 
+/**
+ * Returns a channel's guide. Programs carry guide fields only. Actors, writers, directors, genres and studios are omitted from each program. Tags and artwork are empty, as are the show's and season's genres, actors and studios. Fetch GET /api/programs/{id} for the full program.
+ */
 export const getApiChannelsByIdLineup = <ThrowOnError extends boolean = false>(options: Options<GetApiChannelsByIdLineupData, ThrowOnError>) => {
     return (options.client ?? _heyApiClient).get<GetApiChannelsByIdLineupResponses, GetApiChannelsByIdLineupErrors, ThrowOnError>({
         responseType: 'json',
@@ -157,6 +163,9 @@ export const getApiChannelsByIdLineup = <ThrowOnError extends boolean = false>(o
     });
 };
 
+/**
+ * Returns the program airing now on a channel. Programs carry guide fields only. Actors, writers, directors, genres and studios are omitted from each program. Tags and artwork are empty, as are the show's and season's genres, actors and studios. Fetch GET /api/programs/{id} for the full program.
+ */
 export const getApiChannelsByIdNowPlaying = <ThrowOnError extends boolean = false>(options: Options<GetApiChannelsByIdNowPlayingData, ThrowOnError>) => {
     return (options.client ?? _heyApiClient).get<GetApiChannelsByIdNowPlayingResponses, GetApiChannelsByIdNowPlayingErrors, ThrowOnError>({
         responseType: 'json',
@@ -931,6 +940,9 @@ export const getApiGuideDebug = <ThrowOnError extends boolean = false>(options?:
     });
 };
 
+/**
+ * Returns the guide for every channel, keyed by channel ID. Programs carry guide fields only. Actors, writers, directors, genres and studios are omitted from each program. Tags and artwork are empty, as are the show's and season's genres, actors and studios. Fetch GET /api/programs/{id} for the full program.
+ */
 export const getApiGuideChannels = <ThrowOnError extends boolean = false>(options: Options<GetApiGuideChannelsData, ThrowOnError>) => {
     return (options.client ?? _heyApiClient).get<GetApiGuideChannelsResponses, GetApiGuideChannelsErrors, ThrowOnError>({
         responseType: 'json',
