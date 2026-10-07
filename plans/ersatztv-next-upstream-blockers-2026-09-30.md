@@ -1,6 +1,6 @@
 # ErsatzTV next — upstream blockers track
 
-> **Status (10/01/2026):** Pin moved to `570d136` (upstream `main` HEAD), which adds channel config versioning, per-item copy mode and keyframe seek (#275–#283). B7 is resolved upstream by the new copy mode, and its plan file is deleted. A6 is fixed upstream (#275). B5 stays re-scoped. B2, B3, B6, B8 and C9 are unchanged and nothing is filed yet. Next step is to open the B3 release conversation and the B2 design issue, then send the B6 PR.
+> **Status (10/07/2026):** Pin moved to `v0.2.0-96aa6cb6-develop` (upstream `main` HEAD `96aa6cb`) in `dc4d74269`, pinned by tag and per-target SHA-256. B3 is mostly resolved upstream by #309 and #310, and only the first stable tag remains. B6 now bumps the channel schema to `0.1.2`, because #300 took `0.1.1`. B2, B8 and C9 have no upstream change at `96aa6cb`, and nothing is filed yet. Next step is the B2 design issue and the B6 PR, then the B3 ask for a stable tag once B2, B6 and B8 land.
 
 Offshoot of [`ersatztv-next-integration-2026-09-19.md`](ersatztv-next-integration-2026-09-19.md), called "the main plan" below. The main plan owns the Tunarr side. This plan owns everything that has to change in [ErsatzTV/next](https://github.com/ErsatzTV/next) before Tunarr can ship the backend.
 
@@ -12,21 +12,26 @@ Offshoot of [`ersatztv-next-integration-2026-09-19.md`](ersatztv-next-integratio
 
 ## 1. Upstream drift since the register
 
-The register was verified against `next` at `ed95077` (09/16/2026). Upstream landed 27 commits by 09/30, almost all on the hardware pipeline, and 9 more on 10/01 that rework copy mode and version every config file.
+The register was verified against `next` at `ed95077` (09/16/2026). Upstream landed 27 commits by 09/30, almost all on the hardware pipeline, 9 more on 10/01 that rework copy mode and version every config file, and 28 more by 10/07 that cover process shutdown, gap filling, output frame rate and release tooling.
 
-| Item | At `ed95077`                  | Now (10/01/2026)                                                                           | Effect on Tunarr                                                                                                          |
-| ---- | ----------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| G5   | VAAPI dropped without driver  | Fixed in `f2a981b` (#249). Issue #246 closed 09/23                                         | Done. Pin moved to `091e174` on 09/30, `EtvNextVaapi.ts` deleted, smoke trace shows `h264_vaapi` with neither field sent  |
-| D2   | No `mpeg2video`, no `mp3`     | `mpeg2video` encoder added (#272). `mp3` still missing                                     | Done for `mpeg2video` at pin `091e174`. `mp3` still refused                                                               |
-| A6   | Playlist version mismatch     | Fixed by #275 (`4ad282f`), which closes #213                                               | Done at pin `570d136`                                                                                                     |
-| A9   | `linux-arm` tests never run   | `linux-arm` (arm32v7) dropped entirely (#257)                                              | None. `download-ersatztv-next.ts` never requested `linux-arm`                                                             |
-| A2   | `read_dir` errors swallowed   | Possible overlap with open PR #217 ("name the operation and the path on every io failure") | Check #217 before filing A2                                                                                               |
-| B3   | `develop` is the only release | Unchanged. Tag `v0.1.0` exists with no release object, and no workflow creates releases    | Still the gate. Needs a small `release.yml`, not just a tag                                                               |
-| B5   | Lavfi in-point ignored        | `Lavfi`, `Rtsp`, `Script` have no in/out-point fields at all, here or at `ed95077`         | Not a Tunarr blocker. Folds into C2                                                                                       |
-| B6   | `video_filter.rs:228`, `:540` | Now `:234` and `:599`. The second site scales image subtitles, not video                   | None                                                                                                                      |
-| B7   | No DTS/TrueHD rewrite in copy | Copy mode redone (#280, #281). Items whose codec is not in `copy_formats` transcode        | Resolved upstream at pin `570d136`. DTS and TrueHD are not on the default list, so they transcode to the profile's format |
-| —    | Channel config unversioned    | #276 versions channel and lineup configs. A config without `version` 0.1.0 is rejected     | Done at pin `570d136`. The mapper emits `ChannelConfigVersion`, and `PlayoutVersion` is 0.0.5                             |
-| D1   | Copy breaks mid-GOP starts    | #282, #283 add keyframe-aware seeking. An item that starts between keyframes transcodes    | Codec passthrough with mid-item starts now works. D1's remaining gap is the container and playlist model                  |
+| Item | At `ed95077`                    | Now (10/07/2026)                                                                                                            | Effect on Tunarr                                                                                                                       |
+| ---- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| G5   | VAAPI dropped without driver    | Fixed in `f2a981b` (#249). Issue #246 closed 09/23                                                                          | Done. Pin moved to `091e174` on 09/30, `EtvNextVaapi.ts` deleted, smoke trace shows `h264_vaapi` with neither field sent               |
+| D2   | No `mpeg2video`, no `mp3`       | `mpeg2video` encoder added (#272). `mp3` still missing                                                                      | Done for `mpeg2video` at pin `091e174`. `mp3` still refused                                                                            |
+| A6   | Playlist version mismatch       | Fixed by #275 (`4ad282f`), which closes #213                                                                                | Done at pin `570d136`                                                                                                                  |
+| A9   | `linux-arm` tests never run     | `linux-arm` (arm32v7) dropped entirely (#257)                                                                               | None. `download-ersatztv-next.ts` never requested `linux-arm`                                                                          |
+| A2   | `read_dir` errors swallowed     | Possible overlap with open PR #217 ("name the operation and the path on every io failure")                                  | Check #217 before filing A2                                                                                                            |
+| B3   | `develop` is the only release   | #309, #310: immutable develop builds in `ErsatzTV/next-develop-builds`, computed semver. No stable tag or `release.yml` yet | Pinned `v0.2.0-96aa6cb6-develop` by SHA-256 in `dc4d74269`. Only the first stable tag remains. The old `develop` release has no assets |
+| B5   | Lavfi in-point ignored          | `Lavfi`, `Rtsp`, `Script` have no in/out-point fields at all, here or at `ed95077`                                          | Not a Tunarr blocker. Folds into C2                                                                                                    |
+| B6   | `video_filter.rs:228`, `:540`   | Now `:237` and `:642`. The second site scales image subtitles, not video                                                    | The schema bump becomes `0.1.2`, because #300 took `0.1.1`                                                                             |
+| B7   | No DTS/TrueHD rewrite in copy   | Copy mode redone (#280, #281). Items whose codec is not in `copy_formats` transcode                                         | Resolved upstream at pin `570d136`. DTS and TrueHD are not on the default list, so they transcode to the profile's format              |
+| —    | Channel config unversioned      | #276 versions channel and lineup configs. A config without `version` 0.1.0 is rejected                                      | Done at pin `570d136`. The mapper emits `ChannelConfigVersion`, and `PlayoutVersion` is 0.0.5                                          |
+| —    | Version string is `0.1.0-<sha>` | Builds append the target as build metadata: `0.2.0-96aa6cb6-develop+linux-x64`                                              | Done in `dc4d74269`. The version check drops `+…` before comparing                                                                     |
+| —    | No output frame rate            | #300 adds `normalization.video.frame_rate` (`N` or `N/D`). Schema `0.1.1`                                                   | Vendored at `dc4d74269`. `normalizeFrameRate` may now be mappable. See §5                                                              |
+| A1   | `.heartbeat` self-reap hole     | #294 writes `.heartbeat` at ready, but only in the `ersatztv` server binary                                                 | Still open for Tunarr, which runs `ersatztv-channel` directly                                                                          |
+| A2   | `read_dir` errors swallowed     | Still `while let Ok(Some(entry))` at `playout_loader.rs:75`                                                                 | Still open                                                                                                                             |
+| —    | Orphaned ffmpeg on SIGTERM      | #289–#293: the worker kills ffmpeg on SIGTERM and exits when its parent dies                                                | Tunarr's PID-file orphan reaping may be removable. See §5                                                                              |
+| D1   | Copy breaks mid-GOP starts      | #282, #283 add keyframe-aware seeking. An item that starts between keyframes transcodes                                     | Codec passthrough with mid-item starts now works. D1's remaining gap is the container and playlist model                               |
 
 **Re-verify every row before filing it.** The register's file:line citations point at `ed95077`. Check each one against upstream HEAD first, because upstream moves fast enough that a row can go stale in a week.
 
@@ -49,23 +54,23 @@ The register was verified against `next` at `ed95077` (09/16/2026). Upstream lan
 
 Start the two slow conversations on day one, then send the small PRs while those run.
 
-| Step | Item | Form                    | Why this position                                                                                                |
-| ---- | ---- | ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| 1    | B3   | Issue or direct message | Longest lead time, and it gates shipping. It asks for a release habit, not code                                  |
-| 1    | B2   | Design issue            | It adds config knobs and an exit-code contract, so the shape needs agreement. Pair it with B1's work-ahead knobs |
-| 2    | B6   | PR                      | The most visible regression, since every scaled frame degrades. Small: one filter option plus a format string    |
-| 3    | B8   | PR                      | Small, because the `anullsrc` primitive already exists upstream. Video-only files fail on this backend today     |
-| 4    | B5   | Re-scoped               | Not a blocker. Fold into C2, and send the graphics in-point one-liner with any small PR                          |
-| 5    | B7   | Resolved upstream       | Copy mode (#280, #281) transcodes any codec not in `copy_formats`. Only the Tunarr follow-up in §5 remains       |
-| 6    | B2   | PR                      | After step 1's issue settles the shape                                                                           |
-| 7    | C9   | Design issue            | Not a ship gate. Once it exists, Tunarr derives its validation from the binary instead of hardcoding it          |
-| 8    | B3   | Pin bump                | After a tagged release contains steps 2, 3, 5 and 6. See §5                                                      |
+| Step | Item | Form              | Why this position                                                                                                |
+| ---- | ---- | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 1    | B3   | Ask               | Upstream built the release tooling. The ask is now one stable tag once B2, B6 and B8 land                        |
+| 1    | B2   | Design issue      | It adds config knobs and an exit-code contract, so the shape needs agreement. Pair it with B1's work-ahead knobs |
+| 2    | B6   | PR                | The most visible regression, since every scaled frame degrades. Small: one filter option plus a format string    |
+| 3    | B8   | PR                | Small, because the `anullsrc` primitive already exists upstream. Video-only files fail on this backend today     |
+| 4    | B5   | Re-scoped         | Not a blocker. Fold into C2, and send the graphics in-point one-liner with any small PR                          |
+| 5    | B7   | Resolved upstream | Copy mode (#280, #281) transcodes any codec not in `copy_formats`. Only the Tunarr follow-up in §5 remains       |
+| 6    | B2   | PR                | After step 1's issue settles the shape                                                                           |
+| 7    | C9   | Design issue      | Not a ship gate. Once it exists, Tunarr derives its validation from the binary instead of hardcoding it          |
+| 8    | B3   | Pin bump          | After a tagged release contains steps 2, 3, 5 and 6. See §5                                                      |
 
 ### 3.1 B3 — tagged releases
 
-- **Ask** for version tags, plus a small `release.yml` that creates a draft release, calls `artifacts.yml`, and publishes once all six targets upload. No step creates a release today, so a bare tag is not enough.
-- **Offer** to request a tag after each batch of Tunarr-relevant fixes, so the cadence costs the maintainer nothing extra.
-- **Fallback** if no tag by 10/31/2026: copy upstream's signed `develop` assets into releases on a separate Tunarr-owned repo. Details in the [B3 plan](ersatztv-next-b3-tagged-releases-2026-09-30.md) §5.
+- **Done upstream:** develop builds publish as immutable releases in `ErsatzTV/next-develop-builds`, drafted first and published after all six targets upload (#309, #310).
+- **Ask** for the first stable tag (`v0.2.0`) once B2, B6 and B8 are on `main`, and whether `release.yml` will keep the same asset names.
+- **Fallback:** keep pinning develop builds. Upstream prunes all but the newest 100, so check the pinned release still exists before a Tunarr release. Details in the [B3 plan](ersatztv-next-b3-tagged-releases-2026-09-30.md) §5.
 
 ### 3.2 B2 — callback retry and failure budget
 
@@ -80,8 +85,8 @@ Make the case without Tunarr. A backend that cannot tell "this item failed" from
 ### 3.3 B6 — scaling algorithm
 
 - Add `filters.scale.flags` to the channel config, following the #132 filter-options convention. Unset means today's `fast_bilinear`.
-- Replace the literal at both scale sites (`video_filter.rs:234`, `:599` at `570d136`).
-- Bump the channel schema to `0.1.1` and regenerate `schema/channel_config.json`. Details in the B6 plan.
+- Replace the literal at both scale sites (`video_filter.rs:237`, `:642` at `96aa6cb`).
+- Bump the channel schema to `0.1.2`, regenerate `schema/channel_config.json`, and add a `CHANGELOG.md` entry. Details in the B6 plan.
 
 ### 3.4 B8 and B7 — audio
 
@@ -94,7 +99,7 @@ Make the case without Tunarr. A backend that cannot tell "this item failed" from
 
 | ID  | Change                                | Form      | Upstream   | Status    | Plan                                                           | Tunarr stopgap today                                                                                 |
 | --- | ------------------------------------- | --------- | ---------- | --------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| B3  | Tagged releases                       | Ask       | —          | open      | [plan](ersatztv-next-b3-tagged-releases-2026-09-30.md)         | `server/package.json` `ersatztvNext` records drift but doesn't pin. Its own `note` says so           |
+| B3  | Tagged releases                       | Ask       | #309, #310 | partial   | [plan](ersatztv-next-b3-tagged-releases-2026-09-30.md)         | Develop build pinned by tag and SHA-256 (`dc4d74269`). Expires once upstream prunes it               |
 | B2  | Retry, backoff, failure budget        | Issue, PR | —          | open      | [plan](ersatztv-next-b2-callback-failure-budget-2026-09-30.md) | Resolver-silence watchdog, `EtvNextSession.ts:54` (5-minute grace)                                   |
 | B6  | Scaling-algorithm field               | PR        | —          | open      | [plan](ersatztv-next-b6-scaling-algorithm-2026-09-30.md)       | Compatibility notice lists `scalingAlgorithm` as ignored (`EtvNextChannelConfigMapper.ts:216`)       |
 | B8  | Silent audio for video-only sources   | PR        | —          | open      | [plan](ersatztv-next-b8-silent-audio-2026-09-30.md)            | None for content items. `anullsrc` covers only error and flex items. Phase 5 adds the stopgap        |
@@ -109,14 +114,14 @@ Make the case without Tunarr. A backend that cannot tell "this item failed" from
 
 Upstream fixes reach users only through a pin bump. Every bump moves the following together in one commit, because main plan §12 treats them as one unit:
 
-- `server/package.json` `ersatztvNext` gets the tag, commit, and per-target SHA-256
+- `server/package.json` `ersatztvNext` gets `releaseRepo`, `releaseTag`, `commit`, and per-target `sha256` from the release API `digest`
 - the vendored schemas under `server/src/stream/etv/schema/`
 - the generated Zod (`pnpm generate-etv-schemas`)
 - the emitted playout and channel config version constants (`PlayoutVersion`, `ChannelConfigVersion`).
 
 | ID  | Tunarr change once the pinned binary carries the fix                                                                                                                                                                                                                                          |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B3  | Pin by tag plus SHA-256. Refuse the bundled binary when `--version` differs from `assetVersion`. Warn only under `ERSATZTV_NEXT_PATH`                                                                                                                                                         |
+| B3  | Done 10/07 for the develop pin. After the first stable tag, point `releaseRepo` at `ErsatzTV/next`, and refuse the bundled binary when its version differs from the pin. Warn only under `ERSATZTV_NEXT_PATH`                                                                                 |
 | B2  | Map `errorScreen: kill` to "budget expires, don't restart." Remove the resolver-silence watchdog                                                                                                                                                                                              |
 | B6  | Always emit `filters.scale.flags` from `ffmpegSettings.scalingAlgorithm`. Drop it from the ignored-settings list                                                                                                                                                                              |
 | B8  | Decide whether to keep Phase 5's `anullsrc` stopgap. It still guards against a probe that missed audio                                                                                                                                                                                        |
@@ -124,6 +129,8 @@ Upstream fixes reach users only through a pin bump. Every bump moves the followi
 | B7  | Lift the copy refusal. Map Tunarr's `copy` to `mode: "copy"` with a fallback `format` (`aac`, `h264`), drop loudness under copy because upstream rejects it, and keep `channels` set so a TrueHD 7.1 fallback to `ac3` gets 6 channels. Add mapper tests for all three. Plan together with D1 |
 | G5  | Done 09/30. `EtvNextVaapi.ts` deleted, and the mapper passes an unset device and `system` driver through as unset                                                                                                                                                                             |
 | D2  | Done 09/30 for `mpeg2video`. The refusal lifted when the schemas were regenerated                                                                                                                                                                                                             |
+| —   | `frame_rate` is in the pinned schema. Decide whether `normalizeFrameRate` maps to it. Tunarr's setting is a boolean, so it needs a target rate. Until then the ignored-settings note stays (`EtvNextChannelConfigMapper.ts:214`)                                                              |
+| —   | The worker now kills ffmpeg on SIGTERM and exits when its parent dies (#289–#293). Check whether Tunarr's PID-file orphan reaping can go                                                                                                                                                      |
 
 ---
 
