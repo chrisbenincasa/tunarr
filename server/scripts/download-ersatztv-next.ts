@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path, { dirname } from 'node:path';
@@ -13,6 +14,7 @@ import { hideBin } from 'yargs/helpers';
 import serverPackage from '../package.json' with { type: 'json' };
 import { Nullable } from '../src/types/util.ts';
 import { fileExists } from '../src/util/fsUtil.ts';
+import { isNonEmptyString } from '../src/util/index.ts';
 import {
   matchesPinnedEtvNextVersion,
   parseEtvNextVersion,
@@ -28,7 +30,14 @@ const BINARY_NAME = 'ersatztv-channel';
 
 const DefaultOutPath = `./bin/${BINARY_NAME}`;
 
-const { releaseTag, assetVersion, commit } = serverPackage.ersatztvNext;
+const { releaseRepo, releaseTag, commit } = serverPackage.ersatztvNext;
+const pinnedSha256: Record<string, string> = serverPackage.ersatztvNext.sha256;
+
+/** The pinned archive's SHA-256 for one upstream target. */
+export function expectedSha256For(etvTarget: string): Nullable<string> {
+  const hash = pinnedSha256[etvTarget];
+  return isNonEmptyString(hash) ? hash : null;
+}
 
 /**
  * Upstream's release target names, keyed by Tunarr's.
@@ -63,10 +72,10 @@ function getDownloadUrl(etvTarget: string): {
   isZip: boolean;
 } {
   const isZip = etvTarget.startsWith('windows');
-  const archiveName = `ersatztv-next-${assetVersion}-${etvTarget}${isZip ? '.zip' : '.tar.gz'}`;
+  const archiveName = `ersatztv-next-${releaseTag}-${etvTarget}${isZip ? '.zip' : '.tar.gz'}`;
 
   return {
-    url: `https://github.com/ErsatzTV/next/releases/download/${releaseTag}/${archiveName}`,
+    url: `https://github.com/${releaseRepo}/releases/download/${releaseTag}/${archiveName}`,
     archiveName,
     isZip,
   };
@@ -118,14 +127,8 @@ async function needsToDownloadNewBinary(targetPath: string) {
  *
  * Upstream ships a `.tar.gz` (or `.zip` on Windows) containing a single
  * directory with three binaries, so the archive is extracted to a temp dir and
- * only the worker is kept.
- *
- * **This does not pin to an immutable artifact.** Upstream publishes only a
- * rolling `develop` pre-release whose assets are replaced on every push to
- * main, so a build reproduced later may fetch a different binary under the same
- * URL. `assetVersion` carries the commit, which makes drift detectable at
- * download time and again at runtime, but not preventable. Cutting tagged
- * releases upstream is what fixes this.
+ * only the worker is kept. The archive must match the SHA-256 pinned for its
+ * target, or nothing is written.
  */
 export async function grabEtvNext(
   targetPath: string = DefaultOutPath,
@@ -140,25 +143,41 @@ export async function grabEtvNext(
     return null;
   }
 
+  const expectedSha256 = expectedSha256For(etvTarget);
+  if (!expectedSha256) {
+    console.error(`No SHA-256 is pinned for ErsatzTV next target ${etvTarget}`);
+    return null;
+  }
+
   if (!(await needsToDownloadNewBinary(targetPath))) {
-    console.log(`${BINARY_NAME} ${assetVersion} is already at ${targetPath}`);
+    console.log(`${BINARY_NAME} ${releaseTag} is already at ${targetPath}`);
     return targetPath;
   }
 
   const { url, archiveName, isZip } = getDownloadUrl(etvTarget);
   console.log(`Downloading ${url} ...`);
 
-  const response = await axios.get<stream.Readable>(url, {
-    responseType: 'stream',
+  const response = await axios.get<ArrayBuffer>(url, {
+    responseType: 'arraybuffer',
   });
+  const archive = Buffer.from(response.data);
+
+  const actualSha256 = createHash('sha256').update(archive).digest('hex');
+  if (actualSha256 !== expectedSha256) {
+    console.error(
+      `${archiveName} has SHA-256 ${actualSha256}, but ${expectedSha256} is pinned`,
+    );
+    return null;
+  }
 
   await fs.mkdir(dirname(targetPath), { recursive: true });
 
   return await tmp.withDir(
     async (dir) => {
+      const data = stream.Readable.from(archive);
       const extractedBinary = isZip
-        ? await extractZip(response.data, dir.path)
-        : await extractTarGz(response.data, dir.path);
+        ? await extractZip(data, dir.path)
+        : await extractTarGz(data, dir.path);
 
       if (!extractedBinary) {
         console.error(`${archiveName} did not contain ${BINARY_NAME}`);
@@ -235,7 +254,7 @@ if (invokedDirectly) {
     .parseAsync();
 
   console.log(
-    `ErsatzTV next pinned to ${assetVersion} (commit ${commit.slice(0, 7)}), release tag "${releaseTag}"`,
+    `ErsatzTV next pinned to ${releaseTag} (commit ${commit.slice(0, 7)}) from ${releaseRepo}`,
   );
 
   const result = await grabEtvNext(args.outPath, args.platform, args.arch);

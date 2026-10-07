@@ -148,9 +148,17 @@
     "version": "1.30.0"
   },
   "ersatztvNext": {
-    "releaseTag": "develop",
-    "assetVersion": "v0.1.0-570d136",
-    "commit": "570d136068153c6d8140fd3a6e84b5d943f7caa6",
-    "note": "Upstream cuts no tags; the develop pre-release replaces its assets on every push to main, so assetVersion is detectable drift, not a durable pin. Schemas under src/stream/etv/schema are vendored from this commit."
+    "releaseRepo": "ErsatzTV/next-develop-builds",
+    "releaseTag": "v0.2.0-96aa6cb6-develop",
+    "commit": "96aa6cb6ee475e5b4387f41251c8ea5cbe17af6b",
+    "sha256": {
+      "linux-x64": "64a74b448a01273dfce51ea6741aa164539fd67e5a45c1332a3d9de2bc9219ca",
+      "linux-musl-x64": "2095a7dc7e078080d57de533bb4e220a8835647f8b0a150db58ee3d0a3cfaed3",
+      "linux-arm64": "750ca0d2652b8e0eda90ac349957990a8dd4c7a25f7f01e8d8bb5ddffb09649d",
+      "macos-x64": "2f39e94fe0fe81840f28608687d9560e826f1b66427298722cbde117262bf7d5",
+      "macos-arm64": "f79f432fe2409276ffc3ae6eca2506fe27b7f818341813645a61c23414d1fecc",
+      "windows-x64": "e7128f3e6ec756ee7b7465b74d3248ee266890e0b739cb022cb0cfe16512e17c"
+    },
+    "note": "Develop builds are immutable releases in releaseRepo, but upstream keeps only the newest 100, so a develop pin eventually 404s. Pin a stable tag from ErsatzTV/next before shipping. Schemas under src/stream/etv/schema are vendored from this commit."
   }
 }
