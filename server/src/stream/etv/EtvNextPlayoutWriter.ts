@@ -1,27 +1,28 @@
-import { inject, injectable } from 'inversify';
 import dayjs from 'dayjs';
-import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
+import { inject, injectable } from 'inversify';
 import type {
   ContentBackedStreamLineupItem,
   StreamLineupItem,
 } from '../../db/derived_types/StreamLineup.ts';
 import { isContentBackedLineupItem } from '../../db/derived_types/StreamLineup.ts';
+import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { ChannelOrm } from '../../db/schema/Channel.ts';
 import type { ChannelOrmWithTranscodeConfig } from '../../db/schema/derivedTypes.ts';
+import { StreamSelector } from '../../ffmpeg/StreamSelector.ts';
+import { OnDemandChannelService } from '../../services/OnDemandChannelService.ts';
+import { isNonEmptyString } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
-import { OnDemandChannelService } from '../../services/OnDemandChannelService.ts';
+import { makeLocalUrl } from '../../util/serverUtil.ts';
 import { ProgramStreamDetailsFetcher } from '../ProgramStreamDetailsFetcher.ts';
 import { StreamProgramCalculator } from '../StreamProgramCalculator.ts';
 import type { StreamDetails, StreamSource } from '../types.ts';
-import { isNonEmptyString } from '../../util/index.ts';
-import { makeLocalUrl } from '../../util/serverUtil.ts';
-import { StreamSelector } from '../../ffmpeg/StreamSelector.ts';
 import { WatermarkResolver } from '../WatermarkResolver.ts';
 import type {
   PlayoutItemMapping,
   PlayoutTrackSelection,
   ResolvedWatermark,
+  ToPlayoutItemArgs,
 } from './EtvNextPlayoutItemMapper.ts';
 import {
   StreamTerminationRequestedError,
@@ -89,7 +90,7 @@ export const MaxResolveSkips = 5;
  * viewer reads as a seam, and it stops a run of items just under the floor
  * from walking the channel forward.
  */
-export const MaxSkipAheadMs = 2_000;
+const MaxSkipAheadMs = 2_000;
 
 /** What one walk of the schedule produced for a dynamic callback. */
 type DynamicResolution =
@@ -97,7 +98,7 @@ type DynamicResolution =
   | { failure: 'unreadable' | 'all-too-short' };
 
 /** How long a channel's callback budget runs before it resets. */
-export const CallbackWindowMs = 10_000;
+const CallbackWindowMs = 10_000;
 
 /**
  * Callbacks one channel may make per window.
@@ -138,7 +139,7 @@ function lastResortErrorItem(id: string): PlayoutItemMapping {
 
 /** The channel settings that decide what a flex or error slot looks like. */
 type ScreenOptions = Pick<
-  Parameters<typeof toPlayoutItem>[0],
+  ToPlayoutItemArgs,
   | 'resolution'
   | 'offlinePicture'
   | 'offlineSoundtrack'
@@ -147,6 +148,11 @@ type ScreenOptions = Pick<
   | 'errorScreenAudio'
   | 'errorPicture'
 >;
+
+type CallbackWindowValue = {
+  startMs: number;
+  count: number;
+};
 
 /**
  * Walks a channel's schedule forward and turns it into a playout window.
@@ -169,10 +175,7 @@ export class EtvNextPlayoutWriter {
   @InjectLogger() declare private readonly logger: Logger;
 
   /** Per-channel callback budget for the dynamic resolver. */
-  private readonly callbackWindows = new Map<
-    string,
-    { startMs: number; count: number }
-  >();
+  private readonly callbackWindows = new Map<string, CallbackWindowValue>();
 
   constructor(
     @inject(StreamProgramCalculator)
