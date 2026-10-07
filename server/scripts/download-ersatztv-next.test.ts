@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { etvTargetFor } from './download-ersatztv-next.ts';
+import { etvTargetFor, expectedSha256For } from './download-ersatztv-next.ts';
 
 // The six targets `make-bin.ts` builds, in its own vocabulary.
 const tunarrTargets = [
@@ -34,5 +34,20 @@ describe('etvTargetFor', () => {
     expect(etvTargetFor('linux', 'arm')).toBeNull();
     expect(etvTargetFor('freebsd', 'x64')).toBeNull();
     expect(etvTargetFor('win32', 'arm64')).toBeNull();
+  });
+});
+
+describe('expectedSha256For', () => {
+  test.each(tunarrTargets)('pins a hash for the %s build target', (target) => {
+    const [platform, arch] = target.split('-', 2);
+    const etvTarget = etvTargetFor(platform, arch);
+    expect(etvTarget).not.toBeNull();
+    if (!etvTarget) return;
+
+    expect(expectedSha256For(etvTarget)).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  test('pins nothing for an unknown target', () => {
+    expect(expectedSha256For('linux-arm')).toBeNull();
   });
 });

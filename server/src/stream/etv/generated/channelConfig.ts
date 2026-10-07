@@ -166,6 +166,11 @@ export const VideoNormalizationConfigSchema = z.strictObject({
   deinterlace: z.boolean().optional(),
   filters: VideoFilterOptionsConfigSchema.optional(),
   format: VideoFormatSchema.optional(),
+  frame_rate: z
+    .string()
+    .regex(new RegExp('^[1-9][0-9]*(/[1-9][0-9]*)?$'))
+    .nullable()
+    .optional(),
   height: z.number().int().min(0).nullable().optional(),
   mode: StreamModeSchema.optional(),
   scaling_mode: ScalingModeSchema.optional(),

@@ -34,6 +34,7 @@ type JsonSchema = {
   const?: unknown;
   enum?: unknown[];
   format?: string;
+  pattern?: string;
   description?: string;
   properties?: Record<string, JsonSchema>;
   required?: string[];
@@ -88,6 +89,7 @@ const knownKeywords = new Set([
   'const',
   'enum',
   'format',
+  'pattern',
   'properties',
   'required',
   'items',
@@ -197,10 +199,16 @@ function render(node: JsonSchema, ctx: string): string {
       // The schema cannot say "RFC3339 with an offset", but `next` parses these
       // with `DateTime::parse_from_rfc3339`, and a bare local time in a
       // container without TZ resolves differently than intended.
-      if (node.format === 'date-time') {
-        return `z.iso.datetime({ offset: true })`;
-      }
-      return `z.string()`;
+      const base =
+        node.format === 'date-time'
+          ? `z.iso.datetime({ offset: true })`
+          : `z.string()`;
+
+      // JSON Schema patterns are ECMA-262 regexes and match anywhere unless
+      // anchored, the same as `RegExp.test`.
+      return node.pattern !== undefined
+        ? `${base}.regex(new RegExp(${JSON.stringify(node.pattern)}))`
+        : base;
     }
     case 'integer':
     case 'number': {

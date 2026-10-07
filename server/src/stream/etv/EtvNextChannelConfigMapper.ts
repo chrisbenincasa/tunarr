@@ -259,7 +259,7 @@ export function findIgnoredSettings({
  * a config without it.
  */
 export const ChannelConfigVersion =
-  'https://ersatztv.org/channel/version/0.1.0';
+  'https://ersatztv.org/channel/version/0.1.1';
 
 /**
  * Builds the `channel.json` a worker is spawned with.
