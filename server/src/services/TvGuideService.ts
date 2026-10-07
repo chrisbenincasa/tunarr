@@ -1110,9 +1110,9 @@ export class TVGuideService {
    * Writes XMLTV from the guide cache, one write at a time.
    *
    * Each write loads every guide program, so overlapping writes multiply peak
-   * memory. A call made while a write runs joins a single follow-up write,
-   * which reads the cache after the running one finishes and so includes
-   * every change its callers made.
+   * memory. A call made while a write runs joins a single follow-up write.
+   * The follow-up reads the cache when it starts, so it holds every change made
+   * before it started. A call made after that queues a new follow-up write.
    */
   private writeXmlTv(): Promise<void> {
     if (this.queuedXmlTvWrite) {
@@ -1124,6 +1124,8 @@ export class TVGuideService {
       return this.startXmlTvWrite();
     }
 
+    // The running write's callers receive its error. The follow-up runs anyway,
+    // because its callers' changes are not on disk yet.
     const queued = running
       .catch(() => {})
       .then(() => {
@@ -1181,6 +1183,10 @@ export class TVGuideService {
     });
   }
 
+  /**
+   * Builds guides for the given channels, or for every channel when no filter
+   * is passed. Programs carry the lineup relation set only.
+   */
   async getChannelGuides(
     dateRange: OpenDateTimeRange,
     channelIdFilter?: string[],

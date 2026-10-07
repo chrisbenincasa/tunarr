@@ -37,6 +37,7 @@ vi.mock('../util/fsUtil.ts', () => ({
 const MEDIA_SOURCE_ID = 'media-source-1' as MediaSourceId;
 const PROGRAM_ID = 'program-1';
 const CHANNEL_ID = 'channel-1';
+const OTHER_CHANNEL_ID = 'channel-2';
 const SOURCE_SUBTITLE_PATH = '/data/media/movie.eng.srt';
 const SHARED_SUBTITLE_PATH = '/mnt/media/movie.eng.srt';
 const CACHED_SUBTITLE_PATH = '/tmp/test-tunarr/cache/subtitles/ab/cd/abcd.srt';
@@ -161,6 +162,7 @@ function makeHarness(opts: {
             uuid: CHANNEL_ID,
             subtitlesEnabled: opts.subtitlesEnabled ?? true,
           },
+          { uuid: OTHER_CHANNEL_ID, subtitlesEnabled: false },
         ]),
     } as never,
     {
@@ -425,5 +427,16 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
 
     expect(harness.getChannelGuides).not.toHaveBeenCalled();
     expect(harness.downloadSubtitlesIfNecessary).not.toHaveBeenCalled();
+  });
+
+  it('loads guides only for channels with subtitles turned on', async () => {
+    const harness = makeHarness({ subtitles: [] });
+
+    await run(harness);
+
+    expect(harness.getChannelGuides).toHaveBeenCalledExactlyOnceWith(
+      expect.anything(),
+      [CHANNEL_ID],
+    );
   });
 });
