@@ -13,16 +13,13 @@ that, which supports mid-roll breaks as of #2213.
 
 ## Status
 
-- Not started. Branch `fix/remove-movie-slots` exists but has no commits.
+- 10/07/2026: Step 1 (migration) written and tested on `fix/remove-movie-slots`,
+  uncommitted. Step 2 (removal) not started.
+- Open decisions resolved 10/07/2026: all three proposals accepted.
 - Prerequisite #2213 (mid-roll breaks on custom-show slots) is merged.
-- Custom show title sort and release date sort fixes (Follow-ups) are on
-  `fix/filler-seek-past-eof` (`3eac3910`).
-- Interim fix, branch `fix/movie-slot-filler-leak`: `createProgramMap` leaves
-  programs in a filler list the schedule references out of the movie pool.
-  Known gap: a lineup's filler items are content items with `fillerListId` and
-  are saved as channel programs. If their filler list is later removed from
-  the schedule, they rejoin the movie pool on the next regeneration. The
-  migration below excludes them; the interim fix does not.
+- Custom show sort follow-ups merged as #2214.
+- Interim fix PR #2234 (`fix/movie-slot-filler-leak`) closed unmerged in favor
+  of this removal.
 
 ## 1. Migration: lineup schema v6 to v7
 
@@ -67,8 +64,10 @@ needs more than one. Slots that shared one movie iterator (key
 per show and order (`custom-show_${id}_${order}`).
 
 **The slot keeps everything else:** id, filler, mid-roll, weight, cooldown,
-duration spec, start time and links. Only `type`, `customShowId` and `order`
-change.
+duration spec, start time and links. Only `type`, `customShowId`, `order` and
+`direction` change. `direction` becomes `asc` because the show already holds
+the slot's direction, and a later change that honors `direction` on
+custom-show slots would otherwise reverse it a second time.
 
 **Empty pool.** The slot becomes a `flex` slot and the migration logs a
 warning. An empty custom show would fail schedule validation on save.
