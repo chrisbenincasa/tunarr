@@ -36,6 +36,7 @@ Tunarr uses CalVer, so a release number says when it shipped, not what changed. 
 4. Draft a PR title and body based on the commits and diff:
    - Title: concise, follows conventional commit style
    - Body: summary of what changed and why, plus a test plan checklist
+   - If the PR fully fixes an issue, add a line `Closes-on-release: #N`. The release workflow closes the issue when a stable release ships the PR. Don't use `Fixes #N` or `Closes #N`, because those close the issue at merge, before the fix ships. If the PR is only part of the fix, write `Refs #N` instead.
 5. Create the PR with `gh pr create` targeting the correct branch
 6. Return the PR URL
 

@@ -295,6 +295,18 @@ to crash. This change treats null duration as 0 and logs a warning.
 Fixes #1234"
 ```
 
+### Closing Issues on Release
+
+`Fixes #1234` closes the issue as soon as the PR merges, before any release ships the fix. To keep the issue open until the fix is released, put this line in the PR description instead:
+
+```
+Closes-on-release: #1234
+```
+
+- The line must start with `Closes-on-release:`. List several issues on one line: `Closes-on-release: #1234, #1240`.
+- When a stable release ships the PR, the release workflow comments on the issue and closes it. Prereleases don't count.
+- When an issue needs several PRs, add the line only to the PR that finishes it.
+
 ## Testing
 
 - **Framework**: Vitest
