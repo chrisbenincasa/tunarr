@@ -1,3 +1,4 @@
+import { once } from 'node:events';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
@@ -8,7 +9,7 @@ import { Result } from '../../types/result.ts';
 import type { Maybe } from '../../types/util.ts';
 import type { ChildProcessWrapper } from '../../util/ChildProcessHelper.ts';
 import type { ChildProcessHelper } from '../../util/ChildProcessHelper.ts';
-import { isNonEmptyString } from '../../util/index.ts';
+import { isNonEmptyString, timeoutPromise } from '../../util/index.ts';
 import { defaultHlsOptions } from '../../ffmpeg/builder/constants.ts';
 import type { SessionOptions } from '../Session.ts';
 import { Session } from '../Session.ts';
@@ -55,6 +56,8 @@ export const ResolverSilenceGraceMs = 5 * 60 * 1000;
 
 /** How often the silence is checked. Two comparisons, so it can run often. */
 export const ResolverWatchdogIntervalMs = 30_000;
+
+const WorkerExitTimeoutMs = 30_000;
 
 export type EtvNextSessionOptions = SessionOptions & {
   transcodeDirectory?: string;
@@ -168,7 +171,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
 
     this.#workspace = new EtvNextWorkspace(
       this.baseDirectory,
-      this.channel.uuid,
+      `${this.channel.uuid}_${this.instanceId}`,
     );
   }
 
@@ -344,8 +347,26 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     await this.#inFlightWindowWrite?.catch(() => undefined);
 
     try {
+      // Cleanup must not race the worker's last writes. Listen before the
+      // kill so a fast exit is not missed. Bounded because the worker only
+      // gets SIGTERM and may not honor it.
+      const worker = this.#process?.process;
+      const exited =
+        worker && worker.exitCode === null && worker.signalCode === null
+          ? once(worker, 'exit')
+          : undefined;
+
       this.#process?.kill();
       this.#process = undefined;
+
+      if (exited) {
+        await timeoutPromise(exited, WorkerExitTimeoutMs).catch(() =>
+          this.logger.warn(
+            'The ErsatzTV next worker did not exit %dms after SIGTERM. Removing its workspace anyway.',
+            WorkerExitTimeoutMs,
+          ),
+        );
+      }
 
       await this.#workspace.cleanup();
     } catch (e) {
