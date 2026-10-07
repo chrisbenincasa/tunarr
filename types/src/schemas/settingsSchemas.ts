@@ -157,7 +157,7 @@ const BaseMediaSourceSettingsSchema = z.object({
 
 const RemoteMediaSourceSettingsSchema = z.object({
   ...BaseMediaSourceSettingsSchema.shape,
-  uri: z.string(),
+  uri: z.string().trim(),
   accessToken: z.string().optional(),
   userId: z.string().nullable(),
   sendPlayStatusUpdates: z.boolean().default(false),

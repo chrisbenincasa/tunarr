@@ -620,7 +620,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           .object({
             name: z.string().optional(),
             accessToken: z.string(),
-            uri: z.string(),
+            uri: z.string().trim(),
             type: z.enum(['plex', 'jellyfin', 'emby']),
             username: z.string().optional(),
           })
