@@ -3,6 +3,7 @@ import type {
   ChannelProgram,
   CondensedChannelProgram,
   ContentProgram,
+  CustomProgram,
 } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { match, P } from 'ts-pattern';
@@ -73,7 +74,11 @@ export class MaterializeLineupCommand {
         .with({ type: 'custom' }, (c) => {
           const program = programsById[c.id ?? ''];
           if (!program) return;
-          return { ...c, ...program };
+
+          // Nest the program instead of spreading it. A spread would replace a
+          // mid-roll segment's duration with the full program duration and
+          // turn the item into plain content, dropping its custom show.
+          return { ...c, program } satisfies CustomProgram;
         })
         .with({ type: 'filler' }, (f) => {
           const program = programsById[f.id];
