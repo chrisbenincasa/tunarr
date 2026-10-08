@@ -1,11 +1,17 @@
 import { faker } from '@faker-js/faker';
+import axios from 'axios';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
 import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
+import type {
+  ArtworkResult,
+  ArtworkService,
+} from '../services/ArtworkService.ts';
+import { fileExists } from '../util/fsUtil.ts';
 import { ProgramStreamDetailsFetcher } from './ProgramStreamDetailsFetcher.ts';
-import { HttpStreamSource } from './types.ts';
+import { FileStreamSource, HttpStreamSource } from './types.ts';
 
 vi.mock('@/util/logging/LoggerFactory.js', () => {
   const logger = {
@@ -27,6 +33,14 @@ vi.mock('@/util/logging/LoggerFactory.js', () => {
 
 vi.mock('../util/fsUtil.ts', () => ({
   fileExists: vi.fn().mockResolvedValue(false),
+}));
+
+vi.mock('../util/serverUtil.ts', () => ({
+  makeLocalUrl: (path: string) => `http://localhost:8000${path}`,
+}));
+
+vi.mock('axios', () => ({
+  default: { head: vi.fn() },
 }));
 
 vi.mock('./PathCalculator.ts', () => ({
@@ -169,6 +183,14 @@ function makeProgram(
   } as unknown as ProgramWithRelationsOrm;
 }
 
+function makeArtworkService(
+  result: ArtworkResult = { kind: 'not-found' },
+): ArtworkService {
+  return {
+    resolveArtwork: vi.fn().mockResolvedValue(result),
+  } as unknown as ArtworkService;
+}
+
 function makeProgramDB(program: ProgramWithRelationsOrm): IProgramDB {
   return {
     getStreamProgramById: vi.fn().mockResolvedValue(program),
@@ -181,7 +203,10 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = '/library/parts/1014/1222133011/file.avi';
       const program = makeProgram('plex', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = new ProgramStreamDetailsFetcher(
+        programDB,
+        makeArtworkService(),
+      );
 
       const server = makeServer({
         type: 'plex',
@@ -211,7 +236,10 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = 'abc123def456';
       const program = makeProgram('jellyfin', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = new ProgramStreamDetailsFetcher(
+        programDB,
+        makeArtworkService(),
+      );
 
       const server = makeServer({
         type: 'jellyfin',
@@ -240,7 +268,10 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = 'xyz789';
       const program = makeProgram('emby', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = new ProgramStreamDetailsFetcher(
+        programDB,
+        makeArtworkService(),
+      );
 
       const server = makeServer({
         type: 'emby',
@@ -269,7 +300,10 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = '/library/parts/1014/file.avi';
       const program = makeProgram('plex', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = new ProgramStreamDetailsFetcher(
+        programDB,
+        makeArtworkService(),
+      );
 
       const server = makeServer({
         type: 'plex',
@@ -305,7 +339,10 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = '/library/parts/1014/1222133011/file.avi';
       const program = makeProgram('plex', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = new ProgramStreamDetailsFetcher(
+        programDB,
+        makeArtworkService(),
+      );
 
       const server = makeServer({
         type: 'plex',
@@ -331,7 +368,10 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = 'abc123def456';
       const program = makeProgram('jellyfin', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = new ProgramStreamDetailsFetcher(
+        programDB,
+        makeArtworkService(),
+      );
 
       const server = makeServer({
         type: 'jellyfin',
@@ -357,7 +397,10 @@ describe('ProgramStreamDetailsFetcher', () => {
       const serverPath = 'xyz789';
       const program = makeProgram('emby', serverPath);
       const programDB = makeProgramDB(program);
-      const fetcher = new ProgramStreamDetailsFetcher(programDB);
+      const fetcher = new ProgramStreamDetailsFetcher(
+        programDB,
+        makeArtworkService(),
+      );
 
       const server = makeServer({
         type: 'emby',
@@ -377,6 +420,147 @@ describe('ProgramStreamDetailsFetcher', () => {
       expect(url).toBe(
         `http://10.0.0.50:8096/Videos/xyz789/stream?X-Emby-Token=${server.accessToken}&static=true`,
       );
+    });
+  });
+
+  describe('getStream picks a placeholder image for audio-only programs', () => {
+    const GenericMusicScreen =
+      'http://localhost:8000/images/generic-music-screen.png';
+
+    function makeAudioOnlyProgram(): ProgramWithRelationsOrm {
+      const program = makeProgram('local', '');
+      const version = program.versions[0];
+      if (!version) {
+        throw new Error('makeProgram always creates a version');
+      }
+      const videoStream = version.mediaStreams?.[0];
+      if (!videoStream) {
+        throw new Error('makeProgram always creates a video stream');
+      }
+      version.mediaStreams = [
+        {
+          ...videoStream,
+          streamKind: 'audio',
+          codec: 'flac',
+          channels: 2,
+          pixelFormat: null,
+        },
+      ];
+      return program;
+    }
+
+    async function getStreamDetails(artworkService: ArtworkService) {
+      const program = makeAudioOnlyProgram();
+      const fetcher = new ProgramStreamDetailsFetcher(
+        makeProgramDB(program),
+        artworkService,
+      );
+      const result = await fetcher.getStream({
+        server: makeServer({ type: 'local', uri: '' }),
+        lineupItem: program.externalIds[0] as any,
+      });
+      expect(result.isSuccess()).toBe(true);
+      return result.get().streamDetails;
+    }
+
+    afterEach(() => {
+      vi.mocked(fileExists).mockReset().mockResolvedValue(false);
+      vi.mocked(axios.head).mockReset();
+    });
+
+    it('uses cached artwork on disk', async () => {
+      vi.mocked(fileExists).mockResolvedValueOnce(true);
+
+      const details = await getStreamDetails(
+        makeArtworkService({
+          kind: 'file',
+          path: '/cache/album.jpg',
+          artworkType: 'poster',
+        }),
+      );
+
+      expect(details.audioOnly).toBe(true);
+      expect(details.placeholderImage).toEqual(
+        new FileStreamSource('/cache/album.jpg'),
+      );
+    });
+
+    it('uses reachable remote artwork and keeps its auth headers', async () => {
+      vi.mocked(axios.head).mockResolvedValueOnce({ status: 200 });
+      const headers = { 'X-Plex-Token': 'token' };
+
+      const details = await getStreamDetails(
+        makeArtworkService({
+          kind: 'url',
+          url: 'http://plex:32400/library/metadata/1/thumb',
+          headers,
+        }),
+      );
+
+      expect(details.placeholderImage).toEqual(
+        new HttpStreamSource(
+          'http://plex:32400/library/metadata/1/thumb',
+          headers,
+        ),
+      );
+    });
+
+    it('falls back to the generic music screen when remote artwork is unreachable', async () => {
+      vi.mocked(axios.head).mockRejectedValueOnce(new Error('404'));
+
+      const details = await getStreamDetails(
+        makeArtworkService({
+          kind: 'url',
+          url: 'http://plex:32400/library/metadata/1/thumb',
+        }),
+      );
+
+      expect(details.placeholderImage?.path).toBe(GenericMusicScreen);
+    });
+
+    it('falls back to the generic music screen when cached artwork is missing', async () => {
+      const details = await getStreamDetails(
+        makeArtworkService({
+          kind: 'file',
+          path: '/cache/missing.jpg',
+          artworkType: 'poster',
+        }),
+      );
+
+      expect(details.placeholderImage?.path).toBe(GenericMusicScreen);
+    });
+
+    it('falls back to the generic music screen when there is no artwork', async () => {
+      const details = await getStreamDetails(makeArtworkService());
+
+      expect(details.placeholderImage?.path).toBe(GenericMusicScreen);
+    });
+
+    it('falls back to the generic music screen when artwork lookup throws', async () => {
+      const artworkService = {
+        resolveArtwork: vi.fn().mockRejectedValue(new Error('db is gone')),
+      } as unknown as ArtworkService;
+
+      const details = await getStreamDetails(artworkService);
+
+      expect(details.placeholderImage?.path).toBe(GenericMusicScreen);
+    });
+
+    it('does not look up artwork for programs with video', async () => {
+      const program = makeProgram('local', '');
+      const artworkService = makeArtworkService();
+      const fetcher = new ProgramStreamDetailsFetcher(
+        makeProgramDB(program),
+        artworkService,
+      );
+
+      const result = await fetcher.getStream({
+        server: makeServer({ type: 'local', uri: '' }),
+        lineupItem: program.externalIds[0] as any,
+      });
+
+      expect(result.get().streamDetails.placeholderImage).toBeUndefined();
+      expect(artworkService.resolveArtwork).not.toHaveBeenCalled();
     });
   });
 });

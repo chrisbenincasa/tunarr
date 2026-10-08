@@ -1,4 +1,5 @@
 import { nullToUndefined, seq } from '@tunarr/shared/util';
+import axios from 'axios';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import {
@@ -13,6 +14,7 @@ import {
 import { match } from 'ts-pattern';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
+import { ArtworkService } from '../services/ArtworkService.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import type { Maybe, Nilable } from '../types/util.ts';
@@ -20,6 +22,7 @@ import { fileExists } from '../util/fsUtil.ts';
 import { isNonEmptyArray, isNonEmptyString } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
+import { makeLocalUrl } from '../util/serverUtil.ts';
 import type { StreamFetchRequest } from './ExternalStreamDetailsFetcher.ts';
 import { PathCalculator } from './PathCalculator.ts';
 import type {
@@ -30,14 +33,17 @@ import type {
   SubtitleStreamDetails,
   VideoStreamDetails,
 } from './types.ts';
-import { HttpStreamSource } from './types.ts';
+import { FileStreamSource, HttpStreamSource } from './types.ts';
 import { extractIsAnamorphic } from './util.ts';
 
 @injectable()
 export class ProgramStreamDetailsFetcher {
   @InjectLogger() declare private readonly logger: Logger;
 
-  constructor(@inject(KEYS.ProgramDB) private programDB: IProgramDB) {}
+  constructor(
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(ArtworkService) private artworkService: ArtworkService,
+  ) {}
 
   async getStream({
     lineupItem,
@@ -219,6 +225,12 @@ export class ProgramStreamDetailsFetcher {
         : undefined,
     };
 
+    if (streamDetails.audioOnly) {
+      streamDetails.placeholderImage = await this.resolvePlaceholderImage(
+        program.uuid,
+      );
+    }
+
     if (server.type === 'local') {
       const file = head(firstVersion.mediaFiles);
       if (!file) {
@@ -245,6 +257,64 @@ export class ProgramStreamDetailsFetcher {
         serverPath,
       );
       return Result.success({ streamDetails, streamSource });
+    }
+  }
+
+  /**
+   * Picks the still image looped as video for an audio-only program. The
+   * track's own art wins, then its album's, then a generic music card. Remote
+   * art gets a HEAD request first, because ffmpeg fails the whole stream when
+   * an input is unreachable.
+   */
+  private async resolvePlaceholderImage(
+    programId: string,
+  ): Promise<StreamSource> {
+    try {
+      const artwork = await this.artworkService.resolveArtwork(
+        programId,
+        'program',
+        'poster',
+        ['thumbnail'],
+      );
+
+      const source = await match(artwork)
+        .with({ kind: 'file' }, async ({ path }) =>
+          (await fileExists(path)) ? new FileStreamSource(path) : undefined,
+        )
+        .with({ kind: 'url' }, async ({ url, headers }) =>
+          (await this.isReachable(url, headers))
+            ? new HttpStreamSource(url, headers)
+            : undefined,
+        )
+        .with({ kind: 'not-found' }, () => Promise.resolve(undefined))
+        .exhaustive();
+
+      if (source) {
+        return source;
+      }
+    } catch (e) {
+      this.logger.warn(
+        e,
+        'Unable to resolve artwork for audio-only program %s',
+        programId,
+      );
+    }
+
+    return new HttpStreamSource(
+      makeLocalUrl('/images/generic-music-screen.png'),
+    );
+  }
+
+  private async isReachable(
+    url: string,
+    headers?: Record<string, string>,
+  ): Promise<boolean> {
+    try {
+      await axios.head(url, { headers, timeout: 5_000 });
+      return true;
+    } catch (e) {
+      this.logger.debug(e, 'Artwork at %s is not reachable', url);
+      return false;
     }
   }
 

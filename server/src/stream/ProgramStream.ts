@@ -26,6 +26,7 @@ import { KEYS } from '../types/inject.ts';
 import { assisted, injected, multiInjected } from '../util/assistedInject.ts';
 import {
   attempt,
+  caughtErrorToError,
   isDefined,
   isNonEmptyString,
   isSuccess,
@@ -76,7 +77,11 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
       return Result.success(this._transcodeSession!);
     }
 
-    const result = await this.setupInternal();
+    // A throw here would skip the caller's error-stream fallback, and the
+    // session would retry the same item in a tight loop.
+    const result = await this.setupInternal().catch((e: unknown) =>
+      Result.forError<TranscodeSessionResult>(caughtErrorToError(e)),
+    );
 
     result.forEach((value) => {
       this.transcodeSession = value.session;
