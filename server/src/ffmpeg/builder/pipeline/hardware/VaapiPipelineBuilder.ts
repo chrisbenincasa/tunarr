@@ -70,6 +70,9 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
   // hwdownload+hwupload cycle that breaks with the named init_hw_device setup
   // required for tonemap_opencl.
   private willUseOpenclTonemap = false;
+  // Set in setTonemap(); when a hardware tonemap filter runs, encoding in low
+  // power mode (VDEnc) leaves the GPU's shader units free for the tonemap.
+  private hardwareTonemapApplied = false;
 
   constructor(
     private hardwareCapabilities: BaseFfmpegHardwareCapabilities,
@@ -246,6 +249,12 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
           desiredState.videoFormat,
           desiredState.pixelFormat ?? undefined,
         ) ?? RateControlMode.VBR;
+      const lowPower =
+        this.hardwareTonemapApplied &&
+        this.hardwareCapabilities.canEncodeLowPower(
+          desiredState.videoFormat,
+          desiredState.pixelFormat ?? undefined,
+        );
       // encoder
       const maybeEncoder = match([
         ffmpegState.encoderHwAccelMode,
@@ -253,7 +262,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       ])
         .with(
           [HardwareAccelerationMode.Vaapi, VideoFormats.Hevc],
-          () => new HevcVaapiEncoder(rateControlMode),
+          () => new HevcVaapiEncoder(rateControlMode, lowPower),
         )
         .with(
           [HardwareAccelerationMode.Vaapi, VideoFormats.H264],
@@ -261,11 +270,12 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
             new H264VaapiEncoder(
               desiredState.videoProfile ?? undefined,
               rateControlMode,
+              lowPower,
             ),
         )
         .with(
           [HardwareAccelerationMode.Vaapi, VideoFormats.Mpeg2Video],
-          () => new Mpeg2VaapiEncoder(rateControlMode),
+          () => new Mpeg2VaapiEncoder(rateControlMode, lowPower),
         )
         .otherwise(() => super.setupEncoder(currentState));
 
@@ -375,6 +385,8 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     const { videoStream, pipelineOptions } = this.context;
 
+    this.hardwareTonemapApplied = false;
+
     if (!this.shouldPerformTonemap(videoStream)) {
       return currentState;
     }
@@ -404,6 +416,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     if (filter) {
       const nextState = filter.nextState(currentState);
       this.videoInputSource.filterSteps.push(filter);
+      this.hardwareTonemapApplied = true;
       return nextState;
     }
 

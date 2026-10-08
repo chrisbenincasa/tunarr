@@ -13,6 +13,15 @@ export const VaapiEntrypoint = {
   EncodeLowPower: 'VAEntrypointEncSliceLP',
 } as const;
 
+const AllEncodeEntrypoints: ReadonlySet<string> = new Set([
+  VaapiEntrypoint.Encode,
+  VaapiEntrypoint.EncodeLowPower,
+]);
+
+const LowPowerEncodeEntrypoints: ReadonlySet<string> = new Set([
+  VaapiEntrypoint.EncodeLowPower,
+]);
+
 export const VaapiProfiles = {
   Mpeg2Simple: 'VAProfileMPEG2Simple',
   Mpeg2Main: 'VAProfileMPEG2Main',
@@ -174,6 +183,26 @@ export class VaapiHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
     return isDefined(entrypoint);
   }
 
+  canEncodeLowPower(
+    videoFormat: string,
+    pixelFormat: Maybe<PixelFormat>,
+  ): boolean {
+    const entrypoint = this.getEncoderEntrypoint(
+      videoFormat,
+      pixelFormat,
+      LowPowerEncodeEntrypoints,
+    );
+
+    // Only use low power mode when it supports the same bitrate-based rate
+    // control as the default encoder. Some drivers (e.g. Intel Gen9-11 without
+    // HuC firmware) only expose CQP on the low power entrypoint.
+    return (
+      isDefined(entrypoint) &&
+      (entrypoint.hasRateControlMode(RateControlMode.VBR) ||
+        entrypoint.hasRateControlMode(RateControlMode.CBR))
+    );
+  }
+
   getRateControlMode(
     videoFormat: string,
     pixelFormat: Maybe<PixelFormat>,
@@ -199,60 +228,37 @@ export class VaapiHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
   private getEncoderEntrypoint(
     videoFormat: string,
     pixelFormat: Maybe<PixelFormat>,
+    entrypoints: ReadonlySet<string> = AllEncodeEntrypoints,
   ) {
     const bitDepth = pixelFormat?.bitDepth ?? 8;
+    const findEntrypoint = (profile: string) =>
+      find(
+        this.entrypoints,
+        (ep) => ep.profile === profile && entrypoints.has(ep.entrypoint),
+      );
+
     return (
       match([videoFormat, bitDepth])
         .with([VideoFormats.H264, 10], () => undefined)
         .with([VideoFormats.H264, P._], () =>
-          find(
-            this.entrypoints,
-            (ep) =>
-              ep.profile === VaapiProfiles.H264Main &&
-              (ep.entrypoint === VaapiEntrypoint.Encode ||
-                ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
-          ),
+          findEntrypoint(VaapiProfiles.H264Main),
         )
         // Add support for main12 profile
         // .with([VideoFormats.Hevc, P.union(8, 10)], () =>
-        //   find(
-        //     this.entrypoints,
-        //     (ep) =>
-        //       ep.profile === VaapiProfiles.HevcMain10 &&
-        //       (ep.entrypoint === VaapiEntrypoint.Encode ||
-        //         ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
-        //   ),
+        //   findEntrypoint(VaapiProfiles.HevcMain10),
         // )
         // Check for main10 specifically with 10-bit output, even though
         // HEVC main10 can support 8-10 bits. We will probably wantn to change
         // this if we start to also check profile compatibility
         // 8-bit HEVC output will be handled below.
         .with([VideoFormats.Hevc, 10], () =>
-          find(
-            this.entrypoints,
-            (ep) =>
-              ep.profile === VaapiProfiles.HevcMain10 &&
-              (ep.entrypoint === VaapiEntrypoint.Encode ||
-                ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
-          ),
+          findEntrypoint(VaapiProfiles.HevcMain10),
         )
         .with([VideoFormats.Hevc, 8], () =>
-          find(
-            this.entrypoints,
-            (ep) =>
-              ep.profile === VaapiProfiles.HevcMain &&
-              (ep.entrypoint === VaapiEntrypoint.Encode ||
-                ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
-          ),
+          findEntrypoint(VaapiProfiles.HevcMain),
         )
         .with([VideoFormats.Mpeg1Video, P._], () =>
-          find(
-            this.entrypoints,
-            (ep) =>
-              ep.profile === VaapiProfiles.Mpeg2Main &&
-              (ep.entrypoint === VaapiEntrypoint.Encode ||
-                ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
-          ),
+          findEntrypoint(VaapiProfiles.Mpeg2Main),
         )
         .otherwise(() => undefined)
     );

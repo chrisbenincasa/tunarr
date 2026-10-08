@@ -107,6 +107,8 @@ When enabled, Tunarr automatically selects the best available tonemapping method
 
 Tonemapping is only applied to content Tunarr identifies as HDR (HDR10 or HLG). SDR content is unaffected.
 
+When VAAPI uses `tonemap_vaapi` or `tonemap_opencl`, Tunarr also encodes in low-power mode (`-low_power 1`) if the driver reports a low-power encoder for the output codec that supports bitrate rate control. Low-power mode uses the GPU's fixed-function encoder (Intel VDEnc), which leaves the GPU's shader units free for tonemapping. Tunarr detects support with `vainfo`, so it needs no configuration.
+
 !!! info "Color Metadata"
     Tonemapping relies on color metadata (color space, color transfer, color primaries) stored in Tunarr's database for each program. This metadata is populated automatically when media is scanned or imported from a media source. If tonemapping is not being applied to content you expect to be HDR, try re-scanning the relevant library to ensure the metadata has been recorded.
 

@@ -48,6 +48,13 @@ export abstract class BaseFfmpegHardwareCapabilities {
     return;
   }
 
+  canEncodeLowPower(
+    _videoFormat: string,
+    _pixelFormat: Maybe<PixelFormat>,
+  ): boolean {
+    return false;
+  }
+
   // Right now we assume that all decoders for a hw "class"
   // have the same decoder options. This is not necessarily true.
   hasDecoderOption(_opt: string): boolean {

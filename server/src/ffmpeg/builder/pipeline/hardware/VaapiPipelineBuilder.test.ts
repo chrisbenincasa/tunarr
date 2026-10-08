@@ -53,7 +53,7 @@ import {
   PipelineOptions,
 } from '../../state/FfmpegState.ts';
 import { FrameState, FrameStateOpts } from '../../state/FrameState.ts';
-import { FrameSize } from '../../types.ts';
+import { FrameSize, RateControlMode } from '../../types.ts';
 import { Pipeline } from '../Pipeline.ts';
 import { VaapiPipelineBuilder } from './VaapiPipelineBuilder.ts';
 
@@ -835,17 +835,20 @@ describe('VaapiPipelineBuilder tonemap', () => {
     desiredState?: Partial<FrameStateOpts>;
     subtitles?: SubtitlesInputSource | null;
     stateVaapiDevice?: string;
+    hardwareCapabilities?: VaapiHardwareCapabilities;
   }): Pipeline {
-    const capabilities = new VaapiHardwareCapabilities([
-      new VaapiProfileEntrypoint(
-        VaapiProfiles.HevcMain10,
-        VaapiEntrypoint.Decode,
-      ),
-      new VaapiProfileEntrypoint(
-        VaapiProfiles.HevcMain,
-        VaapiEntrypoint.Encode,
-      ),
-    ]);
+    const capabilities =
+      opts.hardwareCapabilities ??
+      new VaapiHardwareCapabilities([
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain10,
+          VaapiEntrypoint.Decode,
+        ),
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain,
+          VaapiEntrypoint.Encode,
+        ),
+      ]);
 
     const binaryCapabilities =
       opts.binaryCapabilities ??
@@ -1005,6 +1008,127 @@ describe('VaapiPipelineBuilder tonemap', () => {
     expect(hasVaapiTonemapFilter(pipeline)).to.eq(false);
     expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
     expect(hasSoftwareTonemapFilter(pipeline)).to.eq(true);
+  });
+
+  describe('low power encoding', () => {
+    function lowPowerCapabilities() {
+      const lowPowerEncode = new VaapiProfileEntrypoint(
+        VaapiProfiles.HevcMain,
+        VaapiEntrypoint.EncodeLowPower,
+      );
+      lowPowerEncode.addRateControlMode(RateControlMode.VBR);
+      return new VaapiHardwareCapabilities([
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain10,
+          VaapiEntrypoint.Decode,
+        ),
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain,
+          VaapiEntrypoint.Encode,
+        ),
+        lowPowerEncode,
+      ]);
+    }
+
+    function encoderArgs(pipeline: Pipeline) {
+      return pipeline.getCommandArgs().join(' ');
+    }
+
+    test('uses low power encoding with tonemap_opencl', () => {
+      process.env[TONEMAP_ENABLED] = 'true';
+
+      const pipeline = buildWithTonemap({
+        videoStream: createHdrVideoStream(),
+        hardwareCapabilities: lowPowerCapabilities(),
+      });
+
+      expect(hasOpenclTonemapFilter(pipeline)).to.eq(true);
+      expect(encoderArgs(pipeline)).toContain('-c:v hevc_vaapi');
+      expect(encoderArgs(pipeline)).toContain('-low_power 1');
+    });
+
+    test('uses low power encoding with tonemap_vaapi', () => {
+      process.env[TONEMAP_ENABLED] = 'true';
+
+      const pipeline = buildWithTonemap({
+        videoStream: createHdrVideoStream(),
+        hardwareCapabilities: lowPowerCapabilities(),
+        binaryCapabilities: new FfmpegCapabilities(
+          new Set(),
+          new Map(),
+          new Set([KnownFfmpegFilters.TonemapVaapi]),
+          new Set(),
+        ),
+        pipelineOptions: {
+          vaapiPipelineOptions: { tonemapPreference: 'vaapi' },
+        },
+      });
+
+      expect(hasVaapiTonemapFilter(pipeline)).to.eq(true);
+      expect(encoderArgs(pipeline)).toContain('-low_power 1');
+    });
+
+    test('does not use low power encoding when unsupported', () => {
+      process.env[TONEMAP_ENABLED] = 'true';
+
+      const pipeline = buildWithTonemap({
+        videoStream: createHdrVideoStream(),
+      });
+
+      expect(hasOpenclTonemapFilter(pipeline)).to.eq(true);
+      expect(encoderArgs(pipeline)).not.toContain('-low_power');
+    });
+
+    test('does not use low power encoding with software tonemap', () => {
+      process.env[TONEMAP_ENABLED] = 'true';
+
+      const pipeline = buildWithTonemap({
+        videoStream: createHdrVideoStream(),
+        hardwareCapabilities: lowPowerCapabilities(),
+        binaryCapabilities: new FfmpegCapabilities(
+          new Set(),
+          new Map(),
+          new Set(),
+          new Set(),
+        ),
+      });
+
+      expect(hasSoftwareTonemapFilter(pipeline)).to.eq(true);
+      expect(encoderArgs(pipeline)).not.toContain('-low_power');
+    });
+
+    test('does not use low power encoding when hardware filters are disabled', () => {
+      process.env[TONEMAP_ENABLED] = 'true';
+
+      const pipeline = buildWithTonemap({
+        videoStream: createHdrVideoStream(),
+        hardwareCapabilities: lowPowerCapabilities(),
+        pipelineOptions: { disableHardwareFilters: true },
+      });
+
+      expect(hasSoftwareTonemapFilter(pipeline)).to.eq(true);
+      expect(encoderArgs(pipeline)).not.toContain('-low_power');
+    });
+
+    test('does not use low power encoding for SDR content', () => {
+      process.env[TONEMAP_ENABLED] = 'true';
+
+      const pipeline = buildWithTonemap({
+        videoStream: createHdrVideoStream(
+          new ColorFormat({
+            colorRange: ColorRanges.Tv,
+            colorSpace: ColorSpaces.Bt709,
+            colorPrimaries: ColorPrimaries.Bt709,
+            colorTransfer: ColorTransferFormats.Bt709,
+          }),
+        ),
+        hardwareCapabilities: lowPowerCapabilities(),
+      });
+
+      expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
+      expect(encoderArgs(pipeline)).toContain('-c:v hevc_vaapi');
+      expect(encoderArgs(pipeline)).not.toContain('-low_power');
+    });
   });
 
   test('skips hardware tonemap but applies software tonemap when hardware filters are disabled', () => {

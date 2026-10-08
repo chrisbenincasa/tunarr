@@ -9,6 +9,7 @@ abstract class VaapiEncoder extends VideoEncoder {
   protected constructor(
     name: string,
     protected rateControlMode: RateControlMode,
+    protected lowPower: boolean = false,
   ) {
     super(name);
   }
@@ -18,6 +19,9 @@ abstract class VaapiEncoder extends VideoEncoder {
     if (this.rateControlMode === RateControlMode.CQP) {
       opts.push('-rc_mode', '1');
     }
+    if (this.lowPower) {
+      opts.push('-low_power', '1');
+    }
     return opts;
   }
 }
@@ -25,8 +29,8 @@ abstract class VaapiEncoder extends VideoEncoder {
 export class Mpeg2VaapiEncoder extends VaapiEncoder {
   protected videoFormat = VideoFormats.Mpeg2Video;
 
-  constructor(rateControlMode: RateControlMode) {
-    super('mpeg2_vaapi', rateControlMode);
+  constructor(rateControlMode: RateControlMode, lowPower: boolean = false) {
+    super('mpeg2_vaapi', rateControlMode, lowPower);
   }
 
   nextState(currentState: FrameState): FrameState {
@@ -42,8 +46,9 @@ export class H264VaapiEncoder extends VaapiEncoder {
   constructor(
     private videoProfile: Maybe<string>,
     rateControlMode: RateControlMode,
+    lowPower: boolean = false,
   ) {
-    super('h264_vaapi', rateControlMode);
+    super('h264_vaapi', rateControlMode, lowPower);
   }
 
   options(): string[] {
@@ -64,8 +69,8 @@ export class H264VaapiEncoder extends VaapiEncoder {
 export class HevcVaapiEncoder extends VaapiEncoder {
   protected videoFormat = VideoFormats.Hevc;
 
-  constructor(rateControlMode: RateControlMode) {
-    super('hevc_vaapi', rateControlMode);
+  constructor(rateControlMode: RateControlMode, lowPower: boolean = false) {
+    super('hevc_vaapi', rateControlMode, lowPower);
   }
 
   options(): string[] {
