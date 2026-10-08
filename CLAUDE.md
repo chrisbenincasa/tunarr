@@ -66,6 +66,7 @@ The maintainer cannot approve their own PRs on GitHub, so review agents record t
 
 - Build and typecheck through Turbo (`pnpm turbo build`, `pnpm turbo typecheck`). Turbo rebuilds the packages a package depends on first.
 - To check a single package directly, run its own script (`pnpm typecheck` / `pnpm build` inside the package). These use `tsc -p tsconfig.build.json`. Never run a bare `tsc` without `-p tsconfig.build.json`, because the default `tsconfig.json` pulls in test files the build excludes.
+- Neither `pnpm typecheck` nor `tsconfig.json` covers `server/tests/`. Only `tsconfig.test.json` does, so typecheck changes there with `pnpm exec tsc --noEmit -p tsconfig.test.json` inside `server`.
 
 ```bash
 # Install dependencies
