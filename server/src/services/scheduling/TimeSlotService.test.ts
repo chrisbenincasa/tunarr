@@ -1987,6 +1987,114 @@ describe('TimeSlotService', () => {
     });
   });
 
+  describe('per-slot lateness', () => {
+    // A 100m special in a 30m slot runs through the 18:30 slot and ends at
+    // 19:40, 10m into the 19:30 slot. That slot's own lateness, falling back
+    // to the schedule's, decides whether it starts late or is skipped.
+    const MIN = 60 * 1000;
+    const HOUR = 60 * MIN;
+
+    const mkEpisodes = (show: string, durations: number[]) =>
+      durations.map((duration, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `${show}-ep${i + 1}`,
+          type: 'episode' as const,
+          duration,
+          episode: i + 1,
+          tvShowUuid: show,
+          show: { uuid: show },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }));
+
+    const programs: SlotSchedulerProgram[] = [
+      ...mkEpisodes('anime', [100 * MIN, 22 * MIN, 22 * MIN]),
+      ...mkEpisodes('showB', Array<number>(5).fill(25 * MIN)),
+      ...mkEpisodes('showC', Array<number>(5).fill(25 * MIN)),
+    ];
+
+    const showSlot = (startTime: number, showId: string) => ({
+      id: randomUUID(),
+      startTime,
+      type: 'show' as const,
+      showId,
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      seasonExcludeFilter: [],
+    });
+
+    const makeSchedule = (
+      globalLatenessMs: number,
+      slotCLatenessMs: number | undefined,
+    ): TimeSlotSchedule => ({
+      type: 'time',
+      flexPreference: 'end',
+      maxDays: 1,
+      padMs: 5 * MIN,
+      latenessMs: globalLatenessMs,
+      overflow: { type: 'duration', maxMs: 0 },
+      period: 'day',
+      timeZoneOffset: 0,
+      slots: [
+        showSlot(18 * HOUR, 'anime'),
+        showSlot(18.5 * HOUR, 'showB'),
+        { ...showSlot(19.5 * HOUR, 'showC'), latenessMs: slotCLatenessMs },
+        { id: randomUUID(), startTime: 20 * HOUR, type: 'flex' },
+      ],
+    });
+
+    const run = async (
+      globalLatenessMs: number,
+      slotCLatenessMs: number | undefined,
+    ) => {
+      const result = await scheduleTimeSlots(
+        makeSchedule(globalLatenessMs, slotCLatenessMs),
+        programs,
+      );
+      const sixPm = dayjs(result.startTime)
+        .startOf('day')
+        .add(18, 'hour')
+        .valueOf();
+      const content: { id: string; at: number; duration: number }[] = [];
+      let t = result.startTime;
+      for (const item of result.lineup) {
+        if (item.type === 'content' && t >= sixPm && t < sixPm + 2 * HOUR) {
+          content.push({ id: item.id, at: t - sixPm, duration: item.duration });
+        }
+        t += item.duration;
+      }
+      return content;
+    };
+
+    test('an overrunning program plays in full and late slots fall back to the schedule lateness', async () => {
+      const content = await run(0, undefined);
+
+      expect(content).toEqual([
+        { id: 'anime-ep1', at: 0, duration: 100 * MIN },
+      ]);
+    });
+
+    test('a slot with its own lateness starts late instead of being skipped', async () => {
+      const content = await run(0, 15 * MIN);
+
+      expect(content.map((c) => ({ id: c.id, at: c.at }))).toEqual([
+        { id: 'anime-ep1', at: 0 },
+        { id: 'showC-ep1', at: 100 * MIN },
+      ]);
+    });
+
+    test('a slot lateness of zero overrides a larger schedule lateness', async () => {
+      const lenient = await run(30 * MIN, undefined);
+      const strict = await run(30 * MIN, 0);
+
+      expect(lenient.some((c) => c.id === 'showC-ep1')).toBe(true);
+      expect(strict.map((c) => c.id)).toEqual(['anime-ep1']);
+    });
+  });
+
   describe('DST handling', () => {
     // US Eastern timezone DST transitions in 2025:
     //   Spring forward: March 9, 2025 at 2:00 AM EST -> 3:00 AM EDT (23-hour day)
