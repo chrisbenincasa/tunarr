@@ -23,3 +23,23 @@
     Filler is placed *inside* the slot rather than added on top of it: head, pre, post, and tail filler draw from the slot's unused time, including any *padding* applied to the programs around them. A slot only omits filler when it has genuinely no time left to give.
 
     A filler list that has no programs in it is ignored when the schedule is generated: the slot simply gets no filler from that list (and the empty list is noted in the server log). The slot editor marks such lists so they can be spotted before saving.
+
+## Scheduling Movies
+
+Slot editors have no movie slot type. To schedule movies in a slot:
+
+1. Add the movies to a [custom show](../library/custom-shows.md), in the order you want them to play.
+2. Add a **Custom Show** slot that uses that show.
+
+A custom show slot supports filler, [mid-roll breaks](mid-roll-breaks.md), and [linking](slot-linking.md).
+
+### Upgrading From Movie Slots
+
+Earlier versions had a **Movie** slot type, which drew from every movie, music video, and other video in the schedule. That pool also picked up commercials from the schedule's filler lists. On upgrade, Tunarr replaces each movie slot with a custom show slot:
+
+- Tunarr creates a custom show named `<Channel> Movies` from the channel's saved movies, music videos, and other videos. Programs that the schedule only plays as filler are left out.
+- The show is sorted to match the old slot order. Alphanumeric slots sort by title. Next, chronological, and ordered shuffle slots sort by release date. The old ascending or descending direction is kept.
+- The slot keeps its filler, mid-roll breaks, links, weight, cooldown, and timing.
+- A movie slot with no movies to schedule becomes a flex slot.
+
+The new custom show is a snapshot. Movies added to the channel later are not added to it, so add them to the custom show yourself.

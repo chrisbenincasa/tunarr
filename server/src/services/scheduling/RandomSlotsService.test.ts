@@ -49,7 +49,8 @@ describe('randomSlotsService', () => {
             type: 'fixed',
             durationMs: +dayjs.duration({ hours: 3 }),
           },
-          type: 'movie',
+          type: 'custom-show',
+          customShowId: randomUUID(),
           order: 'next',
           direction: 'asc',
         },
@@ -431,6 +432,7 @@ describe('random slot scheduler termination', () => {
   const oneDay = 24 * oneHour;
   const midnight = dayjs('2024-01-01T00:00:00.000Z');
   const distributions = ['none', 'uniform', 'weighted'] as const;
+  const moviesShowId = randomUUID();
 
   const makeMovies = (
     prefix: string,
@@ -446,7 +448,7 @@ describe('random slot scheduler termination', () => {
         originalAirDate: `2000-01-${String(i + 1).padStart(2, '0')}`,
       }),
       parentFillerLists: [],
-      parentCustomShows: [],
+      parentCustomShows: [{ customShowId: moviesShowId, index: i }],
       parentSmartCollections: [],
     }));
 
@@ -484,7 +486,8 @@ describe('random slot scheduler termination', () => {
     cooldownMs = 0,
   ): RandomSlot => ({
     id: randomUUID(),
-    type: 'movie',
+    type: 'custom-show',
+    customShowId: moviesShowId,
     order: 'next',
     direction: 'asc',
     weight: 1,
@@ -512,7 +515,9 @@ describe('random slot scheduler termination', () => {
 
   const contentIds = (result: SlotScheduleResult) =>
     result.lineup.flatMap((item) =>
-      item.type === 'content' && 'id' in item && item.id ? [item.id] : [],
+      (item.type === 'content' || item.type === 'custom') && item.id
+        ? [item.id]
+        : [],
     );
 
   test.each(distributions)(
@@ -578,7 +583,7 @@ describe('random slot scheduler termination', () => {
     let offset = 0;
     const contentStarts: number[] = [];
     for (const item of result.lineup) {
-      if (item.type === 'content') {
+      if (item.type === 'custom') {
         contentStarts.push(offset);
       }
       offset += item.duration;
@@ -729,6 +734,7 @@ describe('random slot scheduler termination', () => {
 });
 
 describe('random slot pad coverage with a fallback filler', () => {
+  const moviesShowId = randomUUID();
   const oneMin = 60 * 1000;
   const oneDay = 24 * 60 * oneMin;
   const slotMs = 30 * oneMin;
@@ -746,7 +752,7 @@ describe('random slot pad coverage with a fallback filler', () => {
         duration: durationMs,
       }),
       parentFillerLists: [],
-      parentCustomShows: [],
+      parentCustomShows: [{ customShowId: moviesShowId, index: i }],
       parentSmartCollections: [],
     })) satisfies SlotSchedulerProgram[];
 
@@ -783,7 +789,8 @@ describe('random slot pad coverage with a fallback filler', () => {
           weight: 100,
           cooldownMs: 0,
           durationSpec: { type: 'fixed', durationMs: slotMs },
-          type: 'movie',
+          type: 'custom-show',
+          customShowId: moviesShowId,
           order: 'next',
           direction: 'asc',
           filler: [
@@ -814,18 +821,20 @@ describe('random slot pad coverage with a fallback filler', () => {
     const shape = result.lineup
       .slice(0, 4)
       .map((item) =>
-        item.type === 'content' && 'id' in item
-          ? `content:${item.id}`
+        item.type === 'custom'
+          ? `custom:${item.id}`
           : `${item.type}:${item.duration / oneMin}min`,
       );
 
     expect(shape).toEqual([
-      'content:movie-1',
+      'custom:movie-1',
       'filler:5min',
-      'content:movie-2',
+      'custom:movie-2',
       'filler:5min',
     ]);
-    expect(result.lineup.filter((item) => item.type === 'flex')).toHaveLength(0);
+    expect(result.lineup.filter((item) => item.type === 'flex')).toHaveLength(
+      0,
+    );
     // maxDays: 1 fills up to start + (maxDays + 1) days. 96 slots of 30 minutes
     // is 2880 minutes; with the pad covered twice it comes out at 3360.
     expect(sumBy(result.lineup, 'duration')).toBe(2 * oneDay);

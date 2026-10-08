@@ -11,6 +11,7 @@ import {
   defaultTranscodeConfigId,
   makeTimeSlotSchedule,
   saveTimeSlotSchedule,
+  seedCustomShow,
   seedPrograms,
   setProgrammingHours,
 } from '../support/seed.ts';
@@ -87,6 +88,7 @@ const SETTLE_MS = envInt('TUNARR_PERF_SETTLE_MS', 8_000);
 let app: FastifyInstance;
 let channelIds: string[];
 let programIds: string[];
+let customShowId: string;
 
 beforeAll(async () => {
   app = await initTestApp(await getAvailablePort(), {
@@ -97,6 +99,7 @@ beforeAll(async () => {
 
   const transcodeConfigId = await defaultTranscodeConfigId();
   programIds = await seedPrograms(PROGRAM_COUNT);
+  customShowId = await seedCustomShow(programIds);
 
   channelIds = [];
   for (let i = 0; i < CHANNEL_COUNT; i++) {
@@ -107,7 +110,10 @@ beforeAll(async () => {
 
   // Give every channel real programming, so the guide has something to build
   // for all of them and a save has to contend with a populated cache.
-  const schedule = makeTimeSlotSchedule({ maxDays: SCHEDULE_DAYS });
+  const schedule = makeTimeSlotSchedule({
+    customShowId,
+    maxDays: SCHEDULE_DAYS,
+  });
   for (const channelId of channelIds) {
     const res = await saveTimeSlotSchedule(
       app,
@@ -146,7 +152,10 @@ describe('time slot save', () => {
   }, 60_000);
 
   test('does not stall concurrent requests', async () => {
-    const schedule = makeTimeSlotSchedule({ maxDays: SCHEDULE_DAYS });
+    const schedule = makeTimeSlotSchedule({
+      customShowId,
+      maxDays: SCHEDULE_DAYS,
+    });
 
     const { result, probe, lag } = await measureWithConcurrentProbe({
       app,
