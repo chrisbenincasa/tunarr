@@ -73,6 +73,7 @@ describe('POST /channels/:id/programming - slot group validation on the save pat
   test('rejects a schedule whose slots share an iterationGroup with mismatched ordering', async () => {
     const channelId = await createChannel();
     const groupId = v4();
+    const customShowId = v4();
 
     const res = await app.inject({
       method: 'POST',
@@ -90,7 +91,8 @@ describe('POST /channels/:id/programming - slot group validation on the save pat
           timeZoneOffset: 0,
           slots: [
             {
-              type: 'movie',
+              type: 'custom-show',
+              customShowId,
               id: v4(),
               startTime: 0,
               order: 'next',
@@ -98,7 +100,8 @@ describe('POST /channels/:id/programming - slot group validation on the save pat
               iterationGroup: groupId,
             },
             {
-              type: 'movie',
+              type: 'custom-show',
+              customShowId,
               id: v4(),
               startTime: 0,
               order: 'shuffle',

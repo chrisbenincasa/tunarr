@@ -7,7 +7,13 @@ import {
   ProgramOptionTypes,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { useLingui } from '@lingui/react/macro';
-import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import {
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+} from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import { filter, map } from 'lodash-es';
 import { useMemo } from 'react';
@@ -22,7 +28,6 @@ import { FillerListSlotProgrammingForm } from './FillerListSlotProgrammingForm.t
 import { RedirectProgrammingForm } from './RedirectProgrammingForm.tsx';
 import { ShowSearchSlotProgrammingForm } from './ShowSearchSlotProgrammingForm.tsx';
 import { SlotLinkingControl } from './SlotLinkingControl.tsx';
-import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 import { SmartCollectionSlotProgrammingForm } from './SmartCollectionSlotProgrammingForm.tsx';
 
 type EditSlotProgramProps<SlotT extends { type: ProgramOptionType }> = {
@@ -104,13 +109,15 @@ export const EditSlotProgrammingForm = <
             </MenuItem>
           )}
         </Select>
+        <FormHelperText>
+          {t`To schedule movies, add them to a custom show and choose Custom Show.`}
+        </FormHelperText>
       </FormControl>
       {type === 'custom-show' && <CustomShowSlotProgrammingForm />}
       {type === 'smart-collection' && <SmartCollectionSlotProgrammingForm />}
       {type === 'filler' && <FillerListSlotProgrammingForm />}
       {type === 'show' && <ShowSearchSlotProgrammingForm />}
       {type === 'redirect' && <RedirectProgrammingForm />}
-      {type === 'movie' && <SlotOrderFormControl />}
 
       <SlotLinkingControl
         allSlots={allSlots}

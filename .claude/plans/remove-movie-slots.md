@@ -13,8 +13,9 @@ that, which supports mid-roll breaks as of #2213.
 
 ## Status
 
-- 10/07/2026: Step 1 (migration) written and tested on `fix/remove-movie-slots`,
-  uncommitted. Step 2 (removal) not started.
+- 10/07/2026: Step 1 (migration) committed on `fix/remove-movie-slots`
+  (`c73f5f6d5`). Step 2 (removal) done in the working tree, uncommitted.
+  Typecheck, lint, server and web tests pass. Next: commit, then step 3.
 - Open decisions resolved 10/07/2026: all three proposals accepted.
 - Prerequisite #2213 (mid-roll breaks on custom-show slots) is merged.
 - Custom show sort follow-ups merged as #2214.

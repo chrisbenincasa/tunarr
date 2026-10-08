@@ -6,10 +6,13 @@ import {
 import { randomUUID } from 'node:crypto';
 import { describe, expect, test } from 'vitest';
 
+const customShowId = randomUUID();
+
 const slot = (startTime: number) => ({
   id: randomUUID(),
   startTime,
-  type: 'movie' as const,
+  type: 'custom-show' as const,
+  customShowId,
   order: 'next' as const,
   direction: 'asc' as const,
 });
@@ -65,6 +68,14 @@ describe('StrictTimeSlotScheduleSchema', () => {
     expect(StrictTimeSlotScheduleSchema.safeParse(schedule).success).toBe(
       false,
     );
+  });
+
+  test('rejects a movie slot', () => {
+    const movie = {
+      ...valid,
+      slots: [{ ...slot(21_000_000), type: 'movie', customShowId: undefined }],
+    };
+    expect(TimeSlotScheduleSchema.safeParse(movie).success).toBe(false);
   });
 
   test('rejects a NaN startTime', () => {

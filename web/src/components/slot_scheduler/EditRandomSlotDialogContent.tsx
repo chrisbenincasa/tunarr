@@ -306,12 +306,6 @@ export const EditRandomSlotDialogContent = ({
             customShowId: opt.customShowId,
           };
         })
-        .with('movie', () => ({
-          id: v4(),
-          type: 'movie',
-          order: 'alphanumeric',
-          direction: 'asc',
-        }))
         .with('filler', () => ({
           id: v4(),
           type: 'filler',

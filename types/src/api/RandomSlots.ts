@@ -46,13 +46,6 @@ export const BaseRandomSlotSchema = z.object({
   index: z.number().optional(),
 });
 
-export const MovieProgrammingRandomSlotSchema = z.object({
-  ...Slot.shape,
-  ...BaseRandomSlotSchema.shape,
-  ...BaseSlotOrdering.shape,
-  type: z.literal('movie'),
-});
-
 export const ShowProgrammingRandomSlotSchema = z.object({
   ...Slot.shape,
   ...BaseRandomSlotSchema.shape,
@@ -128,10 +121,6 @@ export const SmartCollectionRandomSlot = z.object({
   ...SmartCollectionProgrammingSlot.shape,
 });
 
-export type MovieProgrammingRandomSlot = z.infer<
-  typeof MovieProgrammingRandomSlotSchema
->;
-
 export type ShowProgrammingRandomSlot = z.infer<
   typeof ShowProgrammingRandomSlotSchema
 >;
@@ -153,7 +142,6 @@ export type SmartCollectionRandomSlot = z.infer<
 >;
 
 export const RandomSlotSchema = z.discriminatedUnion('type', [
-  MovieProgrammingRandomSlotSchema,
   ShowProgrammingRandomSlotSchema,
   FlexProgrammingRandomSlotSchema,
   RedirectProgrammingRandomSlotSchema,
@@ -165,7 +153,6 @@ export const RandomSlotSchema = z.discriminatedUnion('type', [
 export type RandomSlot = z.infer<typeof RandomSlotSchema>;
 
 export const MaterializedSlot = z.discriminatedUnion('type', [
-  MovieProgrammingRandomSlotSchema,
   MaterializedShowRandomSlot,
   FlexProgrammingRandomSlotSchema,
   MaterializedRedirectRandomSlot,

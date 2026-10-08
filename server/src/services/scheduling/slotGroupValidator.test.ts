@@ -179,7 +179,8 @@ describe('validateSlotGroups', () => {
           linkMode: 'rerun',
         },
         {
-          type: 'movie',
+          type: 'custom-show',
+          customShowId: 'custom-show1',
           order: 'next',
           direction: 'asc',
           id: '2',
@@ -190,7 +191,7 @@ describe('validateSlotGroups', () => {
       { scheduleType: 'time' },
     );
     // Size is 1 (both rerun), so mixed check doesn't trigger.
-    // But content keys mismatch (show vs movie).
+    // But content keys mismatch (show vs custom show).
     expect(result.valid).toBe(false);
     expect(result.errors[0]).toContain('content');
   });

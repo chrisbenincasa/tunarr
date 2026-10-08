@@ -7,6 +7,7 @@ import {
   defaultTranscodeConfigId,
   makeTimeSlotSchedule,
   saveTimeSlotSchedule,
+  seedCustomShow,
   seedPrograms,
 } from './support/seed.ts';
 import { getAvailablePort } from '../src/util/net.ts';
@@ -33,6 +34,7 @@ describe('condensed lineup response equivalence', () => {
     });
 
     const programIds = await seedPrograms(60);
+    const customShowId = await seedCustomShow(programIds);
     const transcodeConfigId = await defaultTranscodeConfigId();
     channelId = await createChannelViaApi(app, {
       number: 4001,
@@ -44,7 +46,7 @@ describe('condensed lineup response equivalence', () => {
       app,
       channelId,
       programIds,
-      makeTimeSlotSchedule({ maxDays: 3, slotsPerDay: 6 }),
+      makeTimeSlotSchedule({ customShowId, maxDays: 3, slotsPerDay: 6 }),
     );
 
     expect(res.statusCode).toBe(200);

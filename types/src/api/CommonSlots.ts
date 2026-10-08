@@ -147,16 +147,6 @@ export const Slot = z.object({
 // Base slots
 //
 
-export const MovieProgrammingSlotSchema = z.object({
-  type: z.literal('movie'),
-  ...BaseSlotOrdering.shape,
-  ...Slot.shape,
-});
-
-export type BaseMovieProgrammingSlot = z.infer<
-  typeof MovieProgrammingSlotSchema
->;
-
 export const ShowProgrammingSlotSchema = z.object({
   type: z.literal('show'),
   showId: z.string(),
@@ -209,7 +199,6 @@ export const SmartCollectionProgrammingSlot = z.object({
 });
 
 export const BaseSlotSchema = z.discriminatedUnion('type', [
-  MovieProgrammingSlotSchema,
   ShowProgrammingSlotSchema,
   FlexProgrammingSlotSchema,
   RedirectProgrammingSlotSchema,
@@ -222,12 +211,12 @@ export type BaseSlot = z.infer<typeof BaseSlotSchema>;
 
 export type LinkableBaseSlot = Extract<
   BaseSlot,
-  { type: 'movie' | 'show' | 'custom-show' | 'smart-collection' }
+  { type: 'show' | 'custom-show' | 'smart-collection' }
 >;
 
 export type BaseSlotWithFiller = Extract<
   BaseSlot,
-  { type: 'movie' | 'show' | 'custom-show' | 'smart-collection' }
+  { type: 'show' | 'custom-show' | 'smart-collection' }
 >;
 
 export function slotIsLinkable(
@@ -238,7 +227,6 @@ export function slotIsLinkable(slot: BaseSlot | BaseSlot['type']): boolean {
   const type = typeof slot === 'string' ? slot : slot.type;
   switch (type) {
     case 'custom-show':
-    case 'movie':
     case 'show':
     case 'smart-collection':
       return true;
@@ -252,7 +240,6 @@ export function slotIsLinkable(slot: BaseSlot | BaseSlot['type']): boolean {
 export function slotHasFiller(slot: BaseSlot): slot is BaseSlotWithFiller {
   switch (slot.type) {
     case 'custom-show':
-    case 'movie':
     case 'show':
     case 'smart-collection':
       return true;

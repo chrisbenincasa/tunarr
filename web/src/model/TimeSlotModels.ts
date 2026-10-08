@@ -4,7 +4,6 @@ import {
   CommonCustomShowSlotViewModel,
   CommonFillerSlotViewModel,
   CommonFlexSlotViewModel,
-  CommonMovieSlotViewModel,
   CommonRedirectSlotViewModel,
   CommonShowSlotViewModel,
   CommonSmartCollectionViewModel,
@@ -16,14 +15,6 @@ const BaseTimeSlot = z.object({
   overflow: OverflowConfig.optional(),
   latenessMs: z.number().optional(),
 });
-
-const MovieTimeSlotViewModel = z.object({
-  ...CommonMovieSlotViewModel.shape,
-  ...BaseTimeSlot.shape,
-  type: z.literal('movie'),
-});
-
-export type MovieTimeSlotViewModel = z.infer<typeof MovieTimeSlotViewModel>;
 
 export const ShowTimeSlotViewModel = z.object({
   ...CommonShowSlotViewModel.shape,
@@ -66,7 +57,6 @@ const SmartCollectionTimeSlotViewModel = z.object({
 });
 
 export const TimeSlotViewModel = z.discriminatedUnion('type', [
-  MovieTimeSlotViewModel,
   ShowTimeSlotViewModel,
   FlexTimeSlotViewModel,
   RedirectTimeSlotViewModel,

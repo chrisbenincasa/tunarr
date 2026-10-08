@@ -102,7 +102,6 @@ function linkableSlotsAreEqual(
       [{ type: 'smart-collection' }, { type: 'smart-collection' }],
       ([l, r]) => l.smartCollection?.name === r.smartCollection?.name,
     )
-    .with([{ type: 'movie' }, { type: 'movie' }], () => true)
     .otherwise(() => false);
 }
 
@@ -120,7 +119,7 @@ function slotHasId(slot: LinkableSlotViewModel) {
     .with({ type: 'filler' }, (f) =>
       isNonEmptyString(f.fillerListId ?? f.fillerList?.id),
     )
-    .with({ type: 'movie' }, () => true);
+    .exhaustive();
 }
 
 export function SlotLinkingControl({

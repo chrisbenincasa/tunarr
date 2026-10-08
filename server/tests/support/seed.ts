@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import { chunk, range } from 'lodash-es';
 import { randomUUID } from 'node:crypto';
 import { container } from '../../src/container.ts';
+import { CustomShowDB } from '../../src/db/CustomShowDB.ts';
 import type { ISettingsDB } from '../../src/db/interfaces/ISettingsDB.ts';
 import { TranscodeConfigDB } from '../../src/db/TranscodeConfigDB.ts';
 import type {
@@ -404,7 +405,30 @@ export async function createChannelViaApi(
   return res.json().id as string;
 }
 
+/**
+ * Creates a custom show holding the programs in the given order, and returns
+ * its id.
+ */
+export function seedCustomShow(
+  programIds: string[],
+  durationMs = HalfHourMs,
+): Promise<string> {
+  return container.get(CustomShowDB).createShow({
+    name: 'Seeded Movies',
+    programs: programIds.map((id) => ({
+      type: 'content',
+      id,
+      duration: durationMs,
+    })),
+    syncMediaSourceId: null,
+    syncMediaSourceType: null,
+    syncExternalPlaylistId: null,
+  });
+}
+
 export type TimeSlotScheduleOptions = {
+  /** Custom show every slot plays, from {@link seedCustomShow}. */
+  customShowId: string;
   /** Days of schedule to precalculate. This is the main cost driver. */
   maxDays: number;
   /** Slots per day, spread evenly across 24h. */
@@ -412,6 +436,7 @@ export type TimeSlotScheduleOptions = {
 };
 
 export function makeTimeSlotSchedule({
+  customShowId,
   maxDays,
   slotsPerDay = 4,
 }: TimeSlotScheduleOptions): TimeSlotSchedule {
@@ -425,7 +450,8 @@ export function makeTimeSlotSchedule({
     period: 'day',
     timeZoneOffset: new Date().getTimezoneOffset(),
     slots: range(slotsPerDay).map((i) => ({
-      type: 'movie',
+      type: 'custom-show',
+      customShowId,
       startTime: Math.floor((dayMs / slotsPerDay) * i),
       order: 'shuffle',
       direction: 'asc',

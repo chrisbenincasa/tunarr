@@ -10,7 +10,6 @@ import {
 import {
   slotHasFiller,
   slotIsLinkable,
-  type BaseMovieProgrammingSlot,
   type BaseShowProgrammingSlot,
   type BaseSlot,
   type FillerProgrammingSlot,
@@ -107,12 +106,7 @@ export type SlotSchedulerProgram = ProgramWithRelationsOrm & {
   parentSmartCollections: string[];
 };
 
-type ContentSlotId =
-  | 'movie'
-  | 'music_video'
-  | 'other_video'
-  | `show.${string}`
-  | `artist.${string}`;
+type ContentSlotId = `show.${string}` | `artist.${string}`;
 
 export type SlotId =
   | ContentSlotId
@@ -190,10 +184,6 @@ export function createProgramMap(
     (acc, program) => {
       const id = match(program)
         .returnType<Nullable<ContentSlotId>>()
-        .with(
-          { type: P.union('movie', 'music_video', 'other_video') },
-          () => 'movie',
-        )
         .with(
           { type: 'episode', show: { uuid: P.when(isNonEmptyString) } },
           (ep) => `show.${ep.show.uuid}`,
@@ -449,14 +439,9 @@ export function createSlotProgramIterator(
       }
       return createFillerShuffleIterator(programs, slot.fillerListId, random);
     })
-    .with({ type: P.union('movie', 'show') }, (slot) => {
-      const slotId = match(slot)
-        .returnType<ContentSlotId>()
-        .with({ type: 'movie' }, () => 'movie')
-        .with({ type: 'show' }, (show) => `show.${show.showId}`)
-        .exhaustive();
-      return getContentProgramIterator(programBySlotType, slotId, slot, random);
-    })
+    .with({ type: 'show' }, (slot) =>
+      getShowProgramIterator(programBySlotType, slot, random),
+    )
     .with({ type: 'smart-collection' }, (slot) => {
       const programs =
         programBySlotType.smartCollection[
@@ -685,30 +670,27 @@ export function getFillerIteratorsForSlot(
   return out;
 }
 
-function getContentProgramIterator(
+function getShowProgramIterator(
   programBySlotType: ProgramMapping,
-  contentSlotId: ContentSlotId,
-  slot: BaseMovieProgrammingSlot | BaseShowProgrammingSlot,
+  slot: BaseShowProgrammingSlot,
   random: Random,
 ) {
   let programs = uniqBy(
-    programBySlotType.content[contentSlotId] ?? [],
+    programBySlotType.content[`show.${slot.showId}`] ?? [],
     (p) => p.uuid,
   );
 
-  if (slot.type === 'show') {
-    if (slot.seasonFilter.length > 0) {
-      programs = programs.filter((program) => {
-        const season = program.season?.index ?? program.seasonNumber;
-        return !isNil(season) && slot.seasonFilter.includes(season);
-      });
-    }
-    if (slot.seasonExcludeFilter?.length > 0) {
-      programs = programs.filter((program) => {
-        const season = program.season?.index ?? program.seasonNumber;
-        return isNil(season) || !slot.seasonExcludeFilter.includes(season);
-      });
-    }
+  if (slot.seasonFilter.length > 0) {
+    programs = programs.filter((program) => {
+      const season = program.season?.index ?? program.seasonNumber;
+      return !isNil(season) && slot.seasonFilter.includes(season);
+    });
+  }
+  if (slot.seasonExcludeFilter?.length > 0) {
+    programs = programs.filter((program) => {
+      const season = program.season?.index ?? program.seasonNumber;
+      return isNil(season) || !slot.seasonExcludeFilter.includes(season);
+    });
   }
 
   switch (slot.order) {
@@ -739,7 +721,6 @@ type SlotWithOrdering = StrictExtract<BaseSlot, { type: SlotTypeWithOrdering }>;
 export type SlotOrder = SlotWithOrdering['order'];
 
 export type SlotIteratorKey =
-  | `movie_${SlotOrder}`
   | `tv_${string}_${SlotOrder}`
   | `redirect_${string}`
   | `custom-show_${string}_${SlotOrder}`

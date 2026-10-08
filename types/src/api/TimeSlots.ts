@@ -8,7 +8,6 @@ import {
   CustomShowProgrammingSlotSchema,
   FillerProgrammingSlotSchema,
   FlexProgrammingSlotSchema,
-  MovieProgrammingSlotSchema,
   RedirectProgrammingSlotSchema,
   ShowProgrammingSlotSchema,
   SmartCollectionProgrammingSlot,
@@ -29,11 +28,6 @@ const BaseTimeSlot = z.object({
   padMs: z.number().optional(),
   overflow: OverflowConfig.optional(),
   latenessMs: z.number().optional(),
-});
-
-export const MovieProgrammingTimeSlotSchema = z.object({
-  ...BaseTimeSlot.shape,
-  ...MovieProgrammingSlotSchema.shape,
 });
 
 export const ShowProgrammingTimeSlotSchema = z.object({
@@ -115,10 +109,6 @@ export const MaterializedSmartCollectionTimeSlot = z.object({
   isMissing: z.boolean().optional().default(false),
 });
 
-export type MovieProgrammingTimeSlot = z.infer<
-  typeof MovieProgrammingTimeSlotSchema
->;
-
 export type ShowProgrammingTimeSlot = z.infer<
   typeof ShowProgrammingTimeSlotSchema
 >;
@@ -140,7 +130,6 @@ export type FillerProgrammingTimeSlot = z.infer<
 >;
 
 export const TimeSlotSchema = z.discriminatedUnion('type', [
-  MovieProgrammingTimeSlotSchema,
   ShowProgrammingTimeSlotSchema,
   FlexProgrammingTimeSlotSchema,
   RedirectProgrammingTimeSlotSchema,
@@ -152,7 +141,6 @@ export const TimeSlotSchema = z.discriminatedUnion('type', [
 export type TimeSlot = z.infer<typeof TimeSlotSchema>;
 
 export const MaterializedTimeSlot = z.discriminatedUnion('type', [
-  MovieProgrammingTimeSlotSchema,
   MaterializedShowTimeSlot,
   FlexProgrammingTimeSlotSchema,
   MaterializedRedirectTimeSlot,

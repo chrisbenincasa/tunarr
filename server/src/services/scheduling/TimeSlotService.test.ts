@@ -17,6 +17,23 @@ import {
 import { scheduleTimeSlots } from './TimeSlotService.ts';
 import { MersenneTwister19937, Random } from 'random-js';
 
+const moviesShowId = randomUUID();
+
+// Puts the movies in one custom show, in array order, for custom-show slots.
+function inMoviesShow(
+  programs: SlotSchedulerProgram[],
+): SlotSchedulerProgram[] {
+  let index = 0;
+  return programs.map((program) =>
+    program.type === 'movie' && program.parentFillerLists.length === 0
+      ? {
+          ...program,
+          parentCustomShows: [{ customShowId: moviesShowId, index: index++ }],
+        }
+      : program,
+  );
+}
+
 describe('createSlotIterators unit', () => {
   test('unlinked slots with same content get independent iterators', () => {
     const episodes: SlotSchedulerProgram[] = Array.from(
@@ -721,7 +738,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 0,
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'next',
               direction: 'asc',
             },
@@ -732,7 +750,10 @@ describe('TimeSlotService', () => {
           timeZoneOffset: 0,
         };
 
-        const result = await scheduleTimeSlots(schedule, programs);
+        const result = await scheduleTimeSlots(
+          schedule,
+          inMoviesShow(programs),
+        );
 
         expect(result.lineup).toBeDefined();
         expect(result.startTime).toBeGreaterThan(0);
@@ -773,7 +794,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 0,
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'next',
               direction: 'asc',
             },
@@ -784,7 +806,10 @@ describe('TimeSlotService', () => {
           timeZoneOffset: 0,
         };
 
-        const result = await scheduleTimeSlots(schedule, programs);
+        const result = await scheduleTimeSlots(
+          schedule,
+          inMoviesShow(programs),
+        );
 
         expect(result.lineup).toBeDefined();
         expect(result.lineup.length).toBeGreaterThan(0);
@@ -800,7 +825,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 0,
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'next',
               direction: 'asc',
             },
@@ -864,7 +890,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 12 * 60 * 60 * 1000, // Noon
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'next',
               direction: 'asc',
             },
@@ -875,7 +902,10 @@ describe('TimeSlotService', () => {
           timeZoneOffset: 0,
         };
 
-        const result = await scheduleTimeSlots(schedule, programs);
+        const result = await scheduleTimeSlots(
+          schedule,
+          inMoviesShow(programs),
+        );
 
         expect(result.lineup).toBeDefined();
         expect(result.lineup.length).toBeGreaterThan(0);
@@ -1285,7 +1315,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 0,
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'shuffle',
               direction: 'asc',
             },
@@ -1297,8 +1328,16 @@ describe('TimeSlotService', () => {
         };
 
         const seed = [1, 2, 3, 4]; // Fixed seed for reproducibility
-        const result1 = await scheduleTimeSlots(schedule, programs, seed);
-        const result2 = await scheduleTimeSlots(schedule, programs, seed);
+        const result1 = await scheduleTimeSlots(
+          schedule,
+          inMoviesShow(programs),
+          seed,
+        );
+        const result2 = await scheduleTimeSlots(
+          schedule,
+          inMoviesShow(programs),
+          seed,
+        );
       });
     });
 
@@ -1441,7 +1480,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 0,
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'next',
               direction: 'asc',
             },
@@ -1454,7 +1494,7 @@ describe('TimeSlotService', () => {
 
         const result = await scheduleTimeSlots(
           schedule,
-          programs,
+          inMoviesShow(programs),
           undefined,
           undefined,
           dayjs().startOf('day'),
@@ -1496,7 +1536,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 0,
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'next',
               direction: 'asc',
             },
@@ -1508,7 +1549,10 @@ describe('TimeSlotService', () => {
           startTomorrow: true,
         };
 
-        const result = await scheduleTimeSlots(schedule, programs);
+        const result = await scheduleTimeSlots(
+          schedule,
+          inMoviesShow(programs),
+        );
 
         expect(result.lineup).toBeDefined();
         expect(result.lineup.length).toBeGreaterThan(0);
@@ -1658,18 +1702,22 @@ describe('TimeSlotService', () => {
           singleSlotSchedule({
             id: randomUUID(),
             startTime: 0,
-            type: 'movie',
+            type: 'custom-show',
+            customShowId: moviesShowId,
             order: 'next',
             direction: 'asc',
           }),
-          [movieProgram('zero', 0), movieProgram('valid', 20 * 60 * 1000)],
+          inMoviesShow([
+            movieProgram('zero', 0),
+            movieProgram('valid', 20 * 60 * 1000),
+          ]),
           [42],
           0,
           midnight,
         );
 
         const ids = result.lineup.flatMap((item) =>
-          item.type === 'content' && 'id' in item && item.id ? [item.id] : [],
+          item.type === 'custom' ? [item.id] : [],
         );
         expect(ids.length).toBeGreaterThan(0);
         expect(ids).not.toContain('zero');
@@ -1714,7 +1762,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 0,
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'next',
               direction: 'asc',
             },
@@ -1725,7 +1774,10 @@ describe('TimeSlotService', () => {
           timeZoneOffset: 0,
         };
 
-        const result = await scheduleTimeSlots(schedule, programs);
+        const result = await scheduleTimeSlots(
+          schedule,
+          inMoviesShow(programs),
+        );
 
         expect(result.lineup).toBeDefined();
         // Note: CondensedChannelProgram doesn't expose uuid for content programs
@@ -1759,7 +1811,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 0,
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'shuffle',
               direction: 'asc',
             },
@@ -1774,14 +1827,14 @@ describe('TimeSlotService', () => {
         const start = dayjs().startOf('day');
         const result1 = await scheduleTimeSlots(
           schedule,
-          programs,
+          inMoviesShow(programs),
           seed,
           undefined,
           start,
         );
         const result2 = await scheduleTimeSlots(
           schedule,
-          programs,
+          inMoviesShow(programs),
           seed,
           undefined,
           start,
@@ -1814,7 +1867,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 0,
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'shuffle',
               direction: 'asc',
             },
@@ -1827,12 +1881,12 @@ describe('TimeSlotService', () => {
 
         const result1 = await scheduleTimeSlots(
           schedule,
-          programs,
+          inMoviesShow(programs),
           [42, 123, 456, 789],
         );
         const result2 = await scheduleTimeSlots(
           schedule,
-          programs,
+          inMoviesShow(programs),
           [99, 88, 77, 66],
         );
 
@@ -1864,7 +1918,8 @@ describe('TimeSlotService', () => {
             {
               id: randomUUID(),
               startTime: 0,
-              type: 'movie',
+              type: 'custom-show',
+              customShowId: moviesShowId,
               order: 'shuffle',
               direction: 'asc',
             },
@@ -1876,8 +1931,18 @@ describe('TimeSlotService', () => {
         };
 
         const seed = [42, 123, 456, 789];
-        const result1 = await scheduleTimeSlots(schedule, programs, seed, 0);
-        const result2 = await scheduleTimeSlots(schedule, programs, seed, 100);
+        const result1 = await scheduleTimeSlots(
+          schedule,
+          inMoviesShow(programs),
+          seed,
+          0,
+        );
+        const result2 = await scheduleTimeSlots(
+          schedule,
+          inMoviesShow(programs),
+          seed,
+          100,
+        );
       });
     });
   });
@@ -1903,7 +1968,7 @@ describe('TimeSlotService', () => {
             duration: TWENTY_EIGHT_MIN,
           }),
           parentFillerLists: [],
-          parentCustomShows: [],
+          parentCustomShows: [{ customShowId: moviesShowId, index: i }],
           parentSmartCollections: [],
         }),
       );
@@ -1919,7 +1984,8 @@ describe('TimeSlotService', () => {
         slots: [
           {
             startTime: 0,
-            type: 'movie',
+            type: 'custom-show',
+            customShowId: moviesShowId,
             order: 'next',
             direction: 'asc',
           },
@@ -1949,7 +2015,7 @@ describe('TimeSlotService', () => {
         let count = 0;
         for (const item of result.lineup) {
           if (t >= result.startTime + 3 * HOUR_MS) break;
-          if (item.type === 'content') count++;
+          if (item.type === 'custom') count++;
           t += item.duration;
         }
         return count;
@@ -2025,10 +2091,10 @@ describe('TimeSlotService', () => {
       const movieUuids = Array.from({ length: 30 }, (_, i) => `dst-movie-${i}`);
       const episodeUuids = Array.from({ length: 10 }, (_, i) => `dst-ep-${i}`);
 
-      const movies: SlotSchedulerProgram[] = movieUuids.map((uuid) => ({
+      const movies: SlotSchedulerProgram[] = movieUuids.map((uuid, index) => ({
         ...createFakeProgramOrm({ uuid, type: 'movie', duration: HOUR_MS }),
         parentFillerLists: [],
-        parentCustomShows: [],
+        parentCustomShows: [{ customShowId: moviesShowId, index }],
         parentSmartCollections: [],
       }));
 
@@ -2060,7 +2126,8 @@ describe('TimeSlotService', () => {
         {
           id: randomUUID(),
           startTime: 0, // midnight
-          type: 'movie',
+          type: 'custom-show',
+          customShowId: moviesShowId,
           order: 'next',
           direction: 'asc',
         },
@@ -3504,7 +3571,8 @@ describe('empty filler lists', () => {
     const slot = {
       id: randomUUID(),
       startTime: 0,
-      type: 'movie' as const,
+      type: 'custom-show' as const,
+      customShowId: moviesShowId,
       order: 'next' as const,
       direction: 'asc' as const,
       filler: [
@@ -3561,7 +3629,8 @@ describe('empty filler lists', () => {
         {
           id: randomUUID(),
           startTime: 0,
-          type: 'movie',
+          type: 'custom-show',
+          customShowId: moviesShowId,
           order: 'next',
           direction: 'asc',
           filler: [
@@ -3584,12 +3653,12 @@ describe('empty filler lists', () => {
       timeZoneOffset: 0,
     };
 
-    const result = await scheduleTimeSlots(schedule, programs);
+    const result = await scheduleTimeSlots(schedule, inMoviesShow(programs));
 
     expect(result.lineup.length).toBeGreaterThan(0);
     expect(
       result.lineup.some(
-        (item) => item.type === 'content' && item.id === 'movie1',
+        (item) => item.type === 'custom' && item.id === 'movie1',
       ),
     ).toBe(true);
   });

@@ -32,7 +32,6 @@ export function formatSlotOrder(
     case 'flex':
     case 'redirect':
       return null;
-    case 'movie':
     case 'show':
     case 'custom-show':
     case 'filler':
@@ -52,8 +51,6 @@ export function slotProgramDurationsMs(
 ): number[] {
   return seq.collect(programs, ({ program, duration }) => {
     switch (slot.type) {
-      case 'movie':
-        return program.type === 'movie' ? duration : undefined;
       case 'show':
         return program.type === 'episode' &&
           getEpisodeShowId(program) === slot.showId

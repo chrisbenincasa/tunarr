@@ -37,13 +37,6 @@ export const WithSlotFiller = z.object({
 
 export type WithSlotFiller = z.infer<typeof WithSlotFiller>;
 
-export const CommonMovieSlotViewModel = z.object({
-  ...LinkableSlot.shape,
-  ...BaseSlotOrdering.shape,
-  ...WithSlotFiller.shape,
-  type: z.literal('movie'),
-});
-
 export const CommonCustomShowSlotViewModel = z.object({
   ...LinkableSlot.shape,
   ...BaseSlotOrdering.shape,
@@ -120,7 +113,6 @@ export type CommonSmartCollectionViewModel = z.infer<
 >;
 
 export const CommonSlotViewModel = z.discriminatedUnion('type', [
-  CommonMovieSlotViewModel,
   CommonCustomShowSlotViewModel,
   CommonFillerSlotViewModel,
   CommonShowSlotViewModel,
@@ -133,7 +125,7 @@ export type CommonSlotViewModel = z.infer<typeof CommonSlotViewModel>;
 
 export type LinkableSlotViewModel = Extract<
   CommonSlotViewModel,
-  { type: 'movie' | 'show' | 'custom-show' | 'smart-collection' | 'filler' }
+  { type: 'show' | 'custom-show' | 'smart-collection' | 'filler' }
 >;
 
 export function slotIsLinkable(
@@ -142,7 +134,6 @@ export function slotIsLinkable(
   switch (slot.type) {
     case 'custom-show':
     case 'filler':
-    case 'movie':
     case 'show':
     case 'smart-collection':
       return true;
@@ -153,13 +144,6 @@ export function slotIsLinkable(
 }
 
 export type SlotLinkingContent =
-  | {
-      type: 'movie';
-      order: z.infer<typeof BaseSlotOrdering>['order'];
-      direction: z.infer<typeof BaseSlotOrdering>['direction'];
-      filler?: WithSlotFiller['filler'];
-      midRoll?: WithSlotFiller['midRoll'];
-    }
   | {
       type: 'show';
       showId: string;
@@ -207,14 +191,6 @@ export function copySlotForLinking(
   slot: LinkableSlotViewModel,
 ): SlotLinkingContent {
   switch (slot.type) {
-    case 'movie':
-      return {
-        type: 'movie',
-        order: slot.order,
-        direction: slot.direction,
-        filler: slot.filler,
-        midRoll: slot.midRoll,
-      };
     case 'show':
       return {
         type: 'show',

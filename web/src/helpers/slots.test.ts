@@ -10,13 +10,6 @@ import { averageProgramDurationMs } from './slots.ts';
 
 const OneMinute = 60_000;
 
-const movieSlot: BaseSlot = {
-  type: 'movie',
-  id: 'slot-movie',
-  order: 'shuffle',
-  direction: 'asc',
-};
-
 const showSlot = (showId: string): BaseSlot => ({
   type: 'show',
   id: `slot-show-${showId}`,
@@ -39,49 +32,6 @@ const episodeProgram = (durationMs: number, uuid: string, showId: string) =>
   );
 
 describe('averageProgramDurationMs', () => {
-  describe('movie slots', () => {
-    test('averages the movies in the pool', () => {
-      const programs = [
-        movieProgram(90 * OneMinute, 'a'),
-        movieProgram(110 * OneMinute, 'b'),
-      ];
-
-      expect(averageProgramDurationMs(movieSlot, programs)).toBe(
-        100 * OneMinute,
-      );
-    });
-
-    test('ignores episodes when averaging a movie slot', () => {
-      const programs = [
-        movieProgram(90 * OneMinute, 'a'),
-        episodeProgram(20 * OneMinute, 'b', 'show-1'),
-      ];
-
-      expect(averageProgramDurationMs(movieSlot, programs)).toBe(
-        90 * OneMinute,
-      );
-    });
-
-    test('returns undefined rather than NaN when there are no movies', () => {
-      expect(averageProgramDurationMs(movieSlot, [])).toBeUndefined();
-      expect(
-        averageProgramDurationMs(movieSlot, [
-          episodeProgram(20 * OneMinute, 'b', 'show-1'),
-        ]),
-      ).toBeUndefined();
-    });
-
-    test('rounds to a whole millisecond', () => {
-      const programs = [
-        movieProgram(1000, 'a'),
-        movieProgram(1001, 'b'),
-        movieProgram(1001, 'c'),
-      ];
-
-      expect(averageProgramDurationMs(movieSlot, programs)).toBe(1001);
-    });
-  });
-
   describe('show slots', () => {
     test('averages only the episodes of the slots own show', () => {
       const programs = [
@@ -97,11 +47,22 @@ describe('averageProgramDurationMs', () => {
     });
 
     test('returns undefined when the show has no episodes in the pool', () => {
+      expect(averageProgramDurationMs(showSlot('show-1'), [])).toBeUndefined();
       expect(
         averageProgramDurationMs(showSlot('show-3'), [
           episodeProgram(20 * OneMinute, 'a', 'show-1'),
         ]),
       ).toBeUndefined();
+    });
+
+    test('rounds to a whole millisecond', () => {
+      const programs = [
+        episodeProgram(1000, 'a', 'show-1'),
+        episodeProgram(1001, 'b', 'show-1'),
+        episodeProgram(1001, 'c', 'show-1'),
+      ];
+
+      expect(averageProgramDurationMs(showSlot('show-1'), programs)).toBe(1001);
     });
   });
 

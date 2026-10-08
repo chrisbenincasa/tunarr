@@ -9,8 +9,6 @@ export const useSlotName = () => {
   return useCallback(
     (slot: CommonSlotViewModel) => {
       switch (slot.type) {
-        case 'movie':
-          return t`Movie`;
         case 'show':
           return (
             slot.show?.title ??
