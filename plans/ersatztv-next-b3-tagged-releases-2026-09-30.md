@@ -1,10 +1,10 @@
 # ErsatzTV next — B3 tagged releases
 
-> **Status (10/07/2026):** Planned and grilled. Mostly resolved upstream. #309 and #310 (merged 10/07) added computed semver, a changelog, and per-commit develop builds published as immutable releases in `ErsatzTV/next-develop-builds`. Tunarr pins `v0.2.0-96aa6cb6-develop` by tag and per-target SHA-256 in `dc4d74269`. No stable release exists yet. The workflow PR in the old §2 is obsolete and was not sent. Next step is to ask for the first stable tag once B2, B6 and B8 land (§3), and to file the notices issue (§4).
+> **Status (10/07/2026):** Planned and grilled. Done upstream. #312 added `release.yml`, and `v0.2.0` (`b340569`) was published 10/07 as an immutable release with all six targets. It carries the same code as `96aa6cb`, the develop build Tunarr pins in `dc4d74269`. Next steps are to pin `v0.2.0` from `ErsatzTV/next`, flip the resolver from warn to refuse (decision 1), and file the notices issue (§4).
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md). B3 is the ship gate.
 
-## 1. Verified state at `96aa6cb`
+## 1. Verified state at `v0.2.0`
 
 ### Develop builds
 
@@ -19,8 +19,8 @@ Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream
 ### Stable releases
 
 - `prep-release.sh` moves `[Unreleased]` into a dated section, sets the workspace version, and prints the `git tag` and `git push` commands.
-- `prep-release.sh:63` refers to a `release.yml` preflight. No `release.yml` is committed yet, so nothing builds or publishes on a `v*` tag.
-- Only `v0.1.0` exists, still with no release object. `[Unreleased]` already holds the 0.1.0 channel config breaking change, so the first stable tag will be `v0.2.0`.
+- `release.yml` (#312) runs on a `v*` tag push or `workflow_dispatch`. It runs a preflight, creates a draft, uploads the six targets, builds Docker images, and publishes with `--latest`.
+- `v0.2.0` (`b340569`, 10/07/2026) is published, immutable, and has all six targets. Asset names follow `ersatztv-next-v0.2.0-<target>`.
 
 ### Version string
 
@@ -30,14 +30,13 @@ Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream
 
 ## 2. Upstream change
 
-None needed from Tunarr. The draft-then-publish flow this plan proposed is what `develop.yml` does, and the stable flow is in progress upstream.
+None needed from Tunarr. Upstream built the draft-then-publish flow this plan proposed, for both develop builds and stable tags.
 
 Upstream is MIT. Bundling is allowed if the copyright notice ships with the binary.
 
 ## 3. Upstream conversation
 
-- Ask for one thing, the first stable tag (`v0.2.0`) once B2, B6 and B8 are on `main`.
-- Ask whether `release.yml` will publish to `ErsatzTV/next` with the same six asset names, so Tunarr's download needs only a repo and tag change.
+- Ask for a tag once B2, B6 and B8 are on `main`. Tunarr ships on that tag.
 - No need to offer to manage cadence. The tooling makes a release cheap for the maintainer.
 
 ## 4. Tunarr follow-up
@@ -51,31 +50,25 @@ Upstream is MIT. Bundling is allowed if the copyright notice ships with the bina
 | 3   | When the release goes public    | Draft first, publish after all six targets upload. Upstream does this for develop builds                                       |
 | 4   | What the startup check compares | `--version` without its build metadata (`+…`) equals `releaseTag` without its `v`                                              |
 | 5   | MIT notice in Tunarr's bundle   | Separate issue, covering Meilisearch too. Prerequisite for the first release that bundles `ersatztv-channel`                   |
-| 6   | Fallback mirror                 | Dropped. Develop builds are immutable, so a pin is durable until pruned. Revisit only if no stable tag comes                   |
+| 6   | Fallback mirror                 | Dropped. Upstream publishes immutable stable releases                                                                          |
 
 ### 4.2 Changes
 
-| When                       | Change                                                                                                                 | Where                                            |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| Done 10/01                 | Pin moved to `570d136`. The channel config carries `ChannelConfigVersion`                                              | `a21a254bb`                                      |
-| Done 10/01                 | Exact-string version check in `EtvNextVersion.ts`, shared with the download script                                     | `f926b2b51`                                      |
-| Done 10/07                 | Pin `v0.2.0-96aa6cb6-develop` by `releaseRepo`, `releaseTag`, `commit` and per-target `sha256`. `assetVersion` is gone | `dc4d74269`, `server/package.json`               |
-| Done 10/07                 | Download verifies the archive's SHA-256 and writes nothing on mismatch                                                 | `server/scripts/download-ersatztv-next.ts`       |
-| Done 10/07                 | Version check drops build metadata before comparing                                                                    | `server/src/stream/etv/EtvNextVersion.ts`        |
-| Now                        | File the third-party notices issue (decision 5)                                                                        | GitHub issue                                     |
-| After the first stable tag | Set `releaseRepo` to `ErsatzTV/next` and `releaseTag` to the tag. Fill `sha256` from the release API `digest`          | `server/package.json`                            |
-| After the first stable tag | Flip the resolver from warn to refuse for the bundled binary. Keep warning under `ERSATZTV_NEXT_PATH`                  | `server/src/stream/etv/EtvNextBinaryResolver.ts` |
-| After the first stable tag | Run the full pin bump from blockers plan §5                                                                            | `server/src/stream/etv/schema/`, `generated/`    |
+| When       | Change                                                                                                                 | Where                                            |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Done 10/01 | Pin moved to `570d136`. The channel config carries `ChannelConfigVersion`                                              | `a21a254bb`                                      |
+| Done 10/01 | Exact-string version check in `EtvNextVersion.ts`, shared with the download script                                     | `f926b2b51`                                      |
+| Done 10/07 | Pin `v0.2.0-96aa6cb6-develop` by `releaseRepo`, `releaseTag`, `commit` and per-target `sha256`. `assetVersion` is gone | `dc4d74269`, `server/package.json`               |
+| Done 10/07 | Download verifies the archive's SHA-256 and writes nothing on mismatch                                                 | `server/scripts/download-ersatztv-next.ts`       |
+| Done 10/07 | Version check drops build metadata before comparing                                                                    | `server/src/stream/etv/EtvNextVersion.ts`        |
+| Now        | File the third-party notices issue (decision 5)                                                                        | GitHub issue                                     |
+| Now        | Set `releaseRepo` to `ErsatzTV/next` and `releaseTag` to `v0.2.0`. Fill `sha256` from the release API `digest`         | `server/package.json`                            |
+| Now        | Flip the resolver from warn to refuse for the bundled binary. Keep warning under `ERSATZTV_NEXT_PATH`                  | `server/src/stream/etv/EtvNextBinaryResolver.ts` |
+| Now        | Run the full pin bump from blockers plan §5                                                                            | `server/src/stream/etv/schema/`, `generated/`    |
 
-## 5. If no stable tag comes
+## 5. Done when
 
-- Keep pinning develop builds. Each pin lasts until 100 newer develop builds publish. The maintainer triggers builds by hand, so the pace is unknown.
-- Before a Tunarr release that bundles the worker, check that the pinned develop release still exists.
-- A Tunarr-owned mirror is needed only if upstream stops publishing develop builds too.
-
-## 6. Done when
-
-- An upstream `v*` tag has a published release with all six targets attached (`windows-x64`, `linux-x64`, `linux-musl-x64`, `linux-arm64`, `macos-x64`, `macos-arm64`).
+- ✅ An upstream `v*` tag has a published release with all six targets attached. `v0.2.0`, 10/07/2026.
 - `server/package.json` pins that tag plus per-target SHA-256.
 - Tunarr refuses a bundled binary whose version differs from the pin, and warns under `ERSATZTV_NEXT_PATH`.
 - Prerequisite, tracked separately: Tunarr's bundle ships third-party notices for `ersatztv-channel` and Meilisearch.
