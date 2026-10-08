@@ -1,6 +1,6 @@
 # ErsatzTV next — B3 tagged releases
 
-> **Status (10/07/2026):** Mostly resolved upstream. #309 and #310 (merged 10/07) added computed semver, a changelog, and per-commit develop builds published as immutable releases in `ErsatzTV/next-develop-builds`. Tunarr pins `v0.2.0-96aa6cb6-develop` by tag and per-target SHA-256 in `dc4d74269`. No stable release exists yet. The workflow PR in the old §2 is obsolete and was not sent. Next step is to ask for the first stable tag once B2, B6 and B8 land (§3), and to file the notices issue (§4).
+> **Status (10/07/2026):** Planned and grilled. Mostly resolved upstream. #309 and #310 (merged 10/07) added computed semver, a changelog, and per-commit develop builds published as immutable releases in `ErsatzTV/next-develop-builds`. Tunarr pins `v0.2.0-96aa6cb6-develop` by tag and per-target SHA-256 in `dc4d74269`. No stable release exists yet. The workflow PR in the old §2 is obsolete and was not sent. Next step is to ask for the first stable tag once B2, B6 and B8 land (§3), and to file the notices issue (§4).
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md). B3 is the ship gate.
 
