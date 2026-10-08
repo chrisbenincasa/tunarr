@@ -37,7 +37,7 @@ A custom show slot supports filler, [mid-roll breaks](mid-roll-breaks.md), and [
 
 Earlier versions had a **Movie** slot type, which drew from every movie, music video, and other video in the schedule. That pool also picked up commercials from the schedule's filler lists. On upgrade, Tunarr replaces each movie slot with a custom show slot:
 
-- Tunarr creates a custom show named `<Channel> Movies` from the channel's saved movies, music videos, and other videos. Programs that the schedule only plays as filler are left out.
+- Tunarr creates a custom show named `<Channel> Movies` from the channel's saved movies, music videos, and other videos. Programs that the schedule only plays as filler are left out. If the channel's movie slots used different sort orders, Tunarr creates one show per order and adds the order to the name: `<Channel> Movies (Oldest First)`, `(Newest First)`, `(A-Z)`, or `(Z-A)`.
 - The show is sorted to match the old slot order. Alphanumeric slots sort by title. Next, chronological, and ordered shuffle slots sort by release date. The old ascending or descending direction is kept.
 - The slot keeps its filler, mid-roll breaks, links, weight, cooldown, and timing.
 - A movie slot with no movies to schedule becomes a flex slot.
