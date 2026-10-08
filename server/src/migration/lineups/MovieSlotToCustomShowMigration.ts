@@ -1,6 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { JSONPath } from 'jsonpath-plus';
 import { isArray, isString, orderBy, uniq, uniqBy } from 'lodash-es';
+import { v5 } from 'uuid';
 import { z } from 'zod/v4';
 import { CustomShowDB } from '../../db/CustomShowDB.ts';
 import type { DrizzleDBAccess } from '../../db/schema/index.ts';
@@ -29,6 +30,10 @@ const MovieSlotSchema = z.object({
 });
 
 type MovieSlot = z.infer<typeof MovieSlotSchema>;
+
+// Namespace for the IDs of custom shows this migration creates. Never change
+// it, or reruns stop finding shows created by earlier attempts.
+const MigratedShowNamespace = 'dadaef0e-568d-4a60-a8d2-1c2c3b567e25';
 
 const MoviePoolTypes = new Set<string>(['movie', 'music_video', 'other_video']);
 
@@ -175,7 +180,12 @@ export class MovieSlotToCustomShowMigration extends ChannelLineupMigration<
           : `${channel.name} Movies (${ShowSortLabels[key]})`;
       showIdBySortKey.set(
         key,
-        await this.findOrCreateShow(name, sortPool(pool, sort)),
+        await this.findOrCreateShow(
+          context.channelId,
+          key,
+          name,
+          sortPool(pool, sort),
+        ),
       );
     }
 
@@ -252,29 +262,39 @@ export class MovieSlotToCustomShowMigration extends ChannelLineupMigration<
     return rows.map(({ programUuid }) => programUuid);
   }
 
-  // Reusing a show by name keeps a rerun from creating a duplicate when an
-  // earlier attempt created the show but failed before the lineup was saved.
-  private async findOrCreateShow(name: string, programs: ProgramOrm[]) {
+  // The show ID derives from the channel and sort, so a rerun after a failed
+  // lineup save reuses the show it created. Names are not unique, so a name
+  // lookup could pick up another channel's show or one the user made.
+  private async findOrCreateShow(
+    channelId: string,
+    sortKey: string,
+    name: string,
+    programs: ProgramOrm[],
+  ) {
+    const uuid = v5(`${channelId}:${sortKey}`, MigratedShowNamespace);
     const existing = await this.drizzle.query.customShow.findFirst({
-      where: (fields, { eq }) => eq(fields.name, name),
+      where: (fields, { eq }) => eq(fields.uuid, uuid),
       columns: { uuid: true },
     });
     if (existing) {
-      this.logger.info('Reusing existing custom show "%s"', name);
+      this.logger.info('Reusing custom show %s ("%s")', uuid, name);
       return existing.uuid;
     }
 
-    return this.customShowDB.createShow({
-      name,
-      programs: programs.map((program) => ({
-        type: 'content',
-        id: program.uuid,
-        duration: program.duration,
-      })),
-      syncMediaSourceId: null,
-      syncMediaSourceType: null,
-      syncExternalPlaylistId: null,
-    });
+    return this.customShowDB.createShow(
+      {
+        name,
+        programs: programs.map((program) => ({
+          type: 'content',
+          id: program.uuid,
+          duration: program.duration,
+        })),
+        syncMediaSourceId: null,
+        syncMediaSourceType: null,
+        syncExternalPlaylistId: null,
+      },
+      uuid,
+    );
   }
 }
 
