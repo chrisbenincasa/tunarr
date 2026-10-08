@@ -1,10 +1,10 @@
 import { inject, injectable } from 'inversify';
 import { compact } from 'lodash-es';
+import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { ChildProcessHelper } from '../../util/ChildProcessHelper.ts';
 import { TUNARR_ENV_VARS, getEnvVar } from '../../util/env.ts';
-import { fileExists } from '../../util/fsUtil.ts';
 import { isNonEmptyString } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
@@ -22,6 +22,18 @@ export class EtvNextBinaryNotFoundError extends Error {
       `Could not find the ${ETV_NEXT_BINARY_NAME} binary at any of the tested paths: ${testedPaths.join(', ')}`,
     );
     this.name = 'EtvNextBinaryNotFoundError';
+  }
+}
+
+export class EtvNextVersionMismatchError extends Error {
+  constructor(
+    readonly executablePath: string,
+    readonly version: string | undefined,
+  ) {
+    super(
+      `The ${ETV_NEXT_BINARY_NAME} binary at ${executablePath} reports ${version ?? 'no readable version'}, but this Tunarr build requires ${pinnedEtvNextVersion}. Reinstall Tunarr, or set TUNARR_ERSATZTV_NEXT_PATH to run a different build at your own risk.`,
+    );
+    this.name = 'EtvNextVersionMismatchError';
   }
 }
 
@@ -48,23 +60,43 @@ export class EtvNextBinaryResolver {
     platform: string = os.platform(),
     arch: string = os.arch(),
   ): string[] {
-    const baseNames = [
-      `${ETV_NEXT_BINARY_NAME}-${platform}-${arch}`,
-      ETV_NEXT_BINARY_NAME,
-    ];
-    const binaryNames = baseNames.map((n) =>
-      platform === 'win32' ? `${n}.exe` : n,
-    );
     const envPath = getEnvVar(TUNARR_ENV_VARS.ERSATZTV_NEXT_PATH);
 
     return compact(
-      binaryNames.flatMap((binaryName) => [
-        envPath,
-        isNonEmptyString(envPath) ? path.join(envPath, binaryName) : null,
-        path.join(process.cwd(), 'bin', binaryName),
-        path.join(process.cwd(), binaryName),
-      ]),
+      EtvNextBinaryResolver.binaryNames(platform, arch).flatMap(
+        (binaryName) => [
+          envPath,
+          isNonEmptyString(envPath) ? path.join(envPath, binaryName) : null,
+          path.join(process.cwd(), 'bin', binaryName),
+          path.join(process.cwd(), binaryName),
+        ],
+      ),
     );
+  }
+
+  /** The candidates that come from `TUNARR_ERSATZTV_NEXT_PATH`, if it is set. */
+  static envCandidatePaths(
+    platform: string = os.platform(),
+    arch: string = os.arch(),
+  ): string[] {
+    const envPath = getEnvVar(TUNARR_ENV_VARS.ERSATZTV_NEXT_PATH);
+    if (!isNonEmptyString(envPath)) {
+      return [];
+    }
+
+    return [
+      envPath,
+      ...EtvNextBinaryResolver.binaryNames(platform, arch).map((binaryName) =>
+        path.join(envPath, binaryName),
+      ),
+    ];
+  }
+
+  private static binaryNames(platform: string, arch: string): string[] {
+    return [
+      `${ETV_NEXT_BINARY_NAME}-${platform}-${arch}`,
+      ETV_NEXT_BINARY_NAME,
+    ].map((n) => (platform === 'win32' ? `${n}.exe` : n));
   }
 
   /**
@@ -80,7 +112,12 @@ export class EtvNextBinaryResolver {
 
     const testPaths = EtvNextBinaryResolver.candidatePaths();
     for (const testPath of testPaths) {
-      if (await fileExists(testPath)) {
+      // The env var may name a directory, which exists but is not the binary.
+      const isFile = await fs
+        .stat(testPath)
+        .then((stats) => stats.isFile())
+        .catch(() => false);
+      if (isFile) {
         this.logger.debug('Found %s at %s', ETV_NEXT_BINARY_NAME, testPath);
         this.#resolved = testPath;
         return testPath;
@@ -101,34 +138,35 @@ export class EtvNextBinaryResolver {
   }
 
   /**
-   * Resolves the binary and warns when its version differs from the pin.
+   * Resolves the binary and checks its version against the pin.
    *
-   * A mismatch is logged rather than refused. Upstream publishes no tagged
-   * release, so the only artifact available is a rolling one, and refusing to
-   * start on drift would make the feature unusable rather than safe.
+   * A bundled binary that differs from the pin, or whose version cannot be
+   * read, is refused, because Tunarr's schemas describe only the pinned
+   * release. A binary found through `TUNARR_ERSATZTV_NEXT_PATH` only warns,
+   * so developers can run a local build.
+   *
+   * @throws EtvNextVersionMismatchError for a bundled binary off the pin.
    */
   async resolveChecked(): Promise<string> {
     const executablePath = await this.resolve();
     const version = await this.getVersion();
 
-    if (!version) {
-      this.logger.warn(
-        'Could not read a version from %s. Continuing, but the worker may not match the schemas Tunarr pinned at %s.',
-        executablePath,
-        pinnedEtvNextVersion,
-      );
+    if (version && matchesPinnedEtvNextVersion(version)) {
       return executablePath;
     }
 
-    if (!matchesPinnedEtvNextVersion(version)) {
-      this.logger.warn(
-        'The ErsatzTV next worker at %s reports %s, but Tunarr pinned %s. Streams may fail in ways the schema cannot catch.',
-        executablePath,
-        version,
-        pinnedEtvNextVersion,
-      );
+    const fromEnv =
+      EtvNextBinaryResolver.envCandidatePaths().includes(executablePath);
+    if (!fromEnv) {
+      throw new EtvNextVersionMismatchError(executablePath, version);
     }
 
+    this.logger.warn(
+      'The ErsatzTV next worker at %s reports %s, but Tunarr pinned %s. Running it because TUNARR_ERSATZTV_NEXT_PATH points at it. Streams may fail in ways the schema cannot catch.',
+      executablePath,
+      version ?? 'no readable version',
+      pinnedEtvNextVersion,
+    );
     return executablePath;
   }
 }
