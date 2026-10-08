@@ -287,9 +287,13 @@ export class ProgramStreamDetailsFetcher {
     }
 
     const source = await match(artwork)
-      .with({ kind: 'file' }, async ({ path }) =>
-        (await fileExists(path)) ? new FileStreamSource(path) : undefined,
-      )
+      .with({ kind: 'file' }, async ({ path }) => {
+        const exists = await fileExists(path).catch((e) => {
+          this.logger.warn(e, 'Unable to read cached artwork at %s', path);
+          return false;
+        });
+        return exists ? new FileStreamSource(path) : undefined;
+      })
       .with({ kind: 'url' }, async ({ url, headers }) =>
         (await this.isReachable(url, headers))
           ? new HttpStreamSource(url, headers)

@@ -530,6 +530,22 @@ describe('ProgramStreamDetailsFetcher', () => {
       expect(details.placeholderImage?.path).toBe(GenericMusicScreen);
     });
 
+    it('falls back to the generic music screen when cached artwork is unreadable', async () => {
+      vi.mocked(fileExists).mockRejectedValueOnce(
+        Object.assign(new Error('permission denied'), { code: 'EACCES' }),
+      );
+
+      const details = await getStreamDetails(
+        makeArtworkService({
+          kind: 'file',
+          path: '/cache/poster.jpg',
+          artworkType: 'poster',
+        }),
+      );
+
+      expect(details.placeholderImage?.path).toBe(GenericMusicScreen);
+    });
+
     it('falls back to the generic music screen when there is no artwork', async () => {
       const details = await getStreamDetails(makeArtworkService());
 
