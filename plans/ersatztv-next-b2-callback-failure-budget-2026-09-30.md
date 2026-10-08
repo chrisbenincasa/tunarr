@@ -1,6 +1,6 @@
 # ErsatzTV next — B2 callback retry and failure budget
 
-> **Status (09/30/2026):** Planned and grilled (decisions D1–D9 in §2). Verified against upstream `091e174`. Nothing filed. Only callback retry gates shipping. The configurable fallback duration is optional and the failure budget is a follow-up. Next steps are the two Tunarr items that need no upstream change (§5.1, §5.2), and filing the design issue in §4 after Christian trims it.
+> **Status (10/07/2026):** Planned and grilled (decisions D1–D9 in §2). Upstream citations re-verified at `v0.2.0`, where the behavior is unchanged. The issue draft is written (§4) and ready to file. Nothing filed. Only callback retry gates shipping. The configurable fallback duration is optional and the failure budget is a follow-up.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md). The original argument is in main plan §15.B, "B2 in full." §1 below corrects part of it.
 
@@ -15,7 +15,7 @@ Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream
 - Nothing counts failures. The worker continues forever.
 - The run loop asks for the next item when the buffer drops to 60 seconds, and drops to realtime below 30 seconds (`:267-269`).
 - `main.rs:49-59` exits 0 for `IdleTimeout` and 1 for every other error.
-- The playout schema accepts versions up to `0.5` (`playout.rs:14`). Tunarr emits `0.3` (`EtvNextWorkspace.ts:12`).
+- The playout schema accepts versions up to `0.0.5` (`playout.rs:15-18` at `v0.2.0`). Tunarr emits `0.0.5` (`EtvNextWorkspace.ts:12`).
 - Open PR #212 changes how `transcode()` sets each pipeline's output duration. Expect to rebase on it.
 
 ### 1.2 Tunarr
@@ -36,7 +36,7 @@ Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream
 | #   | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | D1  | Retry and the configurable fallback duration gate shipping. The failure budget does not. It goes in the same issue as a follow-up that lets Tunarr delete the watchdog. The heartbeat already handles the outage the budget was meant for.                                                                                                                                                                                                     |
-| D2  | Retry parameters live on the playout `Dynamic` source, beside `timeout_us`. This bumps the playout schema to `0.6`, so an older binary refuses the file loudly instead of ignoring the fields.                                                                                                                                                                                                                                                 |
+| D2  | Retry parameters live on the playout `Dynamic` source, beside `timeout_us`. This bumps the playout schema to `0.0.6`, so an older binary refuses the file loudly instead of ignoring the fields.                                                                                                                                                                                                                                               |
 | D3  | Two knobs, `retry_backoff_ms` and `retry_budget_ms`. Backoff grows exponentially with jitter, up to the remaining budget. The budget counts time inside attempts as well as waits, and each attempt's timeout is the smaller of `timeout_us` and the budget left. Jitter, the growth factor and the retryable conditions are fixed.                                                                                                            |
 | D4  | Tunarr emits `timeout_us` of 20 seconds, `retry_budget_ms` of 25000 and `retry_backoff_ms` of 250. Tunarr also bounds its own resolution at about 15 seconds and answers with an error-screen item when it runs out, so slowness never reaches the worker as a timeout. That deadline is its own Tunarr item (§5.1).                                                                                                                           |
 | D5  | Retry is off when the fields are absent (`retry_budget_ms` defaults to 0). Nothing changes for integrators who don't opt in, so the issue is a pure addition.                                                                                                                                                                                                                                                                                  |
@@ -55,7 +55,7 @@ Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream
 - Retry transport errors, timeouts and 5xx. Don't retry 4xx or a JSON parse error, because those are answers, not outages.
 - Wait a jittered, exponentially growing delay between attempts, starting from `retry_backoff_ms` and never past the budget left.
 - Log each attempt at `warn`, and the final failure at `error`.
-- Bump `SUPPORTED_SCHEMA` to `0.6` and hand-edit `schema/playout.json` (C6, upstream maintains it by hand).
+- Bump `SUPPORTED_SCHEMA` to `0.0.6` and hand-edit `schema/playout.json` (C6, upstream maintains it by hand).
 
 ### 3.2 Configurable fallback duration (optional, does not gate shipping)
 
@@ -81,15 +81,32 @@ Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream
 
 ## 4. Design issue
 
-- **Title:** `feat: retry dynamic callbacks`
-- **Case without Tunarr:** one dropped request costs 60 seconds of black today, and nothing retries.
-- **Shape to agree:**
-  - field names on the `Dynamic` source, and the `0.6` schema bump
-  - the default when the fields are absent
-  - the fallback duration field, offered as optional.
-- **Follow-up in the same issue:** the failure budget and exit code, as a separate PR.
-- **Pairing:** offer to fold in B1's work-ahead literals (`:1054`, `:267-272`) if the maintainer wants one config pass. Don't wait on it.
-- Keep it to one screen. Christian trims before filing.
+Re-verified at `v0.2.0`: one GET in `resolve_dynamic_item` (`channel_session.rs:1342`), 10-second default timeout (`:1416-1418`), one minute of fallback (`:1297`), and no `fallback_until` for `ItemSelectionFailed` (`fallback.rs:65`).
+
+Left out on purpose:
+
+- The B1 work-ahead pairing, to keep the issue to one topic. Its citations are not re-verified at `v0.2.0`.
+- Tunarr's own timings (D4), so the case stands without Tunarr.
+
+### Draft
+
+**Title:** feat: retry dynamic callbacks
+
+> When a `Dynamic` source's callback fails, the channel plays a minute of fallback and asks again on the next `transcode()`. Nothing retries, so one dropped connection or a server mid-restart costs 60 seconds of black (`channel_session.rs:1297`; `ItemSelectionFailed` has no `fallback_until`, `fallback.rs:65`).
+>
+> I'd like to add retry with backoff, off by default:
+>
+> - Two optional fields on `PlayoutItemSource::Dynamic`, `retry_budget_ms` and `retry_backoff_ms`. Absent, or a budget of 0, keeps today's behavior.
+> - Retry transport errors, timeouts and 5xx. Don't retry 4xx or a body that doesn't parse, since those are answers rather than outages.
+> - Backoff grows exponentially with jitter, starting at `retry_backoff_ms`. The budget includes time spent inside attempts, so each attempt's timeout is the smaller of `timeout_us` and the budget left.
+> - Playout schema goes to 0.0.6, so an older build rejects the file instead of silently ignoring the fields.
+>
+> Two questions before I send a PR:
+>
+> 1. Do the names and the placement on the `Dynamic` source work for you, or would you rather this live in the channel config?
+> 2. Would you take a `fallback.duration_seconds` channel config field to replace the hardcoded minute? It's optional for us. If it lands, it should be at least the retry budget, or each failed cycle drains more buffer than it adds.
+>
+> Later, as a separate PR: `fallback.max_consecutive_failures`, which exits with a distinct code (say 3) after N straight failed items. Today the worker can't tell "this item failed" from "this channel is broken," so an integrator has no signal for the second.
 
 ## 5. Tunarr follow-up
 
@@ -111,11 +128,11 @@ Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream
 
 ### 5.3 After the pin bump
 
-| Change                                                                                                                  | Where                                                    |
-| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Emit playout version `0.6`, and `timeout_us`, `retry_budget_ms` and `retry_backoff_ms` on the dynamic placeholder (D4). | `EtvNextWorkspace.ts:12`, `EtvNextDynamicPlayout.ts`     |
-| If the optional field landed, emit `fallback.duration_seconds` of 30.                                                   | `EtvNextChannelConfigMapper.ts`, `fallback` block `:397` |
-| Pin bump per blockers plan §5.                                                                                          | —                                                        |
+| Change                                                                                                                    | Where                                                    |
+| ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Emit playout version `0.0.6`, and `timeout_us`, `retry_budget_ms` and `retry_backoff_ms` on the dynamic placeholder (D4). | `EtvNextWorkspace.ts:12`, `EtvNextDynamicPlayout.ts`     |
+| If the optional field landed, emit `fallback.duration_seconds` of 30.                                                     | `EtvNextChannelConfigMapper.ts`, `fallback` block `:397` |
+| Pin bump per blockers plan §5.                                                                                            | —                                                        |
 
 ### 5.4 After the failure budget lands
 
