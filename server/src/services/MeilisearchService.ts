@@ -171,6 +171,7 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'audioLanguages',
     'subtitleLanguages',
     'summary',
+    'plot',
     'countries.name',
     'collections.name',
     'audienceRating',
@@ -1490,7 +1491,7 @@ export class MeilisearchService implements ISearchService {
     ) {
       const encodedLibraryId = encodeCaseSensitiveId(request.libraryId);
       if (isNonEmptyString(filter)) {
-        filter += ` AND libraryId = "${encodedLibraryId}"`;
+        filter = `(${filter}) AND libraryId = "${encodedLibraryId}"`;
       } else {
         filter = `libraryId = "${encodedLibraryId}"`;
       }
@@ -1502,7 +1503,7 @@ export class MeilisearchService implements ISearchService {
     ) {
       const encodedMediaSourceId = encodeCaseSensitiveId(request.mediaSourceId);
       if (isNonEmptyString(filter)) {
-        filter += ` AND mediaSourceId = "${encodedMediaSourceId}"`;
+        filter = `(${filter}) AND mediaSourceId = "${encodedMediaSourceId}"`;
       } else {
         filter = `mediaSourceId = "${encodedMediaSourceId}"`;
       }
@@ -1588,7 +1589,7 @@ export class MeilisearchService implements ISearchService {
     ) {
       const encodedLibraryId = encodeCaseSensitiveId(request.libraryId);
       if (isNonEmptyString(filter)) {
-        filter += ` AND libraryId = "${encodedLibraryId}"`;
+        filter = `(${filter}) AND libraryId = "${encodedLibraryId}"`;
       } else {
         filter = `libraryId = "${encodedLibraryId}"`;
       }
@@ -1600,7 +1601,7 @@ export class MeilisearchService implements ISearchService {
     ) {
       const encodedMediaSourceId = encodeCaseSensitiveId(request.mediaSourceId);
       if (isNonEmptyString(filter)) {
-        filter += ` AND mediaSourceId = "${encodedMediaSourceId}"`;
+        filter = `(${filter}) AND mediaSourceId = "${encodedMediaSourceId}"`;
       } else {
         filter = `mediaSourceId = "${encodedMediaSourceId}"`;
       }
@@ -1948,7 +1949,7 @@ export class MeilisearchService implements ISearchService {
         .getOrElse(() => null),
       originalReleaseYear: program.year,
       summary,
-      plot: null,
+      plot: program.type === 'movie' ? program.plot : null,
       tagline: program.type === 'movie' ? program.tagline : null,
       title: program.title,
       titleReverse: program.title.split('').reverse().join(''),
@@ -2086,7 +2087,7 @@ export class MeilisearchService implements ISearchService {
         .getOrElse(() => null),
       originalReleaseYear: program.year,
       summary,
-      plot: null,
+      plot: program.type === 'movie' ? program.plot : null,
       tagline: program.type === 'movie' ? program.tagline : null,
       title: program.title,
       titleReverse: program.title?.split('').reverse().join(''),
