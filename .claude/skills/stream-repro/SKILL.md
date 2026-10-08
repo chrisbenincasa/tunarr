@@ -24,6 +24,7 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--source synthetic\|copy` | `synthetic` | Generate clips, or replay a real channel from a copied database |
 | `--layout basic\|multi-audio\|dup-lang\|subs\|mixed` | `basic` | Synthetic clip track layout (see below) |
 | `--clips N`, `--clip-seconds S` | `3`, `60` | Number and length of synthetic clips; each clip is one program |
+| `--clip-durations LIST` | | Per-clip lengths in seconds, such as `60,8,60` for a bumper between two programs. Overrides `--clips` and `--clip-seconds` |
 | `--db-dir DIR` | | `copy` only: Tunarr database directory to copy (the dev server's is `TUNARR_DATABASE_PATH` in `server/.env.development`) |
 | `--channel ID` | | `copy` only: channel number or uuid to stream |
 | `--mode hls\|hls_slower\|hls_direct_v2\|mpegts` | `hls` | Stream mode to request |
@@ -40,9 +41,13 @@ count, subtitles, and audio-track count between programs, so it exercises transi
 capture long enough to cross at least two program boundaries: `--seconds` should exceed
 `2 × --clip-seconds`.
 
-Keep clips at 30 s or longer. Tunarr skips to the next program when a stream request lands with less
-than 10 s left in the current one (`SLACK` in `shared/src/util/constants.ts`). Transcodes run faster
-than real time, so short clips get skipped and the run tests a different transition than you intended.
+Short clips are fine. Tunarr skips to the next program only when a stream request lands with less than
+1 s left in the current one, and it never skips a program of 2 s or less (`STREAM_TAIL_SLACK_MS` in
+`server/src/stream/StreamProgramCalculator.ts`).
+
+To check that each program airs on schedule, compare the `About to play lineup item` debug entries in
+`tunarr.log` with the lineup. Each entry's `programBeginMs`, minus `channel.startTime`, should equal the
+program's offset in the lineup.
 
 A run takes one to three minutes. Most of that is server boot and real-time streaming.
 

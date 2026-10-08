@@ -16,6 +16,7 @@ const { values: opt } = parseArgs({
     layout: { type: 'string', default: 'basic' },
     clips: { type: 'string', default: '3' },
     'clip-seconds': { type: 'string', default: '60' },
+    'clip-durations': { type: 'string' },
     'db-dir': { type: 'string' },
     channel: { type: 'string' },
     mode: { type: 'string', default: 'hls' },
@@ -48,9 +49,11 @@ const out = path.resolve(
 fs.mkdirSync(out, { recursive: true });
 const dbDir = path.join(out, 'db');
 const seconds = Number(opt.seconds);
-if (opt.source === 'synthetic' && Number(opt['clip-seconds']) < 30) {
-  console.error('[repro] warning: clips under 30s get skipped; Tunarr jumps to the next program when <10s remain (SLACK in shared/src/util/constants.ts)');
-}
+// Per-clip lengths in seconds, e.g. "60,8,60" for a bumper between two programs.
+const clipDurations = opt['clip-durations']
+  ? opt['clip-durations'].split(',').map(Number)
+  : Array.from({ length: Number(opt.clips) }, () => Number(opt['clip-seconds']));
+if (clipDurations.some((d) => !(d > 0))) throw new Error('--clip-durations must be positive seconds, comma separated');
 const log = (...a) => console.error('[repro]', ...a);
 
 // ---------- helpers ----------
@@ -145,9 +148,9 @@ function makeClips(dir) {
   const layout = LAYOUTS[opt.layout];
   if (!layout) throw new Error(`unknown --layout ${opt.layout}; use ${Object.keys(LAYOUTS).join(', ')}`);
   fs.mkdirSync(dir, { recursive: true });
-  const dur = Number(opt['clip-seconds']);
   const clips = [];
-  for (let i = 0; i < Number(opt.clips); i++) {
+  for (let i = 0; i < clipDurations.length; i++) {
+    const dur = clipDurations[i];
     const l = layout(i);
     const file = path.join(dir, `clip${String(i + 1).padStart(2, '0')}.mkv`);
     const args = ['-y', '-v', 'error', '-f', 'lavfi', '-i', `testsrc2=size=${l.size}:rate=${l.rate}`];
