@@ -60,9 +60,9 @@ matches what the movie slot produced. Custom-show slots ignore `direction`, so
 the direction has to be baked into the show.
 
 Shows are named `<Channel> Movies`, with a sort suffix only when a channel
-needs more than one. Slots that shared one movie iterator (key
-`movie_${order}`) still share one, since custom-show slots share an iterator
-per show and order (`custom-show_${id}_${order}`).
+needs more than one. Iterators are keyed by slot ID, so each ungrouped slot
+gets its own iterator before and after the migration. Only slots with an
+`iterationGroup` share one, and the migration keeps that field.
 
 **The slot keeps everything else:** id, filler, mid-roll, weight, cooldown,
 duration spec, start time and links. Only `type`, `customShowId`, `order` and
@@ -74,9 +74,10 @@ custom-show slots would otherwise reverse it a second time.
 warning. An empty custom show would fail schedule validation on save.
 
 **Reruns.** If the migration fails after creating a show, the lineup stays on
-v6 and the migration runs again on the next startup. It reuses an existing
-custom show with the same name instead of creating a duplicate. (Proposed;
-confirm.)
+v6 and the migration runs again on the next startup. Each show's ID is a
+uuid v5 of the channel ID and sort key, so the rerun finds the show it created
+instead of making a duplicate. Names are not unique, so the migration never
+looks a show up by name.
 
 **Tests.** DB-backed, following `server/src/db/CustomShowDB.test.ts`:
 
@@ -122,7 +123,7 @@ confirm.)
 
 1. The migrated show is a snapshot and doesn't follow movies added to the
    channel later. Proposed: accept it, and document it.
-2. Rerun safety by reusing a same-named show. Proposed: yes.
+2. Rerun safety by deriving each show's ID from the channel and sort. Done.
 3. One PR (migration and removal) or two (migration and server, then web).
    Proposed: one, since the web won't compile against the new types without
    the UI changes.
