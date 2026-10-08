@@ -13,6 +13,7 @@ import type {
   CelEvaluationService,
   StreamSelectionCelContext,
 } from '../services/CelEvaluationService.ts';
+import type { ArtworkService } from '../services/ArtworkService.ts';
 import { ProgramStreamDetailsFetcher } from './ProgramStreamDetailsFetcher.ts';
 import type { AudioStreamDetails, SubtitleStreamDetails } from './types.ts';
 
@@ -297,7 +298,13 @@ const remoteExternalSubRows: SubtitleRow[] = [
 ];
 
 function makeFetcher(program: StreamLineupProgram) {
-  return new ProgramStreamDetailsFetcher(makeProgramDB(program));
+  const artworkService = {
+    resolveArtwork: vi.fn().mockResolvedValue({ kind: 'not-found' }),
+  } as unknown as ArtworkService;
+  return new ProgramStreamDetailsFetcher(
+    makeProgramDB(program),
+    artworkService,
+  );
 }
 
 async function detailsFor(program: StreamLineupProgram, server = makeServer()) {

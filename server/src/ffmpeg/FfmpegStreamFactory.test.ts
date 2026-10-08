@@ -25,7 +25,12 @@ import type { FeatureFlagService } from '@/services/FeatureFlagService.ts';
 import type { StreamDetails, SubtitleStreamDetails } from '@/stream/types.ts';
 import { HttpStreamSource } from '@/stream/types.ts';
 import type { SubtitlesInputSource } from '@/ffmpeg/builder/input/SubtitlesInputSource.ts';
-import { SubtitleMethods } from '@/ffmpeg/builder/MediaStream.ts';
+import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
+import {
+  StillImageStream,
+  SubtitleMethods,
+} from '@/ffmpeg/builder/MediaStream.ts';
+import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.ts';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { describe, expect, test, vi } from 'vitest';
@@ -179,22 +184,28 @@ function createCapturingPipelineBuilderFactory(): {
   getCapturedFfmpegState: () => FfmpegState | undefined;
   getCapturedHwAccel: () => string | undefined;
   getCapturedSubtitleInput: () => SubtitlesInputSource | null | undefined;
+  getCapturedVideoInput: () => VideoInputSource | undefined;
 } {
   let capturedFrameState: FrameState | undefined;
   let capturedFfmpegState: FfmpegState | undefined;
   let capturedHwAccel: string | undefined;
   let capturedSubtitleInput: SubtitlesInputSource | null | undefined;
+  let capturedVideoInput: VideoInputSource | undefined;
 
   const factory: PipelineBuilderFactory = () => {
     const builderProxy: Record<string, unknown> = {};
     for (const method of [
-      'setVideoInputSource',
       'setAudioInputSource',
       'setWatermarkInputSource',
       'setConcatInputSource',
     ]) {
       builderProxy[method] = vi.fn().mockReturnValue(builderProxy);
     }
+
+    builderProxy.setVideoInputSource = vi.fn((input: VideoInputSource) => {
+      capturedVideoInput = input;
+      return builderProxy;
+    });
 
     builderProxy.setSubtitleInputSource = vi.fn(
       (input: SubtitlesInputSource | null) => {
@@ -231,6 +242,7 @@ function createCapturingPipelineBuilderFactory(): {
     getCapturedFfmpegState: () => capturedFfmpegState,
     getCapturedHwAccel: () => capturedHwAccel,
     getCapturedSubtitleInput: () => capturedSubtitleInput,
+    getCapturedVideoInput: () => capturedVideoInput,
   };
 }
 
@@ -782,6 +794,79 @@ describe('FfmpegStreamFactory', () => {
         'jpn',
         'eng',
       ]);
+    });
+  });
+
+  describe('audio-only programs', () => {
+    function makeAudioOnlyStreamDetails(
+      placeholderImage?: HttpStreamSource,
+    ): StreamDetails {
+      return {
+        ...makeStreamDetails(),
+        videoDetails: undefined,
+        audioOnly: true,
+        placeholderImage,
+      };
+    }
+
+    function makeSut(factory: PipelineBuilderFactory) {
+      return new FfmpegStreamFactory(
+        makeMockFfmpegInfo(),
+        makeMockSettingsDB(makeFfmpegSettings()),
+        factory,
+        makeMockChannelDB(),
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        makeTranscodeConfig(),
+        makeChannel(),
+      );
+    }
+
+    const options = {
+      startTime: dayjs.duration(0),
+      duration: dayjs.duration({ seconds: 30 }),
+      outputFormat: HlsOutputFormat(defaultHlsOptions),
+      ptsOffset: 0,
+      realtime: true,
+      streamMode: 'hls',
+    } as const;
+
+    test('loops the placeholder image as the video input', async () => {
+      const { factory, getCapturedVideoInput } =
+        createCapturingPipelineBuilderFactory();
+      const placeholder = new HttpStreamSource(
+        'http://localhost:8000/images/generic-music-screen.png',
+      );
+
+      const result = await makeSut(factory).createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/track.flac'),
+          details: makeAudioOnlyStreamDetails(placeholder),
+        },
+        options,
+        lineupItem: makeLineupItem(),
+      });
+
+      expect(result).not.toBeNull();
+      const videoInput = getCapturedVideoInput();
+      expect(videoInput?.source).toBe(placeholder);
+      expect(videoInput?.streams[0]).toBeInstanceOf(StillImageStream);
+      expect(videoInput?.hasInputOption(InfiniteLoopInputOption)).toBe(true);
+    });
+
+    test('rejects an audio-only stream without a placeholder image', async () => {
+      const { factory } = createCapturingPipelineBuilderFactory();
+
+      await expect(
+        makeSut(factory).createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/track.flac'),
+            details: makeAudioOnlyStreamDetails(),
+          },
+          options,
+          lineupItem: makeLineupItem(),
+        }),
+      ).rejects.toThrow('Streams with no video are not currently supported.');
     });
   });
 
