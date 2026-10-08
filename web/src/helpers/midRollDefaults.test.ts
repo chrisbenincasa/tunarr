@@ -13,13 +13,6 @@ import {
 
 const OneMinute = 60_000;
 
-const movieSlot: BaseSlot = {
-  type: 'movie',
-  id: 'slot-movie',
-  order: 'shuffle',
-  direction: 'asc',
-};
-
 const showSlot = (showId: string): BaseSlot => ({
   type: 'show',
   id: `slot-show-${showId}`,
@@ -79,14 +72,14 @@ describe('deriveMidRollDefaults', () => {
     expect(config.minProgramDurationMs).toBeLessThanOrEqual(22 * OneMinute);
   });
 
-  test('caps the interval for feature-length movies', () => {
+  test('caps the interval for feature-length programs', () => {
     const programs = [
-      movieProgram(100 * OneMinute, 'a'),
-      movieProgram(120 * OneMinute, 'b'),
-      movieProgram(180 * OneMinute, 'c'),
+      episodeProgram(100 * OneMinute, 'a', 'show-1'),
+      episodeProgram(120 * OneMinute, 'b', 'show-1'),
+      episodeProgram(180 * OneMinute, 'c', 'show-1'),
     ];
 
-    const config = deriveMidRollDefaults(movieSlot, programs);
+    const config = deriveMidRollDefaults(showSlot('show-1'), programs);
 
     expect(config.intervalMs).toBe(30 * OneMinute);
     expect(config.minProgramDurationMs).toBe(100 * OneMinute);

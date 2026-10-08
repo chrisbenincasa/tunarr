@@ -1,10 +1,7 @@
 import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
-import { isNonEmptyString } from '@/helpers/util';
 import { t } from '@lingui/core/macro';
-import useStore from '@/store';
 import { useQuery } from '@tanstack/react-query';
-import { seq } from '@tunarr/shared/util';
-import { map, reject, some } from 'lodash-es';
+import { map, reject } from 'lodash-es';
 import { useContext, useMemo } from 'react';
 import { SlotProgrammingOptionsContext } from '../../components/slot_scheduler/SlotProgrammingOptionsContext.ts';
 import { postApiProgramsFacetsByFacetNameOptions } from '../../generated/@tanstack/react-query.gen.ts';
@@ -89,8 +86,6 @@ function useSmartCollectionProgrammingOptions() {
 }
 
 export const useSlotProgramOptions = (channelId?: string) => {
-  const { originalProgramList: newLineup } = useStore((s) => s.channelEditor);
-  const { programLookup } = useStore();
   const syncedOptions = useSyncedProgrammingOptions();
   const customShowOpts = useCustomShowOptions();
   const smartCollectionOpts = useSmartCollectionProgrammingOptions();
@@ -101,26 +96,13 @@ export const useSlotProgramOptions = (channelId?: string) => {
   });
 
   return useMemo<ProgramOptions>(() => {
-    const contentPrograms = seq.collect(newLineup, (program) => {
-      if (program.type === 'content' && isNonEmptyString(program.id)) {
-        return programLookup[program.id];
-      }
-    });
-
     const opts: ProgramOption[] = [
       { value: 'flex', description: t`Flex`, type: 'flex' },
       ...syncedOptions,
     ];
     const nameById: Record<string, string> = {
       flex: t`Flex`,
-      movie: t`Movies`,
     };
-
-    if (contentPrograms.length) {
-      if (some(contentPrograms, ({ program }) => program.type === 'movie')) {
-        opts.push({ description: t`Movies`, value: 'movie', type: 'movie' });
-      }
-    }
 
     for (const opt of customShowOpts) {
       nameById[opt.value] = opt.description;
@@ -172,13 +154,11 @@ export const useSlotProgramOptions = (channelId?: string) => {
       nameById,
     };
   }, [
-    newLineup,
     syncedOptions,
     customShowOpts,
     smartCollectionOpts,
     fillerLists,
     channels,
-    programLookup,
   ]);
 };
 

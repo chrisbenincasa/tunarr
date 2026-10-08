@@ -49,7 +49,7 @@ export type SmartCollectionOption = DropdownOption<string> & {
 
 export type ProgramOption =
   | (DropdownOption<string> & {
-      type: 'movie' | 'flex';
+      type: 'flex';
     })
   | CustomShowProgramOption
   | RedirectProgramOption
@@ -61,7 +61,6 @@ export type ProgramOptionType = ProgramOption['type'];
 
 // TODO: This is duped with the shared package, put it somewhere better
 export type SlotId =
-  | 'movie'
   | `show.${string}`
   | `custom-show.${string}`
   | `filler.${string}`
@@ -141,11 +140,6 @@ export const lineupItemAppearsInSchedule = (
         return item.type === 'redirect';
       case 'flex':
         return item.type === 'flex';
-      case 'movie':
-        return (
-          (item.type === 'content' && item.program.type === 'movie') ||
-          (item.type === 'custom' && item.program?.program.type === 'movie')
-        );
       case 'smart-collection':
         return true;
       case 'show': {
@@ -167,8 +161,6 @@ export const slotOptionIsScheduled = (
   option: ProgramOption,
 ) => {
   switch (option.type) {
-    case 'movie':
-      return some(slots, (slot) => slot.type === 'movie');
     case 'flex':
       return true;
     case 'custom-show':
@@ -328,11 +320,6 @@ export function slotOrderOptions(
   slotProgrammingType: SlotTypeWithOrdering,
 ): DropdownOption<SlotWithOrdering['order']>[] {
   return match(slotProgrammingType)
-    .with('movie', () => [
-      AlphanumericSortOpt,
-      ChronologicalSortOpt,
-      ShuffleSortOpt,
-    ])
     .with(P.union('show', 'custom-show'), () => [
       NextEpSortOpt,
       OrderedShuffleSortOpt,
@@ -404,10 +391,6 @@ export const ProgramOptionTypes: DropdownOption<ProgramOptionType>[] = [
     description: 'Custom Show',
   },
   {
-    value: 'movie',
-    description: 'Movies',
-  },
-  {
     value: 'redirect',
     description: 'Channel Redirect',
   },
@@ -439,9 +422,7 @@ export const getTimeSlotId = (programming: TimeSlotViewModel): SlotId => {
     case 'filler':
       return `${programming.type}.${programming.fillerListId}`;
     case 'flex':
-    case 'movie': {
       return programming.type;
-    }
     case 'smart-collection': {
       return `${programming.type}.${programming.smartCollectionId}`;
     }
@@ -462,9 +443,7 @@ export const getRandomSlotId = (programming: RandomSlot): SlotId => {
     case 'filler':
       return `${programming.type}.${programming.fillerListId}`;
     case 'flex':
-    case 'movie': {
       return programming.type;
-    }
     case 'smart-collection':
       return `${programming.type}.${programming.smartCollectionId}`;
   }
@@ -480,14 +459,13 @@ export const getSlotIdForProgram = (
         const materialized = lookup[program.id];
         if (materialized) {
           switch (materialized.program.type) {
-            case 'movie':
-            case 'music_video':
-            case 'other_video':
-              return 'movie';
             case 'episode':
               return isNonEmptyString(materialized.program.show?.uuid)
                 ? `show.${materialized.program.show?.uuid}`
                 : undefined;
+            case 'movie':
+            case 'music_video':
+            case 'other_video':
             case 'track':
               return;
           }

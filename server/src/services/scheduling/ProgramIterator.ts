@@ -290,8 +290,6 @@ export function getProgramOrderer(
 // programming subtype, but I haven't figured it out yet.
 export function slotIteratorKey<T extends BaseSlot>(slot: T): SlotIteratorKey {
   switch (slot.type) {
-    case 'movie':
-      return `movie_${slot.order}`;
     case 'show':
       return `tv_${slot.showId}_${slot.order}`;
     case 'redirect':
