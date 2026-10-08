@@ -310,10 +310,6 @@ msgstr "about "
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -2952,6 +2948,8 @@ msgid "Passthrough audio unchanged. Other settings will not apply."
 msgstr "Passthrough audio unchanged. Other settings will not apply."
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Password"
 msgstr "Password"
@@ -4128,12 +4126,15 @@ msgid "Today"
 msgstr "Today"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "toggle access token visibility"
 msgstr "toggle access token visibility"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "toggle password visibility"
+msgstr "toggle password visibility"
 
 #: src/components/channel_config/ChannelProgrammingTools.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -4297,6 +4298,8 @@ msgid "Use these settings to override global ffmpeg settings for this channel."
 msgstr "Use these settings to override global ffmpeg settings for this channel."
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Username"
 msgstr "Username"

@@ -310,10 +310,6 @@ msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -2952,6 +2948,8 @@ msgid "Passthrough audio unchanged. Other settings will not apply."
 msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Password"
 msgstr ""
@@ -4126,11 +4124,14 @@ msgid "Today"
 msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "toggle access token visibility"
+msgstr ""
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "toggle password visibility"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingTools.tsx
@@ -4295,6 +4296,8 @@ msgid "Use these settings to override global ffmpeg settings for this channel."
 msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Username"
 msgstr ""
