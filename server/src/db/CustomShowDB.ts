@@ -190,10 +190,13 @@ export class CustomShowDB {
     return ids.filter((programId) => !existingIds.has(programId));
   }
 
-  async createShow(createRequest: CreateCustomShowRequest) {
+  async createShow(
+    createRequest: CreateCustomShowRequest,
+    uuid: string = v4(),
+  ) {
     const now = +dayjs();
     const show = {
-      uuid: v4(),
+      uuid,
       createdAt: now,
       updatedAt: now,
       name: createRequest.name,

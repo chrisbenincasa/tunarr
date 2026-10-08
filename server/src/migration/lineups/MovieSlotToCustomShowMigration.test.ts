@@ -68,21 +68,25 @@ const test = baseTest.extend<Fixture>({
     await use(new MovieSlotToCustomShowMigration(drizzle, customShowDB));
   },
   channelId: async ({ drizzle }, use) => {
-    const uuid = v4();
-    await drizzle.insert(Channel).values({
-      uuid,
-      duration: 0,
-      guideMinimumDuration: 30_000,
-      icon: { path: '', width: 0, duration: 0, position: 'bottom-right' },
-      name: ChannelName,
-      number: 1,
-      offline: { mode: 'pic' },
-      startTime: 0,
-      transcodeConfigId: v4(),
-    });
-    await use(uuid);
+    await use(await insertChannel(drizzle, 1));
   },
 });
+
+async function insertChannel(drizzle: DrizzleDBAccess, number: number) {
+  const uuid = v4();
+  await drizzle.insert(Channel).values({
+    uuid,
+    duration: 0,
+    guideMinimumDuration: 30_000,
+    icon: { path: '', width: 0, duration: 0, position: 'bottom-right' },
+    name: ChannelName,
+    number,
+    offline: { mode: 'pic' },
+    startTime: 0,
+    transcodeConfigId: v4(),
+  });
+  return uuid;
+}
 
 type ProgramSpec = {
   title: string;
@@ -555,6 +559,59 @@ describe('MovieSlotToCustomShowMigration', () => {
     expect(customShowIdOf(slotAt(second, 0))).toBe(
       customShowIdOf(slotAt(first, 0)),
     );
+  });
+
+  test('builds a separate show for each channel that shares a name', async ({
+    drizzle,
+    migration,
+    channelId,
+  }) => {
+    const otherChannelId = await insertChannel(drizzle, 2);
+    const idsA = await insertPrograms(drizzle, channelId, [Movies[0]]);
+    const idsB = await insertPrograms(drizzle, otherChannelId, [Movies[1]]);
+    const lineupA = timeLineup([
+      timeSlot({ type: 'movie', order: 'next', direction: 'asc' }),
+    ]);
+    const lineupB = structuredClone(lineupA);
+
+    await migration.migrate(lineupA, { channelId });
+    await migration.migrate(lineupB, { channelId: otherChannelId });
+
+    const showA = customShowIdOf(slotAt(lineupA, 0));
+    const showB = customShowIdOf(slotAt(lineupB, 0));
+    expect(showA).not.toBe(showB);
+    expect(await showContents(drizzle, showA)).toEqual([idsA('Bravo')]);
+    expect(await showContents(drizzle, showB)).toEqual([idsB('Alpha')]);
+  });
+
+  test('does not reuse a user show with the same name', async ({
+    drizzle,
+    migration,
+    channelId,
+  }) => {
+    const ids = await insertPrograms(drizzle, channelId, Movies);
+    const userShowId = v4();
+    const now = +dayjs();
+    await drizzle.insert(CustomShow).values({
+      uuid: userShowId,
+      name: `${ChannelName} Movies`,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const lineup = timeLineup([
+      timeSlot({ type: 'movie', order: 'next', direction: 'asc' }),
+    ]);
+
+    await migration.migrate(lineup, { channelId });
+
+    const showId = customShowIdOf(slotAt(lineup, 0));
+    expect(showId).not.toBe(userShowId);
+    expect(await showContents(drizzle, showId)).toEqual([
+      ids('Bravo'),
+      ids('Charlie'),
+      ids('Alpha'),
+    ]);
+    expect(await showContents(drizzle, userShowId)).toEqual([]);
   });
 
   test('fails without a channel ID when there are movie slots', async ({
