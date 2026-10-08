@@ -148,17 +148,17 @@
     "version": "1.30.0"
   },
   "ersatztvNext": {
-    "releaseRepo": "ErsatzTV/next-develop-builds",
-    "releaseTag": "v0.2.0-96aa6cb6-develop",
-    "commit": "96aa6cb6ee475e5b4387f41251c8ea5cbe17af6b",
+    "releaseRepo": "ErsatzTV/next",
+    "releaseTag": "v0.2.0",
+    "commit": "b340569997927ead2ff79ebd826a895409764164",
     "sha256": {
-      "linux-x64": "64a74b448a01273dfce51ea6741aa164539fd67e5a45c1332a3d9de2bc9219ca",
-      "linux-musl-x64": "2095a7dc7e078080d57de533bb4e220a8835647f8b0a150db58ee3d0a3cfaed3",
-      "linux-arm64": "750ca0d2652b8e0eda90ac349957990a8dd4c7a25f7f01e8d8bb5ddffb09649d",
-      "macos-x64": "2f39e94fe0fe81840f28608687d9560e826f1b66427298722cbde117262bf7d5",
-      "macos-arm64": "f79f432fe2409276ffc3ae6eca2506fe27b7f818341813645a61c23414d1fecc",
-      "windows-x64": "e7128f3e6ec756ee7b7465b74d3248ee266890e0b739cb022cb0cfe16512e17c"
+      "linux-x64": "3d8257e79a9f95e0f2591424bfbdacabdd6bae541475f5bf4f6a190818b76333",
+      "linux-musl-x64": "96d4d384fa230c005c2db103817f641fa07310f5410ac91df322e199bd8fa48d",
+      "linux-arm64": "9ffcf88bcfc92dc3c44d1edb149b2e4f3b184b4b981e0e01b1696930d9057cde",
+      "macos-x64": "c9725d66815f9f3784011f02f66e83b96eedd7789b8e15ec8f0e0b755fefe1ba",
+      "macos-arm64": "d715cee27da7cc175f422b6a2efbb8c6f370582503f6647489008248c6c53dfe",
+      "windows-x64": "e750450d3265594dc3e6a6eb5d3402759d303c8bbacf36c48266e4915dc19c17"
     },
-    "note": "Develop builds are immutable releases in releaseRepo, but upstream keeps only the newest 100, so a develop pin eventually 404s. Pin a stable tag from ErsatzTV/next before shipping. Schemas under src/stream/etv/schema are vendored from this commit."
+    "note": "Schemas under src/stream/etv/schema are vendored from this commit. The server refuses a bundled worker whose version differs from releaseTag."
   }
 }
