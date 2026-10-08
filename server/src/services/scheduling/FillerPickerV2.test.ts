@@ -719,6 +719,25 @@ describe('FillerPickerV2', () => {
       expect(result.filler?.uuid).toBe(shortProgram.uuid);
     });
 
+    it.each([
+      [14_000, 5_000, false],
+      [5_501, 5_000, false],
+      [5_500, 5_000, true],
+      [609_999, 600_000, true],
+      [610_000, 600_000, false],
+    ])(
+      'overrun tolerance: a %dms clip in a %dms gap is eligible=%s',
+      async (clipMs, gapMs, eligible) => {
+        const filler = createFiller();
+        filler.fillerContent = [createProgram({ duration: clipMs })];
+        vi.mocked(random.bool).mockReturnValue(true);
+
+        const result = await picker.pickFiller(mockChannel, [filler], gapMs);
+
+        expect(result.filler !== null).toBe(eligible);
+      },
+    );
+
     it('returns null when all programs exceed maxDuration', async () => {
       const filler = createFiller();
       filler.fillerContent = [

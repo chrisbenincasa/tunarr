@@ -27,6 +27,13 @@ import {
 // Floor for the play history lookback. Widened when a cooldown exceeds it.
 const MinimumHistoryWindowMillis = 2 * 24 * 60 * 60 * 1000;
 
+// Filler may run past the gap by this much and get cut at the gap's end. The
+// tolerance scales with the gap, so a short gap never shows a fragment of a
+// much longer clip.
+function fillerOverrunToleranceMs(gapMs: number) {
+  return Math.min(constants.SLACK, gapMs / 10);
+}
+
 // A (near) re-implementation of the original DTV filler picker.
 @injectable()
 @loggingDef({
@@ -50,6 +57,9 @@ export class FillerPickerV2 implements IFillerPicker {
     if (isEmpty(fillers)) {
       return Promise.resolve(EmptyFillerPickResult);
     }
+
+    const maxFillerDuration =
+      maxDuration + fillerOverrunToleranceMs(maxDuration);
 
     const fillerRepeatCooldownMs =
       options?.fillerRepeatCooldownOverrideMs ??
@@ -148,7 +158,7 @@ export class FillerPickerV2 implements IFillerPicker {
         // we'd risk picking a list and then failing to find a program.
         let hasEligibleProgram = false;
         for (const program of filler.fillerContent) {
-          if (program.duration > maxDuration + constants.SLACK) continue;
+          if (program.duration > maxFillerDuration) continue;
           const timeSincePlayed = timeSinceProgramPlayed(program.uuid);
           if (timeSincePlayed >= fillerRepeatCooldownMs) {
             hasEligibleProgram = true;
@@ -157,7 +167,7 @@ export class FillerPickerV2 implements IFillerPicker {
               fillerRepeatCooldownMs - timeSincePlayed;
             if (
               program.duration + timeUntilProgramCanPlay <=
-              maxDuration + constants.SLACK
+              maxFillerDuration
             ) {
               minimumWait = Math.min(minimumWait, timeUntilProgramCanPlay);
               this.logger.trace('New minimumWait: %d', minimumWait);
@@ -194,10 +204,7 @@ export class FillerPickerV2 implements IFillerPicker {
           (min, p) => Math.min(min, p.duration),
           Number.MAX_SAFE_INTEGER,
         );
-        if (
-          shortestProgram + timeUntilListIsCandidate <=
-          maxDuration + constants.SLACK
-        ) {
+        if (shortestProgram + timeUntilListIsCandidate <= maxFillerDuration) {
           minimumWait = Math.min(
             minimumWait,
             shortestProgram + timeUntilListIsCandidate,
@@ -226,7 +233,7 @@ export class FillerPickerV2 implements IFillerPicker {
     }[] = [];
 
     for (const program of shuffledPrograms) {
-      if (program.duration > maxDuration + constants.SLACK) {
+      if (program.duration > maxFillerDuration) {
         this.logger.trace(
           'Skipping program %s (%s) from filler list %s because it is too long (%d > %d)',
           program.uuid,
@@ -252,10 +259,7 @@ export class FillerPickerV2 implements IFillerPicker {
         );
         const timeUntilProgramCanPlay =
           fillerRepeatCooldownMs - timeSincePlayed;
-        if (
-          program.duration + timeUntilProgramCanPlay <=
-          maxDuration + constants.SLACK
-        ) {
+        if (program.duration + timeUntilProgramCanPlay <= maxFillerDuration) {
           minimumWait = Math.min(minimumWait, timeUntilProgramCanPlay);
           this.logger.trace('New minimumWait: %d', minimumWait);
         }

@@ -702,6 +702,111 @@ describe('StreamProgramCalculator', () => {
     },
   );
 
+  describe('short flex gaps with allowSkip', () => {
+    // A=60s, flex, B=60s
+    async function lookupAt(flexMs: number, startTime: number) {
+      const fillerDB = mock<IFillerListDB>();
+      const channelDB = mock<IChannelDB>();
+      const programDB = mock<IProgramDB>();
+      const fillerPicker = mock<IFillerPicker>();
+      const playHistoryDB = mock<ProgramPlayHistoryDB>();
+
+      const channelId = faker.string.uuid();
+      const programIdA = faker.string.uuid();
+      const programIdB = faker.string.uuid();
+      const lineup: LineupItem[] = [
+        { type: 'content', durationMs: 60_000, id: programIdA },
+        { type: 'offline', durationMs: flexMs },
+        { type: 'content', durationMs: 60_000, id: programIdB },
+      ];
+
+      for (const id of [programIdA, programIdB]) {
+        when(programDB.getStreamProgramById(id)).thenReturn(
+          Promise.resolve(
+            createFakeProgram({
+              uuid: id,
+              duration: 60_000,
+              mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+            }),
+          ),
+        );
+      }
+
+      const channel = createChannelOrm({
+        uuid: channelId,
+        number: 1,
+        startTime: 0,
+        duration: sumBy(lineup, (i) => i.durationMs),
+      });
+      when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
+      when(channelDB.loadLineup(channelId)).thenReturn(
+        Promise.resolve({
+          version: 1,
+          items: lineup,
+          startTimeOffsets: calculateStartTimeOffsets(lineup),
+          lastUpdated: now(),
+        }),
+      );
+      when(fillerDB.getFillersFromChannel(channelId)).thenReturn(
+        Promise.resolve([]),
+      );
+      when(
+        fillerPicker.pickFiller(
+          anything(),
+          anything(),
+          anything(),
+          anything(),
+          anything(),
+        ),
+      ).thenReturn(
+        Promise.resolve({
+          filler: null,
+          fillerListId: null,
+          minimumWait: Number.MAX_SAFE_INTEGER,
+        }),
+      );
+      when(
+        playHistoryDB.isProgramCurrentlyPlaying(
+          anything(),
+          anything(),
+          anything(),
+        ),
+      ).thenReturn(Promise.resolve(false));
+
+      const calc = new StreamProgramCalculator(
+        instance(fillerDB),
+        instance(channelDB),
+        instance(programDB),
+        instance(fillerPicker),
+        instance(playHistoryDB),
+      );
+      const out = await calc.getCurrentLineupItem({
+        allowSkip: true,
+        channelId: 1,
+        startTime,
+      });
+      return { out: out.get(), programIdB };
+    }
+
+    test('plays a flex gap of a few seconds instead of skipping it', async () => {
+      const { out } = await lookupAt(5_000, 60_000);
+      expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
+        type: 'offline',
+        streamDuration: 5_000,
+      });
+    });
+
+    test('skips the final sub-second tail of a flex gap', async () => {
+      // 900ms of a 1.5s gap remain. The gap is too short for the
+      // calculateStreamDuration skip, so the offline skip handles it.
+      const { out, programIdB } = await lookupAt(1_500, 60_600);
+      expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
+        type: 'program',
+        program: { uuid: programIdB },
+      });
+    });
+  });
+
   describe('calculateStreamDuration', () => {
     test('first channel cycle', () => {
       const lineupItems: LineupItem[] = [
@@ -786,6 +891,81 @@ describe('StreamProgramCalculator', () => {
         0,
       );
       expect(streamDuration).toEqual(3000);
+    });
+
+    function makeLineup(durations: number[]): Lineup {
+      const items: LineupItem[] = durations.map((durationMs, i) => ({
+        type: 'content',
+        id: String(i),
+        durationMs,
+      }));
+      return {
+        version: 1,
+        items,
+        startTimeOffsets: calculateStartTimeOffsets(items),
+        lastUpdated: now(),
+      };
+    }
+
+    test('plays a short item when the lookup lands on its start', () => {
+      // A=60s, B=8s, C=60s. The previous program ended exactly at B's start.
+      const lineup = makeLineup([60_000, 8_000, 60_000]);
+      const result = calculateStreamDuration(60_000, 0, 128_000, lineup);
+      expect(result).toEqual({
+        currentProgramIndex: 1,
+        timeElapsed: 0,
+        streamDuration: 8_000,
+      });
+    });
+
+    test('plays the rest of an item shorter than twice the slack', () => {
+      const lineup = makeLineup([60_000, 1_500, 60_000]);
+      const result = calculateStreamDuration(61_200, 0, 121_500, lineup);
+      expect(result).toEqual({
+        currentProgramIndex: 1,
+        timeElapsed: 1_200,
+        streamDuration: 300,
+      });
+    });
+
+    test('plays a long program with seconds left instead of skipping it', () => {
+      const lineup = makeLineup([60_000, 60_000]);
+      const result = calculateStreamDuration(55_000, 0, 120_000, lineup);
+      expect(result).toEqual({
+        currentProgramIndex: 0,
+        timeElapsed: 55_000,
+        streamDuration: 5_000,
+      });
+    });
+
+    test('skips the final sub-second tail of a long program', () => {
+      const lineup = makeLineup([60_000, 60_000]);
+      const result = calculateStreamDuration(59_500, 0, 120_000, lineup);
+      expect(result).toEqual({
+        currentProgramIndex: 1,
+        timeElapsed: 0,
+        streamDuration: 60_000,
+      });
+    });
+
+    test('keeps a session on schedule across short items', () => {
+      // Advance the lookup time the way HlsSession advances transcodedUntil.
+      const durations = [60_000, 8_000, 5_000, 60_000];
+      const lineup = makeLineup(durations);
+      const total = sum(durations);
+      const played: number[] = [];
+      let t = 5_000;
+      for (let i = 0; i < 8; i++) {
+        const result = calculateStreamDuration(t, 0, total, lineup);
+        played.push(result.currentProgramIndex);
+        const scheduledBegin =
+          Math.floor(t / total) * total +
+          (lineup.startTimeOffsets[result.currentProgramIndex] ?? NaN) +
+          result.timeElapsed;
+        expect(scheduledBegin).toEqual(t);
+        t += result.streamDuration;
+      }
+      expect(played).toEqual([0, 1, 2, 3, 0, 1, 2, 3]);
     });
   });
 });
