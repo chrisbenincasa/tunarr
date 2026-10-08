@@ -1,14 +1,20 @@
+import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import type { ChildProcessHelper } from '../../util/ChildProcessHelper.ts';
 import {
   ETV_NEXT_BINARY_NAME,
   EtvNextBinaryResolver,
+  EtvNextVersionMismatchError,
 } from './EtvNextBinaryResolver.ts';
+import { pinnedEtvNextVersion } from './EtvNextVersion.ts';
 
 const ENV_VAR = 'TUNARR_ERSATZTV_NEXT_PATH';
 
 afterEach(() => {
   delete process.env[ENV_VAR];
+  vi.restoreAllMocks();
 });
 
 describe('candidatePaths', () => {
@@ -48,5 +54,73 @@ describe('candidatePaths', () => {
     const paths = EtvNextBinaryResolver.candidatePaths('linux', 'x64');
 
     expect(paths.every((p) => p.startsWith(process.cwd()))).toBe(true);
+  });
+});
+
+describe('resolveChecked', () => {
+  /** A fake worker in a temp dir, found either as bundled or via the env var. */
+  async function makeResolver(
+    source: 'bundled' | 'env',
+    versionOutput: string,
+  ) {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'etv-resolver-'));
+    const binary = path.join(dir, ETV_NEXT_BINARY_NAME);
+    await fs.writeFile(binary, '');
+
+    if (source === 'env') {
+      process.env[ENV_VAR] = dir;
+      vi.spyOn(process, 'cwd').mockReturnValue(path.join(dir, 'elsewhere'));
+    } else {
+      await fs.mkdir(path.join(dir, 'bin'));
+      await fs.rename(binary, path.join(dir, 'bin', ETV_NEXT_BINARY_NAME));
+      vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    }
+
+    const childProcessHelper = {
+      getStdout: vi.fn(() => Promise.resolve(versionOutput)),
+    } as unknown as ChildProcessHelper;
+
+    return new EtvNextBinaryResolver(childProcessHelper);
+  }
+
+  test('accepts a bundled binary on the pin, build target included', async () => {
+    const resolver = await makeResolver(
+      'bundled',
+      `${ETV_NEXT_BINARY_NAME} ${pinnedEtvNextVersion}+linux-x64`,
+    );
+
+    await expect(resolver.resolveChecked()).resolves.toContain(
+      ETV_NEXT_BINARY_NAME,
+    );
+  });
+
+  test('refuses a bundled binary off the pin', async () => {
+    const resolver = await makeResolver(
+      'bundled',
+      `${ETV_NEXT_BINARY_NAME} 9.9.9+linux-x64`,
+    );
+
+    await expect(resolver.resolveChecked()).rejects.toBeInstanceOf(
+      EtvNextVersionMismatchError,
+    );
+  });
+
+  test('refuses a bundled binary whose version cannot be read', async () => {
+    const resolver = await makeResolver('bundled', 'garbage');
+
+    await expect(resolver.resolveChecked()).rejects.toBeInstanceOf(
+      EtvNextVersionMismatchError,
+    );
+  });
+
+  test('runs a binary off the pin when the env var points at it', async () => {
+    const resolver = await makeResolver(
+      'env',
+      `${ETV_NEXT_BINARY_NAME} 9.9.9+local`,
+    );
+
+    await expect(resolver.resolveChecked()).resolves.toContain(
+      ETV_NEXT_BINARY_NAME,
+    );
   });
 });
