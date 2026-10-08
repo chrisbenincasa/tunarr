@@ -37,6 +37,12 @@ This is a monorepo with four main packages:
 - The `main` branch creates "stable" releases. It receives fixes, chores, build/CI changes, docs, refactors, and small to medium features, including those with database migrations.
 - The `dev` branch creates prereleases. It is reserved for large features that need many prerelease iterations before they reach stable, such as infinite schedules or remote streaming sources.
 
+### Plans
+
+- Write all plans, investigations, and audits to `plans/` at the repo root. Never use `.claude/plans/`.
+- Name files `<topic>.md`, adding a date suffix (`-YYYY-MM-DD`) for point-in-time reports.
+- `.claude/settings.json` sets `plansDirectory` to `plans`, so plan-mode plans land there too.
+
 ### PR Review Labels
 
 The maintainer cannot approve their own PRs on GitHub, so review agents record their verdict with labels.
