@@ -95,8 +95,8 @@ export class HttpStreamSource implements IStreamSource {
       .replaceAll(/(X-Emby-Token=)([A-z0-9_\\-]+)/g, '$1REDACTED')
       .replaceAll(/(api_key=)([A-z0-9_\\-]+)/g, '$1REDACTED')
       .replaceAll(/(X-Emby-Token:\s)([A-z0-9_\\-]+)/g, '$1REDACTED');
-    for (const header of ['X-Plex-Token', 'X-Emby-Token']) {
-      if (this.extraHeaders[header]) {
+    for (const header of Object.keys(this.extraHeaders)) {
+      if (/token|key|auth|secret|password/i.test(header)) {
         this.extraHeaders[header] = 'REDACTED';
       }
     }

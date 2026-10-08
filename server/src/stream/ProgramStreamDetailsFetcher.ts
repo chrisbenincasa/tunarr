@@ -15,6 +15,7 @@ import { match } from 'ts-pattern';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
 import { ArtworkService } from '../services/ArtworkService.ts';
+import type { ArtworkResult } from '../services/ArtworkService.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import type { Maybe, Nilable } from '../types/util.ts';
@@ -269,29 +270,14 @@ export class ProgramStreamDetailsFetcher {
   private async resolvePlaceholderImage(
     programId: string,
   ): Promise<StreamSource> {
+    let artwork: ArtworkResult = { kind: 'not-found' };
     try {
-      const artwork = await this.artworkService.resolveArtwork(
+      artwork = await this.artworkService.resolveArtwork(
         programId,
         'program',
         'poster',
         ['thumbnail'],
       );
-
-      const source = await match(artwork)
-        .with({ kind: 'file' }, async ({ path }) =>
-          (await fileExists(path)) ? new FileStreamSource(path) : undefined,
-        )
-        .with({ kind: 'url' }, async ({ url, headers }) =>
-          (await this.isReachable(url, headers))
-            ? new HttpStreamSource(url, headers)
-            : undefined,
-        )
-        .with({ kind: 'not-found' }, () => Promise.resolve(undefined))
-        .exhaustive();
-
-      if (source) {
-        return source;
-      }
     } catch (e) {
       this.logger.warn(
         e,
@@ -300,8 +286,21 @@ export class ProgramStreamDetailsFetcher {
       );
     }
 
-    return new HttpStreamSource(
-      makeLocalUrl('/images/generic-music-screen.png'),
+    const source = await match(artwork)
+      .with({ kind: 'file' }, async ({ path }) =>
+        (await fileExists(path)) ? new FileStreamSource(path) : undefined,
+      )
+      .with({ kind: 'url' }, async ({ url, headers }) =>
+        (await this.isReachable(url, headers))
+          ? new HttpStreamSource(url, headers)
+          : undefined,
+      )
+      .with({ kind: 'not-found' }, () => Promise.resolve(undefined))
+      .exhaustive();
+
+    return (
+      source ??
+      new HttpStreamSource(makeLocalUrl('/images/generic-music-screen.png'))
     );
   }
 
@@ -310,7 +309,7 @@ export class ProgramStreamDetailsFetcher {
     headers?: Record<string, string>,
   ): Promise<boolean> {
     try {
-      await axios.head(url, { headers, timeout: 5_000 });
+      await axios.head(url, { headers, timeout: 2_000 });
       return true;
     } catch (e) {
       this.logger.debug(e, 'Artwork at %s is not reachable', url);
