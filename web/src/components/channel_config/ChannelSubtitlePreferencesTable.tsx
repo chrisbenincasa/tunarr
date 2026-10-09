@@ -55,7 +55,9 @@ export const ChannelSubtitlePreferencesTable = () => {
             <Checkbox
               sx={{ p: 0 }}
               checked={value}
-              onChange={(_, checked) => setValue(name, checked)}
+              onChange={(_, checked) =>
+                setValue(name, checked, { shouldDirty: true })
+              }
             />
           );
         },
@@ -71,7 +73,9 @@ export const ChannelSubtitlePreferencesTable = () => {
           return (
             <Checkbox
               sx={{ p: 0 }}
-              onChange={(_, checked) => setValue(name, checked)}
+              onChange={(_, checked) =>
+                setValue(name, checked, { shouldDirty: true })
+              }
               checked={value}
             />
           );
@@ -125,6 +129,7 @@ export const ChannelSubtitlePreferencesTable = () => {
             setValue(
               `subtitlePreferences.${row.index}.filter`,
               ev.target.value as SubtitleFilter,
+              { shouldDirty: true },
             ),
         }),
       },
