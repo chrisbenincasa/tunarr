@@ -23,6 +23,7 @@ import { EmbyCollectionScanner } from './scanner/EmbyCollectionScanner.ts';
 import { EmbyMediaSourceMovieScanner } from './scanner/EmbyMediaSourceMovieScanner.ts';
 import { EmbyMediaSourceMusicScanner } from './scanner/EmbyMediaSourceMusicScanner.ts';
 import { EmbyMediaSourceMusicVideoScanner } from './scanner/EmbyMediaSourceMusicVideoScanner.ts';
+import { InvidiousMediaSourceOtherVideoScanner } from './scanner/InvidiousMediaSourceOtherVideoScanner.ts';
 import { EmbyMediaSourceOtherVideoScanner } from './scanner/EmbyMediaSourceOtherVideoScanner.ts';
 import { EmbyMediaSourceTvShowScanner } from './scanner/EmbyMediaSourceTvShowScanner.ts';
 import type { GenericExternalCollectionScanner } from './scanner/ExternalCollectionScanner.ts';
@@ -123,6 +124,11 @@ export const ServicesModule = new ContainerModule(({ bind }) => {
   )
     .to(EmbyMediaSourceOtherVideoScanner)
     .whenNamed(MediaSourceType.Emby);
+  bind<InvidiousMediaSourceOtherVideoScanner>(
+    KEYS.MediaSourceOtherVideoLibraryScanner,
+  )
+    .to(InvidiousMediaSourceOtherVideoScanner)
+    .whenNamed(MediaSourceType.Invidious);
 
   bind<JellyfinMediaSourceMusicVideoScanner>(
     KEYS.MediaSourceMusicVideoLibraryScanner,

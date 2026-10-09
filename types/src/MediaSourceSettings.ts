@@ -7,6 +7,7 @@ import type {
 } from './schemas/settingsSchemas.js';
 import {
   type EmbyServerSettingsSchema,
+  type InvidiousServerSettingsSchema,
   GlobalMediaSourceSettingsSchema,
   type JellyfinServerSettingsSchema,
   type MediaSourceSettingsSchema,
@@ -21,6 +22,10 @@ export type JellyfinServerSettings = z.infer<
 >;
 
 export type EmbyServerSettings = z.infer<typeof EmbyServerSettingsSchema>;
+
+export type InvidiousServerSettings = z.infer<
+  typeof InvidiousServerSettingsSchema
+>;
 
 export type LocalMediaSource = z.infer<typeof LocalMediaSourceSchema>;
 

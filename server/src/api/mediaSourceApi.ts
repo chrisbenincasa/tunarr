@@ -5,7 +5,7 @@ import { nullToUndefined, run } from '@/util/index.js';
 import { checkOutboundUrl } from '@/util/outboundRequests.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
-import type { LocalMediaSource } from '@tunarr/types';
+import type { InvidiousServerSettings, LocalMediaSource } from '@tunarr/types';
 import {
   tag,
   type MediaSourceLibrary,
@@ -39,10 +39,13 @@ import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsComma
 import { DeleteMediaSourceCommand } from '../commands/media_source/DeleteMediaSourceCommand.ts';
 import { container } from '../container.ts';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
+import type { MediaSourceId } from '../db/schema/base.ts';
 import { EntityMutex } from '../services/EntityMutex.ts';
+import type { ServerContext } from '../ServerContext.ts';
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 import { MediaSourceProgressService } from '../services/scanner/MediaSourceProgressService.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
+import { InvidiousApiClient } from '../external/invidious/InvidiousApiClient.ts';
 import { fileExists } from '../util/fsUtil.ts';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
@@ -577,6 +580,18 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
               )
             ).ping();
           })
+          .with({ type: 'invidious' }, async (server) => {
+            try {
+              await (
+                await req.serverCtx.mediaSourceApiFactory.getInvidiousApiClientForMediaSource(
+                  server,
+                )
+              ).ping();
+              return { healthy: true };
+            } catch {
+              return { healthy: false, status: 'unreachable' };
+            }
+          })
           .with({ type: 'local' }, async (source) => {
             // TODO: Check all paths.
             let ok = true;
@@ -612,6 +627,67 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.post(
+    '/media-sources/invidious/resolve-channels',
+    {
+      schema: {
+        tags: ['Media Source'],
+        description:
+          'Resolves YouTube channel ids, @handles or channel URLs through an Invidious instance, returning each channel id and title.',
+        body: z.object({
+          uri: z.string().trim(),
+          channels: z.array(z.string().trim().min(1)),
+        }),
+        response: {
+          200: z.object({
+            healthy: z.boolean(),
+            channels: z.array(
+              z.object({
+                input: z.string(),
+                channelId: z.string().nullable(),
+                name: z.string().nullable(),
+              }),
+            ),
+          }),
+        },
+      },
+    },
+    async (req, res) => {
+      const rejection = await checkOutboundUrl(req.body.uri);
+      if (rejection) {
+        return res.send({ healthy: false, channels: [] });
+      }
+
+      const client = invidiousClientForUri(req.body.uri);
+      try {
+        await client.ping();
+      } catch {
+        return res.send({ healthy: false, channels: [] });
+      }
+
+      const channels: {
+        input: string;
+        channelId: string | null;
+        name: string | null;
+      }[] = [];
+      for (const input of req.body.channels) {
+        const id = await client.resolveChannelId(input);
+        if (id.isFailure()) {
+          channels.push({ input, channelId: null, name: null });
+          continue;
+        }
+        const channel = await client.getChannel(id.get());
+        channels.push({
+          input,
+          channelId: id.get(),
+          name: channel.isSuccess() ? channel.get().author : null,
+        });
+      }
+
+      return res.send({ healthy: true, channels });
+    },
+  );
+
+  fastify.post(
     '/media-sources/foreignstatus',
     {
       schema: {
@@ -621,7 +697,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             name: z.string().optional(),
             accessToken: z.string(),
             uri: z.string().trim(),
-            type: z.enum(['plex', 'jellyfin', 'emby']),
+            type: z.enum(['plex', 'jellyfin', 'emby', 'invidious']),
             username: z.string().optional(),
           })
           .or(
@@ -713,6 +789,17 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             });
 
           healthyPromise = emby.ping();
+          break;
+        }
+        case 'invidious': {
+          const client = invidiousClientForUri(req.body.uri);
+          healthyPromise = client.ping().then(
+            (): MediaSourceStatus => ({ healthy: true }),
+            (): MediaSourceStatus => ({
+              healthy: false,
+              status: 'unreachable',
+            }),
+          );
           break;
         }
         case 'local': {
@@ -828,7 +915,23 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
+        if (req.body.type === 'invidious') {
+          const resolved = await resolveInvidiousChannels(
+            req.body.uri,
+            req.body.channelIds,
+          );
+          if (resolved.failed.length > 0) {
+            // Surfaces through the error event below, which the UI shows.
+            throw new Error(
+              `Could not resolve YouTube channel(s): ${resolved.failed.join(', ')}`,
+            );
+          }
+          req.body.channelIds = resolved.channelIds;
+        }
         await req.serverCtx.mediaSourceDB.updateMediaSource(req.body);
+        if (req.body.type === 'invidious') {
+          await scanUnscannedLibraries(req.serverCtx, tag(req.body.id));
+        }
         if (req.body.type === 'local') {
           await req.serverCtx.mediaSourceScanCoordinator.addLocal({
             mediaSourceId: tag(req.body.id),
@@ -883,9 +986,26 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
+        if (req.body.type === 'invidious') {
+          const resolved = await resolveInvidiousChannels(
+            req.body.uri,
+            req.body.channelIds,
+          );
+          if (resolved.failed.length > 0) {
+            return res
+              .status(400)
+              .send(
+                `Could not resolve YouTube channel(s): ${resolved.failed.join(', ')}`,
+              );
+          }
+          req.body.channelIds = resolved.channelIds;
+        }
         const newServerId = await req.serverCtx.mediaSourceDB.addMediaSource(
           req.body,
         );
+        if (req.body.type === 'invidious') {
+          await scanUnscannedLibraries(req.serverCtx, newServerId);
+        }
         if (req.body.type === 'local') {
           await req.serverCtx.mediaSourceScanCoordinator.addLocal({
             mediaSourceId: newServerId,
@@ -972,6 +1092,37 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             { type: 'plex' | 'jellyfin' | 'emby' }
           >,
       )
+      .with(
+        { type: 'invidious' },
+        (source) =>
+          ({
+            id: source.uuid,
+            uri: source.uri,
+            type: source.type,
+            name: source.name,
+            accessToken: undefined,
+            channelIds: source.libraries.map((library) => library.externalKey),
+            libraries: source.libraries.map((library) => ({
+              id: library.uuid,
+              type: source.type,
+              enabled: library.enabled,
+              lastScannedAt: nullToUndefined(library.lastScannedAt)?.valueOf(),
+              isLocked:
+                entityLocker.isLibraryLocked(library) ||
+                entityLocker.isMediaSourceLocked(source),
+              name: library.name,
+              externalKey: library.externalKey,
+              mediaType: library.mediaType,
+              unavailableSince: nullToUndefined(
+                library.unavailableSince,
+              )?.valueOf(),
+            })),
+            userId: null,
+            username: null,
+            pathReplacements: [],
+            sendPlayStatusUpdates: false,
+          }) satisfies InvidiousServerSettings,
+      )
       .with({ type: 'local', mediaType: P.nonNullable }, (source) => {
         // A local source's `paths` is `libraries.map(l => l.externalKey)`, and
         // the response schema requires it non-empty. Say so here, where the
@@ -1013,5 +1164,60 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         logger.error('Encountered invalid media source: %O', source);
         throw new Error('Invalid media source: ' + JSON.stringify(source));
       });
+  }
+
+  function invidiousClientForUri(uri: string) {
+    return new InvidiousApiClient({
+      mediaSource: {
+        uuid: tag(v4()),
+        name: tag('invidious'),
+        uri,
+        type: 'invidious',
+        accessToken: '',
+        userId: null,
+        username: null,
+        libraries: [],
+        paths: [],
+        mediaType: null,
+        replacePaths: [],
+        sendPlayStatusUpdates: false,
+        consecutiveAuthFailures: 0,
+      },
+    });
+  }
+
+  // Users paste whatever they have: UC… ids, @handles, or channel URLs.
+  // Libraries are keyed by the canonical UC… id, so everything is resolved
+  // before it reaches the database.
+  async function resolveInvidiousChannels(uri: string, inputs: string[]) {
+    const client = invidiousClientForUri(uri);
+    const channelIds: string[] = [];
+    const failed: string[] = [];
+    for (const input of inputs) {
+      const result = await client.resolveChannelId(input);
+      if (result.isSuccess()) {
+        channelIds.push(result.get());
+      } else {
+        failed.push(input);
+      }
+    }
+    return { channelIds, failed };
+  }
+
+  // New YouTube channels are scanned right away, so adding a channel is
+  // enough to make its videos available for scheduling.
+  async function scanUnscannedLibraries(
+    serverCtx: ServerContext,
+    mediaSourceId: MediaSourceId,
+  ) {
+    const source = await serverCtx.mediaSourceDB.getById(mediaSourceId);
+    for (const library of source?.libraries ?? []) {
+      if (library.enabled && isNil(library.lastScannedAt)) {
+        await serverCtx.mediaSourceScanCoordinator.add({
+          libraryId: library.uuid,
+          forceScan: false,
+        });
+      }
+    }
   }
 };

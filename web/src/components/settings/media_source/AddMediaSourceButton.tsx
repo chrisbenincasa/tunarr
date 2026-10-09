@@ -3,7 +3,7 @@ import JellyfinIcon from '@/assets/jellyfin.svg?react';
 import PlexIcon from '@/assets/plex.svg?react';
 import { usePlexLogin } from '@/hooks/plex/usePlexLogin.tsx';
 import { Trans } from '@lingui/react/macro';
-import { Add, Computer } from '@mui/icons-material';
+import { Add, Computer, YouTube } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -18,6 +18,7 @@ import type { MediaSourceType } from '@tunarr/types';
 import { isNull } from 'lodash-es';
 import { useState } from 'react';
 import { EmbyServerEditDialog } from './EmbyServerEditDialog.tsx';
+import { InvidiousServerEditDialog } from './InvidiousServerEditDialog.tsx';
 import { JellyfinServerEditDialog } from './JelllyfinServerEditDialog.tsx';
 import { LocalMediaEditDialog } from './LocalMediaEditDialog.tsx';
 import { PlexServerEditDialog } from './PlexServerEditDialog.tsx';
@@ -34,6 +35,7 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
   const [jellyfinEditDialogOpen, setJellyfinEditDialogOpen] = useState(false);
   const [embyEditDialogOpen, setEmbyEditDialogOpen] = useState(false);
   const [localEditDialogOpen, setLocalEditDialogOpen] = useState(false);
+  const [invidiousEditDialogOpen, setInvidiousEditDialogOpen] = useState(false);
   const discoverPlexServers = usePlexLogin();
 
   const open = !isNull(manualAddPopoverRef);
@@ -66,6 +68,9 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
         break;
       case 'local':
         setLocalEditDialogOpen(true);
+        break;
+      case 'invidious':
+        setInvidiousEditDialogOpen(true);
         break;
     }
     closeManualAddButtonMenu();
@@ -144,6 +149,14 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
             <Trans>Local</Trans>
           </ListItemText>
         </MenuItem>
+        <MenuItem onClick={() => handleOpenMediaSourceDialog('invidious')}>
+          <ListItemIcon>
+            <YouTube />
+          </ListItemIcon>
+          <ListItemText>
+            <Trans>Invidious (YouTube)</Trans>
+          </ListItemText>
+        </MenuItem>
       </Menu>
       <PlexServerEditDialog
         open={plexEditDialogOpen}
@@ -160,6 +173,10 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
       <LocalMediaEditDialog
         open={localEditDialogOpen}
         onClose={() => setLocalEditDialogOpen(false)}
+      />
+      <InvidiousServerEditDialog
+        open={invidiousEditDialogOpen}
+        onClose={() => setInvidiousEditDialogOpen(false)}
       />
     </Box>
   );

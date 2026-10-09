@@ -360,6 +360,7 @@ export class ArtworkService {
           headers['X-Emby-Token'] = mediaSource.accessToken;
           break;
         case 'local':
+        case 'invidious':
           break;
       }
 

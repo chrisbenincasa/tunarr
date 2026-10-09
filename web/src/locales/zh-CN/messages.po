@@ -290,6 +290,14 @@ msgstr "12 小时制"
 msgid "24-hour"
 msgstr "24 小时制"
 
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "A channel @handle, channel URL or UC… channel ID. Each channel becomes a library."
+msgstr ""
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "A name for this source, e.g. \"YouTube\""
+msgstr ""
+
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "A root path to scan for media. Local sources can search many different paths."
 msgstr "要扫描媒体文件的根路径。本地媒体源可以配置多个路径。"
@@ -322,6 +330,7 @@ msgstr "访问令牌"
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -349,6 +358,10 @@ msgstr "添加筛选表达式以微调搜索结果"
 #: src/components/channel_config/AddSelectedMediaButton.tsx
 #~ msgid "Add all selected programs to channel"
 #~ msgstr "Add all selected programs to channel"
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "Add at least one YouTube channel"
+msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
@@ -799,6 +812,7 @@ msgstr "正在计算时段…"
 #: src/components/programming_controls/RemoveShowsModal.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -896,6 +910,7 @@ msgid "Channel Transcode Config"
 msgstr "频道转码配置"
 
 #: src/App.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/hooks/useNavItems.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/channels/ChannelsPage.tsx
@@ -1101,9 +1116,17 @@ msgstr "复制到剪贴板"
 msgid "Could not cancel emptying the trash."
 msgstr ""
 
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "Could not find that YouTube channel"
+msgstr ""
+
 #: src/components/search/SearchFilterBuilder.tsx
 msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
 msgstr "无法解析此筛选表达式。请查看<0>文档</0>了解筛选表达式的用法。"
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "Could not reach the Invidious server"
+msgstr ""
 
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "Create"
@@ -1499,6 +1522,7 @@ msgstr "编辑转码配置：「{0}」"
 #. placeholder {0}: server.name
 #. placeholder {0}: source.name
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "Editing \"{0}\""
@@ -2229,6 +2253,14 @@ msgstr "间隔（分钟）"
 msgid "Inverse linear decay, heavier weighting."
 msgstr "反线性衰减，权重更大。"
 
+#: src/components/settings/media_source/AddMediaSourceButton.tsx
+msgid "Invidious (YouTube)"
+msgstr ""
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "Invidious URL"
+msgstr ""
+
 #: src/components/channel_config/MediaGridItem.tsx
 msgid "Item was not present during the last scan"
 msgstr "上次扫描时该条目不存在"
@@ -2651,6 +2683,7 @@ msgstr "必须填写有效的 URL，或留空。"
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -2707,6 +2740,10 @@ msgstr "新建 Emby 媒体源"
 #: src/pages/library/NewFillerPage.tsx
 msgid "New Filler List"
 msgstr "新建垫片列表"
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "New Invidious (YouTube) Source"
+msgstr ""
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "New Local Media Source"
@@ -3909,6 +3946,10 @@ msgstr "测试播放"
 msgid "Test Transcode"
 msgstr "测试转码"
 
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "The base URL of your Invidious instance, as reachable from the Tunarr server"
+msgstr ""
+
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
@@ -3958,6 +3999,7 @@ msgstr "生成时段时出错，详情请查看浏览器控制台日志"
 msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
 msgstr "提交媒体源设置更新请求时出错，请检查表单后重试"
 
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "There was an error when submitting the form. Please see console logs for details."
 msgstr "提交表单时出错，详情请查看控制台日志。"
@@ -4262,6 +4304,7 @@ msgstr "解除关联"
 #~ msgstr "Unlink from group"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -4507,3 +4550,7 @@ msgstr "一切就绪！"
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Your list will be replicated {0} times"
 msgstr "你的列表将被复制 {0} 份"
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "YouTube channel"
+msgstr ""

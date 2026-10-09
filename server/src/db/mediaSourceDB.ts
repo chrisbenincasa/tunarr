@@ -19,6 +19,7 @@ import {
   isEmpty,
   isNil,
   trimEnd,
+  uniq,
 } from 'lodash-es';
 import type { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
@@ -290,6 +291,14 @@ export class MediaSourceDB {
         .limit(1)
         .executeTakeFirst();
 
+      if (updateReq.type === 'invidious') {
+        this.syncInvidiousChannelLibraries(
+          mediaSource.uuid,
+          mediaSource.libraries,
+          updateReq.channelIds,
+        );
+      }
+
       await this.drizzleDB
         .delete(MediaSourceLibraryReplacePath)
         .where(eq(MediaSourceLibraryReplacePath.mediaSourceId, id));
@@ -306,6 +315,57 @@ export class MediaSourceDB {
 
       this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
     }
+  }
+
+  /**
+   * An Invidious source's libraries are exactly its configured YouTube
+   * channels: one "other videos" library per channel id.
+   */
+  private syncInvidiousChannelLibraries(
+    mediaSourceId: MediaSourceId,
+    existing: { externalKey: string }[],
+    channelIds: string[],
+  ) {
+    const wanted = uniq(channelIds);
+    const added = differenceWith(
+      wanted,
+      existing,
+      (channelId, { externalKey }) => channelId === externalKey,
+    );
+    const removed = differenceWith(
+      existing,
+      wanted,
+      ({ externalKey }, channelId) => externalKey === channelId,
+    ).map(({ externalKey }) => externalKey);
+
+    this.drizzleDB.transaction((tx) => {
+      if (removed.length > 0) {
+        tx.delete(MediaSourceLibrary)
+          .where(
+            and(
+              eq(MediaSourceLibrary.mediaSourceId, mediaSourceId),
+              inArray(MediaSourceLibrary.externalKey, removed),
+            ),
+          )
+          .run();
+      }
+
+      if (added.length > 0) {
+        tx.insert(MediaSourceLibrary)
+          .values(
+            added.map((channelId) => ({
+              externalKey: channelId,
+              mediaSourceId,
+              mediaType: 'other_videos' as const,
+              name: channelId,
+              uuid: v4(),
+              enabled: true,
+              lastScannedAt: null,
+            })),
+          )
+          .run();
+      }
+    });
   }
 
   async setClientIdentifier(
@@ -383,7 +443,8 @@ export class MediaSourceDB {
               : isNonEmptyString(server.username)
                 ? server.username
                 : null,
-          accessToken: server.type === 'local' ? '' : server.accessToken,
+          accessToken:
+            server.type === 'local' ? '' : (server.accessToken ?? ''),
           mediaType: server.type === 'local' ? server.mediaType : null,
           clientIdentifier:
             server.type === 'plex' ? server.clientIdentifier : null,
@@ -401,6 +462,27 @@ export class MediaSourceDB {
                   mediaSourceId: newServer.uuid,
                   mediaType: server.mediaType,
                   name: path,
+                  uuid: v4(),
+                  enabled: true,
+                  lastScannedAt: null,
+                }) satisfies typeof MediaSourceLibrary.$inferInsert,
+            ),
+          )
+          .run();
+      }
+
+      if (server.type === 'invidious') {
+        tx.insert(MediaSourceLibrary)
+          .values(
+            uniq(server.channelIds).map(
+              (channelId) =>
+                ({
+                  externalKey: channelId,
+                  mediaSourceId: newServer.uuid,
+                  mediaType: 'other_videos',
+                  // Replaced with the channel's title on the next library
+                  // refresh, which runs right after this insert.
+                  name: channelId,
                   uuid: v4(),
                   enabled: true,
                   lastScannedAt: null,

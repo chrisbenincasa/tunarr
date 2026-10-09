@@ -36,6 +36,7 @@ import {
 import {
   BackupSettingsSchema,
   EmbyServerSettingsSchema,
+  InvidiousServerSettingsSchema,
   JellyfinServerSettingsSchema,
   LocalMediaSourceSchema,
   PlexServerSettingsSchema,
@@ -206,6 +207,7 @@ export const UpdateMediaSourceRequestSchema = z.discriminatedUnion('type', [
     libraries: true,
   }),
   EmbyServerSettingsSchema.omit({ libraries: true }),
+  InvidiousServerSettingsSchema.omit({ libraries: true }),
   LocalMediaSourceSchema.omit({ libraries: true }),
 ]);
 
@@ -237,6 +239,8 @@ export const InsertMediaSourceRequestSchema = z.discriminatedUnion('type', [
   EmbyServerSettingsSchema.omit({ id: true, libraries: true }).required({
     accessToken: true,
   }),
+  // Invidious needs no credentials; accessToken stays optional.
+  InvidiousServerSettingsSchema.omit({ id: true, libraries: true }),
   LocalMediaSourceSchema.omit({ id: true, libraries: true }),
 ]);
 

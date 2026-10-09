@@ -318,6 +318,13 @@ export class SubtitleExtractorTask extends Task2<
             'Local media sources have no subtitle endpoint',
           ),
         );
+      case 'invidious':
+        return Result.failure(
+          QueryError.create(
+            'generic_request_error',
+            'Invidious media sources do not provide subtitles',
+          ),
+        );
     }
   }
 

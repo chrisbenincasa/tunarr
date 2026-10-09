@@ -11,6 +11,7 @@ export const ExternalIdType = [
   'tvdb',
   'jellyfin',
   'emby',
+  'invidious',
 ] as const;
 
 export type ExternalIdType = TupleToUnion<typeof ExternalIdType>;
@@ -28,7 +29,12 @@ export const SingleExternalIdSourceSchema = constructZodLiteralUnionType(
   SingleExternalIdType.map((typ) => z.literal(typ)),
 );
 
-export const MultiExternalIdType = ['plex', 'jellyfin', 'emby'] as const;
+export const MultiExternalIdType = [
+  'plex',
+  'jellyfin',
+  'emby',
+  'invidious',
+] as const;
 export const MultiExternalSourceSchema = z.enum(MultiExternalIdType);
 export type MultiExternalIdType = z.infer<typeof MultiExternalSourceSchema>;
 

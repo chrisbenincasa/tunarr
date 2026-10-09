@@ -2,12 +2,12 @@
 
 export type TerminalProgramInput = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'movie';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -24,7 +24,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -35,7 +35,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -44,7 +44,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -53,7 +53,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -61,7 +61,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -132,7 +132,7 @@ export type TerminalProgramInput = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         chapters?: Array<{
@@ -148,12 +148,12 @@ export type TerminalProgramInput = {
     duration: number;
 } | EpisodeInput | MusicTrackInput | {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'other_video';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -170,7 +170,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -181,7 +181,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -190,7 +190,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -199,7 +199,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -207,7 +207,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -274,7 +274,7 @@ export type TerminalProgramInput = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         chapters?: Array<{
@@ -290,12 +290,12 @@ export type TerminalProgramInput = {
     duration: number;
 } | {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'music_video';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -312,7 +312,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -323,7 +323,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -332,7 +332,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -341,7 +341,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -349,7 +349,7 @@ export type TerminalProgramInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -418,7 +418,7 @@ export type TerminalProgramInput = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         chapters?: Array<{
@@ -436,12 +436,12 @@ export type TerminalProgramInput = {
 
 export type ShowInput = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'show';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -454,7 +454,7 @@ export type ShowInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -469,7 +469,7 @@ export type ShowInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -480,7 +480,7 @@ export type ShowInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -490,12 +490,12 @@ export type ShowInput = {
     year: number | null;
     seasons?: Array<{
         uuid: string;
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         type: 'season';
         identifiers: Array<{
             id: string;
             sourceId?: string;
-            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
         }>;
         title: string;
         sortTitle: string;
@@ -508,7 +508,7 @@ export type ShowInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -523,7 +523,7 @@ export type ShowInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -550,12 +550,12 @@ export type ShowInput = {
 
 export type SeasonInput = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'season';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -568,7 +568,7 @@ export type SeasonInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -583,7 +583,7 @@ export type SeasonInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -601,12 +601,12 @@ export type SeasonInput = {
     show?: ShowInput;
     episodes?: Array<{
         uuid: string;
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         type: 'episode';
         identifiers: Array<{
             id: string;
             sourceId?: string;
-            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
         }>;
         title: string;
         sortTitle: string;
@@ -620,7 +620,7 @@ export type SeasonInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             order?: number | null;
@@ -631,7 +631,7 @@ export type SeasonInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             thumb?: string | null;
@@ -640,7 +640,7 @@ export type SeasonInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             thumb?: string | null;
@@ -649,7 +649,7 @@ export type SeasonInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -657,7 +657,7 @@ export type SeasonInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -728,7 +728,7 @@ export type SeasonInput = {
             } | {
                 path: string;
                 type: 'remote';
-                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 externalKey: string;
             }>;
             chapters?: Array<{
@@ -747,12 +747,12 @@ export type SeasonInput = {
 
 export type EpisodeInput = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'episode';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -766,7 +766,7 @@ export type EpisodeInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -777,7 +777,7 @@ export type EpisodeInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -786,7 +786,7 @@ export type EpisodeInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -795,7 +795,7 @@ export type EpisodeInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -803,7 +803,7 @@ export type EpisodeInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -876,7 +876,7 @@ export type EpisodeInput = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         chapters?: Array<{
@@ -894,12 +894,12 @@ export type EpisodeInput = {
 
 export type MusicArtistInput = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'artist';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -912,7 +912,7 @@ export type MusicArtistInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -925,12 +925,12 @@ export type MusicArtistInput = {
     }>;
     albums?: Array<{
         uuid: string;
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         type: 'album';
         identifiers: Array<{
             id: string;
             sourceId?: string;
-            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
         }>;
         title: string;
         sortTitle: string;
@@ -943,7 +943,7 @@ export type MusicArtistInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -962,7 +962,7 @@ export type MusicArtistInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -985,12 +985,12 @@ export type MusicArtistInput = {
 
 export type MusicAlbumInput = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'album';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -1003,7 +1003,7 @@ export type MusicAlbumInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1022,19 +1022,19 @@ export type MusicAlbumInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
     artist?: MusicArtistInput;
     tracks?: Array<{
         uuid: string;
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         type: 'track';
         identifiers: Array<{
             id: string;
             sourceId?: string;
-            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
         }>;
         title: string;
         sortTitle: string;
@@ -1051,7 +1051,7 @@ export type MusicAlbumInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             order?: number | null;
@@ -1062,7 +1062,7 @@ export type MusicAlbumInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             thumb?: string | null;
@@ -1071,7 +1071,7 @@ export type MusicAlbumInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             thumb?: string | null;
@@ -1080,7 +1080,7 @@ export type MusicAlbumInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -1088,7 +1088,7 @@ export type MusicAlbumInput = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -1158,7 +1158,7 @@ export type MusicAlbumInput = {
             } | {
                 path: string;
                 type: 'remote';
-                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 externalKey: string;
             }>;
             chapters?: Array<{
@@ -1184,12 +1184,12 @@ export type MusicAlbumInput = {
 
 export type MusicTrackInput = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'track';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -1206,7 +1206,7 @@ export type MusicTrackInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -1217,7 +1217,7 @@ export type MusicTrackInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -1226,7 +1226,7 @@ export type MusicTrackInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -1235,7 +1235,7 @@ export type MusicTrackInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1243,7 +1243,7 @@ export type MusicTrackInput = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1315,7 +1315,7 @@ export type MusicTrackInput = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         chapters?: Array<{
@@ -1414,12 +1414,12 @@ export type SearchFilterInput = {
 
 export type TerminalProgram = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'movie';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -1436,7 +1436,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -1447,7 +1447,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -1456,7 +1456,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -1465,7 +1465,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1473,7 +1473,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1544,7 +1544,7 @@ export type TerminalProgram = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         chapters?: Array<{
@@ -1560,12 +1560,12 @@ export type TerminalProgram = {
     duration: number;
 } | Episode | MusicTrack | {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'other_video';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -1582,7 +1582,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -1593,7 +1593,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -1602,7 +1602,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -1611,7 +1611,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1619,7 +1619,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1686,7 +1686,7 @@ export type TerminalProgram = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         chapters?: Array<{
@@ -1702,12 +1702,12 @@ export type TerminalProgram = {
     duration: number;
 } | {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'music_video';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -1724,7 +1724,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -1735,7 +1735,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -1744,7 +1744,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -1753,7 +1753,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1761,7 +1761,7 @@ export type TerminalProgram = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1830,7 +1830,7 @@ export type TerminalProgram = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         chapters?: Array<{
@@ -1848,12 +1848,12 @@ export type TerminalProgram = {
 
 export type Show = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'show';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -1866,7 +1866,7 @@ export type Show = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1881,7 +1881,7 @@ export type Show = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -1892,7 +1892,7 @@ export type Show = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1902,12 +1902,12 @@ export type Show = {
     year: number | null;
     seasons?: Array<{
         uuid: string;
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         type: 'season';
         identifiers: Array<{
             id: string;
             sourceId?: string;
-            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
         }>;
         title: string;
         sortTitle: string;
@@ -1920,7 +1920,7 @@ export type Show = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -1935,7 +1935,7 @@ export type Show = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -1962,12 +1962,12 @@ export type Show = {
 
 export type Season = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'season';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -1980,7 +1980,7 @@ export type Season = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -1995,7 +1995,7 @@ export type Season = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -2013,12 +2013,12 @@ export type Season = {
     show?: Show;
     episodes?: Array<{
         uuid: string;
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         type: 'episode';
         identifiers: Array<{
             id: string;
             sourceId?: string;
-            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
         }>;
         title: string;
         sortTitle: string;
@@ -2032,7 +2032,7 @@ export type Season = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             order?: number | null;
@@ -2043,7 +2043,7 @@ export type Season = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             thumb?: string | null;
@@ -2052,7 +2052,7 @@ export type Season = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             thumb?: string | null;
@@ -2061,7 +2061,7 @@ export type Season = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -2069,7 +2069,7 @@ export type Season = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -2140,7 +2140,7 @@ export type Season = {
             } | {
                 path: string;
                 type: 'remote';
-                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 externalKey: string;
             }>;
             chapters?: Array<{
@@ -2159,12 +2159,12 @@ export type Season = {
 
 export type Episode = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'episode';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -2178,7 +2178,7 @@ export type Episode = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -2189,7 +2189,7 @@ export type Episode = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -2198,7 +2198,7 @@ export type Episode = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -2207,7 +2207,7 @@ export type Episode = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -2215,7 +2215,7 @@ export type Episode = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -2288,7 +2288,7 @@ export type Episode = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         chapters?: Array<{
@@ -2306,12 +2306,12 @@ export type Episode = {
 
 export type MusicArtist = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'artist';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -2324,7 +2324,7 @@ export type MusicArtist = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -2337,12 +2337,12 @@ export type MusicArtist = {
     }>;
     albums?: Array<{
         uuid: string;
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         type: 'album';
         identifiers: Array<{
             id: string;
             sourceId?: string;
-            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
         }>;
         title: string;
         sortTitle: string;
@@ -2355,7 +2355,7 @@ export type MusicArtist = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -2374,7 +2374,7 @@ export type MusicArtist = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -2397,12 +2397,12 @@ export type MusicArtist = {
 
 export type MusicAlbum = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'album';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -2415,7 +2415,7 @@ export type MusicAlbum = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -2434,19 +2434,19 @@ export type MusicAlbum = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
     artist?: MusicArtist;
     tracks?: Array<{
         uuid: string;
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         type: 'track';
         identifiers: Array<{
             id: string;
             sourceId?: string;
-            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
         }>;
         title: string;
         sortTitle: string;
@@ -2463,7 +2463,7 @@ export type MusicAlbum = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             order?: number | null;
@@ -2474,7 +2474,7 @@ export type MusicAlbum = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             thumb?: string | null;
@@ -2483,7 +2483,7 @@ export type MusicAlbum = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
             thumb?: string | null;
@@ -2492,7 +2492,7 @@ export type MusicAlbum = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -2500,7 +2500,7 @@ export type MusicAlbum = {
             uuid?: string;
             name: string;
             externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 id: string;
             } | null;
         }>;
@@ -2570,7 +2570,7 @@ export type MusicAlbum = {
             } | {
                 path: string;
                 type: 'remote';
-                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 externalKey: string;
             }>;
             chapters?: Array<{
@@ -2596,12 +2596,12 @@ export type MusicAlbum = {
 
 export type MusicTrack = {
     uuid: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
     type: 'track';
     identifiers: Array<{
         id: string;
         sourceId?: string;
-        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
     }>;
     title: string;
     sortTitle: string;
@@ -2618,7 +2618,7 @@ export type MusicTrack = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -2629,7 +2629,7 @@ export type MusicTrack = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -2638,7 +2638,7 @@ export type MusicTrack = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -2647,7 +2647,7 @@ export type MusicTrack = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -2655,7 +2655,7 @@ export type MusicTrack = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
     }>;
@@ -2727,7 +2727,7 @@ export type MusicTrack = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         chapters?: Array<{
@@ -2935,7 +2935,7 @@ export type GetChannelsResponses = {
             serverKey?: string;
             showIcon?: string;
             showTitle?: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             summary?: string;
             title?: string;
             type: 'movie' | 'episode' | 'track' | 'redirect' | 'custom' | 'flex';
@@ -3141,7 +3141,7 @@ export type CreateChannelV2Responses = {
             serverKey?: string;
             showIcon?: string;
             showTitle?: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             summary?: string;
             title?: string;
             type: 'movie' | 'episode' | 'track' | 'redirect' | 'custom' | 'flex';
@@ -3301,7 +3301,7 @@ export type GetChannelsByNumberV2Responses = {
             serverKey?: string;
             showIcon?: string;
             showTitle?: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             summary?: string;
             title?: string;
             type: 'movie' | 'episode' | 'track' | 'redirect' | 'custom' | 'flex';
@@ -3507,7 +3507,7 @@ export type PutApiChannelsByIdResponses = {
             serverKey?: string;
             showIcon?: string;
             showTitle?: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             summary?: string;
             title?: string;
             type: 'movie' | 'episode' | 'track' | 'redirect' | 'custom' | 'flex';
@@ -6922,7 +6922,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         serverKey?: string;
                         showIcon?: string;
                         showTitle?: string;
-                        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                         summary?: string;
                         title?: string;
                         type: 'movie' | 'episode' | 'track' | 'redirect' | 'custom' | 'flex';
@@ -7333,7 +7333,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         serverKey?: string;
                         showIcon?: string;
                         showTitle?: string;
-                        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                         summary?: string;
                         title?: string;
                         type: 'movie' | 'episode' | 'track' | 'redirect' | 'custom' | 'flex';
@@ -8336,7 +8336,7 @@ export type PostApiProgramsSearchResponses = {
      */
     200: {
         results: Array<(TerminalProgram | (Show | Season | MusicArtist | MusicAlbum)) | ({
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -8346,7 +8346,7 @@ export type PostApiProgramsSearchResponses = {
             libraryId: string;
             type: 'folder';
         } | {
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -8356,7 +8356,7 @@ export type PostApiProgramsSearchResponses = {
             libraryId: string;
             type: 'collection';
         } | {
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -8819,7 +8819,7 @@ export type GetApiMediaSourcesResponses = {
             mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
             lastScannedAt?: number;
             externalKey: string;
-            type: 'plex' | 'jellyfin' | 'emby' | 'local';
+            type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             enabled: boolean;
             isLocked: boolean;
             unavailableSince?: number;
@@ -8846,7 +8846,7 @@ export type GetApiMediaSourcesResponses = {
             mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
             lastScannedAt?: number;
             externalKey: string;
-            type: 'plex' | 'jellyfin' | 'emby' | 'local';
+            type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             enabled: boolean;
             isLocked: boolean;
             unavailableSince?: number;
@@ -8870,7 +8870,7 @@ export type GetApiMediaSourcesResponses = {
             mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
             lastScannedAt?: number;
             externalKey: string;
-            type: 'plex' | 'jellyfin' | 'emby' | 'local';
+            type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             enabled: boolean;
             isLocked: boolean;
             unavailableSince?: number;
@@ -8894,7 +8894,32 @@ export type GetApiMediaSourcesResponses = {
             mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
             lastScannedAt?: number;
             externalKey: string;
-            type: 'plex' | 'jellyfin' | 'emby' | 'local';
+            type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
+            enabled: boolean;
+            isLocked: boolean;
+            unavailableSince?: number;
+        }>;
+        pathReplacements: Array<{
+            serverPath: string;
+            localPath: string;
+        }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
+        type: 'invidious';
+        channelIds: Array<string>;
+    } | {
+        id: string;
+        name: string;
+        libraries: Array<{
+            id: string;
+            name: string;
+            mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
+            lastScannedAt?: number;
+            externalKey: string;
+            type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             enabled: boolean;
             isLocked: boolean;
             unavailableSince?: number;
@@ -8951,6 +8976,19 @@ export type PostApiMediaSourcesData = {
         sendPlayStatusUpdates?: boolean;
         username: string | null;
         type: 'emby';
+    } | {
+        name: string;
+        pathReplacements: Array<{
+            serverPath: string;
+            localPath: string;
+        }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
+        type: 'invidious';
+        channelIds: Array<string>;
     } | {
         name: string;
         pathReplacements: Array<{
@@ -9025,7 +9063,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
             lastScannedAt?: number;
             externalKey: string;
-            type: 'plex' | 'jellyfin' | 'emby' | 'local';
+            type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             enabled: boolean;
             isLocked: boolean;
             unavailableSince?: number;
@@ -9052,7 +9090,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
             lastScannedAt?: number;
             externalKey: string;
-            type: 'plex' | 'jellyfin' | 'emby' | 'local';
+            type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             enabled: boolean;
             isLocked: boolean;
             unavailableSince?: number;
@@ -9076,7 +9114,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
             lastScannedAt?: number;
             externalKey: string;
-            type: 'plex' | 'jellyfin' | 'emby' | 'local';
+            type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             enabled: boolean;
             isLocked: boolean;
             unavailableSince?: number;
@@ -9100,7 +9138,32 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
             lastScannedAt?: number;
             externalKey: string;
-            type: 'plex' | 'jellyfin' | 'emby' | 'local';
+            type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
+            enabled: boolean;
+            isLocked: boolean;
+            unavailableSince?: number;
+        }>;
+        pathReplacements: Array<{
+            serverPath: string;
+            localPath: string;
+        }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates: boolean;
+        username: string | null;
+        type: 'invidious';
+        channelIds: Array<string>;
+    } | {
+        id: string;
+        name: string;
+        libraries: Array<{
+            id: string;
+            name: string;
+            mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
+            lastScannedAt?: number;
+            externalKey: string;
+            type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             enabled: boolean;
             isLocked: boolean;
             unavailableSince?: number;
@@ -9153,7 +9216,7 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
         mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
         lastScannedAt?: number;
         externalKey: string;
-        type: 'plex' | 'jellyfin' | 'emby' | 'local';
+        type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         enabled: boolean;
         isLocked: boolean;
         unavailableSince?: number;
@@ -9199,6 +9262,19 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
             sendPlayStatusUpdates: boolean;
             username: string | null;
             type: 'emby';
+        } | {
+            id: string;
+            name: string;
+            pathReplacements: Array<{
+                serverPath: string;
+                localPath: string;
+            }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
+            type: 'invidious';
         } | {
             id: string;
             name: string;
@@ -9253,7 +9329,7 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
         mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
         lastScannedAt?: number;
         externalKey: string;
-        type: 'plex' | 'jellyfin' | 'emby' | 'local';
+        type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         enabled: boolean;
         isLocked: boolean;
         unavailableSince?: number;
@@ -9306,6 +9382,19 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
                 serverPath: string;
                 localPath: string;
             }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
+            type: 'invidious';
+        } | {
+            id: string;
+            name: string;
+            pathReplacements: Array<{
+                serverPath: string;
+                localPath: string;
+            }>;
             type: 'local';
             mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
         };
@@ -9340,7 +9429,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
         mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
         lastScannedAt?: number;
         externalKey: string;
-        type: 'plex' | 'jellyfin' | 'emby' | 'local';
+        type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         enabled: boolean;
         isLocked: boolean;
         unavailableSince?: number;
@@ -9353,7 +9442,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
                 lastScannedAt?: number;
                 externalKey: string;
-                type: 'plex' | 'jellyfin' | 'emby' | 'local';
+                type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 enabled: boolean;
                 isLocked: boolean;
                 unavailableSince?: number;
@@ -9380,7 +9469,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
                 lastScannedAt?: number;
                 externalKey: string;
-                type: 'plex' | 'jellyfin' | 'emby' | 'local';
+                type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 enabled: boolean;
                 isLocked: boolean;
                 unavailableSince?: number;
@@ -9404,7 +9493,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
                 lastScannedAt?: number;
                 externalKey: string;
-                type: 'plex' | 'jellyfin' | 'emby' | 'local';
+                type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 enabled: boolean;
                 isLocked: boolean;
                 unavailableSince?: number;
@@ -9428,7 +9517,32 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
                 lastScannedAt?: number;
                 externalKey: string;
-                type: 'plex' | 'jellyfin' | 'emby' | 'local';
+                type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
+                enabled: boolean;
+                isLocked: boolean;
+                unavailableSince?: number;
+            }>;
+            pathReplacements: Array<{
+                serverPath: string;
+                localPath: string;
+            }>;
+            uri: string;
+            accessToken?: string;
+            userId: string | null;
+            sendPlayStatusUpdates: boolean;
+            username: string | null;
+            type: 'invidious';
+            channelIds: Array<string>;
+        } | {
+            id: string;
+            name: string;
+            libraries: Array<{
+                id: string;
+                name: string;
+                mediaType: 'movies' | 'shows' | 'music_videos' | 'other_videos' | 'tracks';
+                lastScannedAt?: number;
+                externalKey: string;
+                type: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 enabled: boolean;
                 isLocked: boolean;
                 unavailableSince?: number;
@@ -9630,12 +9744,38 @@ export type GetApiMediaSourcesByIdStatusResponses = {
 
 export type GetApiMediaSourcesByIdStatusResponse = GetApiMediaSourcesByIdStatusResponses[keyof GetApiMediaSourcesByIdStatusResponses];
 
+export type PostApiMediaSourcesInvidiousResolveChannelsData = {
+    body: {
+        uri: string;
+        channels: Array<string>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/media-sources/invidious/resolve-channels';
+};
+
+export type PostApiMediaSourcesInvidiousResolveChannelsResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        healthy: boolean;
+        channels: Array<{
+            input: string;
+            channelId: string | null;
+            name: string | null;
+        }>;
+    };
+};
+
+export type PostApiMediaSourcesInvidiousResolveChannelsResponse = PostApiMediaSourcesInvidiousResolveChannelsResponses[keyof PostApiMediaSourcesInvidiousResolveChannelsResponses];
+
 export type PostApiMediaSourcesForeignstatusData = {
     body: {
         name?: string;
         accessToken: string;
         uri: string;
-        type: 'plex' | 'jellyfin' | 'emby';
+        type: 'plex' | 'jellyfin' | 'emby' | 'invidious';
         username?: string;
     } | {
         type: 'local';
@@ -9737,6 +9877,20 @@ export type PutApiMediaSourcesByIdData = {
         sendPlayStatusUpdates?: boolean;
         username: string | null;
         type: 'emby';
+    } | {
+        id: string;
+        name: string;
+        pathReplacements: Array<{
+            serverPath: string;
+            localPath: string;
+        }>;
+        uri: string;
+        accessToken?: string;
+        userId: string | null;
+        sendPlayStatusUpdates?: boolean;
+        username: string | null;
+        type: 'invidious';
+        channelIds: Array<string>;
     } | {
         id: string;
         name: string;
@@ -11385,12 +11539,12 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
         total: number;
         result: Array<{
             uuid: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             type: 'movie';
             identifiers: Array<{
                 id: string;
                 sourceId?: string;
-                type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+                type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
             }>;
             title: string;
             sortTitle: string;
@@ -11407,7 +11561,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
                 order?: number | null;
@@ -11418,7 +11572,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
                 thumb?: string | null;
@@ -11427,7 +11581,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
                 thumb?: string | null;
@@ -11436,7 +11590,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
             }>;
@@ -11444,7 +11598,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
             }>;
@@ -11515,7 +11669,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 } | {
                     path: string;
                     type: 'remote';
-                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     externalKey: string;
                 }>;
                 chapters?: Array<{
@@ -11531,12 +11685,12 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             duration: number;
         } | Episode | Season | Show | MusicTrack | MusicAlbum | MusicArtist | {
             uuid: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             type: 'music_video';
             identifiers: Array<{
                 id: string;
                 sourceId?: string;
-                type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+                type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
             }>;
             title: string;
             sortTitle: string;
@@ -11553,7 +11707,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
                 order?: number | null;
@@ -11564,7 +11718,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
                 thumb?: string | null;
@@ -11573,7 +11727,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
                 thumb?: string | null;
@@ -11582,7 +11736,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
             }>;
@@ -11590,7 +11744,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
             }>;
@@ -11659,7 +11813,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 } | {
                     path: string;
                     type: 'remote';
-                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     externalKey: string;
                 }>;
                 chapters?: Array<{
@@ -11675,12 +11829,12 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             duration: number;
         } | {
             uuid: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             type: 'other_video';
             identifiers: Array<{
                 id: string;
                 sourceId?: string;
-                type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+                type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby' | 'invidious';
             }>;
             title: string;
             sortTitle: string;
@@ -11697,7 +11851,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
                 order?: number | null;
@@ -11708,7 +11862,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
                 thumb?: string | null;
@@ -11717,7 +11871,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
                 thumb?: string | null;
@@ -11726,7 +11880,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
             }>;
@@ -11734,7 +11888,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 uuid?: string;
                 name: string;
                 externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     id: string;
                 } | null;
             }>;
@@ -11801,7 +11955,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 } | {
                     path: string;
                     type: 'remote';
-                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                     externalKey: string;
                 }>;
                 chapters?: Array<{
@@ -11837,7 +11991,7 @@ export type GetApiPlexByMediaSourceIdLibrariesResponses = {
      * Default Response
      */
     200: Array<{
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         uuid: string;
         title: string;
         childCount?: number;
@@ -11850,7 +12004,7 @@ export type GetApiPlexByMediaSourceIdLibrariesResponses = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         libraryId?: string;
@@ -11879,7 +12033,7 @@ export type GetApiPlexByMediaSourceIdLibrariesByLibraryIdCollectionsResponses = 
     200: {
         total: number;
         result: Array<{
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -11916,7 +12070,7 @@ export type GetApiPlexByMediaSourceIdLibrariesByLibraryIdPlaylistsResponses = {
     200: {
         total: number;
         result: Array<{
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -11952,7 +12106,7 @@ export type GetApiPlexByMediaSourceIdPlaylistsResponses = {
     200: {
         total: number;
         result: Array<{
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -12074,7 +12228,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
      * Default Response
      */
     200: Array<(TerminalProgram | (Show | Season | MusicArtist | MusicAlbum)) | ({
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         uuid: string;
         title: string;
         childCount?: number;
@@ -12084,7 +12238,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         libraryId: string;
         type: 'folder';
     } | {
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         uuid: string;
         title: string;
         childCount?: number;
@@ -12094,7 +12248,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         libraryId: string;
         type: 'collection';
     } | {
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         uuid: string;
         title: string;
         childCount?: number;
@@ -12162,7 +12316,7 @@ export type GetJellyfinLibrariesResponses = {
      * Default Response
      */
     200: Array<{
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         uuid: string;
         title: string;
         childCount?: number;
@@ -12175,7 +12329,7 @@ export type GetJellyfinLibrariesResponses = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         libraryId?: string;
@@ -12648,7 +12802,7 @@ export type GetJellyfinLibraryItemsResponses = {
     200: {
         total: number;
         result: Array<(TerminalProgram | (Show | Season | MusicArtist | MusicAlbum)) | ({
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -12658,7 +12812,7 @@ export type GetJellyfinLibraryItemsResponses = {
             libraryId: string;
             type: 'folder';
         } | {
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -12668,7 +12822,7 @@ export type GetJellyfinLibraryItemsResponses = {
             libraryId: string;
             type: 'collection';
         } | {
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -12842,7 +12996,7 @@ export type GetApiEmbyByMediaSourceIdUserLibrariesResponses = {
      * Default Response
      */
     200: Array<{
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
         uuid: string;
         title: string;
         childCount?: number;
@@ -12855,7 +13009,7 @@ export type GetApiEmbyByMediaSourceIdUserLibrariesResponses = {
         } | {
             path: string;
             type: 'remote';
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             externalKey: string;
         }>;
         libraryId?: string;
@@ -12903,7 +13057,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
     200: {
         total: number;
         result: Array<(TerminalProgram | (Show | Season | MusicArtist | MusicAlbum)) | ({
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -12913,7 +13067,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             libraryId: string;
             type: 'folder';
         } | {
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -12923,7 +13077,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             libraryId: string;
             type: 'collection';
         } | {
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -13432,7 +13586,7 @@ export type PostApiTroubleshootResponses = {
                 serverKey?: string;
                 showIcon?: string;
                 showTitle?: string;
-                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
                 summary?: string;
                 title?: string;
                 type: 'movie' | 'episode' | 'track' | 'redirect' | 'custom' | 'flex';
@@ -13612,7 +13766,7 @@ export type GetApiTrashResponses = {
      */
     200: {
         results: Array<(TerminalProgram | (Show | Season | MusicArtist | MusicAlbum)) | ({
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -13622,7 +13776,7 @@ export type GetApiTrashResponses = {
             libraryId: string;
             type: 'folder';
         } | {
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -13632,7 +13786,7 @@ export type GetApiTrashResponses = {
             libraryId: string;
             type: 'collection';
         } | {
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             uuid: string;
             title: string;
             childCount?: number;
@@ -13879,7 +14033,7 @@ export type GetApiCreditsByIdResponses = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         order?: number | null;
@@ -13890,7 +14044,7 @@ export type GetApiCreditsByIdResponses = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;
@@ -13899,7 +14053,7 @@ export type GetApiCreditsByIdResponses = {
         uuid?: string;
         name: string;
         externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            source: 'plex' | 'jellyfin' | 'emby' | 'local' | 'invidious';
             id: string;
         } | null;
         thumb?: string | null;

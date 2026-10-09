@@ -4,6 +4,7 @@ export enum ProgramSourceType {
   PLEX = 'plex',
   JELLYFIN = 'jellyfin',
   EMBY = 'emby',
+  INVIDIOUS = 'invidious',
 }
 
 export function programSourceTypeFromString(

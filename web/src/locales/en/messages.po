@@ -290,6 +290,14 @@ msgstr "12-hour"
 msgid "24-hour"
 msgstr "24-hour"
 
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "A channel @handle, channel URL or UC… channel ID. Each channel becomes a library."
+msgstr "A channel @handle, channel URL or UC… channel ID. Each channel becomes a library."
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "A name for this source, e.g. \"YouTube\""
+msgstr "A name for this source, e.g. \"YouTube\""
+
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "A root path to scan for media. Local sources can search many different paths."
 msgstr "A root path to scan for media. Local sources can search many different paths."
@@ -322,6 +330,7 @@ msgstr "Access Token"
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -349,6 +358,10 @@ msgstr "Add a filter expression to fine-tune results of the search"
 #: src/components/channel_config/AddSelectedMediaButton.tsx
 #~ msgid "Add all selected programs to channel"
 #~ msgstr "Add all selected programs to channel"
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "Add at least one YouTube channel"
+msgstr "Add at least one YouTube channel"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
@@ -799,6 +812,7 @@ msgstr "Calculating Slots..."
 #: src/components/programming_controls/RemoveShowsModal.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -896,6 +910,7 @@ msgid "Channel Transcode Config"
 msgstr "Channel Transcode Config"
 
 #: src/App.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/hooks/useNavItems.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/channels/ChannelsPage.tsx
@@ -1101,9 +1116,17 @@ msgstr "Copy to Clipboard"
 msgid "Could not cancel emptying the trash."
 msgstr "Could not cancel emptying the trash."
 
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "Could not find that YouTube channel"
+msgstr "Could not find that YouTube channel"
+
 #: src/components/search/SearchFilterBuilder.tsx
 msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
 msgstr "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "Could not reach the Invidious server"
+msgstr "Could not reach the Invidious server"
 
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "Create"
@@ -1499,6 +1522,7 @@ msgstr "Edit Transcode Config: \"{0}\""
 #. placeholder {0}: server.name
 #. placeholder {0}: source.name
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "Editing \"{0}\""
@@ -2229,6 +2253,14 @@ msgstr "Interval (minutes)"
 msgid "Inverse linear decay, heavier weighting."
 msgstr "Inverse linear decay, heavier weighting."
 
+#: src/components/settings/media_source/AddMediaSourceButton.tsx
+msgid "Invidious (YouTube)"
+msgstr "Invidious (YouTube)"
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "Invidious URL"
+msgstr "Invidious URL"
+
 #: src/components/channel_config/MediaGridItem.tsx
 msgid "Item was not present during the last scan"
 msgstr "Item was not present during the last scan"
@@ -2651,6 +2683,7 @@ msgstr "Must use a valid URL, or empty."
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -2707,6 +2740,10 @@ msgstr "New Emby Media Source"
 #: src/pages/library/NewFillerPage.tsx
 msgid "New Filler List"
 msgstr "New Filler List"
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "New Invidious (YouTube) Source"
+msgstr "New Invidious (YouTube) Source"
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "New Local Media Source"
@@ -3909,6 +3946,10 @@ msgstr "Test Playback"
 msgid "Test Transcode"
 msgstr "Test Transcode"
 
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "The base URL of your Invidious instance, as reachable from the Tunarr server"
+msgstr "The base URL of your Invidious instance, as reachable from the Tunarr server"
+
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
@@ -3958,6 +3999,7 @@ msgstr "There was an error generating time slots. Check the browser console log 
 msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
 msgstr "There was an error submitting the request to update Media Source settings. Please check the form and try again"
 
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "There was an error when submitting the form. Please see console logs for details."
 msgstr "There was an error when submitting the form. Please see console logs for details."
@@ -4262,6 +4304,7 @@ msgstr "Unlink"
 #~ msgstr "Unlink from group"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -4507,3 +4550,7 @@ msgstr "You're All Set!"
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Your list will be replicated {0} times"
 msgstr "Your list will be replicated {0} times"
+
+#: src/components/settings/media_source/InvidiousServerEditDialog.tsx
+msgid "YouTube channel"
+msgstr "YouTube channel"

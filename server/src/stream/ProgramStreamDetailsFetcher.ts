@@ -14,6 +14,7 @@ import {
 import { match } from 'ts-pattern';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
+import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { ArtworkService } from '../services/ArtworkService.ts';
 import type { ArtworkResult } from '../services/ArtworkService.ts';
 import { KEYS } from '../types/inject.ts';
@@ -44,6 +45,8 @@ export class ProgramStreamDetailsFetcher {
   constructor(
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(ArtworkService) private artworkService: ArtworkService,
+    @inject(MediaSourceApiFactory)
+    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {}
 
   async getStream({
@@ -232,6 +235,10 @@ export class ProgramStreamDetailsFetcher {
       );
     }
 
+    if (server.type === 'invidious') {
+      return this.getInvidiousStream(server, program.externalIds, streamDetails);
+    }
+
     if (server.type === 'local') {
       const file = head(firstVersion.mediaFiles);
       if (!file) {
@@ -259,6 +266,77 @@ export class ProgramStreamDetailsFetcher {
       );
       return Result.success({ streamDetails, streamSource });
     }
+  }
+
+  /**
+   * YouTube stream URLs are signed and expire, so they are resolved here, at
+   * the moment the program starts, rather than stored at scan time. The
+   * details recorded during the scan are placeholders and are replaced with
+   * the formats actually chosen.
+   */
+  private async getInvidiousStream(
+    server: MediaSourceWithRelations,
+    externalIds: { sourceType: string; externalKey: string }[],
+    streamDetails: StreamDetails,
+  ): Promise<Result<ProgramStreamResult>> {
+    const videoId = externalIds.find(
+      (eid) => eid.sourceType === 'invidious',
+    )?.externalKey;
+    if (!isNonEmptyString(videoId)) {
+      return Result.forError(
+        new Error('Invidious program has no YouTube video ID'),
+      );
+    }
+
+    const client =
+      await this.mediaSourceApiFactory.getInvidiousApiClientForMediaSource(
+        server,
+      );
+    const pairResult = await client.getStreamPair(videoId);
+    if (pairResult.isFailure()) {
+      return pairResult.recast();
+    }
+
+    const pair = pairResult.get();
+    const displayAspectRatio = `${pair.width}/${pair.height}`;
+    return Result.success({
+      streamSource: new HttpStreamSource(pair.videoUrl),
+      streamDetails: {
+        ...streamDetails,
+        separateAudioSource: new HttpStreamSource(pair.audioUrl),
+        videoDetails: [
+          {
+            codec: pair.videoCodec,
+            profile: undefined,
+            width: pair.width,
+            height: pair.height,
+            framerate: pair.frameRate,
+            scanType: 'progressive',
+            pixelFormat: 'yuv420p',
+            bitDepth: 8,
+            streamIndex: 0,
+            displayAspectRatio,
+            anamorphic: false,
+            bitrate: undefined,
+            isAttachedPic: false,
+            colorRange: undefined,
+            colorSpace: undefined,
+            colorTransfer: undefined,
+            colorPrimaries: undefined,
+          },
+        ],
+        audioDetails: [
+          {
+            codec: pair.audioCodec,
+            channels: pair.audioChannels,
+            index: 0,
+            default: true,
+          },
+        ],
+        subtitleDetails: undefined,
+        audioOnly: false,
+      },
+    });
   }
 
   /**
@@ -393,6 +471,11 @@ export class ProgramStreamDetailsFetcher {
         )
         .with({ type: 'local' }, () => {
           throw new Error(`Remote paths are not supported for local media`);
+        })
+        .with({ type: 'invidious' }, () => {
+          throw new Error(
+            `Invidious streams are resolved per video, not by server path`,
+          );
         })
         .exhaustive();
     } else {

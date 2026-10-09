@@ -2,6 +2,7 @@ export type ItemUuid = string;
 export type Plex = 'plex';
 export type Jellyfin = 'jellyfin';
 export type Emby = 'emby';
+export type Invidious = 'invidious';
 export type Imported = 'imported';
 export type Local = 'local';
 

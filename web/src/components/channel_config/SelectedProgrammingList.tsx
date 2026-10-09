@@ -24,7 +24,13 @@ import { first, groupBy, mapValues } from 'lodash-es';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import { useWindowSize } from 'usehooks-ts';
-import { Emby, Jellyfin, Local, Plex } from '../../helpers/constants.ts';
+import {
+  Emby,
+  Invidious,
+  Jellyfin,
+  Local,
+  Plex,
+} from '../../helpers/constants.ts';
 import { unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
@@ -156,6 +162,7 @@ export default function SelectedProgrammingList({
       case Plex:
       case Jellyfin:
       case Emby:
+      case Invidious:
       case Local:
         return `${item.type}.${item.mediaSource.id}.${item.id}`;
       case 'custom-show':
@@ -169,6 +176,7 @@ export default function SelectedProgrammingList({
       case Plex:
       case Jellyfin:
       case Emby:
+      case Invidious:
       case Local:
         return (
           <ImportedProgramListItem

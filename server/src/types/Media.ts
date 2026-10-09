@@ -204,6 +204,12 @@ interface EmbyMixin extends HasMediaSourceInfo {
   sourceType: typeof MediaSourceType.Emby;
 }
 
+interface InvidiousMixin extends HasMediaSourceInfo {
+  sourceType: typeof MediaSourceType.Invidious;
+}
+
+export type InvidiousOtherVideo = OtherVideo & InvidiousMixin;
+
 export type JellyfinMovie = Movie & JellyfinMixin;
 export type JellyfinShow = Show & JellyfinMixin;
 export type JellyfinSeason = Season<JellyfinShow> & JellyfinMixin;

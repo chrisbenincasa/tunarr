@@ -18,6 +18,7 @@ import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { type ApiClientOptions } from './BaseApiClient.js';
 import { EmbyApiClient } from './emby/EmbyApiClient.ts';
+import { InvidiousApiClient } from './invidious/InvidiousApiClient.ts';
 import type { JellyfinApiClient } from './jellyfin/JellyfinApiClient.js';
 import type { MediaSourceApiClientFactory } from './MediaSourceApiClient.ts';
 import type { PlexApiClientFactory } from './plex/PlexApiClient.js';
@@ -121,6 +122,14 @@ export class MediaSourceApiFactory {
       ...opts,
       mediaSource: { ...opts.mediaSource, userId },
     });
+  }
+
+  // Invidious clients hold no credentials or per-user state, so a fresh one
+  // per call is fine.
+  getInvidiousApiClientForMediaSource(
+    mediaSource: ApiClientOptions['mediaSource'],
+  ): Promise<InvidiousApiClient> {
+    return Promise.resolve(new InvidiousApiClient({ mediaSource }));
   }
 
   getPlexApiClientForMediaSource(

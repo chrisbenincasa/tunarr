@@ -47,7 +47,12 @@ type ArtworkSourceRef = {
 
 // The source types `buildArtworkSourcePath` knows how to build a URL for.
 // Anything else (`local`, or a source type added later) derives to nothing.
-const DERIVABLE_SOURCE_TYPES: readonly string[] = ['plex', 'jellyfin', 'emby'];
+const DERIVABLE_SOURCE_TYPES: readonly string[] = [
+  'plex',
+  'jellyfin',
+  'emby',
+  'invidious',
+];
 
 /**
  * Mirrors the guard in `ArtworkService.deriveArtworkFromSource`. If these are

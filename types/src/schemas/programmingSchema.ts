@@ -15,7 +15,13 @@ export const ProgramTypeSchema = z.union([
   z.literal('flex'),
 ]);
 
-export const SourceTypeSchema = z.enum(['plex', 'jellyfin', 'emby', 'local']);
+export const SourceTypeSchema = z.enum([
+  'plex',
+  'jellyfin',
+  'emby',
+  'local',
+  'invidious',
+]);
 
 export const ProgramSchema = z.object({
   artistName: z.string().optional(),

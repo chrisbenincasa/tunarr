@@ -60,6 +60,7 @@ export const TranscodeResolutionOptions = [
 export const Plex = 'plex';
 export const Jellyfin = 'jellyfin';
 export const Emby = 'emby';
+export const Invidious = 'invidious';
 export const Imported = 'imported';
 export const Local = 'local';
 

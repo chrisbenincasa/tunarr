@@ -105,7 +105,13 @@ export const FfmpegSettingsSchema = z.object({
   enableSubtitleExtraction: z.boolean().optional().default(false),
 });
 
-export const MediaSourceType = z.enum(['plex', 'jellyfin', 'emby', 'local']);
+export const MediaSourceType = z.enum([
+  'plex',
+  'jellyfin',
+  'emby',
+  'local',
+  'invidious',
+]);
 
 export const MediaSourceContentType = z.enum([
   'movies',
@@ -135,6 +141,7 @@ export const MediaSourceLibrarySchema = z.object({
         PlexServerSettingsSchema.omit({ libraries: true }),
         JellyfinServerSettingsSchema.omit({ libraries: true }),
         EmbyServerSettingsSchema.omit({ libraries: true }),
+        InvidiousServerSettingsSchema.omit({ libraries: true, channelIds: true }),
         LocalMediaSourceSchema.omit({ libraries: true, paths: true }),
       ])
       .optional();
@@ -182,6 +189,16 @@ export const EmbyServerSettingsSchema = z.object({
   type: z.literal('emby'),
 });
 
+// A self-hosted Invidious instance used as a YouTube front end. Each entry in
+// `channelIds` is a YouTube channel (UC… id, @handle or channel URL) and
+// becomes one "other videos" library. Like a local source's `paths`, it is a
+// projection of the source's libraries rather than a separate column.
+export const InvidiousServerSettingsSchema = z.object({
+  ...RemoteMediaSourceSettingsSchema.shape,
+  type: z.literal('invidious'),
+  channelIds: z.array(z.string().trim().min(1)),
+});
+
 export const LocalMediaSourceSchema = z.object({
   ...BaseMediaSourceSettingsSchema.shape,
   type: z.literal('local'),
@@ -193,6 +210,7 @@ export const MediaSourceSettingsSchema = z.discriminatedUnion('type', [
   PlexServerSettingsSchema,
   JellyfinServerSettingsSchema,
   EmbyServerSettingsSchema,
+  InvidiousServerSettingsSchema,
   LocalMediaSourceSchema,
 ]);
 

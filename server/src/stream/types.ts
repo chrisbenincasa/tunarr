@@ -19,6 +19,10 @@ export type StreamDetails = {
   directFilePath?: string;
   chapters?: MediaChapter[];
   formatTags?: Record<string, string>;
+  // Set when the audio lives at a different URL from the video, as with
+  // YouTube's adaptive formats. ffmpeg reads it as a second input and the
+  // audio stream index refers to that input.
+  separateAudioSource?: HttpStreamSource;
 };
 
 export type VideoStreamDetails = {
