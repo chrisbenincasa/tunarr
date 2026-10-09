@@ -25,6 +25,7 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--layout basic\|multi-audio\|dup-lang\|subs\|mixed` | `basic` | Synthetic clip track layout (see below) |
 | `--clips N`, `--clip-seconds S` | `3`, `60` | Number and length of synthetic clips; each clip is one program |
 | `--clip-durations LIST` | | Per-clip lengths in seconds, such as `60,8,60` for a bumper between two programs. Overrides `--clips` and `--clip-seconds` |
+| `--truncate-clip I:S` | | Shorten clip I (1-based) to S seconds after the scan. The database keeps the longer duration, which mimics media that ends before its scheduled time |
 | `--db-dir DIR` | | `copy` only: Tunarr database directory to copy (the dev server's is `TUNARR_DATABASE_PATH` in `server/.env.development`) |
 | `--channel ID` | | `copy` only: channel number or uuid to stream |
 | `--mode hls\|hls_slower\|hls_direct_v2\|mpegts` | `hls` | Stream mode to request |
@@ -85,6 +86,7 @@ A run takes one to three minutes. Most of that is server boot and real-time stre
 - `findings`: one entry per detected anomaly, described below.
 - `ffmpeg.commands`: every ffmpeg argv the server started, in order. There is roughly one per program.
 - `sessionRestarts`: times the HLS session died and the capture restarted it.
+- `capturePieces[].fetchedAtMs`: when the capture fetched each HLS segment, from capture start. A long gap between neighbors means the playlist stopped growing.
 
 | Finding | What it means |
 |---|---|
