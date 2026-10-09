@@ -366,6 +366,104 @@ Key directories:
 - **GitHub Issues**: [Report bugs or request features](https://github.com/chrisbenincasa/tunarr/issues)
 - **Discord**: [Join the community](https://discord.gg/JpFjERP7y) for discussion and support
 
+## Pull Request Policy
+
+These rules apply to every PR, however it was written. They apply to maintainers too.
+
+### You own every line
+
+- You are the author of everything in your PR, whoever or whatever typed it.
+- You must understand each change well enough to explain it in review.
+- You must have run the change yourself and confirmed it does what the PR says.
+- "The AI wrote that part" is not an answer to a review question.
+
+### Design before code
+
+Some changes need an agreed design before anyone writes code. Open an issue first and describe the design. A maintainer approves it by adding the `design approved` label. Then open the PR and link the issue in the "Design issue" section of the PR description.
+
+A change needs a design issue if it does any of the following:
+
+- Adds a new media source type or a new kind of stream source
+- Changes the database schema (adds a migration)
+- Adds a new runtime dependency
+- Adds a new top-level feature, such as a new page, settings area, or scheduling mode
+- Changes code in more than one package (`server`, `web`, `types`, `shared`) in a way that changes how they talk to each other, such as a new API shape or shared type
+- Changes more than **500 lines** outside tests, or more than **1,500 lines** including tests. Neither count includes the generated files listed below.
+
+The line counts leave out these generated files:
+
+- `pnpm-lock.yaml`
+- `server/src/migration/db/sql/meta/`
+- `server/src/generated/`, `web/src/generated/`, `docs/generated/`
+- `web/src/routeTree.gen.ts`
+- `web/src/locales/`
+
+The design issue should cover:
+
+- The problem, and who has it
+- The approach, and the main alternatives you rejected
+- Which parts of the codebase change, and any schema or API changes
+- How you will split the work into PRs that can each be reviewed on their own
+
+Small fixes, docs changes, and refactors inside one module don't need a design issue. If you're unsure, ask in an issue or on Discord before you start.
+
+### PRs that skip the design step
+
+A bot checks every PR from an outside contributor. It detects the size limit, new migrations, new runtime dependencies, and new media sources. Maintainers flag the other triggers by hand.
+
+When a PR needs a design and doesn't link an approved one, it gets converted to a draft and labeled `needs design`. The bot leaves a comment that lists what triggered it. The code stays where it is. Open a design issue and link it from the PR. When a maintainer labels the issue `design approved`, the bot re-checks every PR that links it and removes `needs design`. Rework or split the PR to match the design and mark it ready for review.
+
+A PR labeled `needs design` for 30 days without an approved design will be closed. The clock pauses while the PR links an open design issue (labeled `design proposal`), since the PR is then waiting on a maintainer. If the design issue is closed without approval, a new 30 days starts.
+
+Maintainers are the people listed in [`.github/CODEOWNERS`](https://github.com/chrisbenincasa/tunarr/blob/main/.github/CODEOWNERS). The bot doesn't check their PRs, but the same rules apply to them.
+
+The bot doesn't check PRs opened before October 10, 2026. Maintainers may still apply these rules to them by hand.
+
+### During review
+
+- Address each comment with a change scoped to that comment. Don't regenerate or rewrite unrelated code, because that forces the reviewer to start over.
+- If you don't know why your code does something, say so. Then find out before you change it.
+- A PR whose author can't answer questions about their own code will be closed.
+
+## AI Use
+
+You may use AI tools to write code, tests, docs, and issues for Tunarr. The [Pull Request Policy](#pull-request-policy) applies the same way with or without AI. The rules below add to it.
+
+### Disclose AI use
+
+Every PR description says whether you used AI tools, in the "AI use" section of the PR template. If you did, name the tools and say what they did. For example:
+
+- "Claude Code wrote most of the implementation. I wrote the tests and reviewed every change."
+- "No AI tools used."
+
+Disclosure is not a mark against your PR. It tells the reviewer where to look harder.
+
+- Autocomplete that finishes the line you're typing doesn't need disclosure. Anything that writes whole functions, files, or changes does.
+- Commit trailers such as `Co-Authored-By` are fine to keep but don't replace the PR statement. If your commits or PR description credit an AI tool and your "AI use" section says you used none, the bot will ask you to fix the section.
+
+A maintainer may ask how you used AI. If your answer turns out to be false, the review ends and the PR is closed. Maintainers act on concrete evidence, such as AI tool trailers in your commits or your own statements. They don't act on how the code looks. Without such evidence, they ask questions about the code instead.
+
+### AI in review replies
+
+Write review replies yourself. You may use AI to understand a comment or check your answer, but don't paste model output into the thread.
+
+### Issues and bug reports
+
+AI can help you write an issue, but the content must come from you.
+
+- **Bug reports.** Report what you saw. Your steps, logs, and screenshots must come from your own Tunarr install. If you include a guess about the cause, mark it as a guess. You may include an AI analysis of the cause, but put it in the bug template's "AI analysis" field and say whether you checked it. Maintainers treat unchecked AI analysis as a lead, not a finding.
+- **Feature requests.** Describe the problem you have and how you would use the feature. A short request from you beats a long spec from a model.
+- **Design issues.** A design issue is held to the same rule as a PR. You must understand the design and be able to answer questions about it. Use the "Design proposal" issue template, which asks you to disclose AI use.
+- **Comments.** Don't answer other people's questions with AI output you haven't checked.
+
+Issues that are mostly unchecked AI output will be closed.
+
+### Security reports
+
+Report vulnerabilities privately through [GitHub's vulnerability reporting](https://github.com/chrisbenincasa/tunarr/security/advisories/new), not in a public issue. See [SECURITY.md](https://github.com/chrisbenincasa/tunarr/blob/main/.github/SECURITY.md).
+
+A report must include steps that reproduce the problem against a real Tunarr build. Output from an AI or a scanner that you haven't confirmed will be closed without a detailed response.
+
 ## Pull Request Guidelines
 
 1. **Base branch** 
