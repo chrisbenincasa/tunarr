@@ -3,7 +3,6 @@ import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { MeilisearchService } from '../services/MeilisearchService.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
-import { ReconcileProgramDurationsTask } from './ReconcileProgramDurationsTask.ts';
 import { SimpleTask } from './Task.ts';
 import { simpleTaskDef } from './TaskRegistry.ts';
 
@@ -14,8 +13,8 @@ import { simpleTaskDef } from './TaskRegistry.ts';
     'Removes programs from the search index that have media sources which do not exist in the database',
 })
 export class RemoveDanglingProgramsFromSearchTask extends SimpleTask {
-  static ID = ReconcileProgramDurationsTask.name;
-  public ID = ReconcileProgramDurationsTask.name;
+  static ID = RemoveDanglingProgramsFromSearchTask.name;
+  public ID = RemoveDanglingProgramsFromSearchTask.ID;
 
   @InjectLogger() declare protected readonly logger: Logger;
 
