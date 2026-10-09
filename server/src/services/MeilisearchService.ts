@@ -170,6 +170,12 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'grandparent.studio',
     'audioLanguages',
     'subtitleLanguages',
+    'summary',
+    'plot',
+    'countries.name',
+    'collections.name',
+    'audienceRating',
+    'criticRating',
   ],
   sortable: [
     'title',
@@ -179,6 +185,8 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'originalReleaseYear',
     'addedAt',
     'index',
+    'audienceRating',
+    'criticRating',
   ],
   caseSensitiveFilters: [
     'grandparent.id',
@@ -284,6 +292,10 @@ type BaseProgramSearchDocument = {
   tags: string[];
   state: ProgramState;
   addedAt: Nullable<number>;
+  countries: StringName[];
+  collections: StringName[];
+  audienceRating: Nullable<number>;
+  criticRating: Nullable<number>;
 };
 
 export type TerminalProgramSearchDocument<
@@ -969,6 +981,10 @@ export class MeilisearchService implements ISearchService {
       ),
       tags: show.tags,
       studio: show.studios,
+      countries: show.countries ?? [],
+      collections: show.collections ?? [],
+      audienceRating: show.audienceRating ?? null,
+      criticRating: show.criticRating ?? null,
       state: 'ok',
       addedAt: show.createdAt ?? null,
     };
@@ -1022,6 +1038,10 @@ export class MeilisearchService implements ISearchService {
           `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
       ),
       tags: season.tags,
+      countries: [],
+      collections: [],
+      audienceRating: null,
+      criticRating: null,
       state: 'ok',
       addedAt: season.createdAt ?? null,
       parent: {
@@ -1147,6 +1167,10 @@ export class MeilisearchService implements ISearchService {
           `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
       ),
       tags: artist.tags,
+      countries: [],
+      collections: [],
+      audienceRating: null,
+      criticRating: null,
       state: 'ok',
       addedAt: artist.createdAt ?? null,
     };
@@ -1197,6 +1221,10 @@ export class MeilisearchService implements ISearchService {
           `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
       ),
       tags: album.tags,
+      countries: [],
+      collections: [],
+      audienceRating: null,
+      criticRating: null,
       state: 'ok',
       addedAt: album.createdAt ?? null,
       parent: {
@@ -1463,7 +1491,7 @@ export class MeilisearchService implements ISearchService {
     ) {
       const encodedLibraryId = encodeCaseSensitiveId(request.libraryId);
       if (isNonEmptyString(filter)) {
-        filter += ` AND libraryId = "${encodedLibraryId}"`;
+        filter = `(${filter}) AND libraryId = "${encodedLibraryId}"`;
       } else {
         filter = `libraryId = "${encodedLibraryId}"`;
       }
@@ -1475,7 +1503,7 @@ export class MeilisearchService implements ISearchService {
     ) {
       const encodedMediaSourceId = encodeCaseSensitiveId(request.mediaSourceId);
       if (isNonEmptyString(filter)) {
-        filter += ` AND mediaSourceId = "${encodedMediaSourceId}"`;
+        filter = `(${filter}) AND mediaSourceId = "${encodedMediaSourceId}"`;
       } else {
         filter = `mediaSourceId = "${encodedMediaSourceId}"`;
       }
@@ -1561,7 +1589,7 @@ export class MeilisearchService implements ISearchService {
     ) {
       const encodedLibraryId = encodeCaseSensitiveId(request.libraryId);
       if (isNonEmptyString(filter)) {
-        filter += ` AND libraryId = "${encodedLibraryId}"`;
+        filter = `(${filter}) AND libraryId = "${encodedLibraryId}"`;
       } else {
         filter = `libraryId = "${encodedLibraryId}"`;
       }
@@ -1573,7 +1601,7 @@ export class MeilisearchService implements ISearchService {
     ) {
       const encodedMediaSourceId = encodeCaseSensitiveId(request.mediaSourceId);
       if (isNonEmptyString(filter)) {
-        filter += ` AND mediaSourceId = "${encodedMediaSourceId}"`;
+        filter = `(${filter}) AND mediaSourceId = "${encodedMediaSourceId}"`;
       } else {
         filter = `mediaSourceId = "${encodedMediaSourceId}"`;
       }
@@ -1884,6 +1912,33 @@ export class MeilisearchService implements ISearchService {
         break;
     }
 
+    let audienceRating: number | null;
+    let criticRating: number | null;
+    let countries: StringName[];
+    let collections: StringName[];
+    switch (program.type) {
+      case 'movie':
+        audienceRating = program.audienceRating ?? null;
+        criticRating = program.criticRating ?? null;
+        countries = program.countries ?? [];
+        collections = program.collections ?? [];
+        break;
+      case 'episode':
+        audienceRating = program.season?.show?.audienceRating ?? null;
+        criticRating = program.season?.show?.criticRating ?? null;
+        countries = program.season?.show?.countries ?? [];
+        collections = [];
+        break;
+      case 'track':
+      case 'other_video':
+      case 'music_video':
+        audienceRating = null;
+        criticRating = null;
+        countries = [];
+        collections = [];
+        break;
+    }
+
     return {
       id: program.uuid,
       duration: program.duration ?? null,
@@ -1894,7 +1949,7 @@ export class MeilisearchService implements ISearchService {
         .getOrElse(() => null),
       originalReleaseYear: program.year,
       summary,
-      plot: null,
+      plot: program.type === 'movie' ? program.plot : null,
       tagline: program.type === 'movie' ? program.tagline : null,
       title: program.title,
       titleReverse: program.title.split('').reverse().join(''),
@@ -1916,6 +1971,10 @@ export class MeilisearchService implements ISearchService {
       studio: program.studios ?? [],
       tags: program.tags,
       addedAt: program.createdAt ?? null,
+      countries,
+      collections,
+      audienceRating,
+      criticRating,
       mediaSourceId: encodeCaseSensitiveId(program.mediaSourceId),
       libraryId: encodeCaseSensitiveId(program.libraryId),
       videoWidth: width,
@@ -2028,7 +2087,7 @@ export class MeilisearchService implements ISearchService {
         .getOrElse(() => null),
       originalReleaseYear: program.year,
       summary,
-      plot: null,
+      plot: program.type === 'movie' ? program.plot : null,
       tagline: program.type === 'movie' ? program.tagline : null,
       title: program.title,
       titleReverse: program.title?.split('').reverse().join(''),

@@ -372,6 +372,13 @@
       "when": 1790271998433,
       "tag": "0052_colorful_ken_ellis",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1791486705504,
+      "tag": "0053_slim_nova",
+      "breakpoints": true
     }
   ]
 }
