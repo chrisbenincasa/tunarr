@@ -310,10 +310,6 @@ msgstr "约 "
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -2952,6 +2948,8 @@ msgid "Passthrough audio unchanged. Other settings will not apply."
 msgstr "直接透传音频不做处理，其他设置将不生效。"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Password"
 msgstr "密码"
@@ -4128,12 +4126,15 @@ msgid "Today"
 msgstr "今天"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "toggle access token visibility"
 msgstr "切换访问令牌可见性"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "toggle password visibility"
+msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingTools.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -4297,6 +4298,8 @@ msgid "Use these settings to override global ffmpeg settings for this channel."
 msgstr "使用这些设置覆盖该频道的全局 ffmpeg 设置。"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Username"
 msgstr "用户名"
