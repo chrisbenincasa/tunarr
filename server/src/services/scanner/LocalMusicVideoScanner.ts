@@ -234,7 +234,7 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
 
     const canonicalFilesAndStats = await Promise.all(
       canonicalFiles.map(async (file) => {
-        const stat = await fs.stat(fullPath);
+        const stat = await fs.stat(path.join(file.parentPath, file.name));
         return {
           dirent: file,
           stats: stat,
