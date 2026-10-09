@@ -18,6 +18,8 @@ const { values: opt } = parseArgs({
     'clip-seconds': { type: 'string', default: '60' },
     'clip-durations': { type: 'string' },
     'truncate-clip': { type: 'string' },
+    'mid-truncate': { type: 'string' },
+    'start-ago': { type: 'string' },
     'db-dir': { type: 'string' },
     channel: { type: 'string' },
     mode: { type: 'string', default: 'hls' },
@@ -32,6 +34,7 @@ const { values: opt } = parseArgs({
     'flex-first': { type: 'string' },
     'ffmpeg-setting': { type: 'string', multiple: true, default: [] },
     resolution: { type: 'string' },
+    schedule: { type: 'string' },
   },
 });
 
@@ -69,6 +72,9 @@ const log = (...a) => console.error('[repro]', ...a);
 // ---------- helpers ----------
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Thrown by --seconds 0 to end the run after setup without counting as a failure.
+class SkipCapture extends Error {}
 
 function freePort() {
   return new Promise((resolve) => {
@@ -205,6 +211,49 @@ function truncateClip(dir, spec) {
   log(`truncated clip ${i} to ${s}s; the database still says ${clipDurations[i - 1]}s`);
 }
 
+// Parses --mid-truncate I:S@T. At T seconds into the capture, clip I is cut to
+// S seconds and the media source is rescanned, the way a replaced file and a
+// scheduled scan would change a live channel.
+function parseMidTruncate(spec) {
+  const m = /^(\d+):(\d+(?:\.\d+)?)@(\d+(?:\.\d+)?)$/.exec(spec ?? '');
+  if (!m) throw new Error('--mid-truncate takes I:S@T, such as 3:30@20');
+  return { clip: `${m[1]}:${m[2]}`, atMs: Number(m[3]) * 1000 };
+}
+
+async function midTruncate(base, channel, clipsDir, spec, t0) {
+  const before = await api(base, 'GET', `/api/channels/${channel.channelId}`);
+  truncateClip(clipsDir, spec.clip);
+  const scanAt = Date.now() - t0;
+  await api(base, 'POST', `/api/media-sources/${channel.sourceId}/libraries/all/scan?forceScan=true`);
+  await until(
+    'rescan',
+    async () => ((await api(base, 'GET', `/api/media-sources/${channel.sourceId}/all/status`)).state === 'not_scanning' ? true : null),
+    120_000,
+    500,
+  );
+  const scanDoneAt = Date.now() - t0;
+  // The reconcile task runs right after the scan; give it a moment to write.
+  const after = await until(
+    'reconcile',
+    async () => {
+      const ch = await api(base, 'GET', `/api/channels/${channel.channelId}`);
+      return ch.duration !== before.duration ? ch : null;
+    },
+    30_000,
+    500,
+  ).catch(() => null);
+  const result = {
+    clip: spec.clip,
+    scanAtMs: scanAt,
+    scanDoneAtMs: scanDoneAt,
+    reconciledAtMs: after ? Date.now() - t0 : null,
+    before: { startTime: before.startTime, duration: before.duration },
+    after: after ? { startTime: after.startTime, duration: after.duration } : null,
+  };
+  log('mid-truncate', JSON.stringify(result));
+  return result;
+}
+
 // ---------- server ----------
 
 function prepareDbCopy() {
@@ -287,7 +336,8 @@ async function buildSyntheticChannel(base, clipsDir) {
   const configs = await api(base, 'GET', '/api/transcode_configs');
   const tc = configs.find((c) => c.isDefault) ?? configs[0];
   await applyResolution(base, tc.id);
-  const startTime = Date.now();
+  // --start-ago backdates the channel so it has already looped its lineup.
+  const startTime = Date.now() - Number(opt['start-ago'] ?? 0) * 1000;
   const channel = await api(base, 'POST', '/api/channels', {
     type: 'new',
     channel: {
@@ -317,7 +367,9 @@ async function buildSyntheticChannel(base, clipsDir) {
   });
   return {
     channelId: channel.id,
+    sourceId,
     startTime,
+    programs: programs.map((p) => ({ id: p.id, title: p.program?.title, durationMs: p.duration })),
     lineup: [
       ...(flexMs ? [{ title: '(flex)', durationMs: flexMs }] : []),
       ...programs.map((p) => ({ title: p.program?.title, durationMs: p.duration })),
@@ -355,6 +407,176 @@ async function applyFfmpegSettings(base) {
   const ignored = Object.keys(overrides).filter((k) => JSON.stringify(saved[k]) !== JSON.stringify(overrides[k]));
   if (ignored.length) throw new Error(`ffmpeg settings not applied: ${ignored.join(', ')}`);
   return overrides;
+}
+
+// ---------- slot schedules ----------
+
+const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const HOUR_MS = 60 * 60 * 1000;
+
+// Slot start times are offsets into the period, counted from Sunday 00:00 for
+// a weekly schedule. "Sat 20:30" is weekly, "20:30" is daily, a number is raw ms.
+function slotOffsetMs(at, period) {
+  if (typeof at === 'number') return at;
+  const m = /^(?:([a-z]{3})\w*\s+)?(\d{1,2}):(\d{2})$/i.exec(String(at).trim());
+  if (!m) throw new Error(`slot time "${at}" must look like "Sat 20:30", "20:30", or a number of ms`);
+  const day = m[1] ? DAYS.indexOf(m[1].toLowerCase()) : -1;
+  if (m[1] && day < 0) throw new Error(`unknown weekday in "${at}"`);
+  if (period === 'week' && day < 0) throw new Error(`weekly slot "${at}" needs a weekday`);
+  if (period !== 'week' && day >= 0) throw new Error(`slot "${at}" has a weekday but the period is ${period}`);
+  return Math.max(day, 0) * 24 * HOUR_MS + Number(m[2]) * HOUR_MS + Number(m[3]) * 60_000;
+}
+
+// Guide window bounds: "Sat 17:00" is the next such local time from now,
+// anything else goes through Date.parse.
+function wallClockMs(at) {
+  const m = /^([a-z]{3})\w*\s+(\d{1,2}):(\d{2})$/i.exec(String(at).trim());
+  if (!m) {
+    const t = Date.parse(at);
+    if (Number.isNaN(t)) throw new Error(`guide time "${at}" must look like "Sat 17:00" or an ISO date`);
+    return t;
+  }
+  const day = DAYS.indexOf(m[1].toLowerCase());
+  if (day < 0) throw new Error(`unknown weekday in "${at}"`);
+  const d = new Date();
+  d.setHours(Number(m[2]), Number(m[3]), 0, 0);
+  d.setDate(d.getDate() + ((day - d.getDay() + 7) % 7));
+  if (d.getTime() < Date.now()) d.setDate(d.getDate() + 7);
+  return d.getTime();
+}
+
+function localTime(ms) {
+  const d = new Date(ms);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${DAYS[d.getDay()][0].toUpperCase()}${DAYS[d.getDay()].slice(1)} ${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+function buildSlot(spec, period, showIds, channelIds) {
+  const { at, customShow, redirect, flex, ...rest } = spec;
+  const base = { id: crypto.randomUUID(), startTime: slotOffsetMs(at, period), ...rest };
+  if (customShow !== undefined) {
+    const customShowId = showIds[customShow];
+    if (!customShowId) throw new Error(`slot at ${at}: no custom show named ${customShow}`);
+    return { type: 'custom-show', customShowId, order: 'next', direction: 'asc', ...base };
+  }
+  if (redirect !== undefined) {
+    const channelId = channelIds[redirect];
+    if (!channelId) throw new Error(`slot at ${at}: no channel named ${redirect}`);
+    return { type: 'redirect', channelId, ...base };
+  }
+  if (flex) return { type: 'flex', ...base };
+  if (rest.type) return base;
+  throw new Error(`slot at ${at} needs customShow, redirect, flex, or a raw type`);
+}
+
+// Builds custom shows and time-slot channels from a --schedule spec, then
+// records each channel's saved lineup and, when asked, its guide window.
+async function applySchedule(base, channel, specFile) {
+  const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
+  if (!spec.channels?.length) throw new Error('--schedule needs a non-empty "channels" list');
+  const clipPrograms = channel.programs;
+  const titles = Object.fromEntries(clipPrograms.map((p) => [p.id, p.title]));
+
+  const showIds = {};
+  for (const [name, clips] of Object.entries(spec.customShows ?? {})) {
+    const programs = clips.map((i) => {
+      const p = clipPrograms[i - 1];
+      if (!p) throw new Error(`custom show ${name}: no clip ${i} (there are ${clipPrograms.length})`);
+      return { type: 'content', id: p.id, duration: p.durationMs, persisted: true };
+    });
+    const show = await api(base, 'POST', '/api/custom-shows', {
+      name, programs, syncMediaSourceId: null, syncMediaSourceType: null, syncExternalPlaylistId: null,
+    });
+    showIds[name] = show.id;
+  }
+
+  // The first channel reuses the capture channel; the rest are copies of it.
+  // Every channel exists before any schedule is saved, so redirects can point anywhere.
+  const channelIds = {};
+  for (const [i, c] of spec.channels.entries()) {
+    channelIds[c.name] =
+      i === 0 ? channel.channelId : (await api(base, 'POST', '/api/channels', { type: 'copy', channelId: channel.channelId })).id;
+  }
+
+  const allProgramIds = clipPrograms.map((p) => p.id);
+  const result = { customShows: showIds, channels: [] };
+  for (const c of spec.channels) {
+    const period = c.period ?? 'day';
+    const schedule = {
+      type: 'time',
+      flexPreference: 'distribute',
+      maxDays: 14,
+      padMs: 1,
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: new Date().getTimezoneOffset(),
+      ...c.settings,
+      period,
+      slots: c.slots.map((s) => buildSlot(s, period, showIds, channelIds)),
+    };
+    await api(base, 'POST', `/api/channels/${channelIds[c.name]}/programming`, { type: 'time', programs: allProgramIds, schedule });
+  }
+
+  for (const c of spec.channels) {
+    const id = channelIds[c.name];
+    const ch = await api(base, 'GET', `/api/channels/${id}`);
+    const { lineup } = await api(base, 'GET', `/api/channels/${id}/programming`);
+    let t = ch.startTime;
+    const items = [];
+    for (const item of lineup) {
+      const programId = item.id ?? item.programId;
+      items.push({
+        start: localTime(t),
+        type: item.type,
+        ...(programId && titles[programId] ? { title: titles[programId] } : {}),
+        ...(item.type === 'redirect' ? { to: Object.keys(channelIds).find((n) => channelIds[n] === item.channel) } : {}),
+        minutes: +(item.duration / 60_000).toFixed(2),
+      });
+      t += item.duration;
+    }
+    result.channels.push({ name: c.name, id, startTime: localTime(ch.startTime), lineup: items });
+  }
+
+  if (spec.guide) {
+    const from = wallClockMs(spec.guide.from);
+    const to = wallClockMs(spec.guide.to);
+    if (!(to > from)) throw new Error('guide.to must come after guide.from');
+
+    // The guide only builds programmingHours ahead, 12 by default.
+    const xmltv = await api(base, 'GET', '/api/xmltv-settings');
+    const needHours = Math.ceil((to - Date.now()) / HOUR_MS) + 1;
+    if (xmltv.programmingHours < needHours) {
+      await api(base, 'PUT', '/api/xmltv-settings', { ...xmltv, programmingHours: needHours });
+    }
+    await api(base, 'POST', '/api/tasks/UpdateXmlTvTask/run');
+
+    const range = `dateFrom=${new Date(from).toISOString()}&dateTo=${new Date(to).toISOString()}`;
+    result.guide = { from: localTime(from), to: localTime(to), channels: [] };
+    for (const c of spec.channels) {
+      const id = channelIds[c.name];
+      const entries = await until(
+        `guide for ${c.name}`,
+        async () => {
+          const g = await api(base, 'GET', `/api/guide/channels/${id}?${range}`);
+          const last = g.at(-1);
+          return last && last.startTimeMs + last.lineupItem.durationMs >= to ? g : null;
+        },
+        60_000,
+        1000,
+      );
+      result.guide.channels.push({
+        name: c.name,
+        entries: entries.map((e) => ({
+          start: localTime(e.startTimeMs),
+          end: localTime(e.startTimeMs + e.lineupItem.durationMs),
+          type: e.lineupItem.type,
+          ...(e.lineupItem.id && titles[e.lineupItem.id] ? { title: titles[e.lineupItem.id] } : {}),
+          ...(e.redirectChannelId ? { via: Object.keys(channelIds).find((n) => channelIds[n] === e.redirectChannelId) } : {}),
+        })),
+      });
+    }
+  }
+  return result;
 }
 
 // ---------- capture ----------
@@ -446,7 +668,7 @@ async function rewindHls(base, channelId, seen) {
   return { n, from, target, targetStatus, segment404s, polls: results };
 }
 
-async function captureHls(base, channelId) {
+async function captureHls(base, channelId, onTick) {
   const t0 = Date.now();
   await until(
     'hls session',
@@ -463,6 +685,7 @@ async function captureHls(base, channelId) {
   let captured = 0;
   const end = Date.now() + (seconds + 90) * 1000;
   while (captured < seconds && Date.now() < end) {
+    onTick?.(t0);
     const res = await fetch(listUrl);
     if (res.status === 404) {
       // The session died (Tunarr logs why in tunarr.log). Restart it and keep capturing.
@@ -631,7 +854,12 @@ try {
     log('building channel', server.base);
     channel = await buildSyntheticChannel(server.base, clipsDir);
     if (opt['truncate-clip']) truncateClip(clipsDir, opt['truncate-clip']);
+    if (opt.schedule) {
+      log('applying schedule', opt.schedule);
+      report.schedule = await applySchedule(server.base, channel, path.resolve(opt.schedule));
+    }
   } else if (opt.source === 'copy') {
+    if (opt.schedule) throw new Error('--schedule only works with --source synthetic');
     if (!opt.channel) throw new Error('--source copy needs --channel <number|uuid>');
     log('copying database');
     prepareDbCopy();
@@ -645,9 +873,26 @@ try {
   }
   report.server = server.base;
   report.channel = channel;
+  if (seconds === 0) {
+    log('--seconds 0: skipping the stream capture');
+    throw new SkipCapture();
+  }
 
   log(`capturing ${seconds}s via ${opt.mode}`);
-  const cap = opt.mode === 'mpegts' ? await captureTs(server.base, channel.channelId) : await captureHls(server.base, channel.channelId);
+  // Runs beside the capture so the scan never pauses segment fetching.
+  let midTruncateRun;
+  let onTick;
+  if (opt['mid-truncate']) {
+    if (opt.source !== 'synthetic' || opt.mode === 'mpegts') throw new Error('--mid-truncate needs --source synthetic and an HLS mode');
+    const spec = parseMidTruncate(opt['mid-truncate']);
+    onTick = (t0) => {
+      if (!midTruncateRun && Date.now() - t0 >= spec.atMs) {
+        midTruncateRun = midTruncate(server.base, channel, path.join(out, 'media'), spec, t0).catch((e) => ({ error: String(e.stack ?? e) }));
+      }
+    };
+  }
+  const cap = opt.mode === 'mpegts' ? await captureTs(server.base, channel.channelId) : await captureHls(server.base, channel.channelId, onTick);
+  if (midTruncateRun) report.midTruncate = await midTruncateRun;
   report.captureStartedAt = new Date(cap.t0).toISOString();
   report.pieces = cap.pieces.length;
   report.capturePieces = cap.pieces.map((p) => ({ ...p, file: path.relative(out, p.file) }));
@@ -670,8 +915,10 @@ try {
   }
   report.ffmpeg = ffmpegCommands();
 } catch (e) {
-  report.error = String(e.stack ?? e);
-  process.exitCode = 1;
+  if (!(e instanceof SkipCapture)) {
+    report.error = String(e.stack ?? e);
+    process.exitCode = 1;
+  }
 } finally {
   fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
   if (server && opt['keep-server']) log(`server left running at ${server.base} (pid group ${server.pid})`);
