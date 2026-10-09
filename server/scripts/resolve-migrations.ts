@@ -36,6 +36,14 @@ function git(...args: string[]): string {
   return execFileSync('git', args, { cwd: root, encoding: 'utf-8' }).trim();
 }
 
+// Untrimmed, so a file written back keeps its trailing newline.
+function gitShow(ref: string, file: string): string {
+  return execFileSync('git', ['show', `${ref}:${file}`], {
+    cwd: root,
+    encoding: 'utf-8',
+  });
+}
+
 function hasRef(ref: string): boolean {
   return (
     spawnSync('git', ['rev-parse', '-q', '--verify', ref], { cwd: root })
@@ -115,7 +123,7 @@ function readJson<T>(repoPath: string): T {
  * branch's sole change to it was registering its own SQL migrations.
  */
 function planProvider(refs: Refs, ourOnly: JournalEntry[]) {
-  const oursText = git('show', `${refs.ours}:${PROVIDER}`);
+  const oursText = gitShow(refs.ours, PROVIDER);
 
   const fullCopy = ourOnly.some(
     (e) => entryRegex(e.tag).exec(oursText)?.[1] === 'true',
@@ -133,7 +141,7 @@ function planProvider(refs: Refs, ourOnly: JournalEntry[]) {
     stripped = stripped.replace(entryRegex(e.tag), '');
   }
 
-  if (stripped !== git('show', `${refs.base}:${PROVIDER}`)) {
+  if (stripped !== gitShow(refs.base, PROVIDER)) {
     return fail(
       `${PROVIDER} has conflicts and this branch changed more than its migration registrations. ` +
         'Resolve it by hand, keeping both sides, then run this again.',
@@ -141,7 +149,7 @@ function planProvider(refs: Refs, ourOnly: JournalEntry[]) {
   }
 
   return {
-    text: git('show', `${refs.upstream}:${PROVIDER}`),
+    text: gitShow(refs.upstream, PROVIDER),
     fullCopy,
     unregistered,
   };
@@ -218,6 +226,17 @@ function main() {
   console.log(`Resolving migrations for ${refs.kind}.`);
   console.log(`  upstream: ${upstreamOnly.map((e) => e.tag).join(', ')}`);
   console.log(`  removing: ${ourOnly.map((e) => e.tag).join(', ')}`);
+
+  // drizzle-kit loads the schema, which imports the built @tunarr/types.
+  console.log('\nBuilding server dependencies...\n');
+  const build = spawnSync(
+    'pnpm',
+    ['turbo', 'build', '--filter=@tunarr/server^...'],
+    { cwd: root, stdio: 'inherit' },
+  );
+  if (build.status !== 0) {
+    fail('building server dependencies failed. Nothing was changed.');
+  }
 
   for (const e of ourOnly) {
     for (const file of [`${SQL_DIR}/${e.tag}.sql`, snapshotPath(e.idx)]) {
