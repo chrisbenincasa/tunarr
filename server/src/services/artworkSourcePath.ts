@@ -23,6 +23,9 @@ export function buildArtworkSourcePath(
       case 'emby':
         return new URL(`/Items/${externalKey}/Images/Primary`, mediaSourceUri)
           .href;
+      case 'invidious':
+        return new URL(`/vi/${externalKey}/maxresdefault.jpg`, mediaSourceUri)
+          .href;
       default:
         return undefined;
     }

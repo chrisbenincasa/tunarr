@@ -24,6 +24,7 @@ import { useMemo, useState } from 'react';
 import { DeleteConfirmationDialog } from '../../components/DeleteConfirmationDialog.tsx';
 import { EditMediaSourceLibrariesDialog } from '../../components/settings/media_source/EditMediaSourceLibrariesDialog.tsx';
 import { EmbyServerEditDialog } from '../../components/settings/media_source/EmbyServerEditDialog.tsx';
+import { InvidiousServerEditDialog } from '../../components/settings/media_source/InvidiousServerEditDialog.tsx';
 import { JellyfinServerEditDialog } from '../../components/settings/media_source/JelllyfinServerEditDialog.tsx';
 import { LocalMediaEditDialog } from '../../components/settings/media_source/LocalMediaEditDialog.tsx';
 import { MediaSourceHealthyTableCell } from '../../components/settings/media_source/MediaSourceHealthyTableCell.tsx';
@@ -231,6 +232,13 @@ export default function MediaSourceSettingsPage() {
       )}
       {editingMediaSource?.type === 'emby' && (
         <EmbyServerEditDialog
+          open
+          onClose={() => setEditingMediaSource(null)}
+          server={editingMediaSource}
+        />
+      )}
+      {editingMediaSource?.type === 'invidious' && (
+        <InvidiousServerEditDialog
           open
           onClose={() => setEditingMediaSource(null)}
           server={editingMediaSource}

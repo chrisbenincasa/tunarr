@@ -9,6 +9,7 @@ export enum ProgramExternalIdType {
   TVDB = 'tvdb',
   JELLYFIN = 'jellyfin',
   EMBY = 'emby',
+  INVIDIOUS = 'invidious',
 }
 
 export function programExternalIdTypeFromExternalIdType(

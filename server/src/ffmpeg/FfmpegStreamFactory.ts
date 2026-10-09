@@ -322,8 +322,12 @@ export class FfmpegStreamFactory {
     // Passthrough mode: copy all video/audio streams from the source without
     // re-encoding. Incompatible audio codecs get per-stream overrides.
     // Subtitles are still processed as WebVTT sidecar when available.
+    // Copy-all maps every stream from a single input, so a source whose audio
+    // is a separate input (YouTube via Invidious) always takes the transcode
+    // path, where audio is its own AudioInputSource.
     const isPassthrough =
-      isRemux || outputFormat.type === OutputFormatTypes.HlsDirectV2;
+      (isRemux || outputFormat.type === OutputFormatTypes.HlsDirectV2) &&
+      !streamDetails.separateAudioSource;
     const playbackParams = isPassthrough
       ? null
       : new FfmpegPlaybackParamsCalculator(
@@ -529,7 +533,7 @@ export class FfmpegStreamFactory {
         });
 
       audioInput = new AudioInputSource(
-        streamSource,
+        streamDetails.separateAudioSource ?? streamSource,
         [
           AudioStream.create({
             index: audioStream.index,

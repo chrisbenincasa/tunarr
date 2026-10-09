@@ -81,9 +81,40 @@ export class MediaSourceLibraryRefresher {
         break;
       case 'local':
         break;
+      case 'invidious':
+        await this.handleInvidious(source);
+        break;
     }
 
     return;
+  }
+
+  /**
+   * The channel list is the user's, not the server's, so every stored library
+   * is always reported. This only refreshes each library's display name to
+   * the channel's current title; a lookup that fails keeps the old name.
+   */
+  private async handleInvidious(mediaSource: MediaSourceWithRelations) {
+    const client =
+      await this.mediaSourceApiFactory.getInvidiousApiClientForMediaSource(
+        mediaSource,
+      );
+
+    const reported: ReportedLibrary[] = [];
+    for (const library of mediaSource.libraries) {
+      const channel = await client.getChannel(library.externalKey);
+      reported.push({
+        externalKey: library.externalKey,
+        name: channel.isSuccess() ? channel.get().author : library.name,
+        mediaType: 'other_videos',
+      });
+    }
+
+    if (reported.length === 0) {
+      return;
+    }
+
+    await this.reconcile(mediaSource, 'Invidious', reported);
   }
 
   private async handlePlex(mediaSource: MediaSourceWithRelations) {

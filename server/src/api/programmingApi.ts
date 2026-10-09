@@ -595,7 +595,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
       if (program) {
         externalId = program.externalIds.find(
-          (eid) => eid.sourceType === 'jellyfin' || eid.sourceType === 'plex',
+          (eid) =>
+            eid.sourceType === 'jellyfin' ||
+            eid.sourceType === 'plex' ||
+            eid.sourceType === 'invidious',
         );
       } else {
         const grouping = await req.serverCtx.programDB.getProgramGrouping(
@@ -605,7 +608,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send(`Program ${req.params.id} not found.`);
         }
         externalId = grouping.externalIds.find(
-          (eid) => eid.sourceType === 'jellyfin' || eid.sourceType === 'plex',
+          (eid) =>
+            eid.sourceType === 'jellyfin' ||
+            eid.sourceType === 'plex' ||
+            eid.sourceType === 'invidious',
         );
       }
 
@@ -671,6 +677,16 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }
         case 'jellyfin': {
           const url = `${server.uri}/web/#/details?id=${externalId.externalKey}`;
+          if (!req.query.forward) {
+            return res.send({ url });
+          }
+
+          return res.redirect(url, 302).send();
+        }
+        case 'invidious': {
+          const url = `${server.uri}/watch?v=${encodeURIComponent(
+            externalId.externalKey,
+          )}`;
           if (!req.query.forward) {
             return res.send({ url });
           }

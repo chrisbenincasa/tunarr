@@ -89,7 +89,7 @@ export class BackfillProgramArtworkFixer extends Fixer {
         .where(
           and(
             isNull(Artwork.uuid),
-            inArray(Program.sourceType, ['plex', 'jellyfin', 'emby']),
+            inArray(Program.sourceType, ['plex', 'jellyfin', 'emby', 'invidious']),
             isNotNull(Program.mediaSourceId),
             cursor === undefined ? undefined : gt(Program.uuid, cursor),
           ),

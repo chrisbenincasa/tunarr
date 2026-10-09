@@ -8,7 +8,13 @@ import type { SearchRequest } from '@tunarr/types/schemas';
 import { groupBy, has, reject, some, uniq } from 'lodash-es';
 import { match } from 'ts-pattern';
 import useStore from '..';
-import { Emby, Jellyfin, Local, Plex } from '../../helpers/constants.ts';
+import {
+  Emby,
+  Invidious,
+  Jellyfin,
+  Local,
+  Plex,
+} from '../../helpers/constants.ts';
 import {
   buildPlexFilterKey,
   buildPlexSortKey,
@@ -116,6 +122,7 @@ export const removeMediaSourceSelectedMedia = (
           case Plex:
           case Jellyfin:
           case Emby:
+          case Invidious:
             return some(grouped[media.type], {
               id: media.id,
               mediaSourceId: media.mediaSource.id,

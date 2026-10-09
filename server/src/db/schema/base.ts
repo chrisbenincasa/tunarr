@@ -26,13 +26,19 @@ export const ProgramExternalIdSourceTypes = [
   'tvdb',
   'jellyfin',
   'emby',
+  'invidious',
 ] as const;
 
 export type ProgramExternalIdSourceType = TupleToUnion<
   typeof ProgramExternalIdSourceTypes
 >;
 
-export const RemoteSourceTypes = ['plex', 'jellyfin', 'emby'] as const;
+export const RemoteSourceTypes = [
+  'plex',
+  'jellyfin',
+  'emby',
+  'invidious',
+] as const;
 
 export type RemoteSourceType = TupleToUnion<typeof RemoteSourceTypes>;
 
@@ -118,7 +124,13 @@ export type ChannelOfflineSettings = z.infer<
 
 export type MediaSourceId = Tag<string, 'mediaSourceId'>;
 export type MediaSourceName = Tag<string, 'mediaSourceName'>;
-export const MediaSourceTypes = ['plex', 'jellyfin', 'emby', 'local'] as const;
+export const MediaSourceTypes = [
+  'plex',
+  'jellyfin',
+  'emby',
+  'local',
+  'invidious',
+] as const;
 export const MediaLibraryTypes = [
   'movies',
   'shows',
@@ -137,6 +149,7 @@ export const MediaSourceType: MediaSourceMap = {
   Jellyfin: 'jellyfin',
   Emby: 'emby',
   Local: 'local',
+  Invidious: 'invidious',
 } as const;
 
 export const ProgramStates = ['ok', 'missing'] as const;

@@ -251,6 +251,14 @@ export class DirectMigrationProvider implements MigrationProvider {
         migration1790271998: makeMigrationFromSqlFile(
           './sql/0052_colorful_ken_ellis.sql',
         ),
+        // Widens the source-type CHECK constraints for 'invidious'. That means
+        // rebuilding program and its external-id tables, which drizzle emits
+        // with foreign keys re-enabled part way through; the full copy keeps
+        // those rebuilds from cascading deletes into dependent tables.
+        migration1791503587: makeMigrationFromSqlFile(
+          './sql/0053_add_invidious.sql',
+          true,
+        ),
       } satisfies Record<string, TunarrDatabaseMigration>,
       wrapWithTransaction,
     );

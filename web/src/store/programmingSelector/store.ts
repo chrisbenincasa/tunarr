@@ -11,6 +11,7 @@ import { type StateCreator } from 'zustand';
 import type { Imported, Local } from '../../types/MediaSource';
 import {
   type Emby,
+  type Invidious,
   type ItemUuid,
   type Jellyfin,
   type Plex,
@@ -46,7 +47,7 @@ export type ExternalSourceSelectedMedia = {
   libraryId: string;
   id: ItemUuid;
   childCount?: number;
-  type: Plex | Jellyfin | Emby;
+  type: Plex | Jellyfin | Emby | Invidious;
 };
 
 export type LocalSourceSelectedMedia = {
