@@ -28,6 +28,9 @@ const { values: opt } = parseArgs({
     rewind: { type: 'string' },
     'rewind-polls': { type: 'string', default: '8' },
     reanalyze: { type: 'string' },
+    'flex-first': { type: 'string' },
+    'ffmpeg-setting': { type: 'string', multiple: true, default: [] },
+    resolution: { type: 'string' },
   },
 });
 
@@ -54,6 +57,12 @@ const clipDurations = opt['clip-durations']
   ? opt['clip-durations'].split(',').map(Number)
   : Array.from({ length: Number(opt.clips) }, () => Number(opt['clip-seconds']));
 if (clipDurations.some((d) => !(d > 0))) throw new Error('--clip-durations must be positive seconds, comma separated');
+const flexMs = opt['flex-first'] === undefined ? 0 : Number(opt['flex-first']);
+if (!(flexMs >= 0)) throw new Error('--flex-first takes milliseconds');
+if (flexMs > 0 && opt.source !== 'synthetic') throw new Error('--flex-first only works with --source synthetic');
+const resolutionMatch = opt.resolution === undefined ? null : /^(\d+)x(\d+)$/.exec(opt.resolution);
+if (opt.resolution !== undefined && !resolutionMatch) throw new Error('--resolution takes WIDTHxHEIGHT, such as 1280x720');
+const resolution = resolutionMatch && { widthPx: Number(resolutionMatch[1]), heightPx: Number(resolutionMatch[2]) };
 const log = (...a) => console.error('[repro]', ...a);
 
 // ---------- helpers ----------
@@ -264,6 +273,7 @@ async function buildSyntheticChannel(base, clipsDir) {
 
   const configs = await api(base, 'GET', '/api/transcode_configs');
   const tc = configs.find((c) => c.isDefault) ?? configs[0];
+  await applyResolution(base, tc.id);
   const startTime = Date.now();
   const channel = await api(base, 'POST', '/api/channels', {
     type: 'new',
@@ -287,13 +297,51 @@ async function buildSyntheticChannel(base, clipsDir) {
   await api(base, 'POST', `/api/channels/${channel.id}/programming`, {
     type: 'manual',
     append: false,
-    lineup: programs.map((p) => ({ type: 'content', id: p.id, duration: p.duration })),
+    lineup: [
+      ...(flexMs ? [{ type: 'flex', duration: flexMs }] : []),
+      ...programs.map((p) => ({ type: 'content', id: p.id, duration: p.duration })),
+    ],
   });
   return {
     channelId: channel.id,
     startTime,
-    lineup: programs.map((p) => ({ title: p.program?.title, durationMs: p.duration })),
+    lineup: [
+      ...(flexMs ? [{ title: '(flex)', durationMs: flexMs }] : []),
+      ...programs.map((p) => ({ title: p.program?.title, durationMs: p.duration })),
+    ],
   };
+}
+
+async function applyResolution(base, transcodeConfigId) {
+  if (!resolution) return;
+  const tc = await api(base, 'GET', `/api/transcode_configs/${transcodeConfigId}`);
+  await api(base, 'PUT', `/api/transcode_configs/${transcodeConfigId}`, { ...tc, resolution });
+}
+
+// Values parse as JSON when they can (true, 3, "x"), and as plain strings otherwise.
+async function applyFfmpegSettings(base) {
+  if (opt['ffmpeg-setting'].length === 0) return undefined;
+  const overrides = {};
+  for (const kv of opt['ffmpeg-setting']) {
+    const eq = kv.indexOf('=');
+    if (eq < 1) throw new Error(`--ffmpeg-setting needs key=value, got ${kv}`);
+    const raw = kv.slice(eq + 1);
+    let value;
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      value = raw;
+    }
+    overrides[kv.slice(0, eq)] = value;
+  }
+  const current = await api(base, 'GET', '/api/ffmpeg-settings');
+  await api(base, 'PUT', '/api/ffmpeg-settings', { ...current, ...overrides });
+
+  // The schema strips unknown keys, so a misspelled key would otherwise pass silently.
+  const saved = await api(base, 'GET', '/api/ffmpeg-settings');
+  const ignored = Object.keys(overrides).filter((k) => JSON.stringify(saved[k]) !== JSON.stringify(overrides[k]));
+  if (ignored.length) throw new Error(`ffmpeg settings not applied: ${ignored.join(', ')}`);
+  return overrides;
 }
 
 // ---------- capture ----------
@@ -566,6 +614,7 @@ try {
     report.clips = makeClips(clipsDir);
     log('starting server');
     server = await startServer();
+    report.ffmpegSettings = await applyFfmpegSettings(server.base);
     log('building channel', server.base);
     channel = await buildSyntheticChannel(server.base, clipsDir);
   } else if (opt.source === 'copy') {
@@ -573,7 +622,9 @@ try {
     log('copying database');
     prepareDbCopy();
     server = await startServer();
+    report.ffmpegSettings = await applyFfmpegSettings(server.base);
     const ch = await findChannel(server.base, opt.channel);
+    await applyResolution(server.base, ch.transcodeConfigId);
     channel = { channelId: ch.id, startTime: ch.startTime, lineup: null };
   } else {
     throw new Error(`unknown --source ${opt.source}`);

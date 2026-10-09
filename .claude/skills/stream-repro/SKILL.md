@@ -34,6 +34,19 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--rewind N` | | HLS only. After the capture, jump back N segments, then play on (see below) |
 | `--rewind-polls P` | `8` | Playlist polls after the rewind, 2 s apart |
 | `--reanalyze DIR` | | Re-score an existing capture without booting a server |
+| `--flex-first MS` | | `synthetic` only. Put an offline (flex) gap of MS milliseconds before the clips |
+| `--ffmpeg-setting KEY=VALUE` | | Override one field of the server's ffmpeg settings before streaming. Repeatable. Values parse as JSON when they can, so `true` and `3` are not strings |
+| `--resolution WxH` | | Set the output resolution of the channel's transcode config, such as `1280x720` |
+
+Use `--flex-first` to test the offline placeholder stream, which plays during flex gaps and is built
+separately from program streams (`createOfflineSession` in `server/src/ffmpeg/FfmpegStreamFactory.ts`).
+It runs first in the lineup, so the capture starts inside it. Pair it with `--ffmpeg-setting` to check
+that a setting reaches that path, for example `--flex-first 45000 --ffmpeg-setting
+scalingAlgorithm=lanczos --resolution 1280x720`. The keys are the fields of `FfmpegSettingsSchema` in
+`types/src/schemas/settingsSchemas.ts`. The run fails if the server rejects a value or if a key does not
+stick (a misspelled key gets dropped). `report.ffmpegSettings` records what was overridden. The offline
+image is 1920x1080 and the default output is 1080p, so no scale filter runs unless `--resolution` sets
+another size. Without it, `scalingAlgorithm` has nothing to show.
 
 Pick the layout that matches the report. `dup-lang` has two `eng` audio tracks, one titled
 Commentary, which is how a real library ends up with duplicate-language audio. `mixed` alternates resolution, frame rate, sample rate, channel
