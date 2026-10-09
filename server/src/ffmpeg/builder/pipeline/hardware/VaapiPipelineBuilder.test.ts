@@ -835,17 +835,21 @@ describe('VaapiPipelineBuilder tonemap', () => {
     desiredState?: Partial<FrameStateOpts>;
     subtitles?: SubtitlesInputSource | null;
     stateVaapiDevice?: string;
+    openclInterop?: boolean;
   }): Pipeline {
-    const capabilities = new VaapiHardwareCapabilities([
-      new VaapiProfileEntrypoint(
-        VaapiProfiles.HevcMain10,
-        VaapiEntrypoint.Decode,
-      ),
-      new VaapiProfileEntrypoint(
-        VaapiProfiles.HevcMain,
-        VaapiEntrypoint.Encode,
-      ),
-    ]);
+    const capabilities = new VaapiHardwareCapabilities(
+      [
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain10,
+          VaapiEntrypoint.Decode,
+        ),
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain,
+          VaapiEntrypoint.Encode,
+        ),
+      ],
+      opts.openclInterop ?? true,
+    );
 
     const binaryCapabilities =
       opts.binaryCapabilities ??
@@ -1081,6 +1085,74 @@ describe('VaapiPipelineBuilder tonemap', () => {
 
     expect(hasOpenclTonemapFilter(pipeline)).to.eq(true);
     expect(hasVaapiTonemapFilter(pipeline)).to.eq(false);
+  });
+
+  test('falls back to tonemap_vaapi when the OpenCL interop probe failed', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const pipeline = buildWithTonemap({
+      videoStream: createHdrVideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([
+          KnownFfmpegFilters.TonemapVaapi,
+          KnownFfmpegFilters.TonemapOpencl,
+        ]),
+        new Set(),
+      ),
+      stateVaapiDevice: '/dev/dri/renderD128',
+      openclInterop: false,
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(hasVaapiTonemapFilter(pipeline)).to.eq(true);
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
+    expect(args).not.toContain('opencl=ocl@va');
+    expect(args).not.toContain('derive_device=opencl');
+  });
+
+  test('falls back to software tonemap when the OpenCL interop probe failed and tonemap_vaapi is unavailable', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const pipeline = buildWithTonemap({
+      videoStream: createHdrVideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.TonemapOpencl]),
+        new Set(),
+      ),
+      stateVaapiDevice: '/dev/dri/renderD128',
+      openclInterop: false,
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(hasSoftwareTonemapFilter(pipeline)).to.eq(true);
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
+    expect(args).not.toContain('opencl=ocl@va');
+  });
+
+  test('falls back to tonemap_opencl when preference is vaapi but tonemap_vaapi is unavailable', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const pipeline = buildWithTonemap({
+      videoStream: createHdrVideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.TonemapOpencl]),
+        new Set(),
+      ),
+      pipelineOptions: {
+        vaapiPipelineOptions: { tonemapPreference: 'vaapi' },
+      },
+      stateVaapiDevice: '/dev/dri/renderD128',
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(true);
+    expect(args).toContain('opencl=ocl@va');
   });
 
   test('opencl tonemap filter appears before scale in the filter chain', () => {
@@ -1592,25 +1664,29 @@ describe('VaapiPipelineBuilder scale', () => {
     disableHardwareEncoding?: boolean;
     disableHardwareFilters?: boolean;
     deinterlace?: boolean;
+    openclInterop?: boolean;
   }): Pipeline {
-    const capabilities = new VaapiHardwareCapabilities([
-      new VaapiProfileEntrypoint(
-        VaapiProfiles.H264Main,
-        VaapiEntrypoint.Decode,
-      ),
-      new VaapiProfileEntrypoint(
-        VaapiProfiles.H264Main,
-        VaapiEntrypoint.Encode,
-      ),
-      new VaapiProfileEntrypoint(
-        VaapiProfiles.HevcMain10,
-        VaapiEntrypoint.Decode,
-      ),
-      new VaapiProfileEntrypoint(
-        VaapiProfiles.HevcMain,
-        VaapiEntrypoint.Encode,
-      ),
-    ]);
+    const capabilities = new VaapiHardwareCapabilities(
+      [
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.H264Main,
+          VaapiEntrypoint.Decode,
+        ),
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.H264Main,
+          VaapiEntrypoint.Encode,
+        ),
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain10,
+          VaapiEntrypoint.Decode,
+        ),
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain,
+          VaapiEntrypoint.Encode,
+        ),
+      ],
+      opts.openclInterop ?? false,
+    );
 
     const binaryCapabilities =
       opts.binaryCapabilities ??
@@ -1767,6 +1843,7 @@ describe('VaapiPipelineBuilder scale', () => {
         ]),
         new Set(),
       ),
+      openclInterop: true,
       disableHardwareDecoding: true,
       // After TonemapOpenclFilter.nextState: frameDataLocation = Hardware
       // → condition 2 fires → software scale

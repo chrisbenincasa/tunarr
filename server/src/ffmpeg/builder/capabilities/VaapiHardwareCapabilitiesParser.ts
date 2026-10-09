@@ -21,7 +21,7 @@ export class VaapiHardwareCapabilitiesParser {
     return entrypoints;
   }
 
-  static extractAllFromVaInfo(result: string) {
+  static extractAllFromVaInfo(result: string, openclInterop = false) {
     const entrypoints: VaapiProfileEntrypoint[] = [];
     let currentEntrypoint: VaapiProfileEntrypoint | null = null;
 
@@ -54,6 +54,6 @@ export class VaapiHardwareCapabilitiesParser {
       return null;
     }
 
-    return new VaapiHardwareCapabilities(entrypoints);
+    return new VaapiHardwareCapabilities(entrypoints, openclInterop);
   }
 }
