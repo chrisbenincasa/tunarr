@@ -14,7 +14,7 @@ export class CleanupSessionsTask extends SimpleTask {
   @InjectLogger() declare protected readonly logger: Logger;
 
   static KEY = Symbol.for(CleanupSessionsTask.name);
-  public static ID: TaskId = 'cleanup-sessions';
+  public static ID: TaskId = CleanupSessionsTask.name;
   public ID = CleanupSessionsTask.ID;
 
   constructor(@inject(SessionManager) private sessionManager: SessionManager) {
