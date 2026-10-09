@@ -656,6 +656,73 @@ describe('ChannelDB', () => {
       expect(retrieved?.startTime).toBe(newStartTime);
     });
 
+    test('keeps an off-minute start time when settings are saved', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const channelData = createSaveableChannel(defaultTranscodeConfigId, {
+        name: 'Rebased Channel',
+        number: 1001,
+        startTime: 1_760_000_040_000,
+      });
+      const created = await channelDb.saveChannel(channelData);
+
+      // Duration reconciliation moved the start off the minute.
+      const rebased = 1_760_000_071_234;
+      await channelDb.updateChannelStartTime(created.channel.uuid, rebased);
+
+      const updated = await channelDb.updateChannel(created.channel.uuid, {
+        ...channelData,
+        startTime: rebased,
+        name: 'Renamed',
+      });
+
+      expect(updated.channel.name).toBe('Renamed');
+      expect(updated.channel.startTime).toBe(rebased);
+    });
+
+    test('rounds a new start time to the minute', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const channelData = createSaveableChannel(defaultTranscodeConfigId, {
+        name: 'Moved Channel',
+        number: 1002,
+        startTime: 1_760_000_040_000,
+      });
+      const created = await channelDb.saveChannel(channelData);
+
+      const updated = await channelDb.updateChannel(created.channel.uuid, {
+        ...channelData,
+        startTime: 1_760_003_671_234,
+      });
+
+      expect(updated.channel.startTime).toBe(1_760_003_640_000);
+    });
+
+    test('settings saves do not overwrite the lineup duration', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const channelData = createSaveableChannel(defaultTranscodeConfigId, {
+        name: 'Duration Channel',
+        number: 1003,
+      });
+      const created = await channelDb.saveChannel(channelData);
+      await channelDb.saveLineup(created.channel.uuid, {
+        items: [{ type: 'offline', durationMs: 90_000 }],
+        schedule: null,
+      });
+
+      // A form loaded before the lineup change still holds the old duration.
+      const updated = await channelDb.updateChannel(created.channel.uuid, {
+        ...channelData,
+        duration: 1,
+      });
+
+      expect(updated.channel.duration).toBe(90_000);
+    });
+
     test('should sync channel duration', async ({
       channelDb,
       defaultTranscodeConfigId,

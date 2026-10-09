@@ -40,6 +40,12 @@ export class OnDemandChannelService {
     return lineup.onDemandConfig?.state === 'playing';
   }
 
+  // Serializes a lineup write with pause and resume, which read and rewrite
+  // the on-demand cursor.
+  runWithChannelLock<T>(channelId: string, cb: () => Promise<T>): Promise<T> {
+    return this.#locks.runWithLockId(channelId, cb);
+  }
+
   async pauseAllChannels() {
     const channels = await this.channelDB.getAllChannels();
     const now = +dayjs();
