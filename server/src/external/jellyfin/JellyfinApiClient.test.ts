@@ -220,3 +220,86 @@ describe('JellyfinApiClient external subtitle canonicalization', () => {
     }
   });
 });
+
+// Fake /Items that replaces collection members with their BoxSet unless the
+// request sends collapseBoxSetItems=false. Jellyfin does this when its "Group
+// into collections" settings are on, and Jellyfin 12 also does it for any
+// request without a user.
+function mockJellyfinWithCollection(
+  client: JellyfinApiClient,
+  standalone: unknown[],
+  members: unknown[],
+  boxSet: unknown,
+) {
+  return vi.spyOn(client, 'doTypeCheckedGet' as never).mockImplementation(((
+    _path: string,
+    _schema: unknown,
+    config: { params: Record<string, unknown> },
+  ) => {
+    const items =
+      config.params['collapseBoxSetItems'] === 'false'
+        ? [...standalone, ...members]
+        : [...standalone, boxSet];
+    const start = (config.params['startIndex'] as number | undefined) ?? 0;
+    const limit = (config.params['limit'] as number | undefined) ?? 50;
+    return Promise.resolve(
+      Result.success({
+        Items: items.slice(start, start + limit),
+        TotalRecordCount: items.length,
+        StartIndex: start,
+      }),
+    );
+  }) as never);
+}
+
+const boxSet = { Id: 'boxset-1', Name: 'Korean Dramas', Type: 'BoxSet' };
+
+function movie(id: string, name: string) {
+  return { ...movieWithExternalSubtitles, Id: id, Name: name };
+}
+
+function series(id: string, name: string) {
+  return { Id: id, Name: name, Type: 'Series' };
+}
+
+async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
+  const out: T[] = [];
+  for await (const item of iterable) {
+    out.push(item);
+  }
+  return out;
+}
+
+describe('JellyfinApiClient library scans with Jellyfin collections', () => {
+  it('returns movies that belong to a collection', async () => {
+    const client = makeMinimalJellyfinClient();
+    mockJellyfinWithCollection(
+      client,
+      [movie('m1', 'Standalone')],
+      [movie('m2', 'Member One'), movie('m3', 'Member Two')],
+      boxSet,
+    );
+
+    const movies = await collect(client.getMovieLibraryContents('library-1'));
+
+    expect(movies.map((m) => m.title)).toEqual([
+      'Standalone',
+      'Member One',
+      'Member Two',
+    ]);
+  });
+
+  it('returns shows that belong to a collection', async () => {
+    const client = makeMinimalJellyfinClient();
+    mockJellyfinWithCollection(
+      client,
+      [series('s1', 'Standalone')],
+      [series('s2', 'Member')],
+      boxSet,
+    );
+
+    const shows = await collect(client.getTvShowLibraryContents('library-1'));
+
+    expect(shows.map((s) => s.title)).toEqual(['Standalone', 'Member']);
+  });
+});
