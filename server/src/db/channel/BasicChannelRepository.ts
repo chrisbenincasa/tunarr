@@ -42,6 +42,13 @@ function sanitizeChannelWatermark(
   };
 }
 
+function roundToMinute(timestamp: number) {
+  return +dayjs(timestamp).second(0).millisecond(0);
+}
+
+// Duration is left out because it always follows the lineup. A settings form
+// loaded before a lineup change would otherwise write back a stale cycle.
+
 function updateRequestToChannel(
   updateReq: SaveableChannel,
 ): Partial<NewChannelOrm> {
@@ -54,10 +61,9 @@ function updateRequestToChannel(
     guideMinimumDuration: updateReq.guideMinimumDuration,
     groupTitle: updateReq.groupTitle,
     disableFillerOverlay: updateReq.disableFillerOverlay,
-    startTime: +dayjs(updateReq.startTime).second(0).millisecond(0),
+    startTime: roundToMinute(updateReq.startTime),
     offline: updateReq.offline,
     name: updateReq.name,
-    duration: updateReq.duration,
     stealth: updateReq.stealth,
     fillerRepeatCooldown: updateReq.fillerRepeatCooldown,
     guideFlexTitle: updateReq.guideFlexTitle,
@@ -196,6 +202,13 @@ export class BasicChannelRepository {
     }
 
     const update = updateRequestToChannel(updateReq);
+
+    // Start times are saved on the minute, but duration reconciliation can
+    // move one off it. A request for the same minute keeps the stored value,
+    // so saving other settings doesn't shift the channel or regenerate it.
+    if (update.startTime === roundToMinute(channel.startTime)) {
+      update.startTime = channel.startTime;
+    }
 
     if (
       isNonEmptyString(updateReq.watermark?.url) &&

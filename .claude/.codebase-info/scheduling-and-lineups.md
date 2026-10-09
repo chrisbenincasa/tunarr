@@ -1,6 +1,6 @@
 # Scheduling and Lineups
 
-*Last Updated: 2026-09-29*
+*Last Updated: 2026-10-09*
 
 Domain terms (slot, lineup, filler, flex) are defined in `CONTEXT.md` at the repo root.
 
@@ -13,6 +13,20 @@ SQLite. `db/channel/BasicChannelRepository.ts` creates the lineup file when it c
 
 Lineup file format changes are migrated by `server/src/migration/lineups/ChannelLineupMigrator.ts`,
 separately from SQL migrations.
+
+## Lineup durations and channel position
+
+- Each lineup item stores its own `durationMs`, a copy of `program.duration`. Streaming and the guide
+  read the copy.
+- A channel's position is `(now - channel.startTime) % channel.duration`; on-demand channels use the
+  lineup's `onDemandConfig.cursor` instead.
+- `server/src/tasks/ReconcileProgramDurationsTask.ts` copies changed program durations into lineups.
+  `MediaSourceScanCoordinator` runs it after every scan.
+- The rules live in `server/src/db/lineupDurationReconciler.ts`. Flex right after a changed item absorbs
+  the difference; mid-roll segments are clamped, or the final one is extended; the current item and
+  elapsed time are kept by rebasing `startTime` or moving the on-demand cursor.
+- `BasicChannelRepository.updateChannel` never writes `duration`, and it keeps an off-minute `startTime`
+  when the request rounds to the same minute.
 
 ## Schedulers (`server/src/services/scheduling/`)
 
