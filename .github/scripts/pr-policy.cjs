@@ -12,6 +12,7 @@ const DISCLOSURE_URL = 'https://tunarr.com/dev/contributing/#disclose-ai-use';
 const NEEDS_DESIGN = 'needs design';
 const DESIGN_APPROVED = 'design approved';
 const DESIGN_PROPOSAL = 'design proposal';
+const MECHANICAL = 'mechanical';
 const SIZE_LIMIT = 500;
 const SIZE_LIMIT_WITH_TESTS = 1500;
 const CLOSE_AFTER_DAYS = 30;
@@ -161,10 +162,12 @@ async function evaluateTriggers(github, owner, repo, pr) {
 
   const triggers = [];
 
+  // Maintainers apply the mechanical label to exempt a PR from the size limit.
+  const mechanical = pr.labels.some((l) => l.name === MECHANICAL);
   const { code, withTests } = lineCounts(files);
-  if (code > SIZE_LIMIT) {
+  if (!mechanical && code > SIZE_LIMIT) {
     triggers.push(`${code} changed lines outside tests, over the ${SIZE_LIMIT}-line limit`);
-  } else if (withTests > SIZE_LIMIT_WITH_TESTS) {
+  } else if (!mechanical && withTests > SIZE_LIMIT_WITH_TESTS) {
     triggers.push(
       `${withTests} changed lines including tests, over the ${SIZE_LIMIT_WITH_TESTS}-line limit`,
     );
@@ -186,6 +189,19 @@ function referencedNumbers(body, owner, repo) {
   const url = new RegExp(`github\\.com/${owner}/${repo}/issues/(\\d+)`, 'gi');
   for (const m of body.matchAll(url)) numbers.add(Number(m[1]));
   return [...numbers];
+}
+
+async function labeledByHuman(github, owner, repo, number) {
+  const events = await github.paginate(github.rest.issues.listEvents, {
+    owner,
+    repo,
+    issue_number: number,
+    per_page: 100,
+  });
+  const labeled = events
+    .filter((e) => e.event === 'labeled' && e.label?.name === NEEDS_DESIGN)
+    .at(-1);
+  return labeled !== undefined && labeled.actor?.type !== 'Bot';
 }
 
 async function linkedIssues(github, owner, repo, body) {
@@ -331,8 +347,9 @@ async function evaluatePullRequest(github, core, owner, repo, number) {
   const triggers = await evaluateTriggers(github, owner, repo, pr);
 
   // A maintainer may apply the label by hand for triggers the bot can't
-  // detect. Only an approved design clears it.
-  if (hasLabel && triggers.length === 0) {
+  // detect. Only an approved design clears it. The bot's own label is dropped
+  // once its triggers no longer apply.
+  if (hasLabel && triggers.length === 0 && (await labeledByHuman(github, owner, repo, pr.number))) {
     triggers.push(`a maintainer marked this change as needing a design`);
   }
 

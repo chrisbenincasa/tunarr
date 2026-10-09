@@ -8,7 +8,7 @@ name: PR Policy
 
 on:
   pull_request_target:
-    types: [opened, edited, reopened, synchronize, ready_for_review]
+    types: [opened, edited, reopened, synchronize, ready_for_review, labeled, unlabeled]
   issues:
     types: [labeled]
   schedule:

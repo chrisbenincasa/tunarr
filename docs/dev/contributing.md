@@ -405,6 +405,8 @@ The design issue should cover:
 - Which parts of the codebase change, and any schema or API changes
 - How you will split the work into PRs that can each be reviewed on their own
 
+Large mechanical changes, such as a rename or the same fix repeated across many files, can skip the size limit. A maintainer decides by adding the `mechanical` label to the PR. The other triggers still apply. If you're planning a big mechanical change, ask in an issue first, because it may conflict with other open work.
+
 Small fixes, docs changes, and refactors inside one module don't need a design issue. If you're unsure, ask in an issue or on Discord before you start.
 
 ### PRs that skip the design step

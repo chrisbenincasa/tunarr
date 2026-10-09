@@ -19,6 +19,8 @@ Check whether the change needs an approved design. It does if it will:
 - Change how `server`, `web`, `types`, and `shared` talk to each other, such as a new API shape or shared type
 - Change more than 500 lines outside tests, or more than 1,500 including tests, not counting generated files
 
+A maintainer may exempt a mechanical change, such as a rename or one fix repeated across many files, from the size limit only. Before starting a large mechanical change, have the user ask in an issue first.
+
 If any of these apply, ask the user for the design issue number. Confirm it carries the `design approved` label with `gh issue view <n> --repo chrisbenincasa/tunarr --json labels`.
 
 If there is no approved design issue, don't write the implementation. Help the user write a design issue instead. It should cover the problem, the approach and rejected alternatives, which parts of the codebase change, and how the work splits into PRs.
