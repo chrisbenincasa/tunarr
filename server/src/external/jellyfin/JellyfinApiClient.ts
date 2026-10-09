@@ -163,10 +163,10 @@ export type JellyfinGetItemsQuery = {
   contributingArtistIds?: string[];
   excludeItemIds?: string[];
   albumArtistIds?: string[];
-  // Jellyfin defaults this to the connected user's own "Group movies into
-  // collections" display preference when omitted. Library scans need this to
-  // be explicitly false, or movies inside a BoxSet are silently collapsed
-  // into their parent collection and never returned as individual items.
+  // Defaults to false in getRawItems. When omitted, Jellyfin replaces every
+  // movie or show in a collection with the collection's BoxSet. It does this
+  // when the server's "Group into collections" settings are on, and Jellyfin 12
+  // also does it for any request without a user.
   collapseBoxSetItems?: boolean;
 };
 
@@ -517,6 +517,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
           sortBy: sortBy.join(','),
           recursive: extraParams.recursive?.toString() ?? 'true',
           includeItemTypes: itemTypes ? itemTypes.join(',') : undefined,
+          collapseBoxSetItems: 'false',
           ...{
             ...mapValues(extraParams, (v) => (isBoolean(v) ? v.toString() : v)),
             ids: extraParams.ids?.join(','),
@@ -622,7 +623,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       'Movie',
       (movie) => this.jellyfinApiMovieInjection(movie),
       [],
-      { collapseBoxSetItems: false },
+      {},
       pageSize,
     );
   }
@@ -943,10 +944,8 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         limit: 0,
         recursive: true,
         includeItemTypes: itemType,
-        // See comment on JellyfinGetItemsQuery#collapseBoxSetItems — without
-        // this, counts (and therefore pagination) silently undercount any
-        // library containing BoxSet collections whenever the connected
-        // account has "Group movies into collections" enabled.
+        // Must match getRawItems, or pagination undercounts libraries that
+        // contain collections. See JellyfinGetItemsQuery#collapseBoxSetItems.
         collapseBoxSetItems: false,
       },
     }).then((_) => _.map((response) => response.TotalRecordCount));
