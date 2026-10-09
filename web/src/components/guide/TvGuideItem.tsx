@@ -1,18 +1,29 @@
 import { styled } from '@mui/material';
 import type { TvGuideProgram } from '@tunarr/types';
 import Color from 'colorjs.io';
-import { isNumber, isUndefined } from 'lodash-es';
+import { isUndefined } from 'lodash-es';
 import { alternateColors } from '../../helpers/util.ts';
 import { TvGuideGridChild } from './TvGuideGridChild.tsx';
 
 export const TvGuideItem = styled(TvGuideGridChild, {
-  shouldForwardProp: (prop) => prop !== 'backgroundColor' && prop !== 'program',
+  shouldForwardProp: (prop) =>
+    prop !== 'backgroundColor' &&
+    prop !== 'program' &&
+    prop !== 'left' &&
+    prop !== 'compact',
 })<{
   program?: TvGuideProgram;
   backgroundColor?: Color;
-  width: number | string;
+
+  // Percentages of the guide window
+  left: number;
+  width: number;
   index: number;
-}>(({ theme, width, index, backgroundColor, program }) => {
+
+  // Too narrow for text. Drops the gap and padding so neighboring slivers
+  // stay visible instead of collapsing into their borders.
+  compact?: boolean;
+}>(({ theme, left, width, index, backgroundColor, program, compact }) => {
   const bgColor =
     backgroundColor?.toString({ format: 'hex' }) ??
     alternateColors(index, theme.palette.mode);
@@ -41,16 +52,24 @@ export const TvGuideItem = styled(TvGuideGridChild, {
     display: 'flex',
     alignItems: 'flex-start',
     background,
-    borderCollapse: 'collapse',
+
+    // Blocks are placed by time. The transparent border draws the gap between
+    // neighbors without taking width from the layout.
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: `${left}%`,
+    width: `${width}%`,
+    boxSizing: 'border-box',
+    minWidth: 0,
+    backgroundClip: 'padding-box',
     borderStyle: 'solid',
-    borderWidth: '2px 5px 2px 5px',
+    borderWidth: compact ? '2px 0' : '2px',
     borderColor: 'transparent',
-    borderRadius: '5px',
-    margin: 1,
-    padding: 1,
-    height: '4rem',
-    width: isNumber(width) ? `${width}%` : width,
-    transition: 'width 0.5s ease-in',
+    borderRadius: compact ? 0 : '5px',
+    padding: compact ? 0 : '1px 4px',
+    boxShadow: compact ? 'inset -1px 0 0 rgba(0, 0, 0, 0.3)' : undefined,
+    transition: 'left 0.5s ease-in, width 0.5s ease-in',
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     textOverflow: 'ellipsis',

@@ -19,7 +19,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { compact, isNull, isUndefined, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
-import { useInterval } from 'usehooks-ts';
+import { useInterval, useResizeObserver } from 'usehooks-ts';
 import { betterHumanize } from '../../helpers/dayjs.ts';
 import { extractProgramGrandparent } from '../../helpers/programUtil.ts';
 import { alternateColors, isNonEmptyString } from '../../helpers/util';
@@ -48,6 +48,12 @@ const StyledButton = styled(Button)`
   }
 `;
 
+// Below these pixel widths, blocks drop their text and header times shorten
+// or thin out, because the full text would only show as clipped fragments.
+const CompactBlockPx = 24;
+const ShortTimeSlotPx = 80;
+const SparseTimeSlotPx = 48;
+
 const calcProgress = (start: Dayjs, end: Dayjs): number => {
   const total = end.unix() - start.unix();
   const p = dayjs().unix() - start.unix();
@@ -67,6 +73,8 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
   // Workaround for issue with page jumping on-zoom or nav caused by collapsing
   // div when loading new guide data
   const ref = useRef<HTMLDivElement | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const { width: gridWidth = 0 } = useResizeObserver({ ref: gridRef });
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = !isNull(anchorEl);
   const [minHeight, setMinHeight] = useState(0);
@@ -113,10 +121,16 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
   }, [addListener, queryClient, removeListener]);
 
   const timelineDuration = dayjs.duration(end.diff(start));
+  const toPercent = (ms: number) => (ms / +timelineDuration) * 100;
   const increments = +timelineDuration < +dayjs.duration(4, 'hour') ? 30 : 60;
   const intervalArray = Array.from(
     Array(timelineDuration.asMinutes() / increments).keys(),
   );
+
+  const slotPx = gridWidth / intervalArray.length;
+  const shortTimeLabels =
+    smallViewport || (gridWidth > 0 && slotPx < ShortTimeSlotPx);
+  const sparseTimeLabels = gridWidth > 0 && slotPx < SparseTimeSlotPx;
 
   const handleClick = (
     event: React.MouseEvent<HTMLElement>,
@@ -248,58 +262,20 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
       const key = `${title}_${program.start}_${program.stop}`;
       const programStart = dayjs(program.start);
       const programEnd = dayjs(program.stop);
-      let duration = program.stop - program.start;
-      let endOfAvailableProgramming = false;
-
-      // Trim any time that has already played from the currently playing program
-      if (index === 0) {
-        const trimStart = start.diff(programStart);
-        duration -= trimStart;
-      }
-
-      // Calc for final program in lineup
-      if (index === lineup.length - 1) {
-        // If program goes beyond current guide duration, trim it so we get accurate program durations
-        if (programEnd.isAfter(end)) {
-          const trimEnd = programEnd.diff(end);
-          duration -= trimEnd;
-        }
-
-        if (programEnd.isBefore(end)) {
-          endOfAvailableProgramming = true;
-        }
-      }
-
-      // Calculate the total duration of programming in the lineup
-      // This allows us to properly calculate the width of injected 'no programming available' blocks
-      const totalProgramDuration = lineup.reduce(
-        (totalDuration, currentProgram, index) => {
-          const programStart = dayjs(currentProgram.start);
-          const programEnd = dayjs(currentProgram.stop);
-          let duration = currentProgram.stop - currentProgram.start;
-
-          if (index === 0 && programStart.isBefore(start)) {
-            const trimStart = start.diff(programStart);
-            duration -= trimStart;
-          }
-
-          if (index === lineup.length - 1 && programEnd.isAfter(end)) {
-            const trimEnd = programEnd.diff(end);
-            duration -= trimEnd;
-          }
-
-          return totalDuration + duration;
-        },
-        0,
+      const left = toPercent(Math.max(program.start, +start) - +start);
+      const pct = toPercent(
+        Math.min(program.stop, +end) - Math.max(program.start, +start),
       );
 
-      const finalBlockWidth = round(
-        ((+timelineDuration - totalProgramDuration) / +timelineDuration) *
-          100.0,
-        2,
-      );
+      if (pct <= 0) {
+        return null;
+      }
 
-      const pct = round((+duration / +timelineDuration) * 100.0, 2);
+      const isCompact =
+        gridWidth > 0 && (pct / 100) * gridWidth < CompactBlockPx;
+
+      const endOfAvailableProgramming =
+        index === lineup.length - 1 && programEnd.isBefore(end);
 
       const isPlaying = dayjs().isBetween(programStart, programEnd);
       let remainingTime: Nullable<string> = null;
@@ -315,40 +291,56 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
       return (
         <Fragment key={key}>
           <TvGuideItem
-            // width={`${1200 * (+duration / +timelineDuration)}px`}
-            width={`calc(100% * (${+duration / +timelineDuration}))`}
+            left={left}
+            width={pct}
+            compact={isCompact}
+            title={isCompact ? title : undefined}
             index={index}
             onClick={() => handleModalOpen(program)}
             backgroundColor={bg}
             program={program}
           >
-            <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
-            <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
-              {episodeTitle}
-            </Box>
-            {(smallViewport && pct > 20) ||
-              (!smallViewport && pct > 8 && (
-                <>
-                  {!program.isPaused && (
-                    <Box sx={{ fontSize: '12px' }}>
-                      {`${programStart.format('LT')} - ${programEnd.format('LT')}`}
-                    </Box>
-                  )}
-                  <Box sx={{ fontSize: '12px' }}>
-                    {remainingTime ? <Trans>{remainingTime} left</Trans> : null}
-                  </Box>
-                </>
-              ))}
+            {isCompact ? null : (
+              <>
+                <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
+                <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
+                  {episodeTitle}
+                </Box>
+                {(smallViewport && pct > 20) ||
+                  (!smallViewport && pct > 8 && (
+                    <>
+                      {!program.isPaused && (
+                        <Box sx={{ fontSize: '12px' }}>
+                          {`${programStart.format('LT')} - ${programEnd.format('LT')}`}
+                        </Box>
+                      )}
+                      <Box sx={{ fontSize: '12px' }}>
+                        {remainingTime ? (
+                          <Trans>{remainingTime} left</Trans>
+                        ) : null}
+                      </Box>
+                    </>
+                  ))}
+              </>
+            )}
           </TvGuideItem>
           {endOfAvailableProgramming
-            ? renderUnavailableProgramming(finalBlockWidth, index)
+            ? renderUnavailableProgramming(
+                toPercent(program.stop - +start),
+                toPercent(+end - program.stop),
+                index,
+              )
             : null}
         </Fragment>
       );
     };
   };
 
-  const renderUnavailableProgramming = (width: number, index: number) => {
+  const renderUnavailableProgramming = (
+    left: number,
+    width: number,
+    index: number,
+  ) => {
     const bg = alternateColors(index, theme.palette.mode);
     return (
       <Tooltip
@@ -356,10 +348,10 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
         placement="top"
       >
         <TvGuideItem
+          left={left}
           width={width}
           index={index}
           sx={{
-            border: 'none',
             background: `repeating-linear-gradient(
               45deg,
               ${bg},
@@ -392,7 +384,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
       return;
     }
 
-    const alignedLineup = lineup.programs;
+    let alignedLineup = lineup.programs;
     const flexPlaceholderTitle =
       channelsInfo.find((c) => c.id === lineup.id)?.guideFlexTitle ??
       lineup.name;
@@ -408,29 +400,31 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
       // programming on server startup, but out of scope for right now.
       const startUnix = +start;
       const fillerLength = lineup.programs[0].start - startUnix;
-      alignedLineup.unshift({
-        type: 'flex',
-        duration: fillerLength,
-        start: startUnix,
-        stop: lineup.programs[0].start,
-        title: flexPlaceholderTitle,
-        isPaused: false,
-      });
+      alignedLineup = [
+        {
+          type: 'flex',
+          duration: fillerLength,
+          start: startUnix,
+          stop: lineup.programs[0].start,
+          title: flexPlaceholderTitle,
+          isPaused: false,
+        },
+        ...lineup.programs,
+      ];
     }
     return (
       <Box
         key={lineup.id}
         component="section"
         sx={{
-          display: 'flex',
-          flex: 1,
-          borderStyle: 'solid',
-          borderColor: 'transparent',
+          position: 'relative',
+          height: '4rem',
+          flexShrink: 0,
         }}
       >
         {alignedLineup.length > 0
           ? alignedLineup.map(renderProgram(lineup))
-          : renderUnavailableProgramming(100, index)}
+          : renderUnavailableProgramming(0, 100, index)}
       </Box>
     );
   });
@@ -512,22 +506,17 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
               </Box>
             ))}
         </Box>
-        <Box
-          sx={{
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            width: isPending ? '100%' : undefined,
-            flex: 1,
-          }}
-        >
+        <Box sx={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
+          {/* Children size as percentages of this column, so its width must
+              never depend on their content. */}
           <Box
+            ref={gridRef}
             sx={{
               display: 'flex',
               position: 'relative',
               flexDirection: 'column',
-              width: isPending ? '100%' : 'fit-content',
+              width: '100%',
               height: isPending ? '100%' : undefined,
-              minWidth: '100%',
             }}
           >
             <Box
@@ -548,10 +537,12 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
             >
               {intervalArray.map((slot) => (
                 <TvGuideGridChild
-                  // width={`${1000 / (intervalArray.length > 4 ? intervalArray.length / 2 : intervalArray.length)}px`}
                   width={`calc(100% / ${intervalArray.length})`}
                   sx={{
                     height: '2rem',
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
                     borderLeft: '1px solid white',
                     // textAlign: 'center',
                     pl: 1,
@@ -561,9 +552,11 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
                   }}
                   key={slot}
                 >
-                  {start
-                    .add(slot * increments, 'minutes')
-                    .format(`${smallViewport ? 'h:mm' : 'LT'}`)}
+                  {sparseTimeLabels && slot % 2 === 1
+                    ? null
+                    : start
+                        .add(slot * increments, 'minutes')
+                        .format(shortTimeLabels ? 'h:mm' : 'LT')}
                 </TvGuideGridChild>
               ))}
             </GridParent>
@@ -597,11 +590,14 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
             )}
             {dayjs().isBetween(start, end) && (
               <>
+                {/* Shifting the pill left by its own progress fraction keeps it
+                    inside the grid at both edges. */}
                 <Box
                   sx={{
                     position: 'absolute',
                     left: `${progress}%`,
-                    transition: 'left 0.5s linear',
+                    transform: `translateX(-${progress}%)`,
+                    transition: 'left 0.5s linear, transform 0.5s linear',
                     zIndex: 11,
                   }}
                 >
@@ -617,7 +613,6 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
                       fontSize: '14px',
                       textAlign: 'center',
                       zIndex: 2,
-                      marginLeft: '-50%',
                     }}
                   >
                     {currentTime}
