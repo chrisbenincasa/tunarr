@@ -17,6 +17,7 @@ const { values: opt } = parseArgs({
     clips: { type: 'string', default: '3' },
     'clip-seconds': { type: 'string', default: '60' },
     'clip-durations': { type: 'string' },
+    'truncate-clip': { type: 'string' },
     'db-dir': { type: 'string' },
     channel: { type: 'string' },
     mode: { type: 'string', default: 'hls' },
@@ -190,6 +191,18 @@ function makeClips(dir) {
     clips.push({ file: path.basename(file), layout: l });
   }
   return clips;
+}
+
+// Shortens clip I (1-based) to S seconds after the scan, so the database keeps
+// the longer duration. This mimics media that ends before its scheduled time.
+function truncateClip(dir, spec) {
+  const [i, s] = spec.split(':').map(Number);
+  if (!(i >= 1 && i <= clipDurations.length && s > 0)) throw new Error('--truncate-clip takes I:S, a 1-based clip index and seconds');
+  const file = path.join(dir, `clip${String(i).padStart(2, '0')}.mkv`);
+  const tmp = `${file}.tmp.mkv`;
+  execFileSync(opt.ffmpeg, ['-y', '-v', 'error', '-i', file, '-t', String(s), '-map', '0', '-c', 'copy', tmp]);
+  fs.renameSync(tmp, file);
+  log(`truncated clip ${i} to ${s}s; the database still says ${clipDurations[i - 1]}s`);
 }
 
 // ---------- server ----------
@@ -470,7 +483,7 @@ async function captureHls(base, channelId) {
             if (seg.ok) {
               const file = path.join(segDir, `${String(pieces.length).padStart(4, '0')}-${path.basename(new URL(url).pathname)}`);
               fs.writeFileSync(file, Buffer.from(await seg.arrayBuffer()));
-              pieces.push({ file, discontinuityBefore: disc, extinf: dur });
+              pieces.push({ file, discontinuityBefore: disc, extinf: dur, fetchedAtMs: Date.now() - t0 });
               captured += dur;
             }
           }
@@ -617,6 +630,7 @@ try {
     report.ffmpegSettings = await applyFfmpegSettings(server.base);
     log('building channel', server.base);
     channel = await buildSyntheticChannel(server.base, clipsDir);
+    if (opt['truncate-clip']) truncateClip(clipsDir, opt['truncate-clip']);
   } else if (opt.source === 'copy') {
     if (!opt.channel) throw new Error('--source copy needs --channel <number|uuid>');
     log('copying database');
