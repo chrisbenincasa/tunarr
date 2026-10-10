@@ -31,7 +31,7 @@ type RequestDetails = {
 
 export class HlsPlaylistCreator {
   private static cache = new NodeCache({
-    stdTTL: +dayjs.duration({ days: 1 }),
+    stdTTL: dayjs.duration({ days: 1 }).asSeconds(),
   });
 
   constructor(private streamProgramCalculator: StreamProgramCalculator) {}
