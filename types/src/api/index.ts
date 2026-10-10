@@ -1,7 +1,6 @@
 import { z } from 'zod/v4';
 import { FeatureFlagsSchema } from '../FeatureFlags.js';
 import {
-  CacheSettingsSchema,
   LogCategoriesSchema,
   LoggingSettingsSchema,
   LogLevelsSchema,
@@ -302,7 +301,6 @@ export const UpdateSystemSettingsRequestSchema = z.object({
     })
     .optional(),
   backup: BackupSettingsSchema.optional(),
-  cache: CacheSettingsSchema.optional(),
   server: ServerSettingsSchema.optional(),
 });
 

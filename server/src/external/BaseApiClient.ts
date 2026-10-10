@@ -35,7 +35,6 @@ export type ApiClientOptions = {
   extraHeaders?: {
     [key: string]: AxiosHeaderValue;
   };
-  enableRequestCache?: boolean;
   queueOpts?: {
     concurrency: number;
     interval: Duration;
