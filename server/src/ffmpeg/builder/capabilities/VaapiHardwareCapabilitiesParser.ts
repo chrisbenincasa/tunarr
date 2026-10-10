@@ -33,8 +33,8 @@ export class VaapiHardwareCapabilitiesParser {
       } else if (currentEntrypoint) {
         match = line.match(this.ProfileRateControlPattern);
         if (match) {
-          switch (match[0]?.trim().toLowerCase()) {
-            case 'cgp':
+          switch (match[1]?.toLowerCase()) {
+            case 'cqp':
               currentEntrypoint.addRateControlMode(RateControlMode.CQP);
               break;
             case 'cbr':
