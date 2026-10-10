@@ -363,7 +363,12 @@ export class StreamProgramCalculator {
               ...baseItem,
               type: 'commercial',
               fillerListId: lineupItem.fillerListId,
-              infiniteLoop: backingItem.duration < streamDuration,
+              // Only slot fallback filler is stretched to fill a pad. Other
+              // filler plays once, even when its lineup duration has drifted
+              // past the clip's.
+              infiniteLoop:
+                lineupItem.fillerType === 'fallback' &&
+                backingItem.duration < streamDuration,
               startOffset: lineupItem.startOffsetMs ?? 0,
             } satisfies CommercialStreamLineupItem;
           } else {

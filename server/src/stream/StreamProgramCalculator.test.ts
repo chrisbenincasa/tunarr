@@ -256,123 +256,134 @@ describe('StreamProgramCalculator', () => {
     verify(playHistoryDB.create(anything())).once();
   });
 
-  baseTest('getCurrentLineupItem loop filler lineup item', async () => {
-    const fillerDB = mock<IFillerListDB>();
-    const channelDB = mock<IChannelDB>();
-    const programDB = mock<IProgramDB>();
-    const fillerPicker = mock<IFillerPicker>();
-    const playHistoryDB = mock<ProgramPlayHistoryDB>();
+  // A 3 minute clip in a 22 minute filler item, tuned in 16 minutes in.
+  // Slot fallback filler loops; the seek lands 1 minute into the sixth loop.
+  // Other filler plays once, so the seek is not wrapped.
+  for (const { fillerType, infiniteLoop, startOffsetMins } of [
+    { fillerType: 'fallback', infiniteLoop: true, startOffsetMins: 1 },
+    { fillerType: 'pre', infiniteLoop: false, startOffsetMins: 16 },
+  ] as const) {
+    baseTest(
+      `getCurrentLineupItem ${fillerType} filler lineup item (loop=${infiniteLoop})`,
+      async () => {
+        const fillerDB = mock<IFillerListDB>();
+        const channelDB = mock<IChannelDB>();
+        const programDB = mock<IProgramDB>();
+        const fillerPicker = mock<IFillerPicker>();
+        const playHistoryDB = mock<ProgramPlayHistoryDB>();
 
-    const startTime = dayjs(new Date(2025, 8, 17, 8));
-    const channelId = faker.string.uuid();
-    const programId1 = faker.string.uuid();
-    const programId2 = faker.string.uuid();
-    const fillerListId = faker.string.uuid();
+        const startTime = dayjs(new Date(2025, 8, 17, 8));
+        const channelId = faker.string.uuid();
+        const programId1 = faker.string.uuid();
+        const programId2 = faker.string.uuid();
+        const fillerListId = faker.string.uuid();
 
-    const lineup: LineupItem[] = [
-      {
-        type: 'content',
-        durationMs: +dayjs.duration({ minutes: 22 }),
-        id: programId1,
-        fillerListId: fillerListId,
+        const lineup: LineupItem[] = [
+          {
+            type: 'content',
+            durationMs: +dayjs.duration({ minutes: 22 }),
+            id: programId1,
+            fillerListId: fillerListId,
+            fillerType,
+          },
+          {
+            type: 'content',
+            durationMs: +dayjs.duration({ minutes: 22 }),
+            id: programId2,
+          },
+        ];
+
+        when(programDB.getStreamProgramById(programId1)).thenReturn(
+          Promise.resolve(
+            createFakeProgram({
+              uuid: programId1,
+              duration: +dayjs.duration({ minutes: 3 }),
+              mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+            }),
+          ),
+        );
+
+        when(programDB.getStreamProgramById(programId2)).thenReturn(
+          Promise.resolve(
+            createFakeProgram({
+              uuid: programId2,
+              duration: lineup[1].durationMs,
+              mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+            }),
+          ),
+        );
+
+        const channel = createChannelOrm({
+          uuid: channelId,
+          number: 1,
+          startTime: +startTime.subtract(1, 'hour'),
+          duration: sumBy(lineup, ({ durationMs }) => durationMs),
+        });
+
+        when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
+
+        when(channelDB.loadLineup(channelId)).thenReturn(
+          Promise.resolve({
+            version: 1,
+            items: lineup,
+            startTimeOffsets: calculateStartTimeOffsets(lineup),
+            lastUpdated: now(),
+          }),
+        );
+
+        // Mock play history - program not currently playing
+        when(
+          playHistoryDB.isProgramCurrentlyPlaying(
+            anything(),
+            anything(),
+            anything(),
+          ),
+        ).thenReturn(Promise.resolve(false));
+        when(playHistoryDB.create(anything())).thenReturn(
+          Promise.resolve(undefined),
+        );
+
+        const calc = new StreamProgramCalculator(
+          instance(fillerDB),
+          instance(channelDB),
+          instance(programDB),
+          instance(fillerPicker),
+          instance(playHistoryDB),
+        );
+
+        const out = (
+          await calc.getCurrentLineupItem({
+            allowSkip: false,
+            channelId: 1,
+            startTime: +startTime,
+          })
+        ).get();
+
+        expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
+          streamDuration: +dayjs.duration(6, 'minutes'),
+          program: { uuid: programId1 },
+          infiniteLoop,
+          programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
+          startOffset: +dayjs.duration(startOffsetMins, 'minutes'),
+          fillerListId: fillerListId,
+          type: 'commercial',
+          duration: +dayjs.duration(22, 'minutes'),
+        });
+
+        // Wait for async play history recording
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        verify(
+          playHistoryDB.isProgramCurrentlyPlaying(
+            channelId,
+            programId1,
+            +startTime,
+          ),
+        ).once();
+        verify(playHistoryDB.create(anything())).once();
       },
-      {
-        type: 'content',
-        durationMs: +dayjs.duration({ minutes: 22 }),
-        id: programId2,
-      },
-    ];
-
-    when(programDB.getStreamProgramById(programId1)).thenReturn(
-      Promise.resolve(
-        createFakeProgram({
-          uuid: programId1,
-          duration: +dayjs.duration({ minutes: 3 }),
-          mediaSourceId: tag<MediaSourceId>('mediasource-123'),
-        }),
-      ),
     );
-
-    when(programDB.getStreamProgramById(programId2)).thenReturn(
-      Promise.resolve(
-        createFakeProgram({
-          uuid: programId2,
-          duration: lineup[1].durationMs,
-          mediaSourceId: tag<MediaSourceId>('mediasource-123'),
-        }),
-      ),
-    );
-
-    const channel = createChannelOrm({
-      uuid: channelId,
-      number: 1,
-      startTime: +startTime.subtract(1, 'hour'),
-      duration: sumBy(lineup, ({ durationMs }) => durationMs),
-    });
-
-    when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
-
-    when(channelDB.loadLineup(channelId)).thenReturn(
-      Promise.resolve({
-        version: 1,
-        items: lineup,
-        startTimeOffsets: calculateStartTimeOffsets(lineup),
-        lastUpdated: now(),
-      }),
-    );
-
-    // Mock play history - program not currently playing
-    when(
-      playHistoryDB.isProgramCurrentlyPlaying(
-        anything(),
-        anything(),
-        anything(),
-      ),
-    ).thenReturn(Promise.resolve(false));
-    when(playHistoryDB.create(anything())).thenReturn(
-      Promise.resolve(undefined),
-    );
-
-    const calc = new StreamProgramCalculator(
-      instance(fillerDB),
-      instance(channelDB),
-      instance(programDB),
-      instance(fillerPicker),
-      instance(playHistoryDB),
-    );
-
-    const out = (
-      await calc.getCurrentLineupItem({
-        allowSkip: false,
-        channelId: 1,
-        startTime: +startTime,
-      })
-    ).get();
-
-    expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
-      streamDuration: +dayjs.duration(6, 'minutes'),
-      program: { uuid: programId1 },
-      infiniteLoop: true,
-      programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
-      // 16 minutes into the slot is 1 minute into the sixth loop of the 3 minute clip
-      startOffset: +dayjs.duration(1, 'minutes'),
-      fillerListId: fillerListId,
-      type: 'commercial',
-      duration: +dayjs.duration(22, 'minutes'),
-    });
-
-    // Wait for async play history recording
-    await new Promise((resolve) => setTimeout(resolve, 10));
-
-    verify(
-      playHistoryDB.isProgramCurrentlyPlaying(
-        channelId,
-        programId1,
-        +startTime,
-      ),
-    ).once();
-    verify(playHistoryDB.create(anything())).once();
-  });
+  }
 
   baseTest('records play history for new playback', async () => {
     const fillerDB = mock<IFillerListDB>();
