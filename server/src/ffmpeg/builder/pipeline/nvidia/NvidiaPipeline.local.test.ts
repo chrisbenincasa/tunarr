@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import path from 'node:path';
 import { FileStreamSource } from '../../../../stream/types.ts';
 import {
@@ -220,5 +221,82 @@ describe.skipIf(!binaries || !nvidiaCaps)(
         expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
       },
     );
+
+    // ffmpeg rebuilds the filter graph when a CUDA-decoded input wraps, and
+    // the rebuild fails with "Error reinitializing filters" (#2071).
+    //
+    // The input is remuxed to MP4 because ffmpeg never finishes an infinite
+    // loop over an MPEG-TS file, whatever the decoder.
+    for (const [width, height] of [
+      [1280, 720],
+      [1920, 1080],
+    ] as const) {
+      nvidiaTest(
+        `loops a short input past its end (${width}x${height})`,
+        async ({ binaryCapabilities, ffmpegVersion, resolvedNvidia }) => {
+          const inputPath = path.join(workdir, `loop_input_${width}.mp4`);
+          const remux = runFfmpegWithPipeline(binaries!.ffmpeg, [
+            '-y',
+            '-i',
+            Fixtures.video720p,
+            '-c',
+            'copy',
+            inputPath,
+          ]);
+          expect(remux.exitCode, remux.stderr).toBe(0);
+
+          const video = makeVideoInput(
+            inputPath,
+            FrameSize.withDimensions(1280, 720),
+          );
+          const audio = makeAudioInput(inputPath);
+
+          const builder = new NvidiaPipelineBuilder(
+            resolvedNvidia,
+            binaryCapabilities,
+            video,
+            audio,
+            null,
+            null,
+            null,
+          );
+
+          const frameState = new FrameState({
+            isAnamorphic: false,
+            scaledSize: FrameSize.withDimensions(width, height),
+            paddedSize: FrameSize.withDimensions(width, height),
+            infiniteLoop: true,
+          });
+
+          const outputPath = path.join(
+            workdir,
+            `nvidia_loop_${width}x${height}.ts`,
+          );
+          const pipeline = builder.build(
+            FfmpegState.create({
+              version: ffmpegVersion,
+              outputLocation: FileOutputLocation(outputPath, true),
+              duration: dayjs.duration({ seconds: 7 }),
+            }),
+            frameState,
+            DefaultPipelineOptions,
+          );
+
+          const { exitCode, stderr } = runFfmpegWithPipeline(
+            binaries!.ffmpeg,
+            pipeline.getCommandArgs(),
+          );
+
+          expect(
+            exitCode,
+            `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
+          ).toBe(0);
+
+          // The fixture is about 3 s long, so 7 s of output means it looped.
+          const probe = probeFile(binaries!.ffprobe, outputPath);
+          expect(Number(probe.format.duration)).toBeGreaterThan(6);
+        },
+      );
+    }
   },
 );

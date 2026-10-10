@@ -169,6 +169,65 @@ describe('NvidiaPipelineBuilder', () => {
     expect(deinterlace?.filter).toBe('yadif=1');
   });
 
+  // ffmpeg fails to rebuild the filter graph when a CUDA-decoded input loops.
+  test.each([
+    { infiniteLoop: false, hwDecode: true },
+    { infiniteLoop: true, hwDecode: false },
+  ])(
+    'uses hardware decode = $hwDecode when infiniteLoop = $infiniteLoop',
+    ({ infiniteLoop, hwDecode }) => {
+      const capabilities = new NvidiaHardwareCapabilities('RTX 2080 Ti', 75);
+      const video = VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video.mkv'),
+        VideoStream.create({
+          codec: 'h264',
+          displayAspectRatio: '16:9',
+          frameSize: FrameSize.FHD,
+          index: 0,
+          pixelFormat: new PixelFormatYuv420P(),
+          providedSampleAspectRatio: null,
+          colorFormat: ColorFormat.unknown,
+        }),
+      );
+
+      const builder = new NvidiaPipelineBuilder(
+        capabilities,
+        EmptyFfmpegCapabilities,
+        video,
+        null,
+        null,
+        null,
+        null,
+      );
+
+      const out = builder.build(
+        FfmpegState.create({
+          version: {
+            versionString: 'n7.1.1',
+            majorVersion: 7,
+            minorVersion: 1,
+            patchVersion: 1,
+            isUnknown: false,
+          },
+        }),
+        new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.FHD,
+          paddedSize: FrameSize.FHD,
+          pixelFormat: new PixelFormatYuv420P(),
+          infiniteLoop,
+        }),
+        DefaultPipelineOptions,
+      );
+
+      const args = out.getCommandArgs().join(' ');
+      expect(args.includes('-hwaccel cuda')).toBe(hwDecode);
+      expect(args.includes('-hwaccel_output_format cuda')).toBe(hwDecode);
+      expect(args.includes('-stream_loop -1')).toBe(infiniteLoop);
+      expect(args).toContain('-c:v h264_nvenc');
+    },
+  );
+
   test('should work with hardware filters disabled', () => {
     const capabilities = new NvidiaHardwareCapabilities('RTX 2080 Ti', 75);
     const video = VideoInputSource.withStream(
