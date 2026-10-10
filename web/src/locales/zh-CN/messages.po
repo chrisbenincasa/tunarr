@@ -261,8 +261,8 @@ msgid "<0>Error deleting filler list: {0}<1/>Please consider opening a bug with 
 msgstr "<0>删除垫片列表时出错：{0}<1/>请提交包含详细信息的 Bug 报告！</0>"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "<0>Experimental:</0> Enable Plex Request Cache"
-msgstr "<0>实验性功能：</0>启用 Plex 请求缓存"
+#~ msgid "<0>Experimental:</0> Enable Plex Request Cache"
+#~ msgstr "<0>实验性功能：</0>启用 Plex 请求缓存"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "<0>None:</0> slots are picked in the order they are specified in the table (i.e. not randomly)<1/><2>Uniform:</2> all slots have an equal chance to be picked.<3/><4>Weighted:</4> each slot is picked with a specified probability"
@@ -769,8 +769,8 @@ msgid "By default, time slots are time of the day-based, you can change it to ti
 msgstr "默认情况下，时段按「每日时刻」编排，你可以改为「每日时刻 + 星期」，这意味着时段数量将变为 7 倍。若从「每日」改为「每周」，当前排期会被复制 7 份；若从「每周」改为「每日」，许多时段将被删除。"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "Caching"
-msgstr "缓存"
+#~ msgid "Caching"
+#~ msgstr "缓存"
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
 msgid "Calculated {humanizedDuration} ({numShows} programs) of programming in {duration}ms"
@@ -3890,8 +3890,8 @@ msgid "Tasks"
 msgstr "任务"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
-msgstr "按请求路径临时缓存来自 Plex 的响应，可能有助于加快频道编辑速度。"
+#~ msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
+#~ msgstr "按请求路径临时缓存来自 Plex 的响应，可能有助于加快频道编辑速度。"
 
 #: src/routes/channels_/test.tsx
 msgid "Test"
@@ -4010,8 +4010,8 @@ msgid "This custom show was deleted. Choose another show."
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
-msgstr "此功能目前为实验性，请谨慎使用。如遇到问题，可尝试关闭缓存。"
+#~ msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
+#~ msgstr "此功能目前为实验性，请谨慎使用。如遇到问题，可尝试关闭缓存。"
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "This filler list has no programs and will be ignored."

@@ -123,10 +123,7 @@ import { parseReleaseDate, titleToSortTitle } from '../../util/programs.ts';
 import type { ApiClientOptions } from '../BaseApiClient.js';
 import { QueryError, type QueryResult } from '../BaseApiClient.js';
 import { MediaSourceApiClient } from '../MediaSourceApiClient.ts';
-import { PlexQueryCache } from './PlexQueryCache.js';
 import { PlexRequestRedacter } from './PlexRequestRedacter.ts';
-
-const PlexCache = new PlexQueryCache();
 
 const PlexHeaders = {
   'X-Plex-Product': 'Tunarr',
@@ -188,60 +185,46 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   private async doGetResult<T extends PlexMediaContainerMetadata>(
     path: string,
     config: Partial<Omit<AxiosRequestConfig, 'method' | 'url'>> = {},
-    skipCache: boolean = false,
   ): Promise<QueryResult<T>> {
-    const getter = async (): Promise<QueryResult<T>> => {
-      const req: AxiosRequestConfig = {
-        method: 'get',
-        url: path,
-        headers: config.headers,
-      };
-
-      if (this.options.mediaSource.accessToken === '') {
-        throw new Error(
-          'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
-        );
-      }
-
-      try {
-        const res = await this.doRequest<PlexMediaContainerResponse<T>>(req);
-        if (isUndefined(res?.MediaContainer)) {
-          this.logger.error(res, 'Expected MediaContainer, got %O', res);
-          return this.makeErrorResult('parse_error');
-        }
-
-        return this.makeSuccessResult(res?.MediaContainer);
-      } catch (err) {
-        if (isAxiosError(err) && err.response?.status === 404) {
-          return this.makeErrorResult('not_found');
-        }
-
-        const error = caughtErrorToError(err);
-
-        return this.makeErrorResult('generic_request_error', error.message);
-      }
+    const req: AxiosRequestConfig = {
+      method: 'get',
+      url: path,
+      headers: config.headers,
     };
 
-    return this.options.enableRequestCache && !skipCache
-      ? await PlexCache.getOrSetPlexResult<T>(
-          this.options.mediaSource.name,
-          path,
-          getter,
-        )
-      : await getter();
+    if (this.options.mediaSource.accessToken === '') {
+      throw new Error(
+        'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
+      );
+    }
+
+    try {
+      const res = await this.doRequest<PlexMediaContainerResponse<T>>(req);
+      if (isUndefined(res?.MediaContainer)) {
+        this.logger.error(res, 'Expected MediaContainer, got %O', res);
+        return this.makeErrorResult('parse_error');
+      }
+
+      return this.makeSuccessResult(res?.MediaContainer);
+    } catch (err) {
+      if (isAxiosError(err) && err.response?.status === 404) {
+        return this.makeErrorResult('not_found');
+      }
+
+      const error = caughtErrorToError(err);
+
+      return this.makeErrorResult('generic_request_error', error.message);
+    }
   }
 
   // We're just keeping the old contract here right now...
   async doGetPath<T extends PlexMediaContainerMetadata>(
     path: string,
     optionalHeaders: RawAxiosRequestHeaders = {},
-    skipCache: boolean = false,
   ): Promise<Maybe<T>> {
-    const result = await this.doGetResult<T>(
-      path,
-      { headers: optionalHeaders },
-      skipCache,
-    );
+    const result = await this.doGetResult<T>(path, {
+      headers: optionalHeaders,
+    });
 
     return result.orUndefined();
   }
@@ -1241,10 +1224,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       upscale: opts.upscale,
       imageType: opts.imageType,
     });
-  }
-
-  setEnableRequestCache(enable: boolean) {
-    this.options.enableRequestCache = enable;
   }
 
   protected override preRequestValidate<T>(

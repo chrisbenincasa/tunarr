@@ -22,9 +22,7 @@ import {
   MenuItem,
   Select,
   TextField,
-  Tooltip,
   Typography,
-  useTheme,
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
@@ -36,7 +34,6 @@ import type {
 } from '@tunarr/types';
 import {
   LogLevels,
-  type CacheSettings,
   type LogLevel,
   type ServerSettings,
   type SystemSettings,
@@ -100,9 +97,6 @@ const getBaseFormValues = (
     ? 'env'
     : systemSettings.logging.logLevel,
   backup: systemSettings.backup,
-  cache: systemSettings.cache ?? {
-    enablePlexRequestCache: false,
-  },
   server: systemSettings.server,
   logging: {
     ...systemSettings.logging,
@@ -144,7 +138,6 @@ export function GeneralSettingsForm({
   const versionInfo = useVersion({
     retry: 0,
   });
-  const theme = useTheme();
   const systemState = useSystemState();
 
   const { isLoading, isError } = versionInfo;
@@ -204,7 +197,6 @@ export function GeneralSettingsForm({
         },
       },
       backup: data.backup,
-      cache: data.cache,
       server: data.server,
     };
 
@@ -438,51 +430,6 @@ export function GeneralSettingsForm({
             </Typography>
             {renderBackupsForm()}
           </Box>
-          <Box>
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              <Trans>Caching</Trans>
-            </Typography>
-            <Box>
-              <FormControl
-                sx={{
-                  width: ['100%', '50%'],
-                }}
-              >
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="cache.enablePlexRequestCache"
-                      render={({ field }) => (
-                        <Checkbox checked={field.value} {...field} />
-                      )}
-                    />
-                  }
-                  label={
-                    <span>
-                      <Trans>
-                        <strong>Experimental:</strong> Enable Plex Request Cache
-                      </Trans>{' '}
-                      <Tooltip
-                        title={t`Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing.`}
-                        placement="top"
-                      >
-                        <sup style={{ color: theme.palette.primary.main }}>
-                          [?]
-                        </sup>
-                      </Tooltip>
-                    </span>
-                  }
-                />
-                <FormHelperText>
-                  <Trans>
-                    This feature is currently experimental. Proceed with caution
-                    and if you experience an issue, try disabling caching.
-                  </Trans>
-                </FormHelperText>
-              </FormControl>
-            </Box>
-          </Box>
         </Stack>
         <Stack
           spacing={2}
@@ -517,7 +464,6 @@ export type GeneralSettingsFormData = {
   backendUri: string;
   logLevel: LogLevel | 'env';
   backup: BackupSettings;
-  cache: CacheSettings;
   server: ServerSettings;
   logging: StrictOmit<LoggingSettings, 'categoryLogLevel'> & {
     categoryLogLevel?: Record<

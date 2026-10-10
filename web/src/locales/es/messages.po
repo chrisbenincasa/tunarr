@@ -261,8 +261,8 @@ msgid "<0>Error deleting filler list: {0}<1/>Please consider opening a bug with 
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "<0>Experimental:</0> Enable Plex Request Cache"
-msgstr ""
+#~ msgid "<0>Experimental:</0> Enable Plex Request Cache"
+#~ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "<0>None:</0> slots are picked in the order they are specified in the table (i.e. not randomly)<1/><2>Uniform:</2> all slots have an equal chance to be picked.<3/><4>Weighted:</4> each slot is picked with a specified probability"
@@ -769,8 +769,8 @@ msgid "By default, time slots are time of the day-based, you can change it to ti
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "Caching"
-msgstr ""
+#~ msgid "Caching"
+#~ msgstr ""
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
 msgid "Calculated {humanizedDuration} ({numShows} programs) of programming in {duration}ms"
@@ -3888,8 +3888,8 @@ msgid "Tasks"
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
-msgstr ""
+#~ msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
+#~ msgstr ""
 
 #: src/routes/channels_/test.tsx
 msgid "Test"
@@ -4008,8 +4008,8 @@ msgid "This custom show was deleted. Choose another show."
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
-msgstr ""
+#~ msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
+#~ msgstr ""
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "This filler list has no programs and will be ignored."

@@ -83,8 +83,6 @@ const KNOWN: Record<string, string> = {
   'UpdateMediaSourceRequestSchema.sendPlayStatusUpdates':
     'PUT /media-sources/:id replaces the whole object',
 
-  'UpdateSystemSettingsRequestSchema.cache.enablePlexRequestCache':
-    'catch on a boolean; low impact, not yet changed',
   'XmlTvSettingsSchema.useShowPoster':
     'catch on a boolean; low impact, not yet changed',
 };

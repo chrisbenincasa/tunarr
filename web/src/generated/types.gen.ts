@@ -10771,9 +10771,6 @@ export type GetApiSystemSettingsResponses = {
             };
             environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
         };
-        cache?: {
-            enablePlexRequestCache: boolean;
-        };
         server: {
             port: number;
             searchSettings: {
@@ -10832,9 +10829,6 @@ export type PutApiSystemSettingsData = {
                     maxBackups?: number;
                 }>;
             }>;
-        };
-        cache?: {
-            enablePlexRequestCache?: boolean;
         };
         server?: {
             port?: number;
@@ -10898,9 +10892,6 @@ export type PutApiSystemSettingsResponses = {
                 };
             };
             environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
-        };
-        cache?: {
-            enablePlexRequestCache: boolean;
         };
         server: {
             port: number;
