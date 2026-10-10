@@ -36,7 +36,7 @@ export class NvidiaHardwareCapabilitiesFactory
   }
 
   private static cache = new NodeCache({
-    stdTTL: +dayjs.duration({ hours: 1 }),
+    stdTTL: dayjs.duration({ hours: 1 }).asSeconds(),
   });
 
   private static makeCacheKey(path: string, command: string): string {
