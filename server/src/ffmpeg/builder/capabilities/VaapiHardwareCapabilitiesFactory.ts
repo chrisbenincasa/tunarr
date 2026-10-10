@@ -25,7 +25,7 @@ export class VaapiHardwareCapabilitiesFactory
   }
 
   private static cache = new NodeCache({
-    stdTTL: +dayjs.duration({ hours: 1 }),
+    stdTTL: dayjs.duration({ hours: 1 }).asSeconds(),
   });
 
   private static vaInfoCacheKey(
