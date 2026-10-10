@@ -122,3 +122,12 @@ On startup, Tunarr checks the `data.ms` directory before starting Meilisearch. M
 - If `data.ms` still contains data, Tunarr renames it to `data.ms.broken-<timestamp>` so nothing is lost. You can delete that directory once Tunarr is running normally.
 
 Tunarr then restores the index from `ms-snapshots` when a snapshot exists, or creates an empty index. If search results are empty afterwards, rescan your libraries to rebuild the index.
+
+## Language filter values are now ISO 639-2/T
+
+Starting with the language-code normalization fix (#2044), stored language
+codes and the search index use only the terminological (`/T`) forms (`deu`,
+`fra`, `nld`) instead of a mix of the bibliographic (`/B`) and `/T` sets.
+Query values are normalized to `/T` on the way in too, so a saved smart
+collection that still holds a `/B` code (`ger`, `fre`, `dut`) keeps matching;
+there is nothing to update by hand.

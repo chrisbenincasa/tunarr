@@ -4,6 +4,7 @@ import type {
 } from '@tunarr/types/schemas';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
+import { LanguageCodeSearchFilterMutator } from './LanguageCodeSearchFilterMutator.ts';
 import { LibraryNameSearchMutator } from './LibraryNameSearchMutator.ts';
 import { MediaSourceNameSearchMutator } from './MediaSourceNameSearchMutator.ts';
 import type { SearchFilterValueMutator } from './SearchFilterValueMutator.ts';
@@ -22,6 +23,7 @@ export class SearchParser {
       new LibraryNameSearchMutator(
         allMediaSources.flatMap((ms) => ms.libraries),
       ),
+      new LanguageCodeSearchFilterMutator(),
     ];
 
     return this.preprocessSearchFilterInner(filter, mutators);
