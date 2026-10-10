@@ -4,7 +4,10 @@ import type {
 } from '@/db/interfaces/ISettingsDB.js';
 import type { ChannelOrm } from '@/db/schema/Channel.js';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import {
+  HardwareAccelerationMode,
+  libvaDriverName,
+} from '@/db/schema/TranscodeConfig.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
 import type {
   AudioRenditionInfo,
@@ -1114,8 +1117,6 @@ export class FfmpegStreamFactory {
   }
 
   private getVaapiDriver() {
-    return this.transcodeConfig.vaapiDriver !== 'system'
-      ? this.transcodeConfig.vaapiDriver
-      : null;
+    return libvaDriverName(this.transcodeConfig.vaapiDriver);
   }
 }

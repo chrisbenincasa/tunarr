@@ -1,4 +1,5 @@
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
+import { libvaDriverName } from '@/db/schema/TranscodeConfig.js';
 import type { FfmpegHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
 import { DefaultHardwareCapabilities } from '@/ffmpeg/builder/capabilities/DefaultHardwareCapabilities.js';
 import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.js';
@@ -64,10 +65,7 @@ export class VaapiHardwareCapabilitiesFactory
       return new NoHardwareCapabilities();
     }
 
-    const driver =
-      this.transcodeConfig.vaapiDriver !== 'system'
-        ? this.transcodeConfig.vaapiDriver
-        : '';
+    const driver = libvaDriverName(this.transcodeConfig.vaapiDriver) ?? '';
 
     return await cacheGetOrSet(
       VaapiHardwareCapabilitiesFactory.cache,

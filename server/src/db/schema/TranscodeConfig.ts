@@ -51,6 +51,22 @@ export const VaapiDrivers = [
 ] as const;
 export type VaapiDriver = TupleToUnion<typeof VaapiDrivers>;
 
+// libva loads `<name>_drv_video.so`, and the file lookup is case-sensitive.
+const LibvaDriverNames: Record<Exclude<VaapiDriver, 'system'>, string> = {
+  ihd: 'iHD',
+  i965: 'i965',
+  radeonsi: 'radeonsi',
+  nouveau: 'nouveau',
+};
+
+/**
+ * Returns the value for LIBVA_DRIVER_NAME, or null to let libva pick the
+ * driver itself.
+ */
+export function libvaDriverName(driver: VaapiDriver): string | null {
+  return driver === 'system' ? null : LibvaDriverNames[driver];
+}
+
 export const TranscodeVideoOutputFormats = [
   VideoFormats.H264,
   VideoFormats.Hevc,
