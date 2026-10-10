@@ -204,8 +204,20 @@ export abstract class ExternalCollectionScanner<
       seenIds.add(collection.externalId);
       // Upsert a tag for this collection name
       const tag = await this.tagRepo.upsertTag(collection.title);
-      // Check if collection is new
+      // Check if collection is new. A collection row is unique per media
+      // source (not per library) because of the unique index on
+      // (mediaSourceId, externalKey). The same BoxSet returned through more
+      // than one enabled library of the same media source must reuse the
+      // existing row instead of inserting a duplicate that violates the
+      // media-source-wide unique constraint.
       let existingCollection = existingCollections[collection.externalId];
+      if (!existingCollection) {
+        existingCollection =
+          await this.externalCollectionsRepo.getCollectionByExternalId(
+            ctx.mediaSource.uuid,
+            collection.externalId,
+          );
+      }
       if (!existingCollection) {
         existingCollection = {
           uuid: v4(),
@@ -217,6 +229,20 @@ export abstract class ExternalCollectionScanner<
         };
 
         await this.externalCollectionsRepo.insertCollection(existingCollection);
+      } else if (
+        existingCollection.title !== collection.title ||
+        existingCollection.libraryId !== ctx.library.uuid
+      ) {
+        // The schema enforces a media-source-wide unique key on
+        // (mediaSourceId, externalKey) but tracks only one
+        // (libraryId, title) per row. Re-point the row at the library we
+        // currently see the collection through so its program/grouping
+        // membership is read against the right library in the cleanup
+        // pass below, and so a later title change on the upstream side
+        // is reflected without losing history.
+        existingCollection.libraryId = ctx.library.uuid;
+        existingCollection.title = collection.title;
+        await this.externalCollectionsRepo.upsertCollection(existingCollection);
       }
 
       searchUpdates.push(
@@ -229,11 +255,16 @@ export abstract class ExternalCollectionScanner<
       );
     }
 
-    const missingIds = existingCollectionExternalIds.difference(seenIds);
-    const missingCollections = seq.collect(
-      [...missingIds.values()],
-      (id) => existingCollections[id],
-    );
+    // Cleanup pass. A collection row is unique per media source, not per
+    // library, so a row that no longer shows up in *this* library's scan
+    // might still be visible through another enabled library of the same
+    // media source. Only delete rows that still belong to this library
+    // after the run above (rows whose `libraryId` was repointed by the
+    // reuse branch now track a sibling library and must be preserved).
+    const staleRows = existingCollectionExternalIds.difference(seenIds);
+    const missingCollections = seq
+      .collect([...staleRows.values()], (id) => existingCollections[id])
+      .filter((missing) => missing.libraryId === ctx.library.uuid);
 
     for (const missingCollection of missingCollections) {
       const collection = await this.externalCollectionsRepo.getById(
