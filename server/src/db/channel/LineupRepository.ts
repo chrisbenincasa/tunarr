@@ -304,6 +304,11 @@ export class LineupRepository {
       }
     }
 
+    if (isDefined(newLineup.scheduleSeed)) {
+      data.scheduleSeed =
+        newLineup.scheduleSeed === null ? undefined : newLineup.scheduleSeed;
+    }
+
     if (isDefined(newLineup.onDemandConfig)) {
       data.onDemandConfig =
         newLineup.onDemandConfig === null
@@ -949,6 +954,7 @@ export class LineupRepository {
       await this.timer.timeAsync('saveLineup', () =>
         this.saveLineup(id, {
           items: newLineupItems,
+          scheduleSeed: null,
           onDemandConfig: isDefined(lineup.onDemandConfig)
             ? {
                 ...lineup.onDemandConfig,
@@ -967,6 +973,7 @@ export class LineupRepository {
       // Held onto so the caller can build its response without re-querying and
       // re-materializing every program. See UpdateLineupResult.
       let materializedPrograms: Record<string, ContentProgram>;
+      let scheduleSeed: number[];
       if (req.type === 'time') {
         const { result } = await this.workerPoolProvider().queueTask({
           type: 'time-slots',
@@ -980,6 +987,7 @@ export class LineupRepository {
           },
         });
 
+        scheduleSeed = result.seed;
         materializedPrograms = await this.materializeLineupCommand.execute({
           lineup: result.lineup,
         });
@@ -999,6 +1007,7 @@ export class LineupRepository {
             strictValidation: true,
           },
         });
+        scheduleSeed = result.seed;
         materializedPrograms = await this.materializeLineupCommand.execute({
           lineup: result.lineup,
         });
@@ -1015,6 +1024,7 @@ export class LineupRepository {
       await this.saveLineup(id, {
         items: newLineup,
         schedule: req.schedule,
+        scheduleSeed,
       });
 
       return {

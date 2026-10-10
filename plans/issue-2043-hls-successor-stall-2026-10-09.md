@@ -1,6 +1,34 @@
 # Issue #2043: Standard HLS stalls at program boundary
 
-> **Status (10/09/2026):** Reproduced with stream-repro. A program whose media ends 220 s early leaves the HLS playlist frozen for 215 s. Fix deferred: the trigger looks rare and the remediation design is non-trivial. Design recorded below; findings posted to #2043.
+> **Status (10/09/2026):** Root cause found: stale lineup durations, a regression since v1.3.0. Fix on branch `fix/reconcile-lineup-durations`, verified with stream-repro. The `HlsSession` gap-fill below is still deferred.
+
+## Root cause update (10/09/2026)
+
+The reporter found 922 lineup items whose stored duration was off by more than a second.
+
+- Each lineup item stores its own `durationMs`. Streaming reads that copy, not `program.duration`
+- Scans update `program.duration`. `ReconcileProgramDurationsTask` copies it into lineups
+- The task lost its triggers: hourly run commented out in v0.21.0 (`ed09b4c49`), last general trigger removed in v1.3.0 (`3afa86efc`). Only the Jellyfin re-match path still ran it
+- When the task did run, it skipped mid-roll segments and never rebased `start_time`, so the channel jumped by about (loops so far) x (seconds changed)
+
+### Fix (branch `fix/reconcile-lineup-durations`)
+
+- Task runs after every scan (`MediaSourceScanCoordinator`), which also covers single-program rescans
+- Pure logic in `server/src/db/lineupDurationReconciler.ts`
+  - Whole items take the program duration; mid-roll segments clamp, and the final segment grows or shrinks
+  - A flex item right after a changed item absorbs the difference, so slot times stay on the clock
+  - The current item and elapsed time are kept: `start_time` is rebased, or the on-demand cursor is moved
+- Runs are serialized; each channel is rewritten under the on-demand lock; guide refresh is queued per channel
+- Settings saves no longer round an off-minute `start_time` that is in the same minute, and no longer write `duration`
+
+### Live verification (stream-repro `--mid-truncate`, `--start-ago`)
+
+| Run | Change | Result |
+|---|---|---|
+| A, `hls` | Future program 60 s -> 30 s | Next program on time; no gap |
+| B, `hls` | On-air program 60 s -> 35 s | Old length still airs; next program skips its first 25 s once |
+| C, `hls` | Earlier program on a looped channel | `start_time` rebased; on-air program and next start unchanged |
+| D, `hls_slower` | Future program 60 s -> 30 s | Transcoded at 30 s; continuous output |
 
 ## Report
 

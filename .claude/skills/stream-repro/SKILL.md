@@ -26,6 +26,8 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--clips N`, `--clip-seconds S` | `3`, `60` | Number and length of synthetic clips; each clip is one program |
 | `--clip-durations LIST` | | Per-clip lengths in seconds, such as `60,8,60` for a bumper between two programs. Overrides `--clips` and `--clip-seconds` |
 | `--truncate-clip I:S` | | Shorten clip I (1-based) to S seconds after the scan. The database keeps the longer duration, which mimics media that ends before its scheduled time |
+| `--mid-truncate I:S@T` | | HLS modes only. At T seconds into the capture, shorten clip I to S seconds and force a rescan, the way a replaced file and a scheduled scan change a live channel. `report.midTruncate` records the scan time and the channel's `startTime` and `duration` before and after duration reconciliation |
+| `--start-ago S` | | `synthetic` only. Backdate the channel start by S seconds, so the channel has already looped its lineup. Pair with `--mid-truncate` on a clip earlier in the cycle to exercise the start-time rebase |
 | `--db-dir DIR` | | `copy` only: Tunarr database directory to copy (the dev server's is `TUNARR_DATABASE_PATH` in `server/.env.development`) |
 | `--channel ID` | | `copy` only: channel number or uuid to stream |
 | `--mode hls\|hls_slower\|hls_direct_v2\|mpegts` | `hls` | Stream mode to request |
@@ -62,6 +64,12 @@ Short clips are fine. Tunarr skips to the next program only when a stream reques
 To check that each program airs on schedule, compare the `About to play lineup item` debug entries in
 `tunarr.log` with the lineup. Each entry's `programBeginMs`, minus `channel.startTime`, should equal the
 program's offset in the lineup.
+
+After `--mid-truncate`, programs after the change should begin at their corrected offsets, and the program
+on air should end at its original wall-clock time. `hls_slower` does not log `About to play lineup item`;
+read each program's `-t` in `report.ffmpeg.commands` instead. A program shortened while it is already on
+air still plays its old length, because its transcode was already running. The next program then starts
+late by the difference, and only on that one airing.
 
 A run takes one to three minutes. Most of that is server boot and real-time streaming.
 
