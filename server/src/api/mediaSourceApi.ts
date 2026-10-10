@@ -851,6 +851,26 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             );
           }
         }
+        const restoredIds = [
+          ...trashed.restoredProgramIds,
+          ...trashed.restoredGroupingIds,
+        ];
+        if (restoredIds.length > 0) {
+          // A path that comes back takes its programs and groupings out of the
+          // trash; the scan below leaves unchanged folders alone, so the index
+          // (which the Trash page reads `state` from) is what brings them back.
+          try {
+            await req.serverCtx.searchService.updatePrograms(
+              restoredIds.map((id) => ({ id, state: 'ok' })),
+            );
+          } catch (err) {
+            logger.error(
+              err,
+              'Could not restore %d items in the search index.',
+              restoredIds.length,
+            );
+          }
+        }
         if (req.body.type === 'local') {
           await req.serverCtx.mediaSourceScanCoordinator.addLocal({
             mediaSourceId: tag(req.body.id),

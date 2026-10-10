@@ -315,6 +315,7 @@ describe('MediaSourceDB', () => {
       .all()
       .find((library) => library.externalKey === '/media/shows')!;
     insertPrograms(drizzle, mediaSourceId, removed.uuid, 2);
+    insertGroupings(drizzle, mediaSourceId, removed.uuid, 2);
 
     const update = (paths: string[]) =>
       mediaSourceDB.updateMediaSource({
@@ -334,6 +335,23 @@ describe('MediaSourceDB', () => {
     const restored = libraries.find((library) => library.uuid === removed.uuid);
     expect(restored?.unavailableSince).toBeNull();
     expect(programCountForLibrary(drizzle, removed.uuid)).toBe(2);
+
+    // The path coming back takes its programs and groupings out of the trash:
+    // nothing else flips them, since the scan leaves unchanged folders alone.
+    const programs = drizzle
+      .select()
+      .from(Program)
+      .where(eq(Program.libraryId, removed.uuid))
+      .all();
+    expect(programs).toHaveLength(2);
+    expect(programs.every((program) => program.state === 'ok')).toBe(true);
+    const groupings = drizzle
+      .select()
+      .from(ProgramGrouping)
+      .where(eq(ProgramGrouping.libraryId, removed.uuid))
+      .all();
+    expect(groupings).toHaveLength(2);
+    expect(groupings.every((grouping) => grouping.state === 'ok')).toBe(true);
   });
 
   test('a later save does not re-trash a path that is already unavailable', async ({
@@ -372,7 +390,12 @@ describe('MediaSourceDB', () => {
     // The flagged row keeps its externalKey, so a plain rename must not flag it
     // again and rewrite what is already in the trash.
     const second = await save(['/media/movies'], 'Renamed');
-    expect(second).toEqual({ programIds: [], groupingIds: [] });
+    expect(second).toEqual({
+      programIds: [],
+      groupingIds: [],
+      restoredProgramIds: [],
+      restoredGroupingIds: [],
+    });
 
     const stillFlagged = drizzle
       .select()
@@ -397,7 +420,12 @@ describe('MediaSourceDB', () => {
       pathReplacements: [],
       paths: ['/media/movies', '/media/shows'],
     });
-    expect(trashed).toEqual({ programIds: [], groupingIds: [] });
+    expect(trashed).toEqual({
+      programIds: [],
+      groupingIds: [],
+      restoredProgramIds: [],
+      restoredGroupingIds: [],
+    });
 
     const remaining = drizzle
       .select({ externalKey: MediaSourceLibrary.externalKey })
