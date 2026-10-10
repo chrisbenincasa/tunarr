@@ -46,13 +46,6 @@ export const LoggingSettingsSchema = z.object({
 
 export type LoggingSettings = z.infer<typeof LoggingSettingsSchema>;
 
-export const CacheSettingsSchema = z.object({
-  // Preserve previous behavior
-  enablePlexRequestCache: z.boolean().optional().default(false).catch(false),
-});
-
-export type CacheSettings = z.infer<typeof CacheSettingsSchema>;
-
 export const SearchServerSettingsSchema = z.object({
   maxIndexingMemory: z.number().optional(),
   snapshotIntervalHours: z.number().default(4),
@@ -75,7 +68,6 @@ export const DefaultServerSettings = {
 export const SystemSettingsSchema = z.object({
   backup: BackupSettingsSchema,
   logging: LoggingSettingsSchema,
-  cache: CacheSettingsSchema.optional(),
   server: ServerSettingsSchema.default(DefaultServerSettings),
 });
 

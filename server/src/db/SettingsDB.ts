@@ -142,9 +142,6 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
         maxFileSizeBytes: Math.pow(2, 20),
       },
     },
-    cache: {
-      enablePlexRequestCache: false,
-    },
     server: DefaultServerSettings,
   },
   featureFlags: FeatureFlagsSchema.parse({}),
