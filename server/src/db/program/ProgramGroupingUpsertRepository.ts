@@ -114,43 +114,49 @@ export class ProgramGroupingUpsertRepository {
       for (const externalId of newGroupingAndRelations.externalIds) {
         externalId.groupUuid = entity.uuid;
       }
-      entity = this.drizzleDB.transaction((tx) => {
-        const updated = this.updateProgramGrouping(
-          newGroupingAndRelations,
-          entity!,
-          tx,
-        );
-        const upsertedExternalIds = this.updateProgramGroupingExternalIds(
-          entity!.externalIds,
-          externalIds,
-          tx,
-        );
-        return {
-          ...updated,
-          externalIds: upsertedExternalIds,
-        } satisfies ProgramGroupingOrmWithRelations;
-      });
+      entity = this.drizzleDB.transaction(
+        (tx) => {
+          const updated = this.updateProgramGrouping(
+            newGroupingAndRelations,
+            entity!,
+            tx,
+          );
+          const upsertedExternalIds = this.updateProgramGroupingExternalIds(
+            entity!.externalIds,
+            externalIds,
+            tx,
+          );
+          return {
+            ...updated,
+            externalIds: upsertedExternalIds,
+          } satisfies ProgramGroupingOrmWithRelations;
+        },
+        { behavior: 'immediate' },
+      );
 
       wasUpdated = true;
     } else if (!entity) {
-      entity = this.drizzleDB.transaction((tx) => {
-        const grouping = tx
-          .insert(ProgramGrouping)
-          .values(omit(dao, 'externalIds'))
-          .returning()
-          .get();
-        const insertedExternalIds: ProgramGroupingExternalIdOrm[] = [];
-        if (externalIds.length > 0) {
-          insertedExternalIds.push(
-            ...this.upsertProgramGroupingExternalIdsChunkOrm(externalIds, tx),
-          );
-        }
+      entity = this.drizzleDB.transaction(
+        (tx) => {
+          const grouping = tx
+            .insert(ProgramGrouping)
+            .values(omit(dao, 'externalIds'))
+            .returning()
+            .get();
+          const insertedExternalIds: ProgramGroupingExternalIdOrm[] = [];
+          if (externalIds.length > 0) {
+            insertedExternalIds.push(
+              ...this.upsertProgramGroupingExternalIdsChunkOrm(externalIds, tx),
+            );
+          }
 
-        return {
-          ...grouping,
-          externalIds: insertedExternalIds,
-        } satisfies ProgramGroupingOrmWithRelations;
-      });
+          return {
+            ...grouping,
+            externalIds: insertedExternalIds,
+          } satisfies ProgramGroupingOrmWithRelations;
+        },
+        { behavior: 'immediate' },
+      );
 
       wasInserted = true;
       shouldUpdate = true;

@@ -151,34 +151,37 @@ export class CustomShowDB {
         updateRequest.syncExternalPlaylistId ?? null;
     }
 
-    this.drizzle.transaction((tx) => {
-      if (Object.keys(updates).length > 0) {
-        tx.update(CustomShow)
-          .set(updates)
-          .where(eq(CustomShow.uuid, show.uuid))
+    this.drizzle.transaction(
+      (tx) => {
+        if (Object.keys(updates).length > 0) {
+          tx.update(CustomShow)
+            .set(updates)
+            .where(eq(CustomShow.uuid, show.uuid))
+            .run();
+        }
+
+        if (replacementPrograms === undefined) {
+          return;
+        }
+
+        tx.delete(CustomShowContent)
+          .where(eq(CustomShowContent.customShowUuid, show.uuid))
           .run();
-      }
 
-      if (replacementPrograms === undefined) {
-        return;
-      }
-
-      tx.delete(CustomShowContent)
-        .where(eq(CustomShowContent.customShowUuid, show.uuid))
-        .run();
-
-      const rows = replacementPrograms.map(
-        (program, index) =>
-          ({
-            customShowUuid: show.uuid,
-            contentUuid: program.id,
-            index,
-          }) satisfies NewCustomShowContent,
-      );
-      for (const contentChunk of chunk(rows, 1_000)) {
-        tx.insert(CustomShowContent).values(contentChunk).run();
-      }
-    });
+        const rows = replacementPrograms.map(
+          (program, index) =>
+            ({
+              customShowUuid: show.uuid,
+              contentUuid: program.id,
+              index,
+            }) satisfies NewCustomShowContent,
+        );
+        for (const contentChunk of chunk(rows, 1_000)) {
+          tx.insert(CustomShowContent).values(contentChunk).run();
+        }
+      },
+      { behavior: 'immediate' },
+    );
 
     return await this.getShow(show.uuid);
   }
@@ -217,13 +220,16 @@ export class CustomShowDB {
       return false;
     }
 
-    this.drizzle.transaction((tx) => {
-      // TODO: Do this deletion in the DB with foreign keys.
-      tx.delete(CustomShowContent)
-        .where(eq(CustomShowContent.customShowUuid, show.uuid))
-        .run();
-      tx.delete(CustomShow).where(eq(CustomShow.uuid, show.uuid)).run();
-    });
+    this.drizzle.transaction(
+      (tx) => {
+        // TODO: Do this deletion in the DB with foreign keys.
+        tx.delete(CustomShowContent)
+          .where(eq(CustomShowContent.customShowUuid, show.uuid))
+          .run();
+        tx.delete(CustomShow).where(eq(CustomShow.uuid, show.uuid)).run();
+      },
+      { behavior: 'immediate' },
+    );
 
     return true;
   }
@@ -349,15 +355,18 @@ export class CustomShowDB {
       } satisfies NewCustomShowContent;
     });
 
-    this.drizzle.transaction((tx) => {
-      if (allNewCustomContent.length > 0) {
-        tx.delete(CustomShowContent)
-          .where(eq(CustomShowContent.customShowUuid, customShowId))
-          .run();
-        for (const contentChunk of chunk(allNewCustomContent, 1_000)) {
-          tx.insert(CustomShowContent).values(contentChunk).run();
+    this.drizzle.transaction(
+      (tx) => {
+        if (allNewCustomContent.length > 0) {
+          tx.delete(CustomShowContent)
+            .where(eq(CustomShowContent.customShowUuid, customShowId))
+            .run();
+          for (const contentChunk of chunk(allNewCustomContent, 1_000)) {
+            tx.insert(CustomShowContent).values(contentChunk).run();
+          }
         }
-      }
-    });
+      },
+      { behavior: 'immediate' },
+    );
   }
 }
