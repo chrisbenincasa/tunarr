@@ -138,8 +138,62 @@ describe('reconcileLineupDurations', () => {
       new Map([['a', 600]]),
     );
 
-    expect(durations(result.items)).toEqual([400, 100, 200, 100, 1000]);
+    expect(durations(result.items)).toEqual([400, 100, 200, 1000]);
     expect(result.changedItemCount).toBe(2);
+  });
+
+  test('drops the break before each dropped segment', () => {
+    const result = reconcileLineupDurations(
+      [
+        content('a', 400, { startOffsetMs: 0 }),
+        flex(100, 'midroll'),
+        content('a', 400, { startOffsetMs: 400 }),
+        flex(100, 'midroll'),
+        content('a', 400, { startOffsetMs: 800 }),
+        content('b', 1000),
+      ],
+      new Map([['a', 350]]),
+    );
+
+    expect(durations(result.items)).toEqual([350, 1000]);
+    expect(result.indexMap).toEqual([
+      { index: 0, kept: true },
+      { index: 1, kept: false },
+      { index: 1, kept: false },
+      { index: 1, kept: false },
+      { index: 1, kept: false },
+      { index: 1, kept: true },
+    ]);
+  });
+
+  test('drops mid-roll filler along with the break', () => {
+    const result = reconcileLineupDurations(
+      [
+        content('a', 400, { startOffsetMs: 0 }),
+        content('ad', 50, { fillerType: 'mid' }),
+        flex(50, 'midroll'),
+        content('a', 400, { startOffsetMs: 400 }),
+        content('b', 1000),
+      ],
+      new Map([['a', 300]]),
+    );
+
+    expect(durations(result.items)).toEqual([300, 1000]);
+  });
+
+  test('lets flex after a dropped final segment absorb it', () => {
+    const result = reconcileLineupDurations(
+      [
+        content('a', 400, { startOffsetMs: 0 }),
+        flex(100, 'midroll'),
+        content('a', 400, { startOffsetMs: 400 }),
+        flex(200),
+        content('b', 1000),
+      ],
+      new Map([['a', 350]]),
+    );
+
+    expect(durations(result.items)).toEqual([350, 600, 1000]);
   });
 
   test('treats each airing of a segmented program separately', () => {
@@ -158,6 +212,18 @@ describe('reconcileLineupDurations', () => {
 });
 
 describe('remapLineupPosition', () => {
+  test('moves a position in a dropped break to the next program', () => {
+    const items = [
+      content('a', 400, { startOffsetMs: 0 }),
+      flex(100, 'midroll'),
+      content('a', 400, { startOffsetMs: 400 }),
+      content('b', 1000),
+    ];
+    const result = reconcileLineupDurations(items, new Map([['a', 350]]));
+
+    // 50 ms into the break, which is gone. b now starts at 350.
+    expect(remapLineupPosition(items, result, 450)).toBe(350);
+  });
   test('keeps elapsed time in the current program', () => {
     const items = [content('a', 1000), content('b', 1000), content('c', 1000)];
     const result = reconcileLineupDurations(items, new Map([['a', 600]]));
@@ -190,26 +256,46 @@ describe('remapLineupPosition', () => {
 });
 
 describe('rebaseChannelStartTime', () => {
-  test('puts now at the requested position without moving past now', () => {
-    const oldStart = 1_000_000;
-    const now = oldStart + 10 * 3600 + 1234;
-    const start = rebaseChannelStartTime(oldStart, 3500, now, 777);
+  const minute = 60_000;
+  const oldStart = 1_760_000_040_000;
+  const cycle = 5_400_000;
 
+  test('lands on the minute within 30 s of the requested position', () => {
+    const now = oldStart + 10 * 3_600_000 + 12_345;
+    const position = 777_777;
+    const start = rebaseChannelStartTime(oldStart, cycle, now, position);
+
+    expect(start % minute).toBe(0);
     expect(start).toBeLessThanOrEqual(now);
     expect(start).toBeGreaterThanOrEqual(oldStart);
-    expect((now - start) % 3500).toBe(777);
+    expect(Math.abs(((now - start) % cycle) - position)).toBeLessThanOrEqual(
+      30_000,
+    );
   });
 
-  test('never moves the start after now on a young channel', () => {
-    const now = 10_000;
-    const start = rebaseChannelStartTime(9_900, 5000, now, 2000);
+  test('rounds to the nearer minute', () => {
+    const now = oldStart + 10 * minute;
 
-    expect(start).toBe(8000);
+    // Exact starts are 8:20 and 8:50 past the old start.
+    expect(rebaseChannelStartTime(oldStart, cycle, now, 100_000)).toBe(
+      oldStart + 8 * minute,
+    );
+    expect(rebaseChannelStartTime(oldStart, cycle, now, 70_000)).toBe(
+      oldStart + 9 * minute,
+    );
+  });
+
+  test('never moves the start after now', () => {
+    const now = oldStart + 10 * minute - 10;
+
+    expect(rebaseChannelStartTime(oldStart, cycle, now, 0)).toBe(
+      oldStart + 9 * minute,
+    );
   });
 });
 
 describe('position is preserved for streaming', () => {
-  test('the stream stays on the same program and offset after a rebase', () => {
+  test('the stream stays within 30 s of its position after a rebase', () => {
     const items = [
       content('a', 60_000),
       flex(30_000),
@@ -253,7 +339,11 @@ describe('position is preserved for streaming', () => {
       lineupOf(result.items),
     );
 
-    expect(result.items[after.currentProgramIndex]).toMatchObject({ id: 'b' });
-    expect(after.timeElapsed).toBe(before.timeElapsed);
+    const streamPosition =
+      (calculateStartTimeOffsets(result.items)[after.currentProgramIndex] ??
+        0) + after.timeElapsed;
+
+    expect(newStart % 60_000).toBe(0);
+    expect(Math.abs(streamPosition - position)).toBeLessThanOrEqual(30_000);
   });
 });

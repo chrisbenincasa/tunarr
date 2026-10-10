@@ -36,66 +36,46 @@ export class RegenerateChannelLineupCommand {
       return;
     }
 
-    if (channelAndLineup.lineup.schedule) {
-      if (channelAndLineup.lineup.schedule.type === 'time') {
-        const { result } = await this.workerPoolProvider().queueTask({
-          type: 'time-slots',
-          request: {
-            type: 'channel',
-            channelId,
-            schedule: channelAndLineup.lineup.schedule,
-            startTime: channelAndLineup.channel.startTime,
-          },
-        });
+    const { schedule, scheduleSeed } = channelAndLineup.lineup;
+    if (schedule) {
+      const request = {
+        type: 'channel' as const,
+        channelId,
+        startTime: channelAndLineup.channel.startTime,
+        seed: scheduleSeed,
+      };
 
-        const lineupItems = seq.collect<CondensedChannelProgram, LineupItem>(
-          result.lineup,
-          channelProgramToLineupItem,
-        );
+      const { result } =
+        schedule.type === 'time'
+          ? await this.workerPoolProvider().queueTask({
+              type: 'time-slots',
+              request: { ...request, schedule },
+            })
+          : await this.workerPoolProvider().queueTask({
+              type: 'schedule-slots',
+              request: { ...request, schedule },
+            });
 
-        const programIds = seq.collect(lineupItems, (item) => {
-          return match(item)
-            .with({ type: 'content' }, (i) => i.id)
-            .otherwise(() => null);
-        });
+      const lineupItems = seq.collect(
+        result.lineup,
+        channelProgramToLineupItem,
+      );
 
-        // Regenerate schedule at the new start time.
-        this.channelDB.replaceChannelPrograms(channelId, programIds);
-        await this.channelDB.saveLineup(channelId, { items: lineupItems });
-        await this.channelDB.updateChannelDuration(
-          channelId,
-          sum(lineupItems.map((item) => item.durationMs)),
-        );
-      } else if (channelAndLineup.lineup.schedule.type === 'random') {
-        const { result } = await this.workerPoolProvider().queueTask({
-          type: 'schedule-slots',
-          request: {
-            type: 'channel',
-            channelId,
-            schedule: channelAndLineup.lineup.schedule,
-            startTime: channelAndLineup.channel.startTime,
-          },
-        });
+      const programIds = seq.collect(lineupItems, (item) => {
+        return match(item)
+          .with({ type: 'content' }, (i) => i.id)
+          .otherwise(() => null);
+      });
 
-        const lineupItems = seq.collect(
-          result.lineup,
-          channelProgramToLineupItem,
-        );
-
-        const programIds = seq.collect(lineupItems, (item) => {
-          return match(item)
-            .with({ type: 'content' }, (i) => i.id)
-            .otherwise(() => null);
-        });
-
-        // Regenerate schedule at the new start time.
-        this.channelDB.replaceChannelPrograms(channelId, programIds);
-        await this.channelDB.saveLineup(channelId, { items: lineupItems });
-        await this.channelDB.updateChannelDuration(
-          channelId,
-          sum(lineupItems.map((item) => item.durationMs)),
-        );
-      }
+      this.channelDB.replaceChannelPrograms(channelId, programIds);
+      await this.channelDB.saveLineup(channelId, {
+        items: lineupItems,
+        scheduleSeed: result.seed,
+      });
+      await this.channelDB.updateChannelDuration(
+        channelId,
+        sum(lineupItems.map((item) => item.durationMs)),
+      );
     }
 
     await this.tvGuideService.updateCachedChannel(channelId, true);

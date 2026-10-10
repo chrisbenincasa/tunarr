@@ -1,3 +1,4 @@
+import { RegenerateChannelLineupCommand } from '@/commands/RegenerateChannelLineupCommand.js';
 import type { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
 import { isContentItem } from '@/db/derived_types/Lineup.js';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
@@ -85,6 +86,8 @@ export class ReconcileProgramDurationsTask extends Task2<
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(OnDemandChannelService)
     private onDemandService: OnDemandChannelService,
+    @inject(RegenerateChannelLineupCommand)
+    private regenerateLineup: RegenerateChannelLineupCommand,
   ) {
     super();
     this.logger.setBindings({ task: this.ID });
@@ -158,6 +161,18 @@ export class ReconcileProgramDurationsTask extends Task2<
         return;
       }
 
+      // The slot scheduler lays out mid-roll breaks and keeps time slots on
+      // the clock, so a seeded slot lineup is rebuilt rather than patched.
+      if (lineup.schedule && lineup.scheduleSeed) {
+        await this.regenerateLineup.execute({ channelId });
+        this.logger.debug(
+          'Regenerated slot schedule for channel %s after program durations changed',
+          channelId,
+        );
+        this.scheduleXmlTvUpdate(channelId);
+        return;
+      }
+
       const now = dayjs().valueOf();
       const oldPosition = currentPosition(channel, lineup, now);
       const newCycle = sumBy(reconciliation.items, (item) => item.durationMs);
@@ -199,20 +214,24 @@ export class ReconcileProgramDurationsTask extends Task2<
         }
       }
 
-      this.logger.info(
-        'Corrected %d stale program durations in channel %s (cycle %d ms -> %d ms)',
+      this.logger.debug(
+        'Corrected %d lineup items with stale durations in channel %s (cycle %d ms -> %d ms)',
         reconciliation.changedItemCount,
         channelId,
         channel.duration,
         newCycle,
       );
 
-      GlobalScheduler.scheduleOneOffTask(
-        KEYS.UpdateXmlTvTaskFactory,
-        dayjs().add(1, 'second'),
-        { channelId },
-      );
+      this.scheduleXmlTvUpdate(channelId);
     });
+  }
+
+  private scheduleXmlTvUpdate(channelId: string) {
+    GlobalScheduler.scheduleOneOffTask(
+      KEYS.UpdateXmlTvTaskFactory,
+      dayjs().add(1, 'second'),
+      { channelId },
+    );
   }
 
   private async loadProgramDurations(

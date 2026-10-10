@@ -22,11 +22,17 @@ separately from SQL migrations.
   lineup's `onDemandConfig.cursor` instead.
 - `server/src/tasks/ReconcileProgramDurationsTask.ts` copies changed program durations into lineups.
   `MediaSourceScanCoordinator` runs it after every scan.
-- The rules live in `server/src/db/lineupDurationReconciler.ts`. Flex right after a changed item absorbs
-  the difference; mid-roll segments are clamped, or the final one is extended; the current item and
-  elapsed time are kept by rebasing `startTime` or moving the on-demand cursor.
-- `BasicChannelRepository.updateChannel` never writes `duration`, and it keeps an off-minute `startTime`
-  when the request rounds to the same minute.
+- A slot lineup with a stored `scheduleSeed` is rebuilt by `RegenerateChannelLineupCommand` instead.
+  The command replays the seed from the channel's `startTime`, so time slots stay on the clock and
+  shuffles repeat. New or changed programs in a slot can still change what airs.
+- Slot saves write `scheduleSeed` to the lineup file; manual saves clear it. Lineups saved before the
+  field existed have no seed and are patched until the next slot save or regeneration.
+- The patch rules live in `server/src/db/lineupDurationReconciler.ts`. Flex right after a changed item
+  absorbs the difference; mid-roll segments are clamped, or the final one is extended; a dropped segment
+  takes the mid-roll break before it along. The current position is kept by moving the on-demand
+  cursor, or by rebasing `startTime` to the nearest minute, which can shift it by up to 30 s.
+- `BasicChannelRepository.updateChannel` never writes `duration`, and it rounds every `startTime` down
+  to the minute.
 
 ## Schedulers (`server/src/services/scheduling/`)
 

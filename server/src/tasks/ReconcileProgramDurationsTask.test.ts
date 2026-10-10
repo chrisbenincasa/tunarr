@@ -1,4 +1,6 @@
 import type { Kysely } from 'kysely';
+import type { RegenerateChannelLineupCommand } from '@/commands/RegenerateChannelLineupCommand.ts';
+import { sumBy } from 'lodash-es';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type {
   Lineup,
@@ -20,20 +22,36 @@ type Fixture = {
   programs: { uuid: string; duration: number }[];
   startTime?: number;
   onDemandConfig?: OnDemandChannelConfig;
+  schedule?: Lineup['schedule'];
+  scheduleSeed?: number[];
 };
 
-function setup({ items, programs, startTime = 0, onDemandConfig }: Fixture) {
+const timeSchedule = {
+  type: 'time',
+  slots: [],
+} as unknown as NonNullable<Lineup['schedule']>;
+
+function setup({
+  items,
+  programs,
+  startTime = 0,
+  onDemandConfig,
+  schedule,
+  scheduleSeed,
+}: Fixture) {
   const lineup: Lineup = {
     version: 6,
     lastUpdated: 0,
     items,
     startTimeOffsets: calculateStartTimeOffsets(items),
     onDemandConfig,
+    schedule,
+    scheduleSeed,
   };
   const channel = {
     uuid: 'ch1',
     startTime,
-    duration: items.reduce((sum, i) => sum + i.durationMs, 0),
+    duration: sumBy(items, (i) => i.durationMs),
   };
 
   const channelDB = {
@@ -61,13 +79,25 @@ function setup({ items, programs, startTime = 0, onDemandConfig }: Fixture) {
     ),
   } as unknown as OnDemandChannelService;
 
+  const regenerateLineup = {
+    execute: vi.fn().mockResolvedValue(undefined),
+  };
+
   const task = new ReconcileProgramDurationsTask(
     channelDB as unknown as IChannelDB,
     db,
     onDemandService,
+    regenerateLineup as unknown as RegenerateChannelLineupCommand,
   );
 
-  return { task, channel, lineup, channelDB, onDemandService };
+  return {
+    task,
+    channel,
+    lineup,
+    channelDB,
+    onDemandService,
+    regenerateLineup,
+  };
 }
 
 describe('ReconcileProgramDurationsTask', () => {
@@ -118,7 +148,7 @@ describe('ReconcileProgramDurationsTask', () => {
     );
   });
 
-  test('rebases the start time so the current program keeps playing', async () => {
+  test('rebases the start time to the minute so the current program keeps playing', async () => {
     const items: LineupItem[] = [
       { type: 'content', id: 'a', durationMs: 1_800_000 },
       { type: 'content', id: 'b', durationMs: 1_800_000 },
@@ -153,15 +183,18 @@ describe('ReconcileProgramDurationsTask', () => {
     expect(newStart).toBeLessThanOrEqual(NOW);
     expect(newStart).toBeGreaterThan(channel.startTime - cycle);
 
-    const newCycle = savedItems.reduce((sum, i) => sum + i.durationMs, 0);
+    const newCycle = sumBy(savedItems, (i) => i.durationMs);
     const after = calculateStreamDuration(NOW, newStart, newCycle, {
       ...lineup,
       items: savedItems,
       startTimeOffsets: calculateStartTimeOffsets(savedItems),
     });
 
+    expect(newStart % 60_000).toBe(0);
     expect(after.currentProgramIndex).toBe(before.currentProgramIndex);
-    expect(after.timeElapsed).toBe(before.timeElapsed);
+    expect(
+      Math.abs(after.timeElapsed - before.timeElapsed),
+    ).toBeLessThanOrEqual(30_000);
   });
 
   test('moves an on-demand cursor instead of the start time', async () => {
@@ -246,5 +279,52 @@ describe('ReconcileProgramDurationsTask', () => {
 
     expect(channelDB.saveLineup).toHaveBeenCalledTimes(1);
     expect(channelDB.updateChannelStartTime).not.toHaveBeenCalled();
+  });
+
+  test('regenerates a seeded slot schedule instead of patching it', async () => {
+    const { task, channelDB, regenerateLineup } = setup({
+      items: [{ type: 'content', id: 'a', durationMs: 1000 }],
+      programs: [{ uuid: 'a', duration: 2000 }],
+      startTime: NOW - 500,
+      schedule: timeSchedule,
+      scheduleSeed: [1, 2, 3],
+    });
+
+    await task.run(undefined);
+
+    expect(regenerateLineup.execute).toHaveBeenCalledWith({ channelId: 'ch1' });
+    expect(channelDB.saveLineup).not.toHaveBeenCalled();
+    expect(channelDB.updateChannelStartTime).not.toHaveBeenCalled();
+    expect(scheduleOneOff).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      { channelId: 'ch1' },
+    );
+  });
+
+  test('patches a slot lineup that has no seed, since it may be hand-edited', async () => {
+    const { task, channelDB, regenerateLineup } = setup({
+      items: [{ type: 'content', id: 'a', durationMs: 1000 }],
+      programs: [{ uuid: 'a', duration: 2000 }],
+      schedule: timeSchedule,
+    });
+
+    await task.run(undefined);
+
+    expect(regenerateLineup.execute).not.toHaveBeenCalled();
+    expect(channelDB.saveLineup).toHaveBeenCalledTimes(1);
+  });
+
+  test('leaves a seeded slot schedule alone when durations match', async () => {
+    const { task, regenerateLineup } = setup({
+      items: [{ type: 'content', id: 'a', durationMs: 1000 }],
+      programs: [{ uuid: 'a', duration: 1000 }],
+      schedule: timeSchedule,
+      scheduleSeed: [1, 2, 3],
+    });
+
+    await task.run(undefined);
+
+    expect(regenerateLineup.execute).not.toHaveBeenCalled();
   });
 });

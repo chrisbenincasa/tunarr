@@ -43,7 +43,7 @@ function sanitizeChannelWatermark(
 }
 
 function roundToMinute(timestamp: number) {
-  return +dayjs(timestamp).second(0).millisecond(0);
+  return +dayjs(timestamp).startOf('minute');
 }
 
 // Duration is left out because it always follows the lineup. A settings form
@@ -202,13 +202,6 @@ export class BasicChannelRepository {
     }
 
     const update = updateRequestToChannel(updateReq);
-
-    // Start times are saved on the minute, but duration reconciliation can
-    // move one off it. A request for the same minute keeps the stored value,
-    // so saving other settings doesn't shift the channel or regenerate it.
-    if (update.startTime === roundToMinute(channel.startTime)) {
-      update.startTime = channel.startTime;
-    }
 
     if (
       isNonEmptyString(updateReq.watermark?.url) &&
