@@ -595,7 +595,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
       if (program) {
         externalId = program.externalIds.find(
-          (eid) => eid.sourceType === 'jellyfin' || eid.sourceType === 'plex',
+          (eid) =>
+            eid.sourceType === 'jellyfin' ||
+            eid.sourceType === 'emby' ||
+            eid.sourceType === 'plex',
         );
       } else {
         const grouping = await req.serverCtx.programDB.getProgramGrouping(
@@ -605,7 +608,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send(`Program ${req.params.id} not found.`);
         }
         externalId = grouping.externalIds.find(
-          (eid) => eid.sourceType === 'jellyfin' || eid.sourceType === 'plex',
+          (eid) =>
+            eid.sourceType === 'jellyfin' ||
+            eid.sourceType === 'emby' ||
+            eid.sourceType === 'plex',
         );
       }
 
@@ -671,6 +677,36 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }
         case 'jellyfin': {
           const url = `${server.uri}/web/#/details?id=${externalId.externalKey}`;
+          if (!req.query.forward) {
+            return res.send({ url });
+          }
+
+          return res.redirect(url, 302).send();
+        }
+        case 'emby': {
+          // Emby Web needs the server ID to resolve the item. Tunarr does not
+          // store it, so read it from the server. Without it, Emby Web falls
+          // back to the server the browser is signed in to.
+          const params = new URLSearchParams({ id: externalId.externalKey });
+          const api =
+            await req.serverCtx.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
+              server,
+            );
+          const systemInfo = await api.getSystemInfo();
+          if (systemInfo.isFailure()) {
+            logger.warn(
+              systemInfo.error,
+              'Could not fetch server ID for Emby media source %s',
+              server.uuid,
+            );
+          } else {
+            const serverId = systemInfo.get().Id;
+            if (isNonEmptyString(serverId)) {
+              params.set('serverId', serverId);
+            }
+          }
+
+          const url = `${server.uri}/web/index.html#!/item?${params.toString()}`;
           if (!req.query.forward) {
             return res.send({ url });
           }
