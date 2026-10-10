@@ -195,8 +195,11 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     currentState = this.decoder?.nextState(currentState) ?? currentState;
 
     currentState = this.setDeinterlace(currentState);
-    currentState = this.setTonemap(currentState);
+    // Scale before tonemapping so the tonemap filter (the most expensive step,
+    // particularly tonemap_opencl) runs on the output resolution, not the
+    // source resolution.
     currentState = this.setScale(currentState);
+    currentState = this.setTonemap(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
     // TODO: Set crop
@@ -440,16 +443,14 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       ((ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.None &&
         ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None &&
         !shouldDeinterlace) ||
-        // Software decode and no tonemap implies we're already in software. If we're tonemapping but
-        // performed a software decode, we'll have had to upload to hardware to tonemap anyway (most likely)
-        // so try to continue on hardware if possible
+        // Frames reached hardware without a VAAPI decode
         (ffmpegState.decoderHwAccelMode !== HardwareAccelerationMode.Vaapi &&
           currentState.frameDataLocation === FrameDataLocation.Hardware) ||
         // Use software scale only when frames are not already on hardware.
-        // If frames are on hardware (from hw decode or tonemap), keep them
-        // there and use scale_vaapi — downloading for a software scale and
-        // re-uploading is wasteful, and breaks the named-device init_hw_device
-        // setup used for tonemap_opencl. Pad capability does not affect the
+        // If frames are on hardware (from hw decode), keep them there and use
+        // scale_vaapi — downloading for a software scale and re-uploading for
+        // the tonemap that follows is wasteful, and breaks the named-device
+        // init_hw_device setup used for tonemap_opencl. Pad capability does not affect the
         // scale decision: if padding requires software, it can hwdownload after.
         ((!willNeedPad || !canPadOnHardware) &&
           currentState.frameDataLocation !== FrameDataLocation.Hardware) ||
