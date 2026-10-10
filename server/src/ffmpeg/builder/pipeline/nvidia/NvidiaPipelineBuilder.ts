@@ -113,6 +113,12 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       canDecode = false;
     }
 
+    // ffmpeg rebuilds the filter graph when a CUDA-decoded input loops, and
+    // the rebuild fails with "Error reinitializing filters".
+    if (canDecode && desiredState.infiniteLoop) {
+      canDecode = false;
+    }
+
     const needsTonemapWithVulkan =
       this.featureFlagService.get('tonemapEnabled') &&
       canDecode &&
