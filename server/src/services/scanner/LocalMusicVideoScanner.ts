@@ -163,7 +163,7 @@ export class LocalMusicVideoScanner extends FileSystemScanner {
       const existingMovies =
         await this.programDB.getProgramInfoForMediaSourceLibrary(
           context.library.uuid,
-          ProgramType.OtherVideo,
+          ProgramType.MusicVideo,
         );
 
       const missingMovies: ProgramCanonicalIdLookupResult[] = [];
