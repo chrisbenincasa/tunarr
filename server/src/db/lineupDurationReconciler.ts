@@ -24,7 +24,8 @@ export type LineupDurationReconciliation = {
  *   grows or shrinks so the segments still cover the whole program.
  * - When an item changes length, a flex item right after it absorbs the
  *   difference, so later items keep their place in the cycle.
- * - Items whose duration drops to zero are removed.
+ * - Items whose duration drops to zero are removed. A removed segment takes
+ *   the mid-roll break before it along.
  */
 export function reconcileLineupDurations(
   items: ReadonlyArray<LineupItem>,
@@ -33,10 +34,10 @@ export function reconcileLineupDurations(
   const durations = items.map((item) => item.durationMs);
   let changedItemCount = 0;
 
-  items.forEach((item, i) => {
+  for (const [i, item] of items.entries()) {
     const target = targetDuration(items, i, programDurations);
     if (target === undefined || target === item.durationMs) {
-      return;
+      continue;
     }
 
     changedItemCount++;
@@ -49,11 +50,20 @@ export function reconcileLineupDurations(
         next.durationMs - (target - item.durationMs),
       );
     }
-  });
+
+    // A dropped segment is never the first, so the items before it are the
+    // break that led into it. With nothing after it to return to, the break
+    // goes too.
+    if (target === 0) {
+      for (let j = i - 1; j >= 0 && isMidRollBreakItem(items[j]); j--) {
+        durations[j] = 0;
+      }
+    }
+  }
 
   const reconciled: LineupItem[] = [];
   const indexMap: ReconciledItemIndex[] = [];
-  items.forEach((item, i) => {
+  for (const [i, item] of items.entries()) {
     const durationMs = durations[i] ?? item.durationMs;
     const kept = durationMs > 0;
     indexMap.push({ index: reconciled.length, kept });
@@ -62,9 +72,16 @@ export function reconcileLineupDurations(
         durationMs === item.durationMs ? item : { ...item, durationMs },
       );
     }
-  });
+  }
 
   return { items: reconciled, indexMap, changedItemCount };
+}
+
+function isMidRollBreakItem(item: LineupItem | undefined) {
+  if (isOfflineItem(item)) {
+    return item.fillerConfig?.origin === 'midroll';
+  }
+  return isContentItem(item) && item.fillerType === 'mid';
 }
 
 function targetDuration(
@@ -170,10 +187,13 @@ export function remapLineupPosition(
   return (newStart + newElapsed) % newCycle;
 }
 
+const MINUTE_MS = 60_000;
+
 /**
  * Returns a channel start time that puts `now` at `positionMs` in a cycle of
- * `cycleMs`. The result stays as close to the old start time as it can, and
- * never lands after `now`.
+ * `cycleMs`. Channels start on the minute, so the result is rounded to the
+ * nearest one and can be up to 30 s off `positionMs`. It stays as close to
+ * the old start time as it can, and never lands after `now`.
  */
 export function rebaseChannelStartTime(
   oldStartTime: number,
@@ -186,5 +206,7 @@ export function rebaseChannelStartTime(
     0,
     Math.floor((latestStart - oldStartTime) / cycleMs),
   );
-  return latestStart - cycles * cycleMs;
+  const exact = latestStart - cycles * cycleMs;
+  const rounded = Math.round(exact / MINUTE_MS) * MINUTE_MS;
+  return rounded <= now ? rounded : rounded - MINUTE_MS;
 }

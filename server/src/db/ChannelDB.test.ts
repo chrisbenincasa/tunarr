@@ -656,7 +656,7 @@ describe('ChannelDB', () => {
       expect(retrieved?.startTime).toBe(newStartTime);
     });
 
-    test('keeps an off-minute start time when settings are saved', async ({
+    test('snaps an off-minute start time to the minute when settings are saved', async ({
       channelDb,
       defaultTranscodeConfigId,
     }) => {
@@ -667,7 +667,6 @@ describe('ChannelDB', () => {
       });
       const created = await channelDb.saveChannel(channelData);
 
-      // Duration reconciliation moved the start off the minute.
       const rebased = 1_760_000_071_234;
       await channelDb.updateChannelStartTime(created.channel.uuid, rebased);
 
@@ -678,7 +677,7 @@ describe('ChannelDB', () => {
       });
 
       expect(updated.channel.name).toBe('Renamed');
-      expect(updated.channel.startTime).toBe(rebased);
+      expect(updated.channel.startTime).toBe(1_760_000_040_000);
     });
 
     test('rounds a new start time to the minute', async ({

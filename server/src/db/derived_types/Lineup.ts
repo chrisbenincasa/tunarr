@@ -116,6 +116,11 @@ export const LineupSchema = z.object({
   // API type, but for now it will work.
   schedule: LineupScheduleSchema.optional(),
 
+  // Seed the slot scheduler used to generate `items` from `schedule`.
+  // Regenerating with it reproduces the same lineup. It is cleared when the
+  // items are edited by hand, so they no longer follow from the schedule.
+  scheduleSeed: z.number().array().optional(),
+
   // These are precalculated offsets in milliseconds. The
   // array is a list of the running 'total' duration sum
   // of each of the lineup items. It can be used to quickly
