@@ -536,8 +536,16 @@ msgid "Alphabetically"
 msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
-msgid "Alternate programs in blocks. You can pick the number of programs per-type in each block and if the order of shows in each block should be randomized."
-msgstr ""
+#~ msgid "Alternate programs in blocks. You can pick the number of programs in each block, whether episodes play in order, and whether shows take turns or come up at random."
+#~ msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#~ msgid "Alternate programs in blocks. You can pick the number of programs in each block, whether episodes play in order, and whether shows take turns or come up at random. Each preset fills in these settings, and you can change them before shuffling."
+#~ msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#~ msgid "Alternate programs in blocks. You can pick the number of programs per-type in each block and if the order of shows in each block should be randomized."
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -727,7 +735,6 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Block Shuffle"
 msgstr ""
@@ -1169,6 +1176,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Cyclic Shuffle"
 msgstr ""
 
@@ -1436,6 +1444,10 @@ msgstr ""
 msgid "Dynamic"
 msgstr ""
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Each next block comes from a random show. Shows with more episodes come up more often unless Loop Short Programs is on."
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Eager"
 msgstr ""
@@ -1649,6 +1661,11 @@ msgstr ""
 #: src/pages/settings/XmlTvSettingsPage.tsx
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "EPG (Hours)"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Episode Order"
 msgstr ""
 
 #: src/components/programs/Episodes.tsx
@@ -1974,6 +1991,9 @@ msgid "Finish"
 msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "First Episode"
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
@@ -2184,6 +2204,10 @@ msgstr ""
 msgid "Image URL"
 msgstr ""
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "In Order"
+msgstr ""
+
 #: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
 msgid "Include Seasons"
 msgstr ""
@@ -2329,8 +2353,8 @@ msgid "Light"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
-msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
-msgstr ""
+#~ msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
+#~ msgstr ""
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
 #~ msgid "Limit"
@@ -3005,6 +3029,14 @@ msgstr ""
 #~ msgid "Playlists"
 #~ msgstr ""
 
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#~ msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows."
+#~ msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Opens the shuffle settings, where you can start every show at its first episode or loop shorter shows."
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
 msgstr ""
@@ -3028,6 +3060,11 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Pre"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Preset"
 msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotPresetButton.tsx
@@ -3135,12 +3172,17 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Random"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Random (by show)"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Random Episode"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
@@ -3603,6 +3645,11 @@ msgstr ""
 #~ msgid "Show only synced libraries"
 #~ msgstr ""
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Show Order"
+msgstr ""
+
 #: src/pages/guide/GuidePage.tsx
 msgid "Show Stealth"
 msgstr ""
@@ -3621,6 +3668,19 @@ msgstr ""
 msgid "Shows"
 msgstr ""
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows come up at random, one episode at a time. Each show's episodes stay in order, starting from a random episode."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows take turns in a fixed order, each playing a block of episodes before the next show."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows take turns in a fixed order."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Shuffle"
@@ -3761,6 +3821,11 @@ msgstr ""
 msgid "Started {startedAgo} - {remainingTime}remaining"
 msgstr ""
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Starting Episode"
+msgstr ""
+
 #: src/hooks/useNavItems.tsx
 #: src/pages/system/SystemLayout.tsx
 msgid "Status"
@@ -3880,6 +3945,10 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Tail Buffer (minutes)"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Take Turns"
 msgstr ""
 
 #: src/pages/settings/TaskSettingsPage.tsx
@@ -4226,8 +4295,6 @@ msgstr ""
 msgid "TV shows are grouped by show"
 msgstr ""
 
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
@@ -4471,6 +4538,10 @@ msgstr ""
 
 #: src/pages/system/StatusPage.tsx
 msgid "XMLTV Link:"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "You can change any setting below before shuffling."
 msgstr ""
 
 #: src/pages/library/FillerListsPage.tsx
