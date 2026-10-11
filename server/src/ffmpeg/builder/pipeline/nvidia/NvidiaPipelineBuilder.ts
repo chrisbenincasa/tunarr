@@ -39,7 +39,6 @@ import {
   NvidiaH264Encoder,
   NvidiaHevcEncoder,
 } from '../../encoder/nvidia/NvidiaEncoders.ts';
-import { HardwareDownloadFilter } from '../../filter/HardwareDownloadFilter.ts';
 import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
 import { LibplaceboTonemapFilter } from '../../filter/LibplaceboTonemapFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
@@ -582,9 +581,11 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         // TODO: is this necessary
         cuvidDecoder.hardwareAccelerationMode = HardwareAccelerationMode.None;
       } else {
+        // hwdownload must output the frame's actual sw_format. The watermark
+        // path may already have converted it to yuv420p on the GPU.
         currentState = this.addFilterToVideoChain(
           currentState,
-          new HardwareDownloadFilter(currentState),
+          new HardwareDownloadCudaFilter(currentState, null),
         );
       }
 
