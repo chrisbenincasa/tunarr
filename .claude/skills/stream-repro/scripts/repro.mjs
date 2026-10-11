@@ -34,6 +34,8 @@ const { values: opt } = parseArgs({
     'flex-first': { type: 'string' },
     'ffmpeg-setting': { type: 'string', multiple: true, default: [] },
     resolution: { type: 'string' },
+    hwaccel: { type: 'string' },
+    'vaapi-device': { type: 'string' },
     schedule: { type: 'string' },
   },
 });
@@ -67,6 +69,9 @@ if (flexMs > 0 && opt.source !== 'synthetic') throw new Error('--flex-first only
 const resolutionMatch = opt.resolution === undefined ? null : /^(\d+)x(\d+)$/.exec(opt.resolution);
 if (opt.resolution !== undefined && !resolutionMatch) throw new Error('--resolution takes WIDTHxHEIGHT, such as 1280x720');
 const resolution = resolutionMatch && { widthPx: Number(resolutionMatch[1]), heightPx: Number(resolutionMatch[2]) };
+const HWACCELS = ['none', 'cuda', 'vaapi', 'qsv', 'videotoolbox'];
+if (opt.hwaccel !== undefined && !HWACCELS.includes(opt.hwaccel)) throw new Error(`--hwaccel takes one of ${HWACCELS.join(', ')}`);
+if (opt['vaapi-device'] !== undefined && !['vaapi', 'qsv'].includes(opt.hwaccel)) throw new Error('--vaapi-device needs --hwaccel vaapi or qsv');
 const log = (...a) => console.error('[repro]', ...a);
 
 // ---------- helpers ----------
@@ -335,7 +340,7 @@ async function buildSyntheticChannel(base, clipsDir) {
 
   const configs = await api(base, 'GET', '/api/transcode_configs');
   const tc = configs.find((c) => c.isDefault) ?? configs[0];
-  await applyResolution(base, tc.id);
+  report.transcodeConfig = await applyTranscodeConfig(base, tc.id);
   // --start-ago backdates the channel so it has already looped its lineup.
   const startTime = Date.now() - Number(opt['start-ago'] ?? 0) * 1000;
   const channel = await api(base, 'POST', '/api/channels', {
@@ -377,10 +382,19 @@ async function buildSyntheticChannel(base, clipsDir) {
   };
 }
 
-async function applyResolution(base, transcodeConfigId) {
-  if (!resolution) return;
+// Applies --resolution, --hwaccel, and --vaapi-device to the channel's transcode config.
+async function applyTranscodeConfig(base, transcodeConfigId) {
+  const patch = {};
+  if (resolution) patch.resolution = resolution;
+  if (opt.hwaccel !== undefined) patch.hardwareAccelerationMode = opt.hwaccel;
+  if (opt['vaapi-device'] !== undefined) patch.vaapiDevice = opt['vaapi-device'];
+  if (Object.keys(patch).length === 0) return undefined;
   const tc = await api(base, 'GET', `/api/transcode_configs/${transcodeConfigId}`);
-  await api(base, 'PUT', `/api/transcode_configs/${transcodeConfigId}`, { ...tc, resolution });
+  await api(base, 'PUT', `/api/transcode_configs/${transcodeConfigId}`, { ...tc, ...patch });
+  const saved = await api(base, 'GET', `/api/transcode_configs/${transcodeConfigId}`);
+  const ignored = Object.keys(patch).filter((k) => JSON.stringify(saved[k]) !== JSON.stringify(patch[k]));
+  if (ignored.length) throw new Error(`transcode config not applied: ${ignored.join(', ')}`);
+  return patch;
 }
 
 // Values parse as JSON when they can (true, 3, "x"), and as plain strings otherwise.
@@ -866,7 +880,7 @@ try {
     server = await startServer();
     report.ffmpegSettings = await applyFfmpegSettings(server.base);
     const ch = await findChannel(server.base, opt.channel);
-    await applyResolution(server.base, ch.transcodeConfigId);
+    report.transcodeConfig = await applyTranscodeConfig(server.base, ch.transcodeConfigId);
     channel = { channelId: ch.id, startTime: ch.startTime, lineup: null };
   } else {
     throw new Error(`unknown --source ${opt.source}`);

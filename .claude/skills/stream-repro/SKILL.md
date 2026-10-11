@@ -40,6 +40,8 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--flex-first MS` | | `synthetic` only. Put an offline (flex) gap of MS milliseconds before the clips |
 | `--ffmpeg-setting KEY=VALUE` | | Override one field of the server's ffmpeg settings before streaming. Repeatable. Values parse as JSON when they can, so `true` and `3` are not strings |
 | `--resolution WxH` | | Set the output resolution of the channel's transcode config, such as `1280x720` |
+| `--hwaccel MODE` | | Set the hardware acceleration of the channel's transcode config: `none`, `cuda`, `vaapi`, `qsv`, or `videotoolbox` |
+| `--vaapi-device PATH` | | With `--hwaccel vaapi` or `qsv`, the render node to use, such as `/dev/dri/renderD128` |
 
 Use `--flex-first` to test the offline placeholder stream, which plays during flex gaps and is built
 separately from program streams (`createOfflineSession` in `server/src/ffmpeg/FfmpegStreamFactory.ts`).
@@ -50,6 +52,14 @@ scalingAlgorithm=lanczos --resolution 1280x720`. The keys are the fields of `Ffm
 stick (a misspelled key gets dropped). `report.ffmpegSettings` records what was overridden. The offline
 image is 1920x1080 and the default output is 1080p, so no scale filter runs unless `--resolution` sets
 another size. Without it, `scalingAlgorithm` has nothing to show.
+
+Use `--hwaccel` when a report names a GPU, or when a bug might live in one hardware pipeline. Each
+pipeline has its own builder, in `server/src/ffmpeg/builder/pipeline/nvidia/` for CUDA and
+`server/src/ffmpeg/builder/pipeline/hardware/` for the rest. Check the ffmpeg
+commands in the report to confirm the pipeline you asked for actually ran. A CUDA run shows `scale_cuda`
+and `h264_nvenc`, and a VAAPI run shows the device path and `h264_vaapi`. `report.transcodeConfig`
+records what was overridden. On a machine with more than one GPU, run `vainfo --display drm --device
+/dev/dri/renderD128` to see which render node VAAPI can encode on.
 
 Pick the layout that matches the report. `dup-lang` has two `eng` audio tracks, one titled
 Commentary, which is how a real library ends up with duplicate-language audio. `mixed` alternates resolution, frame rate, sample rate, channel
@@ -145,6 +155,7 @@ Say these when they apply, because a clean report is only as strong as its input
 - **No stream selection profile.** Synthetic channels use the legacy audio/subtitle selection fallback.
   If the reporter's channel has a stream selection profile, audio picking takes a path this run never
   touched. Ask, and use `copy` mode against a database that has the profile.
-- **Software pipeline only**, unless the machine's hardware acceleration is configured in the copied DB.
+- **Software pipeline by default.** Pass `--hwaccel` to test a hardware pipeline. Only pipelines this
+  machine's GPU and ffmpeg build support can run.
 - **Bounded sample.** Anything that happens after `--seconds` is out of view. Long-drift bugs need a
   longer capture.
