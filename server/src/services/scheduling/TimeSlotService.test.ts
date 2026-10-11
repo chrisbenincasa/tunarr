@@ -3556,7 +3556,10 @@ describe('empty filler lists', () => {
       type: 'time',
       flexPreference: 'distribute',
       maxDays: 1,
-      padMs: 120 * 60 * 1000,
+
+      // Padding is aligned to UTC, so a pad longer than 15 minutes can skip
+      // local midnight in zones like UTC+9.
+      padMs: 15 * 60 * 1000,
       slots: [
         {
           id: randomUUID(),
@@ -3584,7 +3587,13 @@ describe('empty filler lists', () => {
       timeZoneOffset: 0,
     };
 
-    const result = await scheduleTimeSlots(schedule, programs);
+    const result = await scheduleTimeSlots(
+      schedule,
+      programs,
+      undefined,
+      0,
+      dayjs('2025-01-06'),
+    );
 
     expect(result.lineup.length).toBeGreaterThan(0);
     expect(
