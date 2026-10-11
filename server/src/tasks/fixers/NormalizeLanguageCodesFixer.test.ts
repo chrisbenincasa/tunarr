@@ -216,4 +216,78 @@ describe('NormalizeLanguageCodesFixer', () => {
         .some((ids) => ids.includes(UnindexedProgramId)),
     ).toBe(true);
   });
+
+  it('keeps the DB heal when a search refresh throws, and keeps publishing later batches', async () => {
+    // Fresh rows: the test above already normalized the seeded ones.
+    insertProgram('program-throwing', 'version-throwing', 2);
+    drizzle
+      .insert(ProgramMediaStream)
+      .values({
+        uuid: 'audio-throwing',
+        index: RowCount + 1,
+        codec: 'aac',
+        streamKind: 'audio' as const,
+        language: 'ger',
+        programVersionId: 'version-throwing',
+      })
+      .run();
+
+    const updatePrograms = vi
+      .fn(async (_partials: PartialDocument[]) => {})
+      .mockRejectedValueOnce(new Error('meilisearch is down'));
+    const getPrograms = vi.fn(async (ids: string[]) =>
+      ids.map((id) => ({ id })),
+    );
+    const warn = vi.fn();
+    const fixer = new NormalizeLanguageCodesFixer(drizzle, {
+      waitUntilReady: vi.fn(() => Promise.resolve()),
+      getPrograms,
+      updatePrograms,
+    } as unknown as MeilisearchService);
+    Object.defineProperty(fixer, 'logger', {
+      value: {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn,
+      } as unknown as Logger,
+    });
+
+    await expect(fixer.run()).resolves.toBeUndefined();
+
+    // The UPDATE had already committed, so the row is normalized even though
+    // the refresh for its batch threw.
+    const healed = drizzle
+      .select({ language: ProgramMediaStream.language })
+      .from(ProgramMediaStream)
+      .where(eq(ProgramMediaStream.uuid, 'audio-throwing'))
+      .get();
+    expect(healed?.language).toBe('deu');
+
+    // The throw was reported, not swallowed silently.
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain(
+      'Failed to refresh the search index',
+    );
+  });
+
+  it('propagates a search readiness failure instead of parking silently', async () => {
+    const updatePrograms = vi.fn(async (_partials: PartialDocument[]) => {});
+    const fixer = new NormalizeLanguageCodesFixer(drizzle, {
+      waitUntilReady: vi.fn(() =>
+        Promise.reject(new Error('search never became ready')),
+      ),
+      getPrograms: vi.fn(async () => []),
+      updatePrograms,
+    } as unknown as MeilisearchService);
+    Object.defineProperty(fixer, 'logger', {
+      value: {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+      } as unknown as Logger,
+    });
+
+    await expect(fixer.run()).rejects.toThrow('search never became ready');
+    expect(updatePrograms).not.toHaveBeenCalled();
+  });
 });
