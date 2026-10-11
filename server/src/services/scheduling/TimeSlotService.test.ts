@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import constants from '@tunarr/shared/constants';
 import type { TimeSlotSchedule } from '@tunarr/types/api';
 import dayjs from '@/util/dayjs.js';
-import { maxBy, minBy } from 'lodash-es';
+import { maxBy, minBy, sumBy } from 'lodash-es';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createFakeProgramOrm } from '../../testing/fakes/entityCreators.ts';
 import { groupByUniq } from '../../util/index.ts';
@@ -3640,6 +3640,8 @@ describe('mid-roll break budgeting', () => {
     fillerConfig?: { origin?: string };
   };
 
+  type TimedItem = { item: LineupItem; start: number };
+
   const makeEpisodes = (
     showId: string,
     count: number,
@@ -3676,8 +3678,8 @@ describe('mid-roll break budgeting', () => {
       parentSmartCollections: [],
     }));
 
-  // Absolute start time of every item, keyed by lineup index.
-  const withStarts = (lineup: LineupItem[], startTime: number) => {
+  // Absolute start time of every item, summed from the lineup's start time.
+  const withStarts = (lineup: LineupItem[], startTime: number): TimedItem[] => {
     let t = startTime;
     return lineup.map((item) => {
       const start = t;
@@ -3696,13 +3698,17 @@ describe('mid-roll break budgeting', () => {
     !!item.id?.startsWith(`${showId}-`) &&
     (item.startOffsetMs ?? 0) === 0;
 
+  // Items that start inside [from, to).
+  const itemsBetween = (items: TimedItem[], from: number, to: number) =>
+    items.filter(({ start }) => start >= from && start < to);
+
   test.each([
     ['eager', 'end'],
     ['eager', 'distribute'],
     ['lazy', 'end'],
     ['lazy', 'distribute'],
   ] as const)(
-    '%s breaks in a full slot do not push the next slot past max lateness (%s flex)',
+    '%s breaks in a full slot end it exactly on time (%s flex)',
     async (strategy, flexPreference) => {
       const midList = randomUUID();
       const slot = (hour: number, showId: string) => ({
@@ -3734,6 +3740,8 @@ describe('mid-roll break budgeting', () => {
         },
       });
 
+      // Lateness is wider than the slot's spare time, so an overrun of a few
+      // minutes would start the next slot late rather than wiping it.
       const schedule: TimeSlotSchedule = {
         type: 'time',
         period: 'day',
@@ -3749,9 +3757,9 @@ describe('mid-roll break budgeting', () => {
       const result = await scheduleTimeSlots(
         schedule,
         [
-          ...makeEpisodes('long', 4, 53 * oneMin),
-          ...makeEpisodes('next', 4, 48 * oneMin),
-          ...makeEpisodes('other', 4, 20 * oneMin),
+          ...makeEpisodes('long', 2, 53 * oneMin),
+          ...makeEpisodes('next', 2, 48 * oneMin),
+          ...makeEpisodes('other', 2, 20 * oneMin),
           ...makeFillers(midList, [60_000, 75_000, 95_000, 110_000, 150_000]),
         ],
         [42, 99],
@@ -3760,32 +3768,30 @@ describe('mid-roll break budgeting', () => {
       );
 
       const items = withStarts(result.lineup as LineupItem[], result.startTime);
-
-      const nextStarts = items.filter(({ item }) =>
-        isEpisodeStart(item, 'next'),
+      const longStarts = items.filter(({ item }) =>
+        isEpisodeStart(item, 'long'),
       );
-      expect(nextStarts.length).toBeGreaterThanOrEqual(2);
-      for (const { start } of nextStarts) {
-        expect(dayjs(start).utc().hour()).toBe(16);
-        expect(start % oneHour).toBe(0);
+      expect(longStarts.length).toBeGreaterThanOrEqual(2);
+      for (const { start } of longStarts) {
+        expect(dayjs(start).utc().format('HH:mm:ss.SSS')).toBe('15:00:00.000');
       }
 
-      // The long slot still gets breaks, just no more than its 7 spare minutes.
-      const longBreakMs = items
-        .filter(
-          ({ item, start }) =>
-            isBreak(item) && dayjs(start).utc().hour() === 15,
-        )
-        .reduce((acc, { item }) => acc + item.duration, 0);
-      const longSlots = items.filter(({ item }) =>
-        isEpisodeStart(item, 'long'),
-      ).length;
-      expect(longBreakMs).toBeGreaterThan(0);
-      expect(longBreakMs).toBeLessThanOrEqual(longSlots * 7 * oneMin);
+      for (const { start: slotStart } of longStarts) {
+        const slotEnd = slotStart + oneHour;
+        const slotItems = itemsBetween(items, slotStart, slotEnd);
+
+        // The slot's items fill the hour exactly, so nothing spills past 16:00.
+        expect(sumBy(slotItems, ({ item }) => item.duration)).toBe(oneHour);
+        expect(slotItems.some(({ item }) => isBreak(item))).toBe(true);
+
+        const boundary = items.find(({ start }) => start === slotEnd);
+        expect(boundary).toBeDefined();
+        expect(boundary && isEpisodeStart(boundary.item, 'next')).toBe(true);
+      }
     },
   );
 
-  test('breaks use each program’s own padding so later programs stay on the pad grid', async () => {
+  test('a break that fits in its own program’s padding leaves later programs on the pad grid', async () => {
     const midList = randomUUID();
     const schedule: TimeSlotSchedule = {
       type: 'time',
@@ -3827,8 +3833,8 @@ describe('mid-roll break budgeting', () => {
     const result = await scheduleTimeSlots(
       schedule,
       [
-        ...makeEpisodes('toon', 400, 7 * oneMin),
-        ...makeFillers(midList, [oneMin, oneMin, oneMin]),
+        ...makeEpisodes('toon', 3, 7 * oneMin),
+        ...makeFillers(midList, [oneMin]),
       ],
       [42, 99],
       undefined,
@@ -3839,10 +3845,103 @@ describe('mid-roll break budgeting', () => {
     const episodeStarts = items.filter(({ item }) =>
       isEpisodeStart(item, 'toon'),
     );
-    expect(episodeStarts.length).toBeGreaterThan(10);
+
+    // A 7 minute episode plus a 1 minute break pads out to 10 minutes, so
+    // each day holds 144 episodes and each one consumes exactly 10 minutes.
+    expect(episodeStarts.length).toBeGreaterThanOrEqual(144);
+    expect(episodeStarts.length % 144).toBe(0);
     for (const { start } of episodeStarts) {
-      expect(start % (10 * oneMin)).toBe(0);
+      const block = itemsBetween(items, start, start + 10 * oneMin);
+      expect(sumBy(block, ({ item }) => item.duration)).toBe(10 * oneMin);
+      expect(
+        sumBy(
+          block.filter(({ item }) => isBreak(item)),
+          ({ item }) => item.duration,
+        ),
+      ).toBe(oneMin);
     }
-    expect(items.some(({ item }) => isBreak(item))).toBe(true);
+  });
+
+  test('breaks that outgrow their own padding take the rest from later programs’ padding', async () => {
+    const midList = randomUUID();
+    const slot = (hour: number, showId: string, withMidRoll: boolean) => ({
+      id: randomUUID(),
+      startTime: hour * oneHour,
+      type: 'show' as const,
+      showId,
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      filler: withMidRoll
+        ? [
+            {
+              types: ['mid' as const],
+              fillerListId: midList,
+              fillerOrder: 'shuffle_prefer_short' as const,
+            },
+          ]
+        : [],
+      midRoll: withMidRoll
+        ? {
+            strategy: 'eager' as const,
+            breakRule: {
+              type: 'fixed_interval' as const,
+              intervalMs: 4 * oneMin,
+            },
+            breakDurationMs: 3 * oneMin,
+            maxBreaks: 1,
+            minProgramDurationMs: 0,
+            tailBufferMs: 0,
+          }
+        : undefined,
+    });
+
+    // Six 9 minute episodes pad to 10 minutes each and fill the hour, so the
+    // slot's only spare time is 1 minute of padding per program. The first
+    // two programs' 3 minute breaks spend all 6 minutes. Each takes 1 minute
+    // from its own padding and the other 4 come from the last four programs.
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: 10 * oneMin,
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+      slots: [slot(0, 'toon', true), slot(1, 'next', false)],
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [
+        ...makeEpisodes('toon', 6, 9 * oneMin),
+        ...makeEpisodes('next', 2, 10 * oneMin),
+        ...makeFillers(midList, [3 * oneMin]),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const items = withStarts(result.lineup as LineupItem[], result.startTime);
+    const slotStart = +midnight;
+    const slotItems = itemsBetween(items, slotStart, slotStart + oneHour);
+
+    expect(sumBy(slotItems, ({ item }) => item.duration)).toBe(oneHour);
+    expect(
+      sumBy(
+        slotItems.filter(({ item }) => isBreak(item)),
+        ({ item }) => item.duration,
+      ),
+    ).toBe(6 * oneMin);
+
+    const toonStarts = slotItems
+      .filter(({ item }) => isEpisodeStart(item, 'toon'))
+      .map(({ start }) => (start - slotStart) / oneMin);
+    expect(toonStarts).toEqual([0, 12, 24, 33, 42, 51]);
+
+    const boundary = items.find(({ start }) => start === slotStart + oneHour);
+    expect(boundary && isEpisodeStart(boundary.item, 'next')).toBe(true);
   });
 });
