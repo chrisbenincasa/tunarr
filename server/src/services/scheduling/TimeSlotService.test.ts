@@ -3702,6 +3702,25 @@ describe('mid-roll break budgeting', () => {
   const itemsBetween = (items: TimedItem[], from: number, to: number) =>
     items.filter(({ start }) => start >= from && start < to);
 
+  // Total duration of each run of consecutive break items.
+  const breakLengths = (items: TimedItem[]) => {
+    const lengths: number[] = [];
+    let inBreak = false;
+    for (const { item } of items) {
+      if (!isBreak(item)) {
+        inBreak = false;
+        continue;
+      }
+      if (inBreak) {
+        lengths[lengths.length - 1] += item.duration;
+      } else {
+        lengths.push(item.duration);
+        inBreak = true;
+      }
+    }
+    return lengths;
+  };
+
   test.each([
     ['eager', 'end'],
     ['eager', 'distribute'],
@@ -3783,6 +3802,9 @@ describe('mid-roll break budgeting', () => {
         // The slot's items fill the hour exactly, so nothing spills past 16:00.
         expect(sumBy(slotItems, ({ item }) => item.duration)).toBe(oneHour);
         expect(slotItems.some(({ item }) => isBreak(item))).toBe(true);
+        for (const length of breakLengths(slotItems)) {
+          expect(length).toBeGreaterThanOrEqual(2 * oneMin);
+        }
 
         const boundary = items.find(({ start }) => start === slotEnd);
         expect(boundary).toBeDefined();
@@ -3943,5 +3965,72 @@ describe('mid-roll break budgeting', () => {
 
     const boundary = items.find(({ start }) => start === slotStart + oneHour);
     expect(boundary && isEpisodeStart(boundary.item, 'next')).toBe(true);
+  });
+
+  test('a break that no longer fits at its minimum length is dropped, not shortened', async () => {
+    const midList = randomUUID();
+    const slot = (hour: number, showId: string, withMidRoll: boolean) => ({
+      id: randomUUID(),
+      startTime: hour * oneHour,
+      type: 'show' as const,
+      showId,
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      filler: withMidRoll
+        ? [
+            {
+              types: ['mid' as const],
+              fillerListId: midList,
+              fillerOrder: 'shuffle_prefer_short' as const,
+            },
+          ]
+        : [],
+      midRoll: withMidRoll
+        ? {
+            strategy: 'eager' as const,
+            breakRule: {
+              type: 'fixed_interval' as const,
+              intervalMs: 13 * oneMin,
+            },
+            breakDurationMs: 3 * oneMin,
+            maxBreaks: 3,
+            minProgramDurationMs: 0,
+            tailBufferMs: 0,
+          }
+        : undefined,
+    });
+
+    // A 56 minute episode leaves 4 spare minutes. The first 3 minute break
+    // fits, and the 1 minute left over is too short for a second one.
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: oneHour,
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+      slots: [slot(0, 'toon', true), slot(1, 'next', false)],
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [
+        ...makeEpisodes('toon', 1, 56 * oneMin),
+        ...makeEpisodes('next', 2, 10 * oneMin),
+        ...makeFillers(midList, [oneMin]),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const items = withStarts(result.lineup as LineupItem[], result.startTime);
+    const slotItems = itemsBetween(items, +midnight, +midnight + oneHour);
+
+    expect(breakLengths(slotItems)).toEqual([3 * oneMin]);
+    expect(sumBy(slotItems, ({ item }) => item.duration)).toBe(oneHour);
   });
 });

@@ -55,6 +55,7 @@ import { isNonEmptyArray, retrySimple } from '../../util/index.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { FlexProgramIterator } from './FlexProgramIterator.ts';
 import {
+  minimumBreakDuration,
   resolveBreakDuration,
   resolveBreakPoints,
 } from './midRollBreakRules.ts';
@@ -1027,17 +1028,21 @@ export function applyMidRollBreaks(
 
 /**
  * Draws the next break's duration, capped by what is left of the budget. A
- * break of zero means the budget is spent and no further breaks fit.
+ * break of zero means no further breaks fit. A capped break shorter than the
+ * configured minimum is dropped, so the budget never yields a sliver.
  */
 function nextBreakDuration(
   config: MidRollConfig,
   random: Random,
   budget: { remainingMs: number },
 ): number {
-  const duration = Math.max(
-    0,
-    Math.min(resolveBreakDuration(config, random), budget.remainingMs),
+  const duration = Math.min(
+    resolveBreakDuration(config, random),
+    budget.remainingMs,
   );
+  if (duration <= 0 || duration < minimumBreakDuration(config)) {
+    return 0;
+  }
   budget.remainingMs -= duration;
   return duration;
 }

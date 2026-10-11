@@ -402,7 +402,20 @@ export async function scheduleTimeSlots(
         deficit -= taken;
         if (deficit <= 0) break;
       }
-      remainingTimeInSlot = 0;
+
+      // The break budget never exceeds the slot's padding, so a leftover
+      // deficit means that invariant broke and the slot overruns its end.
+      remainingTimeInSlot = -deficit;
+      if (deficit > 0) {
+        LoggerFactory.child({
+          caller: import.meta,
+          className: 'TimeSlotService',
+        }).warn(
+          'Mid-roll breaks overran the time slot at %s by %d ms',
+          timeCursor.toISOString(),
+          deficit,
+        );
+      }
     }
 
     // We have two options here if there is remaining time in the slot
@@ -425,7 +438,7 @@ export async function scheduleTimeSlots(
     } else {
       const lastProgram = last(finalPrograms);
       if (lastProgram) {
-        lastProgram.padMs += remainingTimeInSlot;
+        lastProgram.padMs += Math.max(0, remainingTimeInSlot);
       }
     }
 
