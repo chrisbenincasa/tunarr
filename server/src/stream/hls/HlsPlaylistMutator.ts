@@ -286,26 +286,19 @@ export class HlsPlaylistMutator {
     };
   }
 
-  // The WebVTT subtitle sidecar (`HlsSubtitleOutputFormat`, ffmpeg's
-  // `segment` muxer) produces a structurally simpler playlist than the
-  // video/audio `hls` muxer output above: just `#EXTINF:<dur>,` + filename
-  // pairs, with no `#EXT-X-PROGRAM-DATE-TIME` lines and no discontinuity
-  // tags (that muxer has no equivalent of `discont_start`). It also never
-  // needs date-based filtering, so this only supports segment-number-based
-  // trimming, unlike the general `HlsPlaylistFilterOptions` union above.
+  // Subtitle playlists have no program-date-time requirement, but may carry
+  // the same discontinuity boundaries as their associated video playlist.
   parseSubtitlePlaylist(playlistLines: string[]): SubtitlePlaylistSegment[] {
     const items: SubtitlePlaylistSegment[] = [];
-
+    let discontinuitySequence = 0;
     let i = 0;
-    while (
-      i < playlistLines.length &&
-      !playlistLines[i]!.startsWith('#EXTINF:')
-    ) {
-      i++;
-    }
-
     while (i < playlistLines.length) {
       const line = playlistLines[i];
+      if (line?.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE:')) {
+        discontinuitySequence = parseInt(line.split(':')[1]!, 10);
+      } else if (line === '#EXT-X-DISCONTINUITY') {
+        discontinuitySequence++;
+      }
       if (!isNonEmptyString(line) || !line.startsWith('#EXTINF:')) {
         i++;
         continue;
@@ -316,7 +309,9 @@ export class HlsPlaylistMutator {
         break;
       }
 
-      items.push(new SubtitlePlaylistSegment(line, fileLine));
+      items.push(
+        new SubtitlePlaylistSegment(line, fileLine, discontinuitySequence),
+      );
       i += 2;
     }
 
@@ -364,7 +359,21 @@ export class HlsPlaylistMutator {
       `#EXT-X-MEDIA-SEQUENCE:${startSequence}`,
     ];
 
+    let discontinuitySequence = first(allSegments)?.discontinuitySequence ?? 0;
+    if (
+      playlistLines.some(
+        (line) =>
+          line === '#EXT-X-DISCONTINUITY' ||
+          line.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE:'),
+      )
+    ) {
+      lines.push(`#EXT-X-DISCONTINUITY-SEQUENCE:${discontinuitySequence}`);
+    }
     for (const segment of allSegments) {
+      while (discontinuitySequence < segment.discontinuitySequence) {
+        lines.push('#EXT-X-DISCONTINUITY');
+        discontinuitySequence++;
+      }
       lines.push(segment.extInf, segment.line);
     }
 
@@ -407,6 +416,7 @@ export class SubtitlePlaylistSegment {
   constructor(
     public extInf: string,
     public line: string,
+    public discontinuitySequence = 0,
   ) {
     this.duration = parseFloat(trimEnd(extInf.trim(), ',').split(':')[1]!);
   }

@@ -1177,7 +1177,44 @@ describe('HlsPlaylistMutator', () => {
       expect(result.playlist).toContain('#EXT-X-TARGETDURATION:7');
     });
 
-    it('never emits #EXT-X-PROGRAM-DATE-TIME or discontinuity tags', () => {
+    it('preserves the subtitle transition written alongside the video playlist', () => {
+      const lines = createSubtitlePlaylist([4, 4, 4]);
+      lines.splice(4, 0, '#EXT-X-DISCONTINUITY-SEQUENCE:7');
+      lines.splice(7, 0, '#EXT-X-DISCONTINUITY');
+      const result = mutator.trimSubtitlePlaylist(
+        lines,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 0,
+          segmentsToKeepBefore: 0,
+        },
+        { maxSegmentsToKeep: 20 },
+      );
+      expect(result.playlist).toContain('#EXT-X-DISCONTINUITY-SEQUENCE:7');
+      expect(result.playlist).toContain(
+        'sub000000.vtt\n#EXT-X-DISCONTINUITY\n#EXTINF:4.000000,',
+      );
+    });
+
+    it('carries a trimmed subtitle transition into the discontinuity sequence', () => {
+      const lines = createSubtitlePlaylist([4, 4, 4]);
+      lines.splice(4, 0, '#EXT-X-DISCONTINUITY-SEQUENCE:7');
+      lines.splice(7, 0, '#EXT-X-DISCONTINUITY');
+      const result = mutator.trimSubtitlePlaylist(
+        lines,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 1,
+          segmentsToKeepBefore: 0,
+        },
+        { maxSegmentsToKeep: 2 },
+      );
+      expect(result.playlist).toContain('#EXT-X-MEDIA-SEQUENCE:1');
+      expect(result.playlist).toContain('#EXT-X-DISCONTINUITY-SEQUENCE:8');
+      expect(result.playlist.split('\n')).not.toContain('#EXT-X-DISCONTINUITY');
+    });
+
+    it('does not add program-date-time or discontinuity tags to a plain playlist', () => {
       const lines = createSubtitlePlaylist([4, 4, 4]);
 
       const result = mutator.trimSubtitlePlaylist(
