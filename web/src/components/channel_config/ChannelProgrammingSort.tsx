@@ -26,6 +26,7 @@ import { ShuffleProgrammingModal } from '../programming_controls/ShuffleProgramm
 type SortOption =
   | 'random'
   | 'cyclic'
+  | 'cyclic-start'
   | 'alpha-asc'
   | 'alpha-desc'
   | 'episode-asc'
@@ -85,6 +86,14 @@ export function ChannelProgrammingSort() {
         {sort === 'cyclic' && (
           <Button startIcon={<CyclicIcon />} onClick={() => cyclicShuffle()}>
             {t`Cyclic Shuffle`}
+          </Button>
+        )}
+        {sort === 'cyclic-start' && (
+          <Button
+            startIcon={<CyclicIcon />}
+            onClick={() => cyclicShuffle(true)}
+          >
+            {t`Cyclic Shuffle (from start)`}
           </Button>
         )}
         {(sort === 'alpha-asc' || sort === 'alpha-desc') && (
@@ -175,6 +184,23 @@ export function ChannelProgrammingSort() {
           >
             <CyclicIcon />
             {t`Cyclic Shuffle`}
+          </MenuItem>
+        </ElevatedTooltip>
+        <ElevatedTooltip
+          elevation={5}
+          title={t`Like Cyclic Shuffle, but every TV show starts from its first episode instead of a random one.`}
+          placement="right"
+        >
+          <MenuItem
+            disableRipple
+            onClick={() => {
+              setSort('cyclic-start');
+              cyclicShuffle(true);
+              handleClose();
+            }}
+          >
+            <CyclicIcon />
+            {t`Cyclic Shuffle (from start)`}
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip

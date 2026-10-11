@@ -1172,6 +1172,11 @@ msgstr "自定义电影块的排序方式"
 msgid "Cyclic Shuffle"
 msgstr "循环随机"
 
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Cyclic Shuffle (from start)"
+msgstr ""
+
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Cyclic Shuffle randomly shuffles groups of programming."
 msgstr "循环随机会将节目分组后随机打乱。"
@@ -2327,6 +2332,10 @@ msgstr "媒体库：{0}"
 #: src/components/settings/DarkModeButton.tsx
 msgid "Light"
 msgstr "浅色"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Like Cyclic Shuffle, but every TV show starts from its first episode instead of a random one."
+msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."

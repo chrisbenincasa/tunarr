@@ -17,7 +17,7 @@ import type {
 export function useCyclicShuffle() {
   const { materializeNewProgramList } = useChannelEditorLazy();
 
-  return function () {
+  return function (startAtBeginning: boolean = false) {
     const programCandidates = removeDuplicatePrograms(
       materializeNewProgramList(),
     ).filter(
@@ -50,7 +50,7 @@ export function useCyclicShuffle() {
     );
 
     const currIndexes = mapValues(groupedContent, (c) =>
-      random.integer(0, c.length - 1),
+      startAtBeginning ? 0 : random.integer(0, c.length - 1),
     );
 
     const cycledShows: UIChannelProgram[] = [];

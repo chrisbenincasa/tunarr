@@ -17,3 +17,7 @@ A sample cyclic shuffled schedule with 3 shows could be something like:
 6. Show B, S01E03
 
 In other words, channel programming is grouped by show, randomly shuffled (while preserving episode order), and then chosen at random to produce a lineup.
+
+Each show starts at a random episode. Choose **Cyclic Shuffle (from start)** instead to start every show at its first episode (S01E01, or the earliest episode in the lineup). Shows still alternate at random.
+
+Both modes give each show one spot per episode it has in the lineup. A show with few episodes plays less often than a show with many, but its episodes are spread across the whole lineup.

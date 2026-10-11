@@ -1172,6 +1172,11 @@ msgstr "Customize how movie blocks are sorted"
 msgid "Cyclic Shuffle"
 msgstr "Cyclic Shuffle"
 
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Cyclic Shuffle (from start)"
+msgstr "Cyclic Shuffle (from start)"
+
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Cyclic Shuffle randomly shuffles groups of programming."
 msgstr "Cyclic Shuffle randomly shuffles groups of programming."
@@ -2327,6 +2332,10 @@ msgstr "Library: {0}"
 #: src/components/settings/DarkModeButton.tsx
 msgid "Light"
 msgstr "Light"
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Like Cyclic Shuffle, but every TV show starts from its first episode instead of a random one."
+msgstr "Like Cyclic Shuffle, but every TV show starts from its first episode instead of a random one."
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."

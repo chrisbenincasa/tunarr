@@ -1172,6 +1172,11 @@ msgstr ""
 msgid "Cyclic Shuffle"
 msgstr ""
 
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Cyclic Shuffle (from start)"
+msgstr ""
+
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Cyclic Shuffle randomly shuffles groups of programming."
 msgstr ""
@@ -2326,6 +2331,10 @@ msgstr ""
 
 #: src/components/settings/DarkModeButton.tsx
 msgid "Light"
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Like Cyclic Shuffle, but every TV show starts from its first episode instead of a random one."
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
