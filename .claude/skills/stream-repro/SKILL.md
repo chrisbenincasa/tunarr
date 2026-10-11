@@ -1,6 +1,6 @@
 ---
 name: stream-repro
-description: Reproduce and measure Tunarr stream bugs on an isolated server. Boots a throwaway Tunarr server, builds a channel from synthetic clips (or a copy of the dev database), captures a bounded HLS or MPEG-TS sample, and reports per-segment tracks, A/V start offsets, timestamp gaps and overlaps, and the exact ffmpeg commands the server ran. Use this whenever a user report or issue describes playback symptoms such as duplicate or missing audio/subtitle tracks, audio out of sync or starting late, stutter or freezes at program transitions, streams that fail to start, or wrong resolution/codec after a program change, and whenever you need evidence that a streaming or ffmpeg pipeline change fixed such a symptom, even if the user only says "look into this stream issue".
+description: Reproduce and measure Tunarr stream bugs on an isolated server. Boots a throwaway Tunarr server, builds a channel from synthetic clips (or a copy of the dev database), captures a bounded HLS or MPEG-TS sample, and reports per-segment tracks, A/V start offsets, timestamp gaps and overlaps, and the exact ffmpeg commands the server ran. Use this whenever a user report or issue describes playback symptoms such as duplicate or missing audio/subtitle tracks, audio out of sync or starting late, stutter or freezes at program transitions, streams that fail to start, or wrong resolution/codec after a program change, and whenever you need evidence that a streaming or ffmpeg pipeline change fixed such a symptom, even if the user only says "look into this stream issue". Also use it for time-slot schedule bugs (wrong start times, redirect slots, custom-show slots, guide entries), since --schedule builds slot channels and reports their saved lineup and guide.
 ---
 
 # Stream repro
@@ -26,6 +26,8 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--clips N`, `--clip-seconds S` | `3`, `60` | Number and length of synthetic clips; each clip is one program |
 | `--clip-durations LIST` | | Per-clip lengths in seconds, such as `60,8,60` for a bumper between two programs. Overrides `--clips` and `--clip-seconds` |
 | `--truncate-clip I:S` | | Shorten clip I (1-based) to S seconds after the scan. The database keeps the longer duration, which mimics media that ends before its scheduled time |
+| `--mid-truncate I:S@T` | | HLS modes only. At T seconds into the capture, shorten clip I to S seconds and force a rescan, the way a replaced file and a scheduled scan change a live channel. `report.midTruncate` records the scan time and the channel's `startTime` and `duration` before and after duration reconciliation |
+| `--start-ago S` | | `synthetic` only. Backdate the channel start by S seconds, so the channel has already looped its lineup. Pair with `--mid-truncate` on a clip earlier in the cycle to exercise the start-time rebase |
 | `--db-dir DIR` | | `copy` only: Tunarr database directory to copy (the dev server's is `TUNARR_DATABASE_PATH` in `server/.env.development`) |
 | `--channel ID` | | `copy` only: channel number or uuid to stream |
 | `--mode hls\|hls_slower\|hls_direct_v2\|mpegts` | `hls` | Stream mode to request |
@@ -38,6 +40,10 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--flex-first MS` | | `synthetic` only. Put an offline (flex) gap of MS milliseconds before the clips |
 | `--ffmpeg-setting KEY=VALUE` | | Override one field of the server's ffmpeg settings before streaming. Repeatable. Values parse as JSON when they can, so `true` and `3` are not strings |
 | `--resolution WxH` | | Set the output resolution of the channel's transcode config, such as `1280x720` |
+| `--hwaccel MODE` | | Set the hardware acceleration of the channel's transcode config: `none`, `cuda`, `vaapi`, `qsv`, or `videotoolbox` |
+| `--vaapi-device PATH` | | With `--hwaccel vaapi` or `qsv`, the render node to use, such as `/dev/dri/renderD128` |
+| `--schedule FILE` | | `synthetic` only. Build custom shows and time-slot channels from a JSON spec, and report their saved lineups and guide (see below) |
+| `--seconds 0` | | Skip the stream capture. Use with `--schedule` when only the schedule matters |
 
 Use `--flex-first` to test the offline placeholder stream, which plays during flex gaps and is built
 separately from program streams (`createOfflineSession` in `server/src/ffmpeg/FfmpegStreamFactory.ts`).
@@ -48,6 +54,14 @@ scalingAlgorithm=lanczos --resolution 1280x720`. The keys are the fields of `Ffm
 stick (a misspelled key gets dropped). `report.ffmpegSettings` records what was overridden. The offline
 image is 1920x1080 and the default output is 1080p, so no scale filter runs unless `--resolution` sets
 another size. Without it, `scalingAlgorithm` has nothing to show.
+
+Use `--hwaccel` when a report names a GPU, or when a bug might live in one hardware pipeline. Each
+pipeline has its own builder, in `server/src/ffmpeg/builder/pipeline/nvidia/` for CUDA and
+`server/src/ffmpeg/builder/pipeline/hardware/` for the rest. Check the ffmpeg
+commands in the report to confirm the pipeline you asked for actually ran. A CUDA run shows `scale_cuda`
+and `h264_nvenc`, and a VAAPI run shows the device path and `h264_vaapi`. `report.transcodeConfig`
+records what was overridden. On a machine with more than one GPU, run `vainfo --display drm --device
+/dev/dri/renderD128` to see which render node VAAPI can encode on.
 
 Pick the layout that matches the report. `dup-lang` has two `eng` audio tracks, one titled
 Commentary, which is how a real library ends up with duplicate-language audio. `mixed` alternates resolution, frame rate, sample rate, channel
@@ -63,7 +77,57 @@ To check that each program airs on schedule, compare the `About to play lineup i
 `tunarr.log` with the lineup. Each entry's `programBeginMs`, minus `channel.startTime`, should equal the
 program's offset in the lineup.
 
+After `--mid-truncate`, programs after the change should begin at their corrected offsets, and the program
+on air should end at its original wall-clock time. `hls_slower` does not log `About to play lineup item`;
+read each program's `-t` in `report.ffmpeg.commands` instead. A program shortened while it is already on
+air still plays its old length, because its transcode was already running. The next program then starts
+late by the difference, and only on that one airing.
+
 A run takes one to three minutes. Most of that is server boot and real-time streaming.
+
+## Slot schedules
+
+`--schedule FILE` reproduces schedule bugs, such as a program starting at the wrong time or a redirect
+slot misbehaving. It builds the channels from a JSON spec, saves their schedules through the same API the
+slot editor uses, then records each channel's saved lineup and, optionally, its guide window. The
+#1362 setup looks like this:
+
+```json
+{
+  "customShows": { "Series": [1, 2], "Movies": [3] },
+  "channels": [
+    { "name": "Main", "period": "week", "slots": [
+      { "at": "Sat 00:00", "redirect": "Series" },
+      { "at": "Sat 20:30", "customShow": "Movies" },
+      { "at": "Sat 21:30", "flex": true } ] },
+    { "name": "Series", "period": "week", "slots": [
+      { "at": "Sat 18:00", "customShow": "Series" },
+      { "at": "Sat 18:30", "flex": true } ] }
+  ],
+  "guide": { "from": "Sat 17:00", "to": "Sat 23:00" }
+}
+```
+
+```bash
+node .claude/skills/stream-repro/scripts/repro.mjs --clip-durations 1800,1800,5700 --seconds 0 --schedule spec.json
+```
+
+- `customShows` maps a name to 1-based clip numbers. Synthetic clips have no show, so custom shows carry
+  the content.
+- The first channel is the capture channel (number 900). The others are copies of it.
+- A slot takes `at` plus one of `customShow`, `redirect` (a channel name), or `flex: true`. Any other
+  field passes through to the slot, such as `"order": "shuffle"` or `"padMs"`. A slot with its own `type`
+  passes through whole, for slot kinds the shorthand does not cover.
+- `at` is `"Sat 20:30"` for `"period": "week"`, `"20:30"` for the default daily period, or raw
+  milliseconds into the period. Weeks start on Sunday.
+- `settings` overrides schedule defaults, which match the editor's "Do not pad", "Do not allow"
+  lateness, and "Between videos" flex: `padMs: 1`, `latenessMs: 0`, `flexPreference: "distribute"`.
+  `maxDays` defaults to 14.
+- `guide.from` and `guide.to` take `"Sat 17:00"` (the next such local time) or an ISO date. The script
+  raises the guide horizon to cover the window and rebuilds the guide.
+
+`report.schedule` lists each channel's lineup with local start times, and the guide entries for the
+window. A guide entry with `via` came through a redirect.
 
 ## How it isolates itself
 
@@ -137,6 +201,7 @@ Say these when they apply, because a clean report is only as strong as its input
 - **No stream selection profile.** Synthetic channels use the legacy audio/subtitle selection fallback.
   If the reporter's channel has a stream selection profile, audio picking takes a path this run never
   touched. Ask, and use `copy` mode against a database that has the profile.
-- **Software pipeline only**, unless the machine's hardware acceleration is configured in the copied DB.
+- **Software pipeline by default.** Pass `--hwaccel` to test a hardware pipeline. Only pipelines this
+  machine's GPU and ffmpeg build support can run.
 - **Bounded sample.** Anything that happens after `--seconds` is out of view. Long-drift bugs need a
   longer capture.

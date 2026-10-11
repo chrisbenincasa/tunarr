@@ -4,12 +4,14 @@ import { inject, injectable } from 'inversify';
 import PQueue from 'p-queue';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { MediaSourceType } from '../../db/schema/base.ts';
-import { KEYS } from '../../types/inject.ts';
+import { ReconcileProgramDurationsTask } from '../../tasks/ReconcileProgramDurationsTask.ts';
+import { autoFactoryKey, KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.ts';
 import type { Maybe } from '../../types/util.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { EntityMutex } from '../EntityMutex.ts';
+import { GlobalScheduler } from '../Scheduler.ts';
 import type { GenericExternalCollectionScanner } from './ExternalCollectionScanner.ts';
 import type { GenericLocalMediaSourceScannerFactory } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
@@ -35,6 +37,8 @@ export class MediaSourceScanCoordinator {
     private collectionScannerFactory: (
       sourceType: MediaSourceType,
     ) => Maybe<GenericExternalCollectionScanner>,
+    @inject(autoFactoryKey(ReconcileProgramDurationsTask))
+    private reconcileDurationsTaskFactory: () => ReconcileProgramDurationsTask,
   ) {}
 
   async addLocal({
@@ -96,6 +100,7 @@ export class MediaSourceScanCoordinator {
         )
         .finally(() => {
           MediaSourceScanCoordinator.signalById.delete(mediaSource.uuid);
+          this.reconcileProgramDurations();
         });
 
       return true;
@@ -189,6 +194,7 @@ export class MediaSourceScanCoordinator {
         )
         .finally(() => {
           MediaSourceScanCoordinator.signalById.delete(library.uuid);
+          this.reconcileProgramDurations();
         });
 
       return true;
@@ -207,6 +213,12 @@ export class MediaSourceScanCoordinator {
       }
       return false;
     }
+  }
+
+  // A scan can change program durations. Channel lineups keep their own copy,
+  // which streaming schedules from, so it is brought back in line here.
+  private reconcileProgramDurations() {
+    GlobalScheduler.runTask(this.reconcileDurationsTaskFactory(), undefined);
   }
 
   cancelAll() {
