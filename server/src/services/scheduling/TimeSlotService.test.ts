@@ -1994,6 +1994,10 @@ describe('TimeSlotService', () => {
     const MIN = 60 * 1000;
     const HOUR = 60 * MIN;
 
+    // Local midnight on a fixed non-DST date, so the 18:00 window never
+    // depends on when or where the test runs.
+    const START = dayjs('2025-01-06');
+
     const mkEpisodes = (show: string, durations: number[]) =>
       durations.map((duration, i) => ({
         ...createFakeProgramOrm({
@@ -2053,11 +2057,11 @@ describe('TimeSlotService', () => {
       const result = await scheduleTimeSlots(
         makeSchedule(globalLatenessMs, slotCLatenessMs),
         programs,
+        undefined,
+        0,
+        START,
       );
-      const sixPm = dayjs(result.startTime)
-        .startOf('day')
-        .add(18, 'hour')
-        .valueOf();
+      const sixPm = START.add(18, 'hour').valueOf();
       const content: { id: string; at: number; duration: number }[] = [];
       let t = result.startTime;
       for (const item of result.lineup) {
