@@ -2,6 +2,14 @@ import type { MidRollBreakRule, MidRollConfig } from '@tunarr/types/api';
 
 export type BreakPoint = { offsetMs: number };
 
+/**
+ * The shortest break the config allows. A break cut down to fit a slot must
+ * still be at least this long.
+ */
+export function minimumBreakDuration(config: MidRollConfig): number {
+  return config.breakDurationMinMs ?? config.breakDurationMs ?? 0;
+}
+
 export function resolveBreakDuration(
   config: MidRollConfig,
   random?: { integer(min: number, max: number): number },

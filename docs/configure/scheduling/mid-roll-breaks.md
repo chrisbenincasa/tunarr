@@ -55,6 +55,8 @@ Break duration can be configured in two modes:
 - **Fixed**: Every break has the same duration (e.g., 3 minutes).
 - **Range**: Each break's duration is randomly chosen between a minimum and maximum value (e.g., 2–5 minutes). This makes breaks feel less mechanical.
 
+In a time slot, breaks only use the slot's spare time, which is the padding and flex left after its programs. They never push the slot past its end, so the next slot still starts on time. When the spare time runs low, a break is shortened to fit, but never below the minimum break duration (or the fixed duration). A break that cannot fit at that length is dropped, along with the rest of that program's breaks. For example, a 53-minute episode in a one-hour slot gets at most 7 minutes of breaks. A program's breaks use its own padding first, so the programs after it keep their start times.
+
 ## Limits and Filters
 
 | Setting | Description | Default |

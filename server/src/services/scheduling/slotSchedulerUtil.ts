@@ -55,6 +55,7 @@ import { isNonEmptyArray, retrySimple } from '../../util/index.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { FlexProgramIterator } from './FlexProgramIterator.ts';
 import {
+  minimumBreakDuration,
   resolveBreakDuration,
   resolveBreakPoints,
 } from './midRollBreakRules.ts';
@@ -975,6 +976,7 @@ export function applyMidRollBreaks(
   midRollConfig: MidRollConfig | undefined,
   random: Random,
   timeCursor: number,
+  maxBreakMs: number = Infinity,
 ): PaddedProgram[] {
   if (!midRollConfig || slot.getMidFillerListIds().length === 0) {
     return [paddedProgram];
@@ -1009,6 +1011,7 @@ export function applyMidRollBreaks(
       midRollConfig,
       slot,
       random,
+      maxBreakMs,
     );
   }
   return buildEagerBreaks(
@@ -1019,7 +1022,29 @@ export function applyMidRollBreaks(
     slot,
     random,
     timeCursor,
+    maxBreakMs,
   );
+}
+
+/**
+ * Draws the next break's duration, capped by what is left of the budget. A
+ * break of zero means no further breaks fit. A capped break shorter than the
+ * configured minimum is dropped, so the budget never yields a sliver.
+ */
+function nextBreakDuration(
+  config: MidRollConfig,
+  random: Random,
+  budget: { remainingMs: number },
+): number {
+  const duration = Math.min(
+    resolveBreakDuration(config, random),
+    budget.remainingMs,
+  );
+  if (duration <= 0 || duration < minimumBreakDuration(config)) {
+    return 0;
+  }
+  budget.remainingMs -= duration;
+  return duration;
 }
 
 function buildEagerBreaks(
@@ -1030,12 +1055,19 @@ function buildEagerBreaks(
   slot: SlotImpl<BaseSlot>,
   random: Random,
   timeCursor: number,
+  maxBreakMs: number,
 ): PaddedProgram[] {
   const baseOffset = program.startOffsetMs ?? 0;
   const result: PaddedProgram[] = [];
+  const budget = { remainingMs: maxBreakMs };
   let segmentStart = 0;
 
   for (const bp of breakPoints) {
+    const breakDuration = nextBreakDuration(config, random, budget);
+    if (breakDuration <= 0) {
+      break;
+    }
+
     const segmentDuration = bp.offsetMs - segmentStart;
     result.push(
       new PaddedProgram(
@@ -1049,7 +1081,6 @@ function buildEagerBreaks(
       ),
     );
 
-    const breakDuration = resolveBreakDuration(config, random);
     const fillers = fillDurationWithFiller(slot, breakDuration, timeCursor);
 
     for (const filler of fillers.fillers) {
@@ -1098,13 +1129,20 @@ function buildLazyBreaks(
   config: MidRollConfig,
   slot: SlotImpl<BaseSlot>,
   random: Random,
+  maxBreakMs: number,
 ): PaddedProgram[] {
   const baseOffset = program.startOffsetMs ?? 0;
   const midFillerListIds = slot.getMidFillerListIds();
   const result: PaddedProgram[] = [];
+  const budget = { remainingMs: maxBreakMs };
   let segmentStart = 0;
 
   for (const bp of breakPoints) {
+    const breakDuration = nextBreakDuration(config, random, budget);
+    if (breakDuration <= 0) {
+      break;
+    }
+
     const segmentDuration = bp.offsetMs - segmentStart;
     result.push(
       new PaddedProgram(
@@ -1118,7 +1156,6 @@ function buildLazyBreaks(
       ),
     );
 
-    const breakDuration = resolveBreakDuration(config, random);
     const fillerConfig: OfflineFillerConfig = {
       fillerListIds: midFillerListIds.length > 0 ? midFillerListIds : undefined,
       origin: 'midroll',

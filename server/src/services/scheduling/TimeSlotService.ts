@@ -357,19 +357,65 @@ export async function scheduleTimeSlots(
       );
     }
 
+    // Mid-roll breaks spend the slot's spare time, meaning the unallocated
+    // remainder plus every program's padding. They never run the slot past
+    // its end, because that would make the next slot late.
+    let breakBudgetMs = Math.max(
+      0,
+      slotDuration - sumBy(paddedPrograms, (pp) => pp.totalDuration - pp.padMs),
+    );
     let midRollOffset = 0;
     const finalPrograms: PaddedProgram[] = [];
     for (const pp of paddedPrograms) {
-      finalPrograms.push(
-        ...applyMidRollBreaks(
-          pp,
-          currSlot,
-          currSlot.midRollConfig,
-          random,
-          +timeCursor + midRollOffset,
-        ),
+      const unsplitDuration = pp.totalDuration;
+      const segments = applyMidRollBreaks(
+        pp,
+        currSlot,
+        currSlot.midRollConfig,
+        random,
+        +timeCursor + midRollOffset,
+        breakBudgetMs,
       );
-      midRollOffset += pp.totalDuration;
+      const breakMs = sumBy(segments, (s) => s.totalDuration) - unsplitDuration;
+      breakBudgetMs -= breakMs;
+
+      // A program's breaks come out of its own padding first. That keeps the
+      // programs after it on the pad grid.
+      const lastSegment = last(segments);
+      if (lastSegment) {
+        const fromPad = Math.min(breakMs, lastSegment.padMs);
+        lastSegment.padMs -= fromPad;
+        remainingTimeInSlot -= breakMs - fromPad;
+      }
+
+      finalPrograms.push(...segments);
+      midRollOffset += unsplitDuration;
+    }
+
+    // Breaks that outgrew their own program's padding take the rest from other
+    // programs' padding, starting at the end of the slot.
+    if (remainingTimeInSlot < 0) {
+      let deficit = -remainingTimeInSlot;
+      for (const pp of [...finalPrograms].reverse()) {
+        const taken = Math.min(deficit, pp.padMs);
+        pp.padMs -= taken;
+        deficit -= taken;
+        if (deficit <= 0) break;
+      }
+
+      // The break budget never exceeds the slot's padding, so a leftover
+      // deficit means that invariant broke and the slot overruns its end.
+      remainingTimeInSlot = -deficit;
+      if (deficit > 0) {
+        LoggerFactory.child({
+          caller: import.meta,
+          className: 'TimeSlotService',
+        }).warn(
+          'Mid-roll breaks overran the time slot at %s by %d ms',
+          timeCursor.toISOString(),
+          deficit,
+        );
+      }
     }
 
     // We have two options here if there is remaining time in the slot
@@ -392,7 +438,7 @@ export async function scheduleTimeSlots(
     } else {
       const lastProgram = last(finalPrograms);
       if (lastProgram) {
-        lastProgram.padMs += remainingTimeInSlot;
+        lastProgram.padMs += Math.max(0, remainingTimeInSlot);
       }
     }
 
