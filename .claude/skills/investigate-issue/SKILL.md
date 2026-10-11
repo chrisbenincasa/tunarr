@@ -1,6 +1,6 @@
 ---
 name: investigate-issue
-description: Investigate a Tunarr GitHub issue end to end and write up the verdict. Reads the issue and every comment, checks whether main or a recent release already fixed it, reproduces it with the right instrument (stream-repro for playback and time-slot schedules, the e2e Playwright suite for web UI, a focused Vitest test for server or shared logic), traces the root cause, and writes a dated report to plans/ with a draft reply for the issue. Use this whenever the user points at a Tunarr issue number or URL and asks whether it is real, still happening, reproducible, already fixed, implemented, or what causes it, including terse asks like "look into #1983", "is 1639 still a bug?", "diagnose 1951", or "the author responded on 2043". Not for implementing a fix the user has already scoped (use the normal worktree and PR flow), and not for label bookkeeping across many issues (use triage).
+description: Investigate a Tunarr GitHub issue end to end and write up the verdict. Reads the issue and every comment, checks whether main or a recent release already fixed it, reproduces it with the right instrument (stream-repro for playback and time-slot schedules, the e2e Playwright suite for web UI, a focused Vitest test for server or shared logic), traces the root cause, and writes a dated report to plans/investigations/ with a draft reply for the issue. Use this whenever the user points at a Tunarr issue number or URL and asks whether it is real, still happening, reproducible, already fixed, implemented, or what causes it, including terse asks like "look into #1983", "is 1639 still a bug?", "diagnose 1951", or "the author responded on 2043". Not for implementing a fix the user has already scoped (use the normal worktree and PR flow), and not for label bookkeeping across many issues (use triage).
 ---
 
 # Investigate issue
@@ -23,7 +23,7 @@ a version, a correction of the original claim. Note:
 - The exact symptom in their words, and any logs or screenshots.
 - Earlier maintainer analysis in the thread. If the maintainer already posted a theory, test that
   theory first and say plainly whether it holds.
-- Any existing report in `plans/issue-<n>-*.md`. If one exists, this is a follow-up. Read it, then
+- Any existing report in `plans/investigations/issue-<n>-*.md`. If one exists, this is a follow-up. Read it, then
   update it in place rather than starting a second file.
 
 ## 2. Check whether it is already fixed
@@ -74,7 +74,7 @@ change, roughly how big the change is, and what is already in place.
 
 ## 5. Write the report
 
-Write `plans/issue-<n>-<slug>-<YYYY-MM-DD>.md` in the worktree. Reports reach `main` through a PR,
+Write `plans/investigations/issue-<n>-<slug>-<YYYY-MM-DD>.md` in the worktree. Reports reach `main` through a PR,
 either with the fix or batched with other investigations. Follow the house format:
 
 ```markdown
@@ -98,7 +98,7 @@ either with the fix or batched with other investigations. Follow the house forma
 <the comment you would post, written to the reporter>
 ```
 
-Keep it short. The sample reports in `plans/issue-*.md` run 30 to 45 lines. Use only the sections
+Keep it short. The sample reports in `plans/investigations/` run 30 to 45 lines. Use only the sections
 the case needs. A reply to an already-fixed issue needs no root-cause section.
 
 ## 6. Hand back, don't act
