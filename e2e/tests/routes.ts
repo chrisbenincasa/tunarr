@@ -118,13 +118,9 @@ export const ROUTES: Record<string, RouteTarget> = {
   '/media_sources/$mediaSourceId': (ids) => [
     `/media_sources/${ids.mediaSourceId}`,
   ],
-  '/media_sources/$mediaSourceId/libraries/$libraryId': {
-    broken:
-      'GET /api/media-libraries/:id returns 500 for local libraries (#2200).',
-    urls: (ids) => [
-      `/media_sources/${ids.mediaSourceId}/libraries/${ids.libraryId}`,
-    ],
-  },
+  '/media_sources/$mediaSourceId/libraries/$libraryId': (ids) => [
+    `/media_sources/${ids.mediaSourceId}/libraries/${ids.libraryId}`,
+  ],
 };
 
 export function generatedRoutePaths(): string[] {
