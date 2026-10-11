@@ -196,6 +196,10 @@ msgstr "{count} {programLabel}，{0}"
 msgid "{days, plural, one {# day} other {# days}}"
 msgstr "{days, plural, other {# 天}}"
 
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "{enabled} of {total} enabled"
+msgstr ""
+
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, other {# 小时}}"
@@ -493,6 +497,10 @@ msgstr "专辑"
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
 msgstr "所有使用此配置的频道都将恢复为默认配置。如果这是最后一个配置，系统会自动创建一个新的默认配置。"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "All folders"
+msgstr ""
 
 #: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
 #~ msgid "All Genres"
@@ -830,6 +838,7 @@ msgstr "取消"
 msgid "Cannot be empty"
 msgstr "不能为空"
 
+#: src/components/MediaSourceLibraryTable.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
 msgid "Cannot disable libraries when they are locked"
 msgstr "媒体库处于锁定状态时无法禁用"
@@ -1385,8 +1394,8 @@ msgid "Documentation"
 msgstr "文档"
 
 #: src/components/MediaSourceLibraryTable.tsx
-msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
-msgstr "没有看到想要的媒体库？请确认它已在<0>媒体源设置</0>中启用。"
+#~ msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
+#~ msgstr "没有看到想要的媒体库？请确认它已在<0>媒体源设置</0>中启用。"
 
 #: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx
 #: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx
@@ -2327,7 +2336,9 @@ msgstr "让我们开始吧…"
 msgid "Level"
 msgstr "级别"
 
+#: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Libraries"
 msgstr "媒体库"
 
@@ -2762,6 +2773,14 @@ msgid "No active sessions"
 msgstr "暂无活动会话"
 
 #: src/pages/welcome/WelcomePage.tsx
+msgid "No libraries are enabled yet. Tunarr only syncs content from enabled libraries, so choose at least one below."
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "No libraries enabled"
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
 msgid "No media sources connected."
 msgstr "未连接任何媒体源。"
 
@@ -2821,6 +2840,10 @@ msgstr "不是有效的 URL"
 #: src/routes/__root.tsx
 msgid "Not found!"
 msgstr "未找到！"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Not synced"
+msgstr ""
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
 msgid "Now Playing:"
@@ -3643,6 +3666,10 @@ msgstr "剧集"
 msgid "Show Advanced"
 msgstr "显示高级选项"
 
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Show disabled libraries"
+msgstr ""
+
 #: src/components/channel_config/ProgrammingSelector.tsx
 #~ msgid "Show only synced libraries"
 #~ msgstr "Show only synced libraries"
@@ -3793,13 +3820,14 @@ msgstr "按剧集名称对列表排序，每部剧内的剧集按季号/集号�
 msgid "Soundtrack"
 msgstr "原声"
 
+#: src/components/MediaSourceLibraryTable.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Source"
 msgstr "来源"
 
 #: src/components/MediaSourceLibraryTable.tsx
-msgid "Source Type"
-msgstr "来源类型"
+#~ msgid "Source Type"
+#~ msgstr "来源类型"
 
 #: src/hooks/useNavItems.tsx
 msgid "Sources"
@@ -3840,6 +3868,10 @@ msgstr "隐身模式"
 #: src/pages/channels/ChannelsPage.tsx
 msgid "Stealth?"
 msgstr "隐身？"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Stop syncing this library"
+msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Stop Transcode Session"
@@ -3910,9 +3942,17 @@ msgstr "已成功调度 {taskId}（正在后台运行）。"
 msgid "Successfully updated Media Source settings."
 msgstr "媒体源设置已成功更新。"
 
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Sync"
+msgstr ""
+
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync Now"
 msgstr "立即同步"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Sync this library to Tunarr"
+msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync with external playlist"
@@ -4271,6 +4311,19 @@ msgstr "Tunarr 后端地址："
 #: src/components/Video.tsx
 msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
 msgstr "Tunarr 当前配置为使用 AC3 音频编码器。浏览器不支持该音频格式，生成的流很可能没有声音，或完全无法播放。"
+
+#. placeholder {0}: mediaSource.name
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+msgid "Tunarr only syncs content from enabled libraries. Choose the libraries from {0} that you want to use in your channels."
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "Tunarr only syncs content from enabled libraries. Click to choose libraries."
+msgstr ""
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Tunarr only syncs content from enabled libraries. Turn on a library's switch to sync it, or manage sources in <0>Media Source Settings.</0>"
+msgstr ""
 
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."

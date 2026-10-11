@@ -196,6 +196,10 @@ msgstr "{count} {programLabel}, {0}"
 msgid "{days, plural, one {# day} other {# days}}"
 msgstr "{days, plural, one {# day} other {# days}}"
 
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "{enabled} of {total} enabled"
+msgstr "{enabled} of {total} enabled"
+
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, one {# hour} other {# hours}}"
@@ -493,6 +497,10 @@ msgstr "Albums"
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
 msgstr "All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "All folders"
+msgstr "All folders"
 
 #: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
 #~ msgid "All Genres"
@@ -830,6 +838,7 @@ msgstr "Cancel"
 msgid "Cannot be empty"
 msgstr "Cannot be empty"
 
+#: src/components/MediaSourceLibraryTable.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
 msgid "Cannot disable libraries when they are locked"
 msgstr "Cannot disable libraries when they are locked"
@@ -1385,8 +1394,8 @@ msgid "Documentation"
 msgstr "Documentation"
 
 #: src/components/MediaSourceLibraryTable.tsx
-msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
-msgstr "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
+#~ msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
+#~ msgstr "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
 
 #: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx
 #: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx
@@ -2327,7 +2336,9 @@ msgstr "Let's get started..."
 msgid "Level"
 msgstr "Level"
 
+#: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Libraries"
 msgstr "Libraries"
 
@@ -2762,6 +2773,14 @@ msgid "No active sessions"
 msgstr "No active sessions"
 
 #: src/pages/welcome/WelcomePage.tsx
+msgid "No libraries are enabled yet. Tunarr only syncs content from enabled libraries, so choose at least one below."
+msgstr "No libraries are enabled yet. Tunarr only syncs content from enabled libraries, so choose at least one below."
+
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "No libraries enabled"
+msgstr "No libraries enabled"
+
+#: src/pages/welcome/WelcomePage.tsx
 msgid "No media sources connected."
 msgstr "No media sources connected."
 
@@ -2821,6 +2840,10 @@ msgstr "Not a valid URL"
 #: src/routes/__root.tsx
 msgid "Not found!"
 msgstr "Not found!"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Not synced"
+msgstr "Not synced"
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
 msgid "Now Playing:"
@@ -3643,6 +3666,10 @@ msgstr "Show"
 msgid "Show Advanced"
 msgstr "Show Advanced"
 
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Show disabled libraries"
+msgstr "Show disabled libraries"
+
 #: src/components/channel_config/ProgrammingSelector.tsx
 #~ msgid "Show only synced libraries"
 #~ msgstr "Show only synced libraries"
@@ -3793,13 +3820,14 @@ msgstr "Sorts the list by TV Show and the episodes in each TV show by their seas
 msgid "Soundtrack"
 msgstr "Soundtrack"
 
+#: src/components/MediaSourceLibraryTable.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Source"
 msgstr "Source"
 
 #: src/components/MediaSourceLibraryTable.tsx
-msgid "Source Type"
-msgstr "Source Type"
+#~ msgid "Source Type"
+#~ msgstr "Source Type"
 
 #: src/hooks/useNavItems.tsx
 msgid "Sources"
@@ -3840,6 +3868,10 @@ msgstr "Stealth Mode"
 #: src/pages/channels/ChannelsPage.tsx
 msgid "Stealth?"
 msgstr "Stealth?"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Stop syncing this library"
+msgstr "Stop syncing this library"
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Stop Transcode Session"
@@ -3910,9 +3942,17 @@ msgstr "Successfully scheduled {taskId} (running in background)."
 msgid "Successfully updated Media Source settings."
 msgstr "Successfully updated Media Source settings."
 
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Sync"
+msgstr "Sync"
+
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync Now"
 msgstr "Sync Now"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Sync this library to Tunarr"
+msgstr "Sync this library to Tunarr"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync with external playlist"
@@ -4271,6 +4311,19 @@ msgstr "Tunarr Backend URL:"
 #: src/components/Video.tsx
 msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
 msgstr "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
+
+#. placeholder {0}: mediaSource.name
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+msgid "Tunarr only syncs content from enabled libraries. Choose the libraries from {0} that you want to use in your channels."
+msgstr "Tunarr only syncs content from enabled libraries. Choose the libraries from {0} that you want to use in your channels."
+
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "Tunarr only syncs content from enabled libraries. Click to choose libraries."
+msgstr "Tunarr only syncs content from enabled libraries. Click to choose libraries."
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Tunarr only syncs content from enabled libraries. Turn on a library's switch to sync it, or manage sources in <0>Media Source Settings.</0>"
+msgstr "Tunarr only syncs content from enabled libraries. Turn on a library's switch to sync it, or manage sources in <0>Media Source Settings.</0>"
 
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."

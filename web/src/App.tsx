@@ -10,6 +10,7 @@ import { RouterButtonLink } from './components/base/RouterButtonLink.tsx';
 import { RouterLink } from './components/base/RouterLink.tsx';
 import { BottomNavBar } from './components/BottomNavBar.tsx';
 import { Drawer } from './components/Drawer.tsx';
+import { NewMediaSourceLibrariesPrompt } from './components/settings/media_source/NewMediaSourceLibrariesPrompt.tsx';
 import { TopBar } from './components/TopBar.tsx';
 import { useServerEventsSnackbar } from './hooks/useServerEvents.ts';
 import { useIsDarkMode } from './hooks/useTunarrTheme.ts';
@@ -82,6 +83,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
             </Alert>
           ) : null}
           {children ?? <Outlet />}
+          <NewMediaSourceLibrariesPrompt />
         </Container>
       </Box>
     </Box>

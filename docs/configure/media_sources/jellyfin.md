@@ -40,7 +40,7 @@ If you cannot (i.e. you are not an Admin), or would not like to, use an API Key,
 
 Tunarr will periodically synchronize chosen Jellyfin libraries. Synchronizing is a one-way import of Jellyfin metadata into Tunarr. Tunarr **never** mutates Jellyfin data. Importing metadata from Jellyfin allows for a richer search and scheduling experience.
 
-After connecting your Jellyfin server, find the server in the Media Sources table and click the "Edit Libraries" button:
+Tunarr only syncs libraries you enable, and a new Jellyfin server starts with none enabled. After you connect the server, Tunarr opens the library list so you can choose. To change your choice later, click the server's **Libraries** badge in the Media Sources table, or click the "Edit Libraries" button:
 
 <figure markdown="span">
     ![](../../assets/media_sources_edit_libraries.png)
@@ -52,7 +52,7 @@ You will be presented with the Jellyfin libraries that Tunarr is able to sync:
     ![](../../assets/media_sources_enable_libraries.png)
 </figure>
 
-Upon selecting libraries, they will be queued for synchronization. Tunarr will only sync one library per-source at a time. By default, Media Source libraries are all synchronized once every 6 hours. This period can be configured on the Media Source settings page.
+Upon selecting libraries, they will be queued for synchronization. You can also turn libraries on and off from the Libraries page, which lists disabled libraries grayed out with a **Sync** switch. Tunarr will only sync one library per-source at a time. By default, Media Source libraries are all synchronized once every 6 hours. This period can be configured on the Media Source settings page.
 
 Tunarr checks the Jellyfin library list every hour. If Jellyfin stops reporting a library, Tunarr marks it **Unavailable** instead of deleting it. The library's programs and channel schedules are kept, and Tunarr skips the library during scans. When Jellyfin reports the library again, Tunarr marks it available and resumes scanning. Your choice to enable or disable the library does not change. See [Library shows as Unavailable](../../misc/common-issues.md#library-shows-as-unavailable) for common causes.
 
