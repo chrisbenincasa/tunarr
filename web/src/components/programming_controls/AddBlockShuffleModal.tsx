@@ -49,6 +49,8 @@ const AddBlockShuffleModalContent = ({
     defaultValues: {
       shuffleType: 'Fixed',
       blockSize: 2,
+      showOrder: 'rotate',
+      startEpisode: 'first',
       sortOptions: {
         movies: {
           sort: 'release_date',
@@ -72,6 +74,7 @@ const AddBlockShuffleModalContent = ({
   const usePerfectSyncDisabled = !canUsePerfectSync(blockSize);
 
   const isRandom = watch('shuffleType') === 'Random';
+  const isRandomShowOrder = watch('showOrder') === 'random';
 
   return (
     <>
@@ -81,9 +84,9 @@ const AddBlockShuffleModalContent = ({
       <DialogContent sx={{ py: 0 }}>
         <DialogContentText sx={{ mb: 1 }}>
           <Trans>
-            Alternate programs in blocks. You can pick the number of programs
-            per-type in each block and if the order of shows in each block
-            should be randomized.
+            Alternate programs in blocks. You can pick the number of programs in
+            each block, whether episodes play in order, and whether shows take
+            turns or come up at random.
           </Trans>
           <br />
         </DialogContentText>
@@ -124,7 +127,7 @@ const AddBlockShuffleModalContent = ({
                 }}
               >
                 <InputLabel id="sort-block-shuffle-type">
-                  <Trans>Type</Trans>
+                  <Trans>Episode Order</Trans>
                 </InputLabel>
                 <Controller
                   control={control}
@@ -133,11 +136,11 @@ const AddBlockShuffleModalContent = ({
                     <Select
                       {...field}
                       id="sort-block-shuffle-type"
-                      label={t`Type`}
+                      label={t`Episode Order`}
                       onChange={(e) => field.onChange(e.target.value)}
                     >
                       <MenuItem value={'Fixed'}>
-                        <Trans>Fixed</Trans>
+                        <Trans>In Order</Trans>
                       </MenuItem>
                       <MenuItem value={'Random'}>
                         <Trans>Random</Trans>
@@ -147,6 +150,76 @@ const AddBlockShuffleModalContent = ({
                 />
               </FormControl>
             </Stack>
+            <Stack
+              direction={['column', 'row']}
+              spacing={2}
+              useFlexGap
+              sx={{ mt: 2 }}
+            >
+              <FormControl sx={{ width: ['100%', '50%'] }}>
+                <InputLabel id="sort-block-shuffle-show-order">
+                  <Trans>Show Order</Trans>
+                </InputLabel>
+                <Controller
+                  control={control}
+                  name="showOrder"
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      labelId="sort-block-shuffle-show-order"
+                      label={t`Show Order`}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    >
+                      <MenuItem value="rotate">
+                        <Trans>Take Turns</Trans>
+                      </MenuItem>
+                      <MenuItem value="random">
+                        <Trans>Random</Trans>
+                      </MenuItem>
+                    </Select>
+                  )}
+                />
+              </FormControl>
+              <FormControl
+                sx={{
+                  width: ['100%', '50%'],
+                  display: isRandom ? 'none' : undefined,
+                }}
+              >
+                <InputLabel id="sort-block-shuffle-start-episode">
+                  <Trans>Starting Episode</Trans>
+                </InputLabel>
+                <Controller
+                  control={control}
+                  name="startEpisode"
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      labelId="sort-block-shuffle-start-episode"
+                      label={t`Starting Episode`}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    >
+                      <MenuItem value="first">
+                        <Trans>First Episode</Trans>
+                      </MenuItem>
+                      <MenuItem value="random">
+                        <Trans>Random Episode</Trans>
+                      </MenuItem>
+                    </Select>
+                  )}
+                />
+              </FormControl>
+            </Stack>
+            <FormHelperText>
+              {isRandomShowOrder ? (
+                <Trans>
+                  Each next block comes from a random show. Shows with more
+                  episodes come up more often unless Loop Short Programs is on.
+                </Trans>
+              ) : (
+                <Trans>Shows take turns in a fixed order.</Trans>
+              )}
+            </FormHelperText>
           </Box>
           <Box sx={{ display: isRandom ? 'none' : undefined }}>
             <Stack direction={['column', 'row']} spacing={2} useFlexGap>

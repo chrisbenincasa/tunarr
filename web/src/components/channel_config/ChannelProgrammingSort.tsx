@@ -12,7 +12,6 @@ import { Button, ButtonGroup, MenuItem } from '@mui/material';
 import { useState } from 'react';
 import { useAlphaSort } from '../../hooks/programming_controls/useAlphaSort.ts';
 import { useBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
-import { useCyclicShuffle } from '../../hooks/programming_controls/useCyclicShuffle.ts';
 import { useEpisodeNumberSort } from '../../hooks/programming_controls/useEpisodeNumberSort.ts';
 import { useProgramShuffle } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
@@ -50,9 +49,8 @@ export function ChannelProgrammingSort() {
   const shuffler = useProgramShuffle();
   const alphaSort = useAlphaSort();
   const releaseDateSort = useReleaseDateSort();
-  const cyclicShuffle = useCyclicShuffle();
   const episodeSort = useEpisodeNumberSort();
-  const { blockShuffle, canUsePerfectSync } = useBlockShuffle();
+  const { blockShuffle, cyclicShuffle, canUsePerfectSync } = useBlockShuffle();
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -162,7 +160,7 @@ export function ChannelProgrammingSort() {
 
         <ElevatedTooltip
           elevation={5}
-          title={t`Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately.`}
+          title={t`Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows.`}
           placement="right"
         >
           <MenuItem

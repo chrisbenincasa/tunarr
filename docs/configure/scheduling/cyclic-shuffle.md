@@ -1,6 +1,14 @@
 # Cyclic Shuffle
 
-Cyclic Shuffle alternates between shows while preserving the episode sequence. This tool is the equivalent of using [block shuffle](../scheduling/block-shuffle.md) and setting "Program Count" to "1" and "Type" to "Random".
+Cyclic Shuffle alternates between shows at random while preserving each show's episode sequence. It is a preset of [Block Shuffle](block-shuffle.md) with these options:
+
+| Option | Value |
+|---|---|
+| # of Programs | 1 |
+| Episode Order | In Order |
+| Show Order | Random |
+| Starting Episode | Random Episode |
+| Loop Short Programs | Off |
 
 <figure markdown="span">
     ![](../../assets/programming-shuffle.png)
@@ -16,4 +24,9 @@ A sample cyclic shuffled schedule with 3 shows could be something like:
 5. Show C, S04E02
 6. Show B, S01E03
 
-In other words, channel programming is grouped by show, randomly shuffled (while preserving episode order), and then chosen at random to produce a lineup.
+Each show plays once per episode in the lineup, so shows with more episodes come up more often.
+
+To change the preset, open Block Shuffle and set the options yourself. For example:
+
+- Set Starting Episode to First Episode to start every show at its first episode.
+- Turn on Loop Short Programs to make every show play equally often, with shorter shows starting over.

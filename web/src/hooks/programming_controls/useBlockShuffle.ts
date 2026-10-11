@@ -8,6 +8,7 @@ import {
   mapValues,
   max,
   orderBy,
+  random,
   range,
   shuffle,
   values,
@@ -38,9 +39,21 @@ export type BlockShuffleProgramCount = number;
 
 export type BlockShuffleType = 'Fixed' | 'Random';
 
+export type BlockShuffleShowOrder = 'rotate' | 'random';
+
+export type BlockShuffleStartEpisode = 'first' | 'random';
+
 export interface BlockShuffleConfig {
+  // Order of episodes within each group
   shuffleType: BlockShuffleType;
   blockSize: number;
+
+  // 'rotate' cycles groups in a fixed order. 'random' draws each next block
+  // at random, weighted by how many blocks each group has left.
+  showOrder?: BlockShuffleShowOrder;
+
+  // Only applies when shuffleType is 'Fixed'
+  startEpisode?: BlockShuffleStartEpisode;
   sortOptions: {
     movies: {
       sort: 'alpha' | 'release_date';
@@ -53,6 +66,19 @@ export interface BlockShuffleConfig {
   loopBlocks?: boolean;
   perfectSync?: boolean;
 }
+
+export const CyclicShuffleConfig: BlockShuffleConfig = {
+  shuffleType: 'Fixed',
+  blockSize: 1,
+  showOrder: 'random',
+  startEpisode: 'random',
+  sortOptions: {
+    movies: { sort: 'release_date', order: 'asc' },
+    show: { order: 'asc' },
+  },
+  loopBlocks: false,
+  perfectSync: false,
+};
 
 function sortProgram(
   p: UIContentProgram,
@@ -77,9 +103,19 @@ function sortProgram(
 }
 
 export function useBlockShuffle() {
-  const { materializeOriginalProgramList } = useChannelEditorLazy();
+  const { materializeOriginalProgramList, materializeNewProgramList } =
+    useChannelEditorLazy();
 
   return {
+    cyclicShuffle: () => {
+      const cycledShows = blockShuffle(
+        materializeNewProgramList(),
+        CyclicShuffleConfig,
+      );
+      if (cycledShows) {
+        setCurrentLineup(cycledShows, true);
+      }
+    },
     canUsePerfectSync: (blockSize: number) =>
       canUsePerfectSync(materializeOriginalProgramList(), blockSize),
     blockShuffle: (options: BlockShuffleConfig | null) => {
@@ -112,7 +148,7 @@ export function useCustomShowBlockShuffle() {
   };
 }
 
-function blockShuffle(
+export function blockShuffle(
   programs: UIChannelProgram[],
   options: BlockShuffleConfig | null,
 ): Maybe<Array<UICustomProgram | UIContentProgram>> {
@@ -142,7 +178,7 @@ function blockShuffle(
           (p) => p.index,
           [showsAscending ? 'asc' : 'desc'],
         );
-      } else if (key.startsWith('show') || key.startsWith('track')) {
+      } else if (key.startsWith('show') || key.startsWith('artist')) {
         groupByShow[key] = orderBy(
           programs as UIContentProgram[],
           (p) => sortProgram(p, 'index'),
@@ -159,17 +195,45 @@ function blockShuffle(
     });
   }
 
+  if (options?.shuffleType === 'Fixed' && options.startEpisode === 'random') {
+    forEach(groupByShow, (programs, key) => {
+      const start = random(0, programs.length - 1);
+      groupByShow[key] = [
+        ...programs.slice(start),
+        ...programs.slice(0, start),
+      ];
+    });
+  }
+
   const blockSize = options?.blockSize ?? 3;
 
   const [chunks, loops] = options?.perfectSync
     ? getPerfectSyncChunks(groupByShow, blockSize)
     : getSimpleChunks(groupByShow, blockSize, options?.loopBlocks ?? true);
 
+  if (options?.showOrder === 'random') {
+    return drawBlocksAtRandom(chunks);
+  }
+
   const alternatingShows = flatMap(range(loops), (i) =>
     flatMap(chunks, (chunk) => (i < chunk.length ? [...chunk[i]] : [])),
   );
 
   return alternatingShows;
+}
+
+// One draw per block, shuffled, so groups with more blocks left come up more often
+function drawBlocksAtRandom<T>(chunks: Record<string, T[][]>): T[] {
+  const draws = shuffle(
+    flatMap(Object.entries(chunks), ([key, blocks]) => map(blocks, () => key)),
+  );
+  const nextBlock = mapValues(chunks, () => 0);
+
+  return flatMap(draws, (key) => {
+    const block = chunks[key][nextBlock[key]];
+    nextBlock[key] += 1;
+    return block;
+  });
 }
 
 function getPerfectSyncChunks(

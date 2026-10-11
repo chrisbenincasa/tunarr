@@ -536,8 +536,12 @@ msgid "Alphabetically"
 msgstr "按字母顺序"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
-msgid "Alternate programs in blocks. You can pick the number of programs per-type in each block and if the order of shows in each block should be randomized."
-msgstr "将节目按块交替排列。你可以设置每个块中每种类型的节目数量，以及是否随机排列块内节目的顺序。"
+msgid "Alternate programs in blocks. You can pick the number of programs in each block, whether episodes play in order, and whether shows take turns or come up at random."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#~ msgid "Alternate programs in blocks. You can pick the number of programs per-type in each block and if the order of shows in each block should be randomized."
+#~ msgstr "将节目按块交替排列。你可以设置每个块中每种类型的节目数量，以及是否随机排列块内节目的顺序。"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -1436,6 +1440,10 @@ msgstr "时长必须为数字"
 msgid "Dynamic"
 msgstr "动态"
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Each next block comes from a random show. Shows with more episodes come up more often unless Loop Short Programs is on."
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Eager"
 msgstr "即时"
@@ -1650,6 +1658,11 @@ msgstr "电子节目单"
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "EPG (Hours)"
 msgstr "节目单时长（小时）"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Episode Order"
+msgstr ""
 
 #: src/components/programs/Episodes.tsx
 #: src/pages/library/TrashPage.tsx
@@ -1974,6 +1987,9 @@ msgid "Finish"
 msgstr "完成"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "First Episode"
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
@@ -2184,6 +2200,10 @@ msgstr "图片"
 msgid "Image URL"
 msgstr "图片链接"
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "In Order"
+msgstr ""
+
 #: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
 msgid "Include Seasons"
 msgstr "包含季"
@@ -2329,8 +2349,8 @@ msgid "Light"
 msgstr "浅色"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
-msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
-msgstr "与随机打乱类似，但会尽量保持每部剧集的集数顺序。如果某部剧的剧集出现多次，也会相应地循环排列。"
+#~ msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
+#~ msgstr "与随机打乱类似，但会尽量保持每部剧集的集数顺序。如果某部剧的剧集出现多次，也会相应地循环排列。"
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
 #~ msgid "Limit"
@@ -3005,6 +3025,10 @@ msgstr "播放列表"
 #~ msgid "Playlists"
 #~ msgstr "Playlists"
 
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows."
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
 msgstr "请选择大于 1 的值"
@@ -3137,6 +3161,7 @@ msgstr "已排队"
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Random"
 msgstr "随机"
 
@@ -3144,6 +3169,10 @@ msgstr "随机"
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Random (by show)"
 msgstr "随机（按剧集）"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Random Episode"
+msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Random..."
@@ -3605,6 +3634,11 @@ msgstr "显示高级选项"
 #~ msgid "Show only synced libraries"
 #~ msgstr "Show only synced libraries"
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Show Order"
+msgstr ""
+
 #: src/pages/guide/GuidePage.tsx
 msgid "Show Stealth"
 msgstr "显示隐身频道"
@@ -3622,6 +3656,10 @@ msgstr "剧集：{0}"
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
 msgid "Shows"
 msgstr "剧集"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows take turns in a fixed order."
+msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
@@ -3763,6 +3801,11 @@ msgstr "开始时间"
 msgid "Started {startedAgo} - {remainingTime}remaining"
 msgstr "已于 {startedAgo} 开始 - 剩余 {remainingTime}"
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Starting Episode"
+msgstr ""
+
 #: src/hooks/useNavItems.tsx
 #: src/pages/system/SystemLayout.tsx
 msgid "Status"
@@ -3883,6 +3926,10 @@ msgstr "尾部"
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Tail Buffer (minutes)"
 msgstr "尾部缓冲（分钟）"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Take Turns"
+msgstr ""
 
 #: src/pages/settings/TaskSettingsPage.tsx
 #: src/pages/system/SystemLayout.tsx
@@ -4228,8 +4275,6 @@ msgstr "调谐器数量"
 msgid "TV shows are grouped by show"
 msgstr "剧集按剧名分组"
 
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
