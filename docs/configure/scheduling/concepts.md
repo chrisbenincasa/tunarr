@@ -6,7 +6,7 @@
 * **Programming**: A channel's *programming* refers the actual media in a channel lineup
 * **Filler**: *Filler* content refers to media that is used to "round out" a schedule. For instance, a 22-minute television episode may need 8 minutes of "filler" distributed within a 30-minute slot to replicate a true "TV" experience
 * **Flex**: *Flex* time refers to chunks of time in which one or more pieces of filler are placed within a channel lineup. Content used to fill periods of *flex* time are not chosen until stream time.
-* **Padding**: *Padding* generally refers to applying flex time in order to have content start at "nice" times, e.g. 12:00, 12:30, etc.
+* **Padding**: *Padding* generally refers to applying flex time in order to have content start at "nice" times, e.g. 12:00, 12:30, etc. These times are on the server's local clock, the same clock that slot start times use.
 * **Slot**: Tunarr includes programming tools called *slot* editors. Using *slots* allows for fine-grained control over channel lineups. A *slot* refers to a "grouping" of programming with either a set duration or start time.
 * **Slot Isolation**: By default, every slot is *isolated*: it maintains its own position in its program list, independent of all other slots. Two slots for the same show will each start at episode 1 and advance separately, which means duplicates are possible unless the slots are [linked](slot-linking.md).
 * **Slot Linking**: Slots can be *linked* into an *iteration group* so they share a single program iterator. This is configured per-slot via the Link control in the slot editor. Linked slots support two *link modes*:

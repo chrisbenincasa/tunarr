@@ -261,8 +261,8 @@ export class RandomSlotScheduler {
         emptySlotCursorMs = +context.timeCursor;
       }
 
-      // Pad time
-      const m = +context.timeCursor.mod(padMs);
+      // Pad to the local wall clock.
+      const m = +context.timeCursor.mod(padMs, true);
       if (m > constants.SLACK && padMs - m > constants.SLACK) {
         context.pushOrExtendFlex(padMs - m);
         continue;
@@ -354,12 +354,14 @@ export class RandomSlotScheduler {
 
       const totalDuration = sum(map(finalPrograms, (p) => p.totalDuration));
       let remainingTimeInSlot = 0;
-      const startOfNextBlock = +context.timeCursor.add(totalDuration);
+      const nextBlockRem = +context.timeCursor
+        .add(totalDuration)
+        .mod(padMs, true);
       if (
-        startOfNextBlock % padMs >= constants.SLACK &&
-        startOfNextBlock % padMs < padMs - constants.SLACK
+        nextBlockRem >= constants.SLACK &&
+        nextBlockRem < padMs - constants.SLACK
       ) {
-        remainingTimeInSlot = padMs - (startOfNextBlock % padMs);
+        remainingTimeInSlot = padMs - nextBlockRem;
       }
 
       // We have two options here if there is remaining time in the slot

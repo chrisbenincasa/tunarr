@@ -8,7 +8,7 @@ import { sumBy } from 'lodash-es';
 import { randomUUID } from 'node:crypto';
 import dayjs from 'dayjs';
 import { MersenneTwister19937, Random } from 'random-js';
-import { describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createFakeProgramOrm } from '../../testing/fakes/entityCreators.ts';
 import { ScheduleValidationError } from '../../types/errors.ts';
 import { RandomSlotScheduler } from './RandomSlotsService.ts';
@@ -732,7 +732,7 @@ describe('random slot pad coverage with a fallback filler', () => {
   const oneMin = 60 * 1000;
   const oneDay = 24 * 60 * oneMin;
   const slotMs = 30 * oneMin;
-  const midnight = dayjs('2024-01-01T00:00:00.000Z');
+  const midnight = dayjs('2024-01-01');
 
   const makeMovies = (
     count: number,
@@ -825,9 +825,84 @@ describe('random slot pad coverage with a fallback filler', () => {
       'content:movie-2',
       'filler:5min',
     ]);
-    expect(result.lineup.filter((item) => item.type === 'flex')).toHaveLength(0);
+    expect(result.lineup.filter((item) => item.type === 'flex')).toHaveLength(
+      0,
+    );
     // maxDays: 1 fills up to start + (maxDays + 1) days. 96 slots of 30 minutes
     // is 2880 minutes; with the pad covered twice it comes out at 3360.
     expect(sumBy(result.lineup, 'duration')).toBe(2 * oneDay);
   });
+});
+
+describe('random slot padding in a zone with a quarter-hour offset', () => {
+  // Asia/Kathmandu is UTC+5:45, so a pad aligned to UTC lands 15 minutes off
+  // every local half hour.
+  const TZ = 'Asia/Kathmandu';
+  const oneMin = 60 * 1000;
+
+  let originalTZ: string | undefined;
+  beforeAll(() => {
+    originalTZ = process.env['TZ'];
+    process.env['TZ'] = TZ;
+  });
+  afterAll(() => {
+    if (originalTZ !== undefined) {
+      process.env['TZ'] = originalTZ;
+    } else {
+      delete process.env['TZ'];
+    }
+  });
+
+  test.each(['slot', 'episode'] as const)(
+    'blocks start on the local half hour with a 30-minute pad (padStyle %s)',
+    (padStyle) => {
+      const programs: SlotSchedulerProgram[] = Array.from(
+        { length: 10 },
+        (_, i) => ({
+          ...createFakeProgramOrm({
+            uuid: `movie-${i + 1}`,
+            type: 'movie',
+            duration: 25 * oneMin,
+            originalAirDate: `2000-01-${String(i + 1).padStart(2, '0')}`,
+          }),
+          parentFillerLists: [],
+          parentCustomShows: [],
+          parentSmartCollections: [],
+        }),
+      );
+
+      const start = dayjs('2025-01-06');
+      const result = new RandomSlotScheduler({
+        type: 'random',
+        flexPreference: 'end',
+        maxDays: 0,
+        padMs: 30 * oneMin,
+        padStyle,
+        randomDistribution: 'none',
+        lockWeights: false,
+        slots: [
+          {
+            id: randomUUID(),
+            type: 'movie',
+            order: 'next',
+            direction: 'asc',
+            weight: 1,
+            cooldownMs: 0,
+            durationSpec: { type: 'dynamic', programCount: 1 },
+          },
+        ],
+      }).generateSchedule(programs, [42], 0, start);
+
+      const starts: number[] = [];
+      let t = result.startTime;
+      for (const item of result.lineup) {
+        if (item.type === 'content') starts.push(t);
+        t += item.duration;
+      }
+
+      expect(starts[0]).toBe(+start);
+      expect(starts.length).toBeGreaterThan(20);
+      expect(starts.filter((s) => dayjs(s).minute() % 30 !== 0)).toEqual([]);
+    },
+  );
 });

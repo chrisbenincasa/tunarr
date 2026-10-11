@@ -226,7 +226,8 @@ export async function scheduleTimeSlots(
     let lateMillis: number | null = null;
     let slotDuration = 0;
 
-    const m = +timeCursor.mod(schedule.padMs);
+    // Pad to the local wall clock, the same clock slot start times use.
+    const m = +timeCursor.mod(schedule.padMs, true);
     if (m > constants.SLACK && schedule.padMs - m > constants.SLACK) {
       pushFlex(schedule.padMs - m);
       continue;
