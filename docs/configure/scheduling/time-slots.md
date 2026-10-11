@@ -63,4 +63,31 @@ To set per-slot padding, open the slot's options in the Time Slot editor. When a
 
 ### Max Lateness
 
-The **Max Lateness** setting is a companion to padding. It defines how far a program is allowed to run past the slot's scheduled start time before the slot is skipped and the next one begins. For example, with a max lateness of 5 minutes, an episode that would end 4 minutes into the next slot will still be allowed to play in full; one that would end 6 minutes into the next slot will be cut off at the slot boundary.
+The **Max Lateness** setting is a companion to padding. It defines how late a slot may start when the program before it runs long. Tunarr never cuts a program off, so a program that runs past the next slot's start time always plays in full. When it ends, Tunarr checks how late the slot it has run into would start:
+
+- If the slot would start within its max lateness, it starts late.
+- Otherwise Tunarr skips that slot, fills the rest of its time with [Flex](/configure/channels/flex), and resumes at the next slot's start time.
+
+For example, with a max lateness of 5 minutes, an episode that ends 4 minutes into the next slot is followed by that slot's program, 4 minutes late. An episode that ends 6 minutes into the next slot is followed by Flex until the slot after it begins.
+
+A slot can override the global max lateness in its options in the Time Slot editor. The override applies when Tunarr arrives late at *that* slot, so set it on the slot that would be delayed or skipped, not on the slot that runs long.
+
+#### Example: A Long Program in a Short Slot
+
+An anime slot airs 22-minute episodes in a 30-minute slot at 6:00pm, and the season ends with a 100-minute movie. The global pad time is 5 minutes. On the movie's day:
+
+1. The movie plays in full, from 6:00pm to 7:40pm.
+2. Any slot that starts and ends while the movie is playing, like a 6:30pm slot, is skipped for that day.
+3. The 7:30pm slot is 10 minutes late when the movie ends. With the global max lateness at 5 minutes, Tunarr skips it and plays Flex until the next slot. If the 7:30pm slot has its own max lateness of 15 minutes, its program starts at 7:40pm instead.
+
+The global max lateness can stay small, because the long program never needs lateness to finish. Pad time is applied before lateness, so with a 30-minute global pad time Tunarr would first fill 7:40pm to 8:00pm with Flex and the 7:30pm slot would never be considered.
+
+### Max Overflow
+
+The **Max Overflow** setting controls how many programs a slot packs in. A slot always plays at least one program. After that, Tunarr keeps adding programs from the slot while they fit:
+
+- **Do not allow** adds a program only if it ends by the next slot's start time.
+- A duration such as **15 minutes** lets an added program end up to that long after the next slot's start time.
+- **One extra item** keeps adding programs until the slot is full, so the last one may run past the next slot's start time by any amount.
+
+Max overflow and max lateness work together. Overflow decides how far a slot may run past its end, and the next slot's max lateness decides whether that slot then starts late or is skipped. Like max lateness, overflow can be set globally or overridden per slot.
