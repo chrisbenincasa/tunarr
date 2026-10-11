@@ -2,6 +2,7 @@ import { Trans } from '@lingui/react/macro';
 import jellyfinSvg from '@/assets/jellyfin.svg';
 import plexSvg from '@/assets/plex.svg';
 import { useMediaSources } from '@/hooks/settingsHooks.ts';
+import type { Nullable } from '@/types/util.ts';
 import { Edit } from '@mui/icons-material';
 import type { CardProps } from '@mui/material';
 import {
@@ -15,7 +16,11 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
+import type { MediaSourceSettings } from '@tunarr/types';
+import { useState } from 'react';
 import { RouterIconButtonLink } from '../base/RouterButtonLink.tsx';
+import { EditMediaSourceLibrariesDialog } from './media_source/EditMediaSourceLibrariesDialog.tsx';
+import { MediaSourceLibrariesChip } from './media_source/MediaSourceLibrariesChip.tsx';
 
 export default function ConnectMediaSources(props: CardProps) {
   const {
@@ -29,6 +34,8 @@ export default function ConnectMediaSources(props: CardProps) {
 
   const { data: mediaSources } = useMediaSources();
   const hasMediaSources = mediaSources && mediaSources.length > 0;
+  const [editingLibraries, setEditingLibraries] =
+    useState<Nullable<MediaSourceSettings>>(null);
 
   return (
     <Box sx={sx} {...restProps}>
@@ -42,6 +49,9 @@ export default function ConnectMediaSources(props: CardProps) {
                     <TableCell></TableCell>
                     <TableCell>
                       <Trans>Name</Trans>
+                    </TableCell>
+                    <TableCell>
+                      <Trans>Libraries</Trans>
                     </TableCell>
                     <TableCell>
                       <Trans>Edit</Trans>
@@ -60,6 +70,12 @@ export default function ConnectMediaSources(props: CardProps) {
                         </TableCell>
                         <TableCell>{server.name}</TableCell>
                         <TableCell>
+                          <MediaSourceLibrariesChip
+                            mediaSource={server}
+                            onClick={() => setEditingLibraries(server)}
+                          />
+                        </TableCell>
+                        <TableCell>
                           <RouterIconButtonLink
                             to={`/settings/sources`}
                             color="primary"
@@ -76,6 +92,11 @@ export default function ConnectMediaSources(props: CardProps) {
           ) : null}
         </CardContent>
       </Card>
+      <EditMediaSourceLibrariesDialog
+        open={editingLibraries !== null}
+        mediaSource={editingLibraries}
+        onClose={() => setEditingLibraries(null)}
+      />
     </Box>
   );
 }

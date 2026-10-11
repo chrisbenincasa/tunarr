@@ -32,6 +32,10 @@ export default function WelcomePage() {
   const { data: version } = useVersion();
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
+  const hasEnabledLibrary = mediaSources.some(
+    (source) =>
+      source.type === 'local' || source.libraries.some((lib) => lib.enabled),
+  );
 
   useEffect(() => {
     if (!isEmpty(mediaSources) && !mediaSourcesLoading) {
@@ -148,12 +152,21 @@ export default function WelcomePage() {
                   </Typography>
                 </Alert>
               ) : (
-                <Alert variant="filled" severity="success">
+                <Alert
+                  variant="filled"
+                  severity={hasEnabledLibrary ? 'success' : 'warning'}
+                >
                   <Plural
                     value={mediaSources.length}
                     one="# source connected."
                     other="# sources connected."
-                  />
+                  />{' '}
+                  {!hasEnabledLibrary && (
+                    <Trans>
+                      No libraries are enabled yet. Tunarr only syncs content
+                      from enabled libraries, so choose at least one below.
+                    </Trans>
+                  )}
                 </Alert>
               )}
               {hasMediaSource && <ConnectMediaSources />}

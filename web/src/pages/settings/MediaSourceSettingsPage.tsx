@@ -26,6 +26,7 @@ import { EditMediaSourceLibrariesDialog } from '../../components/settings/media_
 import { EmbyServerEditDialog } from '../../components/settings/media_source/EmbyServerEditDialog.tsx';
 import { JellyfinServerEditDialog } from '../../components/settings/media_source/JelllyfinServerEditDialog.tsx';
 import { LocalMediaEditDialog } from '../../components/settings/media_source/LocalMediaEditDialog.tsx';
+import { MediaSourceLibrariesChip } from '../../components/settings/media_source/MediaSourceLibrariesChip.tsx';
 import { MediaSourceHealthyTableCell } from '../../components/settings/media_source/MediaSourceHealthyTableCell.tsx';
 import { PlexServerEditDialog } from '../../components/settings/media_source/PlexServerEditDialog.tsx';
 import {
@@ -104,6 +105,19 @@ export default function MediaSourceSettingsPage() {
             </Link>
           ),
         grow: true,
+      },
+      {
+        header: t`Libraries`,
+        id: 'libraries',
+        Cell: ({ row }) => (
+          <MediaSourceLibrariesChip
+            mediaSource={row.original}
+            onClick={() => setEditingMediaSourceLibraries(row.original)}
+          />
+        ),
+        enableSorting: false,
+        grow: false,
+        size: 180,
       },
       {
         header: t`Healthy?`,

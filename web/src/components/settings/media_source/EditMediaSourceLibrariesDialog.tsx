@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
   IconButton,
   List,
@@ -97,6 +98,13 @@ export const EditMediaSourceLibrariesDialog = ({
         <Trans>Manage Libraries</Trans>
       </DialogTitle>
       <DialogContent>
+        <DialogContentText>
+          <Trans>
+            Tunarr only syncs content from enabled libraries. Choose the
+            libraries from {mediaSource.name} that you want to use in your
+            channels.
+          </Trans>
+        </DialogContentText>
         <List
           sx={{ width: '100%' }}
           subheader={
