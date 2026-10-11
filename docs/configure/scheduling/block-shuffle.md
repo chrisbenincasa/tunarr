@@ -14,7 +14,7 @@ Block Shuffle will play a specific number of episodes from a show, proceed to th
 
 With Show Order set to Random, a show with more episodes comes up more often. Turn on Loop Short Programs to give every show the same number of blocks, so each one plays equally often and shorter shows start over.
 
-[Cyclic Shuffle](cyclic-shuffle.md) is a preset of these options.
+Block Shuffle and [Cyclic Shuffle](cyclic-shuffle.md) open the same settings with different presets. The Preset menu at the top switches between them and fills in that preset's options.
 
 By default, when a show completes airing, it will be absent from your schedule until all of the remaining shows complete airing, where the schedule will then be repeated. This means that as you reach the end of your schedule, it may be dominated by one or two shows that have a longer runtime or more episodes than others.
 

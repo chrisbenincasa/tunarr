@@ -11,7 +11,10 @@ import {
 import { Button, ButtonGroup, MenuItem } from '@mui/material';
 import { useState } from 'react';
 import { useAlphaSort } from '../../hooks/programming_controls/useAlphaSort.ts';
-import { useBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
+import {
+  type BlockShufflePreset,
+  useBlockShuffle,
+} from '../../hooks/programming_controls/useBlockShuffle.ts';
 import { useEpisodeNumberSort } from '../../hooks/programming_controls/useEpisodeNumberSort.ts';
 import { useProgramShuffle } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
@@ -38,8 +41,8 @@ export function ChannelProgrammingSort() {
   const { t } = useLingui();
   const [sort, setSort] = useState<SortOption | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [addBlockShuffleModalOpen, setAddBlockShuffleModalOpen] =
-    useState(false);
+  const [blockShufflePreset, setBlockShufflePreset] =
+    useState<BlockShufflePreset | null>(null);
   const [shuffleProgrammingModalOpen, setShuffleProgrammingModalOpen] =
     useState(false);
   const open = Boolean(anchorEl);
@@ -50,7 +53,7 @@ export function ChannelProgrammingSort() {
   const alphaSort = useAlphaSort();
   const releaseDateSort = useReleaseDateSort();
   const episodeSort = useEpisodeNumberSort();
-  const { blockShuffle, cyclicShuffle, canUsePerfectSync } = useBlockShuffle();
+  const { blockShuffle, canUsePerfectSync } = useBlockShuffle();
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -81,7 +84,10 @@ export function ChannelProgrammingSort() {
           </Button>
         )}
         {sort === 'cyclic' && (
-          <Button startIcon={<CyclicIcon />} onClick={() => cyclicShuffle()}>
+          <Button
+            startIcon={<CyclicIcon />}
+            onClick={() => setBlockShufflePreset('cyclic')}
+          >
             {t`Cyclic Shuffle`}
           </Button>
         )}
@@ -125,7 +131,7 @@ export function ChannelProgrammingSort() {
         {sort === 'block' && (
           <Button
             startIcon={<BlockShuffleIcon />}
-            onClick={() => setAddBlockShuffleModalOpen(true)}
+            onClick={() => setBlockShufflePreset('block')}
           >
             {t`Block Shuffle`}
           </Button>
@@ -160,14 +166,14 @@ export function ChannelProgrammingSort() {
 
         <ElevatedTooltip
           elevation={5}
-          title={t`Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows.`}
+          title={t`Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Opens the shuffle settings, where you can start every show at its first episode or loop shorter shows.`}
           placement="right"
         >
           <MenuItem
             disableRipple
             onClick={() => {
               setSort('cyclic');
-              cyclicShuffle();
+              setBlockShufflePreset('cyclic');
               handleClose();
             }}
           >
@@ -183,7 +189,7 @@ export function ChannelProgrammingSort() {
           <MenuItem
             disableRipple
             onClick={() => {
-              setAddBlockShuffleModalOpen(true);
+              setBlockShufflePreset('block');
               setSort('block');
               handleClose();
             }}
@@ -247,8 +253,9 @@ export function ChannelProgrammingSort() {
         </ElevatedTooltip>
       </StyledMenu>
       <AddBlockShuffleModal
-        open={addBlockShuffleModalOpen}
-        onClose={() => setAddBlockShuffleModalOpen(false)}
+        open={blockShufflePreset !== null}
+        onClose={() => setBlockShufflePreset(null)}
+        initialPreset={blockShufflePreset ?? 'block'}
         blockShuffle={blockShuffle}
         canUsePerfectSync={canUsePerfectSync}
       />

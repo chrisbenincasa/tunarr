@@ -536,8 +536,12 @@ msgid "Alphabetically"
 msgstr "按字母顺序"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
-msgid "Alternate programs in blocks. You can pick the number of programs in each block, whether episodes play in order, and whether shows take turns or come up at random."
-msgstr ""
+#~ msgid "Alternate programs in blocks. You can pick the number of programs in each block, whether episodes play in order, and whether shows take turns or come up at random."
+#~ msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#~ msgid "Alternate programs in blocks. You can pick the number of programs in each block, whether episodes play in order, and whether shows take turns or come up at random. Each preset fills in these settings, and you can change them before shuffling."
+#~ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #~ msgid "Alternate programs in blocks. You can pick the number of programs per-type in each block and if the order of shows in each block should be randomized."
@@ -731,7 +735,6 @@ msgstr "块"
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Block Shuffle"
 msgstr "分块随机"
@@ -1173,6 +1176,7 @@ msgstr "自定义电影块的排序方式"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Cyclic Shuffle"
 msgstr "循环随机"
 
@@ -3026,7 +3030,11 @@ msgstr "播放列表"
 #~ msgstr "Playlists"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
-msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows."
+#~ msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows."
+#~ msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Opens the shuffle settings, where you can start every show at its first episode or loop shorter shows."
 msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
@@ -3053,6 +3061,11 @@ msgstr "后"
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Pre"
 msgstr "前"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Preset"
+msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotPresetButton.tsx
 msgid "Presets"
@@ -3658,9 +3671,18 @@ msgid "Shows"
 msgstr "剧集"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows come up at random, one episode at a time. Each show's episodes stay in order, starting from a random episode."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows take turns in a fixed order, each playing a block of episodes before the next show."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Shows take turns in a fixed order."
 msgstr ""
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Shuffle"
@@ -4519,6 +4541,10 @@ msgstr "XMLTV"
 #: src/pages/system/StatusPage.tsx
 msgid "XMLTV Link:"
 msgstr "XMLTV 链接："
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "You can change any setting below before shuffling."
+msgstr ""
 
 #: src/pages/library/FillerListsPage.tsx
 msgid "You have no Filler Lists. Create your first Filler List <0>here.</0>"

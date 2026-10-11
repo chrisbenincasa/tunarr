@@ -67,17 +67,36 @@ export interface BlockShuffleConfig {
   perfectSync?: boolean;
 }
 
-export const CyclicShuffleConfig: BlockShuffleConfig = {
-  shuffleType: 'Fixed',
-  blockSize: 1,
-  showOrder: 'random',
-  startEpisode: 'random',
-  sortOptions: {
-    movies: { sort: 'release_date', order: 'asc' },
-    show: { order: 'asc' },
+export type BlockShufflePreset = 'block' | 'cyclic';
+
+export const BlockShufflePresets: Record<
+  BlockShufflePreset,
+  BlockShuffleConfig
+> = {
+  block: {
+    shuffleType: 'Fixed',
+    blockSize: 2,
+    showOrder: 'rotate',
+    startEpisode: 'first',
+    sortOptions: {
+      movies: { sort: 'release_date', order: 'asc' },
+      show: { order: 'asc' },
+    },
+    loopBlocks: true,
+    perfectSync: false,
   },
-  loopBlocks: false,
-  perfectSync: false,
+  cyclic: {
+    shuffleType: 'Fixed',
+    blockSize: 1,
+    showOrder: 'random',
+    startEpisode: 'random',
+    sortOptions: {
+      movies: { sort: 'release_date', order: 'asc' },
+      show: { order: 'asc' },
+    },
+    loopBlocks: false,
+    perfectSync: false,
+  },
 };
 
 function sortProgram(
@@ -103,24 +122,14 @@ function sortProgram(
 }
 
 export function useBlockShuffle() {
-  const { materializeOriginalProgramList, materializeNewProgramList } =
-    useChannelEditorLazy();
+  const { materializeNewProgramList } = useChannelEditorLazy();
 
   return {
-    cyclicShuffle: () => {
-      const cycledShows = blockShuffle(
-        materializeNewProgramList(),
-        CyclicShuffleConfig,
-      );
-      if (cycledShows) {
-        setCurrentLineup(cycledShows, true);
-      }
-    },
     canUsePerfectSync: (blockSize: number) =>
-      canUsePerfectSync(materializeOriginalProgramList(), blockSize),
+      canUsePerfectSync(materializeNewProgramList(), blockSize),
     blockShuffle: (options: BlockShuffleConfig | null) => {
       const alternatingShows = blockShuffle(
-        materializeOriginalProgramList(),
+        materializeNewProgramList(),
         options,
       );
       if (alternatingShows) {

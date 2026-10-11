@@ -1,6 +1,6 @@
 # Cyclic Shuffle
 
-Cyclic Shuffle alternates between shows at random while preserving each show's episode sequence. It is a preset of [Block Shuffle](block-shuffle.md) with these options:
+Cyclic Shuffle alternates between shows at random while preserving each show's episode sequence. It shares its settings with [Block Shuffle](block-shuffle.md). Choosing Cyclic Shuffle opens those settings with this preset filled in:
 
 | Option | Value |
 |---|---|
@@ -26,7 +26,7 @@ A sample cyclic shuffled schedule with 3 shows could be something like:
 
 Each show plays once per episode in the lineup, so shows with more episodes come up more often.
 
-To change the preset, open Block Shuffle and set the options yourself. For example:
+You can change any option before shuffling. For example:
 
 - Set Starting Episode to First Episode to start every show at its first episode.
 - Turn on Loop Short Programs to make every show play equally often, with shorter shows starting over.

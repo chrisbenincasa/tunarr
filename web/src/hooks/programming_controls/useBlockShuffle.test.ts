@@ -9,9 +9,11 @@ import {
 import type { UIChannelProgram } from '../../types/index.ts';
 import {
   type BlockShuffleConfig,
-  CyclicShuffleConfig,
+  BlockShufflePresets,
   blockShuffle,
 } from './useBlockShuffle.ts';
+
+const CyclicShuffleConfig = BlockShufflePresets.cyclic;
 
 function makeShow(showId: string, episodeCount: number): UIChannelProgram[] {
   return range(1, episodeCount + 1).map((episodeNumber) => ({
@@ -67,6 +69,25 @@ describe('blockShuffle', () => {
       'b-e2',
       'c-e1',
     ]);
+  });
+
+  test('in-order episodes are restored when the input lineup is scrambled', () => {
+    const scrambled = blockShuffle(lineup, {
+      ...BlockShufflePresets.block,
+      shuffleType: 'Random',
+      loopBlocks: true,
+    });
+    expect(scrambled).toBeDefined();
+
+    const ids = shuffleIds(scrambled ?? [], {
+      ...BlockShufflePresets.block,
+      loopBlocks: false,
+    });
+
+    const byShow = episodesByShow(ids);
+    expect(byShow.a).toEqual(map(range(1, 7), (n) => `a-e${n}`));
+    expect(byShow.b).toEqual(['b-e1', 'b-e2', 'b-e3']);
+    expect(byShow.c).toEqual(['c-e1']);
   });
 
   test.each(range(20))(

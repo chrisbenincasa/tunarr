@@ -23,7 +23,12 @@ import {
 } from '@mui/material';
 import { CalendarIcon } from '@mui/x-date-pickers';
 import { Controller, useForm } from 'react-hook-form';
-import { type BlockShuffleConfig } from '../../hooks/programming_controls/useBlockShuffle';
+import { useState } from 'react';
+import {
+  type BlockShuffleConfig,
+  type BlockShufflePreset,
+  BlockShufflePresets,
+} from '../../hooks/programming_controls/useBlockShuffle';
 import {
   CheckboxFormController,
   NumericFormControllerText,
@@ -37,33 +42,35 @@ type AddBlockShuffleModalProps = {
   // down for now
   blockShuffle: (opts: BlockShuffleConfig | null) => void;
   canUsePerfectSync: (size: number) => boolean;
+  initialPreset?: BlockShufflePreset;
 };
 
 const AddBlockShuffleModalContent = ({
   onClose,
   blockShuffle,
   canUsePerfectSync,
+  initialPreset = 'block',
 }: Omit<AddBlockShuffleModalProps, 'open'>) => {
   const { t } = useLingui();
-  const { control, watch, getValues } = useForm<BlockShuffleConfig>({
-    defaultValues: {
-      shuffleType: 'Fixed',
-      blockSize: 2,
-      showOrder: 'rotate',
-      startEpisode: 'first',
-      sortOptions: {
-        movies: {
-          sort: 'release_date',
-          order: 'asc',
-        },
-        show: {
-          order: 'asc',
-        },
-      },
-      loopBlocks: true,
-      perfectSync: false,
-    },
+  const [preset, setPreset] = useState<BlockShufflePreset>(initialPreset);
+  const { control, watch, getValues, reset } = useForm<BlockShuffleConfig>({
+    defaultValues: BlockShufflePresets[initialPreset],
   });
+
+  const presetLabels: Record<BlockShufflePreset, string> = {
+    block: t`Block Shuffle`,
+    cyclic: t`Cyclic Shuffle`,
+  };
+
+  const presetDescriptions: Record<BlockShufflePreset, string> = {
+    block: t`Shows take turns in a fixed order, each playing a block of episodes before the next show.`,
+    cyclic: t`Shows come up at random, one episode at a time. Each show's episodes stay in order, starting from a random episode.`,
+  };
+
+  const selectPreset = (next: BlockShufflePreset) => {
+    setPreset(next);
+    reset(BlockShufflePresets[next]);
+  };
 
   const handleBlockShuffle = () => {
     blockShuffle(getValues());
@@ -78,17 +85,30 @@ const AddBlockShuffleModalContent = ({
 
   return (
     <>
-      <DialogTitle>
-        <Trans>Block Shuffle</Trans>
-      </DialogTitle>
+      <DialogTitle>{presetLabels[preset]}</DialogTitle>
       <DialogContent sx={{ py: 0 }}>
+        <FormControl fullWidth sx={{ mt: 1, mb: 2 }}>
+          <InputLabel id="sort-block-shuffle-preset">
+            <Trans>Preset</Trans>
+          </InputLabel>
+          <Select
+            labelId="sort-block-shuffle-preset"
+            label={t`Preset`}
+            value={preset}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'block' || value === 'cyclic') {
+                selectPreset(value);
+              }
+            }}
+          >
+            <MenuItem value="block">{presetLabels.block}</MenuItem>
+            <MenuItem value="cyclic">{presetLabels.cyclic}</MenuItem>
+          </Select>
+        </FormControl>
         <DialogContentText sx={{ mb: 1 }}>
-          <Trans>
-            Alternate programs in blocks. You can pick the number of programs in
-            each block, whether episodes play in order, and whether shows take
-            turns or come up at random.
-          </Trans>
-          <br />
+          {presetDescriptions[preset]}{' '}
+          <Trans>You can change any setting below before shuffling.</Trans>
         </DialogContentText>
         <DialogContentText variant="body2" component="div">
           <Trans>Grouping works as follows:</Trans>
@@ -349,7 +369,7 @@ const AddBlockShuffleModalContent = ({
           startIcon={<ShuffleIcon />}
           variant="contained"
         >
-          <Trans>Block Shuffle</Trans>
+          <Trans>Shuffle</Trans>
         </Button>
       </DialogActions>
     </>
