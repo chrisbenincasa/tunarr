@@ -11,11 +11,10 @@ import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from '@/util/dayjs.js';
 import { isNumber, isUndefined, random } from 'lodash-es';
 import { PassThrough } from 'node:stream';
-import type { MarkRequired } from 'ts-essentials';
 import { z } from 'zod/v4';
 import type {
   ChannelOrmWithTranscodeConfig,
-  ProgramWithRelationsOrm,
+  ProgramOrmWithExternalIds,
 } from '../../db/schema/derivedTypes.ts';
 import type { ProgramStreamFactory } from '../../stream/ProgramStreamFactory.ts';
 import { ChannelNotFoundError } from '../../types/errors.ts';
@@ -242,7 +241,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
   );
 
   async function initStream(
-    program: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>,
+    program: ProgramOrmWithExternalIds,
     channel: ChannelOrm,
     transcodeConfig: TranscodeConfigOrm,
     startTime: number = 0,

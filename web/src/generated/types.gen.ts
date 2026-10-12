@@ -3741,6 +3741,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
         } | {
             type: 'filler';
             duration: number;
@@ -4358,6 +4359,7 @@ export type PostApiChannelsByIdProgrammingData = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
         } | {
             type: 'filler';
             duration: number;
@@ -5010,6 +5012,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
         } | {
             type: 'filler';
             duration: number;
@@ -5704,6 +5707,7 @@ export type GetApiChannelsAllLineupsResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -5813,6 +5817,7 @@ export type GetApiChannelsByIdLineupResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -5907,6 +5912,7 @@ export type GetApiChannelsByIdNowPlayingResponses = {
         id: string;
         customShowId: string;
         index: number;
+        startOffsetMs?: number;
         program?: {
             type: 'content';
             duration: number;
@@ -6331,6 +6337,7 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
         } | {
             type: 'filler';
             duration: number;
@@ -6695,6 +6702,7 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
         } | {
             type: 'filler';
             duration: number;
@@ -7669,6 +7677,7 @@ export type GetApiCustomShowsResponses = {
         id: string;
         name: string;
         contentCount: number;
+        schedulableContentCount: number;
         programs?: Array<{
             type: 'custom';
             duration: number;
@@ -7676,6 +7685,7 @@ export type GetApiCustomShowsResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -7723,6 +7733,7 @@ export type CreateCustomShowResponses = {
         id: string;
         name: string;
         contentCount: number;
+        schedulableContentCount: number;
         programs?: Array<{
             type: 'custom';
             duration: number;
@@ -7730,6 +7741,7 @@ export type CreateCustomShowResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -7801,6 +7813,7 @@ export type GetApiCustomShowsByIdResponses = {
         id: string;
         name: string;
         contentCount: number;
+        schedulableContentCount: number;
         programs?: Array<{
             type: 'custom';
             duration: number;
@@ -7808,6 +7821,7 @@ export type GetApiCustomShowsByIdResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -7854,8 +7868,14 @@ export type PutApiCustomShowsByIdErrors = {
     /**
      * Default Response
      */
+    400: string;
+    /**
+     * Default Response
+     */
     404: unknown;
 };
+
+export type PutApiCustomShowsByIdError = PutApiCustomShowsByIdErrors[keyof PutApiCustomShowsByIdErrors];
 
 export type PutApiCustomShowsByIdResponses = {
     /**
@@ -7865,6 +7885,7 @@ export type PutApiCustomShowsByIdResponses = {
         id: string;
         name: string;
         contentCount: number;
+        schedulableContentCount: number;
         programs?: Array<{
             type: 'custom';
             duration: number;
@@ -7872,6 +7893,7 @@ export type PutApiCustomShowsByIdResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -7919,6 +7941,7 @@ export type GetApiCustomShowsByIdProgramsResponses = {
         id: string;
         customShowId: string;
         index: number;
+        startOffsetMs?: number;
         program?: {
             type: 'content';
             duration: number;
@@ -7964,6 +7987,7 @@ export type SyncCustomShowResponses = {
         id: string;
         name: string;
         contentCount: number;
+        schedulableContentCount: number;
         programs?: Array<{
             type: 'custom';
             duration: number;
@@ -7971,6 +7995,7 @@ export type SyncCustomShowResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8020,6 +8045,7 @@ export type GetApiFillerListsResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8051,6 +8077,7 @@ export type PostApiFillerListsData = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8138,6 +8165,7 @@ export type GetApiFillerListsByIdResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8169,6 +8197,7 @@ export type PutApiFillerListsByIdData = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8215,6 +8244,7 @@ export type PutApiFillerListsByIdResponses = {
             id: string;
             customShowId: string;
             index: number;
+            startOffsetMs?: number;
             program?: {
                 type: 'content';
                 duration: number;
@@ -8263,6 +8293,7 @@ export type GetApiFillerListsByIdProgramsResponses = {
         id: string;
         customShowId: string;
         index: number;
+        startOffsetMs?: number;
         program?: {
             type: 'content';
             duration: number;
@@ -8791,6 +8822,7 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -8817,6 +8849,7 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -8840,6 +8873,7 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -8863,6 +8897,7 @@ export type GetApiMediaSourcesResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -8993,6 +9028,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -9019,6 +9055,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -9042,6 +9079,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -9065,6 +9103,7 @@ export type GetApiMediaSourcesByMediaSourceIdResponses = {
             type: 'plex' | 'jellyfin' | 'emby' | 'local';
             enabled: boolean;
             isLocked: boolean;
+            unavailableSince?: number;
         }>;
         pathReplacements: Array<{
             serverPath: string;
@@ -9117,6 +9156,7 @@ export type GetApiMediaSourcesByIdLibrariesResponses = {
         type: 'plex' | 'jellyfin' | 'emby' | 'local';
         enabled: boolean;
         isLocked: boolean;
+        unavailableSince?: number;
         mediaSource?: {
             id: string;
             name: string;
@@ -9216,6 +9256,7 @@ export type PutApiMediaSourcesByIdLibrariesByLibraryIdResponses = {
         type: 'plex' | 'jellyfin' | 'emby' | 'local';
         enabled: boolean;
         isLocked: boolean;
+        unavailableSince?: number;
         mediaSource?: {
             id: string;
             name: string;
@@ -9302,6 +9343,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
         type: 'plex' | 'jellyfin' | 'emby' | 'local';
         enabled: boolean;
         isLocked: boolean;
+        unavailableSince?: number;
         mediaSource: {
             id: string;
             name: string;
@@ -9314,6 +9356,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
@@ -9340,6 +9383,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
@@ -9363,6 +9407,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
@@ -9386,6 +9431,7 @@ export type GetApiMediaLibrariesByLibraryIdResponses = {
                 type: 'plex' | 'jellyfin' | 'emby' | 'local';
                 enabled: boolean;
                 isLocked: boolean;
+                unavailableSince?: number;
             }>;
             pathReplacements: Array<{
                 serverPath: string;
@@ -10725,9 +10771,6 @@ export type GetApiSystemSettingsResponses = {
             };
             environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
         };
-        cache?: {
-            enablePlexRequestCache: boolean;
-        };
         server: {
             port: number;
             searchSettings: {
@@ -10786,9 +10829,6 @@ export type PutApiSystemSettingsData = {
                     maxBackups?: number;
                 }>;
             }>;
-        };
-        cache?: {
-            enablePlexRequestCache?: boolean;
         };
         server?: {
             port?: number;
@@ -10852,9 +10892,6 @@ export type PutApiSystemSettingsResponses = {
                 };
             };
             environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
-        };
-        cache?: {
-            enablePlexRequestCache: boolean;
         };
         server: {
             port: number;
@@ -11003,6 +11040,7 @@ export type GetApiSystemFeatureFlagsResponses = {
             proxyArtwork: boolean;
             tonemapEnabled: boolean;
             webvttSidecarEnabled: boolean;
+            xmltvCreditImagesEnabled: boolean;
             disableSearchSnapshotInBackup: boolean;
             disableVulkan: boolean;
             disableVaapiPad: boolean;
@@ -11027,6 +11065,7 @@ export type PutApiSystemFeatureFlagsData = {
         disableSearchSnapshotInBackup?: boolean;
         disableVulkan?: boolean;
         disableVaapiPad?: boolean;
+        xmltvCreditImagesEnabled?: boolean;
     };
     path?: never;
     query?: never;
@@ -11042,6 +11081,7 @@ export type PutApiSystemFeatureFlagsResponses = {
             proxyArtwork: boolean;
             tonemapEnabled: boolean;
             webvttSidecarEnabled: boolean;
+            xmltvCreditImagesEnabled: boolean;
             disableSearchSnapshotInBackup: boolean;
             disableVulkan: boolean;
             disableVaapiPad: boolean;
@@ -11237,6 +11277,7 @@ export type GetApiGuideChannelsResponses = {
                 id: string;
                 customShowId: string;
                 index: number;
+                startOffsetMs?: number;
                 program?: {
                     type: 'content';
                     duration: number;
@@ -13535,8 +13576,17 @@ export type DeleteApiTrashResponses = {
     /**
      * Default Response
      */
-    200: unknown;
+    202: {
+        state: 'idle' | 'running' | 'cancelling' | 'failed';
+        total: number;
+        deleted: number;
+        startedAt: number | null;
+        finishedAt: number | null;
+        error: string | null;
+    };
 };
+
+export type DeleteApiTrashResponse = DeleteApiTrashResponses[keyof DeleteApiTrashResponses];
 
 export type GetApiTrashData = {
     body?: never;
@@ -13595,6 +13645,52 @@ export type GetApiTrashResponses = {
 };
 
 export type GetApiTrashResponse = GetApiTrashResponses[keyof GetApiTrashResponses];
+
+export type GetApiTrashStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/trash/status';
+};
+
+export type GetApiTrashStatusResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        state: 'idle' | 'running' | 'cancelling' | 'failed';
+        total: number;
+        deleted: number;
+        startedAt: number | null;
+        finishedAt: number | null;
+        error: string | null;
+    };
+};
+
+export type GetApiTrashStatusResponse = GetApiTrashStatusResponses[keyof GetApiTrashStatusResponses];
+
+export type PostApiTrashCancelData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/trash/cancel';
+};
+
+export type PostApiTrashCancelResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        state: 'idle' | 'running' | 'cancelling' | 'failed';
+        total: number;
+        deleted: number;
+        startedAt: number | null;
+        finishedAt: number | null;
+        error: string | null;
+    };
+};
+
+export type PostApiTrashCancelResponse = PostApiTrashCancelResponses[keyof PostApiTrashCancelResponses];
 
 export type GetApiSmartCollectionsData = {
     body?: never;
@@ -14099,6 +14195,10 @@ export type GetStreamChannelsByIdM3U8Data = {
     };
     query?: {
         mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        /**
+         * For hls and hls_direct_v2, return the variant playlist instead of the master. The .ts wrapper uses this so ffmpeg reads only the muxed streams.
+         */
+        variant?: boolean | 'true' | 'false' | number;
     };
     url: '/stream/channels/{id}.m3u8';
 };
@@ -14117,6 +14217,10 @@ export type HeadStreamChannelsByIdM3U8Data = {
     };
     query?: {
         mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+        /**
+         * For hls and hls_direct_v2, return the variant playlist instead of the master. The .ts wrapper uses this so ffmpeg reads only the muxed streams.
+         */
+        variant?: boolean | 'true' | 'false' | number;
     };
     url: '/stream/channels/{id}.m3u8';
 };

@@ -23,6 +23,26 @@ Cooldown only applies to the "random" slot choice modes (uniform and weighted), 
 
 Some programming types also allow configuration of the **order** in which their constituents are scheduled. This controls the playback order; for example, if using "Next" ordering for a TV Show, episodes will be iterated over in episode order during scheduling.
 
+### Slot Requirements
+
+- **Fixed** slots need a duration greater than zero.
+- **Dynamic** slots need a whole-number program count of at least 1.
+- A schedule needs at least one slot.
+- Flex and Redirect slots always use a fixed duration.
+- Every filler list, show, smart collection, and channel a slot references must exist.
+- Programs with no duration are skipped, because they cannot advance the schedule.
+
+Tunarr checks these rules when you save or preview a schedule, and rejects a schedule that breaks one with HTTP 400. Schedules saved before these checks existed still regenerate. A fixed slot with no duration produces nothing, and the scheduler moves on to the other slots.
+
+### Empty or Deleted Custom Shows
+
+A custom show with no programs cannot fill a slot.
+
+- The editor does not offer empty custom shows for new slots.
+- A saved slot whose custom show later becomes empty, or is deleted, keeps its selection and shows a warning. Choose another show or remove the slot. Saving is blocked until every slot is fixed.
+- The API rejects a new schedule or preview that references an empty or unknown custom show with HTTP 400, and leaves the channel's lineup unchanged.
+- When Tunarr regenerates an already saved schedule, an empty slot produces Flex and the scheduler moves on to the other slots.
+
 ## Scheduling Configuration
 
 ### Slot Choice

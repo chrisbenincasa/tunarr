@@ -1058,4 +1058,140 @@ describe('HlsPlaylistMutator', () => {
       expect(parsed[0]?.type).toBe('segment');
     });
   });
+
+  describe('parseSubtitlePlaylist', () => {
+    // The `segment` muxer's HLS list output has no #EXT-X-PROGRAM-DATE-TIME
+    // lines and no discontinuity tags — just EXTINF + filename pairs.
+    function createSubtitlePlaylist(
+      durations: number[],
+      startNum = 0,
+    ): string[] {
+      const lines = [
+        '#EXTM3U',
+        '#EXT-X-VERSION:3',
+        '#EXT-X-TARGETDURATION:4',
+        `#EXT-X-MEDIA-SEQUENCE:${startNum}`,
+      ];
+      durations.forEach((duration, i) => {
+        lines.push(
+          `#EXTINF:${duration.toFixed(6)},`,
+          `/stream/channels/test-channel/hls/sub${String(startNum + i).padStart(6, '0')}.vtt`,
+        );
+      });
+      return lines;
+    }
+
+    it('parses EXTINF + filename pairs with no program-date-time or discontinuity lines', () => {
+      const lines = createSubtitlePlaylist([4, 4, 4]);
+
+      const result = new HlsPlaylistMutator().parseSubtitlePlaylist(lines);
+
+      expect(result).toHaveLength(3);
+      expect(result[0]?.segmentNumber).toBe(0);
+      expect(result[1]?.segmentNumber).toBe(1);
+      expect(result[2]?.segmentNumber).toBe(2);
+    });
+
+    it('parses variable segment durations', () => {
+      const lines = createSubtitlePlaylist([7, 2, 2]);
+
+      const result = mutator.parseSubtitlePlaylist(lines);
+
+      expect(result.map((s) => s.duration)).toEqual([7, 2, 2]);
+    });
+  });
+
+  describe('trimSubtitlePlaylist', () => {
+    function createSubtitlePlaylist(
+      durations: number[],
+      startNum = 0,
+    ): string[] {
+      const lines = [
+        '#EXTM3U',
+        '#EXT-X-VERSION:3',
+        '#EXT-X-TARGETDURATION:4',
+        `#EXT-X-MEDIA-SEQUENCE:${startNum}`,
+      ];
+      durations.forEach((duration, i) => {
+        lines.push(
+          `#EXTINF:${duration.toFixed(6)},`,
+          `/stream/channels/test-channel/hls/sub${String(startNum + i).padStart(6, '0')}.vtt`,
+        );
+      });
+      return lines;
+    }
+
+    it('reports a media sequence derived from the retained segments, not always 0', () => {
+      const lines = createSubtitlePlaylist(Array(15).fill(4), 20);
+
+      const result = mutator.trimSubtitlePlaylist(
+        lines,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 34,
+          segmentsToKeepBefore: 10,
+        },
+        { maxSegmentsToKeep: 10 },
+      );
+
+      expect(result.sequence).toBeGreaterThan(0);
+      expect(result.playlist).toContain(
+        `#EXT-X-MEDIA-SEQUENCE:${result.sequence}`,
+      );
+      expect(result.segmentCount).toBeLessThanOrEqual(10);
+    });
+
+    it('keeps all segments when under the max, starting at segment 0', () => {
+      const lines = createSubtitlePlaylist([4, 4, 4]);
+
+      const result = mutator.trimSubtitlePlaylist(
+        lines,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 0,
+          segmentsToKeepBefore: 10,
+        },
+        { maxSegmentsToKeep: 10 },
+      );
+
+      expect(result.sequence).toBe(0);
+      expect(result.segmentCount).toBe(3);
+      expect(result.playlist).toContain('#EXT-X-MEDIA-SEQUENCE:0');
+    });
+
+    it('recomputes the target duration from the largest retained segment instead of a nominal value', () => {
+      // First segment is unusually long (sparse cues) — must not be
+      // under-reported as the nominal 4s segment_time.
+      const lines = createSubtitlePlaylist([7, 2, 2]);
+
+      const result = mutator.trimSubtitlePlaylist(
+        lines,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 0,
+          segmentsToKeepBefore: 10,
+        },
+        { maxSegmentsToKeep: 10 },
+      );
+
+      expect(result.playlist).toContain('#EXT-X-TARGETDURATION:7');
+    });
+
+    it('never emits #EXT-X-PROGRAM-DATE-TIME or discontinuity tags', () => {
+      const lines = createSubtitlePlaylist([4, 4, 4]);
+
+      const result = mutator.trimSubtitlePlaylist(
+        lines,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 0,
+          segmentsToKeepBefore: 10,
+        },
+        { maxSegmentsToKeep: 10 },
+      );
+
+      expect(result.playlist).not.toContain('#EXT-X-PROGRAM-DATE-TIME');
+      expect(result.playlist).not.toContain('#EXT-X-DISCONTINUITY');
+    });
+  });
 });

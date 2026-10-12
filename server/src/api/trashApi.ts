@@ -1,9 +1,13 @@
-import { ProgramSearchResponse } from '@tunarr/types/api';
+import {
+  EmptyTrashStatusSchema,
+  ProgramSearchResponse,
+} from '@tunarr/types/api';
 import type { SearchFilter } from '@tunarr/types/schemas';
 import { ProgramTypeSchema } from '@tunarr/types/schemas';
 import z from 'zod';
 import { SearchProgramsCommand } from '../commands/SearchProgramsCommand.ts';
 import { container } from '../container.ts';
+import { EmptyTrashService } from '../services/EmptyTrashService.ts';
 import type { RouterPluginAsyncCallback } from '../types/serverType.js';
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -12,6 +16,7 @@ export const trashApi: RouterPluginAsyncCallback = async (fastify) => {
     '/trash',
     {
       schema: {
+        tags: ['Trash'],
         querystring: z.object({
           itemTypes: ProgramTypeSchema.array().optional(),
         }),
@@ -65,11 +70,59 @@ export const trashApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.delete('/trash', {}, async (req, res) => {
-    await Promise.all([
-      req.serverCtx.programDB.emptyTrashPrograms(),
-      req.serverCtx.searchService.deleteMissing(),
-    ]);
-    return res.status(200).send();
-  });
+  fastify.delete(
+    '/trash',
+    {
+      schema: {
+        tags: ['Trash'],
+        response: {
+          202: EmptyTrashStatusSchema,
+        },
+      },
+    },
+    async (_req, res) => {
+      const status = await container
+        .get<EmptyTrashService>(EmptyTrashService)
+        .request();
+      return res.status(202).send(status);
+    },
+  );
+
+  fastify.get(
+    '/trash/status',
+    {
+      schema: {
+        tags: ['Trash'],
+        response: {
+          200: EmptyTrashStatusSchema,
+        },
+      },
+    },
+
+    async (_req, res) => {
+      const status = container
+        .get<EmptyTrashService>(EmptyTrashService)
+        .getStatus();
+      return res.status(200).send(status);
+    },
+  );
+
+  fastify.post(
+    '/trash/cancel',
+    {
+      schema: {
+        tags: ['Trash'],
+        response: {
+          200: EmptyTrashStatusSchema,
+        },
+      },
+    },
+
+    async (_req, res) => {
+      const status = container
+        .get<EmptyTrashService>(EmptyTrashService)
+        .cancel();
+      return res.status(200).send(status);
+    },
+  );
 };

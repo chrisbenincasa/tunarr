@@ -80,6 +80,7 @@ export const MaterializedCustomShowTimeSlot = z.object({
   customShow: CustomShowSchema.omit({
     programs: true,
     totalDuration: true,
+    schedulableContentCount: true,
   }).nullable(),
   isMissing: z.boolean().optional().default(false),
 });

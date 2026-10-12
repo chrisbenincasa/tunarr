@@ -9,6 +9,7 @@ import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.ts';
 import {
   AudioFormats,
   HlsDirectOutputFormat,
+  HlsOutputFormat,
   MpegTsOutputFormat,
   VideoFormats,
   VideoPresets,
@@ -24,7 +25,12 @@ import type { FeatureFlagService } from '@/services/FeatureFlagService.ts';
 import type { StreamDetails, SubtitleStreamDetails } from '@/stream/types.ts';
 import { HttpStreamSource } from '@/stream/types.ts';
 import type { SubtitlesInputSource } from '@/ffmpeg/builder/input/SubtitlesInputSource.ts';
-import { SubtitleMethods } from '@/ffmpeg/builder/MediaStream.ts';
+import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
+import {
+  StillImageStream,
+  SubtitleMethods,
+} from '@/ffmpeg/builder/MediaStream.ts';
+import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.ts';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { describe, expect, test, vi } from 'vitest';
@@ -178,22 +184,28 @@ function createCapturingPipelineBuilderFactory(): {
   getCapturedFfmpegState: () => FfmpegState | undefined;
   getCapturedHwAccel: () => string | undefined;
   getCapturedSubtitleInput: () => SubtitlesInputSource | null | undefined;
+  getCapturedVideoInput: () => VideoInputSource | undefined;
 } {
   let capturedFrameState: FrameState | undefined;
   let capturedFfmpegState: FfmpegState | undefined;
   let capturedHwAccel: string | undefined;
   let capturedSubtitleInput: SubtitlesInputSource | null | undefined;
+  let capturedVideoInput: VideoInputSource | undefined;
 
   const factory: PipelineBuilderFactory = () => {
     const builderProxy: Record<string, unknown> = {};
     for (const method of [
-      'setVideoInputSource',
       'setAudioInputSource',
       'setWatermarkInputSource',
       'setConcatInputSource',
     ]) {
       builderProxy[method] = vi.fn().mockReturnValue(builderProxy);
     }
+
+    builderProxy.setVideoInputSource = vi.fn((input: VideoInputSource) => {
+      capturedVideoInput = input;
+      return builderProxy;
+    });
 
     builderProxy.setSubtitleInputSource = vi.fn(
       (input: SubtitlesInputSource | null) => {
@@ -230,6 +242,7 @@ function createCapturingPipelineBuilderFactory(): {
     getCapturedFfmpegState: () => capturedFfmpegState,
     getCapturedHwAccel: () => capturedHwAccel,
     getCapturedSubtitleInput: () => capturedSubtitleInput,
+    getCapturedVideoInput: () => capturedVideoInput,
   };
 }
 
@@ -467,6 +480,44 @@ describe('FfmpegStreamFactory', () => {
       // calculateForErrorStream (used by offline) doesn't set videoPreset
       expect(frameState!.videoPreset).toBeNull();
     });
+
+    test('createPlaceholderSession (offline) applies software deinterlace + scaling filters', async () => {
+      const config = makeTranscodeConfig({
+        hardwareAccelerationMode: 'none',
+        videoFormat: 'h264',
+      });
+      const { factory, getCapturedFfmpegState } =
+        createCapturingPipelineBuilderFactory();
+
+      const ffmpegSettings = {
+        ...makeFfmpegSettings(),
+        deinterlaceFilter: 'yadif=0',
+        scalingAlgorithm: 'lanczos',
+      };
+      const sut = new FfmpegStreamFactory(
+        makeMockFfmpegInfo(),
+        makeMockSettingsDB(ffmpegSettings),
+        factory,
+        makeMockChannelDB(),
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        config,
+        makeChannel(),
+      );
+
+      await sut.createPlaceholderSession({
+        kind: 'offline',
+        duration: dayjs.duration({ seconds: 10 }),
+        outputFormat: MpegTsOutputFormat,
+      });
+
+      const ffmpegState = getCapturedFfmpegState();
+      expect(ffmpegState).toBeDefined();
+      // Mirrors the error session: reuse the configured ffmpegSettings,
+      // not the FfmpegState class defaults.
+      expect(ffmpegState!.softwareDeinterlaceFilter).toBe('yadif=0');
+      expect(ffmpegState!.softwareScalingAlgorithm).toBe('lanczos');
+    });
   });
 
   describe('passthrough mode (HlsDirectV2 / remux)', () => {
@@ -701,6 +752,159 @@ describe('FfmpegStreamFactory', () => {
       expect(frameState.scaledSize.height).toBe(2160);
       expect(frameState.paddedSize.width).toBe(3840);
       expect(frameState.paddedSize.height).toBe(2160);
+    });
+  });
+
+  describe('audio renditions', () => {
+    function makeMultiAudioStreamDetails(): StreamDetails {
+      return {
+        ...makeStreamDetails(),
+        audioDetails: [
+          {
+            codec: 'aac',
+            channels: 2,
+            index: 1,
+            language: 'Japanese',
+            languageCodeISO6392: 'jpn',
+          },
+          {
+            codec: 'aac',
+            channels: 2,
+            index: 2,
+            language: 'English',
+            languageCodeISO6392: 'eng',
+          },
+        ],
+      };
+    }
+
+    function makeSut() {
+      return new FfmpegStreamFactory(
+        makeMockFfmpegInfo(),
+        makeMockSettingsDB(makeFfmpegSettings()),
+        createCapturingPipelineBuilderFactory().factory,
+        makeMockChannelDB(),
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        makeTranscodeConfig(),
+        makeChannel(),
+      );
+    }
+
+    test('transcode mode advertises no audio renditions', async () => {
+      const result = await makeSut().createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details: makeMultiAudioStreamDetails(),
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: HlsOutputFormat(defaultHlsOptions),
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls',
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      expect(result?.renditions.audio).toEqual([]);
+    });
+
+    test('passthrough mode advertises every source audio track', async () => {
+      const result = await makeSut().createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details: makeMultiAudioStreamDetails(),
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: HlsDirectOutputFormat(defaultHlsOptions),
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls_direct_v2',
+        },
+        lineupItem: makeLineupItem(),
+      });
+
+      expect(result?.renditions.audio.map((r) => r.language)).toEqual([
+        'jpn',
+        'eng',
+      ]);
+    });
+  });
+
+  describe('audio-only programs', () => {
+    function makeAudioOnlyStreamDetails(
+      placeholderImage?: HttpStreamSource,
+    ): StreamDetails {
+      return {
+        ...makeStreamDetails(),
+        videoDetails: undefined,
+        audioOnly: true,
+        placeholderImage,
+      };
+    }
+
+    function makeSut(factory: PipelineBuilderFactory) {
+      return new FfmpegStreamFactory(
+        makeMockFfmpegInfo(),
+        makeMockSettingsDB(makeFfmpegSettings()),
+        factory,
+        makeMockChannelDB(),
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        makeTranscodeConfig(),
+        makeChannel(),
+      );
+    }
+
+    const options = {
+      startTime: dayjs.duration(0),
+      duration: dayjs.duration({ seconds: 30 }),
+      outputFormat: HlsOutputFormat(defaultHlsOptions),
+      ptsOffset: 0,
+      realtime: true,
+      streamMode: 'hls',
+    } as const;
+
+    test('loops the placeholder image as the video input', async () => {
+      const { factory, getCapturedVideoInput } =
+        createCapturingPipelineBuilderFactory();
+      const placeholder = new HttpStreamSource(
+        'http://localhost:8000/images/generic-music-screen.png',
+      );
+
+      const result = await makeSut(factory).createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/track.flac'),
+          details: makeAudioOnlyStreamDetails(placeholder),
+        },
+        options,
+        lineupItem: makeLineupItem(),
+      });
+
+      expect(result).not.toBeNull();
+      const videoInput = getCapturedVideoInput();
+      expect(videoInput?.source).toBe(placeholder);
+      expect(videoInput?.streams[0]).toBeInstanceOf(StillImageStream);
+      expect(videoInput?.hasInputOption(InfiniteLoopInputOption)).toBe(true);
+    });
+
+    test('rejects an audio-only stream without a placeholder image', async () => {
+      const { factory } = createCapturingPipelineBuilderFactory();
+
+      await expect(
+        makeSut(factory).createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/track.flac'),
+            details: makeAudioOnlyStreamDetails(),
+          },
+          options,
+          lineupItem: makeLineupItem(),
+        }),
+      ).rejects.toThrow('Streams with no video are not currently supported.');
     });
   });
 

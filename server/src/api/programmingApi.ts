@@ -106,7 +106,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         req.params.id,
       );
       if (isNil(grouping)) {
-        const program = await req.serverCtx.programDB.getProgramById(
+        const program = await req.serverCtx.programDB.getLineupProgramById(
           req.params.id,
         );
         if (program) {

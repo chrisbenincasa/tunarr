@@ -17,11 +17,26 @@ import { ConnectionTracker } from './ConnectionTracker.ts';
 
 const ConcatSessionSuffix = '_concat';
 
-type SessionState = 'starting' | 'started' | 'error' | 'stopped' | 'init';
+type SessionState =
+  | 'starting'
+  | 'started'
+  | 'error'
+  | 'stopping'
+  | 'stopped'
+  | 'init';
 
 export type SessionOptions = {
   cleanupDelayMs?: number;
   stalenessMs?: number;
+};
+
+export type StopOptions = {
+  /**
+   * Wait for the session's ffmpeg to exit before removing its files. Server
+   * shutdown skips the wait, because ffmpeg can take 15s to die and the
+   * startup sweep removes whatever it leaves behind.
+   */
+  waitForExit?: boolean;
 };
 
 export type HlsSessionType = StrictExtract<
@@ -84,6 +99,11 @@ export abstract class Session<
         })
         .finally(() => this.emit('cleanup'));
     });
+  }
+
+  /** Unique to this session instance, unlike `id`, which is shared by every session for a channel and type. */
+  get instanceId() {
+    return this.#uniqueId;
   }
 
   get key() {
@@ -152,7 +172,7 @@ export abstract class Session<
    * End this shared session. This will stop the stream for all
    * participants.
    */
-  async stop() {
+  async stop(options: StopOptions = {}) {
     // Cancel any pending delayed cleanup so it cannot fire after this
     // session has been replaced by a new one at the same key.
     this.connectionTracker.cancelCleanup();
@@ -162,11 +182,11 @@ export abstract class Session<
         case 'starting':
         case 'started':
           this.logger.debug('Stopping stream session: %s', this.channel.uuid);
-          await this.stopInternal();
+          await this.stopAndMarkStopped(options);
           return;
         case 'error':
           this.logger.debug('Session already in error state. Cleaning it up.');
-          await this.stopInternal();
+          await this.stopAndMarkStopped(options);
           return;
         default:
           this.logger.debug(
@@ -178,7 +198,18 @@ export abstract class Session<
     });
   }
 
-  protected abstract stopInternal(): Promise<void>;
+  // SessionManager replaces a stopping session instead of handing it to new
+  // viewers, so the state must flip before teardown starts.
+  private async stopAndMarkStopped(options: StopOptions) {
+    this.state = 'stopping';
+    try {
+      await this.stopInternal(options);
+    } finally {
+      this.state = 'stopped';
+    }
+  }
+
+  protected abstract stopInternal(options: StopOptions): Promise<void>;
 
   // Override if there are conditions to wait for until the stream is ready to return
   protected waitForStreamReady(): Promise<Result<void>> {
@@ -208,6 +239,10 @@ export abstract class Session<
 
   get stopped() {
     return this.state === 'stopped';
+  }
+
+  get stoppingOrStopped() {
+    return this.state === 'stopping' || this.state === 'stopped';
   }
 
   get hasError() {

@@ -23,10 +23,12 @@ import {
   nth,
   sortBy,
   sumBy,
+  uniqBy,
 } from 'lodash-es';
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { Nilable } from '../../types/util.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import type {
   PaddedProgram,
   SlotSchedulerProgram,
@@ -40,6 +42,7 @@ import {
   createSlotIterators,
   createSlotProgramIterator,
   deduplicatePrograms,
+  partitionSchedulablePrograms,
   deduplicateSlotIds,
   distributeFlex,
   getFillerIteratorsForSlot,
@@ -104,7 +107,18 @@ export async function scheduleTimeSlots(
 
   // Load programs
   // TODO: include redirects and custom programs!
-  const allPrograms = deduplicatePrograms(programs);
+  const { schedulable: allPrograms, unschedulable } =
+    partitionSchedulablePrograms(deduplicatePrograms(programs));
+  if (unschedulable.length > 0) {
+    LoggerFactory.child({
+      caller: import.meta,
+      className: 'TimeSlotService',
+    }).warn(
+      'Skipping %d program(s) without a positive duration while generating a time slot schedule: %j',
+      unschedulable.length,
+      unschedulable.map((program) => program.uuid),
+    );
+  }
   const programMap = createProgramMap(allPrograms);
   const fillerIterators = createFillerIterators(
     schedule.slots,
@@ -117,15 +131,35 @@ export async function scheduleTimeSlots(
   const periodDuration = dayjs.duration(1, schedule.period);
   const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
 
+  // A slot's startTime is an offset into the period, but nothing enforces that:
+  // the editor can emit a daily slot that still carries a day multiplier. The
+  // cursor below is already reduced mod the period, so an unreduced slot never
+  // satisfies `slot.startTime <= currOffset` -- the schedule either throws
+  // outright or collapses into a single multi-period flex block. Reduce here so
+  // schedules already stored with such a value keep working.
+  const normalizeStartTime = (startTime: number) =>
+    ((startTime % periodMs) + periodMs) % periodMs;
+
+  // Normalizing can land two slots on the same offset (05:50 and 29:50 both
+  // become 05:50). Equal startTimes give the earlier one a zero-width window
+  // below, so it would air nothing and which of the two died would depend on
+  // array order. Collapse them here instead, keeping the first -- the same rule
+  // the editor uses when converting a weekly schedule to a daily one -- so what
+  // airs matches what the editor shows.
+  const normalizedSlots = uniqBy(
+    map(schedule.slots, (slot) => ({
+      ...slot,
+      startTime: normalizeStartTime(slot.startTime),
+    })),
+    (slot) => slot.startTime,
+  );
+
   const seenLinkGroups = new Set<string>();
   const sortedSlots = map(
-    sortBy(schedule.slots, (slot) => slot.startTime),
+    sortBy(normalizedSlots, (slot) => slot.startTime),
     (slot) =>
       new TimeSlotImpl(
-        {
-          ...slot,
-          startTime: slot.startTime,
-        },
+        slot,
         ('id' in slot ? slotIterators.get(slot.id) : undefined) ??
           createSlotProgramIterator(slot, programMap, random),
         random,
@@ -282,7 +316,8 @@ export async function scheduleTimeSlots(
     );
     let totalAddedDuration = paddedProgram.totalDuration;
 
-    const effectiveOverflow = currSlot.overflow ?? schedule.overflow;
+    const effectiveOverflow = currSlot.overflow ??
+      schedule.overflow ?? { type: 'duration', maxMs: 0 };
 
     for (;;) {
       const nextProgram = currSlot.getNextProgram({
@@ -322,19 +357,65 @@ export async function scheduleTimeSlots(
       );
     }
 
+    // Mid-roll breaks spend the slot's spare time, meaning the unallocated
+    // remainder plus every program's padding. They never run the slot past
+    // its end, because that would make the next slot late.
+    let breakBudgetMs = Math.max(
+      0,
+      slotDuration - sumBy(paddedPrograms, (pp) => pp.totalDuration - pp.padMs),
+    );
     let midRollOffset = 0;
     const finalPrograms: PaddedProgram[] = [];
     for (const pp of paddedPrograms) {
-      finalPrograms.push(
-        ...applyMidRollBreaks(
-          pp,
-          currSlot,
-          currSlot.midRollConfig,
-          random,
-          +timeCursor + midRollOffset,
-        ),
+      const unsplitDuration = pp.totalDuration;
+      const segments = applyMidRollBreaks(
+        pp,
+        currSlot,
+        currSlot.midRollConfig,
+        random,
+        +timeCursor + midRollOffset,
+        breakBudgetMs,
       );
-      midRollOffset += pp.totalDuration;
+      const breakMs = sumBy(segments, (s) => s.totalDuration) - unsplitDuration;
+      breakBudgetMs -= breakMs;
+
+      // A program's breaks come out of its own padding first. That keeps the
+      // programs after it on the pad grid.
+      const lastSegment = last(segments);
+      if (lastSegment) {
+        const fromPad = Math.min(breakMs, lastSegment.padMs);
+        lastSegment.padMs -= fromPad;
+        remainingTimeInSlot -= breakMs - fromPad;
+      }
+
+      finalPrograms.push(...segments);
+      midRollOffset += unsplitDuration;
+    }
+
+    // Breaks that outgrew their own program's padding take the rest from other
+    // programs' padding, starting at the end of the slot.
+    if (remainingTimeInSlot < 0) {
+      let deficit = -remainingTimeInSlot;
+      for (const pp of [...finalPrograms].reverse()) {
+        const taken = Math.min(deficit, pp.padMs);
+        pp.padMs -= taken;
+        deficit -= taken;
+        if (deficit <= 0) break;
+      }
+
+      // The break budget never exceeds the slot's padding, so a leftover
+      // deficit means that invariant broke and the slot overruns its end.
+      remainingTimeInSlot = -deficit;
+      if (deficit > 0) {
+        LoggerFactory.child({
+          caller: import.meta,
+          className: 'TimeSlotService',
+        }).warn(
+          'Mid-roll breaks overran the time slot at %s by %d ms',
+          timeCursor.toISOString(),
+          deficit,
+        );
+      }
     }
 
     // We have two options here if there is remaining time in the slot
@@ -357,7 +438,7 @@ export async function scheduleTimeSlots(
     } else {
       const lastProgram = last(finalPrograms);
       if (lastProgram) {
-        lastProgram.padMs += remainingTimeInSlot;
+        lastProgram.padMs += Math.max(0, remainingTimeInSlot);
       }
     }
 

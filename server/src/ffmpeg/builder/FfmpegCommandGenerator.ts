@@ -78,7 +78,11 @@ export class FfmpegCommandGenerator {
       !includedPaths.has(subtitleInputSource.path)
     ) {
       includedPaths.add(subtitleInputSource.path);
-      args.push('-i', subtitleInputSource.path);
+      args.push(
+        ...subtitleInputSource.getInputOptions(),
+        '-i',
+        subtitleInputSource.path,
+      );
     }
 
     if (concatInputSource) {

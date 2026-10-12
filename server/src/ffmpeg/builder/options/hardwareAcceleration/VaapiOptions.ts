@@ -20,6 +20,11 @@ export class VaapiHardwareAccelerationOption extends GlobalOption {
         `vaapi=va:${this.vaapiDevice}`,
         '-init_hw_device',
         'opencl=ocl@va',
+        // Without this, ffmpeg defaults filters like hwupload to the last
+        // initialized device (opencl), which breaks filters expecting VAAPI
+        // frames (e.g. the subtitle overlay path).
+        '-filter_hw_device',
+        'va',
       ];
       return this.canHardwardDecode
         ? [...initDevices, '-hwaccel', 'vaapi', '-hwaccel_device', 'va']

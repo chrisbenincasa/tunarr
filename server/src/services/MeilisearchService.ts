@@ -88,6 +88,7 @@ import { getAvailablePort } from '../util/net.ts';
 import { FileSystemService } from './FileSystemService.ts';
 import type { ISearchService } from './ISearchService.ts';
 import { SearchParser } from './search/SearchParser.ts';
+import { prepareSearchIndexDirectory } from './search/searchIndexDirectory.ts';
 
 type FlattenArrayTypes<T> = {
   [K in keyof T]-?: Exclude<T[K], undefined> extends Array<unknown>
@@ -415,6 +416,14 @@ export class MeilisearchService implements ISearchService {
       if (this.started) {
         return;
       }
+
+      // Clear out an index directory Meilisearch would refuse to open. This
+      // runs before the existence check so that a cleared directory falls
+      // through to the snapshot restore below.
+      if (isMainThread) {
+        await prepareSearchIndexDirectory(this.dbPath, this.logger);
+      }
+
       const indexFolderExists = await fileExists(this.dbPath);
 
       // Check for update.
@@ -1598,14 +1607,7 @@ export class MeilisearchService implements ISearchService {
       return;
     }
 
-    return await this.#client!.index(ProgramsIndex.name).deleteDocuments(ids);
-  }
-
-  async deleteMissing() {
-    const filter = `state = "missing"`;
-    return await this.#client!.index(ProgramsIndex.name).deleteDocuments({
-      filter,
-    });
+    return await this.client().index(ProgramsIndex.name).deleteDocuments(ids);
   }
 
   async deleteByMediaSourceIds(ids: string[]) {

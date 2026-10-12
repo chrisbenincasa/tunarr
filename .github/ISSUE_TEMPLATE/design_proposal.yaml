@@ -1,0 +1,46 @@
+name: Design Proposal
+description: Propose a design for a large or structural change before writing code
+title: "[Design]: "
+labels: ["triage", "design proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Some changes need an approved design before a PR. See [Design before code](https://tunarr.com/dev/contributing/#design-before-code). A maintainer approves a design by adding the `design approved` label. Then link this issue from your PR.
+
+        You must understand this design well enough to answer questions about it without an AI.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this solve, and who has it?
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Approach
+      description: How will it work? Which alternatives did you consider, and why did you reject them?
+    validations:
+      required: true
+  - type: textarea
+    id: changes
+    attributes:
+      label: What changes
+      description: Which parts of the codebase change? List any schema changes, new API endpoints or shapes, and new dependencies.
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: PR plan
+      description: How will you split the work into PRs that can each be reviewed on their own?
+    validations:
+      required: true
+  - type: textarea
+    id: ai-use
+    attributes:
+      label: AI use
+      description: Which AI tools helped write this proposal, and what did they do? Write "No AI tools used" if none.
+    validations:
+      required: true

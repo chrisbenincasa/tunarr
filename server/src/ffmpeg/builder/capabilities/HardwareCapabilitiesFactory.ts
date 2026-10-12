@@ -30,6 +30,7 @@ export class HardwareCapabilitiesFactory
       case HardwareAccelerationMode.Vaapi:
         return new VaapiHardwareCapabilitiesFactory(
           this.transcodeConfig,
+          this.ffmpegSettings.ffmpegExecutablePath,
         ).getCapabilities();
       case HardwareAccelerationMode.Qsv:
         return new QsvHardwareCapabilitiesFactory(

@@ -49,10 +49,10 @@ import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
 import type { MarkRequired } from 'ts-essentials';
-import { match } from 'ts-pattern';
 import { MaterializeLineupCommand } from '../../commands/MaterializeLineupCommand.ts';
 import { MaterializeProgramsCommand } from '../../commands/MaterializeProgramsCommand.ts';
 import type { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
+import { ScheduleValidationError } from '../../types/errors.ts';
 import {
   asyncMapToRecord,
   groupByUniqProp,
@@ -60,9 +60,10 @@ import {
   isNonEmptyString,
   mapReduceAsyncSeq,
   run,
+  wait,
 } from '../../util/index.ts';
 import { ProgramConverter } from '../converters/ProgramConverter.ts';
-import { MaterializedProgramRelations } from '../program/programRelations.ts';
+import { LineupProgramRelations } from '../program/programRelations.ts';
 import type {
   ContentItem,
   Lineup,
@@ -94,6 +95,7 @@ import type {
 } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
 import type { ChannelReadOpsRepository } from './ChannelReadOpsRepository.ts';
+import { condensedProgramToLineupItem } from './lineupItemConversion.ts';
 
 // Module-level cache shared within this module
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
@@ -102,43 +104,6 @@ const fileDbLocks = new MutexMap();
 const SqliteMaxDepthLimit = 1000;
 
 type ProgramRelationOperation = { operation: 'add' | 'remove'; id: string };
-
-function channelProgramToLineupItemFunc(
-  p: CondensedChannelProgram,
-): LineupItem {
-  return match(p)
-    .returnType<LineupItem>()
-    .with({ type: 'content' }, (program) => ({
-      type: 'content',
-      id: program.id,
-      durationMs: program.duration,
-      startOffsetMs: program.startOffsetMs,
-    }))
-    .with({ type: 'custom' }, (program) => ({
-      type: 'content',
-      durationMs: program.duration,
-      id: program.id,
-      customShowId: program.customShowId,
-    }))
-    .with({ type: 'filler' }, (program) => ({
-      type: 'content',
-      durationMs: program.duration,
-      id: program.id,
-      fillerListId: program.fillerListId,
-      fillerType: program.fillerType,
-    }))
-    .with({ type: 'redirect' }, (program) => ({
-      type: 'redirect',
-      channel: program.channel,
-      durationMs: program.duration,
-    }))
-    .with({ type: 'flex' }, (program) => ({
-      type: 'offline',
-      durationMs: program.duration,
-      fillerConfig: program.fillerConfig,
-    }))
-    .exhaustive();
-}
 
 /**
  * The outcome of a lineup update.
@@ -339,6 +304,11 @@ export class LineupRepository {
       }
     }
 
+    if (isDefined(newLineup.scheduleSeed)) {
+      data.scheduleSeed =
+        newLineup.scheduleSeed === null ? undefined : newLineup.scheduleSeed;
+    }
+
     if (isDefined(newLineup.onDemandConfig)) {
       data.onDemandConfig =
         newLineup.onDemandConfig === null
@@ -466,19 +436,33 @@ export class LineupRepository {
     await this.saveLineup(channelId, lineup);
   }
 
-  async removeProgramsFromAllLineups(programIds: string[]): Promise<void> {
-    if (isEmpty(programIds)) {
-      return;
+  /**
+   * Rewrites every reference to the given programs as flex, across all channel
+   * lineups. Returns the number of channels that actually changed.
+   *
+   * Accepts a Set so large callers (the empty-trash drain) can avoid rebuilding
+   * one per call.
+   */
+  async removeProgramsFromAllLineups(
+    programIds: ReadonlySet<string> | string[],
+  ): Promise<number> {
+    const programsToRemove =
+      programIds instanceof Set ? programIds : new Set(programIds);
+
+    if (programsToRemove.size === 0) {
+      return 0;
     }
 
     const lineups = await this.loadAllLineups();
 
-    const programsToRemove = new Set(programIds);
+    let changedChannels = 0;
     for (const [channelId, { lineup }] of Object.entries(lineups)) {
+      let changed = false;
       const newLineupItems: LineupItem[] = lineup.items.map((item) => {
         switch (item.type) {
           case 'content': {
             if (programsToRemove.has(item.id)) {
+              changed = true;
               return {
                 type: 'offline',
                 durationMs: item.durationMs,
@@ -492,20 +476,20 @@ export class LineupRepository {
         }
       });
 
-      await this.saveLineup(channelId, {
-        ...lineup,
-        items: newLineupItems,
-      });
+      if (changed) {
+        // saveLineup recalculates and persists channel.duration itself.
+        await this.saveLineup(channelId, {
+          ...lineup,
+          items: newLineupItems,
+        });
+        changedChannels++;
+      }
 
-      const duration = sum(newLineupItems.map((item) => item.durationMs));
-
-      await this.db
-        .updateTable('channel')
-        .set({ duration })
-        .where('uuid', '=', channelId)
-        .limit(1)
-        .executeTakeFirst();
+      // Give the event loop a turn so a large install stays responsive.
+      await wait(0);
     }
+
+    return changedChannels;
   }
 
   async loadAllLineups(): Promise<
@@ -711,7 +695,7 @@ export class LineupRepository {
           where: (fields, { eq }) => eq(fields.channelUuid, channelId),
           with: {
             program: {
-              with: MaterializedProgramRelations,
+              with: LineupProgramRelations,
             },
           },
         }),
@@ -944,12 +928,12 @@ export class LineupRepository {
       programs: ChannelProgram[],
       lineupPrograms: ChannelProgram[] = programs,
     ) => {
-      return map(lineupPrograms, channelProgramToLineupItemFunc);
+      return map(lineupPrograms, condensedProgramToLineupItem);
     };
 
     if (req.type === 'manual') {
       const newLineupItems = await run(async () => {
-        const newItems = req.lineup.map(channelProgramToLineupItemFunc);
+        const newItems = req.lineup.map(condensedProgramToLineupItem);
         if (req.append) {
           const existingLineup = await this.loadLineup(channel.uuid);
           return [...existingLineup.items, ...newItems];
@@ -958,6 +942,11 @@ export class LineupRepository {
         }
       });
 
+      // Check the merged lineup, so an append cannot carry forward a stored
+      // item that no longer resolves.
+      await this.assertProgramsExist(newLineupItems);
+      this.assertValidLineup(lineup, newLineupItems, lineup.schedule);
+
       const updatedChannel = this.timer.timeSync('updateChannel', () =>
         updateChannel(newLineupItems),
       );
@@ -965,6 +954,7 @@ export class LineupRepository {
       await this.timer.timeAsync('saveLineup', () =>
         this.saveLineup(id, {
           items: newLineupItems,
+          scheduleSeed: null,
           onDemandConfig: isDefined(lineup.onDemandConfig)
             ? {
                 ...lineup.onDemandConfig,
@@ -983,6 +973,7 @@ export class LineupRepository {
       // Held onto so the caller can build its response without re-querying and
       // re-materializing every program. See UpdateLineupResult.
       let materializedPrograms: Record<string, ContentProgram>;
+      let scheduleSeed: number[];
       if (req.type === 'time') {
         const { result } = await this.workerPoolProvider().queueTask({
           type: 'time-slots',
@@ -992,9 +983,11 @@ export class LineupRepository {
             schedule: req.schedule,
             seed: req.seed,
             startTime: channel.startTime,
+            strictValidation: true,
           },
         });
 
+        scheduleSeed = result.seed;
         materializedPrograms = await this.materializeLineupCommand.execute({
           lineup: result.lineup,
         });
@@ -1011,8 +1004,10 @@ export class LineupRepository {
             startTime: channel.startTime,
             schedule: req.schedule,
             seed: req.seed,
+            strictValidation: true,
           },
         });
+        scheduleSeed = result.seed;
         materializedPrograms = await this.materializeLineupCommand.execute({
           lineup: result.lineup,
         });
@@ -1023,11 +1018,13 @@ export class LineupRepository {
       }
 
       const newLineup = createNewLineup(programs);
+      this.assertValidLineup(lineup, newLineup, req.schedule);
 
       const updatedChannel = updateChannel(newLineup);
       await this.saveLineup(id, {
         items: newLineup,
         schedule: req.schedule,
+        scheduleSeed,
       });
 
       return {
@@ -1038,6 +1035,52 @@ export class LineupRepository {
     }
 
     return null;
+  }
+
+  // The saved-lineup schema also runs on write, but by then channel SQL has
+  // changed and the cached lineup is already mutated. Check first.
+  private assertValidLineup(
+    current: Lineup,
+    items: LineupItem[],
+    schedule: Lineup['schedule'],
+  ) {
+    const result = LineupSchema.safeParse({
+      ...current,
+      items,
+      startTimeOffsets: calculateStartTimeOffsets(items),
+      schedule,
+    });
+
+    if (!result.success) {
+      const details = result.error.issues
+        .slice(0, 5)
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('; ');
+      throw new ScheduleValidationError(
+        `The new lineup is invalid: ${details}`,
+      );
+    }
+  }
+
+  private async assertProgramsExist(items: readonly LineupItem[]) {
+    const ids = uniq(map(filter(items, isContentItem), (item) => item.id));
+    const found = new Set<string>();
+    for (const idChunk of chunk(ids, 500)) {
+      const rows = await this.drizzleDB.query.program.findMany({
+        where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
+        columns: { uuid: true },
+      });
+      for (const row of rows) {
+        found.add(row.uuid);
+      }
+    }
+
+    const missing = ids.filter((id) => !found.has(id));
+    if (missing.length > 0) {
+      throw new ScheduleValidationError(
+        `The lineup references ${missing.length} program(s) that do not exist: ${missing.slice(0, 10).join(', ')}`,
+      );
+    }
   }
 
   private async buildCondensedLineup(
@@ -1116,6 +1159,7 @@ export class LineupRepository {
           duration: item.durationMs,
           index: customShowIndexes[item.customShowId]![item.id] ?? -1,
           id: item.id,
+          startOffsetMs: item.startOffsetMs,
         };
       } else if (isNonEmptyString(item.fillerListId)) {
         p = {

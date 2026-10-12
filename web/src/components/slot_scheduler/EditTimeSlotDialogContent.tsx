@@ -2,7 +2,12 @@ import type {
   CustomShowProgramOption,
   FillerProgramOption,
 } from '@/helpers/slotSchedulerUtil';
-import { OneDayMillis } from '@/helpers/slotSchedulerUtil';
+import {
+  isSelectableForNewSlot,
+  slotDayOfWeek,
+  withSlotDayOfWeek,
+  withSlotTimeOfDay,
+} from '@/helpers/slotSchedulerUtil';
 import type { TimeSlotViewModel } from '@/model/TimeSlotModels.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
@@ -21,7 +26,7 @@ import {
 import { TimePicker } from '@mui/x-date-pickers';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { find, isNil, map, values } from 'lodash-es';
+import { isNil, map, values } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { match } from 'ts-pattern';
@@ -148,9 +153,7 @@ export const EditTimeSlotDialogContent = ({
 
   const updateSlotDay = useCallback(
     (newDayOfWeek: number, originalOnChange: (...args: unknown[]) => void) => {
-      const startTimeOfDay = getValues('startTime') % OneDayMillis;
-      const newStartTime = startTimeOfDay + newDayOfWeek * OneDayMillis;
-      originalOnChange(newStartTime);
+      originalOnChange(withSlotDayOfWeek(getValues('startTime'), newDayOfWeek));
     },
     [getValues],
   );
@@ -161,13 +164,16 @@ export const EditTimeSlotDialogContent = ({
       originalOnChange: (...args: unknown[]) => void,
     ) => {
       if (!fieldValue) return;
-      const h = fieldValue.hour();
-      const m = fieldValue.minute();
-      const multiplier = Math.floor(getValues('startTime') / OneDayMillis);
-      const millis = dayjs.duration({ hours: h, minutes: m }).asMilliseconds();
-      originalOnChange(millis + multiplier * OneDayMillis);
+      originalOnChange(
+        withSlotTimeOfDay(
+          getValues('startTime'),
+          fieldValue.hour(),
+          fieldValue.minute(),
+          currentPeriod,
+        ),
+      );
     },
-    [getValues],
+    [getValues, currentPeriod],
   );
 
   const slotType = formMethods.watch('type');
@@ -193,21 +199,28 @@ export const EditTimeSlotDialogContent = ({
   const newSlotForType = useCallback(
     (type: TimeSlotViewModel['type']) => {
       const startTime = getValues('startTime');
-      const opt = find(
-        programOptions,
-        (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
-      );
       return match(type)
         .returnType<TimeSlotViewModel>()
         .with('custom-show', () => {
+          const opt = programOptions
+            .filter(isSelectableForNewSlot)
+            .find(
+              (opt): opt is CustomShowProgramOption =>
+                opt.type === 'custom-show',
+            );
+          if (opt === undefined) {
+            throw new Error(
+              'Custom show slots are only offered when a custom show has programs',
+            );
+          }
           return {
             id: v4(),
             startTime,
             type: 'custom-show',
             order: 'next',
             direction: 'asc',
-            customShowId: opt!.customShowId,
-            title: opt!.description,
+            customShowId: opt.customShowId,
+            title: opt.description,
             customShow: null,
             isMissing: false,
           };
@@ -335,7 +348,7 @@ export const EditTimeSlotDialogContent = ({
                           <Select
                             {...field}
                             fullWidth
-                            value={Math.floor(field.value / OneDayMillis)}
+                            value={slotDayOfWeek(field.value)}
                             label={t`Day`}
                             onChange={(e) =>
                               updateSlotDay(

@@ -12,6 +12,7 @@ import {
   postApiChannelsByChannelIdScheduleSlots,
   postApiChannelsByChannelIdScheduleTimeSlots,
 } from '../../generated/sdk.gen.ts';
+import { getApiErrorMessage } from '../../helpers/apiError.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
 import type {
   TimeSlotForm,
@@ -135,8 +136,11 @@ export const useScheduleSlots = () => {
             };
           })
           .catch((e) => {
+            const serverMessage = getApiErrorMessage(e);
             snackbar.enqueueSnackbar(
-              t`There was an error generating time slots. Check the browser console log for more information`,
+              serverMessage !== undefined
+                ? t`There was an error generating slots. ${serverMessage}`
+                : t`There was an error generating time slots. Check the browser console log for more information`,
               {
                 variant: 'error',
               },

@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { FileStreamSource } from '../../../../stream/types.ts';
 import {
@@ -14,8 +16,16 @@ import {
 import { AudioFormats, FileOutputLocation } from '../../constants.ts';
 import { PixelFormatYuv420P } from '../../format/PixelFormat.ts';
 import { AudioInputSource } from '../../input/AudioInputSource.ts';
+import { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
 import { VideoInputSource } from '../../input/VideoInputSource.ts';
-import { AudioStream, VideoStream } from '../../MediaStream.ts';
+import { WatermarkInputSource } from '../../input/WatermarkInputSource.ts';
+import {
+  AudioStream,
+  ExternalSubtitleStream,
+  StillImageStream,
+  SubtitleMethods,
+  VideoStream,
+} from '../../MediaStream.ts';
 import { AudioState } from '../../state/AudioState.ts';
 import {
   DefaultPipelineOptions,
@@ -220,5 +230,178 @@ describe.skipIf(!binaries || !nvidiaCaps)(
         expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
       },
     );
+
+    // ffmpeg rebuilds the filter graph when a CUDA-decoded input wraps, and
+    // the rebuild fails with "Error reinitializing filters" (#2071).
+    //
+    // The input is remuxed to MP4 because ffmpeg never finishes an infinite
+    // loop over an MPEG-TS file, whatever the decoder.
+    for (const [width, height] of [
+      [1280, 720],
+      [1920, 1080],
+    ] as const) {
+      nvidiaTest(
+        `loops a short input past its end (${width}x${height})`,
+        async ({ binaryCapabilities, ffmpegVersion, resolvedNvidia }) => {
+          const inputPath = path.join(workdir, `loop_input_${width}.mp4`);
+          const remux = runFfmpegWithPipeline(binaries!.ffmpeg, [
+            '-y',
+            '-i',
+            Fixtures.video720p,
+            '-c',
+            'copy',
+            inputPath,
+          ]);
+          expect(remux.exitCode, remux.stderr).toBe(0);
+
+          const video = makeVideoInput(
+            inputPath,
+            FrameSize.withDimensions(1280, 720),
+          );
+          const audio = makeAudioInput(inputPath);
+
+          const builder = new NvidiaPipelineBuilder(
+            resolvedNvidia,
+            binaryCapabilities,
+            video,
+            audio,
+            null,
+            null,
+            null,
+          );
+
+          const frameState = new FrameState({
+            isAnamorphic: false,
+            scaledSize: FrameSize.withDimensions(width, height),
+            paddedSize: FrameSize.withDimensions(width, height),
+            infiniteLoop: true,
+          });
+
+          const outputPath = path.join(
+            workdir,
+            `nvidia_loop_${width}x${height}.ts`,
+          );
+          const pipeline = builder.build(
+            FfmpegState.create({
+              version: ffmpegVersion,
+              outputLocation: FileOutputLocation(outputPath, true),
+              duration: dayjs.duration({ seconds: 7 }),
+            }),
+            frameState,
+            DefaultPipelineOptions,
+          );
+
+          const { exitCode, stderr } = runFfmpegWithPipeline(
+            binaries!.ffmpeg,
+            pipeline.getCommandArgs(),
+          );
+
+          expect(
+            exitCode,
+            `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
+          ).toBe(0);
+
+          // The fixture is about 3 s long, so 7 s of output means it looped.
+          const probe = probeFile(binaries!.ffprobe, outputPath);
+          expect(Number(probe.format.duration)).toBeGreaterThan(6);
+        },
+      );
+    }
+
+    // #2272: the watermark path converts frames to yuv420p on the GPU, and
+    // the subtitle download must then ask hwdownload for yuv420p.
+    for (const { name, watermark, outputSize } of [
+      { name: 'no watermark', watermark: false, outputSize: FrameSize.FHD },
+      {
+        name: 'no watermark, scaled',
+        watermark: false,
+        outputSize: FrameSize.SevenTwenty,
+      },
+      { name: 'watermark', watermark: true, outputSize: FrameSize.FHD },
+      {
+        name: 'watermark, scaled',
+        watermark: true,
+        outputSize: FrameSize.SevenTwenty,
+      },
+    ]) {
+      nvidiaTest(
+        `burn text subtitles (${name})`,
+        async ({ binaryCapabilities, ffmpegVersion, resolvedNvidia }) => {
+          const srtPath = path.join(workdir, 'burn.srt');
+          await fs.writeFile(
+            srtPath,
+            '1\n00:00:00,500 --> 00:00:02,500\nHello world\n',
+          );
+
+          const video = makeVideoInput(Fixtures.video1080p, FrameSize.FHD);
+          const audio = makeAudioInput(Fixtures.video1080p);
+          const watermarkInput = watermark
+            ? new WatermarkInputSource(
+                new FileStreamSource(Fixtures.watermark),
+                StillImageStream.create({
+                  frameSize: FrameSize.withDimensions(100, 100),
+                  index: 0,
+                }),
+                {
+                  enabled: true,
+                  position: 'bottom-right',
+                  width: 10,
+                  verticalMargin: 5,
+                  horizontalMargin: 5,
+                  duration: 0,
+                  opacity: 41,
+                },
+              )
+            : null;
+          const subtitles = new SubtitlesInputSource(
+            new FileStreamSource(srtPath),
+            [new ExternalSubtitleStream('subrip', SubtitleMethods.Burn)],
+            SubtitleMethods.Burn,
+          );
+
+          const builder = new NvidiaPipelineBuilder(
+            resolvedNvidia,
+            binaryCapabilities,
+            video,
+            audio,
+            null,
+            watermarkInput,
+            subtitles,
+          );
+
+          const outputPath = path.join(
+            workdir,
+            `nvidia_burn_subs_${watermark}_${outputSize.height}.ts`,
+          );
+          const pipeline = builder.build(
+            FfmpegState.create({
+              version: ffmpegVersion,
+              outputLocation: FileOutputLocation(outputPath, true),
+            }),
+            new FrameState({
+              isAnamorphic: false,
+              scaledSize: outputSize,
+              paddedSize: outputSize,
+            }),
+            DefaultPipelineOptions,
+          );
+
+          const { exitCode, stderr } = runFfmpegWithPipeline(
+            binaries!.ffmpeg,
+            pipeline.getCommandArgs(),
+          );
+
+          expect(
+            exitCode,
+            `Pipeline command failed: ${pipeline.getCommandArgs().join(' ')}\n${stderr}`,
+          ).toBe(0);
+
+          const probe = probeFile(binaries!.ffprobe, outputPath);
+          expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(
+            true,
+          );
+        },
+      );
+    }
   },
 );

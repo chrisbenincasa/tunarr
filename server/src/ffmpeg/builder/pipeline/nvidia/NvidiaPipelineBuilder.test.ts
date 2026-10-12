@@ -24,6 +24,7 @@ import { VideoInputSource } from '../../input/VideoInputSource.ts';
 import { WatermarkInputSource } from '../../input/WatermarkInputSource.ts';
 import {
   EmbeddedSubtitleStream,
+  ExternalSubtitleStream,
   StillImageStream,
   SubtitleMethods,
   VideoStream,
@@ -168,6 +169,65 @@ describe('NvidiaPipelineBuilder', () => {
       );
     expect(deinterlace?.filter).toBe('yadif=1');
   });
+
+  // ffmpeg fails to rebuild the filter graph when a CUDA-decoded input loops.
+  test.each([
+    { infiniteLoop: false, hwDecode: true },
+    { infiniteLoop: true, hwDecode: false },
+  ])(
+    'uses hardware decode = $hwDecode when infiniteLoop = $infiniteLoop',
+    ({ infiniteLoop, hwDecode }) => {
+      const capabilities = new NvidiaHardwareCapabilities('RTX 2080 Ti', 75);
+      const video = VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video.mkv'),
+        VideoStream.create({
+          codec: 'h264',
+          displayAspectRatio: '16:9',
+          frameSize: FrameSize.FHD,
+          index: 0,
+          pixelFormat: new PixelFormatYuv420P(),
+          providedSampleAspectRatio: null,
+          colorFormat: ColorFormat.unknown,
+        }),
+      );
+
+      const builder = new NvidiaPipelineBuilder(
+        capabilities,
+        EmptyFfmpegCapabilities,
+        video,
+        null,
+        null,
+        null,
+        null,
+      );
+
+      const out = builder.build(
+        FfmpegState.create({
+          version: {
+            versionString: 'n7.1.1',
+            majorVersion: 7,
+            minorVersion: 1,
+            patchVersion: 1,
+            isUnknown: false,
+          },
+        }),
+        new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.FHD,
+          paddedSize: FrameSize.FHD,
+          pixelFormat: new PixelFormatYuv420P(),
+          infiniteLoop,
+        }),
+        DefaultPipelineOptions,
+      );
+
+      const args = out.getCommandArgs().join(' ');
+      expect(args.includes('-hwaccel cuda')).toBe(hwDecode);
+      expect(args.includes('-hwaccel_output_format cuda')).toBe(hwDecode);
+      expect(args.includes('-stream_loop -1')).toBe(infiniteLoop);
+      expect(args).toContain('-c:v h264_nvenc');
+    },
+  );
 
   test('should work with hardware filters disabled', () => {
     const capabilities = new NvidiaHardwareCapabilities('RTX 2080 Ti', 75);
@@ -636,5 +696,80 @@ describe('NvidiaPipelineBuilder', () => {
     });
 
     console.log(out.getCommandArgs().join(' '));
+  });
+
+  // hwdownload can only output the CUDA frame's sw_format, so after
+  // scale_cuda=format=yuv420p the download must ask for yuv420p. (#2272)
+  test('text subtitle burn-in with watermark downloads the converted format', () => {
+    const capabilities = new NvidiaHardwareCapabilities('RTX 2080 Ti', 75);
+    const video = VideoInputSource.withStream(
+      new FileStreamSource('/path/to/video.mp4'),
+      VideoStream.create({
+        codec: 'h264',
+        displayAspectRatio: '16:9',
+        frameSize: FrameSize.FHD,
+        index: 0,
+        pixelFormat: new PixelFormatYuv420P(),
+        providedSampleAspectRatio: null,
+        colorFormat: ColorFormat.unknown,
+      }),
+    );
+
+    const watermark = new WatermarkInputSource(
+      new FileStreamSource('/path/to/watermark.png'),
+      StillImageStream.create({
+        frameSize: FrameSize.withDimensions(800, 600),
+        index: 0,
+      }),
+      {
+        duration: 0,
+        enabled: true,
+        horizontalMargin: 5,
+        opacity: 41,
+        position: 'bottom-right',
+        verticalMargin: 5,
+        width: 10,
+      },
+    );
+
+    const builder = new NvidiaPipelineBuilder(
+      capabilities,
+      EmptyFfmpegCapabilities,
+      video,
+      null,
+      null,
+      watermark,
+      new SubtitlesInputSource(
+        new FileStreamSource('/path/to/subs.srt'),
+        [new ExternalSubtitleStream('subrip', SubtitleMethods.Burn)],
+        SubtitleMethods.Burn,
+      ),
+    );
+
+    const out = builder.build(
+      FfmpegState.create({
+        version: {
+          versionString: 'n7.1.1',
+          majorVersion: 7,
+          minorVersion: 1,
+          patchVersion: 1,
+          isUnknown: false,
+        },
+      }),
+      new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.FHD,
+        paddedSize: FrameSize.FHD,
+        pixelFormat: new PixelFormatYuv420P(),
+      }),
+      DefaultPipelineOptions,
+    );
+
+    const args = out.getCommandArgs();
+    const filterComplex = args[args.indexOf('-filter_complex') + 1];
+    expect(filterComplex).toContain(
+      'scale_cuda=format=yuv420p,hwdownload,format=yuv420p,subtitles=',
+    );
+    expect(filterComplex).not.toContain('format=nv12,subtitles=');
   });
 });

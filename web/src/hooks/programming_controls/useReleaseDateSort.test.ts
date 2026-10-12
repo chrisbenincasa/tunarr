@@ -6,6 +6,7 @@ import { map } from 'lodash-es';
 import {
   makeContentProgram,
   makeEpisode,
+  makeMovie,
   makeSeasonGrouping,
 } from '../../test/programFixtures.ts';
 
@@ -41,4 +42,23 @@ describe('useReleaseDateSort', () => {
 
     expect(map(sortedPrograms, 'id')).toEqual([two, three, one]);
   });
+
+  test.each(['asc', 'desc'] as const)(
+    'moves programs without a release date to the bottom (%s)',
+    (sortOrder) => {
+      const movie = (id: string, releaseDate?: number): ChannelProgram =>
+        makeContentProgram(makeMovie({ uuid: id, releaseDate }), 0, id);
+
+      const sortedPrograms = sortProgramsByReleaseDate(
+        [movie('undated'), movie('old', 100), movie('new', 200)],
+        sortOrder,
+      );
+
+      expect(map(sortedPrograms, 'id')).toEqual(
+        sortOrder === 'asc'
+          ? ['old', 'new', 'undated']
+          : ['new', 'old', 'undated'],
+      );
+    },
+  );
 });

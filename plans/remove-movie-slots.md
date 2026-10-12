@@ -1,0 +1,147 @@
+# Remove movie slots
+
+## Why
+
+A `movie` slot has no source of its own. Its pool is every `movie`,
+`music_video` and `other_video` program the scheduler is handed: the channel's
+saved programs plus everything pulled in from the schedule's filler lists,
+custom shows, smart collections and shows. A filler list of commercials attached
+to any slot therefore lets the movie slot schedule those commercials as
+programs. Working around the pool's semantics is a losing game, so movie slots
+go away. Users schedule movies by putting them in a custom show and scheduling
+that, which supports mid-roll breaks as of #2213.
+
+## Status
+
+- Not started. Branch `fix/remove-movie-slots` exists but has no commits.
+- Prerequisite #2213 (mid-roll breaks on custom-show slots) is merged.
+- Custom show title sort and release date sort fixes (Follow-ups) are on
+  `fix/filler-seek-past-eof` (`3eac3910`).
+- Interim fix, branch `fix/movie-slot-filler-leak`: `createProgramMap` leaves
+  programs in a filler list the schedule references out of the movie pool.
+  Known gap: a lineup's filler items are content items with `fillerListId` and
+  are saved as channel programs. If their filler list is later removed from
+  the schedule, they rejoin the movie pool on the next regeneration. The
+  migration below excludes them; the interim fix does not.
+
+## 1. Migration: lineup schema v6 to v7
+
+`MovieSlotToCustomShowMigration` in `server/src/migration/lineups/`, registered
+in `ChannelLineupMigrator`'s `MigrationSteps`. Bump `CurrentLineupSchemaVersion`
+to 7.
+
+**Interface.** `ChannelLineupMigration.migrate(schema)` gets an optional second
+argument, `{ channelId }`, passed by `ChannelLineupMigrator.runSingle`.
+Existing migrations ignore it.
+
+**What goes into the show.** The channel's saved programs
+(`getChannelAndPrograms`) of type `movie`, `music_video` or `other_video`, minus:
+
+- programs that appear in the lineup only as filler (content items with a
+  `fillerListId` or `fillerType`)
+- programs in a filler list the schedule uses (slot filler or filler slots),
+  which drops commercials that already leaked into a saved lineup
+
+This is narrower than today's pool, which also takes movies from custom shows,
+smart collections and shows the schedule references. Those are left out.
+
+**Snapshot, not live.** A movie slot picks up movies added to the channel later.
+The custom show is fixed at migration time. Release notes and docs must say so.
+
+**One show per distinct sort.** Usually one per channel.
+
+| Movie slot order        | Show built in                      | Custom-show slot order |
+| ----------------------- | ---------------------------------- | ---------------------- |
+| `next`, `chronological` | air date, in the slot's direction  | `next`                 |
+| `alphanumeric`          | title, in the slot's direction     | `next`                 |
+| `ordered_shuffle`       | air date, in the slot's direction  | `ordered_shuffle`      |
+| `shuffle`               | any show already built, else air date ascending | `shuffle` |
+
+Sort with the scheduler's own orderers (`getProgramOrderer`) so the order
+matches what the movie slot produced. Custom-show slots ignore `direction`, so
+the direction has to be baked into the show.
+
+Shows are named `<Channel> Movies`, with a sort suffix only when a channel
+needs more than one. Slots that shared one movie iterator (key
+`movie_${order}`) still share one, since custom-show slots share an iterator
+per show and order (`custom-show_${id}_${order}`).
+
+**The slot keeps everything else:** id, filler, mid-roll, weight, cooldown,
+duration spec, start time and links. Only `type`, `customShowId` and `order`
+change.
+
+**Empty pool.** The slot becomes a `flex` slot and the migration logs a
+warning. An empty custom show would fail schedule validation on save.
+
+**Reruns.** If the migration fails after creating a show, the lineup stays on
+v6 and the migration runs again on the next startup. It reuses an existing
+custom show with the same name instead of creating a duplicate. (Proposed;
+confirm.)
+
+**Tests.** DB-backed, following `server/src/db/CustomShowDB.test.ts`:
+
+- show contents and order for each order and direction
+- lineup-only filler and filler-list members are excluded
+- slot rewrite keeps every other field
+- empty pool becomes flex
+- a schedule without movie slots is untouched
+- a channel with no schedule is untouched
+- the result parses under the new `LineupSchema`
+- a rerun reuses the show
+
+## 2. Removal
+
+- **types:** `MovieProgrammingSlotSchema`, `BaseMovieProgrammingSlot`, the time
+  and random slot variants, and their union members (`CommonSlots.ts`,
+  `TimeSlots.ts`, `RandomSlots.ts`).
+- **server:** the `movie` bucket and `ContentSlotId` members in
+  `createProgramMap`, the `movie` arm of the slot iterator, the
+  `movie_${order}` iterator key and `slotIteratorKey` case, `case 'movie'` arms
+  in `RandomSlotsService.validateSchedule` and `SlotSchedulerHelper`. Narrow
+  `getContentProgramIterator` to show slots. Tests that build movie slots move
+  to show or custom-show slots.
+- **web:** slot view models (`CommonSlotModels.ts`, `SlotModels.ts`,
+  `TimeSlotModels.ts`), `slotSchedulerUtil.ts` and `slots.ts` helpers, the add
+  slot buttons' movie defaults, both edit dialogs, `EditSlotProgrammingForm`,
+  `SlotLinkingControl`, `SlotFillerDialogPanel`, `TimeSlotTable`, `useSlotName`,
+  `useSlotProgramOptions`, `useScheduledSlotProgramDetails`, and their tests.
+  The slot type picker gets a hint pointing to custom shows for movies.
+- **docs:** `docs/configure/scheduling/slot-linking.md` and the scheduling
+  pages, plus how to schedule movies with a custom show.
+- Regenerate the OpenAPI spec and web client. Re-extract translations.
+
+## 3. Rollout
+
+- Merge after #2213, or migrated movie slots with mid-roll lose their breaks.
+- The API rejects `movie` slots, so a browser still running the old web app
+  gets a validation error when it saves a schedule until it reloads.
+- `infinite-schedules` will conflict in `types/src/api/CommonSlots.ts` when it
+  rebases.
+
+## Open decisions
+
+1. The migrated show is a snapshot and doesn't follow movies added to the
+   channel later. Proposed: accept it, and document it.
+2. Rerun safety by reusing a same-named show. Proposed: yes.
+3. One PR (migration and removal) or two (migration and server, then web).
+   Proposed: one, since the web won't compile against the new types without
+   the UI changes.
+
+## Follow-ups
+
+Custom show sorting, so users can re-sort a migrated show and schedule it with
+`next`. The custom show editor's Tools menu (`CustomShowSortToolsMenu`) has
+Random, Release Date, Block Shuffle and Clear All, and the program list
+supports drag-and-drop reordering. Gaps:
+
+- **No title sort.** The channel editor has one (`useAlphaSort` /
+  `sortPrograms`), but custom shows don't. Add a `Title` entry using the same
+  sort, like `useCustomShowReleaseDateSort` does for release date. Without it,
+  a migrated `alphanumeric` show can't be re-sorted by title after edits.
+- **Release Date label can be wrong.** Picking Release Date from the menu while
+  it is already ascending sorts descending but keeps the "(asc)" label
+  (`CustomShowSortToolsMenu.tsx`, the menu item's `onClick`).
+- **Undated programs sort first, not last, when ascending.** The web orderer
+  uses `releaseDate ?? 0`, though the tooltip says undated items move to the
+  bottom. The movie slot's orderer treats a missing date as now, so they sorted
+  last there.

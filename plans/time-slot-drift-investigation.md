@@ -165,6 +165,6 @@ These were asked in conversation but not yet answered:
 
 ## Note
 
-`.claude/plans/slot-save-skew-plan.md` is the older plan from the same
+`plans/slot-save-skew-plan.md` is the older plan from the same
 conversation. Parts of it are now stale or wrong — see the correction note at the
 top of that file.

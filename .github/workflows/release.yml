@@ -1,6 +1,6 @@
 name: Release (CalVer)
 
-# CalVer release flow. See .claude/plans/versioning-repair-plan.md for why.
+# CalVer release flow. See plans/versioning-repair-plan.md for why.
 # release-comment.yml comments on shipped PRs and issues once this publishes.
 #
 # Versions are YYYY.M.PATCH, unpadded, because that form is still valid semver:

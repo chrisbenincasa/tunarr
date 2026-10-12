@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import constants from '@tunarr/shared/constants';
 import type { TimeSlotSchedule } from '@tunarr/types/api';
 import dayjs from '@/util/dayjs.js';
-import { maxBy, minBy } from 'lodash-es';
+import { maxBy, minBy, sumBy } from 'lodash-es';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createFakeProgramOrm } from '../../testing/fakes/entityCreators.ts';
 import { groupByUniq } from '../../util/index.ts';
@@ -1608,6 +1608,72 @@ describe('TimeSlotService', () => {
         expect(result.lineup).toBeDefined();
         // May have flex time or may be empty
       });
+
+      const midnight = dayjs('2024-01-01T00:00:00.000Z');
+      const movieProgram = (
+        uuid: string,
+        duration: number,
+      ): SlotSchedulerProgram => ({
+        ...createFakeProgramOrm({ uuid, type: 'movie', duration }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      });
+      const singleSlotSchedule = (
+        slot: TimeSlotSchedule['slots'][number],
+      ): TimeSlotSchedule => ({
+        type: 'time',
+        flexPreference: 'end',
+        maxDays: 1,
+        padMs: 60 * 60 * 1000,
+        slots: [slot],
+        period: 'day',
+        latenessMs: 0,
+        overflow: { type: 'duration', maxMs: 0 },
+        timeZoneOffset: 0,
+      });
+
+      test('an empty custom show slot fills its time with flex', async () => {
+        const result = await scheduleTimeSlots(
+          singleSlotSchedule({
+            id: randomUUID(),
+            startTime: 0,
+            type: 'custom-show',
+            customShowId: randomUUID(),
+            order: 'next',
+            direction: 'asc',
+          }),
+          [],
+          [42],
+          0,
+          midnight,
+        );
+
+        expect(result.lineup.length).toBeGreaterThan(0);
+        expect(result.lineup.every((item) => item.type === 'flex')).toBe(true);
+      });
+
+      test('zero-duration content does not stall a slot', async () => {
+        const result = await scheduleTimeSlots(
+          singleSlotSchedule({
+            id: randomUUID(),
+            startTime: 0,
+            type: 'movie',
+            order: 'next',
+            direction: 'asc',
+          }),
+          [movieProgram('zero', 0), movieProgram('valid', 20 * 60 * 1000)],
+          [42],
+          0,
+          midnight,
+        );
+
+        const ids = result.lineup.flatMap((item) =>
+          item.type === 'content' && 'id' in item && item.id ? [item.id] : [],
+        );
+        expect(ids.length).toBeGreaterThan(0);
+        expect(ids).not.toContain('zero');
+      });
     });
 
     describe('program deduplication', () => {
@@ -1918,6 +1984,118 @@ describe('TimeSlotService', () => {
         startTime,
       );
       expect(countFirstSlotContent(resultWithOverflow)).toBe(5);
+    });
+  });
+
+  describe('per-slot lateness', () => {
+    // A 100m special in a 30m slot runs through the 18:30 slot and ends at
+    // 19:40, 10m into the 19:30 slot. That slot's own lateness, falling back
+    // to the schedule's, decides whether it starts late or is skipped.
+    const MIN = 60 * 1000;
+    const HOUR = 60 * MIN;
+
+    // Local midnight on a fixed non-DST date, so the 18:00 window never
+    // depends on when or where the test runs.
+    const START = dayjs('2025-01-06');
+
+    const mkEpisodes = (show: string, durations: number[]) =>
+      durations.map((duration, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `${show}-ep${i + 1}`,
+          type: 'episode' as const,
+          duration,
+          episode: i + 1,
+          tvShowUuid: show,
+          show: { uuid: show },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }));
+
+    const programs: SlotSchedulerProgram[] = [
+      ...mkEpisodes('anime', [100 * MIN, 22 * MIN, 22 * MIN]),
+      ...mkEpisodes('showB', Array<number>(5).fill(25 * MIN)),
+      ...mkEpisodes('showC', Array<number>(5).fill(25 * MIN)),
+    ];
+
+    const showSlot = (startTime: number, showId: string) => ({
+      id: randomUUID(),
+      startTime,
+      type: 'show' as const,
+      showId,
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      seasonExcludeFilter: [],
+    });
+
+    const makeSchedule = (
+      globalLatenessMs: number,
+      slotCLatenessMs: number | undefined,
+    ): TimeSlotSchedule => ({
+      type: 'time',
+      flexPreference: 'end',
+      maxDays: 1,
+      padMs: 5 * MIN,
+      latenessMs: globalLatenessMs,
+      overflow: { type: 'duration', maxMs: 0 },
+      period: 'day',
+      timeZoneOffset: 0,
+      slots: [
+        showSlot(18 * HOUR, 'anime'),
+        showSlot(18.5 * HOUR, 'showB'),
+        { ...showSlot(19.5 * HOUR, 'showC'), latenessMs: slotCLatenessMs },
+        { id: randomUUID(), startTime: 20 * HOUR, type: 'flex' },
+      ],
+    });
+
+    const run = async (
+      globalLatenessMs: number,
+      slotCLatenessMs: number | undefined,
+    ) => {
+      const result = await scheduleTimeSlots(
+        makeSchedule(globalLatenessMs, slotCLatenessMs),
+        programs,
+        undefined,
+        0,
+        START,
+      );
+      const sixPm = START.add(18, 'hour').valueOf();
+      const content: { id: string; at: number; duration: number }[] = [];
+      let t = result.startTime;
+      for (const item of result.lineup) {
+        if (item.type === 'content' && t >= sixPm && t < sixPm + 2 * HOUR) {
+          content.push({ id: item.id, at: t - sixPm, duration: item.duration });
+        }
+        t += item.duration;
+      }
+      return content;
+    };
+
+    test('an overrunning program plays in full and late slots fall back to the schedule lateness', async () => {
+      const content = await run(0, undefined);
+
+      expect(content).toEqual([
+        { id: 'anime-ep1', at: 0, duration: 100 * MIN },
+      ]);
+    });
+
+    test('a slot with its own lateness starts late instead of being skipped', async () => {
+      const content = await run(0, 15 * MIN);
+
+      expect(content.map((c) => ({ id: c.id, at: c.at }))).toEqual([
+        { id: 'anime-ep1', at: 0 },
+        { id: 'showC-ep1', at: 100 * MIN },
+      ]);
+    });
+
+    test('a slot lateness of zero overrides a larger schedule lateness', async () => {
+      const lenient = await run(30 * MIN, undefined);
+      const strict = await run(30 * MIN, 0);
+
+      expect(lenient.some((c) => c.id === 'showC-ep1')).toBe(true);
+      expect(strict.map((c) => c.id)).toEqual(['anime-ep1']);
     });
   });
 
@@ -3414,5 +3592,566 @@ describe('slot filler budgeting', () => {
       6 * 60 * oneMin,
     );
     expect(straddlers).toEqual([]);
+  });
+});
+
+describe('empty filler lists', () => {
+  const makeFillerPrograms = (fillerListId: string, count: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `${fillerListId}-filler-${i}`,
+        title: `Filler ${i}`,
+        type: 'movie' as const,
+        duration: 2 * 60 * 1000,
+      }),
+      parentFillerLists: [fillerListId],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  test('a filler list with no programs is skipped, not fatal', () => {
+    const populatedList = randomUUID();
+    const emptyList = randomUUID();
+
+    const slot = {
+      id: randomUUID(),
+      startTime: 0,
+      type: 'movie' as const,
+      order: 'next' as const,
+      direction: 'asc' as const,
+      filler: [
+        {
+          types: ['pre' as const],
+          fillerListId: populatedList,
+          fillerOrder: 'shuffle_prefer_short' as const,
+        },
+        {
+          types: ['fallback' as const],
+          fillerListId: emptyList,
+          fillerOrder: 'shuffle_prefer_short' as const,
+        },
+      ],
+    };
+
+    const random = new Random(MersenneTwister19937.seed(42));
+    // Note that no programs exist for emptyList.
+    const programMap = createProgramMap(makeFillerPrograms(populatedList, 5));
+
+    const iterators = createFillerIterators([slot], programMap, random);
+
+    expect(Object.keys(iterators)).toHaveLength(1);
+    expect(
+      Object.keys(getFillerIteratorsForSlot(slot, iterators, new Set())),
+    ).toEqual([populatedList]);
+  });
+
+  test('scheduling a slot that references an empty filler list succeeds', async () => {
+    const populatedList = randomUUID();
+    const emptyList = randomUUID();
+
+    const programs: SlotSchedulerProgram[] = [
+      {
+        ...createFakeProgramOrm({
+          uuid: 'movie1',
+          title: 'Movie 1',
+          type: 'movie',
+          duration: 60 * 60 * 1000,
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      },
+      ...makeFillerPrograms(populatedList, 5),
+    ];
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      flexPreference: 'distribute',
+      maxDays: 1,
+
+      // Padding is aligned to UTC, so a pad longer than 15 minutes can skip
+      // local midnight in zones like UTC+9.
+      padMs: 15 * 60 * 1000,
+      slots: [
+        {
+          id: randomUUID(),
+          startTime: 0,
+          type: 'movie',
+          order: 'next',
+          direction: 'asc',
+          filler: [
+            {
+              types: ['pre'],
+              fillerListId: populatedList,
+              fillerOrder: 'shuffle_prefer_short',
+            },
+            {
+              types: ['fallback'],
+              fillerListId: emptyList,
+              fillerOrder: 'shuffle_prefer_short',
+            },
+          ],
+        },
+      ],
+      period: 'day',
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      programs,
+      undefined,
+      0,
+      dayjs('2025-01-06'),
+    );
+
+    expect(result.lineup.length).toBeGreaterThan(0);
+    expect(
+      result.lineup.some(
+        (item) => item.type === 'content' && item.id === 'movie1',
+      ),
+    ).toBe(true);
+  });
+
+  test('a dedicated filler slot with an empty list flexes instead of throwing', async () => {
+    const emptyList = randomUUID();
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      flexPreference: 'distribute',
+      maxDays: 1,
+      padMs: 30 * 60 * 1000,
+      slots: [
+        {
+          id: randomUUID(),
+          startTime: 0,
+          type: 'filler',
+          fillerListId: emptyList,
+          order: 'shuffle_prefer_short',
+          decayFactor: 0.5,
+          recoveryFactor: 0.05,
+          durationWeighting: 'linear',
+        },
+      ],
+      period: 'day',
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+    };
+
+    const result = await scheduleTimeSlots(schedule, []);
+
+    expect(result.lineup.every((item) => item.type === 'flex')).toBe(true);
+  });
+});
+
+describe('mid-roll break budgeting', () => {
+  const oneMin = 60 * 1000;
+  const oneHour = 60 * oneMin;
+  const midnight = dayjs('2024-01-01T00:00:00.000Z').utc();
+
+  type LineupItem = {
+    type: string;
+    id?: string;
+    duration: number;
+    startOffsetMs?: number;
+    fillerType?: string;
+    fillerConfig?: { origin?: string };
+  };
+
+  type TimedItem = { item: LineupItem; start: number };
+
+  const makeEpisodes = (
+    showId: string,
+    count: number,
+    durationMs: number,
+  ): SlotSchedulerProgram[] =>
+    Array.from({ length: count }, (_, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `${showId}-ep${i + 1}`,
+        title: `${showId} Episode ${i + 1}`,
+        type: 'episode',
+        duration: durationMs,
+        episode: i + 1,
+        tvShowUuid: showId,
+        show: { uuid: showId },
+      }),
+      parentFillerLists: [],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  const makeFillers = (
+    fillerListId: string,
+    durations: number[],
+  ): SlotSchedulerProgram[] =>
+    durations.map((durationMs, i) => ({
+      ...createFakeProgramOrm({
+        uuid: `mid-${i}`,
+        title: `Mid ${i}`,
+        type: 'movie',
+        duration: durationMs,
+      }),
+      parentFillerLists: [fillerListId],
+      parentCustomShows: [],
+      parentSmartCollections: [],
+    }));
+
+  // Absolute start time of every item, summed from the lineup's start time.
+  const withStarts = (lineup: LineupItem[], startTime: number): TimedItem[] => {
+    let t = startTime;
+    return lineup.map((item) => {
+      const start = t;
+      t += item.duration;
+      return { item, start };
+    });
+  };
+
+  const isBreak = (item: LineupItem) =>
+    (item.type === 'filler' && item.fillerType === 'mid') ||
+    (item.type === 'flex' && item.fillerConfig?.origin === 'midroll');
+
+  // Episodes start at the beginning of the program, not a mid-roll segment.
+  const isEpisodeStart = (item: LineupItem, showId: string) =>
+    item.type === 'content' &&
+    !!item.id?.startsWith(`${showId}-`) &&
+    (item.startOffsetMs ?? 0) === 0;
+
+  // Items that start inside [from, to).
+  const itemsBetween = (items: TimedItem[], from: number, to: number) =>
+    items.filter(({ start }) => start >= from && start < to);
+
+  // Total duration of each run of consecutive break items.
+  const breakLengths = (items: TimedItem[]) => {
+    const lengths: number[] = [];
+    let inBreak = false;
+    for (const { item } of items) {
+      if (!isBreak(item)) {
+        inBreak = false;
+        continue;
+      }
+      if (inBreak) {
+        lengths[lengths.length - 1] += item.duration;
+      } else {
+        lengths.push(item.duration);
+        inBreak = true;
+      }
+    }
+    return lengths;
+  };
+
+  test.each([
+    ['eager', 'end'],
+    ['eager', 'distribute'],
+    ['lazy', 'end'],
+    ['lazy', 'distribute'],
+  ] as const)(
+    '%s breaks in a full slot end it exactly on time (%s flex)',
+    async (strategy, flexPreference) => {
+      const midList = randomUUID();
+      const slot = (hour: number, showId: string) => ({
+        id: randomUUID(),
+        startTime: hour * oneHour,
+        type: 'show' as const,
+        showId,
+        order: 'next' as const,
+        direction: 'asc' as const,
+        seasonFilter: [],
+        filler: [
+          {
+            types: ['mid' as const],
+            fillerListId: midList,
+            fillerOrder: 'shuffle_prefer_short' as const,
+          },
+        ],
+        midRoll: {
+          strategy,
+          breakRule: {
+            type: 'fixed_interval' as const,
+            intervalMs: 13 * oneMin,
+          },
+          breakDurationMinMs: 2 * oneMin,
+          breakDurationMaxMs: 4 * oneMin,
+          maxBreaks: 3,
+          minProgramDurationMs: 0,
+          tailBufferMs: 0,
+        },
+      });
+
+      // Lateness is wider than the slot's spare time, so an overrun of a few
+      // minutes would start the next slot late rather than wiping it.
+      const schedule: TimeSlotSchedule = {
+        type: 'time',
+        period: 'day',
+        maxDays: 2,
+        flexPreference,
+        padMs: oneHour,
+        latenessMs: 5 * oneMin,
+        overflow: { type: 'duration', maxMs: 0 },
+        timeZoneOffset: 0,
+        slots: [slot(15, 'long'), slot(16, 'next'), slot(17, 'other')],
+      };
+
+      const result = await scheduleTimeSlots(
+        schedule,
+        [
+          ...makeEpisodes('long', 2, 53 * oneMin),
+          ...makeEpisodes('next', 2, 48 * oneMin),
+          ...makeEpisodes('other', 2, 20 * oneMin),
+          ...makeFillers(midList, [60_000, 75_000, 95_000, 110_000, 150_000]),
+        ],
+        [42, 99],
+        undefined,
+        midnight.add(15, 'hour'),
+      );
+
+      const items = withStarts(result.lineup as LineupItem[], result.startTime);
+      const longStarts = items.filter(({ item }) =>
+        isEpisodeStart(item, 'long'),
+      );
+      expect(longStarts.length).toBeGreaterThanOrEqual(2);
+      for (const { start } of longStarts) {
+        expect(dayjs(start).utc().format('HH:mm:ss.SSS')).toBe('15:00:00.000');
+      }
+
+      for (const { start: slotStart } of longStarts) {
+        const slotEnd = slotStart + oneHour;
+        const slotItems = itemsBetween(items, slotStart, slotEnd);
+
+        // The slot's items fill the hour exactly, so nothing spills past 16:00.
+        expect(sumBy(slotItems, ({ item }) => item.duration)).toBe(oneHour);
+        expect(slotItems.some(({ item }) => isBreak(item))).toBe(true);
+        for (const length of breakLengths(slotItems)) {
+          expect(length).toBeGreaterThanOrEqual(2 * oneMin);
+        }
+
+        const boundary = items.find(({ start }) => start === slotEnd);
+        expect(boundary).toBeDefined();
+        expect(boundary && isEpisodeStart(boundary.item, 'next')).toBe(true);
+      }
+    },
+  );
+
+  test('a break that fits in its own program’s padding leaves later programs on the pad grid', async () => {
+    const midList = randomUUID();
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: 10 * oneMin,
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+      slots: [
+        {
+          id: randomUUID(),
+          startTime: 0,
+          type: 'show',
+          showId: 'toon',
+          order: 'next',
+          direction: 'asc',
+          seasonFilter: [],
+          filler: [
+            {
+              types: ['mid'],
+              fillerListId: midList,
+              fillerOrder: 'shuffle_prefer_short',
+            },
+          ],
+          midRoll: {
+            strategy: 'eager',
+            breakRule: { type: 'fixed_interval', intervalMs: 4 * oneMin },
+            breakDurationMs: oneMin,
+            maxBreaks: 1,
+            minProgramDurationMs: 0,
+            tailBufferMs: 0,
+          },
+        },
+      ],
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [
+        ...makeEpisodes('toon', 3, 7 * oneMin),
+        ...makeFillers(midList, [oneMin]),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const items = withStarts(result.lineup as LineupItem[], result.startTime);
+    const episodeStarts = items.filter(({ item }) =>
+      isEpisodeStart(item, 'toon'),
+    );
+
+    // A 7 minute episode plus a 1 minute break pads out to 10 minutes, so
+    // each day holds 144 episodes and each one consumes exactly 10 minutes.
+    expect(episodeStarts.length).toBeGreaterThanOrEqual(144);
+    expect(episodeStarts.length % 144).toBe(0);
+    for (const { start } of episodeStarts) {
+      const block = itemsBetween(items, start, start + 10 * oneMin);
+      expect(sumBy(block, ({ item }) => item.duration)).toBe(10 * oneMin);
+      expect(
+        sumBy(
+          block.filter(({ item }) => isBreak(item)),
+          ({ item }) => item.duration,
+        ),
+      ).toBe(oneMin);
+    }
+  });
+
+  test('breaks that outgrow their own padding take the rest from later programs’ padding', async () => {
+    const midList = randomUUID();
+    const slot = (hour: number, showId: string, withMidRoll: boolean) => ({
+      id: randomUUID(),
+      startTime: hour * oneHour,
+      type: 'show' as const,
+      showId,
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      filler: withMidRoll
+        ? [
+            {
+              types: ['mid' as const],
+              fillerListId: midList,
+              fillerOrder: 'shuffle_prefer_short' as const,
+            },
+          ]
+        : [],
+      midRoll: withMidRoll
+        ? {
+            strategy: 'eager' as const,
+            breakRule: {
+              type: 'fixed_interval' as const,
+              intervalMs: 4 * oneMin,
+            },
+            breakDurationMs: 3 * oneMin,
+            maxBreaks: 1,
+            minProgramDurationMs: 0,
+            tailBufferMs: 0,
+          }
+        : undefined,
+    });
+
+    // Six 9 minute episodes pad to 10 minutes each and fill the hour, so the
+    // slot's only spare time is 1 minute of padding per program. The first
+    // two programs' 3 minute breaks spend all 6 minutes. Each takes 1 minute
+    // from its own padding and the other 4 come from the last four programs.
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: 10 * oneMin,
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+      slots: [slot(0, 'toon', true), slot(1, 'next', false)],
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [
+        ...makeEpisodes('toon', 6, 9 * oneMin),
+        ...makeEpisodes('next', 2, 10 * oneMin),
+        ...makeFillers(midList, [3 * oneMin]),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const items = withStarts(result.lineup as LineupItem[], result.startTime);
+    const slotStart = +midnight;
+    const slotItems = itemsBetween(items, slotStart, slotStart + oneHour);
+
+    expect(sumBy(slotItems, ({ item }) => item.duration)).toBe(oneHour);
+    expect(
+      sumBy(
+        slotItems.filter(({ item }) => isBreak(item)),
+        ({ item }) => item.duration,
+      ),
+    ).toBe(6 * oneMin);
+
+    const toonStarts = slotItems
+      .filter(({ item }) => isEpisodeStart(item, 'toon'))
+      .map(({ start }) => (start - slotStart) / oneMin);
+    expect(toonStarts).toEqual([0, 12, 24, 33, 42, 51]);
+
+    const boundary = items.find(({ start }) => start === slotStart + oneHour);
+    expect(boundary && isEpisodeStart(boundary.item, 'next')).toBe(true);
+  });
+
+  test('a break that no longer fits at its minimum length is dropped, not shortened', async () => {
+    const midList = randomUUID();
+    const slot = (hour: number, showId: string, withMidRoll: boolean) => ({
+      id: randomUUID(),
+      startTime: hour * oneHour,
+      type: 'show' as const,
+      showId,
+      order: 'next' as const,
+      direction: 'asc' as const,
+      seasonFilter: [],
+      filler: withMidRoll
+        ? [
+            {
+              types: ['mid' as const],
+              fillerListId: midList,
+              fillerOrder: 'shuffle_prefer_short' as const,
+            },
+          ]
+        : [],
+      midRoll: withMidRoll
+        ? {
+            strategy: 'eager' as const,
+            breakRule: {
+              type: 'fixed_interval' as const,
+              intervalMs: 13 * oneMin,
+            },
+            breakDurationMs: 3 * oneMin,
+            maxBreaks: 3,
+            minProgramDurationMs: 0,
+            tailBufferMs: 0,
+          }
+        : undefined,
+    });
+
+    // A 56 minute episode leaves 4 spare minutes. The first 3 minute break
+    // fits, and the 1 minute left over is too short for a second one.
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      period: 'day',
+      maxDays: 1,
+      flexPreference: 'end',
+      padMs: oneHour,
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+      slots: [slot(0, 'toon', true), slot(1, 'next', false)],
+    };
+
+    const result = await scheduleTimeSlots(
+      schedule,
+      [
+        ...makeEpisodes('toon', 1, 56 * oneMin),
+        ...makeEpisodes('next', 2, 10 * oneMin),
+        ...makeFillers(midList, [oneMin]),
+      ],
+      [42, 99],
+      undefined,
+      midnight,
+    );
+
+    const items = withStarts(result.lineup as LineupItem[], result.startTime);
+    const slotItems = itemsBetween(items, +midnight, +midnight + oneHour);
+
+    expect(breakLengths(slotItems)).toEqual([3 * oneMin]);
+    expect(sumBy(slotItems, ({ item }) => item.duration)).toBe(oneHour);
   });
 });

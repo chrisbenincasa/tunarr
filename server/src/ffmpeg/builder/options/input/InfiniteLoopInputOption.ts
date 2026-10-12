@@ -15,7 +15,7 @@ export class InfiniteLoopInputOption extends InputOption {
       return ['-loop', '1'];
     }
 
-    return ['-stream_loop', '1'];
+    return ['-stream_loop', '-1'];
   }
 
   appliesToInput(): boolean {

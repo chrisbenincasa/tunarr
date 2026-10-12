@@ -24,12 +24,11 @@ type Props = {
 
 export type ShuffleGroupingValue = 'none' | 'show';
 
-export const ShuffleProgrammingModal = ({
-  open,
+const ShuffleProgrammingModalContent = ({
   onClose,
   onShuffleTypeChange,
   shuffleType,
-}: Props) => {
+}: Omit<Props, 'open'>) => {
   const { t } = useLingui();
   const shuffler = useProgramShuffle();
 
@@ -39,7 +38,7 @@ export const ShuffleProgrammingModal = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth>
+    <>
       <DialogTitle>
         <Trans>Shuffle Programming</Trans>
       </DialogTitle>
@@ -99,6 +98,13 @@ export const ShuffleProgrammingModal = ({
           <Trans>Shuffle</Trans>
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+// The content mounts only while the dialog is open, so it does no work when closed.
+export const ShuffleProgrammingModal = ({ open, ...props }: Props) => (
+  <Dialog open={open} onClose={props.onClose} fullWidth>
+    <ShuffleProgrammingModalContent {...props} />
+  </Dialog>
+);

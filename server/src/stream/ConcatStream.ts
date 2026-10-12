@@ -34,6 +34,9 @@ export class ConcatStream {
           })
         : makeLocalUrl(`/stream/channels/${this.channel.uuid}.m3u8`, {
             mode: childStreamMode,
+            // The master playlist can list renditions that point back at the
+            // same variant, which makes ffmpeg read the muxed streams twice.
+            variant: true,
           });
 
     return ffmpeg.createConcatSession(streamUrl, {

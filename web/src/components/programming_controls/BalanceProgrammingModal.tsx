@@ -20,7 +20,7 @@ type Props = {
   onClose: () => void;
 };
 
-export const BalanceProgrammingModal = ({ open, onClose }: Props) => {
+const BalanceProgrammingModalContent = ({ onClose }: Omit<Props, 'open'>) => {
   const balancePrograms = useBalancePrograms();
   const [balanceType, setBalanceType] =
     useState<BalanceProgramsOptions['balanceType']>('duration');
@@ -40,7 +40,7 @@ export const BalanceProgrammingModal = ({ open, onClose }: Props) => {
   };
 
   return (
-    <Dialog open={open}>
+    <>
       <DialogTitle>
         <Trans>Balance Programming</Trans>
       </DialogTitle>
@@ -82,6 +82,13 @@ export const BalanceProgrammingModal = ({ open, onClose }: Props) => {
           <Trans>Balance</Trans>
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+// The content mounts only while the dialog is open, so it does no work when closed.
+export const BalanceProgrammingModal = ({ open, ...props }: Props) => (
+  <Dialog open={open}>
+    <BalanceProgrammingModalContent {...props} />
+  </Dialog>
+);

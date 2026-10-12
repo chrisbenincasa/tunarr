@@ -17,6 +17,7 @@ import type { GetPlayerContextRequest } from '../PlayerStreamContext.ts';
 import { PlayerContext } from '../PlayerStreamContext.ts';
 import type { ProgramStream } from '../ProgramStream.ts';
 import type { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
+import type { StopOptions } from '../Session.ts';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.ts';
 import { BaseHlsSession } from './BaseHlsSession.ts';
 
@@ -173,8 +174,11 @@ export class HlsSlowerSession extends BaseHlsSession {
     this.#concatSession.start();
   }
 
-  protected async stopInternal(): Promise<void> {
-    this.#concatSession?.kill();
+  protected async stopInternal(options: StopOptions): Promise<void> {
+    if (this.#concatSession) {
+      this.#concatSession.kill();
+      await this.waitForExit(this.#concatSession, options);
+    }
 
     this.logger.debug(
       `Cleaning out stream path for session: %s`,

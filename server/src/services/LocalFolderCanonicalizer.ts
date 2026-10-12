@@ -23,7 +23,7 @@ export class LocalFolderCanonicalizer
     sha.update(t.folderStats.mtimeMs.toString());
     for (const { dirent, stats } of sortBy(
       t.contents,
-      ({ dirent: name }) => name,
+      ({ dirent }) => dirent.name,
     )) {
       sha.update(dirent.name);
       sha.update(stats.mtimeMs.toString());

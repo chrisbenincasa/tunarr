@@ -4,7 +4,10 @@ import type {
 } from '@/db/interfaces/ISettingsDB.js';
 import type { ChannelOrm } from '@/db/schema/Channel.js';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import {
+  HardwareAccelerationMode,
+  libvaDriverName,
+} from '@/db/schema/TranscodeConfig.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
 import type {
   AudioRenditionInfo,
@@ -310,6 +313,7 @@ export class FfmpegStreamFactory {
       encoding,
       isFirstTranscode,
       emitEndList,
+      subtitleSegmentStartNumber,
     },
     lineupItem,
   }: StreamSessionCreateArgs): Promise<Maybe<TranscodeSessionResult>> {
@@ -422,6 +426,7 @@ export class FfmpegStreamFactory {
         duration,
         ptsOffset,
         isFirstTranscode,
+        subtitleSegmentStartNumber,
         emitEndList: emitEndList ?? false,
         threadCount: isPassthrough ? 0 : this.transcodeConfig.threadCount,
         copyAllStreams: isPassthrough,
@@ -473,7 +478,11 @@ export class FfmpegStreamFactory {
 
     return {
       session: transcodeSession,
-      renditions: this.buildRenditions(streamDetails, subtitleRendition),
+      renditions: this.buildRenditions(
+        streamDetails,
+        subtitleRendition,
+        isPassthrough,
+      ),
     };
   }
 
@@ -546,11 +555,10 @@ export class FfmpegStreamFactory {
           ? SubtitleMethods.Convert
           : SubtitleMethods.Burn;
 
+        // External subtitles are always resolved to a local file before they
+        // get here -- downloaded during scanning, or read from storage shared
+        // with the media source.
         const source = match(subtitleStream.path)
-          .with(
-            P.string.startsWith('http'),
-            (path) => new HttpStreamSource(path),
-          )
           .with(P.string, (path) => new FileStreamSource(path))
           .otherwise(() => streamSource);
 
@@ -647,10 +655,6 @@ export class FfmpegStreamFactory {
         // WebVTT and burn-in is not possible without re-encoding.
         if (!isImageBasedSubtitle(pickedSubtitleStream.codec)) {
           const source = match(pickedSubtitleStream.path)
-            .with(
-              P.string.startsWith('http'),
-              (path) => new HttpStreamSource(path),
-            )
             .with(P.string, (path) => new FileStreamSource(path))
             .otherwise(() => streamSource);
 
@@ -722,9 +726,12 @@ export class FfmpegStreamFactory {
   private buildRenditions(
     streamDetails: StreamDetails,
     subtitleRendition: SubtitleRenditionInfo | undefined,
+    isPassthrough: boolean,
   ): StreamRenditions {
+    // Transcode mode muxes only the selected audio track into the variant,
+    // so there are no alternate audio renditions to advertise.
     const audioRenditions: AudioRenditionInfo[] = [];
-    if (streamDetails.audioDetails) {
+    if (isPassthrough && streamDetails.audioDetails) {
       for (let i = 0; i < streamDetails.audioDetails.length; i++) {
         const audio = streamDetails.audioDetails[i]!;
         audioRenditions.push({
@@ -938,8 +945,8 @@ export class FfmpegStreamFactory {
         ptsOffset,
         threadCount: this.transcodeConfig.threadCount,
         outputFormat,
-        // softwareDeinterlaceFilter: this.transcodeConfig.deinterlaceFilter,
-        // softwareScalingAlgorithm: this.transcodeConfig.scalingAlgorithm,
+        softwareDeinterlaceFilter: this.ffmpegSettings.deinterlaceFilter,
+        softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
         vaapiDevice: this.getVaapiDevice(),
         vaapiDriver: this.getVaapiDriver(),
         logLevel: this.ffmpegSettings.logLevel,
@@ -1110,8 +1117,6 @@ export class FfmpegStreamFactory {
   }
 
   private getVaapiDriver() {
-    return this.transcodeConfig.vaapiDriver !== 'system'
-      ? this.transcodeConfig.vaapiDriver
-      : null;
+    return libvaDriverName(this.transcodeConfig.vaapiDriver);
   }
 }

@@ -31,7 +31,7 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isEmpty, isError, isNil, isNull } from 'lodash-es';
-import type { MarkOptional, StrictExtract } from 'ts-essentials';
+import type { StrictExtract } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
@@ -162,6 +162,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             lastScannedAt: library.lastScannedAt
               ? +dayjs(library.lastScannedAt)
               : undefined,
+            unavailableSince: nullToUndefined(
+              library.unavailableSince,
+            )?.valueOf(),
             isLocked:
               entityLocker.isLibraryLocked(library) ||
               entityLocker.isMediaSourceLocked(mediaSource),
@@ -245,6 +248,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         type: mediaSource.type,
         enabled: updatedLibrary.enabled,
         lastScannedAt: nullToUndefined(updatedLibrary.lastScannedAt)?.valueOf(),
+        unavailableSince: nullToUndefined(
+          updatedLibrary.unavailableSince,
+        )?.valueOf(),
         isLocked:
           entityLocker.isLibraryLocked(updatedLibrary) ||
           entityLocker.isMediaSourceLocked(mediaSource),
@@ -286,6 +292,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         type: library.mediaSource.type,
         enabled: library.enabled,
         lastScannedAt: library.lastScannedAt?.valueOf(),
+        unavailableSince: library.unavailableSince?.valueOf(),
         isLocked:
           entityLocker.isLibraryLocked(library) ||
           entityLocker.isMediaSourceLocked(library.mediaSource),
@@ -613,7 +620,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           .object({
             name: z.string().optional(),
             accessToken: z.string(),
-            uri: z.string(),
+            uri: z.string().trim(),
             type: z.enum(['plex', 'jellyfin', 'emby']),
             username: z.string().optional(),
           })
@@ -657,6 +664,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 mediaType: null,
                 replacePaths: [],
                 sendPlayStatusUpdates: false,
+                consecutiveAuthFailures: 0,
               },
             });
 
@@ -678,6 +686,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 mediaType: null,
                 replacePaths: [],
                 sendPlayStatusUpdates: false,
+                consecutiveAuthFailures: 0,
               },
             });
 
@@ -699,6 +708,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 mediaType: null,
                 replacePaths: [],
                 sendPlayStatusUpdates: false,
+                consecutiveAuthFailures: 0,
               },
             });
 
@@ -915,7 +925,11 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   // TODO put this in its own class.
   function convertToApiMediaSource(
     entityLocker: EntityMutex,
-    source: MarkOptional<MediaSourceWithRelations, 'libraries' | 'paths'>,
+    // `paths` is deliberately NOT part of the dependency: the DTO's `paths` is a
+    // projection of `libraries` (the ORM `paths` relation reads the legacy
+    // local_media_source_path table), and no branch here reads it (#2205
+    // review).
+    source: Omit<MediaSourceWithRelations, 'paths'>,
   ): MediaSourceSettings {
     return match(source)
       .returnType<MediaSourceSettings>()
@@ -931,7 +945,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             accessToken: undefined, // Do not expose access token in API response
             clientIdentifier: nullToUndefined(source.clientIdentifier),
             sendGuideUpdates: source.sendGuideUpdates ?? false,
-            libraries: (source.libraries ?? []).map((library) => ({
+            libraries: source.libraries.map((library) => ({
               id: library.uuid,
               type: source.type,
               enabled: library.enabled,
@@ -942,6 +956,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
               name: library.name,
               externalKey: library.externalKey,
               mediaType: library.mediaType,
+              unavailableSince: nullToUndefined(
+                library.unavailableSince,
+              )?.valueOf(),
             })),
             userId: source.userId,
             username: source.username,
@@ -955,31 +972,43 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             { type: 'plex' | 'jellyfin' | 'emby' }
           >,
       )
-      .with(
-        { type: 'local', mediaType: P.nonNullable },
-        (source) =>
-          ({
-            id: source.uuid,
+      .with({ type: 'local', mediaType: P.nonNullable }, (source) => {
+        // A local source's `paths` is `libraries.map(l => l.externalKey)`, and
+        // the response schema requires it non-empty. Say so here, where the
+        // cause is known, instead of letting Fastify's response serializer
+        // fail with an opaque zod path the way #2200 did (#2205 review).
+        if (source.libraries.length === 0) {
+          throw new Error(
+            `Local media source ${source.uuid} has no libraries loaded; ` +
+              `the library detail response requires at least one path.`,
+          );
+        }
+
+        return {
+          id: source.uuid,
+          type: source.type,
+          name: source.name,
+          mediaType: source.mediaType,
+          paths: source.libraries.map((path) => path.externalKey),
+          libraries: source.libraries.map((library) => ({
+            id: library.uuid,
             type: source.type,
-            name: source.name,
-            mediaType: source.mediaType,
-            paths: source.libraries?.map((path) => path.externalKey) ?? [],
-            libraries: (source.libraries ?? []).map((library) => ({
-              id: library.uuid,
-              type: source.type,
-              enabled: library.enabled,
-              lastScannedAt: nullToUndefined(library.lastScannedAt)?.valueOf(),
-              isLocked:
-                entityLocker.isLibraryLocked(library) ||
-                entityLocker.isMediaSourceLocked(source),
-              name: library.name,
-              externalKey: library.externalKey,
-              mediaType: library.mediaType,
-            })),
-            // N/A for local media sources
-            pathReplacements: [],
-          }) satisfies LocalMediaSource,
-      )
+            enabled: library.enabled,
+            lastScannedAt: nullToUndefined(library.lastScannedAt)?.valueOf(),
+            isLocked:
+              entityLocker.isLibraryLocked(library) ||
+              entityLocker.isMediaSourceLocked(source),
+            name: library.name,
+            externalKey: library.externalKey,
+            mediaType: library.mediaType,
+            unavailableSince: nullToUndefined(
+              library.unavailableSince,
+            )?.valueOf(),
+          })),
+          // N/A for local media sources
+          pathReplacements: [],
+        } satisfies LocalMediaSource;
+      })
       .otherwise(() => {
         logger.error('Encountered invalid media source: %O', source);
         throw new Error('Invalid media source: ' + JSON.stringify(source));

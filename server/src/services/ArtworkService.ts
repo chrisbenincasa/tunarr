@@ -27,6 +27,14 @@ export type ArtworkResult =
   | { kind: 'url'; url: string; headers?: Record<string, string> }
   | { kind: 'not-found' };
 
+const AnyArtworkFallbackOrder = [
+  'poster',
+  'thumbnail',
+  'fanart',
+  'landscape',
+  'banner',
+] as const satisfies ArtworkType[];
+
 @injectable()
 export class ArtworkService {
   @InjectLogger() declare private readonly logger: Logger;
@@ -140,11 +148,28 @@ export class ArtworkService {
       art = await this.resolveParentArtwork(entity, artworkType, fallbackTypes);
     }
 
-    if (!art) {
-      return this.deriveArtworkFromSource(entity, artworkType);
+    if (art) {
+      return this.artworkToResult(art, entity.mediaSourceId);
     }
 
-    return this.artworkToResult(art, entity.mediaSourceId);
+    const derived = await this.deriveArtworkFromSource(entity, artworkType);
+    if (derived.kind !== 'not-found') {
+      return derived;
+    }
+
+    // Serve any stored display image rather than nothing. Callers can't always
+    // know which types an item has, e.g. local other videos only carry a
+    // thumbnail.
+    const anyArt = this.findArtworkByType(
+      entity.artwork,
+      AnyArtworkFallbackOrder[0],
+      AnyArtworkFallbackOrder.slice(1),
+    );
+    if (anyArt) {
+      return this.artworkToResult(anyArt, entity.mediaSourceId);
+    }
+
+    return derived;
   }
 
   /**

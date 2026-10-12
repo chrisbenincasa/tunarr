@@ -392,7 +392,7 @@ describe('CustomShowSyncService', () => {
       fetchSpy.mockRestore();
     });
 
-    it('skips upsert and logs a warning when playlist returns 0 items', async () => {
+    it('clears the show and logs a warning when playlist returns 0 items', async () => {
       const { service, customShowDB, mediaSourceApiFactory, mockScanner } =
         makeMocks();
 
@@ -419,8 +419,10 @@ describe('CustomShowSyncService', () => {
       // No scanning should occur
       expect(mockScanner.scanSingle).not.toHaveBeenCalled();
 
-      // No content upsert
-      expect(customShowDB.upsertCustomShowContent).not.toHaveBeenCalled();
+      expect(customShowDB.upsertCustomShowContent).toHaveBeenCalledWith(
+        customShowId,
+        [],
+      );
 
       // Warning logged about 0 items
       expect(fakeLogger.warn).toHaveBeenCalledWith(

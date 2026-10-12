@@ -13,14 +13,18 @@ type ConnectionTrackerEvents = {
 export class ConnectionTracker<
   ConnectionDetails extends StreamConnectionDetails,
 > extends (events.EventEmitter as new () => TypedEventEmitter<ConnectionTrackerEvents>) {
-  #logger: Logger = LoggerFactory.child({ className: ConnectionTracker.name });
+  #logger: Logger;
   #cleanupFunc: NodeJS.Timeout | null = null;
   #connections: Record<string, ConnectionDetails> = {};
   #heartbeats: Record<string, number> = {};
 
   constructor(id: string, name: string) {
     super();
-    this.#logger.setBindings({ id, name });
+    this.#logger = LoggerFactory.child({
+      className: ConnectionTracker.name,
+      id,
+      name,
+    });
   }
 
   addConnection(token: string, connection: ConnectionDetails) {

@@ -102,6 +102,7 @@ import type {
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { parseReleaseDate, titleToSortTitle } from '../../util/programs.ts';
+import { externalSubtitleDeliveryPath } from '../../util/subtitles.ts';
 import {
   QueryError,
   type ApiClientOptions,
@@ -162,10 +163,10 @@ export type JellyfinGetItemsQuery = {
   contributingArtistIds?: string[];
   excludeItemIds?: string[];
   albumArtistIds?: string[];
-  // Jellyfin defaults this to the connected user's own "Group movies into
-  // collections" display preference when omitted. Library scans need this to
-  // be explicitly false, or movies inside a BoxSet are silently collapsed
-  // into their parent collection and never returned as individual items.
+  // Defaults to false in getRawItems. When omitted, Jellyfin replaces every
+  // movie or show in a collection with the collection's BoxSet. It does this
+  // when the server's "Group into collections" settings are on, and Jellyfin 12
+  // also does it for any request without a user.
   collapseBoxSetItems?: boolean;
 };
 
@@ -516,6 +517,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
           sortBy: sortBy.join(','),
           recursive: extraParams.recursive?.toString() ?? 'true',
           includeItemTypes: itemTypes ? itemTypes.join(',') : undefined,
+          collapseBoxSetItems: 'false',
           ...{
             ...mapValues(extraParams, (v) => (isBoolean(v) ? v.toString() : v)),
             ids: extraParams.ids?.join(','),
@@ -569,6 +571,27 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
     );
   }
 
+  /**
+   * Fetches an external subtitle file from the location the server reported for
+   * it. External subtitles are separate files, so unlike embedded streams they
+   * cannot be addressed by container stream index.
+   */
+  async getSubtitlesByPath(subtitlePath: string): Promise<QueryResult<string>> {
+    try {
+      const subtitlesResult = await this.doGet<string>({
+        url: `/${trimStart(subtitlePath, '/')}`,
+        params: {
+          userId: this.options.mediaSource.userId,
+        },
+      });
+
+      return this.makeSuccessResult(subtitlesResult);
+    } catch (e) {
+      const err = caughtErrorToError(e);
+      return this.makeErrorResult('generic_request_error', err.message);
+    }
+  }
+
   async getSubtitles(
     itemId: string,
     mediaItemId: string,
@@ -600,7 +623,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       'Movie',
       (movie) => this.jellyfinApiMovieInjection(movie),
       [],
-      { collapseBoxSetItems: false },
+      {},
       pageSize,
     );
   }
@@ -921,10 +944,8 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         limit: 0,
         recursive: true,
         includeItemTypes: itemType,
-        // See comment on JellyfinGetItemsQuery#collapseBoxSetItems — without
-        // this, counts (and therefore pagination) silently undercount any
-        // library containing BoxSet collections whenever the connected
-        // account has "Group movies into collections" enabled.
+        // Must match getRawItems, or pagination undercounts libraries that
+        // contain collections. See JellyfinGetItemsQuery#collapseBoxSetItems.
         collapseBoxSetItems: false,
       },
     }).then((_) => _.map((response) => response.TotalRecordCount));
@@ -1268,9 +1289,21 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
             profile: (subStream.Profile ?? '')?.toLowerCase(),
             default: subStream.IsDefault,
             selected: subStream.IsForced,
+            forced: subStream.IsForced,
+            sdh: subStream.IsHearingImpaired,
             languageCodeISO6392: nullToUndefined(subStream.Language),
             index: Math.max(0, (subStream.Index ?? 0) - streamIndexOffset),
             title: subStream.Title ?? subStream.DisplayTitle,
+            // External subtitles live outside the container, so the adjusted
+            // index above cannot address them. Record both ways of reaching the
+            // file: where it sits on the server's disk (readable directly if
+            // Tunarr shares that storage) and the route that serves it.
+            fileName: subStream.IsExternal
+              ? nullToUndefined(subStream.Path)
+              : undefined,
+            externalKey: subStream.IsExternal
+              ? externalSubtitleDeliveryPath(item.Id, source.Id, subStream)
+              : undefined,
           };
         },
       ) ?? [];

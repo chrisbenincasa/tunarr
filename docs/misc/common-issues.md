@@ -25,3 +25,18 @@ To workaround this issue, there are a few options:
 2. Access Tunarr via `https`, via reverse proxy or otherwise
 3. Access your client which connects to Tunarr via `http`
 
+## Library shows as Unavailable
+
+Tunarr checks the library list of each Plex, Jellyfin, and Emby server every hour. A library shows as **Unavailable** when the server stopped including it in that list. Tunarr keeps the library's programs and channel schedules and skips the library during scans.
+
+Every library on a media source shows as **Unavailable** when the server rejects Tunarr's credentials three checks in a row. A revoked or mistyped access token does this; a server that rejects tokens briefly while restarting recovers before the third check.
+
+Common causes:
+
+1. The access token was revoked, expired, or entered incorrectly. Re-enter it on the media source.
+2. The account or token Tunarr uses lost access to the library. Plex shared users and Jellyfin or Emby users only see libraries they have been granted.
+3. The library was deleted on the media server.
+4. The media server was still starting up when Tunarr checked.
+
+The library becomes available again on its own once the server reports it. If you deleted the library on purpose, its programs stay in Tunarr until you delete the media source.
+

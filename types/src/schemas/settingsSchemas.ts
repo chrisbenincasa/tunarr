@@ -105,6 +105,8 @@ export const FfmpegSettingsSchema = z.object({
   enableSubtitleExtraction: z.boolean().optional().default(false),
 });
 
+// .github/scripts/pr-policy.cjs matches this name to detect new media sources.
+// Update it if you rename this constant.
 export const MediaSourceType = z.enum(['plex', 'jellyfin', 'emby', 'local']);
 
 export const MediaSourceContentType = z.enum([
@@ -124,6 +126,7 @@ const BaseMediaSourceLibrarySchema = z.object({
   type: MediaSourceType,
   enabled: z.boolean(),
   isLocked: z.boolean(),
+  unavailableSince: z.number().optional(),
 });
 
 export const MediaSourceLibrarySchema = z.object({
@@ -156,7 +159,7 @@ const BaseMediaSourceSettingsSchema = z.object({
 
 const RemoteMediaSourceSettingsSchema = z.object({
   ...BaseMediaSourceSettingsSchema.shape,
-  uri: z.string(),
+  uri: z.string().trim(),
   accessToken: z.string().optional(),
   userId: z.string().nullable(),
   sendPlayStatusUpdates: z.boolean().default(false),

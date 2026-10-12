@@ -139,6 +139,9 @@ export const CondensedCustomProgramSchema = BaseProgramSchema.extend({
   id: z.string(),
   customShowId: z.string(),
   index: z.number(),
+  // Set on a segment of a program split by mid-roll breaks: where in the
+  // program this segment resumes.
+  startOffsetMs: z.number().nonnegative().optional(),
   // program: CondensedContentProgramSchema.optional(),
 });
 
@@ -152,6 +155,7 @@ export const CustomProgramSchema = BaseProgramSchema.extend({
   id: z.string(),
   customShowId: z.string(),
   index: z.number(),
+  startOffsetMs: z.number().nonnegative().optional(),
   program: ContentProgramSchema.optional(),
 });
 

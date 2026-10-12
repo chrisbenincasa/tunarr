@@ -4,6 +4,7 @@ import type {
   CustomShowProgramOption,
   FillerProgramOption,
 } from '@/helpers/slotSchedulerUtil';
+import { isSelectableForNewSlot } from '@/helpers/slotSchedulerUtil';
 import { useAdjustRandomSlotWeights } from '@/hooks/slot_scheduler/useAdjustRandomSlotWeights.ts';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
@@ -25,7 +26,7 @@ import { TimeField } from '@mui/x-date-pickers';
 import type { RandomSlot } from '@tunarr/types/api';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { find, isNil, map, values } from 'lodash-es';
+import { isNil, map, values } from 'lodash-es';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import type { StrictOmit } from 'ts-essentials';
@@ -58,7 +59,7 @@ type EditRandomSlotDialogContentProps = {
 type PartialRandomSlot = StrictOmit<
   RandomSlot,
   'durationSpec' | 'cooldownMs' | 'weight'
->;
+> & { durationSpec?: RandomSlot['durationSpec'] };
 
 export const EditRandomSlotDialogContent = ({
   slot,
@@ -271,18 +272,40 @@ export const EditRandomSlotDialogContent = ({
 
   const newSlotForType = useCallback(
     (type: RandomSlot['type']) => {
+      // Flex and redirect slots only take a fixed duration, and their editor
+      // hides the Fixed/Dynamic toggle, so replace a dynamic spec here.
+      const fixedDurationSpec = (): RandomSlot['durationSpec'] => {
+        const current = getValues('durationSpec');
+        return current.type === 'fixed'
+          ? current
+          : {
+              type: 'fixed',
+              durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
+            };
+      };
+
       return match(type)
         .returnType<PartialRandomSlot>()
-        .with('custom-show', () => ({
-          id: v4(),
-          type: 'custom-show',
-          order: 'next',
-          direction: 'asc',
-          customShowId: find(
-            programOptions,
-            (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
-          )!.customShowId,
-        }))
+        .with('custom-show', () => {
+          const opt = programOptions
+            .filter(isSelectableForNewSlot)
+            .find(
+              (opt): opt is CustomShowProgramOption =>
+                opt.type === 'custom-show',
+            );
+          if (opt === undefined) {
+            throw new Error(
+              'Custom show slots are only offered when a custom show has programs',
+            );
+          }
+          return {
+            id: v4(),
+            type: 'custom-show',
+            order: 'next',
+            direction: 'asc',
+            customShowId: opt.customShowId,
+          };
+        })
         .with('movie', () => ({
           id: v4(),
           type: 'movie',
@@ -301,13 +324,19 @@ export const EditRandomSlotDialogContent = ({
             (opt): opt is FillerProgramOption => opt.type === 'filler',
           )!.fillerListId,
         }))
-        .with('flex', () => ({ type: 'flex', order: 'next', direction: 'asc' }))
+        .with('flex', () => ({
+          type: 'flex',
+          order: 'next',
+          direction: 'asc',
+          durationSpec: fixedDurationSpec(),
+        }))
         .with('redirect', () => ({
           type: 'redirect',
           channelId: programOptions.find((opt) => opt.type === 'redirect')!
             .channelId,
           order: 'next',
           direction: 'asc',
+          durationSpec: fixedDurationSpec(),
         }))
         .with('show', () => ({
           id: v4(),
@@ -332,7 +361,7 @@ export const EditRandomSlotDialogContent = ({
         })
         .exhaustive();
     },
-    [programOptions],
+    [getValues, programOptions],
   );
 
   // const slotId = getRandomSlotId(programming);

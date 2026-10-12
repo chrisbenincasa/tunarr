@@ -1,5 +1,33 @@
 import { describe, expect, it } from 'vitest';
-import { resolveBaseLogLevel } from './LoggerFactory.ts';
+import { resolveBaseLogLevel, resolveLogFileMode } from './LoggerFactory.ts';
+
+/**
+ * Regression for #2193 — every worker thread built its own rolling
+ * destination, so all of them rolled the shared tunarr.log at the same cron
+ * tick and raced on the same files.
+ */
+describe('resolveLogFileMode (#2193)', () => {
+  it('rolls on the main thread when rolling is enabled', () => {
+    expect(resolveLogFileMode({ rollEnabled: true, isMainThread: true })).toBe(
+      'rolling',
+    );
+  });
+
+  it('appends on a worker thread even when rolling is enabled', () => {
+    expect(resolveLogFileMode({ rollEnabled: true, isMainThread: false })).toBe(
+      'append',
+    );
+  });
+
+  it('appends on every thread when rolling is disabled', () => {
+    expect(resolveLogFileMode({ rollEnabled: false, isMainThread: true })).toBe(
+      'append',
+    );
+    expect(
+      resolveLogFileMode({ rollEnabled: false, isMainThread: false }),
+    ).toBe('append');
+  });
+});
 
 /**
  * Regression for #1992 — `--log_level`/`-v` had no effect on the running

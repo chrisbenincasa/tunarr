@@ -21,3 +21,5 @@
     * **Fallback**: Filler that is played during flex time in the slot
 
     Filler is placed *inside* the slot rather than added on top of it: head, pre, post, and tail filler draw from the slot's unused time, including any *padding* applied to the programs around them. A slot only omits filler when it has genuinely no time left to give.
+
+    A filler list that has no programs in it is ignored when the schedule is generated: the slot simply gets no filler from that list (and the empty list is noted in the server log). The slot editor marks such lists so they can be spotted before saving.

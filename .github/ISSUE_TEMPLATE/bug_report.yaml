@@ -17,6 +17,8 @@ body:
           required: true
         - label: I'm using an up to date version of Tunarr; We generally do not support previous older versions. If possible, please update to the latest version before opening an issue.
           required: true
+        - label: Everything in this report is something I saw on my own install, or is marked as a guess. Any AI analysis is in the "AI analysis" field, not mixed into the rest.
+          required: true
     validations:
       required: true
   - type: markdown
@@ -63,6 +65,11 @@ body:
         The generated schedule shows the correct times
     validations:
       required: true
+  - type: textarea
+    id: ai-analysis
+    attributes:
+      label: AI analysis (optional)
+      description: If an AI tool analyzed the cause, paste its analysis here and say whether you checked it against the code. Maintainers treat unchecked AI analysis as a lead, not a finding.
   - type: dropdown
     id: version
     attributes:

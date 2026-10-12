@@ -429,7 +429,8 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                       id="jellyfin-username"
                       type="text"
                       error={!isUndefined(error)}
-                      label={t`Access Token`}
+                      autoComplete="username"
+                      label={t`Username`}
                       {...field}
                     />
                     <FormHelperText>
@@ -459,11 +460,12 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                     <OutlinedInput
                       id="jellyfin-password"
                       type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
                       error={!isUndefined(error)}
                       endAdornment={
                         <InputAdornment position="end">
                           <IconButton
-                            aria-label={t`toggle access token visibility`}
+                            aria-label={t`toggle password visibility`}
                             onClick={() => setShowPassword(toggle)}
                             edge="end"
                           >
@@ -471,7 +473,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                           </IconButton>
                         </InputAdornment>
                       }
-                      label={t`Access Token`}
+                      label={t`Password`}
                       {...field}
                     />
                     <FormHelperText>

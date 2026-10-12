@@ -364,7 +364,8 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                       id="emby-username"
                       type="text"
                       error={!isUndefined(error)}
-                      label={t`Access Token`}
+                      autoComplete="username"
+                      label={t`Username`}
                       {...field}
                     />
                     <FormHelperText>
@@ -390,11 +391,12 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                     <OutlinedInput
                       id="emby-password"
                       type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
                       error={!isUndefined(error)}
                       endAdornment={
                         <InputAdornment position="end">
                           <IconButton
-                            aria-label={t`toggle access token visibility`}
+                            aria-label={t`toggle password visibility`}
                             onClick={() => setShowPassword(toggle)}
                             edge="end"
                           >
@@ -402,7 +404,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                           </IconButton>
                         </InputAdornment>
                       }
-                      label={t`Access Token`}
+                      label={t`Password`}
                       {...field}
                     />
                     <FormHelperText>

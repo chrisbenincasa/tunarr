@@ -196,6 +196,10 @@ msgstr ""
 msgid "{days, plural, one {# day} other {# days}}"
 msgstr ""
 
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "{enabled} of {total} enabled"
+msgstr ""
+
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr ""
@@ -221,6 +225,11 @@ msgstr ""
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
 msgid "{totalConnections} total"
+msgstr ""
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "{unavailableSlotCount, plural, one {# slot uses a custom show that is empty or deleted. Fix or remove it before saving.} other {# slots use a custom show that is empty or deleted. Fix or remove them before saving.}}"
 msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx
@@ -256,8 +265,8 @@ msgid "<0>Error deleting filler list: {0}<1/>Please consider opening a bug with 
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "<0>Experimental:</0> Enable Plex Request Cache"
-msgstr ""
+#~ msgid "<0>Experimental:</0> Enable Plex Request Cache"
+#~ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "<0>None:</0> slots are picked in the order they are specified in the table (i.e. not randomly)<1/><2>Uniform:</2> all slots have an equal chance to be picked.<3/><4>Weighted:</4> each slot is picked with a specified probability"
@@ -290,23 +299,21 @@ msgid "A root path to scan for media. Local sources can search many different pa
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "A-Z (asc)"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "A-Z (desc)"
 msgstr ""
 
 #: src/helpers/dayjs.ts
 msgid "about "
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -445,7 +452,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes."
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Adjust the output volume (not recommended). Values higher than 100 will boost the audio."
@@ -459,7 +466,7 @@ msgstr ""
 
 #: src/components/channel_config/plex/PlexProgrammingFilterToolbar.tsx
 #~ msgid "Advanced"
-#~ msgstr "<<<<<<< HEAD"
+#~ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Advanced options relating to audio. In general, do not change these unless you know what you are doing!"
@@ -467,7 +474,7 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Advanced options relating to transcoding. In general, do not change these unless you know what you are doing! These settings exist in order to leave some parity with the old dizqueTV transcode pipeline as well as to provide mechanisms to aid in debugging streaming issues."
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
@@ -489,6 +496,10 @@ msgstr ""
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
+msgstr ""
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "All folders"
 msgstr ""
 
 #: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
@@ -528,12 +539,21 @@ msgid "Alphabetical"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Alphabetically"
 msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
-msgid "Alternate programs in blocks. You can pick the number of programs per-type in each block and if the order of shows in each block should be randomized."
-msgstr ""
+#~ msgid "Alternate programs in blocks. You can pick the number of programs in each block, whether episodes play in order, and whether shows take turns or come up at random."
+#~ msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#~ msgid "Alternate programs in blocks. You can pick the number of programs in each block, whether episodes play in order, and whether shows take turns or come up at random. Each preset fills in these settings, and you can change them before shuffling."
+#~ msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#~ msgid "Alternate programs in blocks. You can pick the number of programs per-type in each block and if the order of shows in each block should be randomized."
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -597,7 +617,7 @@ msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Audio Action"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Bitrate"
@@ -618,7 +638,7 @@ msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Audio Language Preferences"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
@@ -627,7 +647,7 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Audio Options"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Sample Rate"
@@ -635,7 +655,7 @@ msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Audio Streams"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Volume"
@@ -651,7 +671,7 @@ msgstr ""
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Auto uses the time convention for the selected language."
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Auto-Update Guide"
@@ -709,7 +729,7 @@ msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Bit Depth"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Bitrate cannot be changed when copying input audio"
@@ -723,7 +743,6 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Block Shuffle"
 msgstr ""
@@ -742,7 +761,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Break Positioning"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Buffer size cannot be changed when copying input audio"
@@ -765,8 +784,8 @@ msgid "By default, time slots are time of the day-based, you can change it to ti
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "Caching"
-msgstr ""
+#~ msgid "Caching"
+#~ msgstr ""
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
 msgid "Calculated {humanizedDuration} ({numShows} programs) of programming in {duration}ms"
@@ -778,7 +797,7 @@ msgstr ""
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 msgid "Calculating Slots..."
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/components/DeleteConfirmationDialog.tsx
@@ -809,6 +828,7 @@ msgstr "<<<<<<< HEAD"
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
+#: src/pages/library/TrashPage.tsx
 msgid "Cancel"
 msgstr ""
 
@@ -818,6 +838,7 @@ msgstr ""
 msgid "Cannot be empty"
 msgstr ""
 
+#: src/components/MediaSourceLibraryTable.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
 msgid "Cannot disable libraries when they are locked"
 msgstr ""
@@ -1092,6 +1113,10 @@ msgstr ""
 msgid "Copy to Clipboard"
 msgstr ""
 
+#: src/hooks/useEmptyTrash.ts
+msgid "Could not cancel emptying the trash."
+msgstr ""
+
 #: src/components/search/SearchFilterBuilder.tsx
 msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
 msgstr ""
@@ -1130,6 +1155,10 @@ msgstr ""
 msgid "Custom Show - {0}"
 msgstr ""
 
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+msgid "Custom Show (add programs to a custom show first)"
+msgstr ""
+
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Custom show programs are grouped by their parent show"
 msgstr ""
@@ -1156,6 +1185,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Cyclic Shuffle"
 msgstr ""
 
@@ -1262,6 +1292,10 @@ msgstr ""
 msgid "Delete Transcoding Config \"{0}\"?"
 msgstr ""
 
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "Deleted custom show"
+msgstr ""
+
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/pages/channels/ChannelsPage.tsx
 msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
@@ -1297,7 +1331,7 @@ msgstr ""
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
 msgid "Details"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Did not receive an accessToken or userId from Jellyfin server."
@@ -1321,7 +1355,7 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Disable Watermarks"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -1360,8 +1394,8 @@ msgid "Documentation"
 msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
-msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
-msgstr ""
+#~ msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
+#~ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx
 #: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx
@@ -1417,6 +1451,10 @@ msgstr ""
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 msgid "Dynamic"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Each next block comes from a random show. Shows with more episodes come up more often unless Loop Short Programs is on."
 msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
@@ -1501,9 +1539,28 @@ msgstr ""
 msgid "Emby"
 msgstr ""
 
+#. placeholder {0}: ev.detail.deleted
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptied trash. Removed {0} item(s)."
+msgstr ""
+
 #: src/pages/library/TrashPage.tsx
 msgid "Empty Trash"
-msgstr "<<<<<<< HEAD"
+msgstr ""
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptying the trash failed. Check the server logs for details."
+msgstr ""
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptying trash in the background. You can keep using Tunarr."
+msgstr ""
+
+#. placeholder {0}: status.deleted
+#. placeholder {1}: status.total
+#: src/pages/library/TrashPage.tsx
+msgid "Emptying trash: {0} / {1}"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enable <0>EBU R 128</0> loudness normalization via the <1>loudnorm</1> FFmpeg filter. May increase CPU usage during streaming."
@@ -1560,7 +1617,7 @@ msgstr ""
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/pages/system/StatusPage.tsx
 msgid "Enabled"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enabled (loudnorm)"
@@ -1570,7 +1627,7 @@ msgstr ""
 msgid "Enabling embedded subtitle extaction will periodically scan your upcoming programming for embedded text-based subtitle streams and extract them to a local cache. This is necessary in order to enable subtitle burning for text-based subtitles which are not external streams."
 msgstr ""
 
-#: src/pages/library/TrashPage.tsx
+#: src/hooks/useEmptyTrash.ts
 msgid "Encountered an error when emptying trash. Check console logs for details."
 msgstr ""
 
@@ -1584,7 +1641,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter a name for your Emby Server"
@@ -1596,7 +1653,7 @@ msgstr ""
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "Enter a name for your Local Media Source"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter your Emby password to generate a new access token."
@@ -1613,6 +1670,11 @@ msgstr ""
 #: src/pages/settings/XmlTvSettingsPage.tsx
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "EPG (Hours)"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Episode Order"
 msgstr ""
 
 #: src/components/programs/Episodes.tsx
@@ -1642,7 +1704,7 @@ msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Error querying Plex. Check console log and consider reporting a bug!"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Error saving new Emby server. See browser console and server logs for details"
@@ -1656,9 +1718,17 @@ msgstr ""
 msgid "Error saving new Smart Collection. Check server logs and browser console for details."
 msgstr ""
 
-#. placeholder {0}: error.message
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
-msgid "Error saving programs. {0}"
+#~ msgid "Error saving programs. {0}"
+#~ msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+msgid "Error saving programs. {message}"
+msgstr ""
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Error saving schedule. {message}"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
@@ -1930,6 +2000,9 @@ msgid "Finish"
 msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "First Episode"
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
@@ -1956,7 +2029,7 @@ msgstr ""
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Flex Style"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
@@ -2140,6 +2213,10 @@ msgstr ""
 msgid "Image URL"
 msgstr ""
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "In Order"
+msgstr ""
+
 #: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
 msgid "Include Seasons"
 msgstr ""
@@ -2259,7 +2336,9 @@ msgstr ""
 msgid "Level"
 msgstr ""
 
+#: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Libraries"
 msgstr ""
 
@@ -2285,8 +2364,8 @@ msgid "Light"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
-msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
-msgstr ""
+#~ msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
+#~ msgstr ""
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
 #~ msgid "Limit"
@@ -2386,7 +2465,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Loop Short Programs"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Loudness Range Target"
@@ -2414,7 +2493,7 @@ msgstr ""
 
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 msgid "Manual"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Manually add an access token from your Emby server"
@@ -2458,7 +2537,7 @@ msgstr ""
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Max Lateness"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
@@ -2598,7 +2677,7 @@ msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Must use a valid URL, or empty."
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
@@ -2654,7 +2733,7 @@ msgstr ""
 #: src/pages/library/EditCustomShowPage.tsx
 #: src/pages/library/NewCustomShowPage.tsx
 msgid "New Custom Show"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "New Emby Media Source"
@@ -2666,7 +2745,7 @@ msgstr ""
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "New Local Media Source"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "New Media Source"
@@ -2691,6 +2770,14 @@ msgstr ""
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
 msgid "No active sessions"
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "No libraries are enabled yet. Tunarr only syncs content from enabled libraries, so choose at least one below."
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "No libraries enabled"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
@@ -2742,7 +2829,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Not a valid number"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -2752,6 +2839,10 @@ msgstr ""
 
 #: src/routes/__root.tsx
 msgid "Not found!"
+msgstr ""
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Not synced"
 msgstr ""
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
@@ -2812,7 +2903,7 @@ msgstr ""
 
 #: src/components/channels/ChannelOptionsButton.tsx
 msgid "Options"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -2897,13 +2988,15 @@ msgstr ""
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Pad Times"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Passthrough audio unchanged. Other settings will not apply."
 msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Password"
 msgstr ""
@@ -2959,6 +3052,14 @@ msgstr ""
 #~ msgid "Playlists"
 #~ msgstr ""
 
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#~ msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows."
+#~ msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Opens the shuffle settings, where you can start every show at its first episode or loop shorter shows."
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
 msgstr ""
@@ -2982,6 +3083,11 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Pre"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Preset"
 msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotPresetButton.tsx
@@ -3069,7 +3175,7 @@ msgstr ""
 
 #: src/components/channel_config/EditChannelForm.tsx
 msgid "Properties"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -3089,12 +3195,17 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Random"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Random (by show)"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Random Episode"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
@@ -3179,7 +3290,7 @@ msgstr ""
 msgid "Remove"
 msgstr ""
 
-#. placeholder {0}: import { betterHumanize } from '@/helpers/dayjs'; import { isNonEmptyString } from '@/helpers/util'; import { Autocomplete, Box, Checkbox, Chip, DialogContentText, List, ListItem, ListItemText, TextField, } from '@mui/material'; import Button from '@mui/material/Button'; import Dialog from '@mui/material/Dialog'; import DialogActions from '@mui/material/DialogActions'; import DialogContent from '@mui/material/DialogContent'; import DialogTitle from '@mui/material/DialogTitle'; import { seq } from '@tunarr/shared/util'; import dayjs from 'dayjs'; import { every, identity, includes, isEmpty, map, reduce, some, uniqBy, values, } from 'lodash-es'; import { Trans, useLingui } from '@lingui/react/macro'; import { plural } from '@lingui/core/macro'; import type { HTMLAttributes } from 'react'; import { useMemo, useState } from 'react'; import { match, P } from 'ts-pattern'; import { useCounter } from 'usehooks-ts'; import { extractProgramGrandparent } from '../../helpers/programUtil.ts'; import type { RemoveProgrammingRequest } from '../../hooks/programming_controls/useRemoveProgramming'; import { useRemoveProgramming } from '../../hooks/programming_controls/useRemoveProgramming'; import useStore from '../../store'; import { materializedProgramListSelector } from '../../store/selectors'; type RemoveShowsModalProps = { open: boolean; onClose: () => void; }; interface FilmOptionType { id: string; title: string; firstLetter?: string; } export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => { const { t } = useLingui(); const { count, increment, decrement } = useCounter(0); const removeProgramming = useRemoveProgramming(); const [removeRequest, setRemoveRequest] = useState<RemoveProgrammingRequest>( {}, ); const programs = useStore(materializedProgramListSelector); const hasMovies = useMemo(() => { return some( programs, (p) => p.type === 'content' && p.program.type === 'movie', ); }, [programs]); const numAndDurationById = useMemo(() => { return reduce( programs, (acc, curr) => { const key = match(curr) .with( { type: 'content', program: { type: P.select(P.union('movie', 'music_video', 'other_video')), }, }, identity, ) .with( { type: 'content', program: { type: 'episode' } }, ({ program }) => program.show?.uuid ?? program.season?.show?.uuid, ) .with( { type: 'content', program: { type: 'track' } }, ({ program }) => program.artist?.uuid ?? program.album?.artist?.uuid, ) .with({ type: P._ }, () => undefined) .exhaustive(); if (key) { acc[key] ??= { totalDuration: 0, totalPrograms: 0 }; acc[key].totalDuration += curr.duration; acc[key].totalPrograms++; } return acc; }, {} as Record<string, { totalPrograms: number; totalDuration: number }>, ); }, [programs]); // Get the total number of movies from the memoized object const movieCount = numAndDurationById['movie']?.totalPrograms ?? 0; const showList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'episode' && isNonEmptyString( program.program.show?.uuid ?? program.program.season?.show?.uuid, ) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const artistList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'track' && isNonEmptyString(extractProgramGrandparent(program.program)?.uuid) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const mapListToGroupedOptions = ( list: Array<{ id: string; title: string }>, ) => { return list.map((option) => { // Get the first letter, use a placeholder if title is empty. const firstLetter = (option.title?.[0] ?? '-').toUpperCase(); return { // Group numbers/digits under '0-9', otherwise use the first letter. firstLetter: /[0-9]/.test(firstLetter) ? '0-9' : firstLetter, ...option, }; }); }; const showOptions = useMemo( () => mapListToGroupedOptions(showList), [showList], ); const artistOptions = useMemo( () => mapListToGroupedOptions(artistList), [artistList], ); const isEmptyRemoveRequest = useMemo(() => { return ( isEmpty(removeRequest) ?? every(values(removeRequest), (value) => { // If it's a boolean (movies: true/false), only check if it's the 'empty' state (false). // We do this because lodash treats booleans as empty regardless of value if (typeof value === 'boolean') { return value === false; } // Otherwise, check if the value is empty. return isEmpty(value); }) ); }, [removeRequest]); const removeShowsProgramming = () => { removeProgramming(removeRequest); onClose(); }; const getProgramCounts = (id: string, type?: string) => { const details = numAndDurationById[id]; if (!details) { return null; } const count = details.totalPrograms; const programLabel = type === 'episode' ? plural(count, { one: 'episode', other: 'episodes' }) : type === 'track' ? plural(count, { one: 'track', other: 'tracks' }) : plural(count, { one: 'program', other: 'programs' }); return t`${count} ${programLabel}, ${betterHumanize( dayjs.duration(details.totalDuration), { style: 'short', }, )}`; }; const getArtistIds = (options: FilmOptionType[]) => map(options, 'id'); return ( <> <Dialog open={open} scroll={'paper'}> <DialogTitle> <Trans>Remove Programming</Trans> </DialogTitle> <DialogContent> <DialogContentText> <Trans>Pick specific programming to remove from the channel.</Trans> </DialogContentText> <Autocomplete options={showOptions.sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.showIds ?? []; return includes(selectedIds, option.id); }} onChange={(_, newOptions) => { // Extract the IDs from the selected options const newShowIds = map(newOptions, 'id'); setRemoveRequest((prev) => ({ ...prev, showIds: newShowIds, })); // Update the program counter based on the number of selected shows const countDifference = newShowIds.length - (removeRequest.showIds?.length ?? 0); if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} value={ removeRequest.showIds ? showList.filter((show) => (removeRequest.showIds ?? []).includes(show.id), ) : [] } renderInput={(params) => ( <TextField {...params} label={t`Select Shows to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'episode')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> {artistList.length > 0 && ( <Autocomplete options={artistOptions.sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.artistIds ?? []; return includes(selectedIds, option.id); }} value={ removeRequest.artistIds ? artistList.filter((artist) => (removeRequest.artistIds ?? []).includes(artist.id), ) : [] } onChange={(_, newOptions) => { const newArtistIds = getArtistIds(newOptions); const previousArtistIds = removeRequest.artistIds ?? []; setRemoveRequest((prev) => ({ ...prev, artistIds: newArtistIds, })); // Update the program counter based on the number of selected shows const countDifference = newArtistIds.length - previousArtistIds.length; if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} renderInput={(params) => ( <TextField {...params} label={t`Select Artists to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'track')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> )} <Box key="dynamic-list-container"> <List dense> {hasMovies && ( <ListItem secondaryAction={ <Checkbox edge="end" onChange={(e) => { const isChecked = e.target.checked; setRemoveRequest((prev) => { const newState = { ...prev, movies: isChecked, }; return newState; }); const countDelta = isChecked ? movieCount : -movieCount; for (let i = 0; i < Math.abs(countDelta); i++) { if (countDelta > 0) increment(); else decrement(); } }} checked={!!removeRequest.movies} /> } > <ListItemText primary={t`Remove All ${movieCount} ${plural(movieCount, { one: 'Movie', other: 'Movies' })}`} secondary={getProgramCounts('movies')} /> </ListItem> )} </List> </Box> </DialogContent> <DialogActions> <Button onClick={() => onClose()}> <Trans>Cancel</Trans> </Button> <Button variant="contained" onClick={() => removeShowsProgramming()} disabled={isEmptyRemoveRequest} > <Trans> Remove {count}{' '} {plural(count, { one: 'program', other: 'programs' })} </Trans> </Button> </DialogActions> </Dialog> </> ); }; 
+#. placeholder {0}: import { betterHumanize } from '@/helpers/dayjs'; import { isNonEmptyString } from '@/helpers/util'; import { Autocomplete, Box, Checkbox, Chip, DialogContentText, List, ListItem, ListItemText, TextField, } from '@mui/material'; import Button from '@mui/material/Button'; import Dialog from '@mui/material/Dialog'; import DialogActions from '@mui/material/DialogActions'; import DialogContent from '@mui/material/DialogContent'; import DialogTitle from '@mui/material/DialogTitle'; import { seq } from '@tunarr/shared/util'; import dayjs from 'dayjs'; import { every, identity, includes, isEmpty, map, reduce, some, uniqBy, values, } from 'lodash-es'; import { Trans, useLingui } from '@lingui/react/macro'; import { plural } from '@lingui/core/macro'; import type { HTMLAttributes } from 'react'; import { useMemo, useState } from 'react'; import { match, P } from 'ts-pattern'; import { useCounter } from 'usehooks-ts'; import { extractProgramGrandparent } from '../../helpers/programUtil.ts'; import type { RemoveProgrammingRequest } from '../../hooks/programming_controls/useRemoveProgramming'; import { useRemoveProgramming } from '../../hooks/programming_controls/useRemoveProgramming'; import useStore from '../../store'; import { materializedProgramListSelector } from '../../store/selectors'; type RemoveShowsModalProps = { open: boolean; onClose: () => void; }; interface FilmOptionType { id: string; title: string; firstLetter?: string; } const RemoveShowsModalContent = ({ onClose, }: Omit<RemoveShowsModalProps, 'open'>) => { const { t } = useLingui(); const { count, increment, decrement } = useCounter(0); const removeProgramming = useRemoveProgramming(); const [removeRequest, setRemoveRequest] = useState<RemoveProgrammingRequest>( {}, ); const programs = useStore(materializedProgramListSelector); const hasMovies = useMemo(() => { return some( programs, (p) => p.type === 'content' && p.program.type === 'movie', ); }, [programs]); const numAndDurationById = useMemo(() => { return reduce( programs, (acc, curr) => { const key = match(curr) .with( { type: 'content', program: { type: P.select(P.union('movie', 'music_video', 'other_video')), }, }, identity, ) .with( { type: 'content', program: { type: 'episode' } }, ({ program }) => program.show?.uuid ?? program.season?.show?.uuid, ) .with( { type: 'content', program: { type: 'track' } }, ({ program }) => program.artist?.uuid ?? program.album?.artist?.uuid, ) .with({ type: P._ }, () => undefined) .exhaustive(); if (key) { acc[key] ??= { totalDuration: 0, totalPrograms: 0 }; acc[key].totalDuration += curr.duration; acc[key].totalPrograms++; } return acc; }, {} as Record<string, { totalPrograms: number; totalDuration: number }>, ); }, [programs]); // Get the total number of movies from the memoized object const movieCount = numAndDurationById['movie']?.totalPrograms ?? 0; const showList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'episode' && isNonEmptyString( program.program.show?.uuid ?? program.program.season?.show?.uuid, ) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const artistList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'track' && isNonEmptyString(extractProgramGrandparent(program.program)?.uuid) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const mapListToGroupedOptions = ( list: Array<{ id: string; title: string }>, ) => { return list.map((option) => { // Get the first letter, use a placeholder if title is empty. const firstLetter = (option.title?.[0] ?? '-').toUpperCase(); return { // Group numbers/digits under '0-9', otherwise use the first letter. firstLetter: /[0-9]/.test(firstLetter) ? '0-9' : firstLetter, ...option, }; }); }; const showOptions = useMemo( () => mapListToGroupedOptions(showList), [showList], ); const artistOptions = useMemo( () => mapListToGroupedOptions(artistList), [artistList], ); const isEmptyRemoveRequest = useMemo(() => { return ( isEmpty(removeRequest) ?? every(values(removeRequest), (value) => { // If it's a boolean (movies: true/false), only check if it's the 'empty' state (false). // We do this because lodash treats booleans as empty regardless of value if (typeof value === 'boolean') { return value === false; } // Otherwise, check if the value is empty. return isEmpty(value); }) ); }, [removeRequest]); const removeShowsProgramming = () => { removeProgramming(removeRequest); onClose(); }; const getProgramCounts = (id: string, type?: string) => { const details = numAndDurationById[id]; if (!details) { return null; } const count = details.totalPrograms; const programLabel = type === 'episode' ? plural(count, { one: 'episode', other: 'episodes' }) : type === 'track' ? plural(count, { one: 'track', other: 'tracks' }) : plural(count, { one: 'program', other: 'programs' }); return t`${count} ${programLabel}, ${betterHumanize( dayjs.duration(details.totalDuration), { style: 'short', }, )}`; }; const getArtistIds = (options: FilmOptionType[]) => map(options, 'id'); return ( <> <DialogTitle> <Trans>Remove Programming</Trans> </DialogTitle> <DialogContent> <DialogContentText> <Trans>Pick specific programming to remove from the channel.</Trans> </DialogContentText> <Autocomplete options={[...showOptions].sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.showIds ?? []; return includes(selectedIds, option.id); }} onChange={(_, newOptions) => { // Extract the IDs from the selected options const newShowIds = map(newOptions, 'id'); setRemoveRequest((prev) => ({ ...prev, showIds: newShowIds, })); // Update the program counter based on the number of selected shows const countDifference = newShowIds.length - (removeRequest.showIds?.length ?? 0); if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} value={ removeRequest.showIds ? showList.filter((show) => (removeRequest.showIds ?? []).includes(show.id), ) : [] } renderInput={(params) => ( <TextField {...params} label={t`Select Shows to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'episode')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> {artistList.length > 0 && ( <Autocomplete options={[...artistOptions].sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.artistIds ?? []; return includes(selectedIds, option.id); }} value={ removeRequest.artistIds ? artistList.filter((artist) => (removeRequest.artistIds ?? []).includes(artist.id), ) : [] } onChange={(_, newOptions) => { const newArtistIds = getArtistIds(newOptions); const previousArtistIds = removeRequest.artistIds ?? []; setRemoveRequest((prev) => ({ ...prev, artistIds: newArtistIds, })); // Update the program counter based on the number of selected shows const countDifference = newArtistIds.length - previousArtistIds.length; if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} renderInput={(params) => ( <TextField {...params} label={t`Select Artists to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'track')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> )} <Box key="dynamic-list-container"> <List dense> {hasMovies && ( <ListItem secondaryAction={ <Checkbox edge="end" onChange={(e) => { const isChecked = e.target.checked; setRemoveRequest((prev) => { const newState = { ...prev, movies: isChecked, }; return newState; }); const countDelta = isChecked ? movieCount : -movieCount; for (let i = 0; i < Math.abs(countDelta); i++) { if (countDelta > 0) increment(); else decrement(); } }} checked={!!removeRequest.movies} /> } > <ListItemText primary={t`Remove All ${movieCount} ${plural(movieCount, { one: 'Movie', other: 'Movies' })}`} secondary={getProgramCounts('movies')} /> </ListItem> )} </List> </Box> </DialogContent> <DialogActions> <Button onClick={() => onClose()}> <Trans>Cancel</Trans> </Button> <Button variant="contained" onClick={() => removeShowsProgramming()} disabled={isEmptyRemoveRequest} > <Trans> Remove {count}{' '} {plural(count, { one: 'program', other: 'programs' })} </Trans> </Button> </DialogActions> </> ); }; // The content mounts only while the dialog is open, so it does no work when closed. export const RemoveShowsModal = ({ open, ...props }: RemoveShowsModalProps) => ( <Dialog open={open} scroll={'paper'}> <RemoveShowsModalContent {...props} /> </Dialog> ); 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Remove {count} {0}"
 msgstr ""
@@ -3353,7 +3464,7 @@ msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Running..."
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Sample rate cannot be changed when copying input audio"
@@ -3488,7 +3599,7 @@ msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Selected Subtitle"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -3553,9 +3664,18 @@ msgstr ""
 msgid "Show Advanced"
 msgstr ""
 
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Show disabled libraries"
+msgstr ""
+
 #: src/components/channel_config/ProgrammingSelector.tsx
 #~ msgid "Show only synced libraries"
 #~ msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Show Order"
+msgstr ""
 
 #: src/pages/guide/GuidePage.tsx
 msgid "Show Stealth"
@@ -3575,6 +3695,19 @@ msgstr ""
 msgid "Shows"
 msgstr ""
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows come up at random, one episode at a time. Each show's episodes stay in order, starting from a random episode."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows take turns in a fixed order, each playing a block of episodes before the next show."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows take turns in a fixed order."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Shuffle"
@@ -3668,6 +3801,7 @@ msgid "Sort TV Shows (desc)"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Sorts alphabetically by program title"
 msgstr ""
 
@@ -3684,13 +3818,14 @@ msgstr ""
 msgid "Soundtrack"
 msgstr ""
 
+#: src/components/MediaSourceLibraryTable.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Source"
 msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
-msgid "Source Type"
-msgstr ""
+#~ msgid "Source Type"
+#~ msgstr ""
 
 #: src/hooks/useNavItems.tsx
 msgid "Sources"
@@ -3714,6 +3849,11 @@ msgstr ""
 msgid "Started {startedAgo} - {remainingTime}remaining"
 msgstr ""
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Starting Episode"
+msgstr ""
+
 #: src/hooks/useNavItems.tsx
 #: src/pages/system/SystemLayout.tsx
 msgid "Status"
@@ -3725,6 +3865,10 @@ msgstr ""
 
 #: src/pages/channels/ChannelsPage.tsx
 msgid "Stealth?"
+msgstr ""
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Stop syncing this library"
 msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
@@ -3776,8 +3920,8 @@ msgid "Successfully copied to clipboard!"
 msgstr ""
 
 #: src/pages/library/TrashPage.tsx
-msgid "Successfully emptied trash."
-msgstr ""
+#~ msgid "Successfully emptied trash."
+#~ msgstr ""
 
 #: src/pages/system/StatusPage.tsx
 msgid "Successfully ran system fixer {fixerId}"
@@ -3796,8 +3940,16 @@ msgstr ""
 msgid "Successfully updated Media Source settings."
 msgstr ""
 
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Sync"
+msgstr ""
+
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync Now"
+msgstr ""
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Sync this library to Tunarr"
 msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
@@ -3835,14 +3987,18 @@ msgstr ""
 msgid "Tail Buffer (minutes)"
 msgstr ""
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Take Turns"
+msgstr ""
+
 #: src/pages/settings/TaskSettingsPage.tsx
 #: src/pages/system/SystemLayout.tsx
 msgid "Tasks"
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
-msgstr ""
+#~ msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
+#~ msgstr ""
 
 #: src/routes/channels_/test.tsx
 msgid "Test"
@@ -3877,6 +4033,10 @@ msgstr ""
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 msgstr ""
 
+#: src/components/UnavailableLibraryIndicator.tsx
+msgid "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
+msgstr ""
+
 #: src/components/LanguagePreferencesList.tsx
 msgid "The selected languages will be considered in order they are selected."
 msgstr ""
@@ -3891,6 +4051,10 @@ msgstr ""
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Theme Settings"
+msgstr ""
+
+#: src/hooks/slot_scheduler/useScheduleSlots.ts
+msgid "There was an error generating slots. {serverMessage}"
 msgstr ""
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
@@ -3910,6 +4074,7 @@ msgid "These settings are stored in your browser and are saved automatically whe
 msgstr ""
 
 #. placeholder {0}: slot.type .split('-') .map((s) => capitalize(s)) .join(' ')
+#: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "This {0} is marked as missing in the database."
 msgstr ""
@@ -3939,12 +4104,24 @@ msgstr ""
 msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
 msgstr ""
 
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "This custom show has no programs. Add programs to it or choose another show."
+msgstr ""
+
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
 msgstr ""
 
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "This custom show was deleted. Choose another show."
+msgstr ""
+
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
+#~ msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
+#~ msgstr ""
+
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "This filler list has no programs and will be ignored."
 msgstr ""
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
@@ -3984,6 +4161,14 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "This slot replays content aired by continue slots earlier in the period."
+msgstr ""
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
+msgid "This slot's custom show has no programs, so the slot cannot be scheduled. Add programs to the show, choose another show, or remove the slot."
+msgstr ""
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
+msgid "This slot's custom show was deleted, so the slot cannot be scheduled. Choose another show or remove the slot."
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
@@ -4045,14 +4230,17 @@ msgstr ""
 
 #: src/components/slot_scheduler/ProgramWeekCalendarView.tsx
 msgid "Today"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "toggle access token visibility"
+msgstr ""
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "toggle password visibility"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingTools.tsx
@@ -4122,9 +4310,22 @@ msgstr ""
 msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
 msgstr ""
 
+#. placeholder {0}: mediaSource.name
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+msgid "Tunarr only syncs content from enabled libraries. Choose the libraries from {0} that you want to use in your channels."
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "Tunarr only syncs content from enabled libraries. Click to choose libraries."
+msgstr ""
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Tunarr only syncs content from enabled libraries. Turn on a library's switch to sync it, or manage sources in <0>Media Source Settings.</0>"
+msgstr ""
+
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Tunarr will attempt to get Plex to pull Tunarr's updated XMLTV upon regeneration"
@@ -4147,8 +4348,6 @@ msgstr ""
 msgid "TV shows are grouped by show"
 msgstr ""
 
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
@@ -4162,6 +4361,11 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
+#: src/components/UnavailableLibraryIndicator.tsx
+#: src/components/UnavailableLibraryIndicator.tsx
+msgid "Unavailable"
+msgstr ""
+
 #: src/components/search/DateSearchValueNode.tsx
 #: src/components/search/DateSearchValueNode.tsx
 msgid "Unit"
@@ -4173,7 +4377,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 #~ msgid "Unlink from group"
-#~ msgstr "<<<<<<< HEAD"
+#~ msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -4209,9 +4413,11 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Use these settings to override global ffmpeg settings for this channel."
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Username"
 msgstr ""
@@ -4385,6 +4591,10 @@ msgstr ""
 
 #: src/pages/system/StatusPage.tsx
 msgid "XMLTV Link:"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "You can change any setting below before shuffling."
 msgstr ""
 
 #: src/pages/library/FillerListsPage.tsx

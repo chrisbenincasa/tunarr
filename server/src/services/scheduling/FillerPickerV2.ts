@@ -8,8 +8,6 @@ import type {
   ChannelFillerShowWithContent,
   ProgramOrmWithExternalIds,
 } from '../../db/schema/derivedTypes.ts';
-import { OneDayMillis } from '../../ffmpeg/builder/constants.ts';
-
 import { OpenDateTimeRange } from '../../types/OpenDateTimeRange.ts';
 import type { Maybe, Nullable } from '../../types/util.ts';
 import { InjectLogger } from '../../util/inject.ts';
@@ -25,6 +23,16 @@ import {
   EmptyFillerPickResult,
   type FillerPickOptions,
 } from '../interfaces/IFillerPicker.ts';
+
+// Floor for the play history lookback. Widened when a cooldown exceeds it.
+const MinimumHistoryWindowMillis = 2 * 24 * 60 * 60 * 1000;
+
+// Filler may run past the gap by this much and get cut at the gap's end. The
+// tolerance scales with the gap, so a short gap never shows a fragment of a
+// much longer clip.
+function fillerOverrunToleranceMs(gapMs: number) {
+  return Math.min(constants.SLACK, gapMs / 10);
+}
 
 // A (near) re-implementation of the original DTV filler picker.
 @injectable()
@@ -50,22 +58,63 @@ export class FillerPickerV2 implements IFillerPicker {
       return Promise.resolve(EmptyFillerPickResult);
     }
 
+    const maxFillerDuration =
+      maxDuration + fillerOverrunToleranceMs(maxDuration);
+
     const fillerRepeatCooldownMs =
       options?.fillerRepeatCooldownOverrideMs ??
       channel.fillerRepeatCooldown ??
       DefaultFillerCooldownMillis;
 
+    // The window must span every cooldown in play. A play falling outside it
+    // reads as "never played", which would let a program run inside its
+    // cooldown.
+    const maxListCooldownMs = fillers.reduce((max, filler) => {
+      const override =
+        options?.fillerListCooldownOverrides?.[filler.fillerShow.uuid];
+      const cooldownMs =
+        (override !== undefined ? override : filler.cooldown) * 1000;
+      return Math.max(max, cooldownMs);
+    }, 0);
+    const historyWindowMs = Math.max(
+      MinimumHistoryWindowMillis,
+      fillerRepeatCooldownMs,
+      maxListCooldownMs,
+    );
+
     const channelHistoryForFiller =
       await this.programPlayHistoryDB.getFillerHistory(
         channel.uuid,
-        OpenDateTimeRange.create(dayjs(now).subtract(2, 'days'), undefined) ??
+        OpenDateTimeRange.create(
+          dayjs(now).subtract(historyWindowMs, 'milliseconds'),
           undefined,
+        ) ?? undefined,
       );
 
     const fillerPlayHistoryById = groupBy(
       channelHistoryForFiller,
       (history) => history.fillerListId,
     );
+
+    // A program's cooldown is per channel, not per list. The same program can
+    // belong to several lists, and a play under any of them counts.
+    const lastPlayedAtByProgramId = new Map<string, number>();
+    for (const history of channelHistoryForFiller) {
+      const playedAt = dayjs(history.playedAt).valueOf();
+      const existing = lastPlayedAtByProgramId.get(history.programUuid);
+      if (existing === undefined || playedAt > existing) {
+        lastPlayedAtByProgramId.set(history.programUuid, playedAt);
+      }
+    }
+
+    // Both phases must agree on this, or one can admit a program the other
+    // considers still on cooldown.
+    const timeSinceProgramPlayed = (programUuid: string) => {
+      const lastPlayedAt = lastPlayedAtByProgramId.get(programUuid);
+      return lastPlayedAt !== undefined
+        ? now - lastPlayedAt
+        : Number.MAX_SAFE_INTEGER;
+    };
 
     let minimumWait = Number.MAX_SAFE_INTEGER;
 
@@ -94,7 +143,7 @@ export class FillerPickerV2 implements IFillerPicker {
       );
       const timeSincePlayedFiller = lastPlay
         ? now - dayjs(lastPlay.playedAt).valueOf()
-        : OneDayMillis;
+        : Number.MAX_SAFE_INTEGER;
       const listCooldownOverride =
         options?.fillerListCooldownOverrides?.[fillerShow.uuid];
       const fillerCooldownMs =
@@ -109,13 +158,8 @@ export class FillerPickerV2 implements IFillerPicker {
         // we'd risk picking a list and then failing to find a program.
         let hasEligibleProgram = false;
         for (const program of filler.fillerContent) {
-          if (program.duration > maxDuration + constants.SLACK) continue;
-          const programLastPlayed = fillerHistory?.find(
-            (h) => h.programUuid === program.uuid,
-          );
-          const timeSincePlayed = programLastPlayed
-            ? now - dayjs(programLastPlayed.playedAt).valueOf()
-            : OneDayMillis;
+          if (program.duration > maxFillerDuration) continue;
+          const timeSincePlayed = timeSinceProgramPlayed(program.uuid);
           if (timeSincePlayed >= fillerRepeatCooldownMs) {
             hasEligibleProgram = true;
           } else {
@@ -123,7 +167,7 @@ export class FillerPickerV2 implements IFillerPicker {
               fillerRepeatCooldownMs - timeSincePlayed;
             if (
               program.duration + timeUntilProgramCanPlay <=
-              maxDuration + constants.SLACK
+              maxFillerDuration
             ) {
               minimumWait = Math.min(minimumWait, timeUntilProgramCanPlay);
               this.logger.trace('New minimumWait: %d', minimumWait);
@@ -160,10 +204,7 @@ export class FillerPickerV2 implements IFillerPicker {
           (min, p) => Math.min(min, p.duration),
           Number.MAX_SAFE_INTEGER,
         );
-        if (
-          shortestProgram + timeUntilListIsCandidate <=
-          maxDuration + constants.SLACK
-        ) {
+        if (shortestProgram + timeUntilListIsCandidate <= maxFillerDuration) {
           minimumWait = Math.min(
             minimumWait,
             shortestProgram + timeUntilListIsCandidate,
@@ -181,16 +222,18 @@ export class FillerPickerV2 implements IFillerPicker {
       };
     }
 
-    // Phase 2: Select a program from the picked list using weighted
-    // reservoir sampling. Shuffle so that programs with equal weights
-    // don't always resolve in the same order.
-    const fillerHistory = fillerPlayHistoryById[pickedFiller.fillerShow.uuid];
+    // Phase 2: Select a program from the picked list. Ranking by staleness
+    // needs the whole eligible set in hand, so gather it before weighting.
+    // Shuffle first so that programs tied on staleness don't always resolve
+    // in the same order.
     const shuffledPrograms = random.shuffle([...pickedFiller.fillerContent]);
-    let programTotalWeight = 0;
-    let pickedProgram: Nullable<ProgramOrmWithExternalIds> = null;
+    const candidates: {
+      program: ProgramOrmWithExternalIds;
+      timeSincePlayed: number;
+    }[] = [];
 
     for (const program of shuffledPrograms) {
-      if (program.duration > maxDuration + constants.SLACK) {
+      if (program.duration > maxFillerDuration) {
         this.logger.trace(
           'Skipping program %s (%s) from filler list %s because it is too long (%d > %d)',
           program.uuid,
@@ -202,12 +245,7 @@ export class FillerPickerV2 implements IFillerPicker {
         continue;
       }
 
-      const programLastPlayed = fillerHistory?.find(
-        (h) => h.programUuid === program.uuid,
-      );
-      const timeSincePlayed = programLastPlayed
-        ? now - dayjs(programLastPlayed.playedAt).valueOf()
-        : OneDayMillis;
+      const timeSincePlayed = timeSinceProgramPlayed(program.uuid);
 
       // Channel level cooldown in effect for this program
       if (timeSincePlayed < fillerRepeatCooldownMs) {
@@ -221,25 +259,33 @@ export class FillerPickerV2 implements IFillerPicker {
         );
         const timeUntilProgramCanPlay =
           fillerRepeatCooldownMs - timeSincePlayed;
-        if (
-          program.duration + timeUntilProgramCanPlay <=
-          maxDuration + constants.SLACK
-        ) {
+        if (program.duration + timeUntilProgramCanPlay <= maxFillerDuration) {
           minimumWait = Math.min(minimumWait, timeUntilProgramCanPlay);
           this.logger.trace('New minimumWait: %d', minimumWait);
         }
         continue;
       }
 
-      const normalizedSince = normalizeSince(
-        // Cap input at the cooldown to treat all programs past the
-        // cooldown with equal staleness. Apply a slight factor
-        // increase to that to spread evenness a bit more among the
-        // other programs too.
-        Math.min(timeSincePlayed, fillerRepeatCooldownMs * 1.2),
-      );
-      const normalizedDuration = normalizeDuration(program.duration);
-      const programWeight = normalizedSince + normalizedDuration;
+      candidates.push({ program, timeSincePlayed });
+    }
+
+    // Freshest first, so the stalest program earns the highest rank. Ranking
+    // by position rather than by elapsed time keeps the spread between fresh
+    // and stale identical whatever the cooldown is set to — elapsed time has
+    // no fixed scale to measure against, position does. The sort is stable,
+    // so the shuffle above still breaks ties, including the large tie among
+    // every never-played program.
+    candidates.sort((a, b) => a.timeSincePlayed - b.timeSincePlayed);
+
+    let programTotalWeight = 0;
+    let pickedProgram: Nullable<ProgramOrmWithExternalIds> = null;
+
+    for (const [index, { program }] of candidates.entries()) {
+      // Squared so the stalest programs pull clearly ahead rather than
+      // edging out the rest. Multiplied by duration, not summed with it, so
+      // neither signal can swamp the other by sheer magnitude.
+      const rank = index + 1;
+      const programWeight = rank * rank * normalizeDuration(program.duration);
       programTotalWeight += programWeight;
       if (this.weightedPick('program', programWeight, programTotalWeight)) {
         pickedProgram = program;
@@ -269,19 +315,13 @@ export class FillerPickerV2 implements IFillerPicker {
   }
 }
 
-// Moving old DTV normalizer functions here. Slightly changing them to make them
-// more readable and less verbose
+// Grows with duration so longer clips stay competitive. Short clips fit more
+// of the gaps, so bin-packing alone would over-expose them.
 function normalizeDuration(durationMs: number) {
   let durationMins = durationMs / (60 * 1000);
   if (durationMins >= 3.0) {
     durationMins = 3.0 + Math.log(durationMins);
   }
   const y = 10000 * (Math.ceil(durationMins * 1000) + 1);
-  return Math.ceil(y / 1000000) + 1;
-}
-
-function normalizeSince(timeSinceMs: number) {
-  let y = Math.ceil(timeSinceMs / 600) + 1;
-  y = y * y;
   return Math.ceil(y / 1000000) + 1;
 }

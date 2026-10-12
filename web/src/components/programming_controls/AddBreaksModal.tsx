@@ -30,7 +30,9 @@ type AddBreaksForm = {
   maxDurationMs: number;
 };
 
-const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
+const AddBreaksModalContent = ({
+  onClose,
+}: Omit<AddBreaksModalProps, 'open'>) => {
   const { t } = useLingui();
   const addBreaks = useAddBreaks();
 
@@ -57,10 +59,10 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
   };
 
   return (
-    <Dialog
-      open={open}
+    <Box
       component="form"
       onSubmit={handleSubmit(doSubmit, console.error)}
+      sx={{ display: 'contents' }}
     >
       <DialogTitle>
         <Trans>Add Breaks</Trans>
@@ -215,8 +217,15 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
           <Trans>Save</Trans>
         </Button>
       </DialogActions>
-    </Dialog>
+    </Box>
   );
 };
+
+// The content mounts only while the dialog is open, so it does no work when closed.
+const AddBreaksModal = ({ open, ...props }: AddBreaksModalProps) => (
+  <Dialog open={open}>
+    <AddBreaksModalContent {...props} />
+  </Dialog>
+);
 
 export default AddBreaksModal;

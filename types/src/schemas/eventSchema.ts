@@ -10,6 +10,8 @@ export const EventTypeSchema = z.union([
   z.literal('xmltv'),
   z.literal('settings-update'),
   z.literal('channel_schedule_changed'),
+  z.literal('stream'),
+  z.literal('empty_trash'),
 ]);
 
 const BaseEventSchema = z.object({
@@ -67,6 +69,15 @@ export const ChannelScheduleChangedEventSchema = BaseEventSchema.extend({
   channelId: z.string().uuid(),
 });
 
+export const EmptyTrashEventSchema = BaseEventSchema.extend({
+  type: z.literal('empty_trash'),
+  detail: z.object({
+    status: z.enum(['started', 'completed', 'cancelled', 'failed']),
+    total: z.number(),
+    deleted: z.number(),
+  }),
+});
+
 export const TunarrEventSchema = z.discriminatedUnion('type', [
   SettingsUpdateEventSchema,
   HeartbeatEventSchema,
@@ -74,4 +85,5 @@ export const TunarrEventSchema = z.discriminatedUnion('type', [
   XmlTvEventSchema,
   StreamSessionEventSchema,
   ChannelScheduleChangedEventSchema,
+  EmptyTrashEventSchema,
 ]);

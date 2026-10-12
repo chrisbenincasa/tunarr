@@ -32,7 +32,8 @@ import {
 } from '../../db/schema/MediaSourceLibrary.ts';
 import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
-import { setGlobalOptions } from '../../globals.ts';
+import { globalOptions, setGlobalOptions } from '../../globals.ts';
+import { FileSystemService } from '../FileSystemService.ts';
 import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { copyPreMigratedDb } from '../../testing/testDbFactory.ts';
 import type { PlexAlbum, PlexArtist, PlexTrack } from '../../types/Media.ts';
@@ -84,7 +85,10 @@ const test = baseTest.extend<Fixture>({
   },
   programDb: async ({ drizzle }, use) => {
     const dbAccess = DBAccess.instance;
-    const metadataRepo = new ProgramMetadataRepository(drizzle);
+    const metadataRepo = new ProgramMetadataRepository(
+      drizzle,
+      new FileSystemService(globalOptions()),
+    );
     const externalIdRepo = new ProgramExternalIdRepository(
       dbAccess.db!,
       drizzle,

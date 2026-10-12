@@ -31,6 +31,11 @@ import type { Canonicalizer } from '../Canonicalizer.ts';
 import type { ImageCache } from '../ImageCache.ts';
 import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
 import { KnownImageFileExtensions } from './constants.ts';
+import {
+  caseInsensitiveExtensionGlob,
+  imageFileLookup,
+  locateImageFile,
+} from './imageFileLookup.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { RunState } from './MediaSourceScanner.ts';
 
@@ -523,23 +528,21 @@ export abstract class FileSystemScanner {
     baseFolder: string,
     artworkNames: string[],
   ) {
-    const allNames = KnownImageFileExtensions.values().flatMap((ext) => {
-      return artworkNames.map((name) => {
+    const lookup = imageFileLookup();
+    for (const ext of KnownImageFileExtensions) {
+      for (const name of artworkNames) {
         if (glob.isDynamicPattern(name)) {
-          return `${glob.convertPathToPattern(baseFolder)}/${name}.${ext}`;
+          const pattern = `${glob.convertPathToPattern(baseFolder)}/${name}.${caseInsensitiveExtensionGlob(ext)}`;
+          const expanded = await glob.async(pattern);
+          if (expanded.length > 0) {
+            return expanded[0];
+          }
+        } else {
+          const found = await lookup(path.join(baseFolder, name), ext);
+          if (found) {
+            return found;
+          }
         }
-        return path.join(baseFolder, `${name}.${ext}`);
-      });
-    });
-
-    for (const name of allNames) {
-      if (glob.isDynamicPattern(name)) {
-        const expanded = await glob.async(name);
-        if (expanded.length > 0) {
-          return expanded[0];
-        }
-      } else if (await fileExists(name)) {
-        return name;
       }
     }
     return;
@@ -548,17 +551,7 @@ export abstract class FileSystemScanner {
   protected static async locateArtworkForPossibleNames(
     possibleNames: string[],
   ) {
-    const allNames = [
-      ...KnownImageFileExtensions.values().flatMap((ext) =>
-        possibleNames.map((name) => `${name}.${ext}`),
-      ),
-    ];
-    for (const name of allNames) {
-      if (await fileExists(name)) {
-        return name;
-      }
-    }
-    return;
+    return locateImageFile(possibleNames);
   }
 }
 

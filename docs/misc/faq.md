@@ -113,3 +113,12 @@ PBS will skip the `data.ms` directory during all future backup jobs that include
 
 !!! tip
     The Meilisearch index can be rebuilt automatically by Tunarr, so excluding `data.ms` from backups is generally safe, so long as the `ms-snapshots` directory is preserved. After restoring a backup without this file, Tunarr will recreate the search index on startup.
+
+### What happens if `data.ms` is damaged?
+
+On startup, Tunarr checks the `data.ms` directory before starting Meilisearch. Meilisearch cannot open a `data.ms` directory that has no `VERSION` file. This can happen after a partial restore, or when something deletes files from the directory (for example, macOS clears old files out of its temporary directory, so don't keep Tunarr's data directory there). When the file is missing:
+
+- If `data.ms` contains no files, Tunarr deletes it.
+- If `data.ms` still contains data, Tunarr renames it to `data.ms.broken-<timestamp>` so nothing is lost. You can delete that directory once Tunarr is running normally.
+
+Tunarr then restores the index from `ms-snapshots` when a snapshot exists, or creates an empty index. If search results are empty afterwards, rescan your libraries to rebuild the index.

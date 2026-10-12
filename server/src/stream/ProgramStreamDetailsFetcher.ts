@@ -1,4 +1,5 @@
 import { nullToUndefined, seq } from '@tunarr/shared/util';
+import axios from 'axios';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import {
@@ -13,13 +14,16 @@ import {
 import { match } from 'ts-pattern';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
+import { ArtworkService } from '../services/ArtworkService.ts';
+import type { ArtworkResult } from '../services/ArtworkService.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
-import type { Nilable } from '../types/util.ts';
+import type { Maybe, Nilable } from '../types/util.ts';
 import { fileExists } from '../util/fsUtil.ts';
 import { isNonEmptyArray, isNonEmptyString } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
+import { makeLocalUrl } from '../util/serverUtil.ts';
 import type { StreamFetchRequest } from './ExternalStreamDetailsFetcher.ts';
 import { PathCalculator } from './PathCalculator.ts';
 import type {
@@ -30,20 +34,23 @@ import type {
   SubtitleStreamDetails,
   VideoStreamDetails,
 } from './types.ts';
-import { HttpStreamSource } from './types.ts';
+import { FileStreamSource, HttpStreamSource } from './types.ts';
 import { extractIsAnamorphic } from './util.ts';
 
 @injectable()
 export class ProgramStreamDetailsFetcher {
   @InjectLogger() declare private readonly logger: Logger;
 
-  constructor(@inject(KEYS.ProgramDB) private programDB: IProgramDB) {}
+  constructor(
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(ArtworkService) private artworkService: ArtworkService,
+  ) {}
 
   async getStream({
     lineupItem,
     server,
   }: StreamFetchRequest): Promise<Result<ProgramStreamResult>> {
-    const program = await this.programDB.getProgramById(lineupItem.uuid);
+    const program = await this.programDB.getStreamProgramById(lineupItem.uuid);
 
     if (!program) {
       return Result.forError(
@@ -114,6 +121,12 @@ export class ProgramStreamDetailsFetcher {
           }) satisfies AudioStreamDetails,
       ) ?? [];
 
+    // NOTE: 'external_subtitles' media streams are deliberately not included
+    // here. They carry no path (program_media_stream has no such column) and
+    // their index is relative to the container, so they are not addressable as
+    // an ffmpeg input. Every external subtitle is also recorded as a 'sidecar'
+    // row on program_subtitles, which does have a path, and those are handled
+    // below.
     const subtitleStreamDetails: SubtitleStreamDetails[] =
       streamsByType['subtitles']?.map(
         (subtitle) =>
@@ -130,11 +143,42 @@ export class ProgramStreamDetailsFetcher {
 
     const usableSubtitles = await Promise.all(
       (program.subtitles ?? []).map(async (subtitle) => {
-        const pathOnDisk =
-          isNonEmptyString(subtitle.path) && (await fileExists(subtitle.path));
-        if (subtitle.subtitleType === 'sidecar') {
-          return pathOnDisk ? subtitle : null;
+        let pathOnDisk: Maybe<string>;
+        if (
+          isNonEmptyString(subtitle.path) &&
+          (await fileExists(subtitle.path))
+        ) {
+          pathOnDisk = subtitle.path;
         }
+
+        if (subtitle.subtitleType === 'sidecar') {
+          // External subtitles are always handed to ffmpeg as a local file:
+          // either a sidecar from a local library, a copy downloaded during
+          // scanning, or a file on storage Tunarr shares with the media source.
+          if (pathOnDisk) {
+            return { subtitle, path: pathOnDisk };
+          }
+
+          // Re-checked here rather than trusting the scan, so a mount that
+          // appeared later is picked up without a rescan.
+          const sharedPath = await PathCalculator.findLocalPath(
+            subtitle.sourcePath,
+            server.replacePaths,
+          );
+          if (sharedPath) {
+            return { subtitle, path: sharedPath };
+          }
+
+          this.logger.debug(
+            'Dropping sidecar subtitle %s for program %s: not on disk (%s) and not on shared storage (%s). It should be downloaded on the next scan of this library.',
+            subtitle.uuid,
+            program.uuid,
+            subtitle.path ?? '<no path>',
+            subtitle.sourcePath ?? '<no source path>',
+          );
+          return null;
+        }
+
         if (!subtitle.isExtracted) {
           return null;
         }
@@ -148,20 +192,21 @@ export class ProgramStreamDetailsFetcher {
           await this.programDB.clearExtractedSubtitle(subtitle.uuid);
           return null;
         }
-        return subtitle;
+        return { subtitle, path: pathOnDisk };
       }),
     );
 
     subtitleStreamDetails.push(
-      ...seq.collect(usableSubtitles, (subtitle) => {
-        if (!subtitle) return null;
+      ...seq.collect(usableSubtitles, (usable) => {
+        if (!usable) return null;
+        const { subtitle, path } = usable;
         return {
           ...subtitle,
           index: nullToUndefined(subtitle.streamIndex),
           type: subtitle.subtitleType === 'embedded' ? 'embedded' : 'external',
           languageCodeISO6392: subtitle.language,
           sdh: subtitle.sdh,
-          path: nullToUndefined(subtitle.path),
+          path,
         } satisfies SubtitleStreamDetails;
       }),
     );
@@ -180,6 +225,12 @@ export class ProgramStreamDetailsFetcher {
         ? videoStreamDetails
         : undefined,
     };
+
+    if (streamDetails.audioOnly) {
+      streamDetails.placeholderImage = await this.resolvePlaceholderImage(
+        program.uuid,
+      );
+    }
 
     if (server.type === 'local') {
       const file = head(firstVersion.mediaFiles);
@@ -207,6 +258,66 @@ export class ProgramStreamDetailsFetcher {
         serverPath,
       );
       return Result.success({ streamDetails, streamSource });
+    }
+  }
+
+  /**
+   * Picks the still image looped as video for an audio-only program. The
+   * track's own art wins, then its album's, then a generic music card. Remote
+   * art gets a HEAD request first, because ffmpeg fails the whole stream when
+   * an input is unreachable.
+   */
+  private async resolvePlaceholderImage(
+    programId: string,
+  ): Promise<StreamSource> {
+    let artwork: ArtworkResult = { kind: 'not-found' };
+    try {
+      artwork = await this.artworkService.resolveArtwork(
+        programId,
+        'program',
+        'poster',
+        ['thumbnail'],
+      );
+    } catch (e) {
+      this.logger.warn(
+        e,
+        'Unable to resolve artwork for audio-only program %s',
+        programId,
+      );
+    }
+
+    const source = await match(artwork)
+      .with({ kind: 'file' }, async ({ path }) => {
+        const exists = await fileExists(path).catch((e) => {
+          this.logger.warn(e, 'Unable to read cached artwork at %s', path);
+          return false;
+        });
+        return exists ? new FileStreamSource(path) : undefined;
+      })
+      .with({ kind: 'url' }, async ({ url, headers }) =>
+        (await this.isReachable(url, headers))
+          ? new HttpStreamSource(url, headers)
+          : undefined,
+      )
+      .with({ kind: 'not-found' }, () => Promise.resolve(undefined))
+      .exhaustive();
+
+    return (
+      source ??
+      new HttpStreamSource(makeLocalUrl('/images/generic-music-screen.png'))
+    );
+  }
+
+  private async isReachable(
+    url: string,
+    headers?: Record<string, string>,
+  ): Promise<boolean> {
+    try {
+      await axios.head(url, { headers, timeout: 2_000 });
+      return true;
+    } catch (e) {
+      this.logger.debug(e, 'Artwork at %s is not reachable', url);
+      return false;
     }
   }
 

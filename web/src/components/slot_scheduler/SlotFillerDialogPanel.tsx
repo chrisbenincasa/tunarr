@@ -25,7 +25,8 @@ import {
 } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
 import type { BaseSlot } from '@tunarr/types/api';
-import { find, isEmpty, map, some } from 'lodash-es';
+import { slotHasFiller } from '@tunarr/types/api';
+import { find, map, some } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 import { slotOrderOptions } from '../../helpers/slotSchedulerUtil.ts';
@@ -33,11 +34,18 @@ import { useFillerLists } from '../../hooks/useFillerLists.ts';
 
 export const SlotFillerDialogPanel = () => {
   const { t } = useLingui();
-  const { control, watch } = useFormContext<BaseSlot>();
+  const { control, getValues, watch } = useFormContext<BaseSlot>();
   const fillerFields = useFieldArray({ control, name: 'filler' });
   const { data: fillerLists } = useFillerLists();
 
-  const [chosenFillerLists, setChosenFillerLists] = useState<string[]>([]);
+  // Seed from the form so the already-chosen lists are known before the
+  // watcher below fires for the first time.
+  const [chosenFillerLists, setChosenFillerLists] = useState<string[]>(() => {
+    const slot = getValues();
+    return slotHasFiller(slot)
+      ? seq.collect(slot.filler, (filler) => filler?.fillerListId)
+      : [];
+  });
 
   // Insanely stupid hack we have to do in order to re-render on nested value
   // set.
@@ -47,14 +55,14 @@ export const SlotFillerDialogPanel = () => {
         value.type &&
         (value.type === 'movie' ||
           value.type === 'custom-show' ||
-          value.type === 'show') &&
+          value.type === 'show' ||
+          value.type === 'smart-collection') &&
         info.name?.startsWith('filler')
       ) {
         const fillerListIds = seq.collect(
           value.filler,
           (filler) => filler?.fillerListId,
         );
-        console.log(fillerListIds);
         setChosenFillerLists(fillerListIds);
       }
     });
@@ -71,20 +79,29 @@ export const SlotFillerDialogPanel = () => {
     );
   }, [chosenFillerLists, fillerLists]);
 
+  // An empty filler list would never contribute anything to the slot, so it
+  // isn't a candidate for a new row.
+  const nextAddableFillerList = useMemo(
+    () =>
+      fillerLists.find(
+        (list) =>
+          list.contentCount > 0 &&
+          !some(chosenFillerLists, (field) => field === list.id),
+      ),
+    [fillerLists, chosenFillerLists],
+  );
+
   const handleAddNewFillerList = useCallback(() => {
-    const unselected = fillerLists.find(
-      (list) => !some(chosenFillerLists, (field) => field === list.id),
-    );
-    if (!unselected) {
+    if (!nextAddableFillerList) {
       return;
     }
 
     fillerFields.append({
       types: ['pre'],
-      fillerListId: unselected.id,
+      fillerListId: nextAddableFillerList.id,
       fillerOrder: 'shuffle_prefer_short',
     });
-  }, [fillerLists, fillerFields, chosenFillerLists]);
+  }, [fillerFields, nextAddableFillerList]);
 
   if (fillerLists.length === 0) {
     return null;
@@ -95,7 +112,7 @@ export const SlotFillerDialogPanel = () => {
       <Button
         startIcon={<Add />}
         variant="outlined"
-        disabled={isEmpty(fillerListOptions)}
+        disabled={!nextAddableFillerList}
         onClick={handleAddNewFillerList}
       >
         <Trans>Add filler</Trans>
@@ -115,25 +132,35 @@ export const SlotFillerDialogPanel = () => {
                 control={control}
                 name={`filler.${idx}.fillerListId` as const}
                 rules={{ required: true }}
-                render={({ field }) => (
-                  <Autocomplete
-                    fullWidth
-                    disableClearable={true}
-                    options={fillerListOptions}
-                    getOptionKey={(list) => list.id}
-                    getOptionLabel={(list) => list.name}
-                    value={find(fillerLists, { id: field.value })}
-                    onChange={(_, list) => field.onChange(list?.id)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        label={t`Filler List`}
-                        helperText={' '}
-                      />
-                    )}
-                  />
-                )}
+                render={({ field }) => {
+                  const selected = find(fillerLists, { id: field.value });
+                  return (
+                    <Autocomplete
+                      fullWidth
+                      disableClearable={true}
+                      options={fillerListOptions}
+                      getOptionKey={(list) => list.id}
+                      getOptionLabel={(list) => list.name}
+                      // An empty filler list can't contribute anything to the
+                      // slot, so don't let one be picked.
+                      getOptionDisabled={(list) => list.contentCount === 0}
+                      value={selected}
+                      onChange={(_, list) => field.onChange(list?.id)}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          fullWidth
+                          label={t`Filler List`}
+                          helperText={
+                            selected && selected.contentCount === 0
+                              ? t`This filler list has no programs and will be ignored.`
+                              : ' '
+                          }
+                        />
+                      )}
+                    />
+                  );
+                }}
               />
               <Controller
                 control={control}

@@ -1,6 +1,7 @@
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import type { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
 import type { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
+import { VaapiHardwareCapabilities } from '@/ffmpeg/builder/capabilities/VaapiHardwareCapabilities.js';
 import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.js';
 import type { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
 import { VaapiDecoder } from '@/ffmpeg/builder/decoder/vaapi/VaapiDecoder.js';
@@ -32,6 +33,7 @@ import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/Infinite
 import { KnownFfmpegFilters } from '@/ffmpeg/builder/options/KnownFfmpegOptions.js';
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.js';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
+import type { VaapiTonemapType } from '@/ffmpeg/builder/state/FfmpegState.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
@@ -119,9 +121,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
         this.featureFlagService.get('tonemapEnabled') &&
         isVideoPipelineContext(this.context) &&
         isHdrContent(this.context.videoStream) &&
-        (pipelineOptions?.vaapiPipelineOptions?.tonemapPreference ??
-          'opencl') === 'opencl' &&
-        this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapOpencl);
+        this.selectHardwareTonemap() === 'opencl';
 
       this.pipelineSteps.push(
         new VaapiHardwareAccelerationOption(
@@ -195,8 +195,11 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     currentState = this.decoder?.nextState(currentState) ?? currentState;
 
     currentState = this.setDeinterlace(currentState);
-    currentState = this.setTonemap(currentState);
+    // Scale before tonemapping so the tonemap filter (the most expensive step,
+    // particularly tonemap_opencl) runs on the output resolution, not the
+    // source resolution.
     currentState = this.setScale(currentState);
+    currentState = this.setTonemap(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
     // TODO: Set crop
@@ -381,24 +384,10 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     let filter: FilterOption | undefined;
     if (!pipelineOptions.disableHardwareFilters) {
-      let preference = pipelineOptions.vaapiPipelineOptions?.tonemapPreference;
-      const hasOpencl = this.ffmpegCapabilities.hasFilter(
-        KnownFfmpegFilters.TonemapOpencl,
-      );
-      const hasVaapi = this.ffmpegCapabilities.hasFilter(
-        KnownFfmpegFilters.TonemapVaapi,
-      );
-
-      // Default preference is opencl.
-      if (!preference) {
-        preference = 'opencl';
-      }
-
-      if (preference === 'opencl' && hasOpencl) {
-        filter = new TonemapOpenclFilter(currentState);
-      } else if (preference === 'vaapi' && hasVaapi) {
-        filter = new TonemapVaapiFilter(currentState);
-      }
+      filter = match(this.selectHardwareTonemap())
+        .with('opencl', () => new TonemapOpenclFilter(currentState))
+        .with('vaapi', () => new TonemapVaapiFilter(currentState))
+        .otherwise(() => undefined);
     }
 
     if (filter) {
@@ -409,6 +398,29 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     // Fall back to software tonemap
     return super.setTonemap(currentState);
+  }
+
+  // Tries the preferred hardware tonemap first, then the other one.
+  // tonemap_opencl also needs the device to pass the OpenCL interop probe.
+  // Returns undefined when neither is usable, so the caller falls back to
+  // software tonemapping.
+  private selectHardwareTonemap(): VaapiTonemapType | undefined {
+    const preference =
+      this.context.pipelineOptions?.vaapiPipelineOptions?.tonemapPreference ??
+      'opencl';
+    const order: VaapiTonemapType[] =
+      preference === 'opencl' ? ['opencl', 'vaapi'] : ['vaapi', 'opencl'];
+
+    const openclInterop =
+      this.hardwareCapabilities instanceof VaapiHardwareCapabilities &&
+      this.hardwareCapabilities.openclInterop;
+
+    return order.find((type) =>
+      type === 'opencl'
+        ? openclInterop &&
+          this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapOpencl)
+        : this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapVaapi),
+    );
   }
 
   protected setScale(currentState: FrameState): FrameState {
@@ -431,16 +443,14 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       ((ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.None &&
         ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None &&
         !shouldDeinterlace) ||
-        // Software decode and no tonemap implies we're already in software. If we're tonemapping but
-        // performed a software decode, we'll have had to upload to hardware to tonemap anyway (most likely)
-        // so try to continue on hardware if possible
+        // Frames reached hardware without a VAAPI decode
         (ffmpegState.decoderHwAccelMode !== HardwareAccelerationMode.Vaapi &&
           currentState.frameDataLocation === FrameDataLocation.Hardware) ||
         // Use software scale only when frames are not already on hardware.
-        // If frames are on hardware (from hw decode or tonemap), keep them
-        // there and use scale_vaapi — downloading for a software scale and
-        // re-uploading is wasteful, and breaks the named-device init_hw_device
-        // setup used for tonemap_opencl. Pad capability does not affect the
+        // If frames are on hardware (from hw decode), keep them there and use
+        // scale_vaapi — downloading for a software scale and re-uploading for
+        // the tonemap that follows is wasteful, and breaks the named-device
+        // init_hw_device setup used for tonemap_opencl. Pad capability does not affect the
         // scale decision: if padding requires software, it can hwdownload after.
         ((!willNeedPad || !canPadOnHardware) &&
           currentState.frameDataLocation !== FrameDataLocation.Hardware) ||

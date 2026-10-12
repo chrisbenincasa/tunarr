@@ -1,63 +1,330 @@
 import type { Kysely } from 'kysely';
-import { describe, expect, test, vi } from 'vitest';
-import type { Lineup } from '@/db/derived_types/Lineup.ts';
+import type { RegenerateChannelLineupCommand } from '@/commands/RegenerateChannelLineupCommand.ts';
+import { sumBy } from 'lodash-es';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import type {
+  Lineup,
+  LineupItem,
+  OnDemandChannelConfig,
+} from '@/db/derived_types/Lineup.ts';
 import type { IChannelDB } from '@/db/interfaces/IChannelDB.ts';
+import { calculateStartTimeOffsets } from '@/db/lineupUtil.ts';
 import type { DB } from '@/db/schema/db.ts';
+import { GlobalScheduler } from '@/services/Scheduler.ts';
+import type { OnDemandChannelService } from '@/services/OnDemandChannelService.ts';
+import { calculateStreamDuration } from '@/stream/StreamProgramCalculator.ts';
 import { ReconcileProgramDurationsTask } from './ReconcileProgramDurationsTask.ts';
 
+const NOW = 1_760_000_000_000;
+
+type Fixture = {
+  items: LineupItem[];
+  programs: { uuid: string; duration: number }[];
+  startTime?: number;
+  onDemandConfig?: OnDemandChannelConfig;
+  schedule?: Lineup['schedule'];
+  scheduleSeed?: number[];
+};
+
+const timeSchedule = {
+  type: 'time',
+  slots: [],
+} as unknown as NonNullable<Lineup['schedule']>;
+
+function setup({
+  items,
+  programs,
+  startTime = 0,
+  onDemandConfig,
+  schedule,
+  scheduleSeed,
+}: Fixture) {
+  const lineup: Lineup = {
+    version: 6,
+    lastUpdated: 0,
+    items,
+    startTimeOffsets: calculateStartTimeOffsets(items),
+    onDemandConfig,
+    schedule,
+    scheduleSeed,
+  };
+  const channel = {
+    uuid: 'ch1',
+    startTime,
+    duration: sumBy(items, (i) => i.durationMs),
+  };
+
+  const channelDB = {
+    getAllChannels: vi.fn().mockResolvedValue([channel]),
+    loadLineup: vi.fn().mockResolvedValue(lineup),
+    loadChannelAndLineup: vi.fn().mockResolvedValue({ channel, lineup }),
+    saveLineup: vi.fn().mockResolvedValue(lineup),
+    updateChannelStartTime: vi.fn().mockResolvedValue(undefined),
+    updateLineupConfig: vi.fn().mockResolvedValue(undefined),
+  };
+
+  const db = {
+    selectFrom: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          execute: vi.fn().mockResolvedValue(programs),
+        }),
+      }),
+    }),
+  } as unknown as Kysely<DB>;
+
+  const onDemandService = {
+    runWithChannelLock: vi.fn((_id: string, cb: () => Promise<unknown>) =>
+      cb(),
+    ),
+  } as unknown as OnDemandChannelService;
+
+  const regenerateLineup = {
+    execute: vi.fn().mockResolvedValue(undefined),
+  };
+
+  const task = new ReconcileProgramDurationsTask(
+    channelDB as unknown as IChannelDB,
+    db,
+    onDemandService,
+    regenerateLineup as unknown as RegenerateChannelLineupCommand,
+  );
+
+  return {
+    task,
+    channel,
+    lineup,
+    channelDB,
+    onDemandService,
+    regenerateLineup,
+  };
+}
+
 describe('ReconcileProgramDurationsTask', () => {
-  test('recomputes startTimeOffsets when it corrects program durations', async () => {
-    // Two content items persisted with stale durations and the matching stale
-    // startTimeOffsets (based on those old durations).
-    const staleLineup = {
-      id: 'uid1',
-      channel_uuid: 'ch1',
+  let scheduleOneOff: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(NOW);
+    scheduleOneOff = vi
+      .spyOn(GlobalScheduler, 'scheduleOneOffTask')
+      .mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  test('corrects durations and recomputes startTimeOffsets', async () => {
+    const { task, channelDB } = setup({
       items: [
         { type: 'content', id: 'p1', durationMs: 1000 },
         { type: 'content', id: 'p2', durationMs: 500 },
       ],
-      startTimeOffsets: [0, 1000, 1500],
-      version: 0,
-    } as unknown as Lineup;
+      programs: [
+        { uuid: 'p1', duration: 60000 },
+        { uuid: 'p2', duration: 30000 },
+      ],
+    });
 
-    const savedLineups: Record<string, unknown>[] = [];
-    const channelDB = {
-      getAllChannels: vi.fn().mockResolvedValue([{ uuid: 'ch1' }]),
-      loadLineup: vi.fn().mockResolvedValue(staleLineup),
-      saveLineup: vi.fn(async (_channelId: string, newLineup: unknown) => {
-        savedLineups.push(newLineup as Record<string, unknown>);
-        return {};
-      }),
-    } as unknown as IChannelDB;
-
-    // Programs table is the source of truth for durations.
-    const db = {
-      selectFrom: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            execute: vi.fn().mockResolvedValue([
-              { uuid: 'p1', duration: 60000 },
-              { uuid: 'p2', duration: 30000 },
-            ]),
-          }),
-        }),
-      }),
-    } as unknown as Kysely<DB>;
-
-    const task = new ReconcileProgramDurationsTask(channelDB, db);
     await task.run(undefined);
 
-    expect(savedLineups).toHaveLength(1);
-    const saved = savedLineups[0] as {
-      items: { type: string; id: string; durationMs: number }[];
-      startTimeOffsets: number[];
-    };
-    expect(saved.items).toEqual([
-      { type: 'content', id: 'p1', durationMs: 60000 },
-      { type: 'content', id: 'p2', durationMs: 30000 },
-    ]);
-    // The persisted startTimeOffsets must reflect the corrected durations,
-    // not be carried over stale from the pre-correction lineup.
-    expect(saved.startTimeOffsets).toEqual([0, 60000, 90000]);
+    expect(channelDB.saveLineup).toHaveBeenCalledTimes(1);
+    expect(channelDB.saveLineup).toHaveBeenCalledWith(
+      'ch1',
+      expect.objectContaining({
+        items: [
+          { type: 'content', id: 'p1', durationMs: 60000 },
+          { type: 'content', id: 'p2', durationMs: 30000 },
+        ],
+        startTimeOffsets: [0, 60000, 90000],
+      }),
+    );
+    expect(scheduleOneOff).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      { channelId: 'ch1' },
+    );
+  });
+
+  test('rebases the start time to the minute so the current program keeps playing', async () => {
+    const items: LineupItem[] = [
+      { type: 'content', id: 'a', durationMs: 1_800_000 },
+      { type: 'content', id: 'b', durationMs: 1_800_000 },
+      { type: 'content', id: 'c', durationMs: 1_800_000 },
+    ];
+    const cycle = 5_400_000;
+    // 120 cycles in, 10 minutes into b.
+    const startTime = NOW - 120 * cycle - 2_400_000;
+    const { task, channel, lineup, channelDB } = setup({
+      items,
+      startTime,
+      programs: [
+        { uuid: 'a', duration: 1_741_500 },
+        { uuid: 'b', duration: 1_800_000 },
+        { uuid: 'c', duration: 1_795_000 },
+      ],
+    });
+
+    const before = calculateStreamDuration(NOW, startTime, cycle, lineup);
+    await task.run(undefined);
+
+    const savedItems = (
+      channelDB.saveLineup.mock.calls[0]?.[1] as { items: LineupItem[] }
+    ).items;
+    const newStart = channelDB.updateChannelStartTime.mock.calls[0]?.[1] as
+      | number
+      | undefined;
+    expect(newStart).toBeDefined();
+    if (newStart === undefined) {
+      return;
+    }
+    expect(newStart).toBeLessThanOrEqual(NOW);
+    expect(newStart).toBeGreaterThan(channel.startTime - cycle);
+
+    const newCycle = sumBy(savedItems, (i) => i.durationMs);
+    const after = calculateStreamDuration(NOW, newStart, newCycle, {
+      ...lineup,
+      items: savedItems,
+      startTimeOffsets: calculateStartTimeOffsets(savedItems),
+    });
+
+    expect(newStart % 60_000).toBe(0);
+    expect(after.currentProgramIndex).toBe(before.currentProgramIndex);
+    expect(
+      Math.abs(after.timeElapsed - before.timeElapsed),
+    ).toBeLessThanOrEqual(30_000);
+  });
+
+  test('moves an on-demand cursor instead of the start time', async () => {
+    const { task, channelDB } = setup({
+      items: [
+        { type: 'content', id: 'a', durationMs: 1000 },
+        { type: 'content', id: 'b', durationMs: 1000 },
+      ],
+      programs: [
+        { uuid: 'a', duration: 700 },
+        { uuid: 'b', duration: 1000 },
+      ],
+      onDemandConfig: {
+        state: 'playing',
+        cursor: 1000,
+        lastResumed: NOW - 200,
+      },
+    });
+
+    await task.run(undefined);
+
+    expect(channelDB.updateChannelStartTime).not.toHaveBeenCalled();
+    // 200 ms into b, which now starts at 700. The resume time is restamped
+    // after the save so the next pause keeps the cursor.
+    expect(channelDB.updateLineupConfig).toHaveBeenCalledWith(
+      'ch1',
+      'onDemandConfig',
+      { state: 'playing', cursor: 900, lastResumed: NOW },
+    );
+  });
+
+  test('keeps the resume time of a paused on-demand channel', async () => {
+    const { task, channelDB } = setup({
+      items: [
+        { type: 'content', id: 'a', durationMs: 1000 },
+        { type: 'content', id: 'b', durationMs: 1000 },
+      ],
+      programs: [{ uuid: 'a', duration: 700 }],
+      onDemandConfig: {
+        state: 'paused',
+        cursor: 1500,
+        lastResumed: NOW - 50_000,
+        lastPaused: NOW - 40_000,
+      },
+    });
+
+    await task.run(undefined);
+
+    expect(channelDB.updateLineupConfig).toHaveBeenCalledWith(
+      'ch1',
+      'onDemandConfig',
+      {
+        state: 'paused',
+        cursor: 1200,
+        lastResumed: NOW - 50_000,
+        lastPaused: NOW - 40_000,
+      },
+    );
+  });
+
+  test('writes nothing when durations already match', async () => {
+    const { task, channelDB } = setup({
+      items: [{ type: 'content', id: 'a', durationMs: 1000 }],
+      programs: [{ uuid: 'a', duration: 1000 }],
+    });
+
+    await task.run(undefined);
+
+    expect(channelDB.saveLineup).not.toHaveBeenCalled();
+    expect(channelDB.updateChannelStartTime).not.toHaveBeenCalled();
+    expect(scheduleOneOff).not.toHaveBeenCalled();
+  });
+
+  test('does not touch the start time of a channel that has not started', async () => {
+    const { task, channelDB } = setup({
+      items: [{ type: 'content', id: 'a', durationMs: 1000 }],
+      programs: [{ uuid: 'a', duration: 2000 }],
+      startTime: NOW + 60_000,
+    });
+
+    await task.run(undefined);
+
+    expect(channelDB.saveLineup).toHaveBeenCalledTimes(1);
+    expect(channelDB.updateChannelStartTime).not.toHaveBeenCalled();
+  });
+
+  test('regenerates a seeded slot schedule instead of patching it', async () => {
+    const { task, channelDB, regenerateLineup } = setup({
+      items: [{ type: 'content', id: 'a', durationMs: 1000 }],
+      programs: [{ uuid: 'a', duration: 2000 }],
+      startTime: NOW - 500,
+      schedule: timeSchedule,
+      scheduleSeed: [1, 2, 3],
+    });
+
+    await task.run(undefined);
+
+    expect(regenerateLineup.execute).toHaveBeenCalledWith({ channelId: 'ch1' });
+    expect(channelDB.saveLineup).not.toHaveBeenCalled();
+    expect(channelDB.updateChannelStartTime).not.toHaveBeenCalled();
+    expect(scheduleOneOff).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      { channelId: 'ch1' },
+    );
+  });
+
+  test('patches a slot lineup that has no seed, since it may be hand-edited', async () => {
+    const { task, channelDB, regenerateLineup } = setup({
+      items: [{ type: 'content', id: 'a', durationMs: 1000 }],
+      programs: [{ uuid: 'a', duration: 2000 }],
+      schedule: timeSchedule,
+    });
+
+    await task.run(undefined);
+
+    expect(regenerateLineup.execute).not.toHaveBeenCalled();
+    expect(channelDB.saveLineup).toHaveBeenCalledTimes(1);
+  });
+
+  test('leaves a seeded slot schedule alone when durations match', async () => {
+    const { task, regenerateLineup } = setup({
+      items: [{ type: 'content', id: 'a', durationMs: 1000 }],
+      programs: [{ uuid: 'a', duration: 1000 }],
+      schedule: timeSchedule,
+      scheduleSeed: [1, 2, 3],
+    });
+
+    await task.run(undefined);
+
+    expect(regenerateLineup.execute).not.toHaveBeenCalled();
   });
 });

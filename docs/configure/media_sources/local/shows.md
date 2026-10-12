@@ -31,4 +31,6 @@ Tunarr will attempt to scan various artwork files for each show, season, and epi
 
 ## Fallback
 
-Without NFO files, Tunarr can still scan a shows directory. For the show itself, Tunarr will simply create an entry with the show name and no additional metadata. Fallback is not supported for episodes or seasons at this time.
+Without NFO files, Tunarr can still scan a shows directory. For the show itself, Tunarr will simply create an entry with the show name and no additional metadata. For each episode, Tunarr uses the file name as the title and takes the episode number from the file name.
+
+Tunarr also falls back when an NFO file exists but can't be used. This happens when the file isn't valid Kodi NFO, when it describes a different kind of item (for example a movie), or when an episode NFO has no entry for the episode number in the file name. Tunarr logs a warning and scans the item with fallback metadata instead of skipping it.

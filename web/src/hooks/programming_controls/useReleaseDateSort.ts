@@ -1,5 +1,5 @@
 import { type ChannelProgram, isContentProgram } from '@tunarr/types';
-import { orderBy } from 'lodash-es';
+import { isNil, orderBy } from 'lodash-es';
 import { getCanonicalOrderIndex } from '../../helpers/programUtil.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
@@ -10,12 +10,14 @@ import {
 } from '../../store/selectors.ts';
 import { type SortOrder } from '../../types/index.ts';
 
+// Programs without a release date (and non-content items like flex) go to the
+// bottom in either direction, so they are grouped ahead of the date itself.
+function missingReleaseDate(p: ChannelProgram) {
+  return isContentProgram(p) && !isNil(p.program.releaseDate) ? 0 : 1;
+}
+
 function releaseDateOrderer(p: ChannelProgram) {
-  if (isContentProgram(p)) {
-    return p.program.releaseDate ?? 0;
-  } else {
-    return Number.MAX_VALUE;
-  }
+  return isContentProgram(p) ? (p.program.releaseDate ?? 0) : 0;
 }
 
 function seasonEpisodeTiebreaker(p: ChannelProgram) {
@@ -32,8 +34,8 @@ export const sortProgramsByReleaseDate = (
 ) => {
   return orderBy(
     programs,
-    [releaseDateOrderer, seasonEpisodeTiebreaker],
-    [sortOrder, sortOrder],
+    [missingReleaseDate, releaseDateOrderer, seasonEpisodeTiebreaker],
+    ['asc', sortOrder, sortOrder],
   );
 };
 

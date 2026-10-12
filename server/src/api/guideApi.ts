@@ -6,6 +6,12 @@ import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import { isNull } from 'lodash-es';
 import { z } from 'zod/v4';
 
+export const GUIDE_PROGRAM_FIELDS_NOTE =
+  'Programs carry guide fields only. Actors, writers, directors, genres and ' +
+  'studios are omitted from each program. Tags and artwork are empty, as are ' +
+  "the show's and season's genres, actors and studios. " +
+  'Fetch GET /api/programs/{id} for the full program.';
+
 export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
   const logger = LoggerFactory.child({
     caller: import.meta,
@@ -52,6 +58,7 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
     '/guide/channels',
     {
       schema: {
+        description: `Returns the guide for every channel, keyed by channel ID. ${GUIDE_PROGRAM_FIELDS_NOTE}`,
         tags: ['Guide'],
         querystring: z.object({
           dateFrom: z.coerce.date(),

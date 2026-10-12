@@ -12,6 +12,7 @@ import {
   trim,
 } from 'lodash-es';
 import { join } from 'node:path';
+import { isMainThread } from 'node:worker_threads';
 import type {
   Bindings,
   ChildLoggerOptions,
@@ -303,7 +304,12 @@ class LoggerFactoryImpl {
       this.roller?.deinitialize();
       this.roller = undefined;
 
-      if (logConfig.logRollConfig.enabled) {
+      const fileMode = resolveLogFileMode({
+        rollEnabled: logConfig.logRollConfig.enabled,
+        isMainThread,
+      });
+
+      if (fileMode === 'rolling') {
         this.roller = new RollingLogDestination({
           fileName: logFilePath,
           maxSizeBytes: logConfig.logRollConfig.maxFileSizeBytes,
@@ -342,6 +348,19 @@ class LoggerFactoryImpl {
 }
 
 export const LoggerFactory = new LoggerFactoryImpl();
+
+/**
+ * Only the main thread rolls tunarr.log. Workers share the file, and a roller
+ * per thread means every thread rolls the same files at once. Workers append
+ * instead. A roll copies the file and truncates it in place, so their
+ * append-mode handles keep writing to the live log afterward.
+ */
+export function resolveLogFileMode(p: {
+  rollEnabled: boolean;
+  isMainThread: boolean;
+}): 'rolling' | 'append' {
+  return p.rollEnabled && p.isMainThread ? 'rolling' : 'append';
+}
 
 /**
  * Pure resolution of the base log level, in priority order. The CLI flags

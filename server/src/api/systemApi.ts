@@ -229,10 +229,6 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
           scheduleBackupJobs(req.body.backup);
         }
 
-        ifDefined(req.body.cache, (cache) => {
-          system.cache = cache;
-        });
-
         ifDefined(req.body.server, (server) => {
           system.server = server;
         });

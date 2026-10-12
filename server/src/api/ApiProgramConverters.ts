@@ -127,9 +127,17 @@ export class ApiProgramConverters {
       duration: program.duration,
       canonicalId: program.canonicalId ?? '',
       tags: program.tags?.map((tag) => tag.tag.tag) ?? searchDoc?.tags ?? [],
-      actors: convertCreditWithArtwork(program.credits ?? [], 'cast'),
-      writers: convertCreditWithArtwork(program.credits ?? [], 'writer'),
-      directors: convertCreditWithArtwork(program.credits ?? [], 'director'),
+      // Omitted when credits were not loaded, so an empty list always means
+      // the program has none.
+      actors: program.credits
+        ? convertCreditWithArtwork(program.credits, 'cast')
+        : undefined,
+      writers: program.credits
+        ? convertCreditWithArtwork(program.credits, 'writer')
+        : undefined,
+      directors: program.credits
+        ? convertCreditWithArtwork(program.credits, 'director')
+        : undefined,
       studios: program.studios?.map(
         (studio) =>
           ({

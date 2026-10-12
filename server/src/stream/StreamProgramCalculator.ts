@@ -6,7 +6,6 @@ import type { Maybe, Nullable } from '@/types/util.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
-import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { inRange, isNil, isNull, sumBy } from 'lodash-es';
@@ -25,14 +24,17 @@ import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { ProgramPlayHistoryDB } from '../db/ProgramPlayHistoryDB.ts';
-import { OneDayMillis } from '../ffmpeg/builder/constants.ts';
+import { OneWeekMillis } from '../ffmpeg/builder/constants.ts';
 import type { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import { WrappedError } from '../types/errors.ts';
 import { devAssert } from '../util/debug.ts';
 import { isNonEmptyString } from '../util/index.js';
 import { wereThereTooManyAttempts } from './StreamThrottler.js';
 
-const SLACK = constants.SLACK;
+// A lookup this close to a program's end starts the next program instead,
+// so ffmpeg never spins up for under a second of content. This is separate
+// from constants.SLACK, which pads schedules and filler.
+const STREAM_TAIL_SLACK_MS = 999;
 
 // Figure out this type later...
 export type ProgramAndTimeElapsed = {
@@ -202,7 +204,7 @@ export class StreamProgramCalculator {
         req.allowSkip &&
         currentProgram.program.type === 'offline' &&
         currentProgram.program.duration - currentProgram.timeElapsed <=
-          constants.SLACK + 1
+          STREAM_TAIL_SLACK_MS + 1
       ) {
         //it's pointless to show the offline screen for such a short time, might as well
         //skip to the next program
@@ -328,7 +330,7 @@ export class StreamProgramCalculator {
     } else {
       lineupItem = {
         type: 'offline',
-        durationMs: OneDayMillis,
+        durationMs: OneWeekMillis,
       };
     }
 
@@ -336,7 +338,9 @@ export class StreamProgramCalculator {
     switch (lineupItem.type) {
       case 'content': {
         // Defer program lookup
-        const backingItem = await this.programDB.getProgramById(lineupItem.id);
+        const backingItem = await this.programDB.getStreamProgramById(
+          lineupItem.id,
+        );
 
         program = {
           duration: lineupItem.durationMs,
@@ -504,7 +508,9 @@ export class StreamProgramCalculator {
       if (!isNil(filler)) {
         // TODO: This stinks right now, but re-materialize the program
         // to get the shiny new type.
-        const fillerProgram = await this.programDB.getProgramById(filler.uuid);
+        const fillerProgram = await this.programDB.getStreamProgramById(
+          filler.uuid,
+        );
         if (!fillerProgram) {
           throw new Error(`Expected program with ID ${filler.uuid}`);
         } else if (!isNonEmptyString(fillerProgram.mediaSourceId)) {
@@ -576,9 +582,17 @@ export class StreamProgramCalculator {
     const mediaStartOffset = timeElapsed;
 
     if (program.type === 'commercial') {
+      const offset = mediaStartOffset + (program.startOffset ?? 0);
+      const clipDuration = program.program.duration;
+
+      // A looping filler clip can be scheduled for longer than the clip itself,
+      // so seek to the matching position within the current loop.
       return {
         ...program,
-        startOffset: mediaStartOffset + (program.startOffset ?? 0),
+        startOffset:
+          program.infiniteLoop && clipDuration > 0
+            ? offset % clipDuration
+            : offset,
         streamDuration,
       };
     }
@@ -597,12 +611,12 @@ export function calculateStreamDuration(
   channelStartTime: number,
   channelDuration: number,
   lineup: Lineup,
-  slackAmount: number = SLACK,
+  slackAmount: number = STREAM_TAIL_SLACK_MS,
 ) {
   devAssert(now >= channelStartTime);
   if (lineup.items.length === 0) {
     return {
-      streamDuration: OneDayMillis,
+      streamDuration: OneWeekMillis,
       timeElapsed: 0,
       currentProgramIndex: -1,
     };
@@ -631,10 +645,12 @@ export function calculateStreamDuration(
     // Mark how far 'into' the program we are.
     timeElapsed = elapsed - foundOffset;
     const program = lineup.items[programIndex]!;
-    if (timeElapsed > program.durationMs - slackAmount) {
-      // Go to the next program if we're very close to the end
-      // of the current one. No sense in starting a brand new
-      // stream for a couple of seconds.
+    // Skip the tail of a long program when little of it remains. A program
+    // within 2x the slack is never skipped, or it would never air at all.
+    if (
+      program.durationMs > 2 * slackAmount &&
+      timeElapsed > program.durationMs - slackAmount
+    ) {
       timeElapsed = 0;
       currentProgramIndex = (programIndex + 1) % lineup.items.length;
     }

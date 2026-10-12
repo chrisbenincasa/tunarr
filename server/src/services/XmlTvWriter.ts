@@ -15,7 +15,8 @@ import {
 } from '@iptv/xmltv';
 import { Mutex } from 'async-mutex';
 import { inject, injectable } from 'inversify';
-import { compact, escape, flatMap, isNil, map, round } from 'lodash-es';
+import throttle from '@/util/throttle.js';
+import { chunk, compact, escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
 import { match } from 'ts-pattern';
 import { type ArtworkType } from '../db/schema/Artwork.ts';
@@ -25,6 +26,13 @@ import { parseAirDate } from '../util/airDate.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
 
 const lock = new Mutex();
+
+// Batch cost grows with credits per programme. At 100, the perf seed with
+// credit images on keeps every slice under 25ms; at 250 slices reached 50ms.
+const SerializeBatchSize = 100;
+
+const TvOpen = '<tv>';
+const TvClose = '</tv>';
 
 /**
  * The fields `ArtworkService` needs to build a remote artwork URL for an item
@@ -86,9 +94,49 @@ export class XmlTvWriter {
   }
 
   private async writeInternal(channels: MaterializedChannelPrograms[]) {
-    const content = writeXmltv(this.generateXmltv(channels));
+    const content = await this.serialize(channels);
 
     return await writeFile(this.settingsDB.xmlTvSettings().outputPath, content);
+  }
+
+  /**
+   * Serializes the same document as `writeXmltv(generateXmltv(channels))`,
+   * yielding to the event loop between batches of programmes.
+   *
+   * A full guide is thousands of programmes, and building and serializing
+   * them in one call blocks every other request, HLS segments included, for
+   * hundreds of milliseconds. Each batch serializes as its own document, and
+   * its programmes are spliced between the shared header and `</tv>`.
+   */
+  async serialize(channels: MaterializedChannelPrograms[]): Promise<string> {
+    const header = writeXmltv(
+      this.generateXmltv(channels.map((c) => ({ ...c, programs: [] }))),
+    );
+    if (!header.endsWith(TvClose)) {
+      throw new Error('Unexpected XMLTV header shape from @iptv/xmltv');
+    }
+
+    const parts = [header.slice(0, -TvClose.length)];
+    for (const { channel, programs } of channels) {
+      const xmlChannelId = getChannelId(channel.number);
+      for (const batch of chunk(programs, SerializeBatchSize)) {
+        await throttle();
+        const body = writeXmltv({
+          programmes: batch.map((p) => this.makeXmlTvProgram(p, xmlChannelId)),
+        });
+
+        // The declaration and DOCTYPE before <tv> come and go with the content,
+        // so cut at <tv> itself. Batch documents carry no <tv> attributes.
+        const open = body.indexOf(TvOpen);
+        if (open === -1 || !body.endsWith(TvClose)) {
+          throw new Error('Unexpected XMLTV batch shape from @iptv/xmltv');
+        }
+        parts.push(body.slice(open + TvOpen.length, -TvClose.length));
+      }
+    }
+    parts.push(TvClose);
+
+    return parts.join('');
   }
 
   generateXmltv(channels: MaterializedChannelPrograms[]) {
@@ -189,16 +237,14 @@ export class XmlTvWriter {
         ({ program }) =>
           `${program.album?.title ? `${program.album.title} - ` : ''}${program.title}`,
       )
-      .with(
-        { type: 'program', program: { type: 'movie' } },
-        ({ program }) => program.tagline,
-      )
       // .with(
       //   { type: 'custom', program: { subtype: P.union('track', 'episode') } },
       //   (p) => p.program?.title,
       // )
       .otherwise(() => undefined);
 
+    // @iptv/xmltv emits children in property insertion order. Keep direct
+    // program children in DTD order: icon before episode-num, image last.
     const partial: XmltvProgramme = {
       start: new Date(guideItem.start),
       stop: new Date(guideItem.stop),
@@ -256,7 +302,7 @@ export class XmlTvWriter {
 
         xmlCreditList.push({
           _value: escape(credit.name),
-          ...(credit.role?.length && { role: credit.role }),
+          ...(credit.role?.length && { role: escape(credit.role) }),
           ...(this.settingsDB.featureFlags().xmltvCreditImagesEnabled &&
             credit.artwork?.length && {
               image: credit.artwork.map(
@@ -268,26 +314,6 @@ export class XmlTvWriter {
               ),
             }),
         });
-      }
-
-      if (program.duration > 0) {
-        // length only supports seconds minutes or hours so convert duration from ms to seconds
-        partial.length = { _value: program.duration * 0.001, units: 'seconds' };
-      }
-
-      const rating = firstDefined(program.rating, program.show?.rating);
-      if (rating) {
-        partial.rating ??= [
-          {
-            system:
-              program.type === 'movie'
-                ? 'MPAA'
-                : program.type === 'track'
-                  ? 'RIAA'
-                  : 'VCHIP',
-            value: escape(rating),
-          },
-        ];
       }
 
       const airDate = parseAirDate(program.originalAirDate);
@@ -316,6 +342,21 @@ export class XmlTvWriter {
       partial.keyword = Array.from(uniqueKeywords).map((k) => ({
         _value: escape(k),
       }));
+
+      if (program.duration > 0) {
+        // length only supports seconds minutes or hours so convert duration from ms to seconds
+        partial.length = { _value: program.duration * 0.001, units: 'seconds' };
+      }
+
+      const useShowPoster =
+        this.settingsDB.xmlTvSettings().useShowPoster ?? false;
+      const url = XmlTvWriter.resolveArtworkUrl(program, {
+        useShowPoster,
+      });
+
+      if (url) {
+        partial.icon = [{ src: url }];
+      }
 
       const [seasonNumber, episodeNumber] = match(program)
         .with({ type: 'episode' }, (ep) => {
@@ -352,15 +393,23 @@ export class XmlTvWriter {
         partial.video = { present: false };
       }
 
-      const useShowPoster =
-        this.settingsDB.xmlTvSettings().useShowPoster ?? false;
-      const url = XmlTvWriter.resolveArtworkUrl(program, {
-        useShowPoster,
-      });
+      const rating = firstDefined(program.rating, program.show?.rating);
+      if (rating) {
+        partial.rating ??= [
+          {
+            system:
+              program.type === 'movie'
+                ? 'MPAA'
+                : program.type === 'track'
+                  ? 'RIAA'
+                  : 'VCHIP',
+            value: escape(rating),
+          },
+        ];
+      }
 
       if (url) {
         partial.image = [{ _value: url, size: 3, type: 'poster' }];
-        partial.icon = [{ src: url }];
       }
     }
 

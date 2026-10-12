@@ -3,11 +3,11 @@
 // active streaming session
 
 import type { OfflineFillerConfig } from '@tunarr/types/schemas';
-import type { MarkRequired, StrictOmit } from 'ts-essentials';
+import type { StrictOmit } from 'ts-essentials';
 import type { MarkNotNilable } from '../../types/util.ts';
 import type { MediaSourceType } from '../schema/base.js';
 import type {
-  ProgramWithRelationsOrm,
+  ProgramOrmWithExternalIds,
   SpecificProgramSourceOrmType,
 } from '../schema/derivedTypes.ts';
 import type { ProgramType } from '../schema/Program.ts';
@@ -20,7 +20,7 @@ type BaseStreamLineupItem = {
 };
 
 export type StreamLineupProgram = MarkNotNilable<
-  MarkRequired<ProgramWithRelationsOrm, 'externalIds'>,
+  ProgramOrmWithExternalIds,
   'mediaSourceId'
 >;
 

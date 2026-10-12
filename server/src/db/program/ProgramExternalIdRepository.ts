@@ -17,7 +17,7 @@ import {
   mapValues,
   partition,
 } from 'lodash-es';
-import type { Dictionary, MarkOptional, MarkRequired } from 'ts-essentials';
+import type { Dictionary, MarkOptional } from 'ts-essentials';
 import { v4 } from 'uuid';
 import {
   flatMapAsyncSeq,
@@ -37,7 +37,7 @@ import {
 } from '../schema/ProgramExternalId.ts';
 import type { MediaSourceId, RemoteSourceType } from '../schema/base.ts';
 import type { DB } from '../schema/db.ts';
-import type { ProgramWithRelationsOrm } from '../schema/derivedTypes.ts';
+import type { ProgramOrmWithExternalIds } from '../schema/derivedTypes.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
 
 @injectable()
@@ -68,7 +68,7 @@ export class ProgramExternalIdRepository {
     chunkSize: number = 200,
   ) {
     const allIds = [...ids];
-    const programs: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[] = [];
+    const programs: ProgramOrmWithExternalIds[] = [];
     for (const idChunk of chunk(allIds, chunkSize)) {
       const results = await this.drizzleDB.query.programExternalId.findMany({
         where: (fields, { or, and, eq }) => {

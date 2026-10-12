@@ -12,13 +12,13 @@ export async function generateEnvModule(keysToInline: string[]) {
     .filter(Boolean)
     .join('\n');
 
-  const moduleContent = `
-// AUTO-GENERATED - DO NOT EDIT MANUALLY
+  // Matches Prettier's output so regenerating leaves the committed file unchanged.
+  const body = entries ? `{\n${entries}\n}` : '{}';
+
+  const moduleContent = `// AUTO-GENERATED - DO NOT EDIT MANUALLY
 // Generated a build time by bundle.ts
 
-export const BUILD_ENV: Record<string, string> = {
-${entries}
-} as const;
+export const BUILD_ENV: Record<string, string> = ${body} as const;
 
 export const BUILD_ENV_KEYS = new Set(Object.keys(BUILD_ENV));
 `;

@@ -20,10 +20,9 @@ type AddRestrictHoursModalProps = {
 // TODO:
 // Replace with time pickers
 // use react hook form
-const AddRestrictHoursModal = ({
-  open,
+const AddRestrictHoursModalContent = ({
   onClose,
-}: AddRestrictHoursModalProps) => {
+}: Omit<AddRestrictHoursModalProps, 'open'>) => {
   const { t } = useLingui();
   const [startOffset, setStartOffset] = useState(0);
   const [endOffset, setEndOffset] = useState(
@@ -92,7 +91,7 @@ const AddRestrictHoursModal = ({
   }, [end, endOffset, start, t]);
 
   return (
-    <Dialog open={open}>
+    <>
       <DialogTitle>
         <Trans>Restrict Hours</Trans>
       </DialogTitle>
@@ -149,8 +148,18 @@ const AddRestrictHoursModal = ({
           <Trans>Save</Trans>
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
+
+// The content mounts only while the dialog is open, so it does no work when closed.
+const AddRestrictHoursModal = ({
+  open,
+  ...props
+}: AddRestrictHoursModalProps) => (
+  <Dialog open={open}>
+    <AddRestrictHoursModalContent {...props} />
+  </Dialog>
+);
 
 export default AddRestrictHoursModal;

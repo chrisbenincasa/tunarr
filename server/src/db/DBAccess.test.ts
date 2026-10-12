@@ -137,3 +137,20 @@ describe('migrateExistingDatabase - pre-migration snapshot', () => {
     expect(await preMigrationSnapshots(dbDir)).toHaveLength(1);
   });
 });
+
+describe('init - connection reuse', () => {
+  test('a second init for the same database reuses the live connection', async ({
+    dbDir,
+  }) => {
+    const dbPath = path.join(dbDir, 'db.db');
+    const live = DBAccess.instance.getConnection(dbPath);
+    expect(live).toBeDefined();
+
+    const reinitialized = DBAccess.init(dbPath);
+
+    // init() used to build a second Connection for the same file and replace
+    // the map entry, abandoning the previous sqlite handle without closing it.
+    expect(reinitialized).toBe(live);
+    expect(DBAccess.instance.getConnection(dbPath)).toBe(live);
+  });
+});

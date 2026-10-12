@@ -196,6 +196,10 @@ msgstr "{count} {programLabel}，{0}"
 msgid "{days, plural, one {# day} other {# days}}"
 msgstr "{days, plural, other {# 天}}"
 
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "{enabled} of {total} enabled"
+msgstr ""
+
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, other {# 小时}}"
@@ -222,6 +226,11 @@ msgstr "{totalConnections, plural, other {# 个连接}}"
 #: src/pages/channels/ChannelsPage.tsx
 msgid "{totalConnections} total"
 msgstr "共 {totalConnections}"
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "{unavailableSlotCount, plural, one {# slot uses a custom show that is empty or deleted. Fix or remove it before saving.} other {# slots use a custom show that is empty or deleted. Fix or remove them before saving.}}"
+msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 msgid "{value, plural, one {# program} other {# programs}}"
@@ -256,8 +265,8 @@ msgid "<0>Error deleting filler list: {0}<1/>Please consider opening a bug with 
 msgstr "<0>删除垫片列表时出错：{0}<1/>请提交包含详细信息的 Bug 报告！</0>"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "<0>Experimental:</0> Enable Plex Request Cache"
-msgstr "<0>实验性功能：</0>启用 Plex 请求缓存"
+#~ msgid "<0>Experimental:</0> Enable Plex Request Cache"
+#~ msgstr "<0>实验性功能：</0>启用 Plex 请求缓存"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "<0>None:</0> slots are picked in the order they are specified in the table (i.e. not randomly)<1/><2>Uniform:</2> all slots have an equal chance to be picked.<3/><4>Weighted:</4> each slot is picked with a specified probability"
@@ -290,10 +299,12 @@ msgid "A root path to scan for media. Local sources can search many different pa
 msgstr "要扫描媒体文件的根路径。本地媒体源可以配置多个路径。"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "A-Z (asc)"
 msgstr "A-Z（升序）"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "A-Z (desc)"
 msgstr "A-Z（降序）"
 
@@ -303,10 +314,6 @@ msgstr "约 "
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -491,6 +498,10 @@ msgstr "专辑"
 msgid "All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
 msgstr "所有使用此配置的频道都将恢复为默认配置。如果这是最后一个配置，系统会自动创建一个新的默认配置。"
 
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "All folders"
+msgstr ""
+
 #: src/components/channel_config/jellyfin/JellyfinLibrarySelector.tsx
 #~ msgid "All Genres"
 #~ msgstr "All Genres"
@@ -528,12 +539,21 @@ msgid "Alphabetical"
 msgstr "按字母顺序"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Alphabetically"
 msgstr "按字母顺序"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
-msgid "Alternate programs in blocks. You can pick the number of programs per-type in each block and if the order of shows in each block should be randomized."
-msgstr "将节目按块交替排列。你可以设置每个块中每种类型的节目数量，以及是否随机排列块内节目的顺序。"
+#~ msgid "Alternate programs in blocks. You can pick the number of programs in each block, whether episodes play in order, and whether shows take turns or come up at random."
+#~ msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#~ msgid "Alternate programs in blocks. You can pick the number of programs in each block, whether episodes play in order, and whether shows take turns or come up at random. Each preset fills in these settings, and you can change them before shuffling."
+#~ msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#~ msgid "Alternate programs in blocks. You can pick the number of programs per-type in each block and if the order of shows in each block should be randomized."
+#~ msgstr "将节目按块交替排列。你可以设置每个块中每种类型的节目数量，以及是否随机排列块内节目的顺序。"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -724,7 +744,6 @@ msgstr "块"
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Block Shuffle"
 msgstr "分块随机"
 
@@ -765,8 +784,8 @@ msgid "By default, time slots are time of the day-based, you can change it to ti
 msgstr "默认情况下，时段按「每日时刻」编排，你可以改为「每日时刻 + 星期」，这意味着时段数量将变为 7 倍。若从「每日」改为「每周」，当前排期会被复制 7 份；若从「每周」改为「每日」，许多时段将被删除。"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "Caching"
-msgstr "缓存"
+#~ msgid "Caching"
+#~ msgstr "缓存"
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
 msgid "Calculated {humanizedDuration} ({numShows} programs) of programming in {duration}ms"
@@ -809,6 +828,7 @@ msgstr "正在计算时段…"
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
+#: src/pages/library/TrashPage.tsx
 msgid "Cancel"
 msgstr "取消"
 
@@ -818,6 +838,7 @@ msgstr "取消"
 msgid "Cannot be empty"
 msgstr "不能为空"
 
+#: src/components/MediaSourceLibraryTable.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
 msgid "Cannot disable libraries when they are locked"
 msgstr "媒体库处于锁定状态时无法禁用"
@@ -1092,6 +1113,10 @@ msgstr "复制到剪贴板"
 msgid "Copy to Clipboard"
 msgstr "复制到剪贴板"
 
+#: src/hooks/useEmptyTrash.ts
+msgid "Could not cancel emptying the trash."
+msgstr ""
+
 #: src/components/search/SearchFilterBuilder.tsx
 msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
 msgstr "无法解析此筛选表达式。请查看<0>文档</0>了解筛选表达式的用法。"
@@ -1130,6 +1155,10 @@ msgstr "自定义剧集"
 msgid "Custom Show - {0}"
 msgstr "自定义剧集 - {0}"
 
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+msgid "Custom Show (add programs to a custom show first)"
+msgstr ""
+
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Custom show programs are grouped by their parent show"
 msgstr "自定义剧集的节目按其所属剧集分组"
@@ -1156,6 +1185,7 @@ msgstr "自定义电影块的排序方式"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Cyclic Shuffle"
 msgstr "循环随机"
 
@@ -1262,6 +1292,10 @@ msgstr "删除时段"
 msgid "Delete Transcoding Config \"{0}\"?"
 msgstr "删除转码配置「{0}」？"
 
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "Deleted custom show"
+msgstr ""
+
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/pages/channels/ChannelsPage.tsx
 msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
@@ -1360,8 +1394,8 @@ msgid "Documentation"
 msgstr "文档"
 
 #: src/components/MediaSourceLibraryTable.tsx
-msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
-msgstr "没有看到想要的媒体库？请确认它已在<0>媒体源设置</0>中启用。"
+#~ msgid "Don't see the library you want here? Ensure it is enabled in the <0>Media Source Settings.</0>"
+#~ msgstr "没有看到想要的媒体库？请确认它已在<0>媒体源设置</0>中启用。"
 
 #: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx
 #: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx
@@ -1418,6 +1452,10 @@ msgstr "时长必须为数字"
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 msgid "Dynamic"
 msgstr "动态"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Each next block comes from a random show. Shows with more episodes come up more often unless Loop Short Programs is on."
+msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Eager"
@@ -1501,9 +1539,28 @@ msgstr "正在编辑智能合集「{0}」"
 msgid "Emby"
 msgstr "Emby"
 
+#. placeholder {0}: ev.detail.deleted
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptied trash. Removed {0} item(s)."
+msgstr ""
+
 #: src/pages/library/TrashPage.tsx
 msgid "Empty Trash"
 msgstr "清空回收站"
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptying the trash failed. Check the server logs for details."
+msgstr ""
+
+#: src/hooks/useEmptyTrash.ts
+msgid "Emptying trash in the background. You can keep using Tunarr."
+msgstr ""
+
+#. placeholder {0}: status.deleted
+#. placeholder {1}: status.total
+#: src/pages/library/TrashPage.tsx
+msgid "Emptying trash: {0} / {1}"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enable <0>EBU R 128</0> loudness normalization via the <1>loudnorm</1> FFmpeg filter. May increase CPU usage during streaming."
@@ -1570,7 +1627,7 @@ msgstr "已启用（loudnorm）"
 msgid "Enabling embedded subtitle extaction will periodically scan your upcoming programming for embedded text-based subtitle streams and extract them to a local cache. This is necessary in order to enable subtitle burning for text-based subtitles which are not external streams."
 msgstr "启用内嵌字幕提取后，系统会定期扫描即将播出的节目，查找内嵌的文本字幕流并提取到本地缓存。这是对非外挂的文本字幕启用字幕烧录（硬字幕）的必要步骤。"
 
-#: src/pages/library/TrashPage.tsx
+#: src/hooks/useEmptyTrash.ts
 msgid "Encountered an error when emptying trash. Check console logs for details."
 msgstr "清空回收站时出错，详情请查看控制台日志。"
 
@@ -1615,6 +1672,11 @@ msgstr "电子节目单"
 msgid "EPG (Hours)"
 msgstr "节目单时长（小时）"
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Episode Order"
+msgstr ""
+
 #: src/components/programs/Episodes.tsx
 #: src/pages/library/TrashPage.tsx
 msgid "Episodes"
@@ -1656,10 +1718,18 @@ msgstr "保存新的 Jellyfin 服务器时出错，详情请查看浏览器控�
 msgid "Error saving new Smart Collection. Check server logs and browser console for details."
 msgstr "保存新的智能合集时出错，详情请查看服务器日志和浏览器控制台。"
 
-#. placeholder {0}: error.message
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
-msgid "Error saving programs. {0}"
-msgstr "保存节目时出错。{0}"
+#~ msgid "Error saving programs. {0}"
+#~ msgstr "保存节目时出错。{0}"
+
+#: src/components/channel_config/ChannelProgrammingConfig.tsx
+msgid "Error saving programs. {message}"
+msgstr ""
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "Error saving schedule. {message}"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
 msgid "Error Screen"
@@ -1930,6 +2000,9 @@ msgid "Finish"
 msgstr "完成"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "First Episode"
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
@@ -2140,6 +2213,10 @@ msgstr "图片"
 msgid "Image URL"
 msgstr "图片链接"
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "In Order"
+msgstr ""
+
 #: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
 msgid "Include Seasons"
 msgstr "包含季"
@@ -2259,7 +2336,9 @@ msgstr "让我们开始吧…"
 msgid "Level"
 msgstr "级别"
 
+#: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Libraries"
 msgstr "媒体库"
 
@@ -2285,8 +2364,8 @@ msgid "Light"
 msgstr "浅色"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
-msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
-msgstr "与随机打乱类似，但会尽量保持每部剧集的集数顺序。如果某部剧的剧集出现多次，也会相应地循环排列。"
+#~ msgid "Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
+#~ msgstr "与随机打乱类似，但会尽量保持每部剧集的集数顺序。如果某部剧的剧集出现多次，也会相应地循环排列。"
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
 #~ msgid "Limit"
@@ -2694,6 +2773,14 @@ msgid "No active sessions"
 msgstr "暂无活动会话"
 
 #: src/pages/welcome/WelcomePage.tsx
+msgid "No libraries are enabled yet. Tunarr only syncs content from enabled libraries, so choose at least one below."
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "No libraries enabled"
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
 msgid "No media sources connected."
 msgstr "未连接任何媒体源。"
 
@@ -2753,6 +2840,10 @@ msgstr "不是有效的 URL"
 #: src/routes/__root.tsx
 msgid "Not found!"
 msgstr "未找到！"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Not synced"
+msgstr ""
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
 msgid "Now Playing:"
@@ -2904,6 +2995,8 @@ msgid "Passthrough audio unchanged. Other settings will not apply."
 msgstr "直接透传音频不做处理，其他设置将不生效。"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Password"
 msgstr "密码"
@@ -2959,6 +3052,14 @@ msgstr "播放列表"
 #~ msgid "Playlists"
 #~ msgstr "Playlists"
 
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+#~ msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows."
+#~ msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingSort.tsx
+msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Opens the shuffle settings, where you can start every show at its first episode or loop shorter shows."
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
 msgstr "请选择大于 1 的值"
@@ -2983,6 +3084,11 @@ msgstr "后"
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Pre"
 msgstr "前"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Preset"
+msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotPresetButton.tsx
 msgid "Presets"
@@ -3091,6 +3197,7 @@ msgstr "已排队"
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Random"
 msgstr "随机"
 
@@ -3098,6 +3205,10 @@ msgstr "随机"
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Random (by show)"
 msgstr "随机（按剧集）"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Random Episode"
+msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Random..."
@@ -3181,7 +3292,7 @@ msgstr "重新加载流"
 msgid "Remove"
 msgstr "移除"
 
-#. placeholder {0}: import { betterHumanize } from '@/helpers/dayjs'; import { isNonEmptyString } from '@/helpers/util'; import { Autocomplete, Box, Checkbox, Chip, DialogContentText, List, ListItem, ListItemText, TextField, } from '@mui/material'; import Button from '@mui/material/Button'; import Dialog from '@mui/material/Dialog'; import DialogActions from '@mui/material/DialogActions'; import DialogContent from '@mui/material/DialogContent'; import DialogTitle from '@mui/material/DialogTitle'; import { seq } from '@tunarr/shared/util'; import dayjs from 'dayjs'; import { every, identity, includes, isEmpty, map, reduce, some, uniqBy, values, } from 'lodash-es'; import { Trans, useLingui } from '@lingui/react/macro'; import { plural } from '@lingui/core/macro'; import type { HTMLAttributes } from 'react'; import { useMemo, useState } from 'react'; import { match, P } from 'ts-pattern'; import { useCounter } from 'usehooks-ts'; import { extractProgramGrandparent } from '../../helpers/programUtil.ts'; import type { RemoveProgrammingRequest } from '../../hooks/programming_controls/useRemoveProgramming'; import { useRemoveProgramming } from '../../hooks/programming_controls/useRemoveProgramming'; import useStore from '../../store'; import { materializedProgramListSelector } from '../../store/selectors'; type RemoveShowsModalProps = { open: boolean; onClose: () => void; }; interface FilmOptionType { id: string; title: string; firstLetter?: string; } export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => { const { t } = useLingui(); const { count, increment, decrement } = useCounter(0); const removeProgramming = useRemoveProgramming(); const [removeRequest, setRemoveRequest] = useState<RemoveProgrammingRequest>( {}, ); const programs = useStore(materializedProgramListSelector); const hasMovies = useMemo(() => { return some( programs, (p) => p.type === 'content' && p.program.type === 'movie', ); }, [programs]); const numAndDurationById = useMemo(() => { return reduce( programs, (acc, curr) => { const key = match(curr) .with( { type: 'content', program: { type: P.select(P.union('movie', 'music_video', 'other_video')), }, }, identity, ) .with( { type: 'content', program: { type: 'episode' } }, ({ program }) => program.show?.uuid ?? program.season?.show?.uuid, ) .with( { type: 'content', program: { type: 'track' } }, ({ program }) => program.artist?.uuid ?? program.album?.artist?.uuid, ) .with({ type: P._ }, () => undefined) .exhaustive(); if (key) { acc[key] ??= { totalDuration: 0, totalPrograms: 0 }; acc[key].totalDuration += curr.duration; acc[key].totalPrograms++; } return acc; }, {} as Record<string, { totalPrograms: number; totalDuration: number }>, ); }, [programs]); // Get the total number of movies from the memoized object const movieCount = numAndDurationById['movie']?.totalPrograms ?? 0; const showList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'episode' && isNonEmptyString( program.program.show?.uuid ?? program.program.season?.show?.uuid, ) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const artistList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'track' && isNonEmptyString(extractProgramGrandparent(program.program)?.uuid) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const mapListToGroupedOptions = ( list: Array<{ id: string; title: string }>, ) => { return list.map((option) => { // Get the first letter, use a placeholder if title is empty. const firstLetter = (option.title?.[0] ?? '-').toUpperCase(); return { // Group numbers/digits under '0-9', otherwise use the first letter. firstLetter: /[0-9]/.test(firstLetter) ? '0-9' : firstLetter, ...option, }; }); }; const showOptions = useMemo( () => mapListToGroupedOptions(showList), [showList], ); const artistOptions = useMemo( () => mapListToGroupedOptions(artistList), [artistList], ); const isEmptyRemoveRequest = useMemo(() => { return ( isEmpty(removeRequest) ?? every(values(removeRequest), (value) => { // If it's a boolean (movies: true/false), only check if it's the 'empty' state (false). // We do this because lodash treats booleans as empty regardless of value if (typeof value === 'boolean') { return value === false; } // Otherwise, check if the value is empty. return isEmpty(value); }) ); }, [removeRequest]); const removeShowsProgramming = () => { removeProgramming(removeRequest); onClose(); }; const getProgramCounts = (id: string, type?: string) => { const details = numAndDurationById[id]; if (!details) { return null; } const count = details.totalPrograms; const programLabel = type === 'episode' ? plural(count, { one: 'episode', other: 'episodes' }) : type === 'track' ? plural(count, { one: 'track', other: 'tracks' }) : plural(count, { one: 'program', other: 'programs' }); return t`${count} ${programLabel}, ${betterHumanize( dayjs.duration(details.totalDuration), { style: 'short', }, )}`; }; const getArtistIds = (options: FilmOptionType[]) => map(options, 'id'); return ( <> <Dialog open={open} scroll={'paper'}> <DialogTitle> <Trans>Remove Programming</Trans> </DialogTitle> <DialogContent> <DialogContentText> <Trans>Pick specific programming to remove from the channel.</Trans> </DialogContentText> <Autocomplete options={showOptions.sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.showIds ?? []; return includes(selectedIds, option.id); }} onChange={(_, newOptions) => { // Extract the IDs from the selected options const newShowIds = map(newOptions, 'id'); setRemoveRequest((prev) => ({ ...prev, showIds: newShowIds, })); // Update the program counter based on the number of selected shows const countDifference = newShowIds.length - (removeRequest.showIds?.length ?? 0); if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} value={ removeRequest.showIds ? showList.filter((show) => (removeRequest.showIds ?? []).includes(show.id), ) : [] } renderInput={(params) => ( <TextField {...params} label={t`Select Shows to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'episode')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> {artistList.length > 0 && ( <Autocomplete options={artistOptions.sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.artistIds ?? []; return includes(selectedIds, option.id); }} value={ removeRequest.artistIds ? artistList.filter((artist) => (removeRequest.artistIds ?? []).includes(artist.id), ) : [] } onChange={(_, newOptions) => { const newArtistIds = getArtistIds(newOptions); const previousArtistIds = removeRequest.artistIds ?? []; setRemoveRequest((prev) => ({ ...prev, artistIds: newArtistIds, })); // Update the program counter based on the number of selected shows const countDifference = newArtistIds.length - previousArtistIds.length; if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} renderInput={(params) => ( <TextField {...params} label={t`Select Artists to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'track')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> )} <Box key="dynamic-list-container"> <List dense> {hasMovies && ( <ListItem secondaryAction={ <Checkbox edge="end" onChange={(e) => { const isChecked = e.target.checked; setRemoveRequest((prev) => { const newState = { ...prev, movies: isChecked, }; return newState; }); const countDelta = isChecked ? movieCount : -movieCount; for (let i = 0; i < Math.abs(countDelta); i++) { if (countDelta > 0) increment(); else decrement(); } }} checked={!!removeRequest.movies} /> } > <ListItemText primary={t`Remove All ${movieCount} ${plural(movieCount, { one: 'Movie', other: 'Movies' })}`} secondary={getProgramCounts('movies')} /> </ListItem> )} </List> </Box> </DialogContent> <DialogActions> <Button onClick={() => onClose()}> <Trans>Cancel</Trans> </Button> <Button variant="contained" onClick={() => removeShowsProgramming()} disabled={isEmptyRemoveRequest} > <Trans> Remove {count}{' '} {plural(count, { one: 'program', other: 'programs' })} </Trans> </Button> </DialogActions> </Dialog> </> ); }; 
+#. placeholder {0}: import { betterHumanize } from '@/helpers/dayjs'; import { isNonEmptyString } from '@/helpers/util'; import { Autocomplete, Box, Checkbox, Chip, DialogContentText, List, ListItem, ListItemText, TextField, } from '@mui/material'; import Button from '@mui/material/Button'; import Dialog from '@mui/material/Dialog'; import DialogActions from '@mui/material/DialogActions'; import DialogContent from '@mui/material/DialogContent'; import DialogTitle from '@mui/material/DialogTitle'; import { seq } from '@tunarr/shared/util'; import dayjs from 'dayjs'; import { every, identity, includes, isEmpty, map, reduce, some, uniqBy, values, } from 'lodash-es'; import { Trans, useLingui } from '@lingui/react/macro'; import { plural } from '@lingui/core/macro'; import type { HTMLAttributes } from 'react'; import { useMemo, useState } from 'react'; import { match, P } from 'ts-pattern'; import { useCounter } from 'usehooks-ts'; import { extractProgramGrandparent } from '../../helpers/programUtil.ts'; import type { RemoveProgrammingRequest } from '../../hooks/programming_controls/useRemoveProgramming'; import { useRemoveProgramming } from '../../hooks/programming_controls/useRemoveProgramming'; import useStore from '../../store'; import { materializedProgramListSelector } from '../../store/selectors'; type RemoveShowsModalProps = { open: boolean; onClose: () => void; }; interface FilmOptionType { id: string; title: string; firstLetter?: string; } const RemoveShowsModalContent = ({ onClose, }: Omit<RemoveShowsModalProps, 'open'>) => { const { t } = useLingui(); const { count, increment, decrement } = useCounter(0); const removeProgramming = useRemoveProgramming(); const [removeRequest, setRemoveRequest] = useState<RemoveProgrammingRequest>( {}, ); const programs = useStore(materializedProgramListSelector); const hasMovies = useMemo(() => { return some( programs, (p) => p.type === 'content' && p.program.type === 'movie', ); }, [programs]); const numAndDurationById = useMemo(() => { return reduce( programs, (acc, curr) => { const key = match(curr) .with( { type: 'content', program: { type: P.select(P.union('movie', 'music_video', 'other_video')), }, }, identity, ) .with( { type: 'content', program: { type: 'episode' } }, ({ program }) => program.show?.uuid ?? program.season?.show?.uuid, ) .with( { type: 'content', program: { type: 'track' } }, ({ program }) => program.artist?.uuid ?? program.album?.artist?.uuid, ) .with({ type: P._ }, () => undefined) .exhaustive(); if (key) { acc[key] ??= { totalDuration: 0, totalPrograms: 0 }; acc[key].totalDuration += curr.duration; acc[key].totalPrograms++; } return acc; }, {} as Record<string, { totalPrograms: number; totalDuration: number }>, ); }, [programs]); // Get the total number of movies from the memoized object const movieCount = numAndDurationById['movie']?.totalPrograms ?? 0; const showList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'episode' && isNonEmptyString( program.program.show?.uuid ?? program.program.season?.show?.uuid, ) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const artistList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'track' && isNonEmptyString(extractProgramGrandparent(program.program)?.uuid) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const mapListToGroupedOptions = ( list: Array<{ id: string; title: string }>, ) => { return list.map((option) => { // Get the first letter, use a placeholder if title is empty. const firstLetter = (option.title?.[0] ?? '-').toUpperCase(); return { // Group numbers/digits under '0-9', otherwise use the first letter. firstLetter: /[0-9]/.test(firstLetter) ? '0-9' : firstLetter, ...option, }; }); }; const showOptions = useMemo( () => mapListToGroupedOptions(showList), [showList], ); const artistOptions = useMemo( () => mapListToGroupedOptions(artistList), [artistList], ); const isEmptyRemoveRequest = useMemo(() => { return ( isEmpty(removeRequest) ?? every(values(removeRequest), (value) => { // If it's a boolean (movies: true/false), only check if it's the 'empty' state (false). // We do this because lodash treats booleans as empty regardless of value if (typeof value === 'boolean') { return value === false; } // Otherwise, check if the value is empty. return isEmpty(value); }) ); }, [removeRequest]); const removeShowsProgramming = () => { removeProgramming(removeRequest); onClose(); }; const getProgramCounts = (id: string, type?: string) => { const details = numAndDurationById[id]; if (!details) { return null; } const count = details.totalPrograms; const programLabel = type === 'episode' ? plural(count, { one: 'episode', other: 'episodes' }) : type === 'track' ? plural(count, { one: 'track', other: 'tracks' }) : plural(count, { one: 'program', other: 'programs' }); return t`${count} ${programLabel}, ${betterHumanize( dayjs.duration(details.totalDuration), { style: 'short', }, )}`; }; const getArtistIds = (options: FilmOptionType[]) => map(options, 'id'); return ( <> <DialogTitle> <Trans>Remove Programming</Trans> </DialogTitle> <DialogContent> <DialogContentText> <Trans>Pick specific programming to remove from the channel.</Trans> </DialogContentText> <Autocomplete options={[...showOptions].sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.showIds ?? []; return includes(selectedIds, option.id); }} onChange={(_, newOptions) => { // Extract the IDs from the selected options const newShowIds = map(newOptions, 'id'); setRemoveRequest((prev) => ({ ...prev, showIds: newShowIds, })); // Update the program counter based on the number of selected shows const countDifference = newShowIds.length - (removeRequest.showIds?.length ?? 0); if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} value={ removeRequest.showIds ? showList.filter((show) => (removeRequest.showIds ?? []).includes(show.id), ) : [] } renderInput={(params) => ( <TextField {...params} label={t`Select Shows to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'episode')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> {artistList.length > 0 && ( <Autocomplete options={[...artistOptions].sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.artistIds ?? []; return includes(selectedIds, option.id); }} value={ removeRequest.artistIds ? artistList.filter((artist) => (removeRequest.artistIds ?? []).includes(artist.id), ) : [] } onChange={(_, newOptions) => { const newArtistIds = getArtistIds(newOptions); const previousArtistIds = removeRequest.artistIds ?? []; setRemoveRequest((prev) => ({ ...prev, artistIds: newArtistIds, })); // Update the program counter based on the number of selected shows const countDifference = newArtistIds.length - previousArtistIds.length; if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} renderInput={(params) => ( <TextField {...params} label={t`Select Artists to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'track')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> )} <Box key="dynamic-list-container"> <List dense> {hasMovies && ( <ListItem secondaryAction={ <Checkbox edge="end" onChange={(e) => { const isChecked = e.target.checked; setRemoveRequest((prev) => { const newState = { ...prev, movies: isChecked, }; return newState; }); const countDelta = isChecked ? movieCount : -movieCount; for (let i = 0; i < Math.abs(countDelta); i++) { if (countDelta > 0) increment(); else decrement(); } }} checked={!!removeRequest.movies} /> } > <ListItemText primary={t`Remove All ${movieCount} ${plural(movieCount, { one: 'Movie', other: 'Movies' })}`} secondary={getProgramCounts('movies')} /> </ListItem> )} </List> </Box> </DialogContent> <DialogActions> <Button onClick={() => onClose()}> <Trans>Cancel</Trans> </Button> <Button variant="contained" onClick={() => removeShowsProgramming()} disabled={isEmptyRemoveRequest} > <Trans> Remove {count}{' '} {plural(count, { one: 'program', other: 'programs' })} </Trans> </Button> </DialogActions> </> ); }; // The content mounts only while the dialog is open, so it does no work when closed. export const RemoveShowsModal = ({ open, ...props }: RemoveShowsModalProps) => ( <Dialog open={open} scroll={'paper'}> <RemoveShowsModalContent {...props} /> </Dialog> ); 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Remove {count} {0}"
 msgstr "移除 {count} {0}"
@@ -3555,9 +3666,18 @@ msgstr "剧集"
 msgid "Show Advanced"
 msgstr "显示高级选项"
 
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Show disabled libraries"
+msgstr ""
+
 #: src/components/channel_config/ProgrammingSelector.tsx
 #~ msgid "Show only synced libraries"
 #~ msgstr "Show only synced libraries"
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Show Order"
+msgstr ""
 
 #: src/pages/guide/GuidePage.tsx
 msgid "Show Stealth"
@@ -3577,6 +3697,19 @@ msgstr "剧集：{0}"
 msgid "Shows"
 msgstr "剧集"
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows come up at random, one episode at a time. Each show's episodes stay in order, starting from a random episode."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows take turns in a fixed order, each playing a block of episodes before the next show."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Shows take turns in a fixed order."
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Shuffle"
@@ -3670,6 +3803,7 @@ msgid "Sort TV Shows (desc)"
 msgstr "剧集排序（降序）"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Sorts alphabetically by program title"
 msgstr "按节目名称的字母顺序排序"
 
@@ -3686,13 +3820,14 @@ msgstr "按剧集名称对列表排序，每部剧内的剧集按季号/集号�
 msgid "Soundtrack"
 msgstr "原声"
 
+#: src/components/MediaSourceLibraryTable.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Source"
 msgstr "来源"
 
 #: src/components/MediaSourceLibraryTable.tsx
-msgid "Source Type"
-msgstr "来源类型"
+#~ msgid "Source Type"
+#~ msgstr "来源类型"
 
 #: src/hooks/useNavItems.tsx
 msgid "Sources"
@@ -3716,6 +3851,11 @@ msgstr "开始时间"
 msgid "Started {startedAgo} - {remainingTime}remaining"
 msgstr "已于 {startedAgo} 开始 - 剩余 {remainingTime}"
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Starting Episode"
+msgstr ""
+
 #: src/hooks/useNavItems.tsx
 #: src/pages/system/SystemLayout.tsx
 msgid "Status"
@@ -3728,6 +3868,10 @@ msgstr "隐身模式"
 #: src/pages/channels/ChannelsPage.tsx
 msgid "Stealth?"
 msgstr "隐身？"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Stop syncing this library"
+msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Stop Transcode Session"
@@ -3778,8 +3922,8 @@ msgid "Successfully copied to clipboard!"
 msgstr "已成功复制到剪贴板！"
 
 #: src/pages/library/TrashPage.tsx
-msgid "Successfully emptied trash."
-msgstr "回收站已清空。"
+#~ msgid "Successfully emptied trash."
+#~ msgstr "回收站已清空。"
 
 #: src/pages/system/StatusPage.tsx
 msgid "Successfully ran system fixer {fixerId}"
@@ -3798,9 +3942,17 @@ msgstr "已成功调度 {taskId}（正在后台运行）。"
 msgid "Successfully updated Media Source settings."
 msgstr "媒体源设置已成功更新。"
 
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Sync"
+msgstr ""
+
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync Now"
 msgstr "立即同步"
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Sync this library to Tunarr"
+msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync with external playlist"
@@ -3837,14 +3989,18 @@ msgstr "尾部"
 msgid "Tail Buffer (minutes)"
 msgstr "尾部缓冲（分钟）"
 
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Take Turns"
+msgstr ""
+
 #: src/pages/settings/TaskSettingsPage.tsx
 #: src/pages/system/SystemLayout.tsx
 msgid "Tasks"
 msgstr "任务"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
-msgstr "按请求路径临时缓存来自 Plex 的响应，可能有助于加快频道编辑速度。"
+#~ msgid "Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
+#~ msgstr "按请求路径临时缓存来自 Plex 的响应，可能有助于加快频道编辑速度。"
 
 #: src/routes/channels_/test.tsx
 msgid "Test"
@@ -3879,6 +4035,10 @@ msgstr "图片将按实际尺寸渲染，不做任何缩放。"
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
 msgstr "当前加载的 Tunarr 界面版本与服务器不匹配。请刷新浏览器以获取最新版本。若此提示持续出现，请清除浏览器缓存后重新加载。"
 
+#: src/components/UnavailableLibraryIndicator.tsx
+msgid "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
+msgstr ""
+
 #: src/components/LanguagePreferencesList.tsx
 msgid "The selected languages will be considered in order they are selected."
 msgstr "所选语言将按选择的先后顺序依次生效。"
@@ -3894,6 +4054,10 @@ msgstr "所提供路径中的媒体类型"
 #: src/components/settings/general/WebSettings.tsx
 msgid "Theme Settings"
 msgstr "主题设置"
+
+#: src/hooks/slot_scheduler/useScheduleSlots.ts
+msgid "There was an error generating slots. {serverMessage}"
+msgstr ""
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
 msgid "There was an error generating time slots. Check the browser console log for more information"
@@ -3912,6 +4076,7 @@ msgid "These settings are stored in your browser and are saved automatically whe
 msgstr "这些设置保存在你的浏览器中，修改后会自动保存。"
 
 #. placeholder {0}: slot.type .split('-') .map((s) => capitalize(s)) .join(' ')
+#: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "This {0} is marked as missing in the database."
 msgstr "此 {0} 在数据库中被标记为缺失。"
@@ -3941,13 +4106,25 @@ msgstr "该频道号已被占用"
 msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
 msgstr "这可能导致下一个时段的节目无法排入。可行的解决办法包括："
 
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "This custom show has no programs. Add programs to it or choose another show."
+msgstr ""
+
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
 msgstr "此自定义剧集已与外部播放列表同步，内容会自动更新，无法手动编辑。"
 
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "This custom show was deleted. Choose another show."
+msgstr ""
+
 #: src/components/settings/general/GeneralSettingsForm.tsx
-msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
-msgstr "此功能目前为实验性，请谨慎使用。如遇到问题，可尝试关闭缓存。"
+#~ msgid "This feature is currently experimental. Proceed with caution and if you experience an issue, try disabling caching."
+#~ msgstr "此功能目前为实验性，请谨慎使用。如遇到问题，可尝试关闭缓存。"
+
+#: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
+msgid "This filler list has no programs and will be ignored."
+msgstr ""
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled."
@@ -3987,6 +4164,14 @@ msgstr "此时段已与另外 {0} 个{1, plural, other {时段}}关联，内容�
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "This slot replays content aired by continue slots earlier in the period."
 msgstr "此时段会重播本周期内前面续播时段已播出的内容。"
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
+msgid "This slot's custom show has no programs, so the slot cannot be scheduled. Add programs to the show, choose another show, or remove the slot."
+msgstr ""
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
+msgid "This slot's custom show was deleted, so the slot cannot be scheduled. Choose another show or remove the slot."
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Threads"
@@ -4050,12 +4235,15 @@ msgid "Today"
 msgstr "今天"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/EmbyServerEditDialog.tsx
-#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "toggle access token visibility"
 msgstr "切换访问令牌可见性"
+
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
+msgid "toggle password visibility"
+msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingTools.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -4124,6 +4312,19 @@ msgstr "Tunarr 后端地址："
 msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
 msgstr "Tunarr 当前配置为使用 AC3 音频编码器。浏览器不支持该音频格式，生成的流很可能没有声音，或完全无法播放。"
 
+#. placeholder {0}: mediaSource.name
+#: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+msgid "Tunarr only syncs content from enabled libraries. Choose the libraries from {0} that you want to use in your channels."
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
+msgid "Tunarr only syncs content from enabled libraries. Click to choose libraries."
+msgstr ""
+
+#: src/components/MediaSourceLibraryTable.tsx
+msgid "Tunarr only syncs content from enabled libraries. Turn on a library's switch to sync it, or manage sources in <0>Media Source Settings.</0>"
+msgstr ""
+
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 msgstr "Tunarr 会运行各类后台任务，其中一些按计划定时执行。"
@@ -4149,8 +4350,6 @@ msgstr "调谐器数量"
 msgid "TV shows are grouped by show"
 msgstr "剧集按剧名分组"
 
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
-#: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
@@ -4163,6 +4362,11 @@ msgstr "剧集按剧名分组"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Type"
 msgstr "类型"
+
+#: src/components/UnavailableLibraryIndicator.tsx
+#: src/components/UnavailableLibraryIndicator.tsx
+msgid "Unavailable"
+msgstr ""
 
 #: src/components/search/DateSearchValueNode.tsx
 #: src/components/search/DateSearchValueNode.tsx
@@ -4214,6 +4418,8 @@ msgid "Use these settings to override global ffmpeg settings for this channel."
 msgstr "使用这些设置覆盖该频道的全局 ffmpeg 设置。"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/EmbyServerEditDialog.tsx
+#: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Username"
 msgstr "用户名"
@@ -4388,6 +4594,10 @@ msgstr "XMLTV"
 #: src/pages/system/StatusPage.tsx
 msgid "XMLTV Link:"
 msgstr "XMLTV 链接："
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "You can change any setting below before shuffling."
+msgstr ""
 
 #: src/pages/library/FillerListsPage.tsx
 msgid "You have no Filler Lists. Create your first Filler List <0>here.</0>"

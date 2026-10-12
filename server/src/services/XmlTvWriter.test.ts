@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { parseXmltv, writeXmltv } from '@iptv/xmltv';
 import { tag } from '@tunarr/types';
 import { v4 } from 'uuid';
 import type { Artwork } from '../db/schema/Artwork.ts';
@@ -9,6 +10,7 @@ import type {
 } from '../db/schema/derivedTypes.ts';
 import {
   createChannel,
+  createChannelOrm,
   createFakeProgram,
   createFakeShow,
 } from '../testing/fakes/entityCreators.ts';
@@ -96,6 +98,316 @@ function makeGrouping(
 }
 
 describe('XmlTvWriter', () => {
+  describe('serialize', () => {
+    // Rotates through the shapes the writer branches on, so batch splicing is
+    // checked against credits, categories, icons and episode numbers.
+    function richProgram(i: number): ProgramWithRelationsOrm {
+      const genres = [
+        {
+          genre: { uuid: v4(), name: 'Comedy' },
+          genreId: '',
+          groupId: '',
+          programId: '',
+        },
+      ];
+      const tags = [
+        {
+          tag: { uuid: v4(), tag: 'Keyword & <Tag>' },
+          tagId: v4(),
+          programId: null,
+          source: 'media' as const,
+          groupingId: null,
+        },
+      ];
+      const credits = [
+        {
+          uuid: v4(),
+          name: `Actor ${i}`,
+          type: 'cast' as const,
+          role: 'Lead',
+          index: 0,
+          createdAt: null,
+          updatedAt: null,
+          programId: null,
+          groupingId: null,
+        },
+      ];
+
+      switch (i % 3) {
+        case 0:
+          return makeProgram({
+            type: 'movie',
+            title: `Movie ${i} <&>`,
+            summary: 'A "quoted" summary',
+            year: 2001,
+            rating: 'PG',
+            artwork: [makeArtwork('poster')],
+            credits,
+            genres,
+            tags,
+          });
+        case 1:
+          return makeProgram({
+            type: 'episode',
+            title: `Episode ${i}`,
+            seasonNumber: 2,
+            episode: i,
+            artwork: [makeArtwork('thumbnail')],
+            show: makeGrouping({
+              type: 'show',
+              title: 'Show "A" & B',
+              artwork: [makeArtwork('poster')],
+              credits,
+              genres,
+              tags,
+            }),
+            season: makeGrouping({ type: 'season', index: 2 }),
+          });
+        default:
+          return makeProgram({
+            type: 'track',
+            title: `Track ${i}`,
+            episode: i,
+            album: makeGrouping({
+              type: 'album',
+              index: 1,
+              artwork: [makeArtwork('poster')],
+            }),
+            artist: makeGrouping({ type: 'artist', title: 'Artist' }),
+          });
+      }
+    }
+
+    it('matches serializing the whole document at once', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(Date.parse('2026-09-22T00:00:00Z'));
+      try {
+        const writer = new XmlTvWriter(inMemorySettingsDB());
+        // Enough programmes per channel to span several serialize batches.
+        const channels: MaterializedChannelPrograms[] = [1, 2, 3].map(
+          (number) => ({
+            channel: createChannelOrm({ number, name: `Channel ${number}` }),
+            programs: Array.from({ length: 600 }, (_, i) => {
+              const program = richProgram(number * 1000 + i);
+              return {
+                programming: { type: 'program' as const, program },
+                title: program.title,
+                start: i * 1_800_000,
+                stop: (i + 1) * 1_800_000,
+                durationMs: 1_800_000,
+              };
+            }),
+          }),
+        );
+
+        const xml = await writer.serialize(channels);
+        expect(xml).toEqual(writeXmltv(writer.generateXmltv(channels)));
+
+        // Guards the fixture: each element below comes from a different shape.
+        for (const element of [
+          '<credits>',
+          '<category',
+          '<icon',
+          '<episode-num',
+        ]) {
+          expect(xml).toContain(element);
+        }
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    // @iptv/xmltv drops its declaration or DOCTYPE when the content already
+    // contains `?xml` or `!DOCTYPE`, so batches can arrive without a prefix.
+    function channelWithTitles(titles: string[]): MaterializedChannelPrograms {
+      return {
+        channel: createChannelOrm({ number: 1, name: 'Channel 1' }),
+        programs: titles.map((title, i) => {
+          const program = makeProgram({ title });
+          return {
+            programming: { type: 'program' as const, program },
+            title,
+            start: i * 1_800_000,
+            stop: (i + 1) * 1_800_000,
+            durationMs: 1_800_000,
+          };
+        }),
+      };
+    }
+
+    it('keeps the header when a title contains ?xml', async () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const xml = await writer.serialize([
+        channelWithTitles(['Parsing <?xml in Python']),
+      ]);
+
+      expect(xml.startsWith('<?xml')).toBe(true);
+      expect(parseXmltv(xml).programmes?.[0]?.title[0]?._value).toBe(
+        'Parsing &lt;?xml in Python',
+      );
+    });
+
+    it('does not throw when a title contains !DOCTYPE', async () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const xml = await writer.serialize([
+        channelWithTitles(['The <!DOCTYPE story']),
+      ]);
+
+      expect(xml.startsWith('<?xml')).toBe(true);
+    });
+  });
+
+  describe('serialized program order', () => {
+    function serializeProgram(program: ProgramWithRelationsOrm) {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const xml = writeXmltv(
+        writer.generateXmltv([
+          {
+            channel: createChannelOrm({ number: 1, name: 'Test Channel' }),
+            programs: [
+              {
+                programming: { type: 'program', program },
+                title: program.title,
+                start: Date.parse('2026-09-22T00:00:00Z'),
+                stop: Date.parse('2026-09-22T00:30:00Z'),
+                durationMs: 1_800_000,
+              },
+            ],
+          },
+        ]),
+      );
+
+      // Parse the serialized document as a DOM to retain sibling order.
+      const tv = parseXmltv(xml, { asDom: true }).find(
+        (node) => typeof node !== 'string' && node.tagName === 'tv',
+      );
+      if (!tv || typeof tv === 'string') throw new Error('Missing tv element');
+      const programElement = tv.children.find(
+        (node) => typeof node !== 'string' && node.tagName === 'programme',
+      );
+      if (!programElement || typeof programElement === 'string') {
+        throw new Error('Missing <programme> element');
+      }
+      const children = programElement.children.filter(
+        (node) => typeof node !== 'string',
+      );
+      return { xml, children };
+    }
+
+    describe.each(['episode', 'movie', 'track'] as const)('%s', (type) => {
+      test.each([true, false])(
+        'serializes metadata in XMLTV order (artwork: %s)',
+        (hasArtwork) => {
+          const program = makeProgram({
+            uuid: 'test-program',
+            type,
+            title: 'Test Title',
+            showTitle: type === 'episode' ? 'Test Show' : null,
+            tagline: type === 'movie' ? 'Test Tagline' : null,
+            summary: 'Test summary & description',
+            duration: 1_800_000,
+            originalAirDate: '2020-05-04T00:00:00Z',
+            rating: 'PG',
+            seasonNumber: type === 'episode' ? 6 : null,
+            episode: type === 'movie' ? null : 4,
+            sourceType: 'local',
+            artwork: hasArtwork ? [makeArtwork('poster')] : [],
+            credits: [
+              {
+                uuid: 'test-director',
+                name: 'Test Director',
+                type: 'director',
+                role: null,
+                index: 0,
+                createdAt: null,
+                updatedAt: null,
+                programId: 'test-program',
+                groupingId: null,
+              },
+            ],
+            genres: [
+              {
+                genre: { uuid: 'test-genre', name: 'Comedy' },
+                genreId: 'test-genre',
+                groupId: null,
+                programId: 'test-program',
+              },
+            ],
+            tags: [
+              {
+                tag: { uuid: 'test-tag', tag: 'Test Keyword' },
+                tagId: 'test-tag',
+                programId: 'test-program',
+                source: 'media',
+                groupingId: null,
+              },
+            ],
+          });
+          const { xml, children } = serializeProgram(program);
+
+          expect(children.map((node) => node.tagName)).toEqual([
+            'title',
+            ...(type === 'movie' ? [] : ['sub-title']),
+            'desc',
+            'credits',
+            'date',
+            'category',
+            'keyword',
+            'length',
+            ...(hasArtwork ? ['icon'] : []),
+            ...(type === 'movie' ? [] : ['episode-num', 'episode-num']),
+            ...(type === 'track' ? ['video'] : []),
+            'rating',
+            ...(hasArtwork ? ['image'] : []),
+          ]);
+          expect(xml).toContain('<desc>Test summary &amp; description</desc>');
+          expect(xml).toContain('<length units="seconds">1800</length>');
+          expect(xml).not.toContain('Test Tagline');
+
+          const icons = children.filter((node) => node.tagName === 'icon');
+          const images = children.filter((node) => node.tagName === 'image');
+          if (hasArtwork) {
+            const url = '{{host}}/api/programs/test-program/artwork/poster';
+            expect(icons).toEqual([
+              { tagName: 'icon', attributes: { src: url }, children: [] },
+            ]);
+            expect(images).toEqual([
+              {
+                tagName: 'image',
+                attributes: { size: '3', type: 'poster' },
+                children: [url],
+              },
+            ]);
+            expect(xml).toContain(`<icon src="${url}"/>`);
+            expect(xml).toContain('</image></programme>');
+          } else {
+            expect(icons).toEqual([]);
+            expect(images).toEqual([]);
+          }
+        },
+      );
+    });
+
+    test.each([true, false])(
+      'omits absent optional metadata (artwork: %s)',
+      (hasArtwork) => {
+        const { children } = serializeProgram(
+          makeProgram({
+            title: 'Minimal Movie',
+            type: 'movie',
+            sourceType: 'local',
+            duration: 0,
+            artwork: hasArtwork ? [makeArtwork('poster')] : [],
+          }),
+        );
+        expect(children.map((node) => node.tagName)).toEqual([
+          'title',
+          ...(hasArtwork ? ['icon', 'image'] : []),
+        ]);
+      },
+    );
+  });
+
   describe('television', () => {
     const channels: MaterializedChannelPrograms[] = [
       {
@@ -795,6 +1107,53 @@ describe('XmlTvWriter', () => {
       expect(credits?.actor).toBeDefined();
       expect(credits?.actor?.[0]?._value).toBe('Alan Smithee');
       expect(credits?.actor?.[0]?.role).toBe('Himself');
+    });
+
+    test('escapes quotes, apostrophes, and ampersands in actor roles', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const xml = writeXmltv(
+        writer.generateXmltv([
+          {
+            channel: createChannel(),
+            programs: [
+              {
+                programming: {
+                  type: 'program',
+                  program: createFakeProgram({
+                    type: 'movie',
+                    credits: [
+                      {
+                        uuid: v4(),
+                        name: 'Michael Palin',
+                        type: 'cast',
+                        role: 'Various / "It\'s" man',
+                        artwork: [],
+                      },
+                      {
+                        uuid: v4(),
+                        name: 'Tómas Matos',
+                        type: 'cast',
+                        role: 'Lattes & Lashes Technician',
+                        artwork: [],
+                      },
+                    ],
+                  }),
+                },
+                start: Date.now(),
+                stop: Date.now() + 3600000,
+                title: 'Live at the Hollywood Bowl',
+              },
+            ],
+          },
+        ]),
+      );
+
+      expect(xml).toContain(
+        '<actor role="Various / &quot;It&#39;s&quot; man">Michael Palin</actor>',
+      );
+      expect(xml).toContain(
+        '<actor role="Lattes &amp; Lashes Technician">Tómas Matos</actor>',
+      );
     });
 
     test('maps director, writer, and producer credits correctly', () => {

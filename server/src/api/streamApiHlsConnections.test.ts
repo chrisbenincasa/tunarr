@@ -18,6 +18,9 @@ import {
   validatorCompiler,
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import tmp from 'tmp';
 import type { DeepRequired } from 'ts-essentials';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -25,6 +28,9 @@ vi.mock('../container.js', () => ({ container: { get: vi.fn() } }));
 vi.mock('@/stream/VideoStream.js', () => ({ VideoStream: class {} }));
 
 import { streamApi } from './streamApi.js';
+
+const MASTER_PLAYLIST = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nstream.m3u8\n';
+const VARIANT_PLAYLIST = '#EXTM3U\n#EXTINF:4.0,\n/test/data000000.ts\n';
 
 class TestHlsSession extends BaseHlsSession {
   public readonly sessionType = 'hls' as const;
@@ -38,7 +44,11 @@ class TestHlsSession extends BaseHlsSession {
   }
 
   async getMasterPlaylist() {
-    return Result.success<string | undefined>('#EXTM3U\n');
+    return Result.success<string | undefined>(MASTER_PLAYLIST);
+  }
+
+  async trimPlaylist() {
+    return Result.success({ playlist: VARIANT_PLAYLIST });
   }
 
   protected getHlsOptions(): DeepRequired<HlsOptions> {
@@ -72,6 +82,29 @@ const baseOptions: BaseHlsSessionOptions = {
   stalenessMs: 120_000,
 };
 
+async function buildApp(sessionManager: unknown) {
+  const app: ReturnType<typeof Fastify> = Fastify()
+    .setValidatorCompiler(validatorCompiler)
+    .setSerializerCompiler(serializerCompiler)
+    .withTypeProvider<ZodTypeProvider>();
+  app.decorateRequest('serverCtx', null);
+  app.addHook('onRequest', (req, _res, done) => {
+    (req as unknown as { serverCtx: unknown }).serverCtx = {
+      channelDB: {
+        getChannel: async () => ({
+          uuid: makeChannel().uuid,
+          streamMode: 'hls',
+        }),
+      },
+      sessionManager,
+    };
+    done();
+  });
+  await app.register(streamApi);
+  await app.ready();
+  return app;
+}
+
 describe('streamApi HLS connection registration (issue #2045 invariant)', () => {
   let session: TestHlsSession;
   let app: ReturnType<typeof Fastify>;
@@ -81,10 +114,24 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
     getHlsSlowerSession: ReturnType<typeof vi.fn>;
   };
 
+  let dir: tmp.DirResult;
+
+  // The fragment route only records segments that exist on disk.
+  async function writeSegments(...names: string[]) {
+    await fs.mkdir(session.workingDirectory, { recursive: true });
+    for (const name of names) {
+      await fs.writeFile(path.join(session.workingDirectory, name), '');
+    }
+  }
+
   beforeEach(async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
 
-    session = new TestHlsSession(makeChannel(), baseOptions);
+    dir = tmp.dirSync({ unsafeCleanup: true });
+    session = new TestHlsSession(makeChannel(), {
+      ...baseOptions,
+      transcodeDirectory: dir.name,
+    });
     sessionManager = {
       getOrCreateHlsSession: vi.fn(async (_id: string, token: string) => {
         // Mirror SessionManager.getOrCreateSession: addConnection(token, ...)
@@ -95,30 +142,13 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
       getHlsSlowerSession: vi.fn(() => undefined),
     };
 
-    app = Fastify()
-      .setValidatorCompiler(validatorCompiler)
-      .setSerializerCompiler(serializerCompiler)
-      .withTypeProvider<ZodTypeProvider>();
-    app.decorateRequest('serverCtx', null);
-    app.addHook('onRequest', (req, _res, done) => {
-      (req as unknown as { serverCtx: unknown }).serverCtx = {
-        channelDB: {
-          getChannel: async () => ({
-            uuid: makeChannel().uuid,
-            streamMode: 'hls',
-          }),
-        },
-        sessionManager,
-      };
-      done();
-    });
-    await app.register(streamApi);
-    await app.ready();
+    app = await buildApp(sessionManager);
   });
 
   afterEach(async () => {
     vi.useRealTimers();
     await app.close();
+    dir.removeCallback();
   });
 
   it('master playlist handshake registers the connection under the client IP', async () => {
@@ -137,6 +167,8 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
   });
 
   it('fragment route keys _minByIp and connections by the client IP, and stale cleanup releases the window', async () => {
+    await writeSegments('data000010.ts', 'data000100.ts');
+
     // Client A is an active watcher near the live edge
     await app.inject({
       method: 'GET',
@@ -155,8 +187,8 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
     for (const [token, conn] of Object.entries(session.connections())) {
       expect(token).toBe(conn.ip);
     }
-    expect(session.minByIp.get('203.0.113.10')).toBe(100);
-    expect(session.minByIp.get('203.0.113.20')).toBe(10);
+    expect(session.minByIp.get('203.0.113.10')?.video).toBe(100);
+    expect(session.minByIp.get('203.0.113.20')?.video).toBe(10);
     expect(session.minSegment).toBe(10); // window anchored to departed client
 
     // B goes quiet past the staleness window; A keeps heartbeating
@@ -170,5 +202,61 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
     expect(session.connections()).not.toHaveProperty('203.0.113.20');
     expect(session.minByIp.has('203.0.113.20')).toBe(false);
     expect(session.minSegment).toBe(100);
+  });
+
+  it('a request for a deleted segment returns 404 and does not move the client position', async () => {
+    await writeSegments('data000100.ts');
+
+    await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/hls/data000100.ts`,
+      remoteAddress: '203.0.113.10',
+    });
+    // The client rewinds to a segment that pruning already removed
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/hls/data000035.ts`,
+      remoteAddress: '203.0.113.10',
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect(session.minByIp.get('203.0.113.10')?.video).toBe(100);
+  });
+});
+
+describe('streamApi channel playlist variant flag', () => {
+  let app: ReturnType<typeof Fastify>;
+
+  beforeEach(async () => {
+    const session = new TestHlsSession(makeChannel(), baseOptions);
+    app = await buildApp({
+      getOrCreateHlsSession: vi.fn(async () => Result.success(session)),
+      getHlsSession: vi.fn(() => session),
+      getHlsSlowerSession: vi.fn(() => undefined),
+    });
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('serves the master playlist by default', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}.m3u8?mode=hls`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBe(MASTER_PLAYLIST);
+  });
+
+  it('serves the variant playlist when variant=true', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}.m3u8?mode=hls&variant=true`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBe(VARIANT_PLAYLIST);
   });
 });

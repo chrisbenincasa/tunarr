@@ -103,8 +103,11 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
       ScanLibrariesTask.ID,
       new ScheduledTask(
         ScanLibrariesTask,
+        // Offset from the hourly library refresh so scans never start while
+        // library availability is being updated.
         hoursCrontab(
           this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
+          30,
         ),
         container.get<() => ScanLibrariesTask>(ScanLibrariesTask.KEY),
         undefined,

@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+<!-- Describe the problem in your own words. AI-written specs are not needed; see https://tunarr.com/dev/contributing/#issues-and-bug-reports -->
+
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 

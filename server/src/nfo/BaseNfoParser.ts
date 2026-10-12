@@ -34,7 +34,12 @@ export abstract class BaseNfoParser<MediaTypeSchema extends z4.$ZodType>
     return (
       await Result.attemptAsync(() => fs.readFile(filename, 'utf-8'))
     ).flatMapAsync((contents) => {
-      return this.parse(contents);
+      return this.parse(contents).then((result) => {
+        if (result.isFailure()) {
+          result.error.message = `Failed parsing NFO file ${filename}: ${result.error.message}`;
+        }
+        return result;
+      });
     });
   }
 

@@ -1,0 +1,68 @@
+name: PR Policy
+
+# Enforces the contribution policy in docs/dev/contributing.md.
+#
+# pull_request_target runs with a write token on fork PRs. That is safe here
+# only because no step checks out or runs PR code. The checkout below fetches
+# the base branch's .github/scripts, and the script reads the PR via the API.
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize, ready_for_review, labeled, unlabeled]
+  issues:
+    types: [labeled]
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pr-policy-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { checkPullRequest } = require('./.github/scripts/pr-policy.cjs');
+            await checkPullRequest({ github, context, core });
+
+  recheck:
+    if: github.event_name == 'issues' && github.event.label.name == 'design approved'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { recheckLinkedPullRequests } = require('./.github/scripts/pr-policy.cjs');
+            await recheckLinkedPullRequests({ github, context, core });
+
+  close-expired:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { closeExpired } = require('./.github/scripts/pr-policy.cjs');
+            await closeExpired({ github, context, core });

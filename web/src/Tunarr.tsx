@@ -5,7 +5,10 @@ import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { ThemeProvider, createTheme } from '@mui/material';
 import { esES as muiEsES, zhCN as muiZhCN } from '@mui/material/locale';
-import { esES as pickersEsES, zhCN as pickersZhCN } from '@mui/x-date-pickers/locales';
+import {
+  esES as pickersEsES,
+  zhCN as pickersZhCN,
+} from '@mui/x-date-pickers/locales';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { QueryClientProvider } from '@tanstack/react-query';

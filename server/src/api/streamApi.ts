@@ -7,6 +7,7 @@ import type { Result } from '@/types/result.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import type { Maybe } from '@/types/util.js';
+import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import fastifyStatic from '@fastify/static';
@@ -300,7 +301,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             );
       }
 
-      if (isUndefined(session)) {
+      // A stopping session holds its lock until ffmpeg exits, so requests to
+      // it would block. Fail fast so the client re-tunes to its replacement.
+      if (isUndefined(session) || session.stoppingOrStopped) {
         return res.status(404).send('No session found');
       }
 
@@ -331,22 +334,46 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           .send(playlist.playlist);
       }
 
+      if (
+        req.params.file === 'subs.m3u8' &&
+        (req.params.sessionType === 'hls' ||
+          req.params.sessionType === 'hls_direct_v2')
+      ) {
+        const playlistResult = await (
+          session as HlsSession
+        ).trimSubtitlePlaylist();
+        if (playlistResult.isFailure()) {
+          logger.error(playlistResult.error);
+          return res.status(500).send('Error retrieving subtitle playlist');
+        }
+        const playlist = playlistResult.get();
+        if (!playlist) {
+          return res.status(404).send('Subtitle playlist not found');
+        }
+        return res
+          .type('application/vnd.apple.mpegurl')
+          .send(playlist.playlist);
+      }
+
+      const filePath = resolve(session.workingDirectory, req.params.file);
+      if (!filePath.startsWith(session.workingDirectory + sep)) {
+        return res.status(400).send('Invalid file path');
+      }
+
+      // A request for a missing segment must not move this client's position.
+      // Otherwise its next playlist is built around segments that are gone.
+      if (!(await fileExists(filePath))) {
+        return res.status(404).send('File not found');
+      }
+
       session.onSegmentRequested(req.ip, req.params.file);
 
       if (req.params.file.endsWith('.vtt')) {
-        const filePath = resolve(session.workingDirectory, req.params.file);
-        if (!filePath.startsWith(session.workingDirectory + sep)) {
-          return res.status(400).send('Invalid file path');
-        }
         const content = await fs.readFile(filePath, 'utf-8');
         return res.type('text/vtt').send(injectTimestampMap(content));
       }
 
       if (req.params.file.endsWith('.m3u8')) {
-        const filePath = resolve(session.workingDirectory, req.params.file);
-        if (!filePath.startsWith(session.workingDirectory + sep)) {
-          return res.status(400).send('Invalid file path');
-        }
         const content = await fs.readFile(filePath);
         return res.type('application/vnd.apple.mpegurl').send(content);
       }
@@ -370,6 +397,11 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       }),
       querystring: z.object({
         mode: ChannelStreamModeSchema.optional(),
+        variant: TruthyQueryParam.optional()
+          .default(false)
+          .describe(
+            'For hls and hls_direct_v2, return the variant playlist instead of the master. The .ts wrapper uses this so ffmpeg reads only the muxed streams.',
+          ),
       }),
     },
     handler: async (req, res) => {
@@ -410,6 +442,31 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             .then((result) =>
               result.mapAsync(async (session) => {
                 session.recordHeartbeat(req.ip);
+
+                if (req.query.variant) {
+                  const variantResult = await session.trimPlaylist();
+                  if (variantResult.isFailure()) {
+                    throw new Error(
+                      'Error retrieving HLS variant playlist for playback',
+                      { cause: variantResult.error },
+                    );
+                  }
+
+                  const variant = variantResult.get();
+                  if (!variant) {
+                    throw new Error(
+                      format(
+                        'No variant playlist found for channel %s. This could mean the stream is not ready.',
+                        channelId,
+                      ),
+                    );
+                  }
+
+                  return res
+                    .type('application/vnd.apple.mpegurl')
+                    .send(variant.playlist);
+                }
+
                 const masterResult = await session.getMasterPlaylist();
 
                 if (masterResult.isFailure()) {

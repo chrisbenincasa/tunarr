@@ -69,8 +69,10 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
   }, [start]);
 
   const reset = useCallback(() => {
+    const newStart = roundCurrentTime(15);
     setGuideDurationState(DefaultDuration);
-    setStart(roundCurrentTime(15));
+    setStart(newStart);
+    setEnd(newStart.add(DefaultDuration, 'ms'));
   }, []);
 
   const zoomInDisabled =
