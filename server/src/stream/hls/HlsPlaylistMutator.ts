@@ -291,28 +291,30 @@ export class HlsPlaylistMutator {
   parseSubtitlePlaylist(playlistLines: string[]): SubtitlePlaylistSegment[] {
     const items: SubtitlePlaylistSegment[] = [];
     let discontinuitySequence = 0;
-    let i = 0;
-    while (i < playlistLines.length) {
-      const line = playlistLines[i];
-      if (line?.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE:')) {
-        discontinuitySequence = parseInt(line.split(':')[1]!, 10);
+    let extInf: string | undefined;
+    for (const rawLine of playlistLines) {
+      const line = rawLine.trimEnd();
+      if (line.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE:')) {
+        const value = line.slice(line.indexOf(':') + 1);
+        const sequence = Number(value);
+        if (!/^\d+$/.test(value) || !Number.isSafeInteger(sequence)) {
+          throw new Error('Invalid subtitle discontinuity sequence');
+        }
+        discontinuitySequence = sequence;
       } else if (line === '#EXT-X-DISCONTINUITY') {
         discontinuitySequence++;
+      } else if (line.startsWith('#EXTINF:')) {
+        extInf = line;
+      } else if (
+        extInf !== undefined &&
+        line.length > 0 &&
+        !line.startsWith('#')
+      ) {
+        items.push(
+          new SubtitlePlaylistSegment(extInf, line, discontinuitySequence),
+        );
+        extInf = undefined;
       }
-      if (!isNonEmptyString(line) || !line.startsWith('#EXTINF:')) {
-        i++;
-        continue;
-      }
-
-      const fileLine = playlistLines[i + 1];
-      if (!isNonEmptyString(fileLine)) {
-        break;
-      }
-
-      items.push(
-        new SubtitlePlaylistSegment(line, fileLine, discontinuitySequence),
-      );
-      i += 2;
     }
 
     return items;
@@ -363,7 +365,7 @@ export class HlsPlaylistMutator {
     if (
       playlistLines.some(
         (line) =>
-          line === '#EXT-X-DISCONTINUITY' ||
+          line.trimEnd() === '#EXT-X-DISCONTINUITY' ||
           line.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE:'),
       )
     ) {
