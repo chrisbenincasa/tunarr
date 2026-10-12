@@ -239,6 +239,11 @@ The web app uses a generated API client (`generated/`) created from the server's
 - Use dependency injection to get database instances
 - All database schema changes should have migrations generated via `pnpm drizzle-kit generate`
 
+### When Working with Slot Schedules:
+
+- Time slots and random slots are being deprecated in favor of infinite schedules (`architecture/infinite-schedules/README.md`, "Deprecation plan").
+- A PR that adds or changes classic slot-scheduler behavior must add a row to `architecture/infinite-schedules/parity-checklist.md`.
+
 ### When Working with Streaming:
 
 - Streaming logic is complex - see `stream/` directory
