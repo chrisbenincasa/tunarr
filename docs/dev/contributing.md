@@ -421,6 +421,10 @@ Maintainers are the people listed in [`.github/CODEOWNERS`](https://github.com/c
 
 The bot doesn't check PRs opened before October 10, 2026. Maintainers may still apply these rules to them by hand.
 
+### Open PR limit
+
+Each outside contributor may have up to 5 PRs open for review at once. When you open a sixth, the bot converts it to a draft and says why. Mark it ready for review once one of your other PRs is merged or closed. Drafts don't count toward the limit, and PRs opened before the policy took effect do.
+
 ### During review
 
 - Address each comment with a change scoped to that comment. Don't regenerate or rewrite unrelated code, because that forces the reviewer to start over.

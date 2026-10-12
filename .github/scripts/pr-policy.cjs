@@ -16,6 +16,7 @@ const MECHANICAL = 'mechanical';
 const SIZE_LIMIT = 500;
 const SIZE_LIMIT_WITH_TESTS = 1500;
 const CLOSE_AFTER_DAYS = 30;
+const OPEN_PR_LIMIT = 5;
 const STATUS_CONTEXT = 'pr-policy';
 
 // PRs opened before the policy took effect are not checked.
@@ -183,6 +184,38 @@ async function evaluateTriggers(github, owner, repo, pr) {
   return triggers;
 }
 
+// Counts the author's ready-for-review PRs opened before this one. Drafts don't
+// count, because they aren't waiting on a reviewer. PRs from before the policy
+// start do count.
+async function olderOpenPullRequests(github, owner, repo, pr) {
+  const open = await github.paginate(github.rest.pulls.list, {
+    owner,
+    repo,
+    state: 'open',
+    per_page: 100,
+  });
+  const login = pr.user.login.toLowerCase();
+  return open.filter(
+    (p) =>
+      !p.draft &&
+      p.number !== pr.number &&
+      p.user?.login.toLowerCase() === login &&
+      Date.parse(p.created_at) < Date.parse(pr.created_at),
+  ).length;
+}
+
+async function convertToDraft(github, core, pr) {
+  if (pr.draft) return;
+  try {
+    await github.graphql(
+      'mutation($id: ID!) { convertPullRequestToDraft(input: {pullRequestId: $id}) { clientMutationId } }',
+      { id: pr.node_id },
+    );
+  } catch (e) {
+    core.warning(`Could not convert PR to draft: ${e.message}`);
+  }
+}
+
 function referencedNumbers(body, owner, repo) {
   const numbers = new Set();
   for (const m of body.matchAll(/(?:^|[\s(])#(\d+)\b/g)) numbers.add(Number(m[1]));
@@ -274,11 +307,12 @@ async function commitMessages(github, owner, repo, number) {
   return commits.map((c) => c.commit.message);
 }
 
-function commentBody({ triggers, designIssue, disclosed, deniedTools = [] }) {
+function commentBody({ triggers, designIssue, disclosed, deniedTools = [], olderOpen = 0 }) {
   const parts = [MARKER];
   const designBlocked = triggers.length > 0 && designIssue === undefined;
+  const overLimit = olderOpen >= OPEN_PR_LIMIT;
 
-  if (!designBlocked && disclosed && deniedTools.length === 0) {
+  if (!designBlocked && !overLimit && disclosed && deniedTools.length === 0) {
     parts.push('This PR meets the contribution policy checks. Thanks!');
     return parts.join('\n\n');
   }
@@ -296,6 +330,12 @@ function commentBody({ triggers, designIssue, disclosed, deniedTools = [] }) {
         '',
         `PRs labeled \`${NEEDS_DESIGN}\` are closed after ${CLOSE_AFTER_DAYS} days without an approved design.`,
       ].join('\n'),
+    );
+  }
+
+  if (overLimit) {
+    parts.push(
+      `You already have ${olderOpen} open PRs waiting for review, and the limit is ${OPEN_PR_LIMIT} per contributor. This PR has been converted to a draft. Mark it ready for review once one of your other PRs is merged or closed.`,
     );
   }
 
@@ -360,11 +400,14 @@ async function evaluatePullRequest(github, core, owner, repo, number) {
     ? attributedTools([body, ...(await commitMessages(github, owner, repo, pr.number))])
     : [];
   const designBlocked = triggers.length > 0 && designIssue === undefined;
+  const olderOpen = await olderOpenPullRequests(github, owner, repo, pr);
+  const overLimit = olderOpen >= OPEN_PR_LIMIT;
 
   core.info(`Triggers: ${triggers.length ? triggers.join('; ') : 'none'}`);
   core.info(`Approved design issue: ${designIssue ?? 'none'}`);
   core.info(`Disclosure present: ${disclosed}`);
   core.info(`Credited tools contradicting disclosure: ${deniedTools.join(', ') || 'none'}`);
+  core.info(`Older open PRs by ${pr.user.login}: ${olderOpen} (limit ${OPEN_PR_LIMIT})`);
 
   if (designBlocked) {
     if (!hasLabel) {
@@ -374,16 +417,6 @@ async function evaluatePullRequest(github, core, owner, repo, number) {
         issue_number: pr.number,
         labels: [NEEDS_DESIGN],
       });
-    }
-    if (!pr.draft) {
-      try {
-        await github.graphql(
-          'mutation($id: ID!) { convertPullRequestToDraft(input: {pullRequestId: $id}) { clientMutationId } }',
-          { id: pr.node_id },
-        );
-      } catch (e) {
-        core.warning(`Could not convert PR to draft: ${e.message}`);
-      }
     }
   } else if (hasLabel) {
     try {
@@ -398,17 +431,21 @@ async function evaluatePullRequest(github, core, owner, repo, number) {
     }
   }
 
+  if (designBlocked || overLimit) {
+    await convertToDraft(github, core, pr);
+  }
+
   await upsertComment(
     github,
     owner,
     repo,
     pr.number,
-    commentBody({ triggers, designIssue, disclosed, deniedTools }),
+    commentBody({ triggers, designIssue, disclosed, deniedTools, olderOpen }),
   );
 
   // A commit status, not a job failure, carries the result. A run started by
   // an issue label can then update the PR's status.
-  const passed = !designBlocked && disclosed && deniedTools.length === 0;
+  const passed = !designBlocked && !overLimit && disclosed && deniedTools.length === 0;
   await github.rest.repos.createCommitStatus({
     owner,
     repo,
@@ -505,4 +542,5 @@ module.exports = {
   deniesAiUse,
   attributedTools,
   commentBody,
+  olderOpenPullRequests,
 };
