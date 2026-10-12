@@ -430,6 +430,8 @@ Each outside contributor may have up to 5 PRs open for review at once. When you 
 - Address each comment with a change scoped to that comment. Don't regenerate or rewrite unrelated code, because that forces the reviewer to start over.
 - If you don't know why your code does something, say so. Then find out before you change it.
 - A PR whose author can't answer questions about their own code will be closed.
+- A PR that doesn't follow this policy or the [AI use](#ai-use) rules is labeled `needs policy fix`. The bot applies it when the "AI use" section is missing or contradicted by the commits, and removes it once that's fixed. A maintainer applies it by hand for anything else and comments with what to change.
+- A PR labeled `changes requested` or `needs policy fix` with no activity for 30 days gets a warning comment. If nothing happens in the next 7 days, it is closed. Any push or comment resets the clock. Draft PRs are exempt.
 
 ## AI Use
 

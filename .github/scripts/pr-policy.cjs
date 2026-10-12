@@ -10,6 +10,7 @@ const MARKER = '<!-- pr-policy-bot -->';
 const POLICY_URL = 'https://tunarr.com/dev/contributing/#pull-request-policy';
 const DISCLOSURE_URL = 'https://tunarr.com/dev/contributing/#disclose-ai-use';
 const NEEDS_DESIGN = 'needs design';
+const NEEDS_POLICY_FIX = 'needs policy fix';
 const DESIGN_APPROVED = 'design approved';
 const DESIGN_PROPOSAL = 'design proposal';
 const MECHANICAL = 'mechanical';
@@ -224,7 +225,7 @@ function referencedNumbers(body, owner, repo) {
   return [...numbers];
 }
 
-async function labeledByHuman(github, owner, repo, number) {
+async function labeledByHuman(github, owner, repo, number, label) {
   const events = await github.paginate(github.rest.issues.listEvents, {
     owner,
     repo,
@@ -232,7 +233,7 @@ async function labeledByHuman(github, owner, repo, number) {
     per_page: 100,
   });
   const labeled = events
-    .filter((e) => e.event === 'labeled' && e.label?.name === NEEDS_DESIGN)
+    .filter((e) => e.event === 'labeled' && e.label?.name === label)
     .at(-1);
   return labeled !== undefined && labeled.actor?.type !== 'Bot';
 }
@@ -349,6 +350,12 @@ function commentBody({ triggers, designIssue, disclosed, deniedTools = [], older
     );
   }
 
+  if (!disclosed || deniedTools.length > 0) {
+    parts.push(
+      `This PR has been labeled \`${NEEDS_POLICY_FIX}\`. PRs with this label are closed after 30 days without activity and a 7-day warning.`,
+    );
+  }
+
   return parts.join('\n\n');
 }
 
@@ -389,7 +396,7 @@ async function evaluatePullRequest(github, core, owner, repo, number) {
   // A maintainer may apply the label by hand for triggers the bot can't
   // detect. Only an approved design clears it. The bot's own label is dropped
   // once its triggers no longer apply.
-  if (hasLabel && triggers.length === 0 && (await labeledByHuman(github, owner, repo, pr.number))) {
+  if (hasLabel && triggers.length === 0 && (await labeledByHuman(github, owner, repo, pr.number, NEEDS_DESIGN))) {
     triggers.push(`a maintainer marked this change as needing a design`);
   }
 
@@ -433,6 +440,34 @@ async function evaluatePullRequest(github, core, owner, repo, number) {
 
   if (designBlocked || overLimit) {
     await convertToDraft(github, core, pr);
+  }
+
+  // A hand-applied label covers violations the bot can't detect, so only a
+  // maintainer removes it.
+  const disclosureFailed = !disclosed || deniedTools.length > 0;
+  const hasPolicyLabel = pr.labels.some((l) => l.name === NEEDS_POLICY_FIX);
+  if (disclosureFailed && !hasPolicyLabel) {
+    await github.rest.issues.addLabels({
+      owner,
+      repo,
+      issue_number: pr.number,
+      labels: [NEEDS_POLICY_FIX],
+    });
+  } else if (
+    !disclosureFailed &&
+    hasPolicyLabel &&
+    !(await labeledByHuman(github, owner, repo, pr.number, NEEDS_POLICY_FIX))
+  ) {
+    try {
+      await github.rest.issues.removeLabel({
+        owner,
+        repo,
+        issue_number: pr.number,
+        name: NEEDS_POLICY_FIX,
+      });
+    } catch (e) {
+      if (e.status !== 404) throw e;
+    }
   }
 
   await upsertComment(
