@@ -41,7 +41,8 @@ This is a monorepo with four main packages:
 
 ### Plans
 
-- Write all plans, investigations, and audits to `plans/` at the repo root. Never use `.claude/plans/`.
+- Write all plans, designs, and audits to `plans/` at the repo root. Never use `.claude/plans/`.
+- Write issue investigations to `plans/investigations/`, named `issue-<n>-<slug>-YYYY-MM-DD.md`. These report whether a bug is real and why. A design that follows from one goes in `plans/`.
 - Name files `<topic>.md`, adding a date suffix (`-YYYY-MM-DD`) for point-in-time reports.
 - `.claude/settings.json` sets `plansDirectory` to `plans`, so plan-mode plans land there too.
 
