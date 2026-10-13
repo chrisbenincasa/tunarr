@@ -756,7 +756,9 @@ describe('FfmpegStreamFactory', () => {
   });
 
   describe('audio renditions', () => {
-    function makeMultiAudioStreamDetails(): StreamDetails {
+    function makeMultiAudioStreamDetails(
+      defaults: [boolean, boolean] = [false, false],
+    ): StreamDetails {
       return {
         ...makeStreamDetails(),
         audioDetails: [
@@ -766,6 +768,7 @@ describe('FfmpegStreamFactory', () => {
             index: 1,
             language: 'Japanese',
             languageCodeISO6392: 'jpn',
+            default: defaults[0],
           },
           {
             codec: 'aac',
@@ -773,6 +776,7 @@ describe('FfmpegStreamFactory', () => {
             index: 2,
             language: 'English',
             languageCodeISO6392: 'eng',
+            default: defaults[1],
           },
         ],
       };
@@ -831,6 +835,57 @@ describe('FfmpegStreamFactory', () => {
       expect(result?.renditions.audio.map((r) => r.language)).toEqual([
         'jpn',
         'eng',
+      ]);
+    });
+
+    function createPassthroughSession(details: StreamDetails) {
+      return makeSut().createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details,
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: HlsDirectOutputFormat(defaultHlsOptions),
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls_direct_v2',
+        },
+        lineupItem: makeLineupItem(),
+      });
+    }
+
+    test('passthrough mode defaults to the first track when none is flagged', async () => {
+      const result = await createPassthroughSession(
+        makeMultiAudioStreamDetails(),
+      );
+
+      expect(result?.renditions.audio.map((r) => r.default)).toEqual([
+        true,
+        false,
+      ]);
+    });
+
+    test('passthrough mode defaults only to the source-flagged track', async () => {
+      const result = await createPassthroughSession(
+        makeMultiAudioStreamDetails([false, true]),
+      );
+
+      expect(result?.renditions.audio.map((r) => r.default)).toEqual([
+        false,
+        true,
+      ]);
+    });
+
+    test('passthrough mode marks one default when several tracks are flagged', async () => {
+      const result = await createPassthroughSession(
+        makeMultiAudioStreamDetails([true, true]),
+      );
+
+      expect(result?.renditions.audio.map((r) => r.default)).toEqual([
+        true,
+        false,
       ]);
     });
   });
