@@ -1,22 +1,27 @@
 {
-  "$id": "https://ersatztv.org/channel/version/0.1.1",
+  "$id": "https://ersatztv.org/channel/version/0.1.2",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ChannelConfig",
+  "description": "Settings for one channel: where its playout is, which ffmpeg to use, and the output format.\nA relative path in any of these settings is relative to the file that sets it.",
   "type": "object",
   "properties": {
     "fallback": {
+      "description": "What plays when nothing is scheduled or an item fails.",
       "$ref": "#/$defs/FallbackConfig",
       "default": {
         "show_error": false
       }
     },
     "ffmpeg": {
+      "description": "ffmpeg and ffprobe settings.",
       "$ref": "#/$defs/FfmpegConfig"
     },
     "normalization": {
+      "description": "Output format for audio, video and subtitles.",
       "$ref": "#/$defs/NormalizationConfig"
     },
     "playout": {
+      "description": "Where to find the channel's playout files.",
       "$ref": "#/$defs/PlayoutConfig"
     },
     "version": {
@@ -33,27 +38,54 @@
     "AudioCopyFormat": {
       "title": "AudioCopyFormat",
       "description": "Limited to codecs that mux correctly into HLS MPEG-TS.",
-      "type": "string",
-      "enum": [
-        "aac",
-        "ac3",
-        "eac3",
-        "mp2",
-        "mp3"
+      "oneOf": [
+        {
+          "description": "AAC.",
+          "type": "string",
+          "const": "aac"
+        },
+        {
+          "description": "Dolby Digital (AC-3).",
+          "type": "string",
+          "const": "ac3"
+        },
+        {
+          "description": "Dolby Digital Plus (E-AC-3).",
+          "type": "string",
+          "const": "eac3"
+        },
+        {
+          "description": "MPEG-1 Audio Layer II.",
+          "type": "string",
+          "const": "mp2"
+        },
+        {
+          "description": "MPEG-1 Audio Layer III.",
+          "type": "string",
+          "const": "mp3"
+        }
       ]
     },
     "AudioFormat": {
       "title": "AudioFormat",
-      "type": "string",
-      "enum": [
-        "aac",
-        "ac3"
+      "oneOf": [
+        {
+          "description": "AAC.",
+          "type": "string",
+          "const": "aac"
+        },
+        {
+          "description": "Dolby Digital (AC-3).",
+          "type": "string",
+          "const": "ac3"
+        }
       ]
     },
     "AudioLoudnessConfig": {
       "type": "object",
       "properties": {
         "integrated_target": {
+          "description": "Integrated loudness target in LUFS (`loudnorm` `I`). Unset is -16.",
           "type": [
             "number",
             "null"
@@ -61,6 +93,7 @@
           "format": "double"
         },
         "range_target": {
+          "description": "Loudness range target in LU (`loudnorm` `LRA`). Unset is 11.",
           "type": [
             "number",
             "null"
@@ -68,6 +101,7 @@
           "format": "double"
         },
         "true_peak": {
+          "description": "Maximum true peak in dBTP (`loudnorm` `TP`). Unset is -1.5.",
           "type": [
             "number",
             "null"
@@ -80,6 +114,7 @@
       "type": "object",
       "properties": {
         "bitrate_kbps": {
+          "description": "Bitrate in kbit/s. Unset leaves it to the encoder.",
           "type": [
             "integer",
             "null"
@@ -88,6 +123,7 @@
           "minimum": 0
         },
         "buffer_kbps": {
+          "description": "Rate control buffer size (`-bufsize`) in kbit/s. Unset leaves it to the encoder.",
           "type": [
             "integer",
             "null"
@@ -96,6 +132,7 @@
           "minimum": 0
         },
         "channels": {
+          "description": "Number of channels, e.g. `2` for stereo. Unset keeps the source channel count.",
           "type": [
             "integer",
             "null"
@@ -119,6 +156,7 @@
           "default": "aac"
         },
         "loudness": {
+          "description": "Targets for `normalize_loudness`.",
           "anyOf": [
             {
               "$ref": "#/$defs/AudioLoudnessConfig"
@@ -129,15 +167,17 @@
           ]
         },
         "mode": {
-          "description": "`copy`: copy items with a source codec in `copy_formats`. Transcode all other items.",
+          "description": "Whether to transcode every item or copy items whose codec allows it.",
           "$ref": "#/$defs/StreamMode",
           "default": "transcode"
         },
         "normalize_loudness": {
+          "description": "Normalize loudness with the ffmpeg `loudnorm` filter to the `loudness` targets.\nNot allowed when `mode` is `copy`.",
           "type": "boolean",
           "default": false
         },
         "sample_rate_hz": {
+          "description": "Sample rate in Hz, e.g. `48000`. Unset keeps the source rate, or 48000 when\n`normalize_loudness` is on.",
           "type": [
             "integer",
             "null"
@@ -151,10 +191,13 @@
       "type": "object",
       "properties": {
         "mode": {
+          "description": "Value for the `bwdif_cuda` `mode` option. Allowed characters: a-z, 0-9, `_`, `.`, `+`, `-`.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
         }
       },
       "additionalProperties": false
@@ -163,10 +206,13 @@
       "type": "object",
       "properties": {
         "mode": {
+          "description": "Value for the `bwdif` `mode` option. Allowed characters: a-z, 0-9, `_`, `.`, `+`, `-`.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
         }
       },
       "additionalProperties": false
@@ -175,10 +221,13 @@
       "type": "object",
       "properties": {
         "mode": {
+          "description": "Value for the `deinterlace_qsv` `mode` option. Allowed characters: a-z, 0-9, `_`, `.`, `+`,\n`-`.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
         }
       },
       "additionalProperties": false
@@ -187,10 +236,13 @@
       "type": "object",
       "properties": {
         "mode": {
+          "description": "Value for the `deinterlace_vaapi` `mode` option. Allowed characters: a-z, 0-9, `_`, `.`,\n`+`, `-`.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
         }
       },
       "additionalProperties": false
@@ -199,6 +251,15 @@
       "description": "Controls the content that replaces scheduled content when there is nothing to play\n(a gap in the playout) or when the scheduled item fails",
       "type": "object",
       "properties": {
+        "duration_seconds": {
+          "description": "Fallback length in seconds when the fallback has no end time, e.g. after a failed\ndynamic source. Default 60. Raised to the source's `retry_budget_ms` if shorter.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 1
+        },
         "show_error": {
           "description": "Burn the reason for the fallback into the fallback video; this is always burned,\nregardless of the normalization subtitle mode",
           "type": "boolean",
@@ -210,6 +271,7 @@
       "type": "object",
       "properties": {
         "disabled_filters": {
+          "description": "ffmpeg video filters to never use, even when the ffmpeg build has them, e.g.\n`[\"scale_cuda\"]`. Pipelines that need one use another filter or software instead.",
           "type": "array",
           "default": [],
           "items": {
@@ -217,6 +279,7 @@
           }
         },
         "ffmpeg_path": {
+          "description": "Path to the ffmpeg executable. Unset or empty uses `ffmpeg` from `PATH`.",
           "type": [
             "string",
             "null"
@@ -224,6 +287,7 @@
           "default": null
         },
         "ffprobe_path": {
+          "description": "Path to the ffprobe executable. Unset or empty uses `ffprobe` from `PATH`.",
           "type": [
             "string",
             "null"
@@ -231,6 +295,7 @@
           "default": null
         },
         "preferred_filters": {
+          "description": "ffmpeg video filters in order of preference, used when more than one filter can do the\nsame step, e.g. `[\"tonemap_vaapi\", \"tonemap_opencl\"]`.",
           "type": "array",
           "default": [],
           "items": {
@@ -238,6 +303,7 @@
           }
         },
         "reports_folder": {
+          "description": "Folder for troubleshooting reports. When set, each failed item or fallback writes a\nsubfolder with the ffmpeg output, the channel config and media info. Unset writes none.",
           "type": [
             "string",
             "null"
@@ -247,25 +313,55 @@
       }
     },
     "HardwareAccel": {
-      "type": "string",
-      "enum": [
-        "amf",
-        "cuda",
-        "qsv",
-        "rkmpp",
-        "vaapi",
-        "videotoolbox",
-        "vulkan"
+      "oneOf": [
+        {
+          "description": "AMD AMF. Windows only.",
+          "type": "string",
+          "const": "amf"
+        },
+        {
+          "description": "NVIDIA NVENC/NVDEC.",
+          "type": "string",
+          "const": "cuda"
+        },
+        {
+          "description": "Intel Quick Sync Video.",
+          "type": "string",
+          "const": "qsv"
+        },
+        {
+          "description": "Rockchip MPP. Linux only.",
+          "type": "string",
+          "const": "rkmpp"
+        },
+        {
+          "description": "VA-API. Linux only.",
+          "type": "string",
+          "const": "vaapi"
+        },
+        {
+          "description": "Apple VideoToolbox. macOS only.",
+          "type": "string",
+          "const": "videotoolbox"
+        },
+        {
+          "description": "Vulkan Video.",
+          "type": "string",
+          "const": "vulkan"
+        }
       ]
     },
     "LibplaceboOptions": {
       "type": "object",
       "properties": {
         "tonemapping": {
+          "description": "Value for the `libplacebo` `tonemapping` option. Allowed characters: a-z, 0-9, `_`, `.`,\n`+`, `-`.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
         }
       },
       "additionalProperties": false
@@ -274,9 +370,11 @@
       "type": "object",
       "properties": {
         "audio": {
+          "description": "Audio output settings.",
           "$ref": "#/$defs/AudioNormalizationConfig"
         },
         "subtitle": {
+          "description": "Subtitle output settings.",
           "$ref": "#/$defs/SubtitleNormalizationConfig",
           "default": {
             "fonts_folder": null,
@@ -285,6 +383,7 @@
           }
         },
         "video": {
+          "description": "Video output settings.",
           "$ref": "#/$defs/VideoNormalizationConfig"
         }
       },
@@ -297,10 +396,11 @@
       "type": "object",
       "properties": {
         "folder": {
+          "description": "Folder of playout files, named `{start}_{finish}.json`.",
           "type": "string"
         },
         "virtual_start": {
-          "description": "RFC3339 formatted date/time, e.g. 2026-04-13T00:24:21.527-05:00",
+          "description": "Play the playout as if the channel started at this time instead of now. RFC 3339, e.g.\n`2026-04-13T00:24:21.527-05:00`. For testing.",
           "type": [
             "string",
             "null"
@@ -312,34 +412,75 @@
         "folder"
       ]
     },
+    "ScaleOptions": {
+      "type": "object",
+      "properties": {
+        "flags": {
+          "description": "Flags for the software `scale` filter, e.g. `bicubic`, `lanczos`, `fast_bilinear`.\nDefault is `bicubic`. Also applies to graphics, image subtitles, and hardware accels that\nuse the software scaler.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
+        }
+      },
+      "additionalProperties": false
+    },
     "ScalingMode": {
-      "type": "string",
-      "enum": [
-        "scale_and_pad",
-        "stretch",
-        "crop"
+      "oneOf": [
+        {
+          "description": "Scale to fit inside the frame and pad the rest with black.",
+          "type": "string",
+          "const": "scale_and_pad"
+        },
+        {
+          "description": "Scale to fill the frame, ignoring the aspect ratio.",
+          "type": "string",
+          "const": "stretch"
+        },
+        {
+          "description": "Scale to cover the frame and crop the overflow.",
+          "type": "string",
+          "const": "crop"
+        }
       ]
     },
     "StreamMode": {
       "title": "StreamMode",
-      "type": "string",
-      "enum": [
-        "transcode",
-        "copy"
+      "oneOf": [
+        {
+          "description": "Transcode every item.",
+          "type": "string",
+          "const": "transcode"
+        },
+        {
+          "description": "Copy items with a source codec in `copy_formats`. Transcode all other items.",
+          "type": "string",
+          "const": "copy"
+        }
       ]
     },
     "SubtitleMode": {
       "title": "SubtitleMode",
-      "type": "string",
-      "enum": [
-        "burn",
-        "convert"
+      "oneOf": [
+        {
+          "description": "Burn subtitles into the video.",
+          "type": "string",
+          "const": "burn"
+        },
+        {
+          "description": "Convert text subtitles to a WebVTT track in the HLS stream.",
+          "type": "string",
+          "const": "convert"
+        }
       ]
     },
     "SubtitleNormalizationConfig": {
       "type": "object",
       "properties": {
         "fonts_folder": {
+          "description": "Folder of fonts for burned-in text subtitles.",
           "type": [
             "string",
             "null"
@@ -347,6 +488,7 @@
           "default": null
         },
         "force_style": {
+          "description": "ASS style overrides for burned-in text subtitles, e.g. `FontName=Arial,FontSize=24`\n(the `subtitles` filter's `force_style` option).",
           "type": [
             "string",
             "null"
@@ -354,6 +496,7 @@
           "default": null
         },
         "mode": {
+          "description": "What to do with the selected text subtitle track. Image subtitles are always burned in.",
           "$ref": "#/$defs/SubtitleMode",
           "default": "burn"
         }
@@ -363,10 +506,13 @@
       "type": "object",
       "properties": {
         "tonemap": {
+          "description": "Value for the `tonemap_opencl` `tonemap` option. Allowed characters: a-z, 0-9, `_`, `.`,\n`+`, `-`.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
         }
       },
       "additionalProperties": false
@@ -375,26 +521,41 @@
       "type": "object",
       "properties": {
         "tonemap": {
+          "description": "Value for the `tonemap` `tonemap` option. Allowed characters: a-z, 0-9, `_`, `.`, `+`, `-`.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
         }
       },
       "additionalProperties": false
     },
     "VaapiDriver": {
-      "type": "string",
-      "enum": [
-        "ihd",
-        "i965",
-        "radeonsi"
+      "oneOf": [
+        {
+          "description": "Intel media driver, for Broadwell and newer.",
+          "type": "string",
+          "const": "ihd"
+        },
+        {
+          "description": "Legacy Intel driver, for older Intel GPUs.",
+          "type": "string",
+          "const": "i965"
+        },
+        {
+          "description": "Mesa driver for AMD GPUs.",
+          "type": "string",
+          "const": "radeonsi"
+        }
       ]
     },
     "VideoFilterOptionsConfig": {
       "type": "object",
       "properties": {
         "bwdif": {
+          "description": "Options for the [`bwdif`](https://ffmpeg.org/ffmpeg-filters.html#bwdif-1) filter, used for\nsoftware deinterlacing.",
           "anyOf": [
             {
               "$ref": "#/$defs/BwdifOptions"
@@ -406,6 +567,7 @@
           "default": null
         },
         "bwdif_cuda": {
+          "description": "Options for the [`bwdif_cuda`](https://ffmpeg.org/ffmpeg-filters.html#bwdif_005fcuda)\nfilter, used for CUDA deinterlacing.",
           "anyOf": [
             {
               "$ref": "#/$defs/BwdifCudaOptions"
@@ -417,6 +579,7 @@
           "default": null
         },
         "deinterlace_qsv": {
+          "description": "Options for the `deinterlace_qsv` filter, used for QSV deinterlacing. Run\n`ffmpeg -h filter=deinterlace_qsv` for its options.",
           "anyOf": [
             {
               "$ref": "#/$defs/DeinterlaceQsvOptions"
@@ -428,6 +591,7 @@
           "default": null
         },
         "deinterlace_vaapi": {
+          "description": "Options for the `deinterlace_vaapi` filter, used for VAAPI deinterlacing. Run\n`ffmpeg -h filter=deinterlace_vaapi` for its options.",
           "anyOf": [
             {
               "$ref": "#/$defs/DeinterlaceVaapiOptions"
@@ -439,6 +603,7 @@
           "default": null
         },
         "libplacebo": {
+          "description": "Options for the [`libplacebo`](https://ffmpeg.org/ffmpeg-filters.html#libplacebo) filter,\nused for CUDA and Vulkan tonemapping.",
           "anyOf": [
             {
               "$ref": "#/$defs/LibplaceboOptions"
@@ -449,7 +614,20 @@
           ],
           "default": null
         },
+        "scale": {
+          "description": "Options for the [`scale`](https://ffmpeg.org/ffmpeg-filters.html#scale-1) filter, used for\nsoftware scaling.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScaleOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "tonemap": {
+          "description": "Options for the [`tonemap`](https://ffmpeg.org/ffmpeg-filters.html#tonemap-1) filter, used\nfor software tonemapping.",
           "anyOf": [
             {
               "$ref": "#/$defs/TonemapOptions"
@@ -461,6 +639,7 @@
           "default": null
         },
         "tonemap_opencl": {
+          "description": "Options for the\n[`tonemap_opencl`](https://ffmpeg.org/ffmpeg-filters.html#tonemap_005fopencl) filter, used\nfor VAAPI tonemapping.",
           "anyOf": [
             {
               "$ref": "#/$defs/TonemapOpenclOptions"
@@ -472,6 +651,7 @@
           "default": null
         },
         "w3fdif": {
+          "description": "Options for the [`w3fdif`](https://ffmpeg.org/ffmpeg-filters.html#w3fdif) filter, used for\nsoftware deinterlacing.",
           "anyOf": [
             {
               "$ref": "#/$defs/W3fdifOptions"
@@ -483,6 +663,7 @@
           "default": null
         },
         "yadif": {
+          "description": "Options for the [`yadif`](https://ffmpeg.org/ffmpeg-filters.html#yadif-1) filter, used for\nsoftware deinterlacing.",
           "anyOf": [
             {
               "$ref": "#/$defs/YadifOptions"
@@ -494,6 +675,7 @@
           "default": null
         },
         "yadif_cuda": {
+          "description": "Options for the [`yadif_cuda`](https://ffmpeg.org/ffmpeg-filters.html#yadif_005fcuda)\nfilter, used for CUDA deinterlacing.",
           "anyOf": [
             {
               "$ref": "#/$defs/YadifCudaOptions"
@@ -509,17 +691,29 @@
     },
     "VideoFormat": {
       "title": "VideoFormat",
-      "type": "string",
-      "enum": [
-        "h264",
-        "hevc",
-        "mpeg2video"
+      "oneOf": [
+        {
+          "description": "H.264 (AVC).",
+          "type": "string",
+          "const": "h264"
+        },
+        {
+          "description": "H.265 (HEVC).",
+          "type": "string",
+          "const": "hevc"
+        },
+        {
+          "description": "MPEG-2 video. Requires `bitrate_kbps`.",
+          "type": "string",
+          "const": "mpeg2video"
+        }
       ]
     },
     "VideoNormalizationConfig": {
       "type": "object",
       "properties": {
         "accel": {
+          "description": "Hardware acceleration for decoding, filtering and encoding. Steps the device can't do use\nsoftware. If the device can't be probed, the whole channel uses software. Unset or empty\nuses software.",
           "anyOf": [
             {
               "$ref": "#/$defs/HardwareAccel"
@@ -531,7 +725,7 @@
           "default": null
         },
         "amf_device": {
-          "description": "Windows only. Unset picks the discrete AMD adapter.",
+          "description": "AMF adapter index. Windows only. Unset picks the discrete AMD adapter.",
           "type": [
             "integer",
             "null"
@@ -540,6 +734,7 @@
           "minimum": 0
         },
         "bit_depth": {
+          "description": "Bit depth, `8` or `10`. `mpeg2video` always uses 8.",
           "type": "integer",
           "format": "uint8",
           "default": 8,
@@ -547,6 +742,7 @@
           "minimum": 0
         },
         "bitrate_kbps": {
+          "description": "Bitrate in kbit/s. Required for `mpeg2video`. Unset leaves it to the encoder.",
           "type": [
             "integer",
             "null"
@@ -555,6 +751,7 @@
           "minimum": 0
         },
         "buffer_kbps": {
+          "description": "Rate control buffer size (`-bufsize`) in kbit/s. Unset leaves it to the encoder.",
           "type": [
             "integer",
             "null"
@@ -573,10 +770,12 @@
           }
         },
         "deinterlace": {
+          "description": "Deinterlace interlaced sources. Progressive sources are not changed.",
           "type": "boolean",
           "default": false
         },
         "filters": {
+          "description": "Options for individual ffmpeg filters. Unset options use the filter's default.",
           "$ref": "#/$defs/VideoFilterOptionsConfig",
           "default": {
             "bwdif": null,
@@ -584,6 +783,7 @@
             "deinterlace_qsv": null,
             "deinterlace_vaapi": null,
             "libplacebo": null,
+            "scale": null,
             "tonemap": null,
             "tonemap_opencl": null,
             "w3fdif": null,
@@ -606,6 +806,7 @@
           "pattern": "^[1-9][0-9]*(/[1-9][0-9]*)?$"
         },
         "height": {
+          "description": "Height in pixels. Applies only when `width` is also set; otherwise the source size is kept.\nThe fallback uses 1080 when unset.",
           "type": [
             "integer",
             "null"
@@ -614,23 +815,24 @@
           "minimum": 0
         },
         "mode": {
-          "description": "`copy`: copy items with a source codec in `copy_formats`. Transcode all other items, and\nitems with graphics, burned-in subtitles, still images, Dolby Vision profile 5 or AVI sources.",
+          "description": "Whether to transcode every item or copy items whose codec allows it. In `copy` mode, items\nwith graphics, burned-in subtitles, still images, Dolby Vision profile 5 or AVI sources are\nalways transcoded.",
           "$ref": "#/$defs/StreamMode",
           "default": "transcode"
         },
         "scaling_mode": {
+          "description": "How a source with a different aspect ratio fits `width` and `height`.",
           "$ref": "#/$defs/ScalingMode",
           "default": "scale_and_pad"
         },
         "vaapi_device": {
-          "description": "Unset uses `/dev/dri/renderD128`.",
+          "description": "VAAPI render node. Unset uses `/dev/dri/renderD128`.",
           "type": [
             "string",
             "null"
           ]
         },
         "vaapi_driver": {
-          "description": "Unset lets libva select the driver for `vaapi_device`.",
+          "description": "VAAPI driver. Unset lets libva select the driver for `vaapi_device`.",
           "anyOf": [
             {
               "$ref": "#/$defs/VaapiDriver"
@@ -641,6 +843,7 @@
           ]
         },
         "width": {
+          "description": "Width in pixels. Applies only when `height` is also set; otherwise the source size is kept.\nThe fallback uses 1920 when unset.",
           "type": [
             "integer",
             "null"
@@ -654,10 +857,13 @@
       "type": "object",
       "properties": {
         "mode": {
+          "description": "Value for the `w3fdif` `mode` option. Allowed characters: a-z, 0-9, `_`, `.`, `+`, `-`.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
         }
       },
       "additionalProperties": false
@@ -666,10 +872,13 @@
       "type": "object",
       "properties": {
         "mode": {
+          "description": "Value for the `yadif_cuda` `mode` option. Allowed characters: a-z, 0-9, `_`, `.`, `+`, `-`.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
         }
       },
       "additionalProperties": false
@@ -678,10 +887,13 @@
       "type": "object",
       "properties": {
         "mode": {
+          "description": "Value for the `yadif` `mode` option. Allowed characters: a-z, 0-9, `_`, `.`, `+`, `-`.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null,
+          "pattern": "^[a-z0-9_.+-]+$"
         }
       },
       "additionalProperties": false

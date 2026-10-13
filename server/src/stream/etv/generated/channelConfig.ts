@@ -42,22 +42,22 @@ export type AudioNormalizationConfig = z.infer<
 >;
 
 export const BwdifCudaOptionsSchema = z.strictObject({
-  mode: z.string().nullable().optional(),
+  mode: z.string().regex(new RegExp('^[a-z0-9_.+-]+$')).nullable().optional(),
 });
 export type BwdifCudaOptions = z.infer<typeof BwdifCudaOptionsSchema>;
 
 export const BwdifOptionsSchema = z.strictObject({
-  mode: z.string().nullable().optional(),
+  mode: z.string().regex(new RegExp('^[a-z0-9_.+-]+$')).nullable().optional(),
 });
 export type BwdifOptions = z.infer<typeof BwdifOptionsSchema>;
 
 export const DeinterlaceQsvOptionsSchema = z.strictObject({
-  mode: z.string().nullable().optional(),
+  mode: z.string().regex(new RegExp('^[a-z0-9_.+-]+$')).nullable().optional(),
 });
 export type DeinterlaceQsvOptions = z.infer<typeof DeinterlaceQsvOptionsSchema>;
 
 export const DeinterlaceVaapiOptionsSchema = z.strictObject({
-  mode: z.string().nullable().optional(),
+  mode: z.string().regex(new RegExp('^[a-z0-9_.+-]+$')).nullable().optional(),
 });
 export type DeinterlaceVaapiOptions = z.infer<
   typeof DeinterlaceVaapiOptionsSchema
@@ -65,6 +65,7 @@ export type DeinterlaceVaapiOptions = z.infer<
 
 /** Controls the content that replaces scheduled content when there is nothing to play */
 export const FallbackConfigSchema = z.strictObject({
+  duration_seconds: z.number().int().min(1).nullable().optional(),
   show_error: z.boolean().optional(),
 });
 export type FallbackConfig = z.infer<typeof FallbackConfigSchema>;
@@ -90,7 +91,11 @@ export const HardwareAccelSchema = z.enum([
 export type HardwareAccel = z.infer<typeof HardwareAccelSchema>;
 
 export const LibplaceboOptionsSchema = z.strictObject({
-  tonemapping: z.string().nullable().optional(),
+  tonemapping: z
+    .string()
+    .regex(new RegExp('^[a-z0-9_.+-]+$'))
+    .nullable()
+    .optional(),
 });
 export type LibplaceboOptions = z.infer<typeof LibplaceboOptionsSchema>;
 
@@ -109,28 +114,41 @@ export type SubtitleNormalizationConfig = z.infer<
 export const VideoFormatSchema = z.enum(['h264', 'hevc', 'mpeg2video']);
 export type VideoFormat = z.infer<typeof VideoFormatSchema>;
 
+export const ScaleOptionsSchema = z.strictObject({
+  flags: z.string().regex(new RegExp('^[a-z0-9_.+-]+$')).nullable().optional(),
+});
+export type ScaleOptions = z.infer<typeof ScaleOptionsSchema>;
+
 export const TonemapOptionsSchema = z.strictObject({
-  tonemap: z.string().nullable().optional(),
+  tonemap: z
+    .string()
+    .regex(new RegExp('^[a-z0-9_.+-]+$'))
+    .nullable()
+    .optional(),
 });
 export type TonemapOptions = z.infer<typeof TonemapOptionsSchema>;
 
 export const TonemapOpenclOptionsSchema = z.strictObject({
-  tonemap: z.string().nullable().optional(),
+  tonemap: z
+    .string()
+    .regex(new RegExp('^[a-z0-9_.+-]+$'))
+    .nullable()
+    .optional(),
 });
 export type TonemapOpenclOptions = z.infer<typeof TonemapOpenclOptionsSchema>;
 
 export const W3fdifOptionsSchema = z.strictObject({
-  mode: z.string().nullable().optional(),
+  mode: z.string().regex(new RegExp('^[a-z0-9_.+-]+$')).nullable().optional(),
 });
 export type W3fdifOptions = z.infer<typeof W3fdifOptionsSchema>;
 
 export const YadifOptionsSchema = z.strictObject({
-  mode: z.string().nullable().optional(),
+  mode: z.string().regex(new RegExp('^[a-z0-9_.+-]+$')).nullable().optional(),
 });
 export type YadifOptions = z.infer<typeof YadifOptionsSchema>;
 
 export const YadifCudaOptionsSchema = z.strictObject({
-  mode: z.string().nullable().optional(),
+  mode: z.string().regex(new RegExp('^[a-z0-9_.+-]+$')).nullable().optional(),
 });
 export type YadifCudaOptions = z.infer<typeof YadifCudaOptionsSchema>;
 
@@ -140,6 +158,7 @@ export const VideoFilterOptionsConfigSchema = z.strictObject({
   deinterlace_qsv: DeinterlaceQsvOptionsSchema.nullable().optional(),
   deinterlace_vaapi: DeinterlaceVaapiOptionsSchema.nullable().optional(),
   libplacebo: LibplaceboOptionsSchema.nullable().optional(),
+  scale: ScaleOptionsSchema.nullable().optional(),
   tonemap: TonemapOptionsSchema.nullable().optional(),
   tonemap_opencl: TonemapOpenclOptionsSchema.nullable().optional(),
   w3fdif: W3fdifOptionsSchema.nullable().optional(),

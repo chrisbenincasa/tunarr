@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ersatztv.org/playout/version/0.0.5",
+  "$id": "https://ersatztv.org/playout/version/0.0.6",
   "title": "Playout",
   "description": "A playout schedule for a single time window.\n\nFiles should be named `{start}_{finish}.json` using compact ISO 8601 (no separators), e.g. `20260413T000000.000000000-0500_20260414T002131.620000000-0500.json`, so that the channel can locate the correct file for the current time.",
   "type": "object",
@@ -83,7 +83,8 @@
           "description": "Ordered media-backed graphics layers. The first entry is lowest and the last entry is highest; a compatibility `watermark` is always below this array.",
           "items": {
             "$ref": "#/definitions/GraphicsLayer"
-          }
+          },
+          "default": []
         }
       }
     },
@@ -258,7 +259,8 @@
       "properties": {
         "timing_type": {
           "type": "string",
-          "const": "periodic"
+          "const": "periodic",
+          "description": "Selects periodic timing."
         },
         "clock": {
           "description": "Reference clock used to position cycles.",
@@ -367,7 +369,8 @@
       "properties": {
         "source_type": {
           "type": "string",
-          "const": "local"
+          "const": "local",
+          "description": "Selects a local file source."
         },
         "path": {
           "type": "string",
@@ -412,7 +415,8 @@
       "properties": {
         "source_type": {
           "type": "string",
-          "const": "lavfi"
+          "const": "lavfi",
+          "description": "Selects an ffmpeg lavfi (libavfilter virtual input) source."
         },
         "params": {
           "type": "string",
@@ -441,7 +445,8 @@
       "properties": {
         "source_type": {
           "type": "string",
-          "const": "http"
+          "const": "http",
+          "description": "Selects an HTTP or HTTPS source."
         },
         "uri": {
           "type": "string",
@@ -452,7 +457,8 @@
             "boolean",
             "null"
           ],
-          "description": "Whether the content is live and therefore cannot seek or work ahead. Default: false."
+          "description": "Whether the content is live and therefore cannot seek or work ahead. Default: false.",
+          "default": false
         },
         "in_point_ms": {
           "type": [
@@ -500,7 +506,8 @@
             "boolean",
             "null"
           ],
-          "description": "Enable reconnect on failure. Default: true."
+          "description": "Enable reconnect on failure. Default: true.",
+          "default": true
         },
         "reconnect_delay_max": {
           "type": [
@@ -515,7 +522,8 @@
             "boolean",
             "null"
           ],
-          "description": "Enable persistent connections in ffmpeg. Default: false."
+          "description": "Enable persistent connections in ffmpeg. Default: false.",
+          "default": false
         },
         "probe_hint": {
           "description": "Optional pre-supplied probe metadata. When present, ffprobe is skipped and the source is read only once (at playback). See `ProbeHint`.",
@@ -540,7 +548,8 @@
       "properties": {
         "source_type": {
           "type": "string",
-          "const": "rtsp"
+          "const": "rtsp",
+          "description": "Selects an RTSP source."
         },
         "uri": {
           "type": "string",
@@ -577,7 +586,8 @@
       "properties": {
         "source_type": {
           "type": "string",
-          "const": "script"
+          "const": "script",
+          "description": "Selects a command that writes MPEG-TS to stdout."
         },
         "command": {
           "type": "string",
@@ -588,14 +598,16 @@
           "items": {
             "type": "string"
           },
-          "description": "Optional arguments for the command. Supports {{TEMPLATE}} expansion. Defaults to []."
+          "description": "Optional arguments for the command. Supports {{TEMPLATE}} expansion. Defaults to [].",
+          "default": []
         },
         "is_live": {
           "type": [
             "boolean",
             "null"
           ],
-          "description": "Whether the content is live and therefore cannot work ahead. Default: false."
+          "description": "Whether the content is live and therefore cannot work ahead. Default: false.",
+          "default": false
         },
         "probe_hint": {
           "description": "Optional pre-supplied probe metadata. When present, ffprobe is skipped and the source is read only once (at playback). Especially useful here: a scripted source (e.g. a yt-dlp pipeline) is otherwise opened twice, once to probe and once to play. See `ProbeHint`.",
@@ -620,7 +632,8 @@
       "properties": {
         "source_type": {
           "type": "string",
-          "const": "dynamic"
+          "const": "dynamic",
+          "description": "Selects a dynamic source, resolved over HTTP when the item plays."
         },
         "uri": {
           "type": "string",
@@ -649,7 +662,25 @@
             "null"
           ],
           "minimum": 0,
-          "description": "Request timeout in microseconds. Defaults to 10 seconds."
+          "description": "Request timeout in microseconds. Defaults to 10 seconds. With retry enabled, each attempt's timeout is the smaller of this and the retry budget left."
+        },
+        "retry_budget_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Total time in milliseconds to spend resolving this source, including every attempt and the waits between them. Absent or 0 disables retry. Transport errors, timeouts and 5xx responses are retried; 4xx responses and a body that isn't a valid `PlayoutItem` are not. When resolution still fails, the channel plays its fallback for at least this long (see `fallback.duration_seconds` in the channel config). Retries delay the first segment when a channel starts while the resolver is unreachable.",
+          "default": 0
+        },
+        "retry_backoff_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "Delay in milliseconds before the first retry. Defaults to 250. The delay doubles after each retry, with jitter, and a retry is skipped when its delay would use up the budget.",
+          "default": 250
         }
       }
     },
@@ -662,21 +693,24 @@
           "items": {
             "$ref": "#/definitions/VideoHint"
           },
-          "description": "Video (and still-image) streams in the source. Omit (or use `[]`) for audio-only sources; defaults to empty."
+          "description": "Video (and still-image) streams in the source. Omit (or use `[]`) for audio-only sources; defaults to empty.",
+          "default": []
         },
         "audio": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/AudioHint"
           },
-          "description": "Audio streams in the source. Omit (or use `[]`) for video-only sources; defaults to empty."
+          "description": "Audio streams in the source. Omit (or use `[]`) for video-only sources; defaults to empty.",
+          "default": []
         },
         "subtitle": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/SubtitleHint"
           },
-          "description": "Subtitle streams in the source. Omit (or use `[]`) for sources without subtitles; defaults to empty. Provide an entry for any subtitle stream a track selects, otherwise the requested subtitle stream cannot be located and subtitles are dropped."
+          "description": "Subtitle streams in the source. Omit (or use `[]`) for sources without subtitles; defaults to empty. Provide an entry for any subtitle stream a track selects, otherwise the requested subtitle stream cannot be located and subtitles are dropped.",
+          "default": []
         },
         "format_name": {
           "type": [
