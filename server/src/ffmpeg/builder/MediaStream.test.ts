@@ -6,30 +6,32 @@ import {
 import { FrameSize } from '@/ffmpeg/builder/types.js';
 
 describe('MediaStream', () => {
-  test('squarePixelFrameSize @ FHD', () => {
-    const stream = VideoStream.create({
+  function createStream(
+    width: number,
+    height: number,
+    providedSampleAspectRatio: string | null,
+    displayAspectRatio: string,
+  ) {
+    return VideoStream.create({
       codec: 'h264',
-      frameSize: FrameSize.withDimensions(720, 480),
+      frameSize: FrameSize.withDimensions(width, height),
       index: 0,
-      providedSampleAspectRatio: null,
-      displayAspectRatio: '1.33',
+      providedSampleAspectRatio,
+      displayAspectRatio,
       pixelFormat: new PixelFormatYuv420P(),
     });
+  }
+
+  test('squarePixelFrameSize @ FHD with decimal DAR', () => {
+    const stream = createStream(720, 480, null, '1.33');
 
     expect(stream.squarePixelFrameSize(FrameSize.FHD)).toMatchFrameSize(
-      FrameSize.withDimensions(1621, 1080),
+      FrameSize.withDimensions(1436, 1080),
     );
   });
 
   test('derives sampleAspectRatio with decimal DAR', () => {
-    const stream = VideoStream.create({
-      codec: 'h264',
-      frameSize: FrameSize.withDimensions(720, 480),
-      index: 0,
-      providedSampleAspectRatio: '0:0',
-      displayAspectRatio: '1.33',
-      pixelFormat: new PixelFormatYuv420P(),
-    });
+    const stream = createStream(720, 480, '0:0', '1.33');
 
     expect(stream.isAnamorphic).toBeTruthy();
     expect(stream.sampleAspectRatio).toEqual(
@@ -38,17 +40,63 @@ describe('MediaStream', () => {
   });
 
   test('derives sampleAspectRatio with ratio DAR', () => {
-    const stream = VideoStream.create({
-      codec: 'h264',
-      frameSize: FrameSize.withDimensions(720, 480),
-      index: 0,
-      providedSampleAspectRatio: '0:0',
-      displayAspectRatio: '16:9',
-      pixelFormat: new PixelFormatYuv420P(),
-    });
+    const stream = createStream(720, 480, '0:0', '16:9');
 
     expect(stream.isAnamorphic).toBeTruthy();
-    expect(stream.sampleAspectRatio).toEqual(`16:${(1.5).toFixed(12)}`);
+    expect(stream.sampleAspectRatio).toEqual(
+      `${(16 / 9).toFixed(12)}:${(1.5).toFixed(12)}`,
+    );
+  });
+
+  test.each([
+    ['0:0', '16:9', 1920, 1080],
+    ['0:0', '4:3', 1440, 1080],
+    ['0:1', '16:9', 1920, 1080],
+    ['', '16:9', 1920, 1080],
+    [null, '16:9', 1920, 1080],
+    ['32:27', '16:9', 1920, 1080],
+    ['8:9', '4:3', 1440, 1080],
+    ['32/27', '16:9', 1920, 1080],
+    [null, '16/9', 1920, 1080],
+  ])(
+    '720x480 with SAR %s and DAR %s scales to %dx%d',
+    (sar, dar, width, height) => {
+      const stream = createStream(720, 480, sar, dar);
+
+      expect(stream.isAnamorphic).toBe(true);
+      expect(stream.squarePixelFrameSize(FrameSize.FHD)).toMatchFrameSize(
+        FrameSize.withDimensions(width, height),
+      );
+    },
+  );
+
+  test.each([
+    [1920, 1080, null, '16:9'],
+    [1920, 1080, '1:1', '16:9'],
+    [1920, 1080, '0:0', '1.78'],
+    [1280, 720, null, '16:9'],
+    [720, 480, null, ''],
+    [720, 480, null, '720/480'],
+  ])('%dx%d with SAR %s and DAR %s is not anamorphic', (w, h, sar, dar) => {
+    expect(createStream(w, h, sar, dar).isAnamorphic).toBe(false);
+  });
+
+  test('missing SAR and DAR keeps the storage shape', () => {
+    const stream = createStream(720, 480, null, '');
+
+    expect(stream.sampleAspectRatio).toEqual('1:1');
+    expect(stream.squarePixelFrameSize(FrameSize.FHD)).toMatchFrameSize(
+      FrameSize.withDimensions(1620, 1080),
+    );
+  });
+
+  test('explicit SAR is reported as given', () => {
+    expect(createStream(720, 480, '32:27', '16:9').sampleAspectRatio).toEqual(
+      '32:27',
+    );
+    expect(createStream(720, 480, '32/27', '16:9').sampleAspectRatio).toEqual(
+      '32:27',
+    );
   });
 });
 

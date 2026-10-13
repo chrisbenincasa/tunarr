@@ -1,6 +1,6 @@
 import type { DataProps, ExcludeByValueType, Nullable } from '@/types/util.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { isEmpty, isNull, merge, nth } from 'lodash-es';
+import { merge, nth } from 'lodash-es';
 import type { AnyFunction, MarkOptional, StrictOmit } from 'ts-essentials';
 import { VideoFormats } from './constants.ts';
 import { ColorFormat } from './format/ColorFormat.js';
@@ -30,6 +30,29 @@ export type VideoStreamFields = StrictOmit<
   MediaStreamFields<VideoStream>,
   'isAnamorphic' | 'sampleAspectRatio'
 >;
+
+// Real anamorphic SARs (8:9, 10:11, 32:27, 4:3) sit well outside this band.
+// Rounded DARs such as "1.78" on 1920x1080 sit inside it.
+const SquarePixelTolerance = 0.01;
+
+// Parses "N:M", "N/M", or a decimal string. Returns undefined unless the ratio
+// is a positive finite number, so ffprobe's "0:0" and "0:1" read as unknown.
+function parseRatio(value: Nullable<string> | undefined): number | undefined {
+  if (!isNonEmptyString(value)) {
+    return;
+  }
+
+  const [num, den] = value.split(/[:/]/);
+  const ratio =
+    den === undefined
+      ? parseFloat(value)
+      : parseFloat(num ?? '') / parseFloat(den);
+  return Number.isFinite(ratio) && ratio > 0 ? ratio : undefined;
+}
+
+function formatRatioPart(n: number) {
+  return Number.isInteger(n) ? n.toString() : n.toFixed(12);
+}
 
 export class AudioStream implements MediaStream {
   readonly kind: StreamKind = 'audio';
@@ -93,86 +116,57 @@ export class VideoStream implements MediaStream {
 
   get sampleAspectRatio(): string {
     const inputSar = this.providedSampleAspectRatio;
-    if (isNull(inputSar) || isEmpty(inputSar) || inputSar === '0:0') {
-      let dar = parseFloat(this.displayAspectRatio);
-      if (isNaN(dar)) {
-        const [num, den] = this.displayAspectRatio.split(':');
-        dar = parseFloat(num!) / parseFloat(den!);
-      }
-
-      const res = this.frameSize.width / this.frameSize.height;
-      const formattedDar = Number.isInteger(dar)
-        ? dar.toString()
-        : dar.toFixed(12);
-      const formattedRes = Number.isInteger(res)
-        ? res.toString()
-        : res.toFixed(12);
-      return `${formattedDar}:${formattedRes}`;
+    if (isNonEmptyString(inputSar) && parseRatio(inputSar) !== undefined) {
+      const [num, den] = inputSar.split(/[:/]/);
+      const formattedDen =
+        den === undefined ? '1' : formatRatioPart(parseFloat(den));
+      return `${formatRatioPart(parseFloat(num ?? ''))}:${formattedDen}`;
     }
 
-    const [num, den] = inputSar.split(':').map((s) => parseFloat(s));
-    const formattedNum = Number.isInteger(num)
-      ? num!.toString()
-      : num!.toFixed(12);
-    const formattedDen = Number.isInteger(den)
-      ? den!.toString()
-      : den!.toFixed(12);
-    return `${formattedNum}:${formattedDen}`;
+    const dar = parseRatio(this.displayAspectRatio);
+    if (dar === undefined) {
+      return '1:1';
+    }
+
+    const res = this.frameSize.width / this.frameSize.height;
+    return `${formatRatioPart(dar)}:${formatRatioPart(res)}`;
   }
 
   get isAnamorphic() {
-    if (this.sampleAspectRatio === '1:1') {
-      return false;
-    } else if (this.sampleAspectRatio !== '0:1') {
-      return true;
-    } else if (this.displayAspectRatio === '0:1') {
-      return false;
-    }
-
-    return (
-      this.displayAspectRatio !==
-      `${this.frameSize.width}:${this.frameSize.height}`
-    );
+    return Math.abs(this.getSampleAspectRatio() - 1) > SquarePixelTolerance;
   }
 
   squarePixelFrameSize(resolution: FrameSize): FrameSize {
-    let width = this.frameSize.width;
-    let height = this.frameSize.height;
-
-    if (this.isAnamorphic) {
-      const sar = this.getSampleAspectRatio();
-      width = Math.floor(this.frameSize.width * sar);
-      height = Math.floor(this.frameSize.height * sar);
-    }
+    // SAR stretches the stored width to its display width. Height is unchanged.
+    const width = this.isAnamorphic
+      ? this.frameSize.width * this.getSampleAspectRatio()
+      : this.frameSize.width;
+    const height = this.frameSize.height;
 
     const widthPercent = resolution.width / width;
     const heightPercent = resolution.height / height;
     const minPercent = Math.min(widthPercent, heightPercent);
 
     return FrameSize.create({
-      width: Math.floor(width * minPercent),
-      height: Math.floor(height * minPercent),
+      width: Math.round(width * minPercent),
+      height: Math.round(height * minPercent),
     });
   }
 
-  private getSampleAspectRatio() {
-    if (
-      isNull(this.sampleAspectRatio) ||
-      isEmpty(this.sampleAspectRatio) ||
-      this.sampleAspectRatio === '0:0'
-    ) {
-      let dar = parseFloat(this.displayAspectRatio);
-      if (isNaN(dar)) {
-        const [num, den] = this.displayAspectRatio.split(':');
-        dar = parseFloat(num!) / parseFloat(den!);
-      }
-
-      const res = this.frameSize.width / this.frameSize.height;
-      return dar / res;
+  // A missing, zero, or unparseable SAR is derived from the DAR. Without a
+  // usable DAR either, pixels are assumed square.
+  private getSampleAspectRatio(): number {
+    const providedSar = parseRatio(this.providedSampleAspectRatio);
+    if (providedSar !== undefined) {
+      return providedSar;
     }
 
-    const [num, den] = this.sampleAspectRatio.split(':');
-    return parseFloat(num!) / parseFloat(den!);
+    const dar = parseRatio(this.displayAspectRatio);
+    if (dar === undefined) {
+      return 1;
+    }
+
+    return dar / (this.frameSize.width / this.frameSize.height);
   }
 
   getNumericFrameRateOrDefault(defaultRate: number = 24) {
