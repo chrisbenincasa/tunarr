@@ -356,8 +356,8 @@ export class TunarrWorkerPool implements IWorkerPool {
               );
             }
           } else {
-            this.logger.error(
-              'No listener found for request ID: %s',
+            this.logger.debug(
+              'No listener found for request ID %s. The request may have timed out.',
               reply.requestId,
             );
           }
