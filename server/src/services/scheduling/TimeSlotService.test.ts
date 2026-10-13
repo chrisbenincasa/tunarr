@@ -944,7 +944,7 @@ describe('TimeSlotService', () => {
           }
 
           // Content always starts on the 30m mark.
-          expect(t % (30 * 60 * 1000)).toBe(0);
+          expect(+dayjs(t).mod(30 * 60 * 1000, true)).toBe(0);
           t += item.duration;
         }
       });
@@ -1037,7 +1037,7 @@ describe('TimeSlotService', () => {
           .add(6, 'hour')
           .valueOf();
         for (const { offset } of shortEntries) {
-          expect(offset % (5 * 60 * 1000)).toBe(0);
+          expect(+dayjs(offset).mod(5 * 60 * 1000, true)).toBe(0);
         }
         expect(
           shortEntries.every(({ offset }) => {
@@ -1048,7 +1048,7 @@ describe('TimeSlotService', () => {
 
         // The un-overridden slot keeps the schedule-level 30m grid.
         for (const { offset } of longEntries) {
-          expect(offset % (30 * 60 * 1000)).toBe(0);
+          expect(+dayjs(offset).mod(30 * 60 * 1000, true)).toBe(0);
         }
       });
 
@@ -4153,5 +4153,81 @@ describe('mid-roll break budgeting', () => {
 
     expect(breakLengths(slotItems)).toEqual([3 * oneMin]);
     expect(sumBy(slotItems, ({ item }) => item.duration)).toBe(oneHour);
+  });
+});
+
+describe('padding in a zone with a quarter-hour offset', () => {
+  // Asia/Kathmandu is UTC+5:45, so a pad aligned to UTC lands 15 minutes off
+  // every local hour.
+  const TZ = 'Asia/Kathmandu';
+  const oneMin = 60 * 1000;
+
+  let originalTZ: string | undefined;
+  beforeAll(() => {
+    originalTZ = process.env['TZ'];
+    process.env['TZ'] = TZ;
+  });
+  afterAll(() => {
+    if (originalTZ !== undefined) {
+      process.env['TZ'] = originalTZ;
+    } else {
+      delete process.env['TZ'];
+    }
+  });
+
+  test('programs start on the local hour with a one-hour pad', async () => {
+    const programs: SlotSchedulerProgram[] = Array.from(
+      { length: 30 },
+      (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `movie-${i + 1}`,
+          type: 'movie',
+          duration: 50 * oneMin,
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: [],
+      }),
+    );
+
+    const schedule: TimeSlotSchedule = {
+      type: 'time',
+      flexPreference: 'end',
+      maxDays: 1,
+      padMs: 60 * oneMin,
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      period: 'day',
+      timeZoneOffset: 0,
+      slots: [
+        {
+          id: randomUUID(),
+          startTime: 0,
+          type: 'movie',
+          order: 'next',
+          direction: 'asc',
+        },
+      ],
+    };
+
+    const start = dayjs('2025-01-06');
+    const result = await scheduleTimeSlots(
+      schedule,
+      programs,
+      undefined,
+      0,
+      start,
+    );
+
+    const starts: number[] = [];
+    let t = result.startTime;
+    for (const item of result.lineup) {
+      if (item.type === 'content') starts.push(t);
+      t += item.duration;
+    }
+
+    expect(starts[0]).toBe(+start);
+    expect(starts.length).toBeGreaterThan(20);
+    expect(starts.filter((s) => dayjs(s).minute() !== 0)).toEqual([]);
   });
 });
