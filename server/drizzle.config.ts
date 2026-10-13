@@ -2,7 +2,8 @@ import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
   dialect: 'sqlite',
-  schema: './src/db/schema/**/*.ts',
+  // Test files import Vitest, which fails to load under drizzle-kit.
+  schema: './src/db/schema/**/!(*.test).ts',
   out: './src/migration/db/sql',
   casing: 'snake_case',
   dbCredentials: {
