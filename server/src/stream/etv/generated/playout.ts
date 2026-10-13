@@ -18,6 +18,8 @@ export const DynamicSourceSchema = z.strictObject({
   headers: z.array(z.string()).nullable().optional(),
   user_agent: z.string().nullable().optional(),
   timeout_us: z.number().int().min(0).nullable().optional(),
+  retry_budget_ms: z.number().int().min(0).nullable().optional(),
+  retry_backoff_ms: z.number().int().min(1).nullable().optional(),
 });
 export type DynamicSource = z.infer<typeof DynamicSourceSchema>;
 

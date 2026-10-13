@@ -2,18 +2,22 @@
   "$id": "https://ersatztv.org/lineup/version/0.0.1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "LineupConfig",
+  "description": "Server settings: where to listen, where to write HLS output, and which channels to serve.",
   "type": "object",
   "properties": {
     "channels": {
+      "description": "The channels to serve, in playlist order.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/ChannelConfig"
       }
     },
     "output": {
+      "description": "Where channels write their HLS output.",
       "$ref": "#/$defs/OutputConfig"
     },
     "server": {
+      "description": "HTTP server settings.",
       "$ref": "#/$defs/ServerConfig",
       "default": {
         "bind_address": "0.0.0.0",
@@ -25,6 +29,7 @@
       "type": "string"
     },
     "xmltv": {
+      "description": "Where to find guide data for `/xmltv.xml`. Unset serves channels without programmes.",
       "anyOf": [
         {
           "$ref": "#/$defs/XmltvConfig"
@@ -44,35 +49,40 @@
       "type": "object",
       "properties": {
         "config": {
-          "description": "Base configuration path",
+          "description": "Path to the channel's `channel.json`. A relative path is relative to the lineup file.",
           "type": "string"
         },
         "group": {
+          "description": "Channel group in the M3U playlist (`/channels.m3u`), sent as `group-title`. Not used in\nthe XMLTV guide.",
           "type": [
             "string",
             "null"
           ]
         },
         "logo": {
+          "description": "Logo URL, sent as `tvg-logo` in the playlist and `icon` in the guide.",
           "type": [
             "string",
             "null"
           ]
         },
         "name": {
+          "description": "Channel name shown in the M3U playlist and XMLTV guide.",
           "type": "string"
         },
         "number": {
+          "description": "Channel number, e.g. `1` or `2.1`. Used in URLs (`/channel/{number}.m3u8`) and as the\nname of the channel's output subfolder, so it must be unique.",
           "type": "string"
         },
         "overlays": {
-          "description": "Optional configuration overlay paths; values will be merged with base config, nulls will remove keys from base config",
+          "description": "Paths to channel config overlays, merged over `config` in order. An overlay value replaces\nthe base value, and `null` removes the key. Each overlay must carry its own `version`.\nA relative path is relative to the lineup file.",
           "type": "array",
           "items": {
             "type": "string"
           }
         },
         "tvg_id": {
+          "description": "Guide ID that links the playlist entry to its XMLTV channel and names its guide file.\nUnset is `ersatztv.{number}`.",
           "type": [
             "string",
             "null"
@@ -89,6 +99,7 @@
       "type": "object",
       "properties": {
         "folder": {
+          "description": "Folder for HLS output. Each channel writes to a subfolder named after its `number`.\nA relative path is relative to the lineup file.",
           "type": "string"
         }
       },
@@ -100,10 +111,12 @@
       "type": "object",
       "properties": {
         "bind_address": {
+          "description": "IP address to listen on. `0.0.0.0` listens on all IPv4 interfaces.",
           "type": "string",
           "default": "0.0.0.0"
         },
         "port": {
+          "description": "TCP port to listen on.",
           "type": "integer",
           "format": "uint16",
           "default": 8409,
@@ -116,6 +129,7 @@
       "type": "object",
       "properties": {
         "folder": {
+          "description": "Folder of per-channel guide files named `{tvg_id}.xml`. Their `programme` elements are\ncopied into `/xmltv.xml`; a missing file is skipped. A relative path is relative to the\nlineup file.",
           "type": "string"
         }
       },

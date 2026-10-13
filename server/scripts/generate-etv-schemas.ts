@@ -75,6 +75,33 @@ const nullableBranch = (branches: JsonSchema[]) => {
   return nulls.length === 1 && rest.length === 1 ? rest[0] : undefined;
 };
 
+/**
+ * Upstream spells a documented enum as `oneOf` string `const` branches, one per
+ * value. Returns the values (plus `null` for a null branch) so it renders as
+ * `z.enum`, or undefined for any other `oneOf`.
+ */
+const constBranchesAsEnum = (branches: JsonSchema[]) => {
+  const values: unknown[] = [];
+  for (const branch of branches) {
+    if (isNullBranch(branch)) {
+      values.push(null);
+      continue;
+    }
+    const extraKeys = Object.keys(branch).filter(
+      (k) => !['const', 'type', 'description', 'title'].includes(k),
+    );
+    if (
+      typeof branch.const !== 'string' ||
+      (branch.type !== undefined && branch.type !== 'string') ||
+      extraKeys.length > 0
+    ) {
+      return;
+    }
+    values.push(branch.const);
+  }
+  return values.some((v) => v !== null) ? values : undefined;
+};
+
 /** Keywords `render` either emits or can drop without weakening validation. */
 const knownKeywords = new Set([
   '$ref',
@@ -130,6 +157,10 @@ function render(node: JsonSchema, ctx: string): string {
     const inner = nullableBranch(branches);
     if (inner !== undefined) {
       return `${render(inner, ctx)}.nullable()`;
+    }
+    const constEnum = constBranchesAsEnum(branches);
+    if (constEnum !== undefined) {
+      return render({ enum: constEnum }, ctx);
     }
     const rendered = branches.map((b, i) => render(b, `${ctx}[${i}]`));
     if (node.discriminator !== undefined) {
