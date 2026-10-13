@@ -45,7 +45,6 @@ These translate to nothing on the worker. The channel streams; it streams withou
 | Video preset and profile | The worker exposes neither yet. |
 | Audio volume | The worker has no volume filter. |
 | Normalize frame rate | The worker does not normalize frame rate. |
-| Scaling algorithm | The worker hardcodes `fast_bilinear` for software scaling. |
 | VAAPI driver `nouveau` | It has no counterpart. `i965`, `ihd` and `radeonsi` translate. |
 
 Tunarr logs the dropped settings once when a channel starts, and the transcode config editor lists them.

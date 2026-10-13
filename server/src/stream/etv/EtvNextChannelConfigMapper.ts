@@ -185,17 +185,10 @@ export function findUnsupportedSettings(
  * These do not refuse the config. The channel still streams; it streams
  * without them, so a user who tuned a preset or a volume trim is told rather
  * than left to wonder why it stopped mattering.
- *
- * Reads the same two sources `toChannelConfig` does, because whether scaling
- * is ignored is a global ffmpeg setting rather than a per-config one.
  */
-export function findIgnoredSettings({
-  transcodeConfig,
-  ffmpegSettings,
-}: {
-  transcodeConfig: TranscodeConfigOrm;
-  ffmpegSettings: Pick<MappedFfmpegSettings, 'scalingAlgorithm'>;
-}): IgnoredSetting[] {
+export function findIgnoredSettings(
+  transcodeConfig: TranscodeConfigOrm,
+): IgnoredSetting[] {
   const ignored: IgnoredSetting[] = [];
   const note = (field: string, reason: string) =>
     ignored.push({ field, reason });
@@ -214,12 +207,6 @@ export function findIgnoredSettings({
   }
   if (transcodeConfig.normalizeFrameRate === true) {
     note('normalizeFrameRate', 'the backend does not normalize frame rate');
-  }
-  if (ffmpegSettings.scalingAlgorithm !== 'fast_bilinear') {
-    note(
-      'scalingAlgorithm',
-      'the backend hardcodes fast_bilinear for software scaling',
-    );
   }
 
   // Only meaningful under an accel mode the backend understands; a driver
@@ -310,7 +297,7 @@ export function toChannelConfig({
   }
   const { videoFormat, audioFormat, accel } = check.codecs;
 
-  const ignored = findIgnoredSettings({ transcodeConfig, ffmpegSettings });
+  const ignored = findIgnoredSettings(transcodeConfig);
   const usesAccel = !!accel;
 
   // Unset, the backend uses /dev/dri/renderD128 and lets libva pick the
@@ -328,9 +315,14 @@ export function toChannelConfig({
       : { device: undefined, driver: undefined };
 
   const deinterlace = transcodeConfig.deinterlaceVideo === true;
-  const filters = deinterlace
-    ? deinterlaceFilters[ffmpegSettings.deinterlaceFilter]
-    : undefined;
+
+  // Always sent, because the backend's own default (bicubic) is not Tunarr's.
+  const filters = {
+    ...(deinterlace
+      ? deinterlaceFilters[ffmpegSettings.deinterlaceFilter]
+      : {}),
+    scale: { flags: ffmpegSettings.scalingAlgorithm },
+  };
 
   const config: ChannelConfig = {
     version: ChannelConfigVersion,
@@ -358,7 +350,7 @@ export function toChannelConfig({
         ...(usesAccel && isNonEmptyString(vaapi.driver)
           ? { vaapi_driver: vaapi.driver }
           : {}),
-        ...(filters ? { filters } : {}),
+        filters,
       },
       audio: {
         format: audioFormat,

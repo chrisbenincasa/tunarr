@@ -80,14 +80,12 @@ async function makeApp({
   channelExists = true,
   errorScreen,
   transcodeConfig,
-  scalingAlgorithm = 'fast_bilinear',
 }: {
   lineupItem?: StreamLineupItem;
   scheduleFails?: boolean;
   channelExists?: boolean;
   errorScreen?: string;
   transcodeConfig?: Partial<TranscodeConfigOrm>;
-  scalingAlgorithm?: string;
 } = {}) {
   const programCalculator = {
     getCurrentLineupItem: vi.fn(() =>
@@ -152,7 +150,6 @@ async function makeApp({
       ),
     ),
   };
-  const settings = { ffmpegSettings: vi.fn(() => ({ scalingAlgorithm })) };
 
   const tokenRegistry = new EtvNextDynamicTokenRegistry();
   const token = tokenRegistry.issue(channelUuid, channelNumber);
@@ -171,7 +168,6 @@ async function makeApp({
     (req as unknown as { serverCtx: unknown }).serverCtx = {
       sessionManager,
       transcodeConfigDB,
-      settings,
     };
     done();
   });
@@ -649,7 +645,6 @@ describe('transcode config compatibility', () => {
   test('reports a dropped setting without refusing the config', async () => {
     const { app } = await makeApp({
       transcodeConfig: { videoPreset: 'slow' } as Partial<TranscodeConfigOrm>,
-      scalingAlgorithm: 'bicubic',
     });
 
     const response = await compatibility(app);
@@ -660,10 +655,7 @@ describe('transcode config compatibility', () => {
       ignored: { field: string }[];
     }>();
     expect(body.supported).toBe(true);
-    expect(body.ignored.map((i) => i.field)).toEqual([
-      'videoPreset',
-      'scalingAlgorithm',
-    ]);
+    expect(body.ignored.map((i) => i.field)).toEqual(['videoPreset']);
   });
 
   test('answers 404 for a config that does not exist', async () => {
