@@ -783,17 +783,16 @@ describe('track selection', () => {
     expect(item.tracks).toBeUndefined();
   });
 
-  // Upstream errors to its fallback card on a source with no audio (B8).
-  test('plays silence alongside a video-only file', () => {
+  // The worker plays silence for a missing audio stream. Forcing it here would
+  // also silence a file whose audio Tunarr's probe missed.
+  test('adds no audio track to a video-only file', () => {
     const { item } = map(programItem(), {
       source: new FileStreamSource('/media/silent-film.mkv'),
       details: { duration: dayjs.duration({ minutes: 30 }) },
     });
 
     expect(item.source).toMatchObject({ path: '/media/silent-film.mkv' });
-    expect(item.tracks).toEqual({
-      audio: { source: { source_type: 'lavfi', params: 'anullsrc' } },
-    });
+    expect(item.tracks).toBeUndefined();
   });
 
   test('every selected item strict-parses', () => {

@@ -200,19 +200,16 @@ type MediaRange = { inPointMs: number; outPointMs: number };
  * embedded text subtitle under burn mode, which is why the extracted file is
  * preferred whenever the selector found one.
  *
- * Upstream errors to its fallback card on a source with no audio stream (B8),
- * so a video-only file gets silence sourced separately.
+ * A video-only file needs no audio track. The worker plays silence in place of
+ * a missing audio stream.
  */
 function contentTracks(
-  details: StreamDetails | undefined,
   selection: PlayoutTrackSelection | undefined,
   range: MediaRange,
 ): PlayoutItemTracks | undefined {
   const tracks: PlayoutItemTracks = {};
 
-  if (details && !details.audioDetails) {
-    tracks.audio = { source: silentAudio };
-  } else if (selection?.audioStream) {
+  if (selection?.audioStream) {
     tracks.audio = { stream_index: selection.audioStream.index };
   }
 
@@ -472,7 +469,7 @@ export function toPlayoutItem({
   }
 
   const range = { inPointMs, outPointMs };
-  const tracks = contentTracks(stream.details, stream.selection, range);
+  const tracks = contentTracks(stream.selection, range);
 
   const item = PlayoutItemSchema.parse({
     ...base,

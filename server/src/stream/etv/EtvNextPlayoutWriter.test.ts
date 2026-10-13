@@ -368,7 +368,8 @@ describe('stream selection', () => {
     expect(logger.warn).toHaveBeenCalled();
   });
 
-  test('skips selection for a file with no audio and plays silence beside it', async () => {
+  // The worker plays silence in place of the missing audio stream.
+  test('skips selection for a file with no audio and adds no audio track', async () => {
     const { writer, streamSelector } = makeWriter({
       items: [programItem(600_000)],
       streamDetails: { duration: tenMinutes },
@@ -377,10 +378,7 @@ describe('stream selection', () => {
     const { item } = await resolveOne(writer);
 
     expect(streamSelector.selectAudioAndSubtitleStreams).not.toHaveBeenCalled();
-    expect(item.tracks?.audio?.source).toEqual({
-      source_type: 'lavfi',
-      params: 'anullsrc',
-    });
+    expect(item.tracks?.audio).toBeUndefined();
   });
 
   test('selects on the materialized path too', async () => {
