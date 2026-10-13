@@ -1,0 +1,1 @@
+ALTER TABLE `channel` ADD `use_etv_next` integer DEFAULT false;

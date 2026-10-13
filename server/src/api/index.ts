@@ -24,6 +24,7 @@ import { CreditsApiController } from './creditsApi.ts';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
 import { embyApiRouter } from './embyApi.ts';
+import { EtvNextApiController } from './etvApi.ts';
 import { ffmpegSettingsRouter } from './ffmpegSettingsApi.js';
 import { fillerListsApi } from './fillerListsApi.js';
 import { guideRouter } from './guideApi.js';
@@ -84,6 +85,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(troubleshootApiRouter)
     .register(trashApi)
     .register(container.get(SmartCollectionsApiController).mount)
+    .register(container.get(EtvNextApiController).mount)
     .register(container.get(CreditsApiController).mount)
     .register(container.get(ProgramGroupingApiController).mount);
 

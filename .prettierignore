@@ -23,10 +23,12 @@ docs-extras/**/*.md
 
 # Server
 server/streams/**/*.ts
+server/src/generated/*
 server/src/testing/ffmpeg/fixtures/*
 server/web/
 server/temp
 
 # web
 web/src/generated/*
+web/src/locales/**/messages.ts
 web/src/routeTree.gen.ts

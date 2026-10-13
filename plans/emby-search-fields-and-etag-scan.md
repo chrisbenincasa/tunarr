@@ -4,11 +4,11 @@
 
 ## Merge order
 
-| Order | PR | Base | Contents |
-|-------|----|------|----------|
-| 1 | Phase A | `main` | ETag-first compare at nine scanner sites, rescan-request table, paging off-by-one, scan metrics |
-| 2 | #1801 (`extra-search-fields`) | `main` | Existing search fields work, rebased onto Phase A. Its migration (now `0053`) adds rescan-request rows for Plex and Jellyfin libraries |
-| 3 | Emby search fields (#2146) | `extra-search-fields` | Emby mappings plus its own migration with an Emby-only rescan-request insert. Retarget to `main` after #1801 merges |
+| Order | PR                            | Base                  | Contents                                                                                                                               |
+| ----- | ----------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Phase A                       | `main`                | ETag-first compare at nine scanner sites, rescan-request table, paging off-by-one, scan metrics                                        |
+| 2     | #1801 (`extra-search-fields`) | `main`                | Existing search fields work, rebased onto Phase A. Its migration (now `0053`) adds rescan-request rows for Plex and Jellyfin libraries |
+| 3     | Emby search fields (#2146)    | `extra-search-fields` | Emby mappings plus its own migration with an Emby-only rescan-request insert. Retarget to `main` after #1801 merges                    |
 
 ## 1. Phase A PR
 
@@ -20,17 +20,17 @@
 - The list ETag can stand in for the full one. Both canonicalizers return the raw `Etag` (`services/JellyfinItemCanonicalizer.ts`, `services/EmbyItemCanonicalizer.ts`), and both calls send the media source's `userId`.
 - A `NULL` stored `canonicalId` counts as changed at all nine sites. Shows (`MediaSourceTvShowLibraryScanner.ts:265-268`) and artists (`MediaSourceMusicArtistScanner.ts:289`) currently treat it as unchanged.
 
-| Site | File | Full fetch → compare |
-|------|------|----------------------|
-| Movie | `MediaSourceMovieLibraryScanner.ts` | `:196` → `:209` (already compares the list ID) |
-| Show | `MediaSourceTvShowLibraryScanner.ts` | `:255` → `:268` |
-| Season | `MediaSourceTvShowLibraryScanner.ts` | `:443` → `:456` |
-| Episode | `MediaSourceTvShowLibraryScanner.ts` | `:541` → `:559` |
-| Music video | `MediaSourceMusicVideoScanner.ts` | `:172` → `:189` |
-| Other video | `MediaSourceOtherVideoScanner.ts` | `:171` → `:188` |
-| Artist | `MediaSourceMusicArtistScanner.ts` | `:127`/`scanArtist` → `:289` |
-| Album | `MediaSourceMusicArtistScanner.ts` | `updateAlbum` → `:459` |
-| Track | `MediaSourceMusicArtistScanner.ts` | `scanTracks` → `:566` |
+| Site        | File                                 | Full fetch → compare                           |
+| ----------- | ------------------------------------ | ---------------------------------------------- |
+| Movie       | `MediaSourceMovieLibraryScanner.ts`  | `:196` → `:209` (already compares the list ID) |
+| Show        | `MediaSourceTvShowLibraryScanner.ts` | `:255` → `:268`                                |
+| Season      | `MediaSourceTvShowLibraryScanner.ts` | `:443` → `:456`                                |
+| Episode     | `MediaSourceTvShowLibraryScanner.ts` | `:541` → `:559`                                |
+| Music video | `MediaSourceMusicVideoScanner.ts`    | `:172` → `:189`                                |
+| Other video | `MediaSourceOtherVideoScanner.ts`    | `:171` → `:188`                                |
+| Artist      | `MediaSourceMusicArtistScanner.ts`   | `:127`/`scanArtist` → `:289`                   |
+| Album       | `MediaSourceMusicArtistScanner.ts`   | `updateAlbum` → `:459`                         |
+| Track       | `MediaSourceMusicArtistScanner.ts`   | `scanTracks` → `:566`                          |
 
 - Unchanged shows, seasons, artists, and albums still descend into their children. A parent ETag does not cover its children.
 
@@ -61,12 +61,12 @@ Backfills new fetched fields without rewriting program data.
 - Mock-based, following the pattern in `MediaSourceOtherVideoScanner.test.ts`. One file per base class: movie, TV, music video, other video, music artist.
 - Four-case matrix at each level:
 
-| Case | Expected full fetches |
-|------|-----------------------|
-| Hook `true`, list ETag matches DB | 0 |
-| Hook `true`, ETag differs | 1 |
-| Hook `true`, `force` on | 1 |
-| Hook `false` (Plex), ETag matches | 1 |
+| Case                              | Expected full fetches |
+| --------------------------------- | --------------------- |
+| Hook `true`, list ETag matches DB | 0                     |
+| Hook `true`, ETag differs         | 1                     |
+| Hook `true`, `force` on           | 1                     |
+| Hook `false` (Plex), ETag matches | 1                     |
 
 - Also assert that unchanged parents still descend into children, that skipped items are not marked missing, and that a `NULL` stored ID counts as changed.
 - Coordinator tests cover four cases: a pending row forces the scan, a complete scan clears the row, and a canceled scan or a `pathFilter` scan keeps it.
@@ -82,14 +82,14 @@ Backfills new fetched fields without rewriting program data.
 - `summary` needs no work. Emby already maps `Overview` to `plot` (`EmbyApiClient.ts:1227`, `:1422`).
 - The source fields already exist in the schema (`types/src/emby/index.ts:406`, `:410`, `:419`).
 
-| Step | File | Change |
-|------|------|--------|
-| 1 | `EmbyApiClient.ts:110` | Add `ProductionLocations`, `CommunityRating`, `CriticRating` to `RequiredLibraryFields` |
-| 2 | `EmbyApiClient.ts` `getMovieLibraryContents` (`:580`), `getTvShowLibraryContents` (`:618`) | Add the same three to the inline field lists |
-| 3 | `embyApiMovieInjection` (`:1207` block) | `countries`, `collections: []`, `audienceRating`, `criticRating`, copied from #1801's Jellyfin diff |
-| 4 | `embyApiShowInjection` (`:1401` block) | Same four fields |
-| 5 | Migration | `INSERT` rescan-request rows for Emby libraries |
-| 6 | Test | Emby movie fixture with the three fields, asserting the injection output |
+| Step | File                                                                                       | Change                                                                                              |
+| ---- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| 1    | `EmbyApiClient.ts:110`                                                                     | Add `ProductionLocations`, `CommunityRating`, `CriticRating` to `RequiredLibraryFields`             |
+| 2    | `EmbyApiClient.ts` `getMovieLibraryContents` (`:580`), `getTvShowLibraryContents` (`:618`) | Add the same three to the inline field lists                                                        |
+| 3    | `embyApiMovieInjection` (`:1207` block)                                                    | `countries`, `collections: []`, `audienceRating`, `criticRating`, copied from #1801's Jellyfin diff |
+| 4    | `embyApiShowInjection` (`:1401` block)                                                     | Same four fields                                                                                    |
+| 5    | Migration                                                                                  | `INSERT` rescan-request rows for Emby libraries                                                     |
+| 6    | Test                                                                                       | Emby movie fixture with the three fields, asserting the injection output                            |
 
 - Open question: confirm on a live Emby server that `CommunityRating` and `CriticRating` are accepted as `Fields` values. Emby may return them by default, as Jellyfin does.
 

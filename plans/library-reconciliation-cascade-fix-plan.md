@@ -40,7 +40,7 @@ Success criteria:
   wipes programs regardless; after this fix the only library-only delete left is the Jellyfin dupe
   path, which now repoints references explicitly (so set-null would never fire); a null `libraryId`
   is a degraded state that `JellyfinItemFinder.ts:78` can only report as unrecoverable; and it would
-  arguably make a *future* explicit "remove library" feature wrong. Not worth rebuilding the largest
+  arguably make a _future_ explicit "remove library" feature wrong. Not worth rebuilding the largest
   table in every user's DB for defense against code that does not exist.
 - **Gate scanning at the coordinator, not the callers.** `MediaSourceScanCoordinator.add()` already
   performs a fresh `getLibrary(libraryId)` read and is the single choke point every scan request
@@ -56,11 +56,11 @@ Success criteria:
 
 ### Handler drift (the thing being unified)
 
-| | supported-type filter | empty guard | update set | dupe handling |
-|---|---|---|---|---|
-| `handlePlex` | yes | **no** | name + mediaType | no |
-| `handleJellyfin` | yes | **no** | **`[]`** (commented out) | yes |
-| `handleEmby` | yes | yes, but on **pre-filter** `Items.length` | **`[]`** | no |
+|                  | supported-type filter | empty guard                               | update set               | dupe handling |
+| ---------------- | --------------------- | ----------------------------------------- | ------------------------ | ------------- |
+| `handlePlex`     | yes                   | **no**                                    | name + mediaType         | no            |
+| `handleJellyfin` | yes                   | **no**                                    | **`[]`** (commented out) | yes           |
+| `handleEmby`     | yes                   | yes, but on **pre-filter** `Items.length` | **`[]`**                 | no            |
 
 Consequences today: Emby's guard misses the "only unsupported types returned" case; Jellyfin and Emby
 never sync library renames; and there is nowhere for the "clear `unavailableSince` on reappearance"
@@ -82,7 +82,7 @@ logic to hang on two of three backends.
   3. Append to the END of `getMigrations()` in `server/src/migration/DirectMigrationProvider.ts`:
      `migration<TIMESTAMP>: makeMigrationFromSqlFile('./sql/00NN_*.sql'),`
   4. Review the generated SQL before committing — drizzle-kit sometimes emits destructive statements.
-- Note: `channel_programs.program_uuid` FK stays `onDelete: 'cascade'` — deleting a *program* should
+- Note: `channel_programs.program_uuid` FK stays `onDelete: 'cascade'` — deleting a _program_ should
   still remove its schedule rows. All library FKs stay `cascade` as they are today.
 
 ### 2. Extract a shared reconcile function — `server/src/services/MediaSourceLibraryRefresher.ts`
@@ -94,7 +94,7 @@ to one shared `reconcileLibraries`. All behavior below lives in that one functio
 - **2a. Post-filter empty guard.** If the normalized list is empty while the stored source has ≥1
   library, log an `error` (mention possible restricted token / transient server state, and that
   stored libraries were left untouched) and return without calling `updateLibraries`. This is
-  strictly stronger than Emby's current guard, which tests raw `Items.length` *before* the
+  strictly stronger than Emby's current guard, which tests raw `Items.length` _before_ the
   supported-type filter and so misses "only unsupported types returned".
 - **2b. Missing libraries → mark unavailable, never delete.** For each stored library absent from the
   incoming keys, add `{ uuid, unavailableSince: now }` to `librariesToMarkUnavailable`, preserving an

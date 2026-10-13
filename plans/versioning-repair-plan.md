@@ -60,11 +60,11 @@ string. So the scheme change carries no runtime behavioural risk.
 
 Four sources disagree:
 
-| Source | Value |
-|---|---|
-| Git tags | `v1.3.13` |
-| `package.json` | `1.2.0-dev.1` |
-| Newest spec file in `docs/generated/` | `v1.3.8`, committed by hand (`edac4d9e`) |
+| Source                                                  | Value                                        |
+| ------------------------------------------------------- | -------------------------------------------- |
+| Git tags                                                | `v1.3.13`                                    |
+| `package.json`                                          | `1.2.0-dev.1`                                |
+| Newest spec file in `docs/generated/`                   | `v1.3.8`, committed by hand (`edac4d9e`)     |
 | `docs/generated/openapi-specs.js` (drives the dropdown) | tops out at `1.2.0-dev.1`, no `1.3.x` at all |
 
 `openapi-specs.js` references `tunarr-v1.2.0-dev.1-openapi.json`, which is **not tracked**
@@ -198,7 +198,7 @@ upgrade, hit a bug, roll back. No version number was ever going to fix it.
 2. **Refuse to start on a newer schema.** `DrizzleMigrator.getUnknownAppliedMigrations()`
    compares the migrations table against the binary's known migrations; unknown entries
    raise `DatabaseSchemaTooNewError`, which names the offending migration and points at the
-   `*-pre-migration-*.bak` file. The guard runs *before* the pending-migration check.
+   `*-pre-migration-*.bak` file. The guard runs _before_ the pending-migration check.
 3. **Backup rotation split.** `bootstrap.ts` rotates two separate pools (keep last 3 each)
    so copy-migrator `.bak` files cannot evict the pre-migration snapshot.
 
@@ -213,7 +213,7 @@ rolling back.
 
 - Tunarr is not backwards compatible across versions. Upgrades may migrate the database.
 - Rollback is supported via the pre-migration snapshot, and the docs say where it is.
-- The version number denotes *when*, not *what changed*. Read the release notes for that.
+- The version number denotes _when_, not _what changed_. Read the release notes for that.
 - Release notes live in GitHub Releases; there is no in-repo changelog.
 - The API spec dropdown is a historical record, not a compatibility contract.
 
@@ -221,12 +221,12 @@ rolling back.
 
 ## Suggested order
 
-| # | Phase | Status |
-|---|---|---|
-| 1 | Phase 3 — rollback safety | **Done** (`faee0050`), unmerged |
-| 2 | Phase 1 — CalVer release workflow | **Built** (PR #2051), needs a CI dry run on `main` after merge |
-| 3 | Phase 2 — spec naming | Blocked on Phase 1 landing |
-| 4 | Phase 4 — contract docs | Ready; Phase 3 is done |
+| #   | Phase                             | Status                                                         |
+| --- | --------------------------------- | -------------------------------------------------------------- |
+| 1   | Phase 3 — rollback safety         | **Done** (`faee0050`), unmerged                                |
+| 2   | Phase 1 — CalVer release workflow | **Built** (PR #2051), needs a CI dry run on `main` after merge |
+| 3   | Phase 2 — spec naming             | Blocked on Phase 1 landing                                     |
+| 4   | Phase 4 — contract docs           | Ready; Phase 3 is done                                         |
 
 ## Open questions
 

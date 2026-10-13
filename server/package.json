@@ -9,28 +9,30 @@
   "main": "src/index.ts",
   "bin": "dist/bundle.cjs",
   "scripts": {
-    "build-dev": "cross-env NODE_ENV=development NODE_OPTIONS=--max-old-space-size=8192 tsgo -p tsconfig.build.json --noEmit --watch",
+    "bench:worker-boundary": "cross-env NODE_ENV=development tsx scripts/worker-boundary-bench.ts",
+    "bench:worker-pool": "cross-env NODE_ENV=development tsx scripts/worker-pool-ab.ts",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsgo -p tsconfig.build.json",
+    "build-dev": "cross-env NODE_ENV=development NODE_OPTIONS=--max-old-space-size=8192 tsgo -p tsconfig.build.json --noEmit --watch",
     "bundle": "dotenvx run -- tsx scripts/bundle.ts",
-    "make-bin": "dotenvx run -- tsx scripts/make-bin.ts",
     "clean": "rimraf --glob ./build/ ./dist/ ./bin/*",
     "debug": "cross-env NODE_ENV=development dotenvx run -f .env.development -- tsx watch --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-wait ./src",
-    "predev": "tsx scripts/generateEnvModule.ts",
     "dev": "cross-env NODE_ENV=development dotenvx run -f .env.development -- tsx watch --heap-snapshot-on-oom --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' --ignore 'src/**/*.test.ts' ./src/index.ts",
+    "download-ersatztv-next": "tsx scripts/download-ersatztv-next.ts",
     "generate-env": "tsx scripts/generateEnvModule.ts",
+    "generate-etv-schemas": "tsx scripts/generate-etv-schemas.ts",
     "generate-openapi": "tsx src/index.ts generate-openapi",
     "install-meilisearch": "tsx scripts/download-meilisearch.ts",
-    "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
     "kysely": "dotenv -e .env.development -- kysely",
+    "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
+    "make-bin": "dotenvx run -- tsx scripts/make-bin.ts",
+    "predev": "tsx scripts/generateEnvModule.ts",
     "preinstall": "npx only-allow pnpm",
     "resolve-migrations": "tsx scripts/resolve-migrations.ts",
     "run-fixer": "dotenv -e .env.development -- tsx src/index.ts fixer",
-    "test:watch": "vitest --typecheck.tsconfig tsconfig.test.json --watch",
     "test": "vitest --typecheck.tsconfig tsconfig.test.json --run",
     "test:local": "vitest --config vitest.local.config.ts --typecheck.tsconfig tsconfig.test.json --run",
+    "test:watch": "vitest --typecheck.tsconfig tsconfig.test.json --watch",
     "test:worker-smoke": "cross-env NODE_ENV=development tsx scripts/worker-smoke-test.ts",
-    "bench:worker-pool": "cross-env NODE_ENV=development tsx scripts/worker-pool-ab.ts",
-    "bench:worker-boundary": "cross-env NODE_ENV=development tsx scripts/worker-boundary-bench.ts",
     "tunarr": "dotenv -e .env.development -- tsx src/index.ts",
     "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsgo -p tsconfig.build.json --noEmit --diagnostics"
   },
@@ -110,6 +112,7 @@
     "@types/split2": "^4.2.3",
     "@types/tmp": "^0.2.6",
     "@types/unzip-stream": "^0.3.4",
+    "@types/unzipper": "^0.10.11",
     "@types/uuid": "^9.0.8",
     "@types/yargs": "^17.0.33",
     "@typescript/native-preview": "catalog:",
@@ -138,9 +141,24 @@
     "tsx": "^4.20.5",
     "typed-emitter": "^2.1.0",
     "typescript": "catalog:",
+    "unzipper": "^0.12.5",
     "vitest": "catalog:vitest"
   },
   "meilisearch": {
     "version": "1.30.0"
+  },
+  "ersatztvNext": {
+    "releaseRepo": "ErsatzTV/next",
+    "releaseTag": "v0.2.0",
+    "commit": "b340569997927ead2ff79ebd826a895409764164",
+    "sha256": {
+      "linux-x64": "3d8257e79a9f95e0f2591424bfbdacabdd6bae541475f5bf4f6a190818b76333",
+      "linux-musl-x64": "96d4d384fa230c005c2db103817f641fa07310f5410ac91df322e199bd8fa48d",
+      "linux-arm64": "9ffcf88bcfc92dc3c44d1edb149b2e4f3b184b4b981e0e01b1696930d9057cde",
+      "macos-x64": "c9725d66815f9f3784011f02f66e83b96eedd7789b8e15ec8f0e0b755fefe1ba",
+      "macos-arm64": "d715cee27da7cc175f422b6a2efbb8c6f370582503f6647489008248c6c53dfe",
+      "windows-x64": "e750450d3265594dc3e6a6eb5d3402759d303c8bbacf36c48266e4915dc19c17"
+    },
+    "note": "Schemas under src/stream/etv/schema are vendored from this commit. The server refuses a bundled worker whose version differs from releaseTag."
   }
 }

@@ -1,0 +1,690 @@
+{
+  "$id": "https://ersatztv.org/channel/version/0.1.1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ChannelConfig",
+  "type": "object",
+  "properties": {
+    "fallback": {
+      "$ref": "#/$defs/FallbackConfig",
+      "default": {
+        "show_error": false
+      }
+    },
+    "ffmpeg": {
+      "$ref": "#/$defs/FfmpegConfig"
+    },
+    "normalization": {
+      "$ref": "#/$defs/NormalizationConfig"
+    },
+    "playout": {
+      "$ref": "#/$defs/PlayoutConfig"
+    },
+    "version": {
+      "description": "Schema version URI, e.g. \"https://ersatztv.org/channel/version/0.1.0\". Missing means 0.0.0.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "playout",
+    "ffmpeg",
+    "normalization"
+  ],
+  "$defs": {
+    "AudioCopyFormat": {
+      "title": "AudioCopyFormat",
+      "description": "Limited to codecs that mux correctly into HLS MPEG-TS.",
+      "type": "string",
+      "enum": [
+        "aac",
+        "ac3",
+        "eac3",
+        "mp2",
+        "mp3"
+      ]
+    },
+    "AudioFormat": {
+      "title": "AudioFormat",
+      "type": "string",
+      "enum": [
+        "aac",
+        "ac3"
+      ]
+    },
+    "AudioLoudnessConfig": {
+      "type": "object",
+      "properties": {
+        "integrated_target": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "range_target": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "true_peak": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      }
+    },
+    "AudioNormalizationConfig": {
+      "type": "object",
+      "properties": {
+        "bitrate_kbps": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "buffer_kbps": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "channels": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "copy_formats": {
+          "description": "Source codecs to copy when `mode` is `copy`. Default: aac, ac3, eac3, mp3.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/AudioCopyFormat"
+          }
+        },
+        "format": {
+          "description": "Codec for transcoded items. When `mode` is `copy`, used only for items that are not copied.",
+          "$ref": "#/$defs/AudioFormat",
+          "default": "aac"
+        },
+        "loudness": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AudioLoudnessConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mode": {
+          "description": "`copy`: copy items with a source codec in `copy_formats`. Transcode all other items.",
+          "$ref": "#/$defs/StreamMode",
+          "default": "transcode"
+        },
+        "normalize_loudness": {
+          "type": "boolean",
+          "default": false
+        },
+        "sample_rate_hz": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "BwdifCudaOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BwdifOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DeinterlaceQsvOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DeinterlaceVaapiOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "FallbackConfig": {
+      "description": "Controls the content that replaces scheduled content when there is nothing to play\n(a gap in the playout) or when the scheduled item fails",
+      "type": "object",
+      "properties": {
+        "show_error": {
+          "description": "Burn the reason for the fallback into the fallback video; this is always burned,\nregardless of the normalization subtitle mode",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "FfmpegConfig": {
+      "type": "object",
+      "properties": {
+        "disabled_filters": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "ffmpeg_path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "ffprobe_path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "preferred_filters": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "reports_folder": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      }
+    },
+    "HardwareAccel": {
+      "type": "string",
+      "enum": [
+        "amf",
+        "cuda",
+        "qsv",
+        "rkmpp",
+        "vaapi",
+        "videotoolbox",
+        "vulkan"
+      ]
+    },
+    "LibplaceboOptions": {
+      "type": "object",
+      "properties": {
+        "tonemapping": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "NormalizationConfig": {
+      "type": "object",
+      "properties": {
+        "audio": {
+          "$ref": "#/$defs/AudioNormalizationConfig"
+        },
+        "subtitle": {
+          "$ref": "#/$defs/SubtitleNormalizationConfig",
+          "default": {
+            "fonts_folder": null,
+            "force_style": null,
+            "mode": "burn"
+          }
+        },
+        "video": {
+          "$ref": "#/$defs/VideoNormalizationConfig"
+        }
+      },
+      "required": [
+        "audio",
+        "video"
+      ]
+    },
+    "PlayoutConfig": {
+      "type": "object",
+      "properties": {
+        "folder": {
+          "type": "string"
+        },
+        "virtual_start": {
+          "description": "RFC3339 formatted date/time, e.g. 2026-04-13T00:24:21.527-05:00",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "folder"
+      ]
+    },
+    "ScalingMode": {
+      "type": "string",
+      "enum": [
+        "scale_and_pad",
+        "stretch",
+        "crop"
+      ]
+    },
+    "StreamMode": {
+      "title": "StreamMode",
+      "type": "string",
+      "enum": [
+        "transcode",
+        "copy"
+      ]
+    },
+    "SubtitleMode": {
+      "title": "SubtitleMode",
+      "type": "string",
+      "enum": [
+        "burn",
+        "convert"
+      ]
+    },
+    "SubtitleNormalizationConfig": {
+      "type": "object",
+      "properties": {
+        "fonts_folder": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "force_style": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "mode": {
+          "$ref": "#/$defs/SubtitleMode",
+          "default": "burn"
+        }
+      }
+    },
+    "TonemapOpenclOptions": {
+      "type": "object",
+      "properties": {
+        "tonemap": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "TonemapOptions": {
+      "type": "object",
+      "properties": {
+        "tonemap": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "VaapiDriver": {
+      "type": "string",
+      "enum": [
+        "ihd",
+        "i965",
+        "radeonsi"
+      ]
+    },
+    "VideoFilterOptionsConfig": {
+      "type": "object",
+      "properties": {
+        "bwdif": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BwdifOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bwdif_cuda": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BwdifCudaOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "deinterlace_qsv": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeinterlaceQsvOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "deinterlace_vaapi": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeinterlaceVaapiOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "libplacebo": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LibplaceboOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tonemap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TonemapOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tonemap_opencl": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TonemapOpenclOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "w3fdif": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/W3fdifOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "yadif": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/YadifOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "yadif_cuda": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/YadifCudaOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false
+    },
+    "VideoFormat": {
+      "title": "VideoFormat",
+      "type": "string",
+      "enum": [
+        "h264",
+        "hevc",
+        "mpeg2video"
+      ]
+    },
+    "VideoNormalizationConfig": {
+      "type": "object",
+      "properties": {
+        "accel": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HardwareAccel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "amf_device": {
+          "description": "Windows only. Unset picks the discrete AMD adapter.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "bit_depth": {
+          "type": "integer",
+          "format": "uint8",
+          "default": 8,
+          "maximum": 255,
+          "minimum": 0
+        },
+        "bitrate_kbps": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "buffer_kbps": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "copy_formats": {
+          "description": "Source codecs to copy when `mode` is `copy`. Default: h264, hevc.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/VideoFormat"
+          }
+        },
+        "deinterlace": {
+          "type": "boolean",
+          "default": false
+        },
+        "filters": {
+          "$ref": "#/$defs/VideoFilterOptionsConfig",
+          "default": {
+            "bwdif": null,
+            "bwdif_cuda": null,
+            "deinterlace_qsv": null,
+            "deinterlace_vaapi": null,
+            "libplacebo": null,
+            "tonemap": null,
+            "tonemap_opencl": null,
+            "w3fdif": null,
+            "yadif": null,
+            "yadif_cuda": null
+          }
+        },
+        "format": {
+          "description": "Codec for transcoded items. When `mode` is `copy`, this and all other video settings apply\nonly to items that are not copied.",
+          "$ref": "#/$defs/VideoFormat",
+          "default": "h264"
+        },
+        "frame_rate": {
+          "description": "Output frame rate, `N` or `N/D` (e.g. `25`, `30000/1001`).\nFrames are dropped or repeated to match it.\nIn `copy` mode, only items at this rate are copied. Unset keeps the source rate.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "pattern": "^[1-9][0-9]*(/[1-9][0-9]*)?$"
+        },
+        "height": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "mode": {
+          "description": "`copy`: copy items with a source codec in `copy_formats`. Transcode all other items, and\nitems with graphics, burned-in subtitles, still images, Dolby Vision profile 5 or AVI sources.",
+          "$ref": "#/$defs/StreamMode",
+          "default": "transcode"
+        },
+        "scaling_mode": {
+          "$ref": "#/$defs/ScalingMode",
+          "default": "scale_and_pad"
+        },
+        "vaapi_device": {
+          "description": "Unset uses `/dev/dri/renderD128`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "vaapi_driver": {
+          "description": "Unset lets libva select the driver for `vaapi_device`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VaapiDriver"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "W3fdifOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "YadifCudaOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "YadifOptions": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

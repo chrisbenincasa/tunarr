@@ -2,7 +2,7 @@
 > after items were implemented and further code was read.
 >
 > - **Item 1 is DONE**, shipped as `fix: scope guide rebuild to the saved
->   channel on lineup update`. It needed more than the one-liner sketched below:
+channel on lineup update`. It needed more than the one-liner sketched below:
 >   `ScheduledTask.runNow` could not carry a request at all (args were fixed at
 >   schedule-registration time via `presetArgs`), and the per-channel branch had
 >   to be corrected to share the all-channels branch's hour-rounded start time
@@ -14,7 +14,7 @@
 >   editors.** `TimeSlotEditorPage.tsx:205` sends `type: 'time'` and
 >   `RandomSlotEditorPage.tsx:135` sends `type: 'random'` — program IDs plus slot
 >   config only. The `type: 'manual'` full-lineup send at
->   `ChannelProgrammingConfig.tsx:111` is the *manual* programming editor, a
+>   `ChannelProgrammingConfig.tsx:111` is the _manual_ programming editor, a
 >   different page. The 100MB `bodyLimit` is ~100x over-provisioned but the body
 >   is small.
 > - **Consequently the real remaining block on a slot save is the scheduler
@@ -36,7 +36,7 @@ Fix plan
 server/src/api/channelsApi.ts:556 — pass the channel ID so UpdateXmlTvTask takes its existing per-channel branch (UpdateXmlTvTask.ts:82) instead of buildAllChannels.
 
 GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
-  .runNow(true, { channelId: req.params.id })   // shape TBD — check Task2 request plumbing
+.runNow(true, { channelId: req.params.id }) // shape TBD — check Task2 request plumbing
 
 Two things to verify before writing it: that runNow's request argument actually reaches runInternal's request param, and that refreshGuide(duration, channelId, true) still rewrites XMLTV for the other channels' cached entries correctly (it should — cachedGuide retains them). This is the whole "all channels at once" symptom, and it's low-risk. Target main.
 
@@ -50,6 +50,7 @@ The issue 2087 plan owns validation ordering. Investigate the response re-read s
 3. Break up the slot-scheduling loop — feat
 
 TimeSlotService.ts:163 runs 365 days of slots in one uninterrupted tick. Either:
+
 - (a) flip TUNARR_USE_WORKER_POOL to default true (container.ts:154) — the machinery already exists and this moves the whole loop off-thread, or
 - (b) await throttle() every N iterations inside the while.
 

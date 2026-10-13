@@ -1,5 +1,8 @@
 import type { ChannelStreamMode, Watermark } from '@tunarr/types';
-import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
+import type {
+  SessionConcatStreamMode,
+  SessionStreamMode,
+} from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import type {
@@ -16,7 +19,7 @@ export type TranscodeSessionResult = {
 };
 
 export type ConcatOptions = {
-  mode: ChannelConcatStreamMode;
+  mode: SessionConcatStreamMode;
   outputFormat: OutputFormat;
 };
 
@@ -27,15 +30,41 @@ export type PlaceholderSessionOpts = {
   ptsOffset?: number;
 } & ({ kind: 'error'; title: string; subtitle?: string } | { kind: 'offline' });
 
+/**
+ * Whether a concat mode's child already emits normalized HLS, so the concat
+ * process can remux it instead of encoding it a second time.
+ *
+ * Exhaustive by type rather than a list to check against, because a mode
+ * missing from a list falls through to a full transcode silently — the output
+ * still plays, it just costs a second encode and the quality loss that brings.
+ */
+export const ConcatStreamModeRemuxes: Record<SessionConcatStreamMode, boolean> =
+  {
+    hls_concat: true,
+    hls_direct_concat: true,
+    hls_direct_v2_concat: true,
+
+    // The worker normalizes and encodes every item, so its playlist arrives in
+    // the same shape Tunarr's own HLS sessions produce.
+    etv_next_concat: true,
+
+    // Has its own concat path.
+    hls_slower_concat: false,
+
+    // Its child emits MPEG-TS, so there is no HLS to wrap.
+    mpegts_concat: false,
+  } as const;
+
 export const ConcatStreamModeToChildMode: Record<
-  ChannelConcatStreamMode,
-  ChannelStreamMode
+  SessionConcatStreamMode,
+  SessionStreamMode
 > = {
   hls_concat: 'hls',
   hls_slower_concat: 'hls_slower',
   mpegts_concat: 'mpegts',
   hls_direct_concat: 'hls_direct',
   hls_direct_v2_concat: 'hls_direct_v2',
+  etv_next_concat: 'etv_next',
 } as const;
 
 export type StreamSessionCreateArgs = {

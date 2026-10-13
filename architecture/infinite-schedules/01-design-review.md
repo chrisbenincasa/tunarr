@@ -8,28 +8,28 @@
 
 ## Branch history
 
-| Ref | Date | State |
-|---|---|---|
-| `a3e63e49` | 2026-01-27 | Original feature commit |
-| `tanstack-form-rewrite-infinite-schedules` | last 2026-03-20 | Local branch. Has 5 checkpoint commits that aren't in `4ca4b75d`. Holds the March filler playback-mode UI work |
-| `4ca4b75d` | 2026-04-30 | Slot linking, based on `dev@7d259340`. Clean: no conflict markers, legacy form intact, test constructor matches, playback-mode UI present |
-| `9eeafa1e` | 2026-06-18 | Rebased onto `dev@1abd59a3` and squashed. Damaged, see blockers. This is the PR head |
-| `origin/dev` | 2026-09-13 | 90 commits past `1abd59a3`, about 20 of them in scheduling |
+| Ref                                        | Date            | State                                                                                                                                     |
+| ------------------------------------------ | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `a3e63e49`                                 | 2026-01-27      | Original feature commit                                                                                                                   |
+| `tanstack-form-rewrite-infinite-schedules` | last 2026-03-20 | Local branch. Has 5 checkpoint commits that aren't in `4ca4b75d`. Holds the March filler playback-mode UI work                            |
+| `4ca4b75d`                                 | 2026-04-30      | Slot linking, based on `dev@7d259340`. Clean: no conflict markers, legacy form intact, test constructor matches, playback-mode UI present |
+| `9eeafa1e`                                 | 2026-06-18      | Rebased onto `dev@1abd59a3` and squashed. Damaged, see blockers. This is the PR head                                                      |
+| `origin/dev`                               | 2026-09-13      | 90 commits past `1abd59a3`, about 20 of them in scheduling                                                                                |
 
 ## Blockers
 
-| # | Blocker | Origin | Evidence |
-|---|---|---|---|
-| B1 | The stream looks up generated items by schedule UUID instead of channel UUID. The lookup always misses, and the stream silently falls back to the classic lineup | Original, present at `4ca4b75d` | `StreamProgramCalculator.ts:107-126,631-633` → `InfiniteScheduleDB.ts:707-721`. Verified |
-| B2 | The guide refill calls `generate(channel.uuid)` with no start time, so it regenerates from now over the existing buffer. `generationCursor` is written three times and never read. Overlapping rows are picked arbitrarily (`findFirst` with no `orderBy`) | Original, present at `4ca4b75d` | `TvGuideService.ts:1036`; `InfiniteScheduleGenerator.ts:185,639,1285,1771`. Verified |
-| B3 | Flex and redirect slots advance time 1 ms per visit when `padToMultiple` is 0, which is the default. Mixed with content slots, they emit 1 ms junk items. A schedule of only flex or redirect slots loops about 6×10⁸ times per 7-day buffer, and a redirect slot also stores an item each loop. A shuffle slot whose show is empty loops the same way. All of this runs inside the guide build | At PR head | `InfiniteScheduleGenerator.ts:933-969,1466,1486,1523`; `schema/InfiniteSchedule.ts:20`. Verified |
-| B4 | Classic `SlotWithFiller` moved from `LegacySlotFiller` (`types[]`) to `SlotFiller` (`type`). Saved lineups then fail `LineupSchema`, the adapter returns `null`, and lowdb keeps its empty default. A later write overwrites the file | Rebase. Classic used `LegacySlotFiller` at `4ca4b75d` | `types/src/api/CommonSlots.ts:185-187`; `SchemaBackedJsonDBAdapter.ts:45-69`; lowdb `Low.js:15-19`. Mechanism verified, overwrite inferred |
-| B5 | The migration chain is corrupt. The 0045 snapshot comes from another lineage: its `prevId` doesn't match, it has a stray `channel_custom_show` table, and it's missing tables. `0046` collides with `dev`'s `0046_melted_captain_flint`, and #2072 and #1897 both already claim `0047` | Likely rebase. `4ca4b75d` had `0045_add_slot_linking` | `meta/0045_snapshot.json`, `_journal.json`. Verified |
-| B6 | The web build fails. Two files contain committed conflict markers, and TS 5.9.3 reports 54 errors across 13 files. The classic `EditSlotProgrammingForm` lost its imports | Rebase. Clean at `4ca4b75d` | `routes/channels_/test.tsx:5-9`; `routes/library/fillers_/$fillerId/programming.tsx:8-20`. Verified |
-| B7 | All 37 planner tests fail. The tests pass `(logger, db, helper)` but the constructor takes `(db, helper)` | Rebase. They matched at `4ca4b75d` | `InfiniteScheduleGenerator.test.ts:215-221`; `InfiniteScheduleGenerator.ts:162-167`. Verified by running |
-| B8 | Nothing in the UI can assign a schedule to a channel. The Scheduling tab binds `scheduleId`, which the channel update route never writes, and no UI calls the assign endpoints | At PR head | `ChannelScheduleConfig.tsx:75-96`; `channelConverters.ts:64`; `channelsApi.ts:265`. Verified |
-| B9 | Saving a schedule wipes channel state. `replaceSlots` deletes and re-inserts every slot, and cascades erase slot state and generated items for every channel on the schedule. None of it runs in a transaction | At PR head | `InfiniteScheduleDB.ts:509-526`; `EditScheduleForm.tsx:63-65`. Server verified, web trigger inferred |
-| B10 | The dynamic slot's filler tab edits the wrong field. It binds `filler[].types`, but the server persists `fillerConfig`, so filler set in the UI never reaches the planner | Rebase and original | `EditScheduleSlotForm.tsx:607`; `SlotFillerDialogPanel.tsx:37,167`. Verified |
+| #   | Blocker                                                                                                                                                                                                                                                                                                                                                                                         | Origin                                                | Evidence                                                                                                                                   |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| B1  | The stream looks up generated items by schedule UUID instead of channel UUID. The lookup always misses, and the stream silently falls back to the classic lineup                                                                                                                                                                                                                                | Original, present at `4ca4b75d`                       | `StreamProgramCalculator.ts:107-126,631-633` → `InfiniteScheduleDB.ts:707-721`. Verified                                                   |
+| B2  | The guide refill calls `generate(channel.uuid)` with no start time, so it regenerates from now over the existing buffer. `generationCursor` is written three times and never read. Overlapping rows are picked arbitrarily (`findFirst` with no `orderBy`)                                                                                                                                      | Original, present at `4ca4b75d`                       | `TvGuideService.ts:1036`; `InfiniteScheduleGenerator.ts:185,639,1285,1771`. Verified                                                       |
+| B3  | Flex and redirect slots advance time 1 ms per visit when `padToMultiple` is 0, which is the default. Mixed with content slots, they emit 1 ms junk items. A schedule of only flex or redirect slots loops about 6×10⁸ times per 7-day buffer, and a redirect slot also stores an item each loop. A shuffle slot whose show is empty loops the same way. All of this runs inside the guide build | At PR head                                            | `InfiniteScheduleGenerator.ts:933-969,1466,1486,1523`; `schema/InfiniteSchedule.ts:20`. Verified                                           |
+| B4  | Classic `SlotWithFiller` moved from `LegacySlotFiller` (`types[]`) to `SlotFiller` (`type`). Saved lineups then fail `LineupSchema`, the adapter returns `null`, and lowdb keeps its empty default. A later write overwrites the file                                                                                                                                                           | Rebase. Classic used `LegacySlotFiller` at `4ca4b75d` | `types/src/api/CommonSlots.ts:185-187`; `SchemaBackedJsonDBAdapter.ts:45-69`; lowdb `Low.js:15-19`. Mechanism verified, overwrite inferred |
+| B5  | The migration chain is corrupt. The 0045 snapshot comes from another lineage: its `prevId` doesn't match, it has a stray `channel_custom_show` table, and it's missing tables. `0046` collides with `dev`'s `0046_melted_captain_flint`, and #2072 and #1897 both already claim `0047`                                                                                                          | Likely rebase. `4ca4b75d` had `0045_add_slot_linking` | `meta/0045_snapshot.json`, `_journal.json`. Verified                                                                                       |
+| B6  | The web build fails. Two files contain committed conflict markers, and TS 5.9.3 reports 54 errors across 13 files. The classic `EditSlotProgrammingForm` lost its imports                                                                                                                                                                                                                       | Rebase. Clean at `4ca4b75d`                           | `routes/channels_/test.tsx:5-9`; `routes/library/fillers_/$fillerId/programming.tsx:8-20`. Verified                                        |
+| B7  | All 37 planner tests fail. The tests pass `(logger, db, helper)` but the constructor takes `(db, helper)`                                                                                                                                                                                                                                                                                       | Rebase. They matched at `4ca4b75d`                    | `InfiniteScheduleGenerator.test.ts:215-221`; `InfiniteScheduleGenerator.ts:162-167`. Verified by running                                   |
+| B8  | Nothing in the UI can assign a schedule to a channel. The Scheduling tab binds `scheduleId`, which the channel update route never writes, and no UI calls the assign endpoints                                                                                                                                                                                                                  | At PR head                                            | `ChannelScheduleConfig.tsx:75-96`; `channelConverters.ts:64`; `channelsApi.ts:265`. Verified                                               |
+| B9  | Saving a schedule wipes channel state. `replaceSlots` deletes and re-inserts every slot, and cascades erase slot state and generated items for every channel on the schedule. None of it runs in a transaction                                                                                                                                                                                  | At PR head                                            | `InfiniteScheduleDB.ts:509-526`; `EditScheduleForm.tsx:63-65`. Server verified, web trigger inferred                                       |
+| B10 | The dynamic slot's filler tab edits the wrong field. It binds `filler[].types`, but the server persists `fillerConfig`, so filler set in the UI never reaches the planner                                                                                                                                                                                                                       | Rebase and original                                   | `EditScheduleSlotForm.tsx:607`; `SlotFillerDialogPanel.tsx:37,167`. Verified                                                               |
 
 ## Findings
 
@@ -80,6 +80,7 @@
 ### Runtime integration
 
 - **The lineup mode is implicit.** A nullable column is checked in two places. These consumers ignore it:
+
   - the materialized schedule API
   - troubleshoot
   - duration reconciliation
@@ -87,6 +88,7 @@
   - the classic lineup itself, which stays a silent fallback
 
   D2 replaces all of this with an explicit mode.
+
 - **The stream path skips classic safeguards** (`StreamProgramCalculator.ts:617-700`):
   - play history
   - retry throttling
@@ -129,19 +131,19 @@
 
 ## Parity with dev scheduler work since June
 
-| `dev` change | Dynamic engine |
-|---|---|
-| Mid-roll filler (#1917, #1988) | Missing |
-| Linked-slot independent filler (#1956) | Unaffected, because filler helpers are per slot |
-| Filler iterators loop forever (#1967) | Unaffected |
-| Random-slot cooldown (#2001) | Same bug: `cooldownMs` is never read |
-| Shuffle reshuffles when it wraps (`16638d03`) | Same bug, in separate code |
-| Season 0 filters (#1915, #1919) | Same bug, and there's no exclude filter |
-| `FillerPickerV2` slack (#1907), channel fallback filler | Not used, so flex never plays channel filler |
-| Mixed link modes, `rerunOverflow` | The dynamic validator rejects them |
-| Unique slot IDs (#1933) | Unaffected |
-| Lateness and overflow (#1965, open) | No equivalent (Q3) |
-| Guide retry (#2000), `guideBuildLock` | Conflicts (see runtime integration) |
+| `dev` change                                            | Dynamic engine                                  |
+| ------------------------------------------------------- | ----------------------------------------------- |
+| Mid-roll filler (#1917, #1988)                          | Missing                                         |
+| Linked-slot independent filler (#1956)                  | Unaffected, because filler helpers are per slot |
+| Filler iterators loop forever (#1967)                   | Unaffected                                      |
+| Random-slot cooldown (#2001)                            | Same bug: `cooldownMs` is never read            |
+| Shuffle reshuffles when it wraps (`16638d03`)           | Same bug, in separate code                      |
+| Season 0 filters (#1915, #1919)                         | Same bug, and there's no exclude filter         |
+| `FillerPickerV2` slack (#1907), channel fallback filler | Not used, so flex never plays channel filler    |
+| Mixed link modes, `rerunOverflow`                       | The dynamic validator rejects them              |
+| Unique slot IDs (#1933)                                 | Unaffected                                      |
+| Lateness and overflow (#1965, open)                     | No equivalent (Q3)                              |
+| Guide retry (#2000), `guideBuildLock`                   | Conflicts (see runtime integration)             |
 
 ## Target architecture
 
