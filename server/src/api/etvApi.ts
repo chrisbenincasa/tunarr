@@ -374,10 +374,7 @@ export class EtvNextApiController implements ApiController {
         return res.send({
           supported: unsupported.length === 0,
           unsupported,
-          ignored: findIgnoredSettings({
-            transcodeConfig,
-            ffmpegSettings: req.serverCtx.settings.ffmpegSettings(),
-          }),
+          ignored: findIgnoredSettings(transcodeConfig),
         });
       },
     );
