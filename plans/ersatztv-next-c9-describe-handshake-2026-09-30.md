@@ -1,6 +1,6 @@
 # ErsatzTV next — C9 capability handshake
 
-> **Status (09/30/2026):** Planned. Verified against upstream `091e174`. Nothing filed. Not a ship gate. Next step is the design issue in §3, after B2's issue, so the maintainer isn't handed two design threads at once.
+> **Status (10/13/2026):** Planned. Still not built upstream at `v0.2.2`. Not a ship gate. Citations from `091e174` have moved: the subcommands are `Commands` at `main.rs:31`, the ready and heartbeat constants are at `lib.rs:14-18`, the playlist names at `channel_session.rs:147-178`, `pipeline.rs:37-38` is `:44-45`, and `playout.rs:14` is `:15`. The claim that `channel_config.json` has no version is stale since #276. The draft's schemas should read playout `0.0.6` and channel config `0.1.2`. Next step is the design issue in §3, after the B2 failure-budget issue.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md). The argument is in main plan §15.C, "C9 in full."
 
