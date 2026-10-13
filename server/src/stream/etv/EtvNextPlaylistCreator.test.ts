@@ -28,8 +28,8 @@ describe('createMultivariantPlaylist', () => {
       [
         '#EXTM3U',
         '#EXT-X-VERSION:6',
-        '#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English",' +
-          'DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,LANGUAGE="en",' +
+        '#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="Subtitles",' +
+          'DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,' +
           'URI="/stream/channels/abc-123/etv_next/live_sub.m3u8"',
         '#EXT-X-STREAM-INF:BANDWIDTH=11211200,SUBTITLES="subs"',
         '/stream/channels/abc-123/etv_next/live.m3u8',
