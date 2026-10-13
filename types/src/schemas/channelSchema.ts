@@ -202,6 +202,12 @@ export const SaveableChannelSchema = ChannelSchema.omit({
     watermark: StrictWatermarkSchema.optional(),
   });
 
+// A missing startTime leaves the stored value unchanged. Server-computed
+// rebases are exact and must survive saves of unrelated settings.
+export const UpdateChannelRequestSchema = SaveableChannelSchema.partial({
+  startTime: true,
+});
+
 export const NewChannelSaveRequestSchema = z.object({
   type: z.literal('new'),
   channel: SaveableChannelSchema,

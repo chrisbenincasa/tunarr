@@ -131,3 +131,44 @@ describe('PUT /channels/:id - values are stored as submitted or rejected', () =>
     expect(get.json().watermark.opacity).toBe(42);
   });
 });
+
+describe('PUT /channels/:id - startTime changes only when submitted', () => {
+  // Off-minute, like the exact values ReconcileProgramDurationsTask writes.
+  const rebasedStartTime = 1_700_000_012_345;
+
+  async function getChannel() {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/channels/${channelId}`,
+    });
+    expect(res.statusCode).toBe(200);
+    return res.json<{ name: string; startTime: number }>();
+  }
+
+  test('keeps a server-rebased startTime when the request omits it', async () => {
+    await container
+      .get<ChannelDB>(KEYS.ChannelDB)
+      .updateChannelStartTime(channelId, rebasedStartTime);
+
+    const { startTime: _, ...payload } = channelPayload();
+    const res = await put({ ...payload, name: 'Renamed Channel' });
+    expect(res.statusCode, res.body).toBe(200);
+
+    const channel = await getChannel();
+    expect(channel.name).toBe('Renamed Channel');
+    expect(channel.startTime).toBe(rebasedStartTime);
+  });
+
+  test('rounds a submitted startTime down to the minute', async () => {
+    const res = await put({
+      ...channelPayload(),
+      startTime: rebasedStartTime,
+    });
+    expect(res.statusCode, res.body).toBe(200);
+
+    const channel = await getChannel();
+    expect(channel.startTime).toBe(
+      Math.floor(rebasedStartTime / 60_000) * 60_000,
+    );
+  });
+});

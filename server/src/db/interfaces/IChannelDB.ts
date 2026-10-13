@@ -23,6 +23,7 @@ import type {
   CondensedChannelProgramming,
   ContentProgram,
   SaveableChannel,
+  UpdateChannelRequest,
 } from '@tunarr/types';
 import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import type { ContentProgramType } from '@tunarr/types/schemas';
@@ -100,7 +101,7 @@ export interface IChannelDB {
 
   updateChannel(
     id: string,
-    updateReq: SaveableChannel,
+    updateReq: UpdateChannelRequest,
   ): Promise<
     ChannelAndLineup<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>
   >;
