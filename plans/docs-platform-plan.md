@@ -27,33 +27,33 @@ started. Two decisions are open (see Open questions).
 
 ## Current state
 
-| Part | Today |
-|---|---|
-| Generator | MkDocs 1.6.1 |
-| Theme | Material, with `custom_dir: docs/overrides` |
-| Plugins | `search`, `glightbox` |
-| Markdown extras | admonitions (19 files), `pymdownx.snippets` auto-append, `abbr`, `md_in_html` |
-| Deploy | `.github/workflows/docs.yml` runs `mkdocs gh-deploy --force` on `main` pushes touching `docs/**` |
-| Hosting | GitHub Pages, `gh-pages` branch, `docs/CNAME` = tunarr.com |
-| API reference | `docs/api-docs.html` loads Scalar from jsdelivr; dropdown from `docs/generated/openapi-specs.js` |
-| Local preview | `scripts/run-docs-local.sh` builds `docker/docs.Dockerfile` |
+| Part            | Today                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| Generator       | MkDocs 1.6.1                                                                                     |
+| Theme           | Material, with `custom_dir: docs/overrides`                                                      |
+| Plugins         | `search`, `glightbox`                                                                            |
+| Markdown extras | admonitions (19 files), `pymdownx.snippets` auto-append, `abbr`, `md_in_html`                    |
+| Deploy          | `.github/workflows/docs.yml` runs `mkdocs gh-deploy --force` on `main` pushes touching `docs/**` |
+| Hosting         | GitHub Pages, `gh-pages` branch, `docs/CNAME` = tunarr.com                                       |
+| API reference   | `docs/api-docs.html` loads Scalar from jsdelivr; dropdown from `docs/generated/openapi-specs.js` |
+| Local preview   | `scripts/run-docs-local.sh` builds `docker/docs.Dockerfile`                                      |
 
 ## Defects in the current setup
 
 These exist regardless of which tool is chosen.
 
-| # | Defect | Evidence | Fix |
-|---|---|---|---|
-| D1 | Internal docs are public | MkDocs publishes every file under `docs/`. Deploy of `882829f` (2026-09-10) put `architecture/backend-arch-review-2026-08-26.html`, `architecture/server/` and `architecture/01-editor-collapse/` on tunarr.com | Move `docs/architecture/` out of `docs/`, or add it to `exclude_docs` |
-| D2 | Unlinked pages are published | `configure/scheduling/balance.md`, `configure/scheduling/slot-linking.md`, `configure/transcoding.md`, `search_syntax.html` are live but absent from `nav` | Add to `nav` or delete |
-| D3 | API dropdown is stale and has a 404 | `openapi-specs.js` tops out at `1.2.0-dev.1`, which is untracked. `v1.3.8` spec is tracked but not listed. Releases are at `v1.3.14` | Owned by `versioning-repair-plan.md` Phase 2 |
-| D4 | Docs edits on `dev` are invisible | Deploy runs on `main` only. `mkdocs.yml:4` sets `edit_uri: edit/dev/docs/` | Phase 4 (dev channel) |
-| D5 | Builds are unpinned | `docs.yml:32` installs without versions. `docs.Dockerfile` uses the `latest` image and installs unused `mike`. `api-docs.html:16` loads Scalar without a version | Pin all three |
-| D6 | Header override will drift | `docs/overrides/partials/header.html` is a full copy of a Material partial marked "do not edit" | Re-derive during Phase 3, or replace with a smaller override |
-| D7 | No build check on PRs | Broken links and nav errors surface only on deploy after merge | Add a PR workflow running a strict build |
-| D8 | Alpha status is half-wired | `mkdocs.yml:133` defines status `new`. `extra.css:29` styles status `alpha`. No page sets `status:` | Rename the key to `alpha` |
-| D9 | Alpha notes are stale | `plex.md:22` and `jellyfin.md:39` say "will be available in v1.0" | Replace with `since()` (Phase 5) |
-| D10 | Sample abbreviations on every page | `docs-extras/includes/definitions.md` still holds the HTML/W3C examples | Replace with real terms or drop the auto-append |
+| #   | Defect                              | Evidence                                                                                                                                                                                                        | Fix                                                                   |
+| --- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| D1  | Internal docs are public            | MkDocs publishes every file under `docs/`. Deploy of `882829f` (2026-09-10) put `architecture/backend-arch-review-2026-08-26.html`, `architecture/server/` and `architecture/01-editor-collapse/` on tunarr.com | Move `docs/architecture/` out of `docs/`, or add it to `exclude_docs` |
+| D2  | Unlinked pages are published        | `configure/scheduling/balance.md`, `configure/scheduling/slot-linking.md`, `configure/transcoding.md`, `search_syntax.html` are live but absent from `nav`                                                      | Add to `nav` or delete                                                |
+| D3  | API dropdown is stale and has a 404 | `openapi-specs.js` tops out at `1.2.0-dev.1`, which is untracked. `v1.3.8` spec is tracked but not listed. Releases are at `v1.3.14`                                                                            | Owned by `versioning-repair-plan.md` Phase 2                          |
+| D4  | Docs edits on `dev` are invisible   | Deploy runs on `main` only. `mkdocs.yml:4` sets `edit_uri: edit/dev/docs/`                                                                                                                                      | Phase 4 (dev channel)                                                 |
+| D5  | Builds are unpinned                 | `docs.yml:32` installs without versions. `docs.Dockerfile` uses the `latest` image and installs unused `mike`. `api-docs.html:16` loads Scalar without a version                                                | Pin all three                                                         |
+| D6  | Header override will drift          | `docs/overrides/partials/header.html` is a full copy of a Material partial marked "do not edit"                                                                                                                 | Re-derive during Phase 3, or replace with a smaller override          |
+| D7  | No build check on PRs               | Broken links and nav errors surface only on deploy after merge                                                                                                                                                  | Add a PR workflow running a strict build                              |
+| D8  | Alpha status is half-wired          | `mkdocs.yml:133` defines status `new`. `extra.css:29` styles status `alpha`. No page sets `status:`                                                                                                             | Rename the key to `alpha`                                             |
+| D9  | Alpha notes are stale               | `plex.md:22` and `jellyfin.md:39` say "will be available in v1.0"                                                                                                                                               | Replace with `since()` (Phase 5)                                      |
+| D10 | Sample abbreviations on every page  | `docs-extras/includes/definitions.md` still holds the HTML/W3C examples                                                                                                                                         | Replace with real terms or drop the auto-append                       |
 
 ## Why mike failed before
 
@@ -80,13 +80,13 @@ If mike is ever retried, it needs all of the following.
 
 ## Tool options
 
-| Option | Migration effort | Two channels | Page badges | Inline "since" badges | Main risk |
-|---|---|---|---|---|---|
-| Zensical | Low. Reads `mkdocs.yml`; search built in; glightbox since 0.0.35 | Plain build per channel | `status` front matter | `macros` plugin (since 0.0.40) | Pre-1.0; header override and custom Python macros untested |
-| Material, pinned | None | Plain build per channel | `status` front matter | `mkdocs-macros-plugin` | No fixes after 2026-11-05; tied to MkDocs 1.x |
-| Starlight | Medium. `!!!` → `:::` in 19 files, nav to Astro config, lightbox plugin | Plain build per channel | Built-in sidebar badges | TS component, easy | ~50 pages rewritten; `starlight-versions` is snapshot-only and early |
-| Docusaurus | Medium–high | Built in, snapshot copies per version | Manual | Component | MDX strictness; more JS shipped |
-| VitePress | Medium | DIY | Manual | Component | Vue, used nowhere else in the repo |
+| Option           | Migration effort                                                        | Two channels                          | Page badges             | Inline "since" badges          | Main risk                                                            |
+| ---------------- | ----------------------------------------------------------------------- | ------------------------------------- | ----------------------- | ------------------------------ | -------------------------------------------------------------------- |
+| Zensical         | Low. Reads `mkdocs.yml`; search built in; glightbox since 0.0.35        | Plain build per channel               | `status` front matter   | `macros` plugin (since 0.0.40) | Pre-1.0; header override and custom Python macros untested           |
+| Material, pinned | None                                                                    | Plain build per channel               | `status` front matter   | `mkdocs-macros-plugin`         | No fixes after 2026-11-05; tied to MkDocs 1.x                        |
+| Starlight        | Medium. `!!!` → `:::` in 19 files, nav to Astro config, lightbox plugin | Plain build per channel               | Built-in sidebar badges | TS component, easy             | ~50 pages rewritten; `starlight-versions` is snapshot-only and early |
+| Docusaurus       | Medium–high                                                             | Built in, snapshot copies per version | Manual                  | Component                      | MDX strictness; more JS shipped                                      |
+| VitePress        | Medium                                                                  | DIY                                   | Manual                  | Component                      | Vue, used nowhere else in the repo                                   |
 
 GitHub Pages is adequate for stable. The only reason to change hosts is branch deploys and PR
 previews, which the dev channel wants anyway.
@@ -172,13 +172,13 @@ semver-comparable and sort above `1.3.x`, so the macro works across the scheme c
 
 ## Suggested order
 
-| Order | Phase | Notes |
-|---|---|---|
-| 1 | Phase 1 — internal docs | Do first; small and urgent |
-| 2 | Phase 2 — hygiene | Independent of tool choice |
-| 3 | Phase 3 — Zensical test | Before 2026-11-05 |
-| 4 | Phase 4 — dev channel | Needs host decision |
-| 5 | Phase 5 — markers | Needs Phase 3 macro check; most useful after Phase 4 |
+| Order | Phase                   | Notes                                                |
+| ----- | ----------------------- | ---------------------------------------------------- |
+| 1     | Phase 1 — internal docs | Do first; small and urgent                           |
+| 2     | Phase 2 — hygiene       | Independent of tool choice                           |
+| 3     | Phase 3 — Zensical test | Before 2026-11-05                                    |
+| 4     | Phase 4 — dev channel   | Needs host decision                                  |
+| 5     | Phase 5 — markers       | Needs Phase 3 macro check; most useful after Phase 4 |
 
 ## Open questions
 

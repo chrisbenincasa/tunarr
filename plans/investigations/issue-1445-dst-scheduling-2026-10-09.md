@@ -11,13 +11,13 @@
 
 ## Findings
 
-| # | Problem | Where | Evidence |
-|---|---------|-------|----------|
-| 1 | Time picker shows and saves the wrong hour during a DST day or week | `web/`, about 7 components | Code reading, matches the report |
-| 2 | Generator shifts the whole lineup 1 h when the start falls after a transition in the same period | `TimeSlotService.ts:173-216` | Scratch test, below |
-| 3 | Generator is 2 h off in the southern hemisphere | Same | Scratch test, below |
-| 4 | Generated lineups loop on fixed real time, so they likely drift 1 h at each transition | `StreamProgramCalculator.ts:635` | Code reading only |
-| 5 | Server ignores the schedule's `timeZoneOffset` and uses the process timezone | `types/src/api/TimeSlots.ts:175` | Code reading |
+| #   | Problem                                                                                          | Where                            | Evidence                         |
+| --- | ------------------------------------------------------------------------------------------------ | -------------------------------- | -------------------------------- |
+| 1   | Time picker shows and saves the wrong hour during a DST day or week                              | `web/`, about 7 components       | Code reading, matches the report |
+| 2   | Generator shifts the whole lineup 1 h when the start falls after a transition in the same period | `TimeSlotService.ts:173-216`     | Scratch test, below              |
+| 3   | Generator is 2 h off in the southern hemisphere                                                  | Same                             | Scratch test, below              |
+| 4   | Generated lineups loop on fixed real time, so they likely drift 1 h at each transition           | `StreamProgramCalculator.ts:635` | Code reading only                |
+| 5   | Server ignores the schedule's `timeZoneOffset` and uses the process timezone                     | `types/src/api/TimeSlots.ts:175` | Code reading                     |
 
 ### 1. Web time picker
 
@@ -45,13 +45,13 @@
 
 Scratch test (deleted): a movie slot at 00:00 and a show slot at 18:00, 1 h programs, `padMs` 1 h. The table shows when the show first airs each day, in wall-clock time.
 
-| TZ | Case | Show airs at |
-|----|------|--------------|
-| America/New_York | Daily, start 10/31/2025 00:00, spans fall-back | 18:00 (correct) |
-| America/New_York | Daily, start 11/02/2025 12:00, after that morning's fall-back | 17:00 every day |
-| America/New_York | Weekly, show Wed 18:00, start Wed 11/05/2025 | 17:00 every week |
-| Australia/Sydney | Daily, spans spring-forward 10/05/2025 | 20:00 on the transition day, then the slot runs past midnight |
-| Australia/Sydney | Daily, spans fall-back 04/06/2025 | 16:00 every day after |
+| TZ               | Case                                                          | Show airs at                                                  |
+| ---------------- | ------------------------------------------------------------- | ------------------------------------------------------------- |
+| America/New_York | Daily, start 10/31/2025 00:00, spans fall-back                | 18:00 (correct)                                               |
+| America/New_York | Daily, start 11/02/2025 12:00, after that morning's fall-back | 17:00 every day                                               |
+| America/New_York | Weekly, show Wed 18:00, start Wed 11/05/2025                  | 17:00 every week                                              |
+| Australia/Sydney | Daily, spans spring-forward 10/05/2025                        | 20:00 on the transition day, then the slot runs past midnight |
+| Australia/Sydney | Daily, spans fall-back 04/06/2025                             | 16:00 every day after                                         |
 
 - Existing tests (`TimeSlotService.test.ts:1990`) start at midnight in New York only, so they pass.
 - The existing spring-forward test expects the 18:00 slot to be skipped on 03/09/2025 and first air on 03/10. That is a symptom of the heuristic and should change.

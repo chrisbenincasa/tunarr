@@ -71,6 +71,7 @@ A single `season` filter then covers both, with no episode-number collision and 
     same episode `seasonIndex` expression for completeness/future partial updates.
 
 Notes:
+
 - Keep the existing top-level `index` fields untouched (episode number / season number
   / track number / album index). `seasonIndex` is additive.
 - `index` is **not** added to `filterable`, avoiding the "`index` means different
@@ -100,6 +101,7 @@ Add a numeric spec (place after the "Show Title" spec, ~line 90):
 ```
 
 Notes:
+
 - `visibleForLibraryTypes: ['shows']` records intent, but the current UI does not wire
   `mediaTypeFilter` into `SearchValueNode`, so the field displays for all library
   types today (same as the existing "Show Title" field). Acceptable; smart collections

@@ -7,13 +7,13 @@
 - Script drives `/web/guide`, steps zoom from 1h to 8h, and measures the grid. Run at 1600, 1100, and 800px viewports.
 - Dev DB has one channel of long movies. The many-short-programs case was simulated by cloning one program block 80 times in the live DOM.
 
-| Case | Result |
-| --- | --- |
-| 1600px and 1100px, all zoom levels | Grid fills its container. Block widths match program times. |
-| 800px, 6h and up | Grid grows past its 403px container (510, 510, 611px). The guide scrolls sideways, 6h and 7h render the same width, and right-hand time labels are cut off. |
-| 1600px, 80 short programs in one row | Grid grows from 1082px to 9756px. |
-| Any width, 4h and up | The current-time pill is clipped at the left edge ("2:19 PM", ":19 PM"). |
-| 1h | The trailing program renders as a 12–18px sliver with unreadable text. |
+| Case                                 | Result                                                                                                                                                      |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1600px and 1100px, all zoom levels   | Grid fills its container. Block widths match program times.                                                                                                 |
+| 800px, 6h and up                     | Grid grows past its 403px container (510, 510, 611px). The guide scrolls sideways, 6h and 7h render the same width, and right-hand time labels are cut off. |
+| 1600px, 80 short programs in one row | Grid grows from 1082px to 9756px.                                                                                                                           |
+| Any width, 4h and up                 | The current-time pill is clipped at the left edge ("2:19 PM", ":19 PM").                                                                                    |
+| 1h                                   | The trailing program renders as a 12–18px sliver with unreadable text.                                                                                      |
 
 ## Root cause
 
@@ -22,7 +22,7 @@
 - `fit-content` sizes the column from its children's intrinsic widths. Flex items default to `min-width: auto`, so each block and header slot refuses to shrink below its text or its padding and borders.
 - So when the labels or blocks don't fit, the column widens. The percentages then resolve against the wider column, and the whole guide scales out of proportion to the viewport.
 - More zoom means more header slots and more programs per row, so it triggers sooner at higher zoom and on narrow windows. That matches the reporter's "zoom 3–6 look identical."
-- The `minWidth: 100%` added after #1197 stops the grid from getting *narrower* than the container, which fixed the "too thin" symptom. It does nothing for the *wider* case.
+- The `minWidth: 100%` added after #1197 stops the grid from getting _narrower_ than the container, which fixed the "too thin" symptom. It does nothing for the _wider_ case.
 
 ## Fix options
 

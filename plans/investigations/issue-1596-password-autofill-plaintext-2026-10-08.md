@@ -21,13 +21,13 @@
 - Submitted via `fetch` and then removed the form, as Tunarr's dialog does.
 - Afterward, read the `autofill` and `autocomplete` tables in the profile's `Web Data` store.
 
-| Variant | Stored in form history |
-|---------|------------------------|
-| Password field, never revealed | `username` only |
-| Revealed after typing | `username` only |
-| Revealed before typing | `username` only |
-| Revealed, with `autocomplete` set to `off`, `current-password`, or `new-password` | `username` only |
-| Field is `type="text"` from page load (control) | `username` only |
+| Variant                                                                           | Stored in form history |
+| --------------------------------------------------------------------------------- | ---------------------- |
+| Password field, never revealed                                                    | `username` only        |
+| Revealed after typing                                                             | `username` only        |
+| Revealed before typing                                                            | `username` only        |
+| Revealed, with `autocomplete` set to `off`, `current-password`, or `new-password` | `username` only        |
+| Field is `type="text"` from page load (control)                                   | `username` only        |
 
 - Chromium 153 never stored the password value, even in the control. It appears to exclude password-named fields from form history.
 - Limits:
