@@ -413,7 +413,11 @@ export function createSlotProgramIterator(
       const programs =
         programBySlotType.custom[`custom-show.${slot.customShowId}` as const] ??
         [];
-      return new CustomProgramChunkedShuffle(slot.customShowId, programs);
+      return new CustomProgramChunkedShuffle(
+        slot.customShowId,
+        programs,
+        random,
+      );
     })
     .with({ type: 'custom-show' }, (slot) => {
       throw new Error(
@@ -478,6 +482,7 @@ export function createSlotProgramIterator(
           return new ContentProgramChunkedShuffle(
             programs,
             getProgramOrderer('next'),
+            random,
             slot.direction === 'asc',
           );
       }
@@ -727,6 +732,7 @@ function getContentProgramIterator(
       return new ContentProgramChunkedShuffle(
         programs,
         getProgramOrderer('next'),
+        random,
         slot.direction === 'asc',
       );
   }

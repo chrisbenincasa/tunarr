@@ -1882,6 +1882,107 @@ describe('TimeSlotService', () => {
     });
   });
 
+  describe('ordered shuffle reproducibility', () => {
+    const makeShowEpisodes = (showId: string, smartCollectionId?: string) =>
+      Array.from({ length: 20 }, (_, i) => ({
+        ...createFakeProgramOrm({
+          uuid: `${showId}-ep${i + 1}`,
+          title: `${showId} Episode ${i + 1}`,
+          type: 'episode',
+          duration: 30 * 60 * 1000,
+          episode: i + 1,
+          seasonNumber: 1,
+          tvShowUuid: showId,
+          show: { uuid: showId },
+        }),
+        parentFillerLists: [],
+        parentCustomShows: [],
+        parentSmartCollections: smartCollectionId ? [smartCollectionId] : [],
+      })) satisfies SlotSchedulerProgram[];
+
+    const scheduleWithSlot = (
+      slot: TimeSlotSchedule['slots'][number],
+    ): TimeSlotSchedule => ({
+      type: 'time',
+      flexPreference: 'end',
+      maxDays: 1,
+      padMs: 30 * 60 * 1000,
+      slots: [slot],
+      period: 'day',
+      latenessMs: 0,
+      overflow: { type: 'duration', maxMs: 0 },
+      timeZoneOffset: 0,
+    });
+
+    const seed = [42, 123, 456, 789];
+    const start = dayjs('2024-01-01T00:00:00.000Z');
+
+    test('same seed produces identical schedules for a show slot', async () => {
+      const programs = makeShowEpisodes('show1');
+      const schedule = scheduleWithSlot({
+        id: randomUUID(),
+        startTime: 0,
+        type: 'show',
+        showId: 'show1',
+        order: 'ordered_shuffle',
+        direction: 'asc',
+        seasonFilter: [],
+        seasonExcludeFilter: [],
+      });
+
+      const result1 = await scheduleTimeSlots(
+        schedule,
+        programs,
+        seed,
+        0,
+        start,
+      );
+      const result2 = await scheduleTimeSlots(
+        schedule,
+        programs,
+        seed,
+        0,
+        start,
+      );
+
+      expect(result1.lineup).toEqual(result2.lineup);
+    });
+
+    test('same seed produces identical schedules for a smart collection slot', async () => {
+      const smartCollectionId = randomUUID();
+      const programs = [
+        ...makeShowEpisodes('show1', smartCollectionId),
+        ...makeShowEpisodes('show2', smartCollectionId),
+        ...makeShowEpisodes('show3', smartCollectionId),
+      ];
+      const schedule = scheduleWithSlot({
+        id: randomUUID(),
+        startTime: 0,
+        type: 'smart-collection',
+        smartCollectionId,
+        order: 'ordered_shuffle',
+        direction: 'asc',
+      });
+
+      const result1 = await scheduleTimeSlots(
+        schedule,
+        programs,
+        seed,
+        0,
+        start,
+      );
+      const result2 = await scheduleTimeSlots(
+        schedule,
+        programs,
+        seed,
+        0,
+        start,
+      );
+
+      expect(result1.lineup).toEqual(result2.lineup);
+    });
+  });
+
   describe('max overflow', () => {
     test('inner loop allows programs to overflow into the overflow buffer', async () => {
       // Slot A (movie) at 0, Slot B (show) at 2h — bounds Slot A to 2 hours.
