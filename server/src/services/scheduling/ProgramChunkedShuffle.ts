@@ -5,8 +5,8 @@ import type {
 } from '@tunarr/types';
 import type { CondensedCustomProgram } from '@tunarr/types/schemas';
 import { orderBy } from 'lodash-es';
+import type { Random } from 'random-js';
 import { IndexBasedProgramIterator } from './ProgramIterator.js';
-import { random } from './RandomSlotsService.ts';
 import {
   createIndexByIdMap,
   type SlotSchedulerProgram,
@@ -18,6 +18,7 @@ abstract class ProgramChunkedShuffle<
   constructor(
     programs: SlotSchedulerProgram[],
     orderer: (program: SlotSchedulerProgram) => string | number,
+    random: Random,
     asc: boolean = true,
   ) {
     super(
@@ -45,10 +46,11 @@ export class CustomProgramChunkedShuffle extends ProgramChunkedShuffle<Condensed
   constructor(
     private customShowId: string,
     programs: SlotSchedulerProgram[],
+    random: Random,
     asc: boolean = true,
   ) {
     const indexById = createIndexByIdMap(programs, customShowId);
-    super(programs, (program) => indexById[program.uuid] ?? -1, asc);
+    super(programs, (program) => indexById[program.uuid] ?? -1, random, asc);
     this.indexById = indexById;
   }
 

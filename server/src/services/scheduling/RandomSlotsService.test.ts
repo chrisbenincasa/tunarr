@@ -831,3 +831,61 @@ describe('random slot pad coverage with a fallback filler', () => {
     expect(sumBy(result.lineup, 'duration')).toBe(2 * oneDay);
   });
 });
+
+describe('random slot seed reproducibility', () => {
+  const oneHour = 60 * 60 * 1000;
+  const midnight = dayjs('2024-01-01T00:00:00.000Z');
+
+  const movies: SlotSchedulerProgram[] = Array.from({ length: 30 }, (_, i) => ({
+    ...createFakeProgramOrm({
+      uuid: `movie-${i + 1}`,
+      title: `Movie ${i + 1}`,
+      type: 'movie',
+      duration: oneHour,
+    }),
+    parentFillerLists: [],
+    parentCustomShows: [],
+    parentSmartCollections: [],
+  }));
+
+  const movieSlot = (): RandomSlot => ({
+    id: randomUUID(),
+    type: 'movie',
+    order: 'shuffle',
+    direction: 'asc',
+    weight: 1,
+    cooldownMs: 0,
+    durationSpec: { type: 'dynamic', programCount: 1 },
+  });
+
+  test.each(['uniform', 'weighted'] as const)(
+    'same seed picks the same slots (%s)',
+    (randomDistribution) => {
+      const schedule: RandomSlotSchedule = {
+        type: 'random',
+        flexPreference: 'end',
+        maxDays: 1,
+        padMs: 1,
+        padStyle: 'slot',
+        randomDistribution,
+        lockWeights: false,
+        slots: [movieSlot(), movieSlot(), movieSlot()],
+      };
+
+      const result1 = new RandomSlotScheduler(schedule).generateSchedule(
+        movies,
+        [42],
+        0,
+        midnight,
+      );
+      const result2 = new RandomSlotScheduler(schedule).generateSchedule(
+        movies,
+        [42],
+        0,
+        midnight,
+      );
+
+      expect(result1.lineup).toEqual(result2.lineup);
+    },
+  );
+});
