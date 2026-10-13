@@ -34,6 +34,16 @@ export const DynamicResolverPath = '/api/etv/playout-item';
 export const DynamicTokenEnvVar = 'TUNARR_ETV_TOKEN';
 
 /**
+ * Callback retry. The worker retries transport errors, timeouts and 5xx with
+ * jittered exponential backoff until the budget, which includes attempt time,
+ * runs out. Tunarr answers within about 15 seconds, so a timeout means it is
+ * unreachable rather than slow.
+ */
+export const DynamicTimeoutUs = 20_000_000;
+export const DynamicRetryBudgetMs = 25_000;
+export const DynamicRetryBackoffMs = 250;
+
+/**
  * The URI the worker dials Tunarr back on.
  *
  * Upstream turns a refused callback into silent black video, so the host must
@@ -83,6 +93,9 @@ export function createDynamicPlaceholder({
       source_type: 'dynamic',
       uri: resolverUri,
       headers: [`Authorization: Bearer {{${DynamicTokenEnvVar}}}`],
+      timeout_us: DynamicTimeoutUs,
+      retry_budget_ms: DynamicRetryBudgetMs,
+      retry_backoff_ms: DynamicRetryBackoffMs,
     },
   });
 }

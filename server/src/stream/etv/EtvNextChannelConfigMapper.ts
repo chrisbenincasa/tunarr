@@ -17,6 +17,7 @@ import {
   VideoFormatSchema,
 } from './generated/channelConfig.ts';
 import { isNonEmptyString } from '../../util/index.ts';
+import { DynamicRetryBudgetMs } from './EtvNextDynamicPlayout.ts';
 
 /**
  * The ffmpeg settings this mapper reads, as a readonly view.
@@ -261,6 +262,10 @@ export function findIgnoredSettings({
 export const ChannelConfigVersion =
   'https://ersatztv.org/channel/version/0.1.2';
 
+/** How long the worker's fallback item plays after a failed callback. */
+export const FallbackDurationSeconds =
+  Math.ceil(DynamicRetryBudgetMs / 1000) + 5;
+
 /**
  * Builds the `channel.json` a worker is spawned with.
  *
@@ -387,6 +392,10 @@ export function toChannelConfig({
       // the backend's card is a last-resort net. Burning the reason into frame
       // is what makes an otherwise silent fallback diagnosable.
       show_error: transcodeConfig.errorScreen !== 'blank',
+
+      // Must be at least the callback retry budget. A shorter fallback burns
+      // more buffer per failed cycle than it adds back, and the player freezes.
+      duration_seconds: FallbackDurationSeconds,
     },
   };
 

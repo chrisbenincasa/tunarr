@@ -2,7 +2,10 @@ import { describe, expect, test } from 'vitest';
 import {
   createDynamicPlaceholder,
   DynamicResolverPath,
+  DynamicRetryBackoffMs,
+  DynamicRetryBudgetMs,
   DynamicRollThresholdMs,
+  DynamicTimeoutUs,
   DynamicTokenEnvVar,
   DynamicWindowMs,
   dynamicPlaceholderId,
@@ -36,6 +39,16 @@ describe('the dynamic placeholder', () => {
 
     expect(source).toMatchObject({
       headers: [`Authorization: Bearer {{${DynamicTokenEnvVar}}}`],
+    });
+  });
+
+  // Without these the worker makes one attempt and plays a fallback card on
+  // any hiccup.
+  test('asks the worker to retry failed callbacks', () => {
+    expect(placeholder().source).toMatchObject({
+      timeout_us: DynamicTimeoutUs,
+      retry_budget_ms: DynamicRetryBudgetMs,
+      retry_backoff_ms: DynamicRetryBackoffMs,
     });
   });
 
