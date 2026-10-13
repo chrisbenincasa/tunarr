@@ -4,10 +4,12 @@ import { describe, expect, test } from 'vitest';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import {
   ChannelConfigVersion,
+  FallbackDurationSeconds,
   UnsupportedTranscodeConfigError,
   findUnsupportedSettings,
   toChannelConfig,
 } from './EtvNextChannelConfigMapper.ts';
+import { DynamicRetryBudgetMs } from './EtvNextDynamicPlayout.ts';
 import { ChannelConfigSchema } from './generated/channelConfig.ts';
 
 const transcodeConfig = (
@@ -226,6 +228,15 @@ describe('toChannelConfig', () => {
     expect(map({ errorScreen: 'blank' }).config.fallback?.show_error).toBe(
       false,
     );
+  });
+
+  // A fallback shorter than the retry budget burns more buffer per failed
+  // cycle than it adds back.
+  test('plays the fallback for at least the callback retry budget', () => {
+    const duration = map({}).config.fallback?.duration_seconds;
+
+    expect(duration).toBe(FallbackDurationSeconds);
+    expect((duration ?? 0) * 1000).toBeGreaterThanOrEqual(DynamicRetryBudgetMs);
   });
 
   test('names every setting that does not survive the crossing', () => {
