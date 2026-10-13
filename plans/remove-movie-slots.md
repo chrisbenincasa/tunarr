@@ -50,12 +50,12 @@ The custom show is fixed at migration time. Release notes and docs must say so.
 
 **One show per distinct sort.** Usually one per channel.
 
-| Movie slot order        | Show built in                      | Custom-show slot order |
-| ----------------------- | ---------------------------------- | ---------------------- |
-| `next`, `chronological` | air date, in the slot's direction  | `next`                 |
-| `alphanumeric`          | title, in the slot's direction     | `next`                 |
-| `ordered_shuffle`       | air date, in the slot's direction  | `ordered_shuffle`      |
-| `shuffle`               | any show already built, else air date ascending | `shuffle` |
+| Movie slot order        | Show built in                                   | Custom-show slot order |
+| ----------------------- | ----------------------------------------------- | ---------------------- |
+| `next`, `chronological` | air date, in the slot's direction               | `next`                 |
+| `alphanumeric`          | title, in the slot's direction                  | `next`                 |
+| `ordered_shuffle`       | air date, in the slot's direction               | `ordered_shuffle`      |
+| `shuffle`               | any show already built, else air date ascending | `shuffle`              |
 
 Sort with the scheduler's own orderers (`getProgramOrderer`) so the order
 matches what the movie slot produced. Custom-show slots ignore `direction`, so

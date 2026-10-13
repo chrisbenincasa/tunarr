@@ -23,15 +23,15 @@ for v2.
 
 ## Current state
 
-| Piece | Where | State |
-|---|---|---|
-| Slot schedule definition | lineup JSON (`LineupRepository.ts`) | Stored |
-| `scheduleSeed` | lineup JSON | Stored on slot save, cleared on manual save |
-| RNG skip count (`discardCount`) | `TimeSlotService.ts:101,481`, `RandomSlotsService.ts:79,204` | Accepted and returned by the schedulers, never stored |
-| Rebuild from schedule | `RegenerateChannelLineupCommand.ts` | Replays seed from `startTime`, so the same draws every time |
-| Slot iterator position | `ProgramIterator.ts` (`IndexBasedProgramIterator.position`) | In memory only, starts at 0 every build |
-| Manual tool ops | `web/src/hooks/programming_controls/` | Run in the browser; the server only sees the result |
-| Channel position | `(now - startTime) % duration` | `startTime` is rounded down to the minute on every `updateChannel` (`BasicChannelRepository.ts:46`) |
+| Piece                           | Where                                                        | State                                                                                               |
+| ------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Slot schedule definition        | lineup JSON (`LineupRepository.ts`)                          | Stored                                                                                              |
+| `scheduleSeed`                  | lineup JSON                                                  | Stored on slot save, cleared on manual save                                                         |
+| RNG skip count (`discardCount`) | `TimeSlotService.ts:101,481`, `RandomSlotsService.ts:79,204` | Accepted and returned by the schedulers, never stored                                               |
+| Rebuild from schedule           | `RegenerateChannelLineupCommand.ts`                          | Replays seed from `startTime`, so the same draws every time                                         |
+| Slot iterator position          | `ProgramIterator.ts` (`IndexBasedProgramIterator.position`)  | In memory only, starts at 0 every build                                                             |
+| Manual tool ops                 | `web/src/hooks/programming_controls/`                        | Run in the browser; the server only sees the result                                                 |
+| Channel position                | `(now - startTime) % duration`                               | `startTime` is rounded down to the minute on every `updateChannel` (`BasicChannelRepository.ts:46`) |
 
 ## Shared mechanism: the loop boundary
 
@@ -42,12 +42,14 @@ driven by one scheduled task.
 
 1. **Extend.** When the time left in the current loop drops below the guide horizon
    (`xmlTvSettings().programmingHours`) plus a margin, do two things in one write:
+
    - Move `startTime` to the start of the current loop: `startTime += k * duration`, where
      `k = floor((now - startTime) / duration)`.
    - Append the next loop's items. `duration` becomes the sum of both loops.
 
    The channel position is unchanged, because `now - startTime` is still less than the old duration.
    The guide now sees real future programming.
+
 2. **Trim.** Once `now` passes the old boundary, drop the first loop's items and add its duration to
    `startTime`. The position is again unchanged.
 
@@ -149,15 +151,15 @@ identical shuffles, which removes the hardest parity problem.
 
 ### Replayable ops
 
-| Op | Randomizing | Source |
-|---|---|---|
-| Random sort (all, by show) | Yes | `useRandomSort.ts` |
-| Block / cyclic shuffle | Yes | `blockShuffle` in `useBlockShuffle.ts` |
-| Replicate (random) | Yes | `replicatePrograms` |
-| Add breaks | Yes | `addBreaks` |
-| Pad start times | No | `padStartTimes` |
-| Restrict hours | No | `restrictHours` |
-| Remove flex | No | `useRemoveFlex.ts` |
+| Op                         | Randomizing | Source                                 |
+| -------------------------- | ----------- | -------------------------------------- |
+| Random sort (all, by show) | Yes         | `useRandomSort.ts`                     |
+| Block / cyclic shuffle     | Yes         | `blockShuffle` in `useBlockShuffle.ts` |
+| Replicate (random)         | Yes         | `replicatePrograms`                    |
+| Add breaks                 | Yes         | `addBreaks`                            |
+| Pad start times            | No          | `padStartTimes`                        |
+| Restrict hours             | No          | `restrictHours`                        |
+| Remove flex                | No          | `useRemoveFlex.ts`                     |
 
 ### Edits after the first randomizing op
 
