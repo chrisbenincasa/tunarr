@@ -22,7 +22,7 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | Option | Default | Meaning |
 |---|---|---|
 | `--source synthetic\|copy` | `synthetic` | Generate clips, or replay a real channel from a copied database |
-| `--layout basic\|multi-audio\|dup-lang\|subs\|mixed` | `basic` | Synthetic clip track layout (see below) |
+| `--layout basic\|multi-audio\|dup-lang\|subs\|mixed\|anamorphic` | `basic` | Synthetic clip track layout (see below) |
 | `--clips N`, `--clip-seconds S` | `3`, `60` | Number and length of synthetic clips; each clip is one program |
 | `--clip-durations LIST` | | Per-clip lengths in seconds, such as `60,8,60` for a bumper between two programs. Overrides `--clips` and `--clip-seconds` |
 | `--truncate-clip I:S` | | Shorten clip I (1-based) to S seconds after the scan. The database keeps the longer duration, which mimics media that ends before its scheduled time |
@@ -42,6 +42,7 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--resolution WxH` | | Set the output resolution of the channel's transcode config, such as `1280x720` |
 | `--hwaccel MODE` | | Set the hardware acceleration of the channel's transcode config: `none`, `cuda`, `vaapi`, `qsv`, or `videotoolbox` |
 | `--vaapi-device PATH` | | With `--hwaccel vaapi` or `qsv`, the render node to use, such as `/dev/dri/renderD128` |
+| `--sar-override VALUE` | | `synthetic` only. After the scan, set every program's saved sample aspect ratio to VALUE, such as `0:0`. Needs the `sqlite3` CLI |
 | `--schedule FILE` | | `synthetic` only. Build custom shows and time-slot channels from a JSON spec, and report their saved lineups and guide (see below) |
 | `--seconds 0` | | Skip the stream capture. Use with `--schedule` when only the schedule matters |
 
@@ -68,6 +69,13 @@ Commentary, which is how a real library ends up with duplicate-language audio. `
 count, subtitles, and audio-track count between programs, so it exercises transitions hardest. Make the
 capture long enough to cross at least two program boundaries: `--seconds` should exceed
 `2 × --clip-seconds`.
+
+Use `anamorphic` for aspect-ratio and scaling bugs. Its clips are 720x480 NTSC widescreen with SAR 32:27,
+so ffprobe reports DAR 16:9. The stream path reads SAR and DAR from the saved `program_version` row, not
+from the file. Jellyfin and Emby save `0:0` for anamorphic media, which a local clip cannot produce, so
+add `--sar-override 0:0` to mirror them. `report.sarOverride` lists the saved dimensions and ratios after
+the change. The fitted size shows in the `scale` and `pad` filters of `report.ffmpeg.commands`. To check
+the picture for black bars, run `ffmpeg -i <segment> -vf cropdetect -frames:v 60 -f null -` on a segment.
 
 Short clips are fine. Tunarr skips to the next program only when a stream request lands with less than
 1 s left in the current one, and it never skips a program of 2 s or less (`STREAM_TAIL_SLACK_MS` in
