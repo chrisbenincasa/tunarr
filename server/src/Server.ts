@@ -111,7 +111,6 @@ export class Server {
       trustProxy: this.serverOptions.trustProxy,
     })
       .setValidatorCompiler(validatorCompiler)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       .setSerializerCompiler(serializerCompiler)
       .withTypeProvider<ZodTypeProvider>();
 
