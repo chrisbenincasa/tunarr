@@ -35,14 +35,14 @@ export type VideoStreamFields = StrictOmit<
 // Rounded DARs such as "1.78" on 1920x1080 sit inside it.
 const SquarePixelTolerance = 0.01;
 
-// Parses "N:M" or a decimal string. Returns undefined unless the ratio is a
-// positive finite number, so ffprobe's "0:0" and "0:1" read as unknown.
+// Parses "N:M", "N/M", or a decimal string. Returns undefined unless the ratio
+// is a positive finite number, so ffprobe's "0:0" and "0:1" read as unknown.
 function parseRatio(value: Nullable<string> | undefined): number | undefined {
   if (!isNonEmptyString(value)) {
     return;
   }
 
-  const [num, den] = value.split(':');
+  const [num, den] = value.split(/[:/]/);
   const ratio =
     den === undefined
       ? parseFloat(value)
@@ -117,7 +117,7 @@ export class VideoStream implements MediaStream {
   get sampleAspectRatio(): string {
     const inputSar = this.providedSampleAspectRatio;
     if (isNonEmptyString(inputSar) && parseRatio(inputSar) !== undefined) {
-      const [num, den] = inputSar.split(':');
+      const [num, den] = inputSar.split(/[:/]/);
       const formattedDen =
         den === undefined ? '1' : formatRatioPart(parseFloat(den));
       return `${formatRatioPart(parseFloat(num ?? ''))}:${formattedDen}`;

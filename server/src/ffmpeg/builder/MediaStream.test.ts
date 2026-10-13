@@ -56,6 +56,8 @@ describe('MediaStream', () => {
     [null, '16:9', 1920, 1080],
     ['32:27', '16:9', 1920, 1080],
     ['8:9', '4:3', 1440, 1080],
+    ['32/27', '16:9', 1920, 1080],
+    [null, '16/9', 1920, 1080],
   ])(
     '720x480 with SAR %s and DAR %s scales to %dx%d',
     (sar, dar, width, height) => {
@@ -74,6 +76,7 @@ describe('MediaStream', () => {
     [1920, 1080, '0:0', '1.78'],
     [1280, 720, null, '16:9'],
     [720, 480, null, ''],
+    [720, 480, null, '720/480'],
   ])('%dx%d with SAR %s and DAR %s is not anamorphic', (w, h, sar, dar) => {
     expect(createStream(w, h, sar, dar).isAnamorphic).toBe(false);
   });
@@ -89,6 +92,9 @@ describe('MediaStream', () => {
 
   test('explicit SAR is reported as given', () => {
     expect(createStream(720, 480, '32:27', '16:9').sampleAspectRatio).toEqual(
+      '32:27',
+    );
+    expect(createStream(720, 480, '32/27', '16:9').sampleAspectRatio).toEqual(
       '32:27',
     );
   });
