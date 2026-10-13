@@ -50,10 +50,12 @@ export function createMultivariantPlaylist({
     : `${streamBaseUrl}/`;
   const lines = ['#EXTM3U', '#EXT-X-VERSION:6'];
 
+  // The subtitle language changes from program to program, so the rendition
+  // carries no LANGUAGE. A channel with subtitles on shows them by default.
   if (includeSubtitles) {
     lines.push(
-      '#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English",' +
-        'DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,LANGUAGE="en",' +
+      '#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="Subtitles",' +
+        'DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,' +
         `URI="${base}${EtvNextOutputFiles.SubtitlePlaylist}"`,
     );
   }
