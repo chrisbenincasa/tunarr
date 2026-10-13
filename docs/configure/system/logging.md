@@ -125,14 +125,21 @@ Each log entry contains:
 
 Log rolling prevents log files from growing indefinitely by rotating them when they reach a certain size or on a schedule.
 
+Log rolling is on by default. Tunarr rotates the log every day at midnight, or sooner if it grows past 50 MB, and keeps three rotated files. That is about three days of logs at normal log levels.
+
 ### Configuration Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| **Enabled** | `false` | Enable log file rotation |
-| **Max File Size** | `1 MB` | Rotate when file exceeds this size. Tunarr checks the size every 10 seconds, so the file can briefly overshoot. |
+| **Enabled** | `true` | Enable log file rotation |
+| **Max File Size** | `50 MB` | Rotate when file exceeds this size. Tunarr checks the size every 10 seconds, so the file can briefly overshoot. |
 | **Rolled File Limit** | `3` | Number of rotated files to keep |
-| **Schedule** | (none) | Optional time-based rotation |
+| **Schedule** | Every 1 day at midnight | Time-based rotation |
+
+Size and schedule rotation can be combined. The log rotates when either one triggers, so heavy logging at `debug` or `trace` can rotate out older days early.
+
+!!! note "Upgrading"
+    Earlier releases left log rolling off by default. On the first start after upgrading, Tunarr turns on daily rolling for any install that had it off. Installs that already had rolling enabled keep their settings. To turn it off again, disable it under **Settings > System > Logging**. Tunarr will not turn it back on.
 
 ### Rotated File Naming
 
@@ -152,7 +159,7 @@ tunarr.log.2    (older)
 tunarr.log.3    (oldest, will be deleted on next rotation)
 ```
 
-### Enabling Log Rolling
+### Configuring Log Rolling via the API
 
 ```bash
 curl -X PUT "http://localhost:8000/api/system/settings" \

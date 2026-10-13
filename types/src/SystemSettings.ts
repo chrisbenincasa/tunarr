@@ -24,10 +24,26 @@ export const LogLevelsSchema = z.enum([...LogLevels]);
 export type LogLevel = TupleToUnion<typeof LogLevels>;
 
 export const LogRollConfigSchema = z.object({
-  enabled: z.boolean().default(false),
+  enabled: z.boolean().default(true),
   maxFileSizeBytes: z.number().positive().optional(),
   rolledFileLimit: z.number().positive(),
   schedule: ScheduleSchema.optional(),
+});
+
+export type LogRollConfig = z.infer<typeof LogRollConfigSchema>;
+
+// Rolls at midnight and keeps three rolled files, so about three days of logs.
+// The size cap bounds disk use when verbose logging fills a file early.
+export const defaultLogRollConfig = (): LogRollConfig => ({
+  enabled: true,
+  maxFileSizeBytes: 50 * 1024 * 1024,
+  rolledFileLimit: 3,
+  schedule: {
+    type: 'every',
+    increment: 1,
+    unit: 'day',
+    offsetMs: 0,
+  },
 });
 
 export const LoggingSettingsSchema = z.object({
@@ -37,11 +53,7 @@ export const LoggingSettingsSchema = z.object({
     .optional(),
   logsDirectory: z.string(),
   useEnvVarLevel: z.boolean().default(true),
-  logRollConfig: LogRollConfigSchema.optional().default({
-    enabled: false,
-    maxFileSizeBytes: Math.pow(2, 20), // 1MB => 1,048,576 bytes
-    rolledFileLimit: 3,
-  }),
+  logRollConfig: LogRollConfigSchema.optional().default(defaultLogRollConfig),
 });
 
 export type LoggingSettings = z.infer<typeof LoggingSettingsSchema>;

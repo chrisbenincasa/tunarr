@@ -21,6 +21,7 @@ import {
   defaultFfmpegSettings,
   defaultGlobalMediaSourceSettings,
   defaultHdhrSettings,
+  defaultLogRollConfig,
   defaultPlexStreamSettings,
   defaultXmlTvSettings as defaultXmlTvSettingsSchema,
 } from '@tunarr/types';
@@ -74,6 +75,7 @@ export const MigrationStateSchema = z.object({
     .describe('Whether a legacy migration was performed'),
   isFreshSettings: z.boolean().default(true).optional(),
   hasMigratedTo1_0: z.boolean().optional().default(false),
+  hasEnabledLogRollByDefault: z.boolean().optional().default(false),
 });
 
 export type MigrationState = z.infer<typeof MigrationStateSchema>;
@@ -115,6 +117,7 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
   migration: {
     legacyMigration: false,
     hasMigratedTo1_0: false,
+    hasEnabledLogRollByDefault: false,
   },
   settings: {
     clientId: uuidv4(),
@@ -136,11 +139,7 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
       // database to one directory and the logs to another.
       logsDirectory: path.join(dbBasePath, 'logs'),
       useEnvVarLevel: true,
-      logRollConfig: {
-        enabled: false,
-        rolledFileLimit: 3,
-        maxFileSizeBytes: Math.pow(2, 20),
-      },
+      logRollConfig: defaultLogRollConfig(),
     },
     server: DefaultServerSettings,
   },

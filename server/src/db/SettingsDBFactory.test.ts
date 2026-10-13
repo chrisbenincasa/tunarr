@@ -69,4 +69,91 @@ describe('SettingsDBFactory', () => {
     expect((await fs.stat(settingsPath)).mtimeMs).toBe(beforeStat.mtimeMs);
     expect(await fs.readdir(dir)).toEqual(['settings.json']);
   });
+
+  describe('log rolling default', () => {
+    type WrittenSettings = {
+      migration: Record<string, unknown>;
+      system: { logging: { logRollConfig: Record<string, unknown> } };
+    };
+
+    const dailyRoll = {
+      enabled: true,
+      maxFileSizeBytes: 52428800,
+      rolledFileLimit: 3,
+      schedule: { type: 'every', increment: 1, unit: 'day', offsetMs: 0 },
+    };
+
+    const readSettings = async () =>
+      JSON.parse(await fs.readFile(settingsPath, 'utf-8')) as WrittenSettings;
+
+    // Writes a settings file as an older release left it, then starts fresh.
+    const writeLegacySettings = async (
+      logRollConfig: Record<string, unknown>,
+    ) => {
+      const SettingsDBFactory = await loadFactory();
+      new SettingsDBFactory(options).get();
+      const settings = await readSettings();
+      delete settings.migration.hasEnabledLogRollByDefault;
+      settings.system.logging.logRollConfig = logRollConfig;
+      await fs.writeFile(settingsPath, JSON.stringify(settings));
+      vi.resetModules();
+    };
+
+    test('new installs roll daily', async () => {
+      const SettingsDBFactory = await loadFactory();
+
+      new SettingsDBFactory(options).get();
+
+      const settings = await readSettings();
+      expect(settings.system.logging.logRollConfig).toEqual(dailyRoll);
+      expect(settings.migration.hasEnabledLogRollByDefault).toBe(true);
+    });
+
+    test('turns rolling on for existing installs that had it off', async () => {
+      await writeLegacySettings({
+        enabled: false,
+        rolledFileLimit: 3,
+        maxFileSizeBytes: 1048576,
+      });
+      const SettingsDBFactory = await loadFactory();
+
+      new SettingsDBFactory(options).get();
+
+      const settings = await readSettings();
+      expect(settings.system.logging.logRollConfig).toEqual(dailyRoll);
+      expect(settings.migration.hasEnabledLogRollByDefault).toBe(true);
+    });
+
+    test('keeps an existing enabled config', async () => {
+      const custom = {
+        enabled: true,
+        rolledFileLimit: 5,
+        maxFileSizeBytes: 10485760,
+      };
+      await writeLegacySettings(custom);
+      const SettingsDBFactory = await loadFactory();
+
+      new SettingsDBFactory(options).get();
+
+      expect((await readSettings()).system.logging.logRollConfig).toEqual(
+        custom,
+      );
+    });
+
+    test('respects rolling turned off after the migration ran', async () => {
+      const SettingsDBFactory = await loadFactory();
+      new SettingsDBFactory(options).get();
+      const settings = await readSettings();
+      settings.system.logging.logRollConfig.enabled = false;
+      await fs.writeFile(settingsPath, JSON.stringify(settings));
+      vi.resetModules();
+      const RestartedSettingsDBFactory = await loadFactory();
+
+      new RestartedSettingsDBFactory(options).get();
+
+      expect((await readSettings()).system.logging.logRollConfig.enabled).toBe(
+        false,
+      );
+    });
+  });
 });

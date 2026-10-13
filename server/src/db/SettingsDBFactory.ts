@@ -1,6 +1,7 @@
 import type { GlobalOptions } from '@/globals.js';
 import { KEYS } from '@/types/inject.js';
 import { SettingsJsonFilename } from '@/util/constants.js';
+import { defaultLogRollConfig } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { merge } from 'lodash-es';
 import { Low, LowSync } from 'lowdb';
@@ -72,6 +73,15 @@ export class SettingsDBFactory {
         }
         // New installs are fresh and have effectively "migrated"
         data.migration.hasMigratedTo1_0 = freshSettings;
+
+        // Log rolling used to default to off, and every install saved that
+        // default. Turn it on once for installs that still have it off.
+        if (!data.migration.hasEnabledLogRollByDefault) {
+          if (!data.system.logging.logRollConfig.enabled) {
+            data.system.logging.logRollConfig = defaultLogRollConfig();
+          }
+          data.migration.hasEnabledLogRollByDefault = true;
+        }
       });
     }
 
