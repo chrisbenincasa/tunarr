@@ -104,11 +104,13 @@ describe('ClearStreamDirectoriesStartupTask', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('matches only stream_<uuid> and stream_<uuid>_<uuid>', () => {
+  it('matches only stream_ or etv_ followed by one or two uuids', () => {
     const a = faker.string.uuid();
     const b = faker.string.uuid();
     expect(StreamDirectoryNameRegex.test(`stream_${a}`)).toBe(true);
     expect(StreamDirectoryNameRegex.test(`stream_${a}_${b}`)).toBe(true);
+    expect(StreamDirectoryNameRegex.test(`etv_${a}_${b}`)).toBe(true);
+    expect(StreamDirectoryNameRegex.test('etv_backup')).toBe(false);
     expect(StreamDirectoryNameRegex.test(`stream_${a}_extra`)).toBe(false);
     expect(StreamDirectoryNameRegex.test('stream_backup')).toBe(false);
     expect(StreamDirectoryNameRegex.test(`streams_${a}`)).toBe(false);

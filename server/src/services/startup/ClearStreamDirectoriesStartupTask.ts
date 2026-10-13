@@ -14,10 +14,11 @@ import { SimpleStartupTask } from './IStartupTask.ts';
 const Uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 
 // stream_<channel>_<session instance>, or stream_<channel> from versions
-// that shared one directory per channel. The transcode directory is
+// that shared one directory per channel. ErsatzTV next worker workspaces use
+// the same shape with an etv_ prefix. The transcode directory is
 // user-configured, so anything else in it is left alone.
 export const StreamDirectoryNameRegex = new RegExp(
-  `^stream_${Uuid}(_${Uuid})?$`,
+  `^(stream|etv)_${Uuid}(_${Uuid})?$`,
   'i',
 );
 
