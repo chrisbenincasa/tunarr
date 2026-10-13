@@ -1,6 +1,6 @@
 # ErsatzTV next — B6 scaling algorithm
 
-> **Status (10/07/2026):** Planned and grilled. Re-verified against upstream `96aa6cb`. Upstream took channel schema `0.1.1` for `frame_rate` (#300), so this change bumps to `0.1.2`. PRs now need a `CHANGELOG.md` entry. The field follows the `filters` convention from #132, not a new typed enum. Nothing filed. Next step is the PR in §3. No issue first, because the default stays the same.
+> **Status (10/13/2026):** Done upstream in #320 (`v0.2.1`), built by the maintainer. One difference from this plan: the default is `bicubic`, not `fast_bilinear`. Tunarr always sends the flag (`f157db68d`), so the default does not reach it. Nothing to file.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md).
 

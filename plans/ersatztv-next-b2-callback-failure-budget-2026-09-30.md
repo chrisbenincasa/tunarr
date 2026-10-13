@@ -1,6 +1,6 @@
 # ErsatzTV next — B2 callback retry and failure budget
 
-> **Status (10/07/2026):** Planned and grilled (decisions D1–D9 in §2). Upstream citations re-verified at `v0.2.0`, where the behavior is unchanged. The issue draft is written (§4) and ready to file. Nothing filed. Only callback retry gates shipping. The configurable fallback duration is optional and the failure budget is a follow-up.
+> **Status (10/13/2026):** Retry and the configurable fallback duration are done upstream in #322 (`v0.2.1`), matching D2–D6. Tunarr emits them in `c87cdaecf`. The failure budget (D7, D8) is not built upstream and is the only part left to file. The §4 draft's citations are from `v0.2.0` and have moved: `resolve_dynamic_item` is now `channel_session.rs:1396`, the fallback length is `FallbackConfig::duration` in `config.rs` (used at `channel_session.rs:1351`), `fallback.rs:65` is `:62`, and the exit codes are `main.rs:95-103` (unchanged in behavior). Trim §4 to the budget and re-verify before filing.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md). The original argument is in main plan §15.B, "B2 in full." §1 below corrects part of it.
 
