@@ -22,9 +22,9 @@
 
 - Ran the reporter's ffmpeg command against a JPG served over local HTTP, with a 12 s duration.
 
-| Input flags | Segments | Video frames |
-|-------------|----------|--------------|
-| `-readrate 1.0` (0.22.2) | 1 segment, 12.0 s | 1 |
-| `-loop 1` (`main`) | 3 segments, ~4 s each | 96 each (24 fps) |
+| Input flags              | Segments              | Video frames     |
+| ------------------------ | --------------------- | ---------------- |
+| `-readrate 1.0` (0.22.2) | 1 segment, 12.0 s     | 1                |
+| `-loop 1` (`main`)       | 3 segments, ~4 s each | 96 each (24 fps) |
 
 - Not tested through a running server, because the stream-repro skill cannot build a flex gap or set an offline picture.

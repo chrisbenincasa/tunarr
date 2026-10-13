@@ -11,10 +11,10 @@ Issue: [#1750](https://github.com/chrisbenincasa/tunarr/issues/1750)
 
 ## Current State
 
-| Feature | Storage | Resolution |
-|---|---|---|
-| Filler list | `filler_show_content` maps a list to program rows | Plain SQL join |
-| Smart collection | `smart_collection.query` holds a search string | Meilisearch query, then shows/seasons/albums expand into terminal programs |
+| Feature          | Storage                                           | Resolution                                                                 |
+| ---------------- | ------------------------------------------------- | -------------------------------------------------------------------------- |
+| Filler list      | `filler_show_content` maps a list to program rows | Plain SQL join                                                             |
+| Smart collection | `smart_collection.query` holds a search string    | Meilisearch query, then shows/seasons/albums expand into terminal programs |
 
 - `StreamProgramCalculator.ts:450` calls `getFillersFromChannel` on every flex gap. This is the streaming hot path.
 - Grouping expansion lives in `SlotSchedulerHelper.materializeSmartCollections` (`services/scheduling/SlotSchedulerHelper.ts:383-489`).
@@ -25,12 +25,12 @@ Issue: [#1750](https://github.com/chrisbenincasa/tunarr/issues/1750)
 
 Store a snapshot. The filler list gets a `smart_collection_id`. A sync job rewrites `filler_show_content` from the collection.
 
-| | Snapshot sync (chosen) | Resolve live (rejected) |
-|---|---|---|
-| Readers changed | None | 6+ (`getFillersFromChannel`, `getFillerPrograms`, `getAllFillers`, `getFillerListsByIds`, `materializeFillerLists`, `/filler-lists/:id/programs`) |
-| Streaming hot path | SQL only | Meilisearch plus grouping expansion per flex gap |
-| Search outage | Last snapshot keeps playing | Filler breaks |
-| Freshness | Last sync | Always current |
+|                    | Snapshot sync (chosen)      | Resolve live (rejected)                                                                                                                           |
+| ------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Readers changed    | None                        | 6+ (`getFillersFromChannel`, `getFillerPrograms`, `getAllFillers`, `getFillerListsByIds`, `materializeFillerLists`, `/filler-lists/:id/programs`) |
+| Streaming hot path | SQL only                    | Meilisearch plus grouping expansion per flex gap                                                                                                  |
+| Search outage      | Last snapshot keeps playing | Filler breaks                                                                                                                                     |
+| Freshness          | Last sync                   | Always current                                                                                                                                    |
 
 - Cooldowns, play history, and per-list stream selection profiles key off `fillerListId` and program UUID. They keep working unchanged.
 - When a smart collection is deleted, the FK uses `ON DELETE SET NULL`. The list keeps its last snapshot and becomes a manual list.
@@ -62,11 +62,11 @@ Store a snapshot. The filler list gets a `smart_collection_id`. A sync job rewri
 
 ### 4. Triggers
 
-| Event | Action |
-|---|---|
-| Filler list created or saved with a collection | `syncList` |
-| Smart collection updated | `syncByCollection` |
-| `scanEnd` | Sync every smart-backed list, debounced (e.g. 30 s) so a multi-library scan runs one sync |
+| Event                                          | Action                                                                                    |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Filler list created or saved with a collection | `syncList`                                                                                |
+| Smart collection updated                       | `syncByCollection`                                                                        |
+| `scanEnd`                                      | Sync every smart-backed list, debounced (e.g. 30 s) so a multi-library scan runs one sync |
 
 - Run sync work through the existing task queue rather than inside the event handler, so a slow sync can't block scanning.
 

@@ -825,7 +825,9 @@ describe('random slot pad coverage with a fallback filler', () => {
       'content:movie-2',
       'filler:5min',
     ]);
-    expect(result.lineup.filter((item) => item.type === 'flex')).toHaveLength(0);
+    expect(result.lineup.filter((item) => item.type === 'flex')).toHaveLength(
+      0,
+    );
     // maxDays: 1 fills up to start + (maxDays + 1) days. 96 slots of 30 minutes
     // is 2880 minutes; with the pad covered twice it comes out at 3360.
     expect(sumBy(result.lineup, 'duration')).toBe(2 * oneDay);
