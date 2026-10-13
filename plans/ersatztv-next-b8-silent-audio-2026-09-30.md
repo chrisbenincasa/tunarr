@@ -1,6 +1,6 @@
 # ErsatzTV next — B8 silent audio for video-only sources
 
-> **Status (10/01/2026):** Planned. Re-verified against upstream `570d136`. Video-only sources still fail. Upstream copy mode already handles the synthetic track (step 4 is done), so the PR is smaller. Nothing filed. Next step is the PR in §2.
+> **Status (10/13/2026):** Done upstream in #321 (`v0.2.1`), built by the maintainer as this plan proposed (`silence_if_missing` in `ffpipeline/src/input.rs`). Tunarr dropped its forced `anullsrc` track in `615a11b9e`. Nothing to file.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md).
 
