@@ -1,25 +1,40 @@
 # Reshuffle Schedules on Loop
 
-> **Status (10/11/2026):** Draft. Phase 1 (slot schedules) approved in principle. Phase 2 (manual
-> lineups) is scoped here for a go/no-go decision. Nothing implemented.
+> **Status (10/13/2026):** Design settled in a review session. Phase 1 (slot schedules) is ready to
+> build once #2306 lands. Phase 2 (manual lineups) is deferred. Nothing implemented.
 
-Stopgap for dynamic schedules (Tunarr v2). When a channel's lineup reaches the end of its loop, the
-server builds the next loop from the same schedule, with randomness redrawn from the same seed
-advanced by the number of draws already used. Users get a fresh shuffle each loop without waiting
-for v2.
+Stopgap for dynamic schedules (Tunarr v2). A slot channel's lineup holds one cycle of content at a
+time. Before a cycle ends, the server builds the next one from the same schedule, continuing the RNG
+stream and each iterator's state. Users get a fresh shuffle every cycle without waiting for v2.
 
 ## Goals
 
-- Slot channels (time and random slots) get a new shuffle every loop.
-- Ordered shows continue where they left off instead of restarting each loop.
-- The guide and XMLTV show the next loop before it airs.
+- Slot channels (time and random slots) get a new shuffle every cycle.
+- Ordered shows continue where they left off instead of restarting each cycle.
+- Shuffled shows play every program once before repeating, across cycles.
+- The guide and XMLTV show the next cycle before it airs.
 - Code stays small and isolated, so v2 can replace it without a migration story.
 
 ## Non-goals
 
 - On-demand channels. Their position comes from `onDemandConfig.cursor`, not `startTime`.
+- Manual lineups (deferred, see Phase 2).
 - Custom show editors (`useCustomShowBlockShuffle`, `useCustomShowRandomSort`).
-- Replaying every loop missed while the server was down. A catch-up builds one loop and moves on.
+- Replaying cycles missed while the server was down.
+
+## Prerequisites
+
+| Item | State |
+|---|---|
+| #2301: seeded RNG for `ordered_shuffle` and random slot picks (fixes #2303) | Merged 10/13/2026 |
+| #2306: a settings save reverts a server-moved `startTime` | Open. Fix on `main` first |
+
+#2306 fix:
+
+- The settings form sends `startTime` only when the picker is dirty.
+- `startTime` is optional on `PUT /channels/:id`. A missing value means unchanged.
+- The server rounds user-entered values down to the minute and writes server-computed values exactly.
+- The reconciler can then rebase `startTime` exactly instead of to the nearest minute.
 
 ## Current state
 
@@ -27,108 +42,127 @@ for v2.
 |---|---|---|
 | Slot schedule definition | lineup JSON (`LineupRepository.ts`) | Stored |
 | `scheduleSeed` | lineup JSON | Stored on slot save, cleared on manual save |
-| RNG skip count (`discardCount`) | `TimeSlotService.ts:101,481`, `RandomSlotsService.ts:79,204` | Accepted and returned by the schedulers, never stored |
-| Rebuild from schedule | `RegenerateChannelLineupCommand.ts` | Replays seed from `startTime`, so the same draws every time |
-| Slot iterator position | `ProgramIterator.ts` (`IndexBasedProgramIterator.position`) | In memory only, starts at 0 every build |
-| Manual tool ops | `web/src/hooks/programming_controls/` | Run in the browser; the server only sees the result |
-| Channel position | `(now - startTime) % duration` | `startTime` is rounded down to the minute on every `updateChannel` (`BasicChannelRepository.ts:46`) |
+| RNG skip count (`discardCount`) | `TimeSlotService.ts`, `RandomSlotsService.ts` | Accepted and returned by the schedulers, never stored |
+| Lineup length | `upperLimit = t0 + maxDays + 1 day` (`TimeSlotService.ts:181`, `RandomSlotsService.ts:242`) | `maxDays` defaults to 365 |
+| Rebuild from schedule | `RegenerateChannelLineupCommand.ts` | Replays seed from `startTime`. Runs after scans and some property changes |
+| Slot iterator position | `ProgramIterator.ts` | In memory only, starts at 0 every build |
+| Channel position | `(now - startTime) % duration` | Read per program by `StreamProgramCalculator`. No session holds a lineup index |
 
-## Shared mechanism: the loop boundary
+## Cycles
 
-Both phases need the same swap. It lives in one service (working name `LoopRegenerationService`)
-driven by one scheduled task.
+### Length
 
-### Extend, then trim
+| Schedule | Cycle |
+|---|---|
+| Time slots | One `schedule.period` (day, week or month). `maxDays` is ignored |
+| Random slots | `maxDays` |
 
-1. **Extend.** When the time left in the current loop drops below the guide horizon
-   (`xmlTvSettings().programmingHours`) plus a margin, do two things in one write:
-   - Move `startTime` to the start of the current loop: `startTime += k * duration`, where
-     `k = floor((now - startTime) / duration)`.
-   - Append the next loop's items. `duration` becomes the sum of both loops.
+- A cycle ends where its last program ends, so lengths vary and are not whole minutes.
+- Each cycle starts exactly where the previous one ended.
+- Each time-slot cycle is generated from its own `t0`, so DST is handled per cycle.
 
-   The channel position is unchanged, because `now - startTime` is still less than the old duration.
-   The guide now sees real future programming.
-2. **Trim.** Once `now` passes the old boundary, drop the first loop's items and add its duration to
-   `startTime`. The position is again unchanged.
+### Build ahead
 
-### Whole-minute loops
+- A `ScheduledTask` runs every few minutes over channels with the toggle on.
+- When built content ends less than `xmlTvSettings().programmingHours` from now, it builds cycles
+  one at a time until the content reaches past `now + programmingHours`.
+- A cycle shorter than the horizon means more than one cycle is built ahead.
+- Building appends items. `channel.duration` becomes the sum of all built cycles. `startTime` does
+  not move, so the channel position is unchanged.
+- After each write it calls `tvGuideService.updateCachedChannel(channelId, true)`.
 
-`updateChannel` rounds `startTime` down to the minute, and that rounding stays. Instead, every loop
-ends with a flex item that pads its duration up to the next whole minute (at most 59.999 s).
+### Trim
 
-- Each built loop gets this pad before it is appended.
-- The first loop gets it when the user saves with the toggle on. The save already rewrites the
-  lineup and `startTime`, so padding there costs nothing.
-- With every loop a whole number of minutes, `startTime += k * duration` and the trim's
-  `startTime += loopDuration` always land on a minute, so the existing rounding never moves the
-  channel.
-- A loop that is already a whole number of minutes, such as a full-day time-slot schedule, gets no
-  pad.
+- Once `now` passes the end of the oldest cycle, the task drops that cycle's items and adds its
+  duration to `startTime`. The position is unchanged.
+- `startTime` is written exactly, with no rounding. This depends on #2306.
 
-### Task
+### Per-cycle state
 
-- A `ScheduledTask` runs every few minutes and checks each opted-in channel for an extend or trim
-  that is due.
-- On startup the task runs once. If a channel is past its boundary with no next loop built, it
-  builds one loop starting at the current loop start and skips the missed loops.
-- After each swap it calls `tvGuideService.updateCachedChannel(channelId, true)`, as
-  `RegenerateChannelLineupCommand` already does.
+Each cycle stores a snapshot of the state it started from:
 
-### Opt-in
+- `discardCount`, the RNG skip count into the channel's `scheduleSeed`.
+- Ordered iterators: `lastProgramId`, plus the rotation offset for `ordered_shuffle`.
+- Shuffle iterators: the IDs played in the current pass.
 
-Add a per-channel toggle, "Rebuild each loop", defaulting to off. Turning it on changes behavior
-even for fully ordered schedules, because ordered shows stop repeating, so existing channels must
-not change silently.
+One seed per channel, with skip counts, keeps every cycle reproducible from the channel's seed.
 
-### Risks to verify
+### Rebuilds cascade
 
-- Sessions that are already streaming may hold a lineup index, not a timestamp. Check
-  `StreamProgramCalculator` and the HLS/concat sessions for indexes that survive a lineup swap.
-- `ReconcileProgramDurationsTask` patches lineups after scans. It must not run on a lineup in the
-  extended state with stale assumptions about the loop length.
-- A slot save from the editor resets the seed, the skip count, the iterator state and `startTime`.
-  That is expected, but the toggle state must survive it.
-- `ReconcileProgramDurationsTask` can change a loop's length after a scan. It must re-pad the loop to
-  a whole minute, or the next rebase lands off the minute.
+- `RegenerateChannelLineupCommand` replays the airing cycle from its snapshot, then rebuilds every
+  built-ahead cycle from the new end state. One write.
+- Slot lineups with a seed are already regenerated, not patched, by `ReconcileProgramDurationsTask`,
+  so the reconciler's patch rules never touch these lineups.
+
+### Catch-up after downtime
+
+- While the server is down past a boundary, the old cycles wrap and replay until the task runs.
+- The task runs once at startup. It starts a new cycle from the last aired cycle's end snapshot.
+- Time slots: the new cycle starts at the start of the current period.
+- Random slots: the new cycle starts at `now`, rounded to the minute.
+- Missed cycles are not simulated, so no unaired episodes are skipped.
 
 ## Phase 1: slot schedules
 
 ### Data (lineup JSON, all optional)
 
-- `scheduleDiscardCount: number`, the RNG skip count after the last built loop.
-- `slotIteratorState: Record<SlotIteratorKey, { lastProgramId: string }>`, the last program each
-  ordered iterator emitted.
-- `rebuildEachLoop: boolean`.
+- `rebuildEachCycle: boolean`. Missing reads as off.
+- `cycles: Array<{ itemCount, durationMs, snapshot }>`, in lineup order.
 
 New optional fields need no `ChannelLineupMigrator` step.
 
 ### Scheduler changes
 
-- `scheduleTimeSlots` and the random-slots equivalent accept an initial iterator state and return
-  the final one, next to `discardCount`.
-- An ordered iterator resumes just after `lastProgramId` in its sort order. If that program is gone,
-  it starts at 0.
-- Shuffle iterators restart with a fresh permutation each loop. A show can repeat an episode near
-  the boundary before every episode has aired. That is acceptable for a stopgap. Persisting the
-  played-this-pass IDs fixes it later if users complain.
+- `scheduleTimeSlots` and the random-slots equivalent accept a snapshot and a cycle end, and return
+  the end snapshot next to the items.
+- Ordered iterators resume just after `lastProgramId` in sort order. A missing program means
+  starting at 0.
+- `ordered_shuffle` resumes at its stored rotation offset.
+- Shuffle iterators shuffle only unplayed programs. When those run out, a new pass starts. New
+  library programs join the unplayed pool, and deleted ones drop out.
 
 ### Regeneration
 
-- Extend `RegenerateChannelLineupCommand` (or a sibling command) to take `startTime`, `seed`,
-  `discardCount` and iterator state, and to return the items for one loop without saving.
-- The boundary service does the save.
+- `RegenerateChannelLineupCommand`, or a sibling command, builds one cycle from a start time and a
+  snapshot, and returns items plus the end snapshot without saving.
+- The boundary service owns build-ahead, trim, cascade and catch-up writes.
+
+### Opt-in
+
+- Toggle label: "Rebuild each cycle".
+- On by default for new slot schedules. Existing slot channels stay off until the owner turns it on.
+- Helper text says that shuffles change each cycle, ordered shows continue, and time slots ignore
+  `maxDays`.
+- A slot save keeps the toggle state and resets seed, cycles, snapshots and `startTime`.
+- A manual save clears the toggle and all cycle state. The saved items become a fixed manual lineup.
 
 ### Web
 
-- Add the toggle to the slot editor.
-- Optionally show "rebuilt N times, next rebuild at T" on the channel page.
+- Add the toggle to both slot editors.
+- Make the "Programming Start" picker read-only on rebuilding channels, with helper text saying the
+  schedule sets it each cycle. A slot save is the way to restart the schedule.
+- Optional: "rebuilt N times, next rebuild at T" on the channel page.
+
+### Tests
+
+- Build ahead and trim keep the channel position unchanged at every step.
+- A cycle shorter than the horizon builds enough cycles to cover it.
+- Cascade: rebuilding the airing cycle rebuilds the next one from the new end state.
+- Ordered shows continue across cycles. `ordered_shuffle` keeps its offset.
+- Shuffled programs do not repeat within a pass across cycles.
+- Catch-up starts from the last snapshot at the period start (time slots) or `now` (random slots).
+- Same seed and library give the same sequence of cycles.
 
 ### Size
 
-Medium. The scheduler and iterator plumbing is mechanical. The boundary swap and its tests carry
+Medium. The scheduler and iterator plumbing is mechanical. The boundary service and its tests carry
 most of the risk.
 
-## Phase 2: manual lineups (minimal)
+## Phase 2: manual lineups (deferred)
+
+Deferred on 10/13/2026. It costs about as much as phase 1 and builds editor-store plumbing that
+infinite schedules will replace. Revisit if manual-lineup users ask for reshuffles after phase 1
+ships. The design below is kept as it was.
 
 ### Problem
 
@@ -143,9 +177,9 @@ When the user saves, the web client sends an optional recipe with the manual lin
   Deterministic ops before that point are already baked into `base`, so they never replay.
 - `ops`, an ordered list of `{ kind, config }` from the first randomizing op onward.
 
-The server keeps the user's saved items, padded to a whole minute, as loop 1. From loop 2 on, it replays the recipe with its
-own seeded RNG. Because loop 1 is what the user saw, the browser and server never need to produce
-identical shuffles, which removes the hardest parity problem.
+The server keeps the user's saved items as cycle 1. From cycle 2 on, it replays the recipe with its
+own seeded RNG. Because cycle 1 is what the user saw, the browser and server never need to produce
+identical shuffles.
 
 ### Replayable ops
 
@@ -168,38 +202,15 @@ identical shuffles, which removes the hardest parity problem.
 ### Work
 
 1. Move the op functions in the table from `web/src/hooks/programming_controls/` to
-   `@tunarr/shared`, with the RNG passed in (`random-js` `Random`). The web hooks become thin
-   wrappers that pass an unseeded engine.
+   `@tunarr/shared`, with the RNG passed in (`random-js` `Random`).
 2. Record ops in the channel editor store and maintain `base` according to the rules above.
-3. Add optional `recipe`, plus `rebuildEachLoop`, to `ManualProgramLineupSchema`. Store the recipe,
-   seed and skip count in the lineup JSON. A manual save without a recipe clears them.
-4. On the server, materialize `base` to `ChannelProgram` (the same path `MaterializeLineupCommand`
-   uses), run the ops, condense the result, and hand it to the boundary service.
-
-### Why manual is simpler than slots in one way
-
-A manual loop plays each base item once per pass. There is no iterator position to carry between
-loops, so the ordered-show continuity problem does not exist here.
+3. Add optional `recipe`, plus `rebuildEachCycle`, to `ManualProgramLineupSchema`.
+4. On the server, materialize `base` to `ChannelProgram`, run the ops, condense the result, and hand
+   it to the boundary service.
 
 ### Risks to verify
 
-- Each op must work on server-materialized programs. Shuffle by show and block shuffle group by
-  show, and the sorts need season, episode and release date. Confirm materialization fills those
-  fields.
-- Programs deleted since the save drop out of `base` at replay. Programs added to the library do
-  not appear, because a manual lineup has no source query.
-- Restrict hours and pad start times depend on the loop's start time. Replay them with the new loop
-  start, not the original channel `startTime`.
-
-### Size
-
-Medium to large. Most of the cost is moving the functions and their tests to `shared` and building
-the op-log plumbing in the editor store. Phase 2 does not block v2 if it stays limited to the
-table above.
-
-## Open questions
-
-1. Should "Rebuild each loop" default to on for new slot channels and stay off for existing ones?
-2. Should shuffled slots persist their played-this-pass IDs in phase 1, or wait for complaints?
-3. In phase 2, should a drag reorder after a shuffle drop the recipe, or fold the reorder into
-   `base`? Dropping it is simpler and easier to explain.
+- Shuffle by show and block shuffle group by show, and the sorts need season, episode and release
+  date. Confirm materialization fills those fields.
+- Programs deleted since the save drop out of `base` at replay. New library programs do not appear.
+- Restrict hours and pad start times must replay with the new cycle start.
