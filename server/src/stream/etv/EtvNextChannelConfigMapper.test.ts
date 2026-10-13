@@ -167,19 +167,39 @@ describe('toChannelConfig', () => {
         },
       );
 
-      expect(config.normalization.video.filters).toEqual(expected);
+      expect(config.normalization.video.filters).toEqual({
+        ...expected,
+        scale: { flags: 'fast_bilinear' },
+      });
     },
   );
 
-  test('emits no filter options when deinterlacing is off', () => {
+  test('emits only the scale flags when deinterlacing is off', () => {
     const { config } = map(
       { deinterlaceVideo: false },
       { deinterlaceFilter: 'yadif=1' },
     );
 
     expect(config.normalization.video.deinterlace).toBe(false);
-    expect(config.normalization.video.filters).toBeUndefined();
+    expect(config.normalization.video.filters).toEqual({
+      scale: { flags: 'fast_bilinear' },
+    });
   });
+
+  // The backend defaults to bicubic, so the flags go out even for Tunarr's
+  // own default.
+  test.each(['bicubic', 'fast_bilinear', 'lanczos', 'spline'] as const)(
+    'passes the %s scaling algorithm to the backend',
+    (scalingAlgorithm) => {
+      const { config, ignored } = map({}, { scalingAlgorithm });
+
+      expect(config.normalization.video.filters?.scale?.flags).toBe(
+        scalingAlgorithm,
+      );
+      expect(ignored).toEqual([]);
+      expect(ChannelConfigSchema.safeParse(config).success).toBe(true);
+    },
+  );
 
   test('maps the loudnorm triple onto the loudness block', () => {
     const { config } = map({
@@ -240,21 +260,17 @@ describe('toChannelConfig', () => {
   });
 
   test('names every setting that does not survive the crossing', () => {
-    const { ignored } = map(
-      {
-        threadCount: 4,
-        videoPreset: 'veryfast',
-        videoProfile: 'high',
-        audioVolumePercent: 80,
-        normalizeFrameRate: true,
-      },
-      { scalingAlgorithm: 'bicubic' },
-    );
+    const { ignored } = map({
+      threadCount: 4,
+      videoPreset: 'veryfast',
+      videoProfile: 'high',
+      audioVolumePercent: 80,
+      normalizeFrameRate: true,
+    });
 
     expect(ignored.map((i) => i.field).sort()).toEqual([
       'audioVolumePercent',
       'normalizeFrameRate',
-      'scalingAlgorithm',
       'threadCount',
       'videoPreset',
       'videoProfile',
