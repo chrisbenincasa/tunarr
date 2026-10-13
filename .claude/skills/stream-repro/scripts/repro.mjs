@@ -37,6 +37,7 @@ const { values: opt } = parseArgs({
     hwaccel: { type: 'string' },
     'vaapi-device': { type: 'string' },
     schedule: { type: 'string' },
+    'sar-override': { type: 'string' },
   },
 });
 
@@ -156,6 +157,7 @@ const LAYOUTS = {
     audio: [{ lang: 'eng', ar: 48000, ac: 2 }, { lang: 'eng', ar: 48000, ac: 2, title: 'Commentary' }],
     subs: false,
   }),
+  anamorphic: () => ({ size: '720x480', rate: '30000/1001', sar: '32/27', audio: [{ lang: 'eng', ar: 48000, ac: 2 }], subs: false }),
   subs: () => ({ size: '1280x720', rate: '30', audio: [{ lang: 'eng', ar: 48000, ac: 2 }], subs: true }),
   mixed: (i) =>
     [
@@ -190,6 +192,7 @@ function makeClips(dir) {
       subIdx = l.audio.length + 1;
       args.push('-i', srt);
     }
+    if (l.sar) args.push('-vf', `setsar=${l.sar}`);
     args.push('-map', '0:v');
     l.audio.forEach((_, j) => args.push('-map', `${j + 1}:a`));
     if (subIdx) args.push('-map', `${subIdx}:s`, '-c:s', 'srt', '-metadata:s:s:0', 'language=eng');
@@ -868,6 +871,12 @@ try {
     log('building channel', server.base);
     channel = await buildSyntheticChannel(server.base, clipsDir);
     if (opt['truncate-clip']) truncateClip(clipsDir, opt['truncate-clip']);
+    if (opt['sar-override'] !== undefined) {
+      // Mirrors Jellyfin/Emby, which save '0:0' for anamorphic media.
+      execFileSync('sqlite3', [path.join(dbDir, 'db.db'), `UPDATE program_version SET sample_aspect_ratio = '${opt['sar-override'].replace(/'/g, "''")}';`]);
+      report.sarOverride = execFileSync('sqlite3', [path.join(dbDir, 'db.db'), 'SELECT width, height, sample_aspect_ratio, display_aspect_ratio FROM program_version;'], { encoding: 'utf8' }).trim();
+      log('sar override', report.sarOverride);
+    }
     if (opt.schedule) {
       log('applying schedule', opt.schedule);
       report.schedule = await applySchedule(server.base, channel, path.resolve(opt.schedule));
