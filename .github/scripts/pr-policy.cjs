@@ -492,9 +492,26 @@ async function evaluatePullRequest(github, core, owner, repo, number) {
   });
 }
 
+// Runs on PR events, on a `/recheck` comment, and on a manual dispatch with
+// `pr_number`. The workflow filters who may comment `/recheck`.
 async function checkPullRequest({ github, context, core }) {
   const { owner, repo } = context.repo;
-  await evaluatePullRequest(github, core, owner, repo, context.payload.pull_request.number);
+  const { payload } = context;
+  const number =
+    payload.pull_request?.number ?? payload.issue?.number ?? Number(payload.inputs?.pr_number);
+  if (!Number.isInteger(number) || number <= 0) {
+    core.setFailed(`No PR number in the ${context.eventName} event.`);
+    return;
+  }
+  if (payload.comment) {
+    await github.rest.reactions.createForIssueComment({
+      owner,
+      repo,
+      comment_id: payload.comment.id,
+      content: 'eyes',
+    });
+  }
+  await evaluatePullRequest(github, core, owner, repo, number);
 }
 
 // Runs when an issue is labeled `design approved`. Re-checks the open PRs

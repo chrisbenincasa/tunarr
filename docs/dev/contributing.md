@@ -421,6 +421,8 @@ Maintainers are the people listed in [`.github/CODEOWNERS`](https://github.com/c
 
 The bot doesn't check PRs opened before October 10, 2026. Maintainers may still apply these rules to them by hand.
 
+The bot re-checks a PR whenever it's pushed, edited, labeled, or reopened. To re-check it without changing anything, comment `/recheck` on the PR. Only the PR author and people with write access can do this. Maintainers can also run the PR Policy workflow from the Actions tab with a PR number.
+
 ### Open PR limit
 
 Each outside contributor may have up to 5 PRs open for review at once. When you open a sixth, the bot converts it to a draft and says why. Mark it ready for review once one of your other PRs is merged or closed. Drafts don't count toward the limit, and PRs opened before the policy took effect do.
