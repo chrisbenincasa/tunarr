@@ -48,7 +48,7 @@ import { type ServerOptions, serverOptions } from './globals.js';
 import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { Result } from './types/result.ts';
-import { getBooleanEnvVar, getEnvVar, TUNARR_ENV_VARS } from './util/env.ts';
+import { getEnvVar, TUNARR_ENV_VARS } from './util/env.ts';
 import { filename, isDev, run, timeoutPromise } from './util/index.js';
 import { InjectLogger } from './util/inject.js';
 import { type Logger } from './util/logging/LoggerFactory.js';
@@ -620,13 +620,11 @@ export class Server {
       ),
     );
 
-    if (getBooleanEnvVar(TUNARR_ENV_VARS.USE_WORKER_POOL_ENV_VAR, false)) {
-      this.logger.info('Shutting down all workers');
-      try {
-        await container.get<IWorkerPool>(KEYS.WorkerPool).shutdown(5_000);
-      } catch (e) {
-        this.logger.error(e, 'Error shutting down workers');
-      }
+    this.logger.info('Shutting down all workers');
+    try {
+      await container.get<IWorkerPool>(KEYS.WorkerPool).shutdown(5_000);
+    } catch (e) {
+      this.logger.error(e, 'Error shutting down workers');
     }
 
     this.serverContext.eventService.close();
