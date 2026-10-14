@@ -10,6 +10,8 @@ const ONE_DAY = 86_400_000;
 const TIME_OF_DAY = 21_000_000; // 05:50
 const OUT_OF_RANGE = ONE_DAY + TIME_OF_DAY; // 107_400_000, as reported
 
+const customShowId = randomUUID();
+
 const programs: SlotSchedulerProgram[] = Array.from({ length: 8 }, (_, i) => ({
   ...createFakeProgramOrm({
     uuid: `mv${i}`,
@@ -18,7 +20,7 @@ const programs: SlotSchedulerProgram[] = Array.from({ length: 8 }, (_, i) => ({
     duration: 90 * 60 * 1000,
   }),
   parentFillerLists: [],
-  parentCustomShows: [],
+  parentCustomShows: [{ customShowId, index: i }],
   parentSmartCollections: [],
 }));
 
@@ -36,7 +38,8 @@ function makeSchedule(startTime: number): TimeSlotSchedule {
       {
         id: randomUUID(),
         startTime,
-        type: 'movie' as const,
+        type: 'custom-show' as const,
+        customShowId,
         order: 'next' as const,
         direction: 'asc' as const,
       },
@@ -107,7 +110,8 @@ describe('time slots with a startTime beyond the period', () => {
     const at = (startTime: number) => ({
       id: randomUUID(),
       startTime,
-      type: 'movie' as const,
+      type: 'custom-show' as const,
+      customShowId,
       order: 'next' as const,
       direction: 'asc' as const,
     });

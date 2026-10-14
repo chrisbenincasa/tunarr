@@ -324,7 +324,6 @@ export const TimeSlotTable = () => {
         id: 'filler',
         accessorFn: (row) => {
           switch (row.type) {
-            case 'movie':
             case 'show':
             case 'custom-show':
             case 'smart-collection':
