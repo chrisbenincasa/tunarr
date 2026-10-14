@@ -536,14 +536,13 @@ export class LocalMovieScanner extends FileSystemScanner {
     }
 
     const folder = dirname(fullMoviePath);
-    const stemPaths = [
-      path.join(folder, filename),
-      path.join(
-        folder,
-        `${basename(fullMoviePath, extname(fullMoviePath))}-${filename}`,
-      ),
-    ];
-    const found = await locateImageFile(stemPaths);
+    const stem = basename(fullMoviePath, extname(fullMoviePath));
+
+    // Kodi order: the movie-specific name wins in any extension, so look it
+    // up on its own before the folder-level short name.
+    const found =
+      (await locateImageFile([path.join(folder, `${stem}-${filename}`)])) ??
+      (await locateImageFile([path.join(folder, filename)]));
     if (found || artworkType !== 'poster') {
       return found;
     }
