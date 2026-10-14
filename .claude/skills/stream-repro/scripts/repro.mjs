@@ -272,6 +272,8 @@ function prepareDbCopy() {
     recursive: true,
     filter: (p) => !/[\\/](logs|backups|cache|streams)$/.test(p),
   });
+  // The server reads the logs directory at startup but does not create it.
+  fs.mkdirSync(path.join(dbDir, 'logs'), { recursive: true });
 
   // The copied settings hold absolute paths to the original directory.
   const settingsFile = path.join(dbDir, 'settings.json');

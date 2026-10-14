@@ -117,20 +117,31 @@ run_repro() {
     --entrypoint sleep tunarr infinity >/dev/null
   docker cp "$script" "$repro_container:/tmp/repro.mjs"
 
-  local status=0
+  local status=0 interrupted=0
+  # On Ctrl-C, `docker exec` can exit 0, so record the interrupt ourselves and
+  # still copy out whatever the run produced.
+  trap 'interrupted=1' INT TERM
   # ${hwaccel[@]+...} keeps an empty array from tripping `set -u` in bash 3.2.
   docker exec "$repro_container" node /tmp/repro.mjs \
     --server-bin /tunarr/tunarr --out /tmp/repro \
     ${hwaccel[@]+"${hwaccel[@]}"} "$@" || status=$?
+  trap - INT TERM
 
   # Copy the output back even after a failed run; the report says why.
-  local out_dir
-  out_dir="$(mktemp -d "${TMPDIR:-/tmp}/tunarr-repro.XXXXXX")"
-  if docker cp "$repro_container:/tmp/repro/." "$out_dir" >/dev/null; then
-    echo "docker-test: report: ${out_dir%/}/report.json"
-  else
+  local tmp="${TMPDIR:-/tmp}" out_dir
+  out_dir="$(mktemp -d "${tmp%/}/tunarr-repro.XXXXXX")"
+  if ! docker cp "$repro_container:/tmp/repro/." "$out_dir" >/dev/null; then
     echo "docker-test: could not copy the repro output out of the container." >&2
   fi
+
+  # repro.mjs writes report.json only when it finishes.
+  if [[ -f "$out_dir/report.json" ]]; then
+    echo "docker-test: report: $out_dir/report.json"
+  else
+    echo "docker-test: no report.json; the run did not finish. Partial output: $out_dir" >&2
+    [[ $status -eq 0 ]] && status=1
+  fi
+  [[ $interrupted -eq 1 ]] && status=130
   exit "$status"
 }
 
