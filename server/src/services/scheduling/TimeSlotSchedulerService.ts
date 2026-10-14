@@ -1,10 +1,13 @@
-import type { TimeSlotScheduleResult } from '@tunarr/types/api';
 import { TimeSlotScheduleSchema } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { z } from 'zod/v4';
 import { SlotSchedulerHelper } from './SlotSchedulerHelper.ts';
-import { scheduleTimeSlots } from './TimeSlotService.ts';
+import { SlotIteratorStateSchema } from './slotIteratorState.ts';
+import {
+  scheduleTimeSlots,
+  type TimeSlotCycleResult,
+} from './TimeSlotService.ts';
 
 export const ChannelTimeSlotScheduleRequest = z.object({
   type: z.literal('channel'),
@@ -16,6 +19,9 @@ export const ChannelTimeSlotScheduleRequest = z.object({
   // Set on save and preview. Rejects slots that reference missing content or
   // cannot play. Regeneration leaves it off so stored schedules keep playing.
   strictValidation: z.boolean().optional(),
+  // Set when building one cycle of a rebuilding channel. See SlotCycleOptions.
+  iteratorState: SlotIteratorStateSchema.optional(),
+  endTime: z.number().optional(),
 });
 
 export type ChannelTimeSlotScheduleRequest = z.infer<
@@ -32,6 +38,9 @@ export const ProgramsTimeSlotScheduleRequest = z.object({
   // Set on save and preview. Rejects slots that reference missing content or
   // cannot play. Regeneration leaves it off so stored schedules keep playing.
   strictValidation: z.boolean().optional(),
+  // Set when building one cycle of a rebuilding channel. See SlotCycleOptions.
+  iteratorState: SlotIteratorStateSchema.optional(),
+  endTime: z.number().optional(),
 });
 
 export type ProgramsTimeSlotScheduleRequest = z.infer<
@@ -56,7 +65,7 @@ export class TimeSlotSchedulerService {
 
   async schedule(
     request: TimeSlotScheduleServiceRequest,
-  ): Promise<TimeSlotScheduleResult> {
+  ): Promise<TimeSlotCycleResult> {
     const slotPrograms =
       await this.slotSchedulerHelper.collectSlotProgramming(request);
 
@@ -73,6 +82,11 @@ export class TimeSlotSchedulerService {
       request.seed,
       request.discardCount ?? 0,
       request.startTime ? dayjs(request.startTime) : undefined,
+      {
+        iteratorState: request.iteratorState,
+        endTime:
+          request.endTime !== undefined ? dayjs(request.endTime) : undefined,
+      },
     );
   }
 }
