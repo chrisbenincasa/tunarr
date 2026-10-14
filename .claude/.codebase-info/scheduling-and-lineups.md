@@ -91,6 +91,9 @@ Opt-in reshuffle-on-loop for slot channels (design in `plans/schedules-reshuffle
   web toggle doesn't exist yet. Turning it on assigns a new `scheduleSeed`, clears `cycles`, and
   writes `startTime` to `cycleStartTime(now)` exactly before building the first cycle. A manual
   save clears `rebuildEachCycle`, `cycles`, and `nextCycleSnapshot`.
+- Lineups with `onDemandConfig` never rebuild. `PUT /channels/:id` takes the lock and ignores an
+  incoming `startTime` on rebuilding channels, because the server owns it. Each pass builds a capped
+  number of cycles, and every cycle write also syncs `channel_programs`.
 
 ## Related
 
