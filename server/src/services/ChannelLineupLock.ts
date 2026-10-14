@@ -39,6 +39,18 @@ export class ChannelLineupLock {
     );
   }
 
+  /**
+   * Runs `cb` as if no lock were held.
+   *
+   * Reentrancy rides on an `AsyncLocalStorage`, which a timer or a callback
+   * registered inside the critical section inherits and keeps after the lock
+   * is released. Work scheduled for later goes through here so it waits for
+   * the lock like any other caller instead of walking past it.
+   */
+  runDetached<T>(cb: () => T): T {
+    return this.#held.exit(cb);
+  }
+
   isLocked(channelId: string): boolean {
     return this.#locks.isLocked(channelId);
   }

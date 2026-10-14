@@ -134,6 +134,13 @@ export interface IChannelDB {
    */
   replaceChannelPrograms(channelId: string, programIds: string[]): void;
 
+  /**
+   * Associate programs with a channel, keeping the ones already there.
+   * @param channelId
+   * @param programIds
+   */
+  addChannelPrograms(channelId: string, programIds: string[]): void;
+
   updateLineup(
     id: string,
     req: UpdateChannelProgrammingRequest,

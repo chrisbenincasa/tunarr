@@ -39,6 +39,12 @@ export class OnDemandChannelService {
     return this.locks.run(channelId, cb);
   }
 
+  // Use for work handed to a timer from inside the lock. See
+  // ChannelLineupLock.runDetached.
+  runWithoutChannelLock<T>(cb: () => T): T {
+    return this.locks.runDetached(cb);
+  }
+
   async pauseAllChannels() {
     const channels = await this.channelDB.getAllChannels();
     const now = +dayjs();
@@ -92,10 +98,14 @@ export class OnDemandChannelService {
           cursor: nextCursor,
         })
         .then(() => {
-          GlobalScheduler.scheduleOneOffTask(
-            KEYS.UpdateXmlTvTaskFactory,
-            dayjs().add(1000),
-            [channelId],
+          // Detached: the timer would otherwise inherit this lock and run the
+          // update believing it still holds it.
+          this.locks.runDetached(() =>
+            GlobalScheduler.scheduleOneOffTask(
+              KEYS.UpdateXmlTvTaskFactory,
+              dayjs().add(1000),
+              [channelId],
+            ),
           );
         })
         .finally(() => {

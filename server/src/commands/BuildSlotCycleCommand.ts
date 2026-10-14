@@ -46,6 +46,15 @@ export class BuildSlotCycleCommand {
       );
     }
 
+    // Every cycle replays the same seeded RNG from its stored discard count.
+    // Without a seed the scheduler mints fresh entropy per cycle, which makes
+    // the count meaningless and a cascade unable to reproduce what aired.
+    if (!scheduleSeed) {
+      throw new Error(
+        `Channel ${channelId} rebuilds each cycle but has no schedule seed`,
+      );
+    }
+
     const request = {
       type: 'channel' as const,
       channelId,
