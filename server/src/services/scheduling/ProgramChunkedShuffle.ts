@@ -7,6 +7,7 @@ import type { CondensedCustomProgram } from '@tunarr/types/schemas';
 import { orderBy } from 'lodash-es';
 import type { Random } from 'random-js';
 import { IndexBasedProgramIterator } from './ProgramIterator.js';
+import type { ProgramIteratorSnapshot } from './slotIteratorState.ts';
 import {
   createIndexByIdMap,
   type SlotSchedulerProgram,
@@ -20,13 +21,23 @@ abstract class ProgramChunkedShuffle<
     orderer: (program: SlotSchedulerProgram) => string | number,
     random: Random,
     asc: boolean = true,
+    resume?: ProgramIteratorSnapshot,
   ) {
+    const sorted = orderBy(programs, orderer, [asc ? 'asc' : 'desc']);
+
+    // Resuming keeps the sorted order and skips the random rotation, since a
+    // rotation does not change which program follows which.
+    const canResume =
+      resume?.type === 'ordered' &&
+      sorted.some((program) => program.uuid === resume.lastProgramId);
     super(
-      seq.rotateArray(
-        orderBy(programs, orderer, [asc ? 'asc' : 'desc']),
-        random.integer(0, programs.length),
-      ),
+      canResume
+        ? sorted
+        : seq.rotateArray(sorted, random.integer(0, programs.length)),
     );
+    if (canResume) {
+      this.resumeAfter(resume.lastProgramId);
+    }
   }
 }
 
@@ -48,9 +59,16 @@ export class CustomProgramChunkedShuffle extends ProgramChunkedShuffle<Condensed
     programs: SlotSchedulerProgram[],
     random: Random,
     asc: boolean = true,
+    resume?: ProgramIteratorSnapshot,
   ) {
     const indexById = createIndexByIdMap(programs, customShowId);
-    super(programs, (program) => indexById[program.uuid] ?? -1, random, asc);
+    super(
+      programs,
+      (program) => indexById[program.uuid] ?? -1,
+      random,
+      asc,
+      resume,
+    );
     this.indexById = indexById;
   }
 
