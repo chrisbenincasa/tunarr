@@ -1,6 +1,6 @@
 # ErsatzTV next — B2 callback retry and failure budget
 
-> **Status (10/13/2026):** Retry and the configurable fallback duration are done upstream in #322 (`v0.2.1`), matching D2–D6. Upstream also raises the fallback to the retry budget itself (`config.rs:101-102`), so the D6 rule needs no Tunarr check. Tunarr emits them in `c87cdaecf`. The failure budget (D7, D8) is the only part left. §4 is trimmed to it and re-verified at `v0.2.2`; next step is filing it.
+> **Status (10/13/2026):** Retry and the configurable fallback duration are done upstream in #322 (`v0.2.1`), matching D2–D6. Upstream also raises the fallback to the retry budget itself (`config.rs:101-102`), so the D6 rule needs no Tunarr check. Tunarr emits them in `c87cdaecf`. The failure budget (D7, D8) is the only part left. §4 is trimmed to it, re-verified at `v0.2.2`, and filed as [ErsatzTV/next#332](https://github.com/ErsatzTV/next/issues/332). Next step is the PR once the maintainer answers its two questions.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md). The original argument is in main plan §15.B, "B2 in full." §1 below corrects part of it.
 
@@ -81,7 +81,7 @@ Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream
 
 ## 4. Design issue
 
-Re-verified at `v0.2.2` (`4a0b59a`). No upstream issue covers this yet.
+Re-verified at `v0.2.2` (`4a0b59a`). Filed as [#332](https://github.com/ErsatzTV/next/issues/332).
 
 - A selection error becomes `ItemSelectionFailed` and plays fallback (`channel_session.rs:458-468`). Since #322 that happens only after the retry budget runs out.
 - A transcode error becomes `TranscodeFailed` and plays fallback until the item's finish (`channel_session.rs:488-504`).
