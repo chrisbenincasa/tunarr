@@ -1996,3 +1996,64 @@ describe('VaapiPipelineBuilder scale', () => {
     expect(args).not.toContain('scale=');
   });
 });
+
+describe('VaapiPipelineBuilder MPEG-2 encoding', () => {
+  function buildMpeg2(entrypoints: VaapiProfileEntrypoint[]): string {
+    const video = VideoInputSource.withStream(
+      new FileStreamSource('/path/to/video.mkv'),
+      create169FhdVideoStream(),
+    );
+
+    const builder = new VaapiPipelineBuilder(
+      new VaapiHardwareCapabilities(entrypoints),
+      EmptyFfmpegCapabilities,
+      video,
+      null,
+      null,
+      null,
+      null,
+    );
+
+    const pipeline = builder.build(
+      FfmpegState.create({ version: fakeVersion }),
+      new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.FHD,
+        paddedSize: FrameSize.FHD,
+        pixelFormat: new PixelFormatYuv420P(),
+        videoFormat: VideoFormats.Mpeg2Video,
+      }),
+      { ...DefaultPipelineOptions, vaapiDevice: '/dev/dri/renderD128' },
+    );
+
+    return pipeline.getCommandArgs().join(' ');
+  }
+
+  test('uses mpeg2_vaapi when the device has an MPEG-2 encode entrypoint', () => {
+    const args = buildMpeg2([
+      new VaapiProfileEntrypoint(
+        VaapiProfiles.H264Main,
+        VaapiEntrypoint.Decode,
+      ),
+      new VaapiProfileEntrypoint(
+        VaapiProfiles.Mpeg2Main,
+        VaapiEntrypoint.Encode,
+      ),
+    ]);
+
+    expect(args).toContain('-c:v mpeg2_vaapi');
+    expect(args).not.toContain('hwdownload');
+  });
+
+  test('falls back to software mpeg2video without an MPEG-2 encode entrypoint', () => {
+    const args = buildMpeg2([
+      new VaapiProfileEntrypoint(
+        VaapiProfiles.H264Main,
+        VaapiEntrypoint.Decode,
+      ),
+    ]);
+
+    expect(args).toContain('-c:v mpeg2video');
+    expect(args).not.toContain('mpeg2_vaapi');
+  });
+});
