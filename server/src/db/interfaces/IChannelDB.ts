@@ -210,7 +210,14 @@ export interface IChannelDB {
   findChannelsForProgramId(programId: string): Promise<ChannelOrm[]>;
 }
 export type UpdateChannelLineupRequest = MarkOptional<
-  MarkNullable<Omit<Lineup, 'lastUpdated'>, 'schedule' | 'scheduleSeed'>,
+  MarkNullable<
+    Omit<Lineup, 'lastUpdated'>,
+    | 'schedule'
+    | 'scheduleSeed'
+    | 'rebuildEachCycle'
+    | 'cycles'
+    | 'nextCycleSnapshot'
+  >,
   'version' | 'onDemandConfig' | 'items' | 'startTimeOffsets' | 'scheduleSeed'
 >;
 

@@ -53,6 +53,7 @@ import type { MarkRequired } from 'ts-essentials';
 import { MaterializeLineupCommand } from '../../commands/MaterializeLineupCommand.ts';
 import { MaterializeProgramsCommand } from '../../commands/MaterializeProgramsCommand.ts';
 import type { IWorkerPool } from '../../interfaces/IWorkerPool.ts';
+import type { ChannelLineupLock } from '../../services/ChannelLineupLock.ts';
 import { ScheduleValidationError } from '../../types/errors.ts';
 import {
   asyncMapToRecord,
@@ -123,6 +124,9 @@ export type UpdateLineupResult = {
   channel: ChannelOrm;
   newLineup: LineupItem[];
   materializedPrograms?: Record<string, ContentProgram>;
+  // Whether the saved channel rebuilds its schedule each cycle. The caller
+  // builds the first cycle, which replaces the lineup saved here.
+  rebuildEachCycle: boolean;
 };
 
 @injectable()
@@ -147,6 +151,8 @@ export class LineupRepository {
     @inject(ProgramConverter) private programConverter: ProgramConverter,
     @inject(KEYS.ChannelReadOpsRepository)
     private readonly channelReadOps: ChannelReadOpsRepository,
+    @inject(KEYS.ChannelLineupLock)
+    private readonly lineupLock: ChannelLineupLock,
   ) {}
 
   async createLineup(channelId: string): Promise<void> {
@@ -237,25 +243,29 @@ export class LineupRepository {
 
     const ops = asyncPool(
       reject(allChannels, { uuid: toChannel }),
-      async (channel) => {
-        const lineup = await this.loadLineup(channel.uuid);
-        let changed = false;
-        const newLineup: LineupItem[] = map(lineup.items, (item) => {
-          if (item.type === 'redirect' && item.channel === toChannel) {
-            changed = true;
-            return {
-              type: 'offline' as const,
-              durationMs: item.durationMs,
-            };
-          } else {
-            return item;
+      (channel) =>
+        this.lineupLock.run(channel.uuid, async () => {
+          const lineup = await this.loadLineup(channel.uuid);
+          let changed = false;
+          const newLineup: LineupItem[] = map(lineup.items, (item) => {
+            if (item.type === 'redirect' && item.channel === toChannel) {
+              changed = true;
+              return {
+                type: 'offline' as const,
+                durationMs: item.durationMs,
+              };
+            } else {
+              return item;
+            }
+          });
+          if (changed) {
+            return this.saveLineup(channel.uuid, {
+              ...lineup,
+              items: newLineup,
+            });
           }
-        });
-        if (changed) {
-          return this.saveLineup(channel.uuid, { ...lineup, items: newLineup });
-        }
-        return;
-      },
+          return;
+        }),
       { concurrency: 2 },
     );
 
@@ -315,6 +325,24 @@ export class LineupRepository {
         newLineup.onDemandConfig === null
           ? undefined
           : newLineup.onDemandConfig;
+    }
+
+    if (isDefined(newLineup.rebuildEachCycle)) {
+      data.rebuildEachCycle =
+        newLineup.rebuildEachCycle === null
+          ? undefined
+          : newLineup.rebuildEachCycle;
+    }
+
+    if (isDefined(newLineup.cycles)) {
+      data.cycles = newLineup.cycles === null ? undefined : newLineup.cycles;
+    }
+
+    if (isDefined(newLineup.nextCycleSnapshot)) {
+      data.nextCycleSnapshot =
+        newLineup.nextCycleSnapshot === null
+          ? undefined
+          : newLineup.nextCycleSnapshot;
     }
 
     data.version = newLineup?.version ?? data.version;
@@ -445,18 +473,20 @@ export class LineupRepository {
     }
 
     const idSet = new Set(programIds);
-    const lineup = await this.loadLineup(channelId);
-    lineup.items = map(lineup.items, (item) => {
-      if (isContentItem(item) && idSet.has(item.id)) {
-        return {
-          type: 'offline',
-          durationMs: item.durationMs,
-        };
-      } else {
-        return item;
-      }
+    await this.lineupLock.run(channelId, async () => {
+      const lineup = await this.loadLineup(channelId);
+      lineup.items = map(lineup.items, (item) => {
+        if (isContentItem(item) && idSet.has(item.id)) {
+          return {
+            type: 'offline',
+            durationMs: item.durationMs,
+          };
+        } else {
+          return item;
+        }
+      });
+      await this.saveLineup(channelId, lineup);
     });
-    await this.saveLineup(channelId, lineup);
   }
 
   /**
@@ -479,32 +509,43 @@ export class LineupRepository {
     const lineups = await this.loadAllLineups();
 
     let changedChannels = 0;
-    for (const [channelId, { lineup }] of Object.entries(lineups)) {
-      let changed = false;
-      const newLineupItems: LineupItem[] = lineup.items.map((item) => {
-        switch (item.type) {
-          case 'content': {
-            if (programsToRemove.has(item.id)) {
-              changed = true;
-              return {
-                type: 'offline',
-                durationMs: item.durationMs,
-              };
+    for (const channelId of Object.keys(lineups)) {
+      // Re-read under the lock: the snapshot above is only an enumeration, and
+      // another writer may have rewritten the channel since.
+      const didChange = await this.lineupLock.run(channelId, async () => {
+        const lineup = await this.loadLineup(channelId);
+        let changed = false;
+        const newLineupItems: LineupItem[] = lineup.items.map((item) => {
+          switch (item.type) {
+            case 'content': {
+              if (programsToRemove.has(item.id)) {
+                changed = true;
+                return {
+                  type: 'offline',
+                  durationMs: item.durationMs,
+                };
+              }
+              return item;
             }
-            return item;
+            case 'offline':
+            case 'redirect':
+              return item;
           }
-          case 'offline':
-          case 'redirect':
-            return item;
-        }
-      });
+        });
 
-      if (changed) {
+        if (!changed) {
+          return false;
+        }
+
         // saveLineup recalculates and persists channel.duration itself.
         await this.saveLineup(channelId, {
           ...lineup,
           items: newLineupItems,
         });
+        return true;
+      });
+
+      if (didChange) {
         changedChannels++;
       }
 
@@ -851,7 +892,14 @@ export class LineupRepository {
     };
   }
 
-  async updateLineup(
+  updateLineup(
+    id: string,
+    req: UpdateChannelProgrammingRequest,
+  ): Promise<Nullable<UpdateLineupResult>> {
+    return this.lineupLock.run(id, () => this.updateLineupLocked(id, req));
+  }
+
+  private async updateLineupLocked(
     id: string,
     req: UpdateChannelProgrammingRequest,
   ): Promise<Nullable<UpdateLineupResult>> {
@@ -984,12 +1032,18 @@ export class LineupRepository {
                 cursor: 0,
               }
             : undefined,
+          // Hand-edited items no longer follow from a schedule, so the
+          // channel loops them like any other manual lineup.
+          rebuildEachCycle: null,
+          cycles: null,
+          nextCycleSnapshot: null,
         }),
       );
 
       return {
         channel: updatedChannel,
         newLineup: newLineupItems,
+        rebuildEachCycle: false,
       };
     } else if (req.type === 'time' || req.type === 'random') {
       let programs: ChannelProgram[];
@@ -1043,17 +1097,29 @@ export class LineupRepository {
       const newLineup = createNewLineup(programs);
       this.assertValidLineup(lineup, newLineup, req.schedule);
 
+      // The request carries the toggle only when the editor shows it. Without
+      // it the channel keeps whatever it had, and a channel that never set it
+      // stays off.
+      const rebuildEachCycle =
+        req.rebuildEachCycle ?? lineup.rebuildEachCycle ?? false;
+
       const updatedChannel = updateChannel(newLineup);
       await this.saveLineup(id, {
         items: newLineup,
         schedule: req.schedule,
         scheduleSeed,
+        rebuildEachCycle,
+        // The new schedule and seed invalidate every cycle built from the old
+        // ones. The caller rebuilds from the first cycle.
+        cycles: null,
+        nextCycleSnapshot: null,
       });
 
       return {
         channel: updatedChannel,
         newLineup,
         materializedPrograms,
+        rebuildEachCycle,
       };
     }
 
