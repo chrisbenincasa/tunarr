@@ -23,6 +23,7 @@ const ArrayTags = [
   'movie.fileinfo',
   'movie.actor',
   'movie.studio',
+  'movie.uniqueid',
 ];
 
 export class OtherVideoNfoParser extends BaseNfoParser<
