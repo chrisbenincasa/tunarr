@@ -1,0 +1,15 @@
+# Developer layer for `pnpm docker-test`. Copy to
+# docker/test/local.compose.yaml and edit. That file is ignored by git and is
+# applied last, on top of the base and pipeline files.
+#
+# Put anything here that is specific to your Docker host and that the
+# variables in .env cannot express, mainly media mounts.
+services:
+  tunarr:
+    volumes:
+      # Host paths on the Docker host. Mount media at the same path Tunarr's
+      # local libraries expect.
+      - /path/to/movies:/media/movies:ro
+      - /path/to/tv:/media/tv:ro
+    # environment:
+    #   - TUNARR_DISABLE_VAAPI_PAD=true

@@ -1,0 +1,30 @@
+# Base layer for testing a build of the working tree in Docker.
+#
+# Run it through `pnpm docker-test` (scripts/docker-test.sh), which layers a
+# pipeline file from ./pipelines and an optional ./local.compose.yaml on top.
+# Values come from ./.env; see ./.env.example.
+#
+# Keep this file hardware-neutral. Compose merges lists such as `devices` and
+# `volumes` by appending, so an overlay cannot remove anything declared here.
+name: tunarr-test
+
+services:
+  tunarr:
+    build:
+      context: ../..
+      target: full-stack
+      args:
+        tunarr_version: test
+        tunarr_build: ${TUNARR_BUILD:-local}
+        exec_target: ${TUNARR_TEST_EXEC_TARGET:-linux-x64}
+    image: tunarr:test
+    container_name: tunarr-test
+    ports:
+      - '${TUNARR_TEST_PORT:-8001}:8000'
+    environment:
+      - TZ=${TUNARR_TEST_TZ:-UTC}
+      # Empty means "use the level saved in Tunarr's settings".
+      - TUNARR_LOG_LEVEL=${TUNARR_TEST_LOG_LEVEL:-}
+    volumes:
+      # A path on the Docker host, not on the machine running the command.
+      - ${TUNARR_TEST_DATA_DIR:?Set TUNARR_TEST_DATA_DIR in docker/test/.env}:/config/tunarr

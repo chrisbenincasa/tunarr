@@ -1,0 +1,5 @@
+# QSV pipeline: pass the host's render devices to the container.
+services:
+  tunarr:
+    devices:
+      - ${TUNARR_TEST_RENDER_DEVICE:-/dev/dri}:/dev/dri
