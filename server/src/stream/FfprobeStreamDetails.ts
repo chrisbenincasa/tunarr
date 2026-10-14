@@ -35,7 +35,9 @@ type FfprobeStreamDetailsRequest = {
 export class FfprobeStreamDetails
   implements StreamDetailsFetcher<FfprobeStreamDetailsRequest>
 {
-  constructor(@inject(FfmpegInfo) private ffmpegInfo: FfmpegInfo) {}
+  constructor(
+    @inject(FfmpegInfo) private ffmpegInfo: Pick<FfmpegInfo, 'probeFile'>,
+  ) {}
 
   async getStream({
     path,
@@ -55,9 +57,15 @@ export class FfprobeStreamDetails
       );
     }
 
+    // Local audio files carry their cover art as an embedded `video` stream
+    // flagged `attached_pic`. Taking it would store a ~300x300 still image as
+    // the program's video track, and the channel would then hand ffmpeg an
+    // image as its video input instead of looping a placeholder over the
+    // audio the way #2238 restored (#2242).
     const videoStream = find(
       probeDetails.streams,
-      (stream): stream is FfprobeVideoStream => stream.codec_type === 'video',
+      (stream): stream is FfprobeVideoStream =>
+        stream.codec_type === 'video' && stream.disposition?.attached_pic !== 1,
     );
 
     let videoDetails: Maybe<VideoStreamDetails>;
@@ -95,6 +103,10 @@ export class FfprobeStreamDetails
         colorRange: videoStream.color_range,
         colorSpace: videoStream.color_space,
         colorTransfer: videoStream.color_transfer,
+        // The pick above already skipped every stream with `attached_pic` set,
+        // so this is false on every path that reaches here. Kept as a literal
+        // rather than read back from the disposition, which would be a
+        // constant dressed as a value - same as ProgramStreamDetailsFetcher.
         isAttachedPic: false,
       } satisfies VideoStreamDetails;
     }
