@@ -18,5 +18,7 @@ Everything the time-slot and random-slot schedulers do that infinite schedules m
 | Filler cooldown shared between linked slots | #2166 | unverified | |
 | Random-slot weights and cooldown | `RandomSlotSchedulerService.ts` | unverified | Shuffle order |
 | Weekly and daily periods, DST handling | `TimeSlotService.ts` (#1445) | unverified | D20 stores an IANA zone, so infinite schedules should exceed classic here. Classic has open DST bugs (#1445) |
+| Program iterators resume across lineup builds (ordered position, shuffle pass, random-slot cursor and cooldowns) | `slotIteratorState.ts` (#2310) | unverified | Carried across cycles by `SlotCycleBoundaryService` as of #2310 |
+| Cycle boundary service (build ahead to the XMLTV horizon, trim with exact `startTime`, cascade on regenerate, catch-up after downtime) | `SlotCycleBoundaryService.ts` (#2310) | unverified | Reshuffle-on-loop, opt-in per channel via `rebuildEachCycle` |
 | Seeded, repeatable regeneration (`scheduleSeed`) | `RegenerateChannelLineupCommand.ts` | unverified | |
 | Generate then hand-edit a fixed lineup | Slot editors | won't port | D16. Fixed programming becomes a manual lineup |

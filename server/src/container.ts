@@ -31,6 +31,7 @@ import { ExternalApiModule } from './external/ExternalApiModule.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
 import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
+import { ChannelLineupLock } from './services/ChannelLineupLock.ts';
 import { EntityMutex } from './services/EntityMutex.ts';
 import { FileSystemService } from './services/FileSystemService.ts';
 import { M3uService } from './services/M3UService.ts';
@@ -97,6 +98,10 @@ const RootModule = new ContainerModule(({ bind }) => {
   bind(ServerContext).toSelf().inSingletonScope();
 
   bind<MutexMap>(KEYS.MutexMap).toDynamicValue(() => new MutexMap());
+
+  // One instance, or it serializes nothing. See ChannelLineupLock.
+  bind(ChannelLineupLock).toSelf().inSingletonScope();
+  bind(KEYS.ChannelLineupLock).toService(ChannelLineupLock);
 
   bind<Factory<MutexMap, [Maybe<number>]>>('Factory<MutexMax>').toFactory(
     () => (timeout?: number) => new MutexMap(timeout),

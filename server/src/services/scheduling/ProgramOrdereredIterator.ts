@@ -5,6 +5,7 @@ import type {
 import type { CondensedCustomProgram } from '@tunarr/types/schemas';
 import { orderBy } from 'lodash-es';
 import { IndexBasedProgramIterator } from './ProgramIterator.ts';
+import type { ProgramIteratorSnapshot } from './slotIteratorState.ts';
 import {
   createIndexByIdMap,
   type SlotSchedulerProgram,
@@ -23,8 +24,12 @@ abstract class ProgramOrdereredIterator<
     programs: SlotSchedulerProgram[],
     orderer: (program: SlotSchedulerProgram) => string | number,
     asc: boolean = true,
+    resume?: ProgramIteratorSnapshot,
   ) {
     super(orderBy(programs, orderer, [asc ? 'asc' : 'desc']));
+    if (resume?.type === 'ordered') {
+      this.resumeAfter(resume.lastProgramId);
+    }
   }
 }
 
@@ -44,9 +49,10 @@ export class CustomProgramOrderedIterator extends ProgramOrdereredIterator<Conde
     private customShowId: string,
     programs: SlotSchedulerProgram[],
     asc: boolean = true,
+    resume?: ProgramIteratorSnapshot,
   ) {
     const indexById = createIndexByIdMap(programs, customShowId);
-    super(programs, (program) => indexById[program.uuid] ?? -1, asc);
+    super(programs, (program) => indexById[program.uuid] ?? -1, asc, resume);
     this.indexById = indexById;
   }
 
