@@ -1,5 +1,4 @@
 import { head } from 'lodash-es';
-import { isWindows } from '../../../util/index.ts';
 import type { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
 import type { FrameState } from '../state/FrameState.ts';
 import { FrameDataLocation } from '../types.ts';
@@ -16,20 +15,22 @@ export class SubtitleFilter extends FilterOption {
       return '';
     }
 
-    let path = this.subtitleInputSource.path;
-
-    if (isWindows()) {
-      path = path.replaceAll('\\', '/\\');
-    }
-
-    if (!path.startsWith('http')) {
-      path = path.replaceAll(':/', '\\\\:/');
-    }
+    // FFmpeg parses the subtitle option, then parses the containing filtergraph.
+    // Escape both layers in order. The filtergraph is passed directly to ffmpeg,
+    // so there is no shell-escaping layer.
+    let path = this.subtitleInputSource.path
+      .replaceAll('\\', '\\\\')
+      .replaceAll("'", "\\'")
+      .replaceAll(':', '\\:')
+      .replaceAll('=', '\\=');
 
     path = path
+      .replaceAll('\\', '\\\\')
+      .replaceAll("'", "\\'")
       .replaceAll('[', '\\[')
       .replaceAll(']', '\\]')
-      .replaceAll(':', '\\:');
+      .replaceAll(',', '\\,')
+      .replaceAll(';', '\\;');
 
     return `subtitles=${path}`;
   }
