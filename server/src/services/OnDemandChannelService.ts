@@ -154,10 +154,14 @@ export class OnDemandChannelService {
           );
         });
 
-      GlobalScheduler.scheduleOneOffTask(
-        KEYS.UpdateXmlTvTaskFactory,
-        dayjs().add(1000),
-        [channelId],
+      // Detached: the timer would otherwise inherit this lock and run the
+      // update believing it still holds it.
+      this.locks.runDetached(() =>
+        GlobalScheduler.scheduleOneOffTask(
+          KEYS.UpdateXmlTvTaskFactory,
+          dayjs().add(1000),
+          [channelId],
+        ),
       );
     });
   }
