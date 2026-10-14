@@ -11,6 +11,7 @@ import type { Kysely } from 'kysely';
 import { isEmpty, isNil, isUndefined, map, sum } from 'lodash-es';
 import type { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
+import type { ChannelLineupLock } from '../../services/ChannelLineupLock.ts';
 import { isDefined, isNonEmptyString } from '../../util/index.ts';
 import type { ChannelAndLineup } from '../interfaces/IChannelDB.ts';
 import type { NewChannelOrm } from '../schema/Channel.ts';
@@ -108,6 +109,7 @@ export class BasicChannelRepository {
     @inject(KEYS.ChannelReadOpsRepository)
     private channelReadOpsRepo: ChannelReadOpsRepository,
     @inject(KEYS.LineupRepository) private lineupRepository: LineupRepository,
+    @inject(KEYS.ChannelLineupLock) private lineupLock: ChannelLineupLock,
   ) {}
 
   async saveChannel(
@@ -189,7 +191,20 @@ export class BasicChannelRepository {
     };
   }
 
-  async updateChannel(
+  // The channel row and the lineup file are read, changed and written back
+  // here, so the whole thing runs under the channel's lineup lock.
+  updateChannel(
+    id: string,
+    updateReq: SaveableChannel,
+  ): Promise<
+    ChannelAndLineup<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>
+  > {
+    return this.lineupLock.run(id, () =>
+      this.updateChannelLocked(id, updateReq),
+    );
+  }
+
+  private async updateChannelLocked(
     id: string,
     updateReq: SaveableChannel,
   ): Promise<
@@ -201,7 +216,18 @@ export class BasicChannelRepository {
       throw new ChannelNotFoundError(id);
     }
 
+    // loadLineupConfig reads the same file but hands back only a few of its
+    // fields, so it cannot answer this.
+    const currentLineup = await this.lineupRepository.loadLineup(id);
     const update = updateRequestToChannel(updateReq);
+
+    // The server owns a rebuilding channel's start time, which follows the
+    // cycles as they air, down to the millisecond. A settings form holding the
+    // value it loaded would rewind it by a whole cycle, and the rounding would
+    // shift the lineup off the slot clock.
+    if (currentLineup.rebuildEachCycle) {
+      delete update.startTime;
+    }
 
     if (
       isNonEmptyString(updateReq.watermark?.url) &&
@@ -264,6 +290,11 @@ export class BasicChannelRepository {
             state: 'paused',
             cursor: 0,
           };
+          // The cursor indexes a looping lineup, so the channel stops
+          // rebuilding and loops the cycles it has built so far.
+          delete lineup['rebuildEachCycle'];
+          delete lineup['cycles'];
+          delete lineup['nextCycleSnapshot'];
         } else {
           delete lineup['onDemandConfig'];
         }

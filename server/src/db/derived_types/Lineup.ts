@@ -155,7 +155,9 @@ export const LineupSchema = z.object({
   onDemandConfig: OnDemandChannelConfigSchema.optional(),
 
   // Rebuild the schedule at every cycle boundary rather than looping `items`.
-  // Missing reads as off.
+  // Missing reads as off. Never on together with `onDemandConfig`: an
+  // on-demand channel tracks its position with a cursor into a looping
+  // lineup, which a rebuild would move out from under it.
   rebuildEachCycle: z.boolean().optional(),
 
   // The built cycles that make up `items`, in lineup order. Only set while

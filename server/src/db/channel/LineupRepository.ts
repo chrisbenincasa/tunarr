@@ -106,6 +106,10 @@ const SqliteMaxDepthLimit = 1000;
 
 type ProgramRelationOperation = { operation: 'add' | 'remove'; id: string };
 
+function lineupContentIds(items: readonly LineupItem[]): string[] {
+  return uniq(map(filter(items, isContentItem), (item) => item.id));
+}
+
 /**
  * The outcome of a lineup update.
  *
@@ -897,7 +901,13 @@ export class LineupRepository {
       return null;
     }
 
-    const updateChannel = (lineup: readonly LineupItem[]) => {
+    // `programIds` is what the channel_programs table ends up holding. It
+    // defaults to the lineup's own content, and a rebuilding channel widens it
+    // to the whole pool its later cycles draw from.
+    const updateChannel = (
+      lineup: readonly LineupItem[],
+      programIds: readonly string[] = lineupContentIds(lineup),
+    ) => {
       return this.drizzleDB.transaction((tx) => {
         tx.update(Channel)
           .set({
@@ -906,9 +916,7 @@ export class LineupRepository {
           .where(eq(Channel.uuid, id))
           .run();
 
-        const allNewIds = new Set([
-          ...uniq(map(filter(lineup, isContentItem), (p) => p.id)),
-        ]);
+        const allNewIds = new Set(programIds);
 
         const existingIds = new Set([
           ...channel.channelPrograms.map((cp) => cp.programUuid),
@@ -1076,11 +1084,25 @@ export class LineupRepository {
 
       // The request carries the toggle only when the editor shows it. Without
       // it the channel keeps whatever it had, and a channel that never set it
-      // stays off.
-      const rebuildEachCycle =
-        req.rebuildEachCycle ?? lineup.rebuildEachCycle ?? false;
+      // stays off. An on-demand channel loops its lineup against a cursor, so
+      // it never rebuilds.
+      const rebuildEachCycle = isDefined(lineup.onDemandConfig)
+        ? false
+        : (req.rebuildEachCycle ?? lineup.rebuildEachCycle ?? false);
 
-      const updatedChannel = updateChannel(newLineup);
+      // Later cycles pick their channel-sourced content out of
+      // channel_programs, so a rebuilding channel records the pool the user
+      // chose rather than the subset this one pass happened to air. Programs
+      // that no longer exist are dropped, because the table keys into them.
+      const poolIds = rebuildEachCycle
+        ? LineupRepository.slotPoolProgramIds(
+            newLineup,
+            req.programs,
+            await this.findExistingProgramIds(req.programs),
+          )
+        : lineupContentIds(newLineup);
+
+      const updatedChannel = updateChannel(newLineup, poolIds);
       await this.saveLineup(id, {
         items: newLineup,
         schedule: req.schedule,
@@ -1128,10 +1150,27 @@ export class LineupRepository {
     }
   }
 
-  private async assertProgramsExist(items: readonly LineupItem[]) {
-    const ids = uniq(map(filter(items, isContentItem), (item) => item.id));
+  /**
+   * The programs a rebuilding channel's later cycles may draw from. That is
+   * the pass the save just generated plus every program the user picked that
+   * still exists.
+   */
+  static slotPoolProgramIds(
+    items: readonly LineupItem[],
+    requestedIds: readonly string[],
+    existingProgramIds: ReadonlySet<string>,
+  ): string[] {
+    return uniq([
+      ...lineupContentIds(items),
+      ...requestedIds.filter((programId) => existingProgramIds.has(programId)),
+    ]);
+  }
+
+  private async findExistingProgramIds(
+    ids: readonly string[],
+  ): Promise<Set<string>> {
     const found = new Set<string>();
-    for (const idChunk of chunk(ids, 500)) {
+    for (const idChunk of chunk(uniq(ids), 500)) {
       const rows = await this.drizzleDB.query.program.findMany({
         where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
         columns: { uuid: true },
@@ -1140,7 +1179,12 @@ export class LineupRepository {
         found.add(row.uuid);
       }
     }
+    return found;
+  }
 
+  private async assertProgramsExist(items: readonly LineupItem[]) {
+    const ids = lineupContentIds(items);
+    const found = await this.findExistingProgramIds(ids);
     const missing = ids.filter((id) => !found.has(id));
     if (missing.length > 0) {
       throw new ScheduleValidationError(

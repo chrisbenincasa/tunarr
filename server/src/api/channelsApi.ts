@@ -312,33 +312,47 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           logger.warn(e, 'Could not delete old channel icon file from disk');
         }
 
-        const updatedChannel = await req.serverCtx.channelDB.updateChannel(
-          channel.uuid,
-          channelUpdate,
-        );
+        // One lock span over the save and the regeneration it decides on, so
+        // a cycle boundary cannot land in between and regenerate against the
+        // properties this request just replaced.
+        const updatedChannel = await container
+          .get<ChannelLineupLock>(KEYS.ChannelLineupLock)
+          .run(channel.uuid, async () => {
+            const saved = await req.serverCtx.channelDB.updateChannel(
+              channel.uuid,
+              channelUpdate,
+            );
+
+            const needsGuideRegen =
+              channel.guideMinimumDuration !==
+                saved.channel.guideMinimumDuration ||
+              channel.startTime !== saved.channel.startTime ||
+              isNil(lineupConfig.onDemandConfig) !==
+                isNil(saved.lineup.onDemandConfig);
+
+            if (needsGuideRegen) {
+              logger.debug(
+                'Regenerating lineup for channel %s after property change',
+                channel.uuid,
+              );
+              await container
+                .get<RegenerateChannelLineupCommand>(
+                  RegenerateChannelLineupCommand,
+                )
+                .execute({ channelId: channel.uuid });
+            } else {
+              await req.serverCtx.guideService.updateCachedChannel(
+                channel.uuid,
+              );
+            }
+
+            return saved;
+          });
+
         const subtitlePreferences =
           await req.serverCtx.channelDB.getChannelSubtitlePreferences(
             channel.uuid,
           );
-
-        const needsGuideRegen =
-          channel.guideMinimumDuration !==
-            updatedChannel.channel.guideMinimumDuration ||
-          channel.startTime !== updatedChannel.channel.startTime ||
-          isNil(lineupConfig.onDemandConfig) !==
-            isNil(updatedChannel.lineup.onDemandConfig);
-
-        if (needsGuideRegen) {
-          logger.debug(
-            'Regenerating lineup for channel %s after property change',
-            channel.uuid,
-          );
-          await container
-            .get<RegenerateChannelLineupCommand>(RegenerateChannelLineupCommand)
-            .execute({ channelId: channel.uuid });
-        } else {
-          await req.serverCtx.guideService.updateCachedChannel(channel.uuid);
-        }
 
         await req.serverCtx.m3uService.regenerateCache();
 
