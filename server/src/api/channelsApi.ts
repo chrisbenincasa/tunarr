@@ -3,10 +3,13 @@ import {
   ormChannelToApiChannel,
 } from '@/db/converters/channelConverters.js';
 import { globalOptions } from '@/globals.js';
+import type { ChannelLineupLock } from '@/services/ChannelLineupLock.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
+import { SlotCycleBoundaryService } from '@/services/scheduling/SlotCycleBoundaryService.js';
 import { validateSlotGroups } from '@/services/scheduling/slotGroupValidator.js';
 import type { UpdateXmlTvTaskRequest } from '@/tasks/UpdateXmlTvTask.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
+import { KEYS } from '@/types/inject.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { deleteIfLocalAndCleared } from '@/util/iconUtil.js';
@@ -619,8 +622,31 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         };
       }
 
+      // One lock across the save and the first cycle build, so nothing reads
+      // or rewrites the lineup between the two writes.
       const updateResult = await Result.attemptAsync(() =>
-        req.serverCtx.channelDB.updateLineup(req.params.id, programmingRequest),
+        container
+          .get<ChannelLineupLock>(KEYS.ChannelLineupLock)
+          .run(req.params.id, async () => {
+            const saved = await req.serverCtx.channelDB.updateLineup(
+              req.params.id,
+              programmingRequest,
+            );
+
+            if (!saved?.rebuildEachCycle) {
+              return saved;
+            }
+
+            // What the save wrote is a single pass of the schedule. Replace
+            // it with the channel's first cycles, which also moves its start
+            // time to the start of the cycle.
+            await container
+              .get<SlotCycleBoundaryService>(SlotCycleBoundaryService)
+              .initializeChannel(req.params.id);
+
+            // Those programs describe the lineup that was just replaced.
+            return { ...saved, materializedPrograms: undefined };
+          }),
       );
       if (updateResult.isFailure()) {
         const badRequest = findBadRequestError(updateResult.error);
