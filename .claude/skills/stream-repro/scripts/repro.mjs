@@ -38,6 +38,7 @@ const { values: opt } = parseArgs({
     'vaapi-device': { type: 'string' },
     schedule: { type: 'string' },
     'sar-override': { type: 'string' },
+    'server-bin': { type: 'string' },
   },
 });
 
@@ -51,8 +52,9 @@ function findRepoRoot() {
   }
   throw new Error('run this from inside the Tunarr repo');
 }
-const repoRoot = findRepoRoot();
-const serverDir = path.join(repoRoot, 'server');
+// A built binary (--server-bin, as inside the docker-test image) needs no checkout.
+const serverBin = opt['server-bin'] === undefined ? undefined : path.resolve(opt['server-bin']);
+const serverDir = serverBin === undefined ? path.join(findRepoRoot(), 'server') : undefined;
 const out = path.resolve(
   opt.reanalyze ?? opt.out ?? fs.mkdtempSync(path.join(os.tmpdir(), 'tunarr-repro-')),
 );
@@ -270,6 +272,8 @@ function prepareDbCopy() {
     recursive: true,
     filter: (p) => !/[\\/](logs|backups|cache|streams)$/.test(p),
   });
+  // The server reads the logs directory at startup but does not create it.
+  fs.mkdirSync(path.join(dbDir, 'logs'), { recursive: true });
 
   // The copied settings hold absolute paths to the original directory.
   const settingsFile = path.join(dbDir, 'settings.json');
@@ -284,16 +288,20 @@ async function startServer() {
   const port = await freePort();
   const searchPort = await freePort();
   const logFile = fs.openSync(path.join(out, 'server.stdout.log'), 'w');
+  // A binary runs from its own directory, where it finds bin/meilisearch.
+  const [command, args, cwd] = serverBin
+    ? [serverBin, [], path.dirname(serverBin)]
+    : [path.join(serverDir, 'node_modules/.bin/tsx'), ['--tsconfig', './tsconfig.build.json', './src/index.ts'], serverDir];
   const child = spawn(
-    path.join(serverDir, 'node_modules/.bin/tsx'),
-    ['--tsconfig', './tsconfig.build.json', './src/index.ts'],
+    command,
+    args,
     {
-      cwd: serverDir,
+      cwd,
       detached: true,
       stdio: ['ignore', logFile, logFile],
       env: {
         ...process.env,
-        NODE_ENV: 'development',
+        ...(serverBin ? {} : { NODE_ENV: 'development' }),
         TUNARR_DATABASE_PATH: dbDir,
         TUNARR_SERVER_PORT: String(port),
         TUNARR_SEARCH_PORT: String(searchPort),

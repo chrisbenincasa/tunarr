@@ -12,6 +12,7 @@
     "lint-staged": "lint-staged --allow-empty",
     "lint-changed": "./scripts/lint-changed.sh",
     "preflight": "./scripts/preflight.sh",
+    "docker-test": "./scripts/docker-test.sh",
     "test": "turbo run test",
     "preinstall": "npx only-allow pnpm",
     "generate-docs-script": "tsx scripts/generate-docs-script.ts",

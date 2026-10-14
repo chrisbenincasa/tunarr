@@ -92,6 +92,9 @@ pnpm lint-changed
 # Run the typechecker
 pnpm turbo typecheck
 
+# Build the working tree into a Docker image and run it (see docker/test/)
+pnpm docker-test
+
 # Server-specific commands
 cd server
 pnpm dev              # Start server with tsx watch

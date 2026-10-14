@@ -1,0 +1,12 @@
+# Nvidia (CUDA) pipeline. The Docker host needs the NVIDIA Container Toolkit.
+services:
+  tunarr:
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, video, utility]
