@@ -1,4 +1,4 @@
-name: 'Close stale pending response issues'
+name: 'Close stale issues and PRs pending a response'
 on:
   workflow_dispatch:
   schedule:
@@ -11,7 +11,11 @@ jobs:
       - uses: actions/stale@v10
         with:
           stale-issue-message: 'This issue is pending a response and has no activity in 30 days. It will be closed automatically in one week if no updates are provided.'
+          stale-pr-message: 'This PR is waiting on its author and has had no activity in 30 days. It will be closed automatically in one week if no updates are provided.'
+          close-pr-message: 'Closing because this PR has waited on its author for over 37 days with no response. Make the requested changes and ask a maintainer to reopen it, or open a new PR.'
           exempt-draft-pr: true
           any-of-issue-labels: pending response,info needed
+          any-of-pr-labels: changes requested,needs policy fix
           days-before-issue-stale: 30
-          days-before-pr-stale: -1
+          days-before-pr-stale: 30
+          days-before-close: 7
