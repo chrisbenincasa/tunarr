@@ -44,6 +44,28 @@ export async function locateImageFile(
 }
 
 /**
+ * Finds a movie's artwork in Kodi order. `<movie>-<name>` wins in any
+ * extension, then `<name>`, then `folder` for posters only. Each name gets its
+ * own lookup because `locateImageFile` tries extensions before stems.
+ */
+export async function locateMovieArtwork(
+  moviePath: string,
+  name: string,
+): Promise<Maybe<string>> {
+  const folder = path.dirname(moviePath);
+  const stem = path.basename(moviePath, path.extname(moviePath));
+
+  const found =
+    (await locateImageFile([path.join(folder, `${stem}-${name}`)])) ??
+    (await locateImageFile([path.join(folder, name)]));
+  if (found || name !== 'poster') {
+    return found;
+  }
+
+  return locateImageFile([path.join(folder, 'folder')]);
+}
+
+/**
  * Turns `jpg` into `[jJ][pP][gG]` so a glob matches the extension in any case.
  */
 export function caseInsensitiveExtensionGlob(ext: string) {

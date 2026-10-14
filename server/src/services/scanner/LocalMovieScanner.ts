@@ -40,7 +40,7 @@ import type { LocalScanContext } from './FileSystemScanner.ts';
 import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import { KnownVideoFileExtensions } from './constants.ts';
-import { locateImageFile } from './imageFileLookup.ts';
+import { locateMovieArtwork } from './imageFileLookup.ts';
 
 @injectable()
 export class LocalMovieScanner extends FileSystemScanner {
@@ -535,19 +535,6 @@ export class LocalMovieScanner extends FileSystemScanner {
       return;
     }
 
-    const folder = dirname(fullMoviePath);
-    const stemPaths = [
-      path.join(folder, filename),
-      path.join(
-        folder,
-        `${basename(fullMoviePath, extname(fullMoviePath))}-${filename}`,
-      ),
-    ];
-    const found = await locateImageFile(stemPaths);
-    if (found || artworkType !== 'poster') {
-      return found;
-    }
-
-    return locateImageFile([path.join(folder, 'folder')]);
+    return locateMovieArtwork(fullMoviePath, filename);
   }
 }
