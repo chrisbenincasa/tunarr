@@ -2,11 +2,36 @@ import { parseIntOrNull } from '@/util/index.js';
 import { isNull, split } from 'lodash-es';
 import { z } from 'zod/v4';
 
+const FfprobeDispositionSchema = z
+  .object({
+    default: z.number().optional(),
+    dub: z.number().optional(),
+    original: z.number().optional(),
+    comment: z.number().optional(),
+    lyrics: z.number().optional(),
+    karaoke: z.number().optional(),
+    forced: z.number().optional(),
+    hearing_impaired: z.number().optional(),
+    visual_impaired: z.number().optional(),
+    clean_effects: z.number().optional(),
+    attached_pic: z.number().optional(),
+    timed_thumbnails: z.number().optional(),
+    non_diegetic: z.number().optional(),
+    captions: z.number().optional(),
+    descriptions: z.number().optional(),
+    metadata: z.number().optional(),
+    dependent: z.number().optional(),
+    still_image: z.number().optional(),
+    multilayer: z.number().optional(),
+  })
+  .optional();
+
 const BaseFfprobeMediaStreamSchema = z.object({
   index: z.number(),
   codec_long_name: z.string().optional(),
   profile: z.string().optional(),
   tags: z.record(z.string(), z.string()).optional(),
+  disposition: FfprobeDispositionSchema,
 });
 
 const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
@@ -42,30 +67,6 @@ const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
 
 export type FfprobeVideoStream = z.infer<typeof FfprobeVideoStreamSchema>;
 
-const FfprobeDispositionSchema = z
-  .object({
-    default: z.number().optional(),
-    dub: z.number().optional(),
-    original: z.number().optional(),
-    comment: z.number().optional(),
-    lyrics: z.number().optional(),
-    karaoke: z.number().optional(),
-    forced: z.number().optional(),
-    hearing_impaired: z.number().optional(),
-    visual_impaired: z.number().optional(),
-    clean_effects: z.number().optional(),
-    attached_pic: z.number().optional(),
-    timed_thumbnails: z.number().optional(),
-    non_diegetic: z.number().optional(),
-    captions: z.number().optional(),
-    descriptions: z.number().optional(),
-    metadata: z.number().optional(),
-    dependent: z.number().optional(),
-    still_image: z.number().optional(),
-    multilayer: z.number().optional(),
-  })
-  .optional();
-
 const FfprobeAudioStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('audio'),
   codec_name: z.string(),
@@ -88,7 +89,6 @@ export type FfprobeAudioStream = z.infer<typeof FfprobeAudioStreamSchema>;
 const FfprobeSubtitleStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('subtitle'),
   codec_name: z.string().optional(),
-  disposition: FfprobeDispositionSchema,
 });
 
 const FfprobeAttachmentStreamSchema = BaseFfprobeMediaStreamSchema.extend({
