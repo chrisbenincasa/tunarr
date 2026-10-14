@@ -169,6 +169,36 @@ describe('FfmpegPlaybackParamsCalculator', () => {
       expect(params.videoProfile).not.toBe(VideoPresets.VeryFast);
     });
 
+    test('does not scale a video stream whose stored size is 0x0', () => {
+      const [video] = makeStreamDetails().videoDetails ?? [];
+      if (!video) {
+        throw new Error('makeStreamDetails returned no video stream');
+      }
+
+      // Cover-art tracks scanned before attached pictures were skipped are
+      // stored this way.
+      const calculator = new FfmpegPlaybackParamsCalculator(
+        makeTranscodeConfig(),
+        'hls',
+      );
+      const params = calculator.calculateForStream({
+        duration: dayjs.duration({ seconds: 30 }),
+        videoDetails: [
+          {
+            ...video,
+            codec: 'mjpeg',
+            width: 0,
+            height: 0,
+            framerate: 90000,
+            sampleAspectRatio: '1:1',
+            displayAspectRatio: '1:1',
+          },
+        ],
+      });
+
+      expect(params.scaledSize).toBeUndefined();
+    });
+
     test('does not set videoPreset when there are no video details', () => {
       const config = makeTranscodeConfig({
         hardwareAccelerationMode: 'none',
