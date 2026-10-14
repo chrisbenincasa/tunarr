@@ -1,6 +1,6 @@
 # ErsatzTV next — upstream blockers track
 
-> **Status (10/13/2026):** The ship condition in §6 is met. Upstream built B2's retry and fallback duration (#322), B6 (#320) and B8 (#321) itself and released them in `v0.2.1`. Tunarr pins `v0.2.2` (`31658e23b`) and uses all three (`c87cdaecf`, `f157db68d`, `615a11b9e`). The B2 failure budget is still open upstream and is the only item left to file. It does not gate shipping. Next step is the §5 follow-ups that remain.
+> **Status (10/13/2026):** The ship condition in §6 is met. Upstream built B2's retry and fallback duration (#322), B6 (#320) and B8 (#321) itself and released them in `v0.2.1`. Tunarr pins `v0.2.2` (`31658e23b`) and uses all three (`c87cdaecf`, `f157db68d`, `615a11b9e`). The B2 failure budget is filed as [ErsatzTV/next#332](https://github.com/ErsatzTV/next/issues/332). It does not gate shipping. Next step is the §5 follow-ups that remain.
 
 Offshoot of [`ersatztv-next-integration-2026-09-19.md`](ersatztv-next-integration-2026-09-19.md), called "the main plan" below. The main plan owns the Tunarr side. This plan owns everything that has to change in [ErsatzTV/next](https://github.com/ErsatzTV/next) before Tunarr can ship the backend.
 
@@ -62,7 +62,7 @@ Start the two slow conversations on day one, then send the small PRs while those
 | Step | Item | Form              | Why this position                                                                                          |
 | ---- | ---- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
 | 1    | B3   | Done              | Upstream cut `v0.2.0` on 10/07, then `v0.2.1` and `v0.2.2` on 10/13                                        |
-| 1    | B2   | Design issue      | Retry and fallback duration done upstream (#322). The issue shrinks to the failure budget (§3.2)           |
+| 1    | B2   | Design issue      | Filed as #332, failure budget only. Retry and fallback duration done upstream (#322)                       |
 | 2    | B6   | Done              | Upstream built it (#320)                                                                                   |
 | 3    | B8   | Done              | Upstream built it (#321)                                                                                   |
 | 4    | B5   | Re-scoped         | Not a blocker. Fold into C2, and send the graphics in-point one-liner with any small PR                    |
@@ -78,7 +78,7 @@ Start the two slow conversations on day one, then send the small PRs while those
 
 ### 3.2 B2 — callback retry and failure budget
 
-Retry and the configurable fallback duration are done upstream (#322). Upstream also enforces D6 itself and stretches the fallback to at least `retry_budget_ms`. The issue now proposes only the failure budget, `fallback.max_consecutive_failures` (B2 plan, D7 and D8). Its §4 draft cites `v0.2.0` line numbers and needs re-verifying before filing.
+Retry and the configurable fallback duration are done upstream (#322). Upstream also enforces D6 itself and stretches the fallback to at least `retry_budget_ms`. The issue now proposes only the failure budget, `fallback.max_consecutive_failures` (B2 plan, D7 and D8). Filed 10/13/2026 as [#332](https://github.com/ErsatzTV/next/issues/332), re-verified at `v0.2.2`.
 
 Make the case without Tunarr. A backend that cannot tell "this item failed" from "this channel is dead" gives no other consumer an outage signal either. The full argument is in main plan §15.B, "B2 in full."
 
@@ -106,7 +106,7 @@ Make the case without Tunarr. A backend that cannot tell "this item failed" from
 | G5  | VAAPI device and driver defaults      | Issue     | #246             | 🟢 done      | —                                                              | None. Workaround deleted at pin `091e174`                                                             |
 | B3  | Tagged releases                       | Ask       | #309, #310, #312 | 🟢 done      | [plan](ersatztv-next-b3-tagged-releases-2026-09-30.md)         | `v0.2.2` pinned by tag and SHA-256 (`31658e23b`). Bundled worker off the pin is refused (`8b19291e5`) |
 | B2  | Retry and fallback duration           | —         | #322             | 🟢 done      | [plan](ersatztv-next-b2-callback-failure-budget-2026-09-30.md) | None. Retry fields emitted in `c87cdaecf`                                                             |
-| B2  | Failure budget                        | Issue, PR | —                | 🟡 grilled   | [plan](ersatztv-next-b2-callback-failure-budget-2026-09-30.md) | Resolver-silence watchdog, `EtvNextSession.ts:55` (5-minute grace)                                    |
+| B2  | Failure budget                        | Issue, PR | #332             | 🟡 filed     | [plan](ersatztv-next-b2-callback-failure-budget-2026-09-30.md) | Resolver-silence watchdog, `EtvNextSession.ts:55` (5-minute grace)                                    |
 | B6  | Scaling-algorithm field               | —         | #320             | 🟢 done      | [plan](ersatztv-next-b6-scaling-algorithm-2026-09-30.md)       | None. Flags emitted in `f157db68d`                                                                    |
 | B8  | Silent audio for video-only sources   | —         | #321             | 🟢 done      | [plan](ersatztv-next-b8-silent-audio-2026-09-30.md)            | None. Forced `anullsrc` removed in `615a11b9e`                                                        |
 | B5  | In/out points on every source variant | PR        | —                | 🔴 re-scoped | [plan](ersatztv-next-b5-in-out-points-2026-09-30.md)           | Mapper attaches in/out points only to `local` and `http` sources (`EtvNextPlayoutItemMapper.ts:229`)  |
