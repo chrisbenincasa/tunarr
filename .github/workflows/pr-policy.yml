@@ -11,9 +11,16 @@ on:
     types: [opened, edited, reopened, synchronize, ready_for_review, labeled, unlabeled]
   issues:
     types: [labeled]
+  issue_comment:
+    types: [created]
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR to re-check. Leave empty to run the expiry sweep instead.
+        type: number
+        required: false
 
 permissions:
   contents: read
@@ -22,11 +29,21 @@ permissions:
   statuses: write
 
 jobs:
+  # A `/recheck` comment counts only from the PR author or someone with write
+  # access. The filter lives here so other comments never start a run that
+  # cancels one in progress.
   check:
-    if: github.event_name == 'pull_request_target'
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      (github.event_name == 'workflow_dispatch' && inputs.pr_number) ||
+      (github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        startsWith(github.event.comment.body, '/recheck') &&
+        (contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) ||
+          github.event.comment.user.login == github.event.issue.user.login))
     runs-on: ubuntu-latest
     concurrency:
-      group: pr-policy-${{ github.event.pull_request.number }}
+      group: pr-policy-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +71,7 @@ jobs:
             await recheckLinkedPullRequests({ github, context, core });
 
   close-expired:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.pr_number)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
