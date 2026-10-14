@@ -1,6 +1,6 @@
 # ErsatzTV next — B2 callback retry and failure budget
 
-> **Status (10/13/2026):** Retry and the configurable fallback duration are done upstream in #322 (`v0.2.1`), matching D2–D6. Tunarr emits them in `c87cdaecf`. The failure budget (D7, D8) is not built upstream and is the only part left to file. The §4 draft's citations are from `v0.2.0` and have moved: `resolve_dynamic_item` is now `channel_session.rs:1396`, the fallback length is `FallbackConfig::duration` in `config.rs` (used at `channel_session.rs:1351`), `fallback.rs:65` is `:62`, and the exit codes are `main.rs:95-103` (unchanged in behavior). Trim §4 to the budget and re-verify before filing.
+> **Status (10/13/2026):** Retry and the configurable fallback duration are done upstream in #322 (`v0.2.1`), matching D2–D6. Upstream also raises the fallback to the retry budget itself (`config.rs:101-102`), so the D6 rule needs no Tunarr check. Tunarr emits them in `c87cdaecf`. The failure budget (D7, D8) is the only part left. §4 is trimmed to it and re-verified at `v0.2.2`; next step is filing it.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md). The original argument is in main plan §15.B, "B2 in full." §1 below corrects part of it.
 
@@ -68,7 +68,7 @@ Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream
 
 - Why: a worker whose items keep failing to transcode plays fallback cards forever, and nothing outside it can tell (D7).
 - New `fallback.max_consecutive_failures: Option<u32>` (D8). Unset keeps today's behavior.
-- `ItemSelectionFailed` and `TranscodeFailed` count. `ScheduledGap` doesn't. A successful non-fallback item resets the count.
+- `ItemSelectionFailed` and `TranscodeFailed` count. `ScheduledGap` and `SourceEnded` don't. A successful non-fallback item resets the count.
 - Past the bound, write the fallback dossier (`:1405`) and exit with a distinct code, proposed `3`.
 
 ### 3.4 Tests
@@ -81,32 +81,42 @@ Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream
 
 ## 4. Design issue
 
-Re-verified at `v0.2.0`: one GET in `resolve_dynamic_item` (`channel_session.rs:1342`), 10-second default timeout (`:1416-1418`), one minute of fallback (`:1297`), and no `fallback_until` for `ItemSelectionFailed` (`fallback.rs:65`).
+Re-verified at `v0.2.2` (`4a0b59a`). No upstream issue covers this yet.
+
+- A selection error becomes `ItemSelectionFailed` and plays fallback (`channel_session.rs:458-468`). Since #322 that happens only after the retry budget runs out.
+- A transcode error becomes `TranscodeFailed` and plays fallback until the item's finish (`channel_session.rs:488-504`).
+- Nothing counts either one.
+- `main.rs:95-103` exits 0 for `IdleTimeout` and 1 for every other error, including `Stalled`.
+- The stall path writes a dossier before it exits (`channel_session.rs:940-955`). The budget exit can do the same.
+- `SourceEnded` (`fallback.rs:24`) is new since the plan. It means a source ended early, so it doesn't count.
 
 Left out on purpose:
 
-- The B1 work-ahead pairing, to keep the issue to one topic. Its citations are not re-verified at `v0.2.0`.
-- Tunarr's own timings (D4), so the case stands without Tunarr.
+- Tunarr's values for the bound (D8), so the case stands without Tunarr.
+- The watchdog, which is Tunarr's problem.
 
 ### Draft
 
-**Title:** feat: retry dynamic callbacks
+**Title:** feat: exit after N consecutive failed items
 
-> When a `Dynamic` source's callback fails, the channel plays a minute of fallback and asks again on the next `transcode()`. Nothing retries, so one dropped connection or a server mid-restart costs 60 seconds of black (`channel_session.rs:1297`; `ItemSelectionFailed` has no `fallback_until`, `fallback.rs:65`).
+> Since #322, a failed `Dynamic` callback retries within `retry_budget_ms` before it falls back. That covers short outages, but not a channel that stays broken. When every callback fails, or every item fails to transcode, the worker plays fallback until viewers leave. A supervisor can't tell that channel from a healthy one.
 >
-> I'd like to add retry with backoff, off by default:
+> At `v0.2.2`:
 >
-> - Two optional fields on `PlayoutItemSource::Dynamic`, `retry_budget_ms` and `retry_backoff_ms`. Absent, or a budget of 0, keeps today's behavior.
-> - Retry transport errors, timeouts and 5xx. Don't retry 4xx or a body that doesn't parse, since those are answers rather than outages.
-> - Backoff grows exponentially with jitter, starting at `retry_backoff_ms`. The budget includes time spent inside attempts, so each attempt's timeout is the smaller of `timeout_us` and the budget left.
-> - Playout schema goes to 0.0.6, so an older build rejects the file instead of silently ignoring the fields.
+> - A selection error plays fallback as `ItemSelectionFailed` (`channel_session.rs:458-468`). A transcode error plays fallback as `TranscodeFailed` until the item's finish (`:488-504`). Neither is counted.
+> - `main.rs:95-103` exits 1 for every error except `IdleTimeout`, so a dead channel and a crash look the same from outside.
+>
+> I'd like to add a failure budget, off by default:
+>
+> - `fallback.max_consecutive_failures: Option<NonZeroU32>` in the channel config, beside `duration_seconds`. Unset keeps today's behavior.
+> - `ItemSelectionFailed` and `TranscodeFailed` count. `ScheduledGap` and `SourceEnded` don't, because the schedule or the source caused them. A non-fallback item that transcodes successfully resets the count.
+> - Past the bound, write a dossier as the stall path does (`:943`) and exit with a distinct code through a new `ChannelError` variant. I'd propose 3.
+> - The counter goes in a small struct with unit tests.
 >
 > Two questions before I send a PR:
 >
-> 1. Do the names and the placement on the `Dynamic` source work for you, or would you rather this live in the channel config?
-> 2. Would you take a `fallback.duration_seconds` channel config field to replace the hardcoded minute? It's optional for us. If it lands, it should be at least the retry budget, or each failed cycle drains more buffer than it adds.
->
-> Later, as a separate PR: `fallback.max_consecutive_failures`, which exits with a distinct code (say 3) after N straight failed items. Today the worker can't tell "this item failed" from "this channel is broken," so an integrator has no signal for the second.
+> 1. Is exit code 3 fine, or do you want to reserve a range?
+> 2. Should the channel config schema version bump for the new field?
 
 ## 5. Tunarr follow-up
 
