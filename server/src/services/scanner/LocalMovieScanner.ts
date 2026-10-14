@@ -40,7 +40,7 @@ import type { LocalScanContext } from './FileSystemScanner.ts';
 import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import { KnownVideoFileExtensions } from './constants.ts';
-import { locateImageFile } from './imageFileLookup.ts';
+import { locateMovieArtwork } from './imageFileLookup.ts';
 
 @injectable()
 export class LocalMovieScanner extends FileSystemScanner {
@@ -535,18 +535,6 @@ export class LocalMovieScanner extends FileSystemScanner {
       return;
     }
 
-    const folder = dirname(fullMoviePath);
-    const stem = basename(fullMoviePath, extname(fullMoviePath));
-
-    // Kodi order: the movie-specific name wins in any extension, so look it
-    // up on its own before the folder-level short name.
-    const found =
-      (await locateImageFile([path.join(folder, `${stem}-${filename}`)])) ??
-      (await locateImageFile([path.join(folder, filename)]));
-    if (found || artworkType !== 'poster') {
-      return found;
-    }
-
-    return locateImageFile([path.join(folder, 'folder')]);
+    return locateMovieArtwork(fullMoviePath, filename);
   }
 }

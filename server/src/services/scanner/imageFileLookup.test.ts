@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import {
   caseInsensitiveExtensionGlob,
   locateImageFile,
+  locateMovieArtwork,
 } from './imageFileLookup.ts';
 
 let dir: string;
@@ -78,6 +79,58 @@ describe('locateImageFile', () => {
 
   test('returns undefined for a missing directory', async () => {
     const found = await locateImageFile([path.join(dir, 'missing', 'poster')]);
+
+    expect(found).toBeUndefined();
+  });
+});
+
+describe('locateMovieArtwork', () => {
+  const movie = () => path.join(dir, 'Movie (2020).mkv');
+
+  test('prefers the movie-specific name over the short name', async () => {
+    await touch('Movie (2020)-poster.jpg', 'poster.jpg');
+
+    const found = await locateMovieArtwork(movie(), 'poster');
+
+    expect(found).toBe(path.join(dir, 'Movie (2020)-poster.jpg'));
+  });
+
+  test('prefers the movie-specific name in a later extension (#2170)', async () => {
+    await touch('Movie (2020)-poster.png', 'poster.jpg');
+
+    const found = await locateMovieArtwork(movie(), 'poster');
+
+    expect(found).toBe(path.join(dir, 'Movie (2020)-poster.png'));
+  });
+
+  test('falls back to the short name', async () => {
+    await touch('fanart.jpg');
+
+    const found = await locateMovieArtwork(movie(), 'fanart');
+
+    expect(found).toBe(path.join(dir, 'fanart.jpg'));
+  });
+
+  test('falls back to folder for a poster', async () => {
+    await touch('folder.jpg');
+
+    const found = await locateMovieArtwork(movie(), 'poster');
+
+    expect(found).toBe(path.join(dir, 'folder.jpg'));
+  });
+
+  test('prefers the short poster name over folder', async () => {
+    await touch('folder.jpg', 'poster.png');
+
+    const found = await locateMovieArtwork(movie(), 'poster');
+
+    expect(found).toBe(path.join(dir, 'poster.png'));
+  });
+
+  test('never falls back to folder for other artwork', async () => {
+    await touch('folder.jpg');
+
+    const found = await locateMovieArtwork(movie(), 'fanart');
 
     expect(found).toBeUndefined();
   });
