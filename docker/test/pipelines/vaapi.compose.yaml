@@ -2,4 +2,4 @@
 services:
   tunarr:
     devices:
-      - ${TUNARR_TEST_RENDER_DEVICE:-/dev/dri}:/dev/dri
+      - ${TUNARR_TEST_RENDER_DEVICE:-/dev/dri}:${TUNARR_TEST_RENDER_DEVICE:-/dev/dri}
