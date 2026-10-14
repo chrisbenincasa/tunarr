@@ -4540,6 +4540,7 @@ export type PostApiChannelsByIdProgrammingData = {
         };
         seed?: Array<number>;
         discardCount?: number;
+        rebuildEachCycle?: boolean;
     } | {
         type: 'random';
         programs: Array<string>;
@@ -4777,6 +4778,7 @@ export type PostApiChannelsByIdProgrammingData = {
         };
         seed?: Array<number>;
         discardCount?: number;
+        rebuildEachCycle?: boolean;
     };
     path: {
         id: string;
