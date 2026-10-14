@@ -6,8 +6,21 @@ import type {
   LineupItem,
 } from '../../db/derived_types/Lineup.ts';
 import dayjs from '../../util/dayjs.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 
 export type { CycleSnapshot, LineupCycle };
+
+const logger = LoggerFactory.child({ className: 'slotCycles' });
+
+/**
+ * Hard cap on the cycles one pass builds.
+ *
+ * Each cycle is a worker scheduling pass run under the channel's lineup lock,
+ * so an unbounded loop would hold the lock for minutes. A 4 hour guide horizon
+ * needs one or two cycles; the cap only bites when a start time sits far
+ * behind the horizon, and the next pass picks up where this one stopped.
+ */
+export const MaxCyclesPerPass = 24;
 
 export type BuiltCycle = {
   items: LineupItem[];
@@ -104,6 +117,15 @@ async function buildFrom(
   const limit = opts.now + opts.horizonMs;
 
   while (contentEnd(state) <= limit) {
+    if (state.cycles.length >= MaxCyclesPerPass) {
+      logger.warn(
+        'Stopped building slot cycles at the %d cycle cap, %d ms short of the guide horizon. The next pass continues from here.',
+        MaxCyclesPerPass,
+        limit - contentEnd(state),
+      );
+      break;
+    }
+
     const startSnapshot = state.nextSnapshot;
     const built = await opts.build(contentEnd(state), startSnapshot);
     if (built.durationMs <= 0) {
@@ -158,30 +180,10 @@ export async function advanceCycles(
       : { state: caughtUp, changed: true };
   }
 
-  let changed = false;
-  let startTime = state.startTime;
-  let cycles = state.cycles;
-  let droppedItems = 0;
-
   // Catch-up above guarantees at least one cycle ends after `now`, so this
   // never empties the lineup.
-  while (cycles.length > 0) {
-    const oldest = cycles[0];
-    if (oldest === undefined || startTime + oldest.durationMs > opts.now) {
-      break;
-    }
-    startTime += oldest.durationMs;
-    droppedItems += oldest.itemCount;
-    cycles = cycles.slice(1);
-    changed = true;
-  }
-
-  const trimmed: CycleState = {
-    startTime,
-    items: droppedItems > 0 ? state.items.slice(droppedItems) : state.items,
-    cycles,
-    nextSnapshot: state.nextSnapshot,
-  };
+  const trimmed = trimAiredCycles(state, opts.now);
+  const changed = trimmed.cycles.length !== state.cycles.length;
 
   // buildFrom's own content end starts at the trimmed content end, so its
   // horizon check covers the whole lineup, not just the part it appends.
@@ -203,6 +205,36 @@ export async function advanceCycles(
       nextSnapshot: ahead.nextSnapshot,
     },
     changed: true,
+  };
+}
+
+/**
+ * Drops the cycles that finished before `now` and moves `startTime` past
+ * them, which leaves the airing program and its offset unchanged.
+ *
+ * A state whose cycles have all aired comes back empty, so the caller starts
+ * the channel over rather than rebuilding everything it missed.
+ */
+export function trimAiredCycles(state: CycleState, now: number): CycleState {
+  let startTime = state.startTime;
+  let cycles = state.cycles;
+  let droppedItems = 0;
+
+  while (cycles.length > 0) {
+    const oldest = cycles[0];
+    if (oldest === undefined || startTime + oldest.durationMs > now) {
+      break;
+    }
+    startTime += oldest.durationMs;
+    droppedItems += oldest.itemCount;
+    cycles = cycles.slice(1);
+  }
+
+  return {
+    startTime,
+    items: droppedItems > 0 ? state.items.slice(droppedItems) : state.items,
+    cycles,
+    nextSnapshot: state.nextSnapshot,
   };
 }
 

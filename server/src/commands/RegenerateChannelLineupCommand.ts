@@ -1,7 +1,7 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import type { CondensedChannelProgram } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { sum } from 'lodash-es';
+import { isUndefined, sum } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { condensedProgramToLineupItem } from '../db/channel/lineupItemConversion.ts';
 import type { LineupItem } from '../db/derived_types/Lineup.ts';
@@ -50,12 +50,14 @@ export class RegenerateChannelLineupCommand {
       return;
     }
 
-    const { schedule, scheduleSeed, rebuildEachCycle } =
+    const { schedule, scheduleSeed, rebuildEachCycle, onDemandConfig } =
       channelAndLineup.lineup;
 
     // A rebuilding channel's lineup is a run of cycles, not one loop, so it is
-    // rebuilt cycle by cycle. That path writes the guide update itself.
-    if (rebuildEachCycle && schedule) {
+    // rebuilt cycle by cycle. That path writes the guide update itself. An
+    // on-demand channel loops its lineup against a cursor, so it regenerates
+    // the ordinary way whatever the flag says.
+    if (rebuildEachCycle && schedule && isUndefined(onDemandConfig)) {
       await this.boundaryService.regenerateChannel(channelId);
       return;
     }

@@ -4,7 +4,7 @@ import type { ContentProgramType } from '@tunarr/types/schemas';
 import { and, asc, count, countDistinct, eq, isNotNull } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
-import { chunk, flatten, groupBy, sum, uniq } from 'lodash-es';
+import { chunk, flatten, groupBy, isEmpty, sum, uniq } from 'lodash-es';
 import type { MarkRequired } from 'ts-essentials';
 import {
   createManyRelationAgg,
@@ -377,6 +377,22 @@ export class ChannelProgramRepository {
       for (const c of chunk(uniqueIds, 250)) {
         tx.insert(ChannelPrograms)
           .values(c.map((id) => ({ channelUuid: channelId, programUuid: id })))
+          .run();
+      }
+    });
+  }
+
+  addChannelPrograms(channelId: string, programIds: string[]): void {
+    const uniqueIds = uniq(programIds);
+    if (isEmpty(uniqueIds)) {
+      return;
+    }
+
+    this.drizzleDB.transaction((tx) => {
+      for (const c of chunk(uniqueIds, 250)) {
+        tx.insert(ChannelPrograms)
+          .values(c.map((id) => ({ channelUuid: channelId, programUuid: id })))
+          .onConflictDoNothing()
           .run();
       }
     });
