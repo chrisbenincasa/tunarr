@@ -3,6 +3,7 @@ import type { BaseSlot, FillerProgrammingSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { nth } from 'lodash-es';
 import type { Nullable } from '../../types/util.ts';
+import type { ProgramIteratorSnapshot } from './slotIteratorState.ts';
 import type {
   SlotIteratorKey,
   SlotSchedulerProgram,
@@ -25,6 +26,8 @@ export interface ProgramIterator<
   next(): void;
   reset(): void;
   fork(): ProgramIterator<ProgramT>;
+  // Iterators without resumable state leave this out.
+  snapshot?(): ProgramIteratorSnapshot | undefined;
 }
 
 abstract class BaseProgramIterator<ProgramT extends CondensedChannelProgram>
@@ -48,6 +51,7 @@ export abstract class IndexBasedProgramIterator<
   ProgramT extends CondensedChannelProgram,
 > extends BaseProgramIterator<ProgramT> {
   protected position: number = 0;
+  protected lastPlayedId: string | undefined;
 
   current(): ProgramT | null {
     const curr = nth(this.programs, this.position);
@@ -68,11 +72,34 @@ export abstract class IndexBasedProgramIterator<
       // Modulo zero yields NaN, which would permanently poison the position.
       return;
     }
+    this.lastPlayedId = this.programs[this.position]?.uuid;
     this.position = (this.position + 1) % this.programs.length;
   }
 
   reset(): void {
     this.position = 0;
+    this.lastPlayedId = undefined;
+  }
+
+  snapshot(): ProgramIteratorSnapshot | undefined {
+    if (this.lastPlayedId === undefined) {
+      return;
+    }
+    return { type: 'ordered', lastProgramId: this.lastPlayedId };
+  }
+
+  // Moves to the program after `programId`. Returns false, leaving the
+  // position alone, when the program is no longer in the list.
+  protected resumeAfter(programId: string): boolean {
+    const index = this.programs.findIndex(
+      (program) => program.uuid === programId,
+    );
+    if (index < 0) {
+      return false;
+    }
+    this.position = (index + 1) % this.programs.length;
+    this.lastPlayedId = programId;
+    return true;
   }
 }
 
@@ -106,6 +133,11 @@ export class RerunProgramIterator<
 
   fork(): ProgramIterator<ProgramT> {
     return this;
+  }
+
+  // The rerun count restarts with each build.
+  snapshot(): ProgramIteratorSnapshot | undefined {
+    return this.inner.snapshot?.();
   }
 }
 
@@ -159,6 +191,12 @@ export class RecordingProgramIterator<
 
   fork(): ProgramIterator<ProgramT> {
     return this;
+  }
+
+  // The period buffer restarts with each build, so reruns replay only what
+  // aired in the same build.
+  snapshot(): ProgramIteratorSnapshot | undefined {
+    return this.inner.snapshot?.();
   }
 }
 
