@@ -41,6 +41,9 @@ describe('slot cycle wiring', () => {
     const service = container.get(SlotCycleBoundaryService);
 
     expect(service).toBeInstanceOf(SlotCycleBoundaryService);
+    // One instance, which the overlapping-pass guard in advanceAll depends on.
+    // Inversify's default scope is Transient.
+    expect(container.get(SlotCycleBoundaryService)).toBe(service);
   });
 
   test('the container builds the cycle builder', () => {
