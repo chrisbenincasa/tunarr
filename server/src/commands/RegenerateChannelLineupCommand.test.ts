@@ -11,7 +11,11 @@ vi.mock('../services/scheduling/SlotCycleBoundaryService.ts', () => ({
   SlotCycleBoundaryService: class {},
 }));
 
-function setup(scheduleSeed?: number[], rebuildEachCycle = false) {
+function setup(
+  scheduleSeed?: number[],
+  rebuildEachCycle = false,
+  onDemandConfig?: { state: 'paused'; cursor: number },
+) {
   const channelDB = {
     loadChannelAndLineupOrm: vi.fn().mockResolvedValue({
       channel: { uuid: 'ch1', startTime: 1000 },
@@ -20,6 +24,7 @@ function setup(scheduleSeed?: number[], rebuildEachCycle = false) {
         schedule: { type: 'time', slots: [] },
         scheduleSeed,
         rebuildEachCycle,
+        onDemandConfig,
       },
     }),
     replaceChannelPrograms: vi.fn(),
@@ -87,5 +92,19 @@ describe('RegenerateChannelLineupCommand', () => {
     expect(boundaryService.regenerateChannel).toHaveBeenCalledWith('ch1');
     expect(queueTask).not.toHaveBeenCalled();
     expect(channelDB.saveLineup).not.toHaveBeenCalled();
+  });
+
+  test('regenerates an on-demand channel the ordinary way', async () => {
+    const { command, channelDB, queueTask, boundaryService } = setup(
+      [1, 2, 3],
+      true,
+      { state: 'paused', cursor: 0 },
+    );
+
+    await command.execute({ channelId: 'ch1' });
+
+    expect(boundaryService.regenerateChannel).not.toHaveBeenCalled();
+    expect(queueTask).toHaveBeenCalled();
+    expect(channelDB.saveLineup).toHaveBeenCalled();
   });
 });

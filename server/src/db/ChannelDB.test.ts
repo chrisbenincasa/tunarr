@@ -1,11 +1,13 @@
 import { faker } from '@faker-js/faker';
 import { SaveableChannel } from '@tunarr/types';
+import { eq } from 'drizzle-orm';
 import tmp from 'tmp-promise';
 import { copyPreMigratedDb } from '../testing/testDbFactory.ts';
 import { mock } from 'ts-mockito';
 import { v4 } from 'uuid';
 import { test as baseTest, describe, expect } from 'vitest';
 import { bootstrapTunarr } from '../bootstrap.ts';
+import dayjs from '../util/dayjs.ts';
 import { globalOptions, setGlobalOptionsUnchecked } from '../globals.ts';
 import { CacheImageService } from '../services/cacheImageService.ts';
 import { ChannelLineupLock } from '../services/ChannelLineupLock.ts';
@@ -82,6 +84,8 @@ const test = baseTest.extend<Fixture>({
       dbAccess.db!,
     );
 
+    const lineupLock = new ChannelLineupLock();
+
     const lineupRepo = new LineupRepository(
       dbAccess.db!,
       dbAccess.drizzle!,
@@ -91,7 +95,7 @@ const test = baseTest.extend<Fixture>({
       mockMaterializeProgramsCommand,
       mock<IProgramDB>(),
       programConverter,
-      new ChannelLineupLock(),
+      lineupLock,
     );
 
     const channelReadOpsRepo = new ChannelReadOpsRepository(dbAccess.drizzle!);
@@ -102,6 +106,7 @@ const test = baseTest.extend<Fixture>({
       mock(CacheImageService),
       channelReadOpsRepo,
       lineupRepo,
+      lineupLock,
     );
 
     const channelProgramRepo = new ChannelProgramRepository(
@@ -245,6 +250,77 @@ describe('ChannelDB', () => {
       expect(updated.channel.uuid).toBe(created.channel.uuid);
       expect(updated.channel.name).toBe('Updated Name');
       expect(updated.channel.number).toBe(201);
+    });
+
+    test('rounds an updated start time to the minute', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId),
+      );
+
+      const startTime = +dayjs().startOf('minute') + 37_123;
+      const updated = await channelDb.updateChannel(created.channel.uuid, {
+        ...createSaveableChannel(defaultTranscodeConfigId),
+        id: created.channel.uuid,
+        number: created.channel.number,
+        startTime,
+      });
+
+      expect(updated.channel.startTime).toBe(
+        +dayjs(startTime).startOf('minute'),
+      );
+    });
+
+    test('ignores an updated start time on a channel that rebuilds each cycle', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId),
+      );
+      await channelDb.updateLineupConfig(
+        created.channel.uuid,
+        'rebuildEachCycle',
+        true,
+      );
+
+      // The server owns this channel's start time down to the millisecond, so
+      // a settings form holding a stale, minute-rounded value cannot move it.
+      const updated = await channelDb.updateChannel(created.channel.uuid, {
+        ...createSaveableChannel(defaultTranscodeConfigId),
+        id: created.channel.uuid,
+        number: created.channel.number,
+        startTime: created.channel.startTime - 24 * 60 * 60 * 1000,
+      });
+
+      expect(updated.channel.startTime).toBe(created.channel.startTime);
+    });
+
+    test('stops a channel rebuilding when it turns on-demand', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId),
+      );
+      await channelDb.updateLineupConfig(
+        created.channel.uuid,
+        'rebuildEachCycle',
+        true,
+      );
+
+      const updated = await channelDb.updateChannel(created.channel.uuid, {
+        ...createSaveableChannel(defaultTranscodeConfigId),
+        id: created.channel.uuid,
+        number: created.channel.number,
+        onDemand: { enabled: true },
+      });
+
+      expect(updated.lineup.onDemandConfig).toBeDefined();
+      expect(updated.lineup.rebuildEachCycle).toBeUndefined();
+      expect(updated.lineup.cycles).toBeUndefined();
     });
 
     test('should delete a channel', async ({
@@ -547,6 +623,51 @@ describe('ChannelDB', () => {
       expect(result).toBeDefined();
       expect(result?.channel.uuid).toBe(created.channel.uuid);
       expect(result?.lineup.items).toHaveLength(1);
+    });
+
+    test('addChannelPrograms keeps the rows already there', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+      drizzle,
+    }) => {
+      const created = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId),
+      );
+
+      const programIds: string[] = [];
+      for (let i = 0; i < 3; i++) {
+        const programId = v4();
+        await drizzle.insert(Program).values({
+          uuid: programId,
+          duration: 30000,
+          type: 'movie',
+          sourceType: 'plex',
+          externalKey: faker.string.alphanumeric({ length: 16 }),
+          externalSourceId: faker.string.alphanumeric({ length: 16 }),
+          title: `Union Movie ${i}`,
+          year: 2020 + i,
+        });
+        programIds.push(programId);
+      }
+
+      const [first] = programIds;
+      if (first === undefined) {
+        throw new Error('expected the inserted programs');
+      }
+
+      channelDb.replaceChannelPrograms(created.channel.uuid, [first]);
+      // The list overlaps what is already there, which the composite primary
+      // key would otherwise reject.
+      channelDb.addChannelPrograms(created.channel.uuid, programIds);
+
+      const rows: { programUuid: string }[] = await drizzle
+        .select({ programUuid: ChannelPrograms.programUuid })
+        .from(ChannelPrograms)
+        .where(eq(ChannelPrograms.channelUuid, created.channel.uuid));
+
+      expect(new Set(rows.map((row) => row.programUuid))).toEqual(
+        new Set(programIds),
+      );
     });
 
     test('should load condensed lineup with offset and limit', async ({

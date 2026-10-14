@@ -1,9 +1,12 @@
-import { inject, injectable, unmanaged } from 'inversify';
+import { bindingScopeValues, inject, injectable, unmanaged } from 'inversify';
+import { uniq } from 'lodash-es';
 import { BuildSlotCycleCommand } from '../../commands/BuildSlotCycleCommand.ts';
-import type { Lineup } from '../../db/derived_types/Lineup.ts';
+import type { Lineup, LineupItem } from '../../db/derived_types/Lineup.ts';
+import { isContentItem } from '../../db/derived_types/Lineup.ts';
 import type { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
 import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { KEYS } from '../../types/inject.ts';
+import { isDefined } from '../../util/index.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import type { ChannelLineupLock } from '../ChannelLineupLock.ts';
@@ -14,6 +17,7 @@ import {
   cascadeCycles,
   cycleStartTime,
   initializeCycles,
+  trimAiredCycles,
 } from './slotCycles.ts';
 
 const OneHourMs = 60 * 60 * 1000;
@@ -30,8 +34,13 @@ const OneHourMs = 60 * 60 * 1000;
  * Every method holds the channel's lineup lock across the whole read, build
  * and write, so a concurrent save or regeneration cannot land in between.
  */
-@injectable()
+@injectable(bindingScopeValues.Singleton)
 export class SlotCycleBoundaryService {
+  // Channels already reported as unbuildable or as on-demand, so the
+  // five-minute pass says it once instead of forever.
+  #quietChannels = new Set<string>();
+  #advanceAllRunning = false;
+
   constructor(
     @inject(KEYS.ChannelDB) private readonly channelDB: IChannelDB,
     @inject(KEYS.SettingsDB) private readonly settingsDB: ISettingsDB,
@@ -104,7 +113,8 @@ export class SlotCycleBoundaryService {
 
   /**
    * Rebuilds every cycle in place after the library changed, keeping the
-   * channel's start time and its place in the schedule.
+   * channel's start time and its place in the schedule. A channel whose
+   * cycles have all aired starts over instead.
    */
   async regenerateChannel(channelId: string, now: number = Date.now()) {
     await this.lineupLock.run(channelId, async () => {
@@ -116,11 +126,14 @@ export class SlotCycleBoundaryService {
       const { lineup, schedule, state } = loaded;
       const opts = this.cycleOptions(channelId, lineup, now);
 
-      // Nothing built yet, so there is no airing cycle to cascade from.
-      const built =
-        state.cycles.length === 0
-          ? await initializeCycles(cycleStartTime(schedule, now), opts)
-          : await cascadeCycles(state, opts);
+      // Once every built cycle has aired there is nothing to cascade from.
+      // Rebuilding from the old start time would run a scheduling pass per
+      // cycle between then and now and produce content nobody can see, so the
+      // channel starts over at the current period, as a missed boundary does.
+      const allAired = trimAiredCycles(state, now).cycles.length === 0;
+      const built = allAired
+        ? await initializeCycles(cycleStartTime(schedule, now), opts)
+        : await cascadeCycles(state, opts);
 
       await this.persist(channelId, state, built);
     });
@@ -129,20 +142,35 @@ export class SlotCycleBoundaryService {
   /**
    * Advances every rebuilding channel. One channel's failure does not stop
    * the rest.
+   *
+   * A pass that outlives its schedule interval skips the next one rather than
+   * queueing a second walk over every channel behind it.
    */
   async advanceAll(now: number = Date.now()) {
-    const channels = await this.channelDB.getAllChannels();
+    if (this.#advanceAllRunning) {
+      this.logger.warn(
+        'The previous slot cycle pass is still running; skipping this one',
+      );
+      return;
+    }
 
-    for (const channel of channels) {
-      try {
-        await this.advanceChannel(channel.uuid, now);
-      } catch (e) {
-        this.logger.error(
-          e,
-          'Error advancing slot cycles for channel %s',
-          channel.uuid,
-        );
+    this.#advanceAllRunning = true;
+    try {
+      const channels = await this.channelDB.getAllChannels();
+
+      for (const channel of channels) {
+        try {
+          await this.advanceChannel(channel.uuid, now);
+        } catch (e) {
+          this.logger.error(
+            e,
+            'Error advancing slot cycles for channel %s',
+            channel.uuid,
+          );
+        }
       }
+    } finally {
+      this.#advanceAllRunning = false;
     }
   }
 
@@ -157,6 +185,20 @@ export class SlotCycleBoundaryService {
     const { channel, lineup } = channelAndLineup;
     const schedule = lineup.schedule;
     if (!lineup.rebuildEachCycle || !schedule) {
+      return;
+    }
+
+    // An on-demand channel's position is a cursor into a looping lineup, so a
+    // trim moves the lineup out from under it and every cycle write resets it
+    // to the start. The save path refuses the combination; this catches a
+    // channel that turned on-demand on afterwards.
+    if (isDefined(lineup.onDemandConfig)) {
+      this.warnOnce(channelId, () =>
+        this.logger.warn(
+          'Channel %s is on-demand, so its slot schedule loops instead of rebuilding each cycle',
+          channelId,
+        ),
+      );
       return;
     }
 
@@ -183,6 +225,15 @@ export class SlotCycleBoundaryService {
     };
   }
 
+  // Logs for a channel once, until the thing it reports goes away.
+  private warnOnce(channelId: string, warn: () => void) {
+    if (this.#quietChannels.has(channelId)) {
+      return;
+    }
+    this.#quietChannels.add(channelId);
+    warn();
+  }
+
   // The lineup file and channel.duration go first, then startTime, so a reader
   // that catches the gap sees the old position of the new lineup rather than
   // the new position of the old one.
@@ -192,12 +243,23 @@ export class SlotCycleBoundaryService {
     next: CycleState,
   ) {
     if (next.cycles.length === 0) {
-      this.logger.warn(
-        'Slot schedule for channel %s produced no cycles; leaving its lineup alone',
-        channelId,
+      this.warnOnce(channelId, () =>
+        this.logger.warn(
+          'Slot schedule for channel %s produced no cycles; leaving its lineup alone',
+          channelId,
+        ),
       );
       return;
     }
+
+    this.#quietChannels.delete(channelId);
+
+    // Programs a new cycle introduced have to reach the join table, or the
+    // duration reconciler and the library reference counts stop seeing this
+    // channel as one that plays them. The rows are unioned rather than
+    // replaced, because a trim drops aired items whose programs the next
+    // cycle may well pick again.
+    this.channelDB.addChannelPrograms(channelId, contentProgramIds(next.items));
 
     await this.channelDB.saveLineup(channelId, {
       items: next.items,
@@ -211,4 +273,10 @@ export class SlotCycleBoundaryService {
 
     await this.tvGuideService.updateCachedChannel(channelId, true);
   }
+}
+
+function contentProgramIds(items: readonly LineupItem[]): string[] {
+  return uniq(
+    items.filter((item) => isContentItem(item)).map((item) => item.id),
+  );
 }

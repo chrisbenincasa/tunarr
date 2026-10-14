@@ -47,6 +47,7 @@ type FakeChannelDB = {
   state: { channel: Channel; lineup: Lineup };
   saves: UpdateChannelLineupRequest[];
   startTimeWrites: number[];
+  channelProgramIds: Set<string>;
 };
 
 // Stores one channel and its lineup. Reads hand out copies and both reads and
@@ -58,6 +59,7 @@ function createFakeChannelDB(lineup: Lineup): FakeChannelDB {
   };
   const saves: UpdateChannelLineupRequest[] = [];
   const startTimeWrites: number[] = [];
+  const channelProgramIds = new Set<string>();
 
   const db = {
     loadChannelAndLineup: async (id: string) => {
@@ -93,6 +95,12 @@ function createFakeChannelDB(lineup: Lineup): FakeChannelDB {
       }
       return state.lineup;
     },
+    addChannelPrograms: (id: string, programIds: string[]) => {
+      expect(id).toBe(state.channel.uuid);
+      for (const programId of programIds) {
+        channelProgramIds.add(programId);
+      }
+    },
     updateChannelStartTime: async (id: string, newTime: number) => {
       await tick(1);
       expect(id).toBe(state.channel.uuid);
@@ -110,6 +118,7 @@ function createFakeChannelDB(lineup: Lineup): FakeChannelDB {
     state,
     saves,
     startTimeWrites,
+    channelProgramIds,
   };
 }
 
