@@ -27,6 +27,22 @@ describe('RollingLogDestination', () => {
     return pino.destination({ dest: fileName, append: true, sync: true });
   }
 
+  it('starts when the logs directory does not exist yet', async () => {
+    const nestedFile = path.join(dir, 'logs', 'tunarr.log');
+    const roller = new RollingLogDestination({
+      fileName: nestedFile,
+      destinationOpts: { mkdir: true, append: true, sync: true },
+    });
+    const main = roller.initDestination();
+    await once(main, 'ready');
+
+    main.write('hello\n');
+
+    expect(fs.readFileSync(nestedFile, 'utf8')).toBe('hello\n');
+
+    roller.deinitialize();
+  });
+
   // Workers log through a plain append destination on the file the main
   // thread rolls (#2193). This pins down that their handles stay valid.
   it('keeps a second append-mode writer on the live file across a roll', async () => {
