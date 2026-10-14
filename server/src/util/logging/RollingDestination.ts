@@ -185,7 +185,14 @@ export class RollingLogDestination {
   }
 
   private initState() {
-    for (const file of fs.readdirSync(path.dirname(this.opts.fileName))) {
+    const dir = path.dirname(this.opts.fileName);
+
+    // On first run the directory is missing; the destination creates it.
+    if (!fs.existsSync(dir)) {
+      return;
+    }
+
+    for (const file of fs.readdirSync(dir)) {
       if (file.match(this.rotatePattern)) {
         this.createdFileNames.push(file);
       }
