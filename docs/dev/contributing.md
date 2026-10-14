@@ -375,7 +375,10 @@ pnpm docker-test              # Build the working tree and start it
 pnpm docker-test logs -f      # Follow the logs
 pnpm docker-test config       # Print the merged compose file without running anything
 pnpm docker-test down         # Stop and remove the container
+pnpm docker-test repro        # Run the stream-repro script in a throwaway container
 ```
+
+`pnpm docker-test repro` builds the same image and runs `.claude/skills/stream-repro/scripts/repro.mjs` inside a throwaway container with the pipeline's GPU, then copies its report back to a local temp directory. Options after `repro` go to the script; see `.claude/skills/stream-repro/SKILL.md`.
 
 Any other arguments are passed to `docker compose`. The build includes uncommitted changes. The server listens on port `8001` by default, so the web UI is at `http://<docker-host>:8001/web`.
 

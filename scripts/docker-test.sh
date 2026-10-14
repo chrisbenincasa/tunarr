@@ -28,6 +28,8 @@ Usage: docker-test [docker compose arguments]
   logs -f         follow the container logs
   config          print the merged compose file without running anything
   down            stop and remove the container
+  repro [options] run the stream-repro skill inside a throwaway container
+                  built from the same image; options go to repro.mjs
 
 Any other arguments are passed to `docker compose` unchanged.
 Configure with docker/test/.env (see docker/test/.env.example).
@@ -77,6 +79,64 @@ fi
 
 if [[ -f "$local_file" ]]; then
   files+=(-f "$local_file")
+fi
+
+# Runs .claude/skills/stream-repro/scripts/repro.mjs in a one-off container
+# from the test image, so the repro's own server gets this pipeline's GPU and
+# shares a filesystem with the script. The live tunarr-test container and its
+# data directory are not touched. The output is copied back to a local temp
+# directory.
+repro_container=
+run_repro() {
+  local script=.claude/skills/stream-repro/scripts/repro.mjs
+  local arg has_hwaccel=0
+  for arg in "$@"; do
+    case "$arg" in
+      --out | --out=* | --keep-server | --keep-server=*)
+        echo "docker-test: repro does not support $arg; the output is copied to a local temp directory and the server stops with the run." >&2
+        exit 1
+        ;;
+      --hwaccel | --hwaccel=*) has_hwaccel=1 ;;
+    esac
+  done
+
+  # Default the repro's transcode config to the pipeline the container has.
+  local hwaccel=()
+  if [[ $has_hwaccel -eq 0 ]]; then
+    case "$pipeline" in
+      vaapi | qsv) hwaccel=(--hwaccel "$pipeline") ;;
+      nvidia) hwaccel=(--hwaccel cuda) ;;
+    esac
+  fi
+
+  docker compose "${files[@]}" build tunarr
+
+  repro_container="tunarr-repro-$$"
+  trap 'docker rm -f "$repro_container" >/dev/null 2>&1 || true' EXIT
+  docker compose "${files[@]}" run -d --no-deps --name "$repro_container" \
+    --entrypoint sleep tunarr infinity >/dev/null
+  docker cp "$script" "$repro_container:/tmp/repro.mjs"
+
+  local status=0
+  # ${hwaccel[@]+...} keeps an empty array from tripping `set -u` in bash 3.2.
+  docker exec "$repro_container" node /tmp/repro.mjs \
+    --server-bin /tunarr/tunarr --out /tmp/repro \
+    ${hwaccel[@]+"${hwaccel[@]}"} "$@" || status=$?
+
+  # Copy the output back even after a failed run; the report says why.
+  local out_dir
+  out_dir="$(mktemp -d "${TMPDIR:-/tmp}/tunarr-repro.XXXXXX")"
+  if docker cp "$repro_container:/tmp/repro/." "$out_dir" >/dev/null; then
+    echo "docker-test: report: ${out_dir%/}/report.json"
+  else
+    echo "docker-test: could not copy the repro output out of the container." >&2
+  fi
+  exit "$status"
+}
+
+if [[ "${1:-}" == "repro" ]]; then
+  shift
+  run_repro "$@"
 fi
 
 if [[ $# -eq 0 ]]; then

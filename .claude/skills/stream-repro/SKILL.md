@@ -137,6 +137,30 @@ node .claude/skills/stream-repro/scripts/repro.mjs --clip-durations 1800,1800,57
 `report.schedule` lists each channel's lineup with local start times, and the guide entries for the
 window. A guide entry with `via` came through a redirect.
 
+## Run it on real hardware
+
+To test a GPU pipeline this machine lacks, run the script on a Docker host through `pnpm docker-test`
+(set up in `docker/test/`, see "Testing a Build in Docker" in `docs/dev/contributing.md`):
+
+```bash
+pnpm docker-test repro --layout mixed --clip-seconds 30 --seconds 90
+```
+
+It builds the working tree into the test image, starts a throwaway container from it with the configured
+pipeline's GPU, and runs this script there with `--server-bin /tunarr/tunarr`, so the server under test is
+the production binary rather than `tsx`. The output directory is copied back to a local temp directory,
+whose `report.json` path is printed last. The container is removed afterwards, and a running `tunarr-test`
+container and its data directory are not touched.
+
+- `--hwaccel` defaults to the pipeline in `docker/test/.env` (`nvidia` becomes `cuda`). Pass it to override.
+- `--source copy --db-dir /config/tunarr --channel N` replays a channel from the test data directory, which
+  is mounted in the container. The copied database comes back with the output.
+- `--out` and `--keep-server` are rejected: the wrapper owns the output directory, and the container
+  publishes no ports.
+- `--sar-override` fails, because the image has no `sqlite3` CLI.
+- `--schedule FILE` does not work yet, because the file is not copied into the container.
+- `--reanalyze <dir>` works locally on the copied-back directory.
+
 ## How it isolates itself
 
 - A fresh database directory under `--out`, free random ports for HTTP and search, and bind to 127.0.0.1.
@@ -210,6 +234,6 @@ Say these when they apply, because a clean report is only as strong as its input
   If the reporter's channel has a stream selection profile, audio picking takes a path this run never
   touched. Ask, and use `copy` mode against a database that has the profile.
 - **Software pipeline by default.** Pass `--hwaccel` to test a hardware pipeline. Only pipelines this
-  machine's GPU and ffmpeg build support can run.
+  machine's GPU and ffmpeg build support can run. For another GPU, see "Run it on real hardware".
 - **Bounded sample.** Anything that happens after `--seconds` is out of view. Long-drift bugs need a
   longer capture.
