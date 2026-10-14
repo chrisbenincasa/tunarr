@@ -170,6 +170,9 @@ export const TimeBasedProgramLineupSchema = z.object({
   schedule: TimeSlotScheduleSchema,
   seed: z.number().array().optional(),
   discardCount: z.number().optional(),
+  // Rebuild the schedule at every cycle boundary instead of looping the saved
+  // items. Omitted keeps the channel's current setting.
+  rebuildEachCycle: z.boolean().optional(),
 });
 
 export const RandomSlotProgramLineupSchema = z.object({
@@ -178,6 +181,9 @@ export const RandomSlotProgramLineupSchema = z.object({
   schedule: RandomSlotScheduleSchema,
   seed: z.number().array().optional(),
   discardCount: z.number().optional(),
+  // Rebuild the schedule at every cycle boundary instead of looping the saved
+  // items. Omitted keeps the channel's current setting.
+  rebuildEachCycle: z.boolean().optional(),
 });
 
 export const UpdateChannelProgrammingRequestSchema = z.discriminatedUnion(

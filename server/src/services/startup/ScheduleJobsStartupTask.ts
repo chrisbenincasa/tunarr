@@ -7,6 +7,7 @@ import { OnDemandChannelStateTask } from '../../tasks/OnDemandChannelStateTask.t
 import { RefreshMediaSourceLibraryTask } from '../../tasks/RefreshMediaSourceLibraryTask.ts';
 import { ScanLibrariesTask } from '../../tasks/ScanLibrariesTask.ts';
 import { ScheduledTask } from '../../tasks/ScheduledTask.ts';
+import { SlotCycleBoundaryTask } from '../../tasks/SlotCycleBoundaryTask.ts';
 import { SubtitleExtractorTask } from '../../tasks/SubtitleExtractorTask.ts';
 import { SyncCollectionsTask } from '../../tasks/SyncCollectionsTask.ts';
 import { SyncCustomShowsTask } from '../../tasks/SyncCustomShowsTask.ts';
@@ -67,6 +68,19 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
           OnDemandChannelStateTask.KEY,
         ),
         undefined,
+        { runAtStartup: true },
+      ),
+    );
+
+    GlobalScheduler.scheduleTask(
+      SlotCycleBoundaryTask.ID,
+      new ScheduledTask(
+        SlotCycleBoundaryTask,
+        minutesCrontab(5),
+        container.get<() => SlotCycleBoundaryTask>(SlotCycleBoundaryTask.KEY),
+        undefined,
+        // The startup run is the catch-up pass for channels whose cycles all
+        // aired while the server was down.
         { runAtStartup: true },
       ),
     );

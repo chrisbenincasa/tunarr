@@ -8,6 +8,7 @@ import { test as baseTest, describe, expect } from 'vitest';
 import { bootstrapTunarr } from '../bootstrap.ts';
 import { globalOptions, setGlobalOptionsUnchecked } from '../globals.ts';
 import { CacheImageService } from '../services/cacheImageService.ts';
+import { ChannelLineupLock } from '../services/ChannelLineupLock.ts';
 import { FileSystemService } from '../services/FileSystemService.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { ChannelDB } from './ChannelDB.ts';
@@ -90,6 +91,7 @@ const test = baseTest.extend<Fixture>({
       mockMaterializeProgramsCommand,
       mock<IProgramDB>(),
       programConverter,
+      new ChannelLineupLock(),
     );
 
     const channelReadOpsRepo = new ChannelReadOpsRepository(dbAccess.drizzle!);

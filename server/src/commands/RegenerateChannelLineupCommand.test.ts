@@ -1,12 +1,17 @@
 import { describe, expect, test, vi } from 'vitest';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import { ChannelLineupLock } from '../services/ChannelLineupLock.ts';
+import type { SlotCycleBoundaryService } from '../services/scheduling/SlotCycleBoundaryService.ts';
 import type { TVGuideService } from '../services/TvGuideService.ts';
 import { RegenerateChannelLineupCommand } from './RegenerateChannelLineupCommand.ts';
 
 vi.mock('../services/TvGuideService.ts', () => ({ TVGuideService: class {} }));
+vi.mock('../services/scheduling/SlotCycleBoundaryService.ts', () => ({
+  SlotCycleBoundaryService: class {},
+}));
 
-function setup(scheduleSeed?: number[]) {
+function setup(scheduleSeed?: number[], rebuildEachCycle = false) {
   const channelDB = {
     loadChannelAndLineupOrm: vi.fn().mockResolvedValue({
       channel: { uuid: 'ch1', startTime: 1000 },
@@ -14,6 +19,7 @@ function setup(scheduleSeed?: number[]) {
         items: [],
         schedule: { type: 'time', slots: [] },
         scheduleSeed,
+        rebuildEachCycle,
       },
     }),
     replaceChannelPrograms: vi.fn(),
@@ -30,12 +36,18 @@ function setup(scheduleSeed?: number[]) {
     updateCachedChannel: vi.fn().mockResolvedValue(undefined),
   };
 
+  const boundaryService = {
+    regenerateChannel: vi.fn().mockResolvedValue(undefined),
+  };
+
   const command = new RegenerateChannelLineupCommand(
     channelDB as unknown as IChannelDB,
     () => ({ queueTask }) as unknown as IWorkerPool,
     tvGuideService as unknown as TVGuideService,
+    new ChannelLineupLock(),
+    boundaryService as unknown as SlotCycleBoundaryService,
   );
-  return { command, channelDB, queueTask };
+  return { command, channelDB, queueTask, boundaryService };
 }
 
 describe('RegenerateChannelLineupCommand', () => {
@@ -62,5 +74,18 @@ describe('RegenerateChannelLineupCommand', () => {
     expect(channelDB.replaceChannelPrograms).toHaveBeenCalledWith('ch1', [
       'p1',
     ]);
+  });
+
+  test('hands a rebuilding channel to the cycle boundary service', async () => {
+    const { command, channelDB, queueTask, boundaryService } = setup(
+      [1, 2, 3],
+      true,
+    );
+
+    await command.execute({ channelId: 'ch1' });
+
+    expect(boundaryService.regenerateChannel).toHaveBeenCalledWith('ch1');
+    expect(queueTask).not.toHaveBeenCalled();
+    expect(channelDB.saveLineup).not.toHaveBeenCalled();
   });
 });
