@@ -54,7 +54,11 @@ export class FfmpegPlaybackParamsCalculator {
 
     if (streamDetails.videoDetails) {
       const [videoStream] = streamDetails.videoDetails;
+      // A stored size of 0x0 means the size is unknown, so there is no aspect
+      // ratio to scale from.
       if (
+        videoStream.width > 0 &&
+        videoStream.height > 0 &&
         needsToScale(this.transcodeConfig, videoStream) &&
         videoStream.sampleAspectRatio !== '0:0'
       ) {
