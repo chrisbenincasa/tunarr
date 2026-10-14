@@ -14,7 +14,7 @@ jobs:
       TURBO_CACHE_DIR: .turbo
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Use Latest Corepack
         run: |
