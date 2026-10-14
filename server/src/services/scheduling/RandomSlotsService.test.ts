@@ -844,6 +844,7 @@ describe('random slot pad coverage with a fallback filler', () => {
 describe('random slot seed reproducibility', () => {
   const oneHour = 60 * 60 * 1000;
   const midnight = dayjs('2024-01-01T00:00:00.000Z');
+  const moviesShowId = randomUUID();
 
   const movies: SlotSchedulerProgram[] = Array.from({ length: 30 }, (_, i) => ({
     ...createFakeProgramOrm({
@@ -853,13 +854,14 @@ describe('random slot seed reproducibility', () => {
       duration: oneHour,
     }),
     parentFillerLists: [],
-    parentCustomShows: [],
+    parentCustomShows: [{ customShowId: moviesShowId, index: i }],
     parentSmartCollections: [],
   }));
 
   const movieSlot = (): RandomSlot => ({
     id: randomUUID(),
-    type: 'movie',
+    type: 'custom-show',
+    customShowId: moviesShowId,
     order: 'shuffle',
     direction: 'asc',
     weight: 1,
