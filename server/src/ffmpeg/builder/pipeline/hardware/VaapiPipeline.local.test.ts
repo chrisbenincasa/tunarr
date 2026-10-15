@@ -1294,6 +1294,77 @@ describe.skipIf(!binaries || !vaapiInfo || !canDecodeHdr)(
       },
     );
 
+    // A software pad after tonemap_opencl downloads the frames directly from
+    // the reverse hwmap, with no VAAPI filter in between.
+    vaapiTest.skipIf(!vaapiOpenclSupported)(
+      'HDR10 content tonemapped via opencl, then padded in software',
+      async ({ binaryCapabilities, ffmpegVersion, resolvedVaapi }) => {
+        if (!binaries) {
+          throw new Error('ffmpeg binaries are required for this test');
+        }
+        process.env[TONEMAP_ENABLED] = 'true';
+
+        const video = makeHdrVideoInput(Fixtures.videoHevc720p);
+        const audio = makeAudioInput(Fixtures.videoHevc720p);
+
+        const capsWithOpencl = new FfmpegCapabilities(
+          binaryCapabilities.allOptions(),
+          binaryCapabilities.allVideoEncoders(),
+          new Set([
+            ...binaryCapabilities.allFilters(),
+            KnownFfmpegFilters.TonemapOpencl,
+          ]),
+          new Set(),
+        );
+
+        const builder = new VaapiPipelineBuilder(
+          makeHdrVaapiCapabilities(),
+          capsWithOpencl,
+          video,
+          audio,
+          null,
+          null,
+          null,
+        );
+
+        const outputPath = path.join(workdir, 'tonemap_opencl_pad.ts');
+        const pipeline = builder.build(
+          FfmpegState.create({
+            duration: testDuration,
+            version: ffmpegVersion,
+            outputLocation: FileOutputLocation(outputPath, true),
+            vaapiDevice: resolvedVaapi.device,
+          }),
+          new FrameState({
+            isAnamorphic: false,
+            scaledSize: FrameSize.withDimensions(1440, 810),
+            paddedSize: FrameSize.withDimensions(1440, 1080),
+            pixelFormat: new PixelFormatYuv420P(),
+            videoFormat: VideoFormats.H264,
+          }),
+          {
+            ...DefaultPipelineOptions,
+            vaapiPipelineOptions: { tonemapPreference: 'opencl' },
+          },
+        );
+
+        const args = pipeline.getCommandArgs();
+        expect(args.join(' ')).toContain('reverse=1,format=vaapi,hwdownload');
+
+        const { exitCode, stderr } = runFfmpegWithPipeline(
+          binaries.ffmpeg,
+          args,
+        );
+
+        expect(
+          exitCode,
+          `Pipeline command failed: ${args.join(' ')}\n${stderr}`,
+        ).toBe(0);
+        const probe = probeFile(binaries.ffprobe, outputPath);
+        expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+      },
+    );
+
     vaapiTest(
       'TONEMAP_ENABLED=false skips tonemapping',
       async ({ binaryCapabilities, ffmpegVersion, resolvedVaapi }) => {
