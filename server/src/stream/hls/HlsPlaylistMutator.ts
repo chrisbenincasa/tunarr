@@ -286,38 +286,35 @@ export class HlsPlaylistMutator {
     };
   }
 
-  // The WebVTT subtitle sidecar (`HlsSubtitleOutputFormat`, ffmpeg's
-  // `segment` muxer) produces a structurally simpler playlist than the
-  // video/audio `hls` muxer output above: just `#EXTINF:<dur>,` + filename
-  // pairs, with no `#EXT-X-PROGRAM-DATE-TIME` lines and no discontinuity
-  // tags (that muxer has no equivalent of `discont_start`). It also never
-  // needs date-based filtering, so this only supports segment-number-based
-  // trimming, unlike the general `HlsPlaylistFilterOptions` union above.
+  // Subtitle playlists have no program-date-time requirement, but may carry
+  // the same discontinuity boundaries as their associated video playlist.
   parseSubtitlePlaylist(playlistLines: string[]): SubtitlePlaylistSegment[] {
     const items: SubtitlePlaylistSegment[] = [];
-
-    let i = 0;
-    while (
-      i < playlistLines.length &&
-      !playlistLines[i]!.startsWith('#EXTINF:')
-    ) {
-      i++;
-    }
-
-    while (i < playlistLines.length) {
-      const line = playlistLines[i];
-      if (!isNonEmptyString(line) || !line.startsWith('#EXTINF:')) {
-        i++;
-        continue;
+    let discontinuitySequence = 0;
+    let extInf: string | undefined;
+    for (const rawLine of playlistLines) {
+      const line = rawLine.trimEnd();
+      if (line.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE:')) {
+        const value = line.slice(line.indexOf(':') + 1);
+        const sequence = Number(value);
+        if (!/^\d+$/.test(value) || !Number.isSafeInteger(sequence)) {
+          throw new Error('Invalid subtitle discontinuity sequence');
+        }
+        discontinuitySequence = sequence;
+      } else if (line === '#EXT-X-DISCONTINUITY') {
+        discontinuitySequence++;
+      } else if (line.startsWith('#EXTINF:')) {
+        extInf = line;
+      } else if (
+        extInf !== undefined &&
+        line.length > 0 &&
+        !line.startsWith('#')
+      ) {
+        items.push(
+          new SubtitlePlaylistSegment(extInf, line, discontinuitySequence),
+        );
+        extInf = undefined;
       }
-
-      const fileLine = playlistLines[i + 1];
-      if (!isNonEmptyString(fileLine)) {
-        break;
-      }
-
-      items.push(new SubtitlePlaylistSegment(line, fileLine));
-      i += 2;
     }
 
     return items;
@@ -364,7 +361,21 @@ export class HlsPlaylistMutator {
       `#EXT-X-MEDIA-SEQUENCE:${startSequence}`,
     ];
 
+    let discontinuitySequence = first(allSegments)?.discontinuitySequence ?? 0;
+    if (
+      playlistLines.some(
+        (line) =>
+          line.trimEnd() === '#EXT-X-DISCONTINUITY' ||
+          line.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE:'),
+      )
+    ) {
+      lines.push(`#EXT-X-DISCONTINUITY-SEQUENCE:${discontinuitySequence}`);
+    }
     for (const segment of allSegments) {
+      while (discontinuitySequence < segment.discontinuitySequence) {
+        lines.push('#EXT-X-DISCONTINUITY');
+        discontinuitySequence++;
+      }
       lines.push(segment.extInf, segment.line);
     }
 
@@ -407,6 +418,7 @@ export class SubtitlePlaylistSegment {
   constructor(
     public extInf: string,
     public line: string,
+    public discontinuitySequence = 0,
   ) {
     this.duration = parseFloat(trimEnd(extInf.trim(), ',').split(':')[1]!);
   }
