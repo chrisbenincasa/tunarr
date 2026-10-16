@@ -157,11 +157,10 @@ export class FixMislabeledGroupingExternalIdSourceType extends Fixer {
         ),
       )
       // Leave the row alone when the grouping already carries a jellyfin/emby external
-      // id, whatever its media source id: relabelling would duplicate it rather than
-      // repair anything. This is about ambiguity, not about a constraint - the partial
-      // index on (group_uuid, source_type, media_source_id) WHERE media_source_id IS
-      // NULL does not enforce uniqueness in SQLite, because every indexed row has NULL
-      // in the key column.
+      // id, whatever its media source id. Since this statement also sets
+      // media_source_id, a relabel could otherwise collide with
+      // unique_program_grouping_multiple_external_id_media_source, and would duplicate
+      // the identifier regardless.
       .where((eb) =>
         eb.not(
           eb.exists(
