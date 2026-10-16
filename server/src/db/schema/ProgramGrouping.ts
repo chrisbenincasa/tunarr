@@ -86,6 +86,11 @@ export const ProgramGrouping = sqliteTable(
     index('program_grouping_show_uuid_index').on(table.showUuid),
     index('program_grouping_artist_uuid_index').on(table.artistUuid),
     index('program_grouping_state_index').on(table.state),
+    index('program_grouping_media_source_library_external_key_index').on(
+      table.mediaSourceId,
+      table.libraryId,
+      table.externalKey,
+    ),
     check(
       'type_check',
       inArray(table.type, table.type.enumValues).inlineParams(),
