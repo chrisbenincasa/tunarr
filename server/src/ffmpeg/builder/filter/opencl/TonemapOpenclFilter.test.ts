@@ -26,7 +26,7 @@ describe('TonemapOpenclFilter', () => {
     const filter = new TonemapOpenclFilter(currentState);
 
     expect(filter.filter).to.eq(
-      'hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:peak=1000:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1',
+      'hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:peak=1000:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1,format=vaapi',
     );
   });
 
@@ -42,7 +42,7 @@ describe('TonemapOpenclFilter', () => {
     const filter = new TonemapOpenclFilter(currentState);
 
     expect(filter.filter).to.eq(
-      'format=vaapi|nv12|p010le,hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:peak=1000:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1',
+      'format=vaapi|nv12|p010le,hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:peak=1000:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1,format=vaapi',
     );
   });
 
@@ -96,7 +96,7 @@ describe('TonemapOpenclFilter', () => {
     expect(nextState.frameDataLocation).to.eq(FrameDataLocation.Hardware);
   });
 
-  test('nextState wraps existing pixel format in PixelFormatNv12', () => {
+  test('nextState sets an 8-bit pixel format for 10-bit input', () => {
     const currentState = new FrameState({
       scaledSize: FrameSize.FHD,
       paddedSize: FrameSize.FHD,
@@ -109,8 +109,9 @@ describe('TonemapOpenclFilter', () => {
     const nextState = filter.nextState(currentState);
 
     expect(nextState.pixelFormat).toMatchPixelFormat(
-      new PixelFormatNv12(new PixelFormatYuv420P10Le()),
+      new PixelFormatNv12(new PixelFormatYuv420P()),
     );
+    expect(nextState.bitDepth).to.eq(8);
   });
 
   test('nextState wraps unknown pixel format in PixelFormatNv12 when no current pixel format', () => {

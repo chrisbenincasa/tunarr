@@ -1180,6 +1180,68 @@ describe('VaapiPipelineBuilder tonemap', () => {
     expect(scaleIndex).toBeLessThan(tonemapIndex);
   });
 
+  function createHdrVideoStreamWithSize(frameSize: FrameSize): VideoStream {
+    return VideoStream.create({
+      index: 0,
+      codec: VideoFormats.Hevc,
+      profile: 'main 10',
+      pixelFormat: new PixelFormatYuv420P10Le(),
+      frameSize,
+      displayAspectRatio: '16:9',
+      providedSampleAspectRatio: '1:1',
+      colorFormat: new ColorFormat({
+        colorRange: ColorRanges.Tv,
+        colorSpace: ColorSpaces.Bt2020nc,
+        colorPrimaries: ColorPrimaries.Bt2020,
+        colorTransfer: ColorTransferFormats.Smpte2084,
+      }),
+    });
+  }
+
+  test('opencl tonemap returns VAAPI frames before the software pad downloads them (no scale)', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const stream = createHdrVideoStreamWithSize(
+      FrameSize.withDimensions(3840, 2076),
+    );
+    const pipeline = buildWithTonemap({
+      videoStream: stream,
+      desiredState: {
+        scaledSize: stream.squarePixelFrameSize(FrameSize.FourK),
+        paddedSize: FrameSize.FourK,
+      },
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args).toContain(
+      'hwmap=derive_device=vaapi:reverse=1,format=vaapi,hwdownload,format=nv12,pad=3840:2160',
+    );
+  });
+
+  test('opencl tonemap returns VAAPI frames before the software pad downloads them (scale and pad)', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const stream = createHdrVideoStreamWithSize(
+      FrameSize.withDimensions(3840, 1600),
+    );
+    const pipeline = buildWithTonemap({
+      videoStream: stream,
+      desiredState: {
+        scaledSize: stream.squarePixelFrameSize(FrameSize.FHD),
+        paddedSize: FrameSize.FHD,
+      },
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(args.indexOf('scale_vaapi=1920:1080')).toBeGreaterThan(-1);
+    expect(args.indexOf('scale_vaapi=1920:1080')).toBeLessThan(
+      args.indexOf('tonemap_opencl'),
+    );
+    expect(args).toContain(
+      'hwmap=derive_device=vaapi:reverse=1,format=vaapi,hwdownload,format=nv12,pad=1920:1080',
+    );
+  });
+
   test('skips opencl tonemap when hardware filters are disabled but applies software tonemap', () => {
     process.env[TONEMAP_ENABLED] = 'true';
 
