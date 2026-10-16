@@ -250,7 +250,7 @@ export class VaapiHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
                 ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
           ),
         )
-        .with([VideoFormats.Mpeg1Video, P._], () =>
+        .with([VideoFormats.Mpeg2Video, P._], () =>
           find(
             this.entrypoints,
             (ep) =>
