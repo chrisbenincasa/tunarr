@@ -74,6 +74,11 @@ export class SettingsDBFactory {
         // New installs are fresh and have effectively "migrated"
         data.migration.hasMigratedTo1_0 = freshSettings;
 
+        // Installs that predate the welcome checklist are already set up.
+        if (data.migration.onboardingComplete === undefined) {
+          data.migration.onboardingComplete = !freshSettings;
+        }
+
         // Log rolling used to default to off, and every install saved that
         // default. Turn it on once for installs that still have it off.
         if (!data.migration.hasEnabledLogRollByDefault) {

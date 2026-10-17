@@ -156,4 +156,41 @@ describe('SettingsDBFactory', () => {
       );
     });
   });
+
+  describe('onboarding state', () => {
+    type WrittenSettings = { migration: Record<string, unknown> };
+
+    const readSettings = async () =>
+      JSON.parse(await fs.readFile(settingsPath, 'utf-8')) as WrittenSettings;
+
+    const restart = async () => {
+      vi.resetModules();
+      new (await loadFactory())(options).get();
+    };
+
+    test('new installs start onboarding', async () => {
+      new (await loadFactory())(options).get();
+
+      expect((await readSettings()).migration.onboardingComplete).toBe(false);
+    });
+
+    test('existing installs skip onboarding', async () => {
+      new (await loadFactory())(options).get();
+      const settings = await readSettings();
+      delete settings.migration.onboardingComplete;
+      await fs.writeFile(settingsPath, JSON.stringify(settings));
+
+      await restart();
+
+      expect((await readSettings()).migration.onboardingComplete).toBe(true);
+    });
+
+    test('unfinished onboarding survives a restart', async () => {
+      new (await loadFactory())(options).get();
+
+      await restart();
+
+      expect((await readSettings()).migration.onboardingComplete).toBe(false);
+    });
+  });
 });

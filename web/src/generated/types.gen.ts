@@ -10946,10 +10946,44 @@ export type GetApiSystemMigrationStateResponses = {
         isFreshSettings?: boolean;
         hasMigratedTo1_0: boolean;
         hasEnabledLogRollByDefault: boolean;
+        /**
+         * Whether the first-run welcome checklist was finished or skipped
+         */
+        onboardingComplete?: boolean;
     };
 };
 
 export type GetApiSystemMigrationStateResponse = GetApiSystemMigrationStateResponses[keyof GetApiSystemMigrationStateResponses];
+
+export type PutApiSystemOnboardingData = {
+    body: {
+        complete: boolean;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/system/onboarding';
+};
+
+export type PutApiSystemOnboardingResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        /**
+         * Whether a legacy migration was performed
+         */
+        legacyMigration: boolean;
+        isFreshSettings?: boolean;
+        hasMigratedTo1_0: boolean;
+        hasEnabledLogRollByDefault: boolean;
+        /**
+         * Whether the first-run welcome checklist was finished or skipped
+         */
+        onboardingComplete?: boolean;
+    };
+};
+
+export type PutApiSystemOnboardingResponse = PutApiSystemOnboardingResponses[keyof PutApiSystemOnboardingResponses];
 
 export type PostApiSystemFixersByFixerIdRunData = {
     body?: never;
