@@ -8,6 +8,7 @@ import {
   IndexBasedProgramIterator,
   type ProgramIterator,
 } from './ProgramIterator.ts';
+import type { ProgramIteratorSnapshot } from './slotIteratorState.ts';
 import {
   createIndexByIdMap,
   type SlotSchedulerProgram,
@@ -16,26 +17,69 @@ import {
 abstract class ShuffleProgramIterator<
   ProgramT extends CondensedChannelProgram,
 > extends IndexBasedProgramIterator<ProgramT> {
+  #allPrograms: SlotSchedulerProgram[];
+  #played = new Set<string>();
+  // True while the first pass holds only the programs a resumed pass had
+  // not played yet.
+  #partialPass: boolean;
+
   constructor(
     programs: SlotSchedulerProgram[],
     protected random: Random,
+    resume?: ProgramIteratorSnapshot,
   ) {
-    super(random.shuffle(programs));
+    const played = new Set(resume?.type === 'shuffle' ? resume.playedIds : []);
+    const unplayed = programs.filter((program) => !played.has(program.uuid));
+    const partialPass =
+      unplayed.length > 0 && unplayed.length < programs.length;
+
+    // A full pass shuffles `programs` in place. Callers share these arrays
+    // between iterators, so changing that would change existing schedules.
+    super(random.shuffle(partialPass ? unplayed : programs));
+    this.#allPrograms = programs;
+    this.#partialPass = partialPass;
+    if (partialPass) {
+      for (const program of programs) {
+        if (played.has(program.uuid)) {
+          this.#played.add(program.uuid);
+        }
+      }
+    }
   }
 
   next() {
+    const curr = this.programs[this.position];
+    if (curr) {
+      this.#played.add(curr.uuid);
+    }
     super.next();
     // IndexBasedProgramIterator#next wraps the position modulo the list
     // length, so position === 0 means we just completed a full pass.
     // Reshuffle so the next pass isn't a replay of the previous one.
     if (this.position === 0) {
-      this.programs = this.random.shuffle([...this.programs]);
+      this.#played.clear();
+      this.programs = this.random.shuffle([
+        ...(this.#partialPass ? this.#allPrograms : this.programs),
+      ]);
+      this.#partialPass = false;
     }
   }
 
   reset(): void {
-    this.programs = this.random.shuffle(this.programs);
+    this.programs = this.random.shuffle(
+      this.#partialPass ? [...this.#allPrograms] : this.programs,
+    );
     this.position = 0;
+    this.lastPlayedId = undefined;
+    this.#played.clear();
+    this.#partialPass = false;
+  }
+
+  snapshot(): ProgramIteratorSnapshot | undefined {
+    if (this.#played.size === 0) {
+      return;
+    }
+    return { type: 'shuffle', playedIds: [...this.#played] };
   }
 }
 
@@ -81,8 +125,9 @@ export class CustomProgramShuffleIterator extends ShuffleProgramIterator<Condens
     private customShowId: string,
     programs: SlotSchedulerProgram[],
     random: Random,
+    resume?: ProgramIteratorSnapshot,
   ) {
-    super(programs, random);
+    super(programs, random, resume);
     this.indexById = createIndexByIdMap(programs, customShowId);
   }
 

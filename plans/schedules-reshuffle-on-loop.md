@@ -1,7 +1,8 @@
 # Reshuffle Schedules on Loop
 
-> **Status (10/13/2026):** Design settled in a review session. Phase 1 (slot schedules) is ready to
-> build once #2306 lands. Phase 2 (manual lineups) is deferred. Nothing implemented.
+> **Status (10/13/2026):** Scheduler plumbing (PR plan step 2) built on branch
+> `feat/slot-cycle-snapshots`, not yet merged. Boundary service next, once #2306 lands. Phase 2
+> (manual lineups) is deferred.
 
 Stopgap for dynamic schedules (Tunarr v2). A slot channel's lineup holds one cycle of content at a
 time. Before a cycle ends, the server builds the next one from the same schedule, continuing the RNG
@@ -82,8 +83,15 @@ stream and each iterator's state. Users get a fresh shuffle every cycle without 
 Each cycle stores a snapshot of the state it started from:
 
 - `discardCount`, the RNG skip count into the channel's `scheduleSeed`.
-- Ordered iterators: `lastProgramId`, plus the rotation offset for `ordered_shuffle`.
+- Ordered iterators, including `ordered_shuffle`: `lastProgramId`. A rotation keeps the sorted
+  list's cyclic order, so `ordered_shuffle` needs no stored offset.
 - Shuffle iterators: the IDs played in the current pass.
+- Random slots: the next slot for sequential distribution, and each slot's last-played time for
+  cooldowns.
+- Rerun counters and mixed-group replay buffers restart each cycle. Only the iterator they wrap
+  carries over.
+- Iterators are keyed by slot position or link group, not slot ID, because duplicate slot IDs are
+  replaced with random ones on every build. Filler iterators are not carried over.
 
 One seed per channel, with skip counts, keeps every cycle reproducible from the channel's seed.
 
@@ -117,7 +125,7 @@ New optional fields need no `ChannelLineupMigrator` step.
   the end snapshot next to the items.
 - Ordered iterators resume just after `lastProgramId` in sort order. A missing program means
   starting at 0.
-- `ordered_shuffle` resumes at its stored rotation offset.
+- `ordered_shuffle` resumes after `lastProgramId` in sorted order, skipping its random rotation.
 - Shuffle iterators shuffle only unplayed programs. When those run out, a new pass starts. New
   library programs join the unplayed pool, and deleted ones drop out.
 
@@ -148,7 +156,7 @@ New optional fields need no `ChannelLineupMigrator` step.
 - Build ahead and trim keep the channel position unchanged at every step.
 - A cycle shorter than the horizon builds enough cycles to cover it.
 - Cascade: rebuilding the airing cycle rebuilds the next one from the new end state.
-- Ordered shows continue across cycles. `ordered_shuffle` keeps its offset.
+- Ordered shows continue across cycles. `ordered_shuffle` keeps its place.
 - Shuffled programs do not repeat within a pass across cycles.
 - Catch-up starts from the last snapshot at the period start (time slots) or `now` (random slots).
 - Same seed and library give the same sequence of cycles.
