@@ -8,11 +8,11 @@
   "author": "chrisbenincasa",
   "type": "module",
   "scripts": {
-    "bundle": "tsgo",
-    "build": "tsgo --declaration",
-    "build-dev": "tsgo --declaration --watch",
+    "bundle": "tsc",
+    "build": "tsc --declaration",
+    "build-dev": "tsc --declaration --watch",
     "clean": "rimraf ./dist/",
-    "dev": "tsgo --declaration --watch",
+    "dev": "tsc --declaration --watch",
     "generate-search-diagram": "tsx scripts/generate_search_diagram.ts",
     "lint": "oxlint src/",
     "test": "vitest --run"
@@ -48,7 +48,6 @@
     "@rollup/plugin-swc": "^0.4.0",
     "@types/lodash-es": "4.17.9",
     "@types/node": "22.10.7",
-    "@typescript/native-preview": "catalog:",
     "@vitest/coverage-v8": "catalog:vitest",
     "rimraf": "^5.0.5",
     "ts-essentials": "^9.4.2",
