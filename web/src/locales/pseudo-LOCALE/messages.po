@@ -3442,8 +3442,11 @@ msgid "Roll on Schedule"
 msgstr ""
 
 #: src/components/settings/general/LogRollForm.tsx
-#: src/components/settings/general/LogRollForm.tsx
 msgid "Roll the log file on a fixed schedule, regardless of file size."
+msgstr ""
+
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Roll the log file when it grows past the maximum size."
 msgstr ""
 
 #: src/components/library/LibraryListViewBreadcrumbs.tsx

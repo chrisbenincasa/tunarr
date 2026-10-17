@@ -12,6 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers';
+import { defaultLogRollConfig } from '@tunarr/types';
 import type { EverySchedule } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
@@ -116,7 +117,9 @@ export const LogRollForm = () => {
                   control={control}
                   name="logging.logRollConfig.schedule.increment"
                   prettyFieldName="Max Backups"
-                  rules={{ min: 1 }}
+                  // The rule outlives this field when it unmounts. Unticking
+                  // the schedule writes 0, and min: 1 would block every save.
+                  rules={{ min: 0 }}
                   TextFieldProps={{
                     sx: { width: '30%' },
                   }}
@@ -181,7 +184,11 @@ export const LogRollForm = () => {
                       <Checkbox
                         checked={(field.value ?? 0) > 0}
                         onChange={(_, checked) => {
-                          field.onChange(checked ? Math.pow(2, 20) : 0);
+                          field.onChange(
+                            checked
+                              ? defaultLogRollConfig().maxFileSizeBytes
+                              : 0,
+                          );
                           setValue(
                             'logging.logRollConfig.schedule.unit',
                             'day',
@@ -197,8 +204,7 @@ export const LogRollForm = () => {
               />
               <FormHelperText>
                 <Trans>
-                  Roll the log file on a fixed schedule, regardless of file
-                  size.
+                  Roll the log file when it grows past the maximum size.
                 </Trans>
               </FormHelperText>
             </FormControl>
