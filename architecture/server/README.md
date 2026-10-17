@@ -49,6 +49,23 @@ migration of the remaining 23 routers, not a design invention.
 | 12  | One run-a-unit-of-work seam — and inject the Scheduler                   | Verified                                  | —      |
 | 13  | Object-shaped pipeline builder seam                                      | **Premise is false** — see below          | —      |
 
+## Second pass (2026-09-13)
+
+None of the 13 candidates above had landed. The second pass added one candidate and re-scoped four.
+
+| #   | Candidate                                                      | Status                                                   | Record                                               |
+| --- | -------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------- |
+| A   | One program lifecycle module — missing, trash, purge           | Deep dive complete · plan recorded · **not implemented** | [01-program-lifecycle.md](./01-program-lifecycle.md) |
+| B   | One commit for channel programming (extends #3)                | Pending                                                  | —                                                    |
+| C   | One channel timeline for streams and the guide (extends #10)   | Pending                                                  | —                                                    |
+| D   | Remote library scanners take the client adapter (re-scopes #5) | Pending                                                  | —                                                    |
+| E   | A process seam under stream sessions (relates to #6, #8)       | Pending                                                  | —                                                    |
+
+Bugs observed in the second pass, not yet filed:
+
+- `RemoveDanglingProgramsFromSearchTask.ts:17-18` reuses `ReconcileProgramDurationsTask.name` as its task ID
+- On-demand time shift is skipped at `HlsSlowerSession.ts:51`, `HlsPlaylistCreator.ts:45` and `nativePlaybackApi.ts:110`
+
 ## Fact-check (2026-08-26)
 
 The review's structural diagnoses hold and its line numbers are usually exact. Its **counts are not
