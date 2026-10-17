@@ -2809,10 +2809,9 @@ msgstr ""
 msgid "No results"
 msgstr ""
 
-#. placeholder {0}: version.nodejs
 #: src/components/VersionFooter.tsx
-msgid "NodeJS: {0}"
-msgstr ""
+#~ msgid "NodeJS: {0}"
+#~ msgstr ""
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/pages/system/TroubleshootPage.tsx

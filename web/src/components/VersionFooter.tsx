@@ -35,9 +35,6 @@ export default function VersionFooter() {
           <Typography component="p" variant="overline">
             <Trans>FFMPEG: {version.ffmpeg}</Trans>
           </Typography>
-          <Typography component="p" variant="overline">
-            <Trans>NodeJS: {version.nodejs}</Trans>
-          </Typography>
         </>
       )}
     </Box>
