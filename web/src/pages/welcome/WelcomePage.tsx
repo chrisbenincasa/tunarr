@@ -1,301 +1,280 @@
 import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
-import { Plural, Trans, useLingui } from '@lingui/react/macro';
-import { ArrowBack, ArrowForward, Edit } from '@mui/icons-material';
+import { CopyToClipboardButton } from '@/components/base/CopyToClipboardButton.tsx';
+import { useChannels } from '@/hooks/useChannels.ts';
+import { useM3ULink } from '@/hooks/useM3ULink.ts';
+import { useSetOnboardingComplete } from '@/hooks/useOnboarding.ts';
+import { useSystemHealthChecks } from '@/hooks/useSystemHealthChecks.ts';
+import { useXmlTvLink } from '@/hooks/useXmlTvLink.ts';
+import { Trans } from '@lingui/react/macro';
+import {
+  Add,
+  CheckCircle,
+  Edit,
+  Info,
+  RadioButtonUnchecked,
+  Warning,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
   Button,
-  Step,
-  StepLabel,
-  Stepper,
+  LinearProgress,
+  Link,
+  Paper,
+  Stack,
   Typography,
 } from '@mui/material';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { isEmpty } from 'lodash-es';
-import React, { useEffect } from 'react';
+import type { MediaSourceSettings } from '@tunarr/types';
+import type { ReactNode } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
 import ConnectMediaSources from '../../components/settings/ConnectMediaSources.tsx';
-import { useMediaSources } from '../../hooks/settingsHooks.ts';
-import { useVersion } from '../../hooks/useVersion.tsx';
-import { updateShowWelcomeState } from '../../store/themeEditor/actions.ts';
+import { getApiMediaSourcesOptions } from '../../generated/@tanstack/react-query.gen.ts';
+
+type StepStatus = 'done' | 'todo' | 'attention' | 'optional';
+
+// Local sources sync every library they have.
+const syncedLibraries = (sources: MediaSourceSettings[]) =>
+  sources.flatMap((source) =>
+    source.libraries.filter((lib) => source.type === 'local' || lib.enabled),
+  );
+
+const hasScannedLibrary = (sources: MediaSourceSettings[] | undefined) =>
+  (sources ?? []).length > 0 &&
+  syncedLibraries(sources ?? []).some((lib) => lib.lastScannedAt !== undefined);
 
 export default function WelcomePage() {
-  const { t } = useLingui();
-  const steps = [t`Connect Sources`, t`Install FFMPEG`, t`All Set!`];
-  const [hasMediaSource, setHasMediaSource] = React.useState<boolean>(false);
-  const [isFfmpegInstalled, setIsFfmpegInstalled] =
-    React.useState<boolean>(false);
   const navigate = useNavigate();
+  const setOnboardingComplete = useSetOnboardingComplete();
 
-  const { data: version } = useVersion();
-  const { data: mediaSources, isLoading: mediaSourcesLoading } =
-    useMediaSources();
-  const hasEnabledLibrary = mediaSources.some(
-    (source) =>
-      source.type === 'local' || source.libraries.some((lib) => lib.enabled),
-  );
+  // Poll until the first scan lands so the checklist updates on its own.
+  const { data: mediaSources } = useSuspenseQuery({
+    ...getApiMediaSourcesOptions(),
+    refetchInterval: (query) =>
+      hasScannedLibrary(query.state.data) ? false : 5_000,
+  });
+  const { data: channels } = useChannels();
+  const { data: healthChecks } = useSystemHealthChecks();
+  const m3uLink = useM3ULink();
+  const xmlTvLink = useXmlTvLink();
 
-  useEffect(() => {
-    if (!isEmpty(mediaSources) && !mediaSourcesLoading) {
-      setHasMediaSource(true);
-    }
+  const libraries = syncedLibraries(mediaSources);
+  const hasSource = mediaSources.length > 0;
+  const hasLibrary = libraries.length > 0;
+  const hasScan = hasScannedLibrary(mediaSources);
+  const ffmpegCheck = healthChecks['FfmpegVersion'];
+  const ffmpegOk =
+    ffmpegCheck === undefined ||
+    ffmpegCheck.type === 'healthy' ||
+    ffmpegCheck.type === 'info';
+  const hasChannel = channels.length > 0;
+  const allDone = hasLibrary && hasScan && ffmpegOk && hasChannel;
 
-    if (version && version.ffmpeg !== 'Error' && version.ffmpeg !== 'unknown') {
-      setIsFfmpegInstalled(true);
-    }
-  }, [mediaSources, mediaSourcesLoading, version]);
-
-  const header = (
-    <>
-      <TunarrLogo
-        style={{
-          width: '4rem',
-          height: '4rem',
-          margin: '0 auto',
-          textAlign: 'center',
-        }}
-      />
-
-      <Typography variant="h3">
-        <Trans>Welcome to Tunarr!</Trans>
-      </Typography>
-    </>
-  );
-
-  const [activeStep, setActiveStep] = React.useState(0);
-  const [skipped, setSkipped] = React.useState(new Set<number>());
-
-  const isStepSkipped = (step: number) => {
-    return skipped.has(step);
+  const complete = () => {
+    setOnboardingComplete.mutate(
+      { body: { complete: true } },
+      {
+        onSuccess: () => {
+          navigate({ to: '/guide' }).catch(console.warn);
+        },
+      },
+    );
   };
-
-  const handleNext = () => {
-    let newSkipped = skipped;
-    if (isStepSkipped(activeStep)) {
-      newSkipped = new Set(newSkipped.values());
-      newSkipped.delete(activeStep);
-    }
-
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
-    setSkipped(newSkipped);
-  };
-
-  const handleFinish = () => {
-    updateShowWelcomeState();
-    navigate({ to: '/channels/new' }).catch(console.warn);
-  };
-
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
-
-  const getStarted = (
-    <>
-      <Typography variant="body1">
-        <Trans>Let's get started...</Trans>
-      </Typography>
-      <Box sx={{ width: '100%', maxWidth: '750px', margin: '0 auto', mt: 4 }}>
-        <Stepper alternativeLabel activeStep={activeStep}>
-          {steps.map((label, index) => {
-            const stepProps: { completed?: boolean } = {};
-            if (isStepSkipped(index)) {
-              stepProps.completed = false;
-            }
-            return (
-              <Step key={label} {...stepProps}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            );
-          })}
-        </Stepper>
-
-        <React.Fragment>
-          {activeStep === 0 && (
-            <>
-              <Typography
-                variant="h6"
-                fontWeight={600}
-                align="left"
-                sx={{ mt: 3 }}
-              >
-                <Trans>Connect Media Sources</Trans>
-              </Typography>
-              <Typography sx={{ mb: 3 }} align="left">
-                <Trans>
-                  To use Tunarr, you must first connect at least one media
-                  source. Media sources provide all content used to create
-                  channels in Tunarr. Plex and Jellyfin are currently supported.
-                </Trans>
-              </Typography>
-
-              {!hasMediaSource ? (
-                <Alert
-                  sx={{
-                    alignItems: 'center',
-                  }}
-                  variant="filled"
-                  severity="error"
-                  action={
-                    <AddMediaSourceButton
-                      ButtonProps={{
-                        variant: 'outlined',
-                        color: 'inherit',
-                        size: 'small',
-                      }}
-                    />
-                  }
-                >
-                  <Typography>
-                    <Trans>No media sources connected.</Trans>
-                  </Typography>
-                </Alert>
-              ) : (
-                <Alert
-                  variant="filled"
-                  severity={hasEnabledLibrary ? 'success' : 'warning'}
-                >
-                  <Plural
-                    value={mediaSources.length}
-                    one="# source connected."
-                    other="# sources connected."
-                  />{' '}
-                  {!hasEnabledLibrary && (
-                    <Trans>
-                      No libraries are enabled yet. Tunarr only syncs content
-                      from enabled libraries, so choose at least one below.
-                    </Trans>
-                  )}
-                </Alert>
-              )}
-              {hasMediaSource && <ConnectMediaSources />}
-            </>
-          )}
-          {activeStep === 1 && (
-            <>
-              <Typography
-                variant="h6"
-                fontWeight={600}
-                align="left"
-                sx={{ mt: 3 }}
-              >
-                <Trans>Install FFMPEG</Trans>
-              </Typography>
-              <Typography sx={{ mb: 3 }} align="left">
-                <Trans>
-                  FFMPEG transcoding is required for some features like channel
-                  overlay, subtitles, and measures to prevent issues when
-                  switching episodes.
-                </Trans>
-              </Typography>
-
-              {isFfmpegInstalled ? (
-                <Alert variant="filled" severity="success">
-                  <Trans>
-                    FFMPEG is installed. Detected version {version?.ffmpeg}
-                  </Trans>
-                </Alert>
-              ) : (
-                <>
-                  <Alert
-                    variant="filled"
-                    severity="warning"
-                    action={
-                      <RouterButtonLink
-                        to={`/settings/ffmpeg`}
-                        color="inherit"
-                        startIcon={<Edit />}
-                      >
-                        <Trans>Edit</Trans>
-                      </RouterButtonLink>
-                    }
-                  >
-                    <Trans>FFMPEG is not detected.</Trans>
-                  </Alert>
-                  <Typography sx={{ my: 3 }} align="left">
-                    <Trans>
-                      If you are confident FFMPEG is installed, you may just
-                      need to update the executable path in the settings. To do
-                      so, simply click Edit above to update the path.
-                    </Trans>
-                  </Typography>
-                </>
-              )}
-            </>
-          )}
-          {activeStep === 2 && (
-            <>
-              {' '}
-              <Typography
-                variant="h6"
-                fontWeight={600}
-                align="left"
-                sx={{ mt: 3 }}
-              >
-                <Trans>You're All Set!</Trans>
-              </Typography>
-              <Typography sx={{ mb: 3 }} align="left">
-                <Trans>
-                  Congrats, you're ready to start building channels! Just click
-                  Finish below to start working on your first channel.
-                </Trans>
-              </Typography>
-            </>
-          )}
-
-          <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
-            <Button
-              color="inherit"
-              disabled={activeStep === 0}
-              onClick={handleBack}
-              sx={{ mr: 1 }}
-              variant="outlined"
-              startIcon={<ArrowBack />}
-            >
-              <Trans>Back</Trans>
-            </Button>
-            <Box sx={{ flex: '1 1 auto' }} />
-
-            {activeStep !== steps.length - 1 ? (
-              <Button
-                onClick={handleNext}
-                variant="contained"
-                disabled={activeStep === 0 && !hasMediaSource}
-                endIcon={<ArrowForward />}
-              >
-                <Trans>Next</Trans>
-              </Button>
-            ) : (
-              <Button
-                onClick={handleFinish}
-                variant="contained"
-                color="primary"
-              >
-                <Trans>Finish</Trans>
-              </Button>
-            )}
-          </Box>
-        </React.Fragment>
-      </Box>
-    </>
-  );
 
   return (
-    <>
-      <PaddedPaper>
-        <Box
-          sx={{
-            py: 10,
-            display: 'flex',
-            flexDirection: 'column',
-            textAlign: 'center',
-          }}
-        >
-          {header}
-          {getStarted}
+    <PaddedPaper>
+      <Box sx={{ maxWidth: 750, mx: 'auto', py: 6 }}>
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <TunarrLogo style={{ width: '4rem', height: '4rem' }} />
+          <Typography variant="h3">
+            <Trans>Welcome to Tunarr!</Trans>
+          </Typography>
+          <Typography variant="body1" sx={{ mt: 1 }}>
+            <Trans>
+              These steps get your first channel on the air. Each one checks
+              itself off as you finish it. You can skip setup at any time and do
+              all of this from the menu later.
+            </Trans>
+          </Typography>
         </Box>
-      </PaddedPaper>
-    </>
+
+        <Stack spacing={2}>
+          <ChecklistStep
+            status={hasLibrary ? 'done' : hasSource ? 'attention' : 'todo'}
+            title={<Trans>Connect a media source</Trans>}
+          >
+            <Typography>
+              <Trans>
+                Media sources provide the content for your channels. Tunarr
+                supports Plex, Jellyfin, Emby, and local folders.
+              </Trans>
+            </Typography>
+            {hasSource && !hasLibrary && (
+              <Alert severity="warning">
+                <Trans>
+                  No libraries are enabled yet. Tunarr only syncs content from
+                  enabled libraries, so choose at least one below.
+                </Trans>
+              </Alert>
+            )}
+            {hasSource && <ConnectMediaSources sx={{ py: 0 }} />}
+            <Box>
+              <AddMediaSourceButton
+                ButtonProps={{ variant: hasSource ? 'outlined' : 'contained' }}
+              />
+            </Box>
+          </ChecklistStep>
+
+          <ChecklistStep
+            status={hasScan ? 'done' : 'todo'}
+            title={<Trans>Scan your libraries</Trans>}
+          >
+            <Typography>
+              <Trans>
+                Tunarr scans enabled libraries in the background. Channels can
+                only use programs that a scan has found.
+              </Trans>
+            </Typography>
+            {hasLibrary && !hasScan && (
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <Trans>Waiting for the first scan to finish...</Trans>
+                </Typography>
+                <LinearProgress />
+              </Box>
+            )}
+          </ChecklistStep>
+
+          <ChecklistStep
+            status={ffmpegOk ? 'done' : 'attention'}
+            title={<Trans>Check FFmpeg</Trans>}
+          >
+            <Typography>
+              <Trans>
+                Tunarr uses FFmpeg to transcode streams. Docker images include
+                it, so most installs need no changes here.
+              </Trans>
+            </Typography>
+            {ffmpegCheck !== undefined && ffmpegCheck.type !== 'healthy' && (
+              <Alert
+                severity={ffmpegCheck.type}
+                action={
+                  <RouterButtonLink
+                    to="/settings/ffmpeg"
+                    color="inherit"
+                    startIcon={<Edit />}
+                  >
+                    <Trans>Settings</Trans>
+                  </RouterButtonLink>
+                }
+              >
+                {ffmpegCheck.context}
+              </Alert>
+            )}
+          </ChecklistStep>
+
+          <ChecklistStep
+            status={hasChannel ? 'done' : 'todo'}
+            title={<Trans>Create a channel</Trans>}
+          >
+            <Typography>
+              <Trans>
+                Channels play your content on a schedule, like live TV.
+              </Trans>
+            </Typography>
+            <Box>
+              <RouterButtonLink
+                to="/channels/new"
+                variant={hasScan && !hasChannel ? 'contained' : 'outlined'}
+                startIcon={<Add />}
+              >
+                <Trans>New Channel</Trans>
+              </RouterButtonLink>
+            </Box>
+          </ChecklistStep>
+
+          <ChecklistStep
+            status="optional"
+            title={<Trans>Watch from a client</Trans>}
+          >
+            <Typography>
+              <Trans>
+                Add these links to an IPTV player. Plex, Jellyfin, and Emby can
+                also add Tunarr as an HDHomeRun tuner.
+              </Trans>
+            </Typography>
+            <ClientLink label={<Trans>M3U playlist</Trans>} url={m3uLink} />
+            <ClientLink label={<Trans>XMLTV guide</Trans>} url={xmlTvLink} />
+            <Box>
+              <RouterButtonLink to="/settings/hdhr" variant="outlined">
+                <Trans>HDHomeRun Settings</Trans>
+              </RouterButtonLink>
+            </Box>
+          </ChecklistStep>
+        </Stack>
+
+        <Box sx={{ display: 'flex', mt: 4 }}>
+          <Button
+            color="inherit"
+            onClick={complete}
+            disabled={setOnboardingComplete.isPending}
+          >
+            <Trans>Skip Setup</Trans>
+          </Button>
+          <Box sx={{ flex: 1 }} />
+          <Button
+            variant="contained"
+            onClick={complete}
+            disabled={!allDone || setOnboardingComplete.isPending}
+          >
+            <Trans>Finish</Trans>
+          </Button>
+        </Box>
+      </Box>
+    </PaddedPaper>
+  );
+}
+
+type ChecklistStepProps = {
+  status: StepStatus;
+  title: ReactNode;
+  children: ReactNode;
+};
+
+function ChecklistStep({ status, title, children }: ChecklistStepProps) {
+  const icon = {
+    done: <CheckCircle color="success" />,
+    todo: <RadioButtonUnchecked color="disabled" />,
+    attention: <Warning color="warning" />,
+    optional: <Info color="info" />,
+  }[status];
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2 }}>
+      <Stack direction="row" spacing={2}>
+        <Box sx={{ pt: 0.25 }}>{icon}</Box>
+        <Stack spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="h6" fontWeight={600}>
+            {title}
+          </Typography>
+          {children}
+        </Stack>
+      </Stack>
+    </Paper>
+  );
+}
+
+function ClientLink({ label, url }: { label: ReactNode; url: string }) {
+  return (
+    <Typography sx={{ overflowWrap: 'anywhere' }}>
+      <strong>{label}:</strong>{' '}
+      <Link href={url} target="_blank">
+        {url}
+      </Link>
+      <CopyToClipboardButton content={url} />
+    </Typography>
   );
 }

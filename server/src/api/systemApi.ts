@@ -142,6 +142,27 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     },
   );
 
+  fastify.put(
+    '/system/onboarding',
+    {
+      schema: {
+        tags: ['System'],
+        body: z.object({
+          complete: z.boolean(),
+        }),
+        response: {
+          200: MigrationStateSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      await req.serverCtx.settings.updateBaseSettings('migration', {
+        onboardingComplete: req.body.complete,
+      });
+      return res.send(req.serverCtx.settings.migrationState);
+    },
+  );
+
   fastify.post(
     '/system/fixers/:fixerId/run',
     {

@@ -2,8 +2,8 @@ import type {
   ShellNav,
   ShellNavBadge,
 } from '@/components/ui/patterns/AppShell';
+import { useOnboardingComplete } from '@/hooks/useOnboarding.ts';
 import { useSystemHealthChecks } from '@/hooks/useSystemHealthChecks.ts';
-import useStore from '@/store/index.ts';
 import { useLingui } from '@lingui/react/macro';
 import {
   Computer,
@@ -36,7 +36,7 @@ const useHealthBadge = (): ShellNavBadge | undefined => {
 // one more entry in `sections`.
 export const useShellNav = (): ShellNav => {
   const { t } = useLingui();
-  const showWelcome = useStore((state) => state.theme.showWelcome);
+  const onboardingComplete = useOnboardingComplete();
   const healthBadge = useHealthBadge();
 
   return useMemo<ShellNav>(
@@ -48,7 +48,7 @@ export const useShellNav = (): ShellNav => {
           to: '/welcome',
           icon: <Home />,
           pages: [],
-          hidden: !showWelcome,
+          hidden: onboardingComplete,
         },
         {
           id: 'guide',
@@ -128,6 +128,6 @@ export const useShellNav = (): ShellNav => {
         ],
       },
     }),
-    [healthBadge, showWelcome, t],
+    [healthBadge, onboardingComplete, t],
   );
 };

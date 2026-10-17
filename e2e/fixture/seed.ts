@@ -269,6 +269,9 @@ export async function seed(): Promise<FixtureIds> {
     throw new Error('Scanned episode has no parent show');
   }
 
+  // The fixture is fully set up, so `/` should render the guide.
+  await api('PUT', '/system/onboarding', { complete: true });
+
   return {
     mediaSourceId: moviesSourceId,
     libraryId: movies.libraryId,
