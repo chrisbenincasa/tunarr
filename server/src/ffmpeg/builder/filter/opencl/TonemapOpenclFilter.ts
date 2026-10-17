@@ -4,7 +4,10 @@ import {
   PixelFormatUnknown,
   PixelFormatYuv420P,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
-import { DefaultTonemapPeakNits } from '@/ffmpeg/builder/options/KnownFfmpegOptions.js';
+import {
+  DefaultTonemapPeakNits,
+  toFfmpegTonemapPeak,
+} from '@/ffmpeg/builder/options/KnownFfmpegOptions.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import { ColorFormat } from '../../format/ColorFormat.ts';
@@ -18,7 +21,7 @@ export class TonemapOpenclFilter extends FilterOption {
     // format=vaapi pins the reverse map's output to VAAPI frames. Without it,
     // a following filter that accepts any hardware format (e.g. hwdownload)
     // lets the output stay 'opencl', which VAAPI rejects.
-    const tonemap = `hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:peak=${DefaultTonemapPeakNits}:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1,format=vaapi`;
+    const tonemap = `hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:peak=${toFfmpegTonemapPeak(DefaultTonemapPeakNits)}:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1,format=vaapi`;
     return this.currentState.frameDataLocation === FrameDataLocation.Hardware
       ? tonemap
       : `format=vaapi|nv12|p010le,${tonemap}`;
