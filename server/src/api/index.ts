@@ -108,7 +108,6 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         return res.send({
           tunarr: getTunarrVersion(),
           ffmpeg: v.versionString,
-          nodejs: process.version.replace('v', ''),
         });
       } catch (err) {
         logger.error(err);

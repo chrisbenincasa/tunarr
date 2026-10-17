@@ -2809,10 +2809,9 @@ msgstr "No programming scheduled for this time period"
 msgid "No results"
 msgstr "No results"
 
-#. placeholder {0}: version.nodejs
 #: src/components/VersionFooter.tsx
-msgid "NodeJS: {0}"
-msgstr "NodeJS: {0}"
+#~ msgid "NodeJS: {0}"
+#~ msgstr "NodeJS: {0}"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/pages/system/TroubleshootPage.tsx

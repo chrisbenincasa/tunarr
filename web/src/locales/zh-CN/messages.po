@@ -2809,10 +2809,9 @@ msgstr "该时间段内没有安排节目"
 msgid "No results"
 msgstr "无结果"
 
-#. placeholder {0}: version.nodejs
 #: src/components/VersionFooter.tsx
-msgid "NodeJS: {0}"
-msgstr "Node.js：{0}"
+#~ msgid "NodeJS: {0}"
+#~ msgstr "Node.js：{0}"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/pages/system/TroubleshootPage.tsx
