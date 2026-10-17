@@ -71,10 +71,9 @@ msgstr ""
 msgid "{0, plural, one {# session} other {# sessions}}"
 msgstr ""
 
-#. placeholder {0}: mediaSources.length
 #: src/pages/welcome/WelcomePage.tsx
-msgid "{0, plural, one {# source connected.} other {# sources connected.}}"
-msgstr ""
+#~ msgid "{0, plural, one {# source connected.} other {# sources connected.}}"
+#~ msgstr ""
 
 #. placeholder {0}: currentBackupSchedule!.increment
 #: src/components/settings/general/BackupForm.tsx
@@ -429,6 +428,10 @@ msgstr ""
 msgid "Add Slot"
 msgstr ""
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Add these links to an IPTV player. Plex, Jellyfin, and Emby can also add Tunarr as an HDHomeRun tuner."
+msgstr ""
+
 #: src/components/filler/EditFillerListForm.tsx
 msgid "Add TV Shows or Movies to filler"
 msgstr ""
@@ -515,8 +518,8 @@ msgid "All lists are used"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "All Set!"
-msgstr ""
+#~ msgid "All Set!"
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
 msgid "Allow External"
@@ -687,8 +690,8 @@ msgid "Average program length: {0}"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Back"
-msgstr ""
+#~ msgid "Back"
+#~ msgstr ""
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
@@ -927,9 +930,17 @@ msgstr ""
 msgid "Channels M3U Link:"
 msgstr ""
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Channels play your content on a schedule, like live TV."
+msgstr ""
+
 #: src/pages/system/SystemDebugPage.tsx
 #: src/pages/system/SystemDebugPage.tsx
 msgid "Check"
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Check FFmpeg"
 msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
@@ -1017,7 +1028,11 @@ msgid "Configure what appears on your channel when there is no suitable filler c
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Congrats, you're ready to start building channels! Just click Finish below to start working on your first channel."
+#~ msgid "Congrats, you're ready to start building channels! Just click Finish below to start working on your first channel."
+#~ msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Connect a media source"
 msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
@@ -1025,12 +1040,12 @@ msgid "Connect Media Source"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Connect Media Sources"
-msgstr ""
+#~ msgid "Connect Media Sources"
+#~ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Connect Sources"
-msgstr ""
+#~ msgid "Connect Sources"
+#~ msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Console"
@@ -1123,6 +1138,10 @@ msgstr ""
 
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "Create"
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Create a channel"
 msgstr ""
 
 #: src/components/channel_config/NoChannelsCreated.tsx
@@ -1469,7 +1488,6 @@ msgstr ""
 #: src/hooks/useRouteName.ts
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
-#: src/pages/welcome/WelcomePage.tsx
 msgid "Edit"
 msgstr ""
 
@@ -1846,14 +1864,13 @@ msgstr ""
 msgid "FFmpeg Executable Path"
 msgstr ""
 
-#. placeholder {0}: version?.ffmpeg
 #: src/pages/welcome/WelcomePage.tsx
-msgid "FFMPEG is installed. Detected version {0}"
-msgstr ""
+#~ msgid "FFMPEG is installed. Detected version {0}"
+#~ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "FFMPEG is not detected."
-msgstr ""
+#~ msgid "FFMPEG is not detected."
+#~ msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "FFmpeg Log"
@@ -1882,8 +1899,8 @@ msgid "FFmpeg Transcode Path"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "FFMPEG transcoding is required for some features like channel overlay, subtitles, and measures to prevent issues when switching episodes."
-msgstr ""
+#~ msgid "FFMPEG transcoding is required for some features like channel overlay, subtitles, and measures to prevent issues when switching episodes."
+#~ msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFmpeg version 7.1+ recommended. Check your current version in the sidebar"
@@ -2103,6 +2120,10 @@ msgstr ""
 msgid "Hardware Acceleration"
 msgstr ""
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "HDHomeRun Settings"
+msgstr ""
+
 #: src/pages/settings/SettingsLayout.tsx
 msgid "HDHR"
 msgstr ""
@@ -2198,8 +2219,8 @@ msgid "If true, adjusting the weight of one slot will scale the weights of other
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "If you are confident FFMPEG is installed, you may just need to update the executable path in the settings. To do so, simply click Edit above to update the path."
-msgstr ""
+#~ msgid "If you are confident FFMPEG is installed, you may just need to update the executable path in the settings. To do so, simply click Edit above to update the path."
+#~ msgstr ""
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "If you proceed, all unsaved changes will be lost. Are you sure you want to proceed?"
@@ -2251,8 +2272,8 @@ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Install FFMPEG"
-msgstr ""
+#~ msgid "Install FFMPEG"
+#~ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Interval (minutes)"
@@ -2329,8 +2350,8 @@ msgid "Leave blank to use the channel's icon."
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Let's get started..."
-msgstr ""
+#~ msgid "Let's get started..."
+#~ msgstr ""
 
 #: src/pages/system/SystemLogsPage.tsx
 msgid "Level"
@@ -2479,6 +2500,10 @@ msgstr ""
 msgid "Loudnorm Options"
 msgstr ""
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "M3U playlist"
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Makes multiple copies of the schedule and plays them in sequence"
 msgstr ""
@@ -2586,6 +2611,10 @@ msgstr ""
 
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Media sources provide the content for your channels. Tunarr supports Plex, Jellyfin, Emby, and local folders."
 msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
@@ -2727,6 +2756,7 @@ msgid "New"
 msgstr ""
 
 #: src/pages/channels/NewChannelPage.tsx
+#: src/pages/welcome/WelcomePage.tsx
 msgid "New Channel"
 msgstr ""
 
@@ -2756,8 +2786,8 @@ msgid "New Plex Server"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Next"
-msgstr ""
+#~ msgid "Next"
+#~ msgstr ""
 
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Next run"
@@ -2781,8 +2811,8 @@ msgid "No libraries enabled"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "No media sources connected."
-msgstr ""
+#~ msgid "No media sources connected."
+#~ msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "No Media Sources detected."
@@ -3519,6 +3549,10 @@ msgstr ""
 msgid "Scan {0}"
 msgstr ""
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Scan your libraries"
+msgstr ""
+
 #: src/pages/settings/SettingsLayout.tsx
 msgid "Scanner"
 msgstr ""
@@ -3643,6 +3677,7 @@ msgstr ""
 #: src/hooks/useNavItems.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/settings/SettingsLayout.tsx
+#: src/pages/welcome/WelcomePage.tsx
 msgid "Settings"
 msgstr ""
 
@@ -3728,6 +3763,10 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Skip mid-roll for programs shorter than this"
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Skip Setup"
 msgstr ""
 
 #: src/hooks/useRouteName.ts
@@ -4073,6 +4112,10 @@ msgstr ""
 msgid "These settings are stored in your browser and are saved automatically when changed."
 msgstr ""
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "These steps get your first channel on the air. Each one checks itself off as you finish it. You can skip setup at any time and do all of this from the menu later."
+msgstr ""
+
 #. placeholder {0}: slot.type .split('-') .map((s) => capitalize(s)) .join(' ')
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
@@ -4221,8 +4264,8 @@ msgid "TO"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "To use Tunarr, you must first connect at least one media source. Media sources provide all content used to create channels in Tunarr. Plex and Jellyfin are currently supported."
-msgstr ""
+#~ msgid "To use Tunarr, you must first connect at least one media source. Media sources provide all content used to create channels in Tunarr. Plex and Jellyfin are currently supported."
+#~ msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "To use Tunarr, you need to first connect a media source. This will allow you to build custom channels with your content."
@@ -4325,6 +4368,14 @@ msgstr ""
 
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Tunarr scans enabled libraries in the background. Channels can only use programs that a scan has found."
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Tunarr uses FFmpeg to transcode streams. Docker images include it, so most installs need no changes here."
 msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -4505,12 +4556,20 @@ msgstr ""
 #~ msgid "View Library"
 #~ msgstr ""
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Waiting for the first scan to finish..."
+msgstr ""
+
 #: src/hooks/useRouteName.ts
 msgid "Watch"
 msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Watch Channel"
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Watch from a client"
 msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
@@ -4589,6 +4648,10 @@ msgstr ""
 msgid "XMLTV"
 msgstr ""
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "XMLTV guide"
+msgstr ""
+
 #: src/pages/system/StatusPage.tsx
 msgid "XMLTV Link:"
 msgstr ""
@@ -4622,8 +4685,8 @@ msgid "You must create at least one <0>filler list</0> before assigning filler t
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "You're All Set!"
-msgstr ""
+#~ msgid "You're All Set!"
+#~ msgstr ""
 
 #. placeholder {0}: field.value
 #: src/components/programming_controls/AddReplicateModal.tsx

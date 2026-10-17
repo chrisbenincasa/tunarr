@@ -13,23 +13,6 @@ export const setThemePreference = (pref: 'light' | 'dark' | 'system') =>
     state.theme.themePreference = pref;
   });
 
-export const updateShowWelcomeState = () => {
-  useStore.setState((state) => {
-    state.theme.showWelcome = !state.theme.showWelcome;
-  });
-};
-
-export const setShowWelcome = (show: boolean) =>
-  useStore.setState((state) => {
-    state.theme.showWelcome = show;
-  });
-
-export const resetShowWelcomeState = () => {
-  useStore.setState((state) => {
-    state.theme.showWelcome = true;
-  });
-};
-
 export const setProgrammingSelectorViewState = (
   view: ProgramSelectorViewType,
 ) => {
