@@ -224,7 +224,7 @@ export const FileBackupOutputSchema = z.object({
   archiveFormat: z.union([z.literal('zip'), z.literal('tar')]).default('tar'),
   gzip: z.boolean().optional(), // Only valid if archive format is tar
   tempDir: z.string().optional(), // Defaults to OS-specific temp dir, can be relative path
-  maxBackups: z.number().positive().default(3),
+  maxBackups: z.number().nonnegative().default(3),
 });
 
 export type FileBackupOutput = z.infer<typeof FileBackupOutputSchema>;
