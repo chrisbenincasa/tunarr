@@ -9,12 +9,12 @@
     "e2e:report": "playwright show-report",
     "e2e:install-browsers": "playwright install chromium",
     "e2e:serve": "tsx fixture/startServer.ts",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@types/node": "22.10.7",
-    "@typescript/native-preview": "catalog:",
-    "tsx": "^4.20.5"
+    "tsx": "^4.20.5",
+    "typescript": "catalog:"
   }
 }

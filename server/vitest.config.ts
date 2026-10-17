@@ -30,7 +30,7 @@ export default defineConfig({
       provider: 'v8',
     },
     typecheck: {
-      checker: 'tsgo',
+      checker: 'tsc',
       tsconfig: 'tsconfig.test.json',
     },
     silent: true,
