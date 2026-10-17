@@ -13,6 +13,16 @@ export const KnownFfmpegOptions = {
 // constant when absent.
 export const DefaultTonemapPeakNits = 1000;
 
+// ffmpeg's `tonemap` and `tonemap_opencl` filters take `peak` as a multiple
+// of reference white (REFERENCE_WHITE = 100 nits in libavfilter), not in
+// nits. Linear light is scaled the same way: zscale's npl=100 and
+// tonemap_opencl's PQ EOTF both put 1.0 at 100 nits.
+export const TonemapReferenceWhiteNits = 100;
+
+export function toFfmpegTonemapPeak(peakNits: number): number {
+  return peakNits / TonemapReferenceWhiteNits;
+}
+
 export const KnownFfmpegFilters = {
   ScaleNpp: 'scale_npp',
   ScaleCuda: 'scale_cuda',
