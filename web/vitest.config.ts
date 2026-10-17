@@ -1,6 +1,7 @@
 import { lingui } from '@lingui/vite-plugin';
 import react from '@vitejs/plugin-react-swc';
 import path from 'node:path';
+import svgr from 'vite-plugin-svgr';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -9,6 +10,7 @@ export default defineConfig({
       plugins: [['@lingui/swc-plugin', {}]],
     }),
     lingui(),
+    svgr(),
   ],
   resolve: {
     alias: {
