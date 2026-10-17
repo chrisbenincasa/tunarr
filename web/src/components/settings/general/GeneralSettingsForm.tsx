@@ -119,11 +119,15 @@ function getDefaultFormValues(
   systemSettings: SystemSettings,
 ) {
   const base = getBaseFormValues(settings, systemSettings);
+  base.logging.logRollConfig = { ...base.logging.logRollConfig };
   base.logging.logRollConfig.maxFileSizeBytes ??= 0;
+
+  // An increment of 0 renders "Roll on Schedule" unticked. The save handler
+  // omits the schedule in that case, because the API requires a positive one.
   base.logging.logRollConfig.schedule ??= {
     type: 'every',
     unit: 'day',
-    increment: 1,
+    increment: 0,
     offsetMs: 0,
   };
   return base;
@@ -171,7 +175,7 @@ export function GeneralSettingsForm({
 
     const rollSchedule =
       data.logging.logRollConfig.schedule?.type === 'every' &&
-      data.logging.logRollConfig.schedule.increment >= 0
+      data.logging.logRollConfig.schedule.increment > 0
         ? data.logging.logRollConfig.schedule
         : undefined;
     const updateReq: UpdateSystemSettingsRequest = {
@@ -204,7 +208,7 @@ export function GeneralSettingsForm({
       { body: updateReq },
       {
         onSuccess(data) {
-          reset(getBaseFormValues(settings, data), { keepDirty: false });
+          reset(getDefaultFormValues(settings, data), { keepDirty: false });
           snackbar.enqueueSnackbar(t`Settings Saved!`, {
             variant: 'success',
           });
