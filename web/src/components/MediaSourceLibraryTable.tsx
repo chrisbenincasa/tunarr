@@ -21,17 +21,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
-import type { ScanProgress } from '@tunarr/types/api';
 import { maxBy, some, sortBy } from 'lodash-es';
 import type { MRT_ColumnDef } from 'material-react-table';
 import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   getApiMediaLibrariesByLibraryIdQueryKey,
-  getApiMediaSourcesByMediaSourceIdByLibraryIdStatusOptions,
   getApiMediaSourcesQueryKey,
 } from '../generated/@tanstack/react-query.gen.ts';
 import {
@@ -41,9 +39,7 @@ import {
 } from '../hooks/media-sources/mediaSourceLibraryHooks.ts';
 import { useMediaSources } from '../hooks/settingsHooks.ts';
 import { useDayjs } from '../hooks/useDayjs.ts';
-import { useQueryObserver } from '../hooks/useQueryObserver.ts';
 import { useStoreBackedTableSettings } from '../hooks/useTableSettings.ts';
-import type { Nullable } from '../types/util.ts';
 import { UnavailableLibraryIcon } from './UnavailableLibraryIndicator.tsx';
 import { NetworkIcon } from './util/NetworkIcon.tsx';
 
@@ -61,15 +57,15 @@ const MediaSourceLibraryTableActionCell = ({
   library,
 }: ActionCellProps) => {
   const { t } = useLingui();
-  const [isRefreshing, setIsRefreshing] = useState(library.isLocked);
   const refreshLibraryMutation = useScanLibraryMutation();
+  const isScanning = library.isLocked || refreshLibraryMutation.isPending;
   const scanStateQuery = useLibraryScanState(
     mediaSource.id,
     library.id,
-    isRefreshing,
+    isScanning,
   );
-  const [prevScanState, setPrevScanState] =
-    useState<Nullable<ScanProgress['state']>>(null);
+  const scanState = scanStateQuery.data?.state;
+  const scanStateUpdatedAt = scanStateQuery.dataUpdatedAt;
 
   const queryClient = useQueryClient();
 
@@ -77,7 +73,6 @@ const MediaSourceLibraryTableActionCell = ({
     (ev: React.MouseEvent, force: boolean = false) => {
       ev.stopPropagation();
       ev.preventDefault();
-      setIsRefreshing(true);
       refreshLibraryMutation.mutate(
         {
           path: {
@@ -105,47 +100,16 @@ const MediaSourceLibraryTableActionCell = ({
     [library.id, library.mediaSource.id, queryClient, refreshLibraryMutation],
   );
 
-  const opts = useMemo(
-    () =>
-      getApiMediaSourcesByMediaSourceIdByLibraryIdStatusOptions({
-        path: {
-          mediaSourceId: mediaSource.id,
-          libraryId: library.id,
-        },
-      }),
-    [library.id, mediaSource.id],
-  );
-
-  useQueryObserver(
-    opts,
-    useCallback(
-      (result) => {
-        if (result.status !== 'success') {
-          return;
-        }
-
-        if (!isRefreshing) {
-          return;
-        }
-
-        if (
-          (prevScanState === 'in_progress' || prevScanState === 'queued') &&
-          result.data?.state === 'not_scanning'
-        ) {
-          setIsRefreshing(false);
-          setPrevScanState(null);
-          queryClient
-            .invalidateQueries({
-              queryKey: getApiMediaSourcesQueryKey(),
-            })
-            .catch(console.error);
-        } else {
-          setPrevScanState(result.data.state);
-        }
-      },
-      [isRefreshing, prevScanState, queryClient],
-    ),
-  );
+  // The server reports not_scanning before it releases the library lock,
+  // because post-scan work such as the collection scan still holds it.
+  // Refetch media sources on every status poll until the lock clears.
+  useEffect(() => {
+    if (library.isLocked && scanState === 'not_scanning') {
+      queryClient
+        .invalidateQueries({ queryKey: getApiMediaSourcesQueryKey() })
+        .catch(console.error);
+    }
+  }, [library.isLocked, queryClient, scanState, scanStateUpdatedAt]);
 
   return (
     <>
@@ -179,7 +143,7 @@ const MediaSourceLibraryTableActionCell = ({
           </IconButton>
         </span>
       </Tooltip>
-      {!isRefreshing && (
+      {!isScanning && (
         <Tooltip
           placement="top"
           title={
@@ -207,7 +171,7 @@ const MediaSourceLibraryTableActionCell = ({
           </span>
         </Tooltip>
       )}
-      {isRefreshing && (
+      {isScanning && (
         <Box
           component="span"
           sx={{
@@ -216,7 +180,9 @@ const MediaSourceLibraryTableActionCell = ({
             textAlign: 'center',
           }}
         >
-          {`${(scanStateQuery.data?.state === 'in_progress' ? scanStateQuery.data.percentComplete : 0).toFixed(0)}%`}
+          {scanStateQuery.data?.state === 'in_progress'
+            ? `${scanStateQuery.data.percentComplete.toFixed(0)}%`
+            : null}
         </Box>
       )}
     </>
