@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { chunk, compact, isEmpty, isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
-import path, { basename, dirname, extname } from 'node:path';
+import path, { basename, dirname } from 'node:path';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
@@ -39,8 +39,7 @@ import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
 import type { LocalScanContext } from './FileSystemScanner.ts';
 import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import { KnownVideoFileExtensions } from './constants.ts';
-import { locateMovieArtwork } from './imageFileLookup.ts';
+import { isMovieFolder, isMovieVideoFile, locateMovieArtwork } from './imageFileLookup.ts';
 
 @injectable()
 export class LocalMovieScanner extends FileSystemScanner {
@@ -195,13 +194,13 @@ export class LocalMovieScanner extends FileSystemScanner {
     }
 
     const allFiles = await fs.readdir(fullPath, { withFileTypes: true });
+    const fileNames = allFiles
+      .filter((file) => file.isFile())
+      .map((file) => file.name);
 
     // TODO filter extra files
     const videoFiles = allFiles.filter(
-      (file) =>
-        file.isFile() &&
-        KnownVideoFileExtensions.has(extname(file.name)) &&
-        !basename(file.name).startsWith('._'),
+      (file) => file.isFile() && isMovieVideoFile(file.name),
     );
 
     const canonicalFiles = allFiles.filter(
@@ -271,10 +270,18 @@ export class LocalMovieScanner extends FileSystemScanner {
 
     for (const videoFile of videoFiles) {
       const fullVideoFilePath = path.join(videoFile.parentPath, videoFile.name);
+      // The short artwork names are folder conventions, so the decision is
+      // taken once per movie -- from the names already read -- and carried
+      // through both artwork lookups below.
+      const inMovieFolder = isMovieFolder({
+        moviePath: fullVideoFilePath,
+        videoFileNames: fileNames,
+      });
       const result = await this.handleVideoFile(
         fullVideoFilePath,
         folderModel.folder.uuid,
         context,
+        inMovieFolder,
       );
       if (result.isFailure()) {
         this.logger.error(
@@ -290,6 +297,7 @@ export class LocalMovieScanner extends FileSystemScanner {
     fullVideoFilePath: string,
     folderId: string,
     context: LocalScanContext,
+    inMovieFolder: boolean,
   ): Promise<Result<void>> {
     try {
       const existingMovie = await this.localMediaDB.findExistingLocalProgram(
@@ -318,12 +326,14 @@ export class LocalMovieScanner extends FileSystemScanner {
         fullVideoFilePath,
         'poster',
         existingMovie,
+        inMovieFolder,
         context.force,
       );
       const fanartArtResult = await this.scanArtworkForMovie(
         fullVideoFilePath,
         'fanart',
         existingMovie,
+        inMovieFolder,
         context.force,
       );
 
@@ -493,9 +503,14 @@ export class LocalMovieScanner extends FileSystemScanner {
     fullMoviePath: string,
     artworkType: ArtworkType,
     existingItem: Maybe<ProgramOrm & { artwork: Artwork[] }>,
+    inMovieFolder: boolean,
     force: boolean = false,
   ) {
-    const artworkPath = await this.getArtworkPath(fullMoviePath, artworkType);
+    const artworkPath = await this.getArtworkPath(
+      fullMoviePath,
+      artworkType,
+      inMovieFolder,
+    );
     if (!artworkPath) {
       this.logger.debug(
         'Could not locate artwork type %s for file %s',
@@ -527,6 +542,7 @@ export class LocalMovieScanner extends FileSystemScanner {
   private async getArtworkPath(
     fullMoviePath: string,
     artworkType: ArtworkType,
+    inMovieFolder: boolean,
   ) {
     const filename = match(artworkType)
       .with(P.union('poster', 'fanart', 'banner', 'landscape'), (s) => s)
@@ -535,6 +551,8 @@ export class LocalMovieScanner extends FileSystemScanner {
       return;
     }
 
-    return locateMovieArtwork(fullMoviePath, filename);
+    return locateMovieArtwork(fullMoviePath, filename, {
+      allowShortNames: inMovieFolder,
+    });
   }
 }
