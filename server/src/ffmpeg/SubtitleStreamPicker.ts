@@ -1,12 +1,7 @@
-import { orderBy } from 'lodash-es';
 import path from 'path';
-import type { NonEmptyArray } from 'ts-essentials';
 import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
-import type { ChannelSubtitlePreferences } from '../db/schema/SubtitlePreferences.ts';
 import { globalOptions } from '../globals.ts';
-import { LanguageService } from '../services/LanguageService.ts';
 import type { SubtitleStreamDetails } from '../stream/types.ts';
-import { isImageBasedSubtitle } from '../stream/util.ts';
 import type { Maybe } from '../types/util.ts';
 import {
   CacheFolderName,
@@ -32,131 +27,6 @@ export class SubtitleStreamPicker {
       CacheFolderName,
       SubtitlesCacheFolderName,
     );
-  }
-
-  static async pickSubtitles(
-    subtitlePreferences: ChannelSubtitlePreferences[],
-    lineupItem: ContentBackedStreamLineupItem,
-    subtitleStreams: NonEmptyArray<SubtitleStreamDetails>,
-    opts: { preferTextBased?: boolean } = {},
-  ): Promise<Maybe<SubtitleStreamDetails>> {
-    const orderedStreams = opts.preferTextBased
-      ? (orderBy(
-          subtitleStreams,
-          (s) => isImageBasedSubtitle(s.codec),
-          'desc',
-        ) as NonEmptyArray<SubtitleStreamDetails>)
-      : subtitleStreams;
-    if (subtitlePreferences.length === 0) {
-      this.logger.debug(
-        'No subtitle preferences for channel. Attempting to use default stream.',
-      );
-      const defaultStream = orderedStreams.find((stream) => stream.default);
-      const defaultOrFirstStream = defaultStream ?? orderedStreams[0];
-      if (!defaultStream) {
-        this.logger.debug('Could not find default subtitle stream');
-      }
-
-      let foundStream: Maybe<SubtitleStreamDetails> = defaultOrFirstStream;
-      if (
-        !opts.preferTextBased &&
-        !isImageBasedSubtitle(defaultOrFirstStream.codec) &&
-        defaultOrFirstStream.type === 'embedded'
-      ) {
-        foundStream = await this.getSubtitleDetailsWithExtractedPath(
-          lineupItem,
-          foundStream,
-        );
-      }
-
-      return foundStream;
-    }
-
-    for (const pref of orderBy(
-      subtitlePreferences,
-      (pref) => pref.priority,
-      'asc',
-    )) {
-      this.logger.debug(
-        'Attempting to find subtitle match for preference: %O',
-        pref,
-      );
-
-      if (pref.filterType === 'none') {
-        continue;
-      }
-
-      // Try to find a match
-      for (const stream of orderedStreams) {
-        // Both sides go through codesMatch so a preference stored as an
-        // ISO 639-2/B code ("ger") still matches a stream tagged with the
-        // equivalent /T code ("deu"), and vice versa.
-        if (
-          stream.languageCodeISO6392 &&
-          !LanguageService.codesMatch(
-            stream.languageCodeISO6392,
-            pref.languageCode,
-          )
-        ) {
-          this.logger.debug(
-            'Skipping subtitle index %d, not a language match',
-            stream.index ?? -1,
-          );
-          continue;
-        }
-
-        // Check filter types
-        if (pref.filterType === 'forced' && !stream.forced) {
-          this.logger.debug(
-            'Skipping subtitle index %d, wanted forced',
-            stream.index ?? -1,
-          );
-          continue;
-        } else if (pref.filterType === 'default' && !stream.default) {
-          this.logger.debug(
-            'Skipping subtitle index %d, wanted default',
-            stream.index ?? -1,
-          );
-          continue;
-        }
-
-        // Check subtitle type
-        if (!pref.allowExternal && stream.type === 'external') {
-          this.logger.debug(
-            'Skipping subtitle index %d, disallowed external',
-            stream.index ?? -1,
-          );
-          continue;
-        }
-
-        if (!pref.allowImageBased && isImageBasedSubtitle(stream.codec)) {
-          this.logger.debug(
-            'Skipping subtitle index %d, disallowed image-based',
-            stream.index ?? -1,
-          );
-          continue;
-        }
-
-        // TODO: check if embedded text based are extracted and continue searching
-        // for a fallback if they are not.
-        if (!isImageBasedSubtitle(stream.codec) && stream.type === 'embedded') {
-          if (opts.preferTextBased) {
-            return stream;
-          }
-          const streamWithUpdatedPath =
-            await this.getSubtitleDetailsWithExtractedPath(lineupItem, stream);
-          if (streamWithUpdatedPath) {
-            return streamWithUpdatedPath;
-          }
-
-          continue;
-        }
-
-        return stream;
-      }
-    }
-
-    return;
   }
 
   static async getSubtitleDetailsWithExtractedPath(

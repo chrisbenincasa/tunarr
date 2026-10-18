@@ -187,6 +187,12 @@ export function streamMatchesLanguage(
   return LanguageService.codesMatch(streamLanguage, language);
 }
 
+function hasLanguageTag(stream: LanguageTaggedStream): boolean {
+  return Boolean(
+    stream.languageCodeISO6392 ?? stream.languageCodeISO6391 ?? stream.language,
+  );
+}
+
 export function resolveAudioAction(
   action: AudioAction,
   audioStreams: NonEmptyArray<AudioStreamDetails>,
@@ -245,10 +251,8 @@ function selectDefaultAudioStream(
 function sortSubtitleCandidates(
   subtitleStreams: SubtitleStreamDetails[],
   preferTextBased: boolean | undefined,
-): NonEmptyArray<SubtitleStreamDetails> {
-  const candidates = [
-    ...subtitleStreams,
-  ] as NonEmptyArray<SubtitleStreamDetails>;
+): SubtitleStreamDetails[] {
+  const candidates = [...subtitleStreams];
   if (preferTextBased) {
     candidates.sort(
       (a, b) =>
@@ -277,12 +281,8 @@ async function resolveSubtitleAction(
       return null;
 
     case 'default': {
-      if (!subtitleStreams || subtitleStreams.length === 0) {
-        return null;
-      }
-
       const candidates = sortSubtitleCandidates(
-        subtitleStreams,
+        subtitleStreams ?? [],
         hints?.preferTextBased || action.preferTextBased,
       );
 
@@ -290,6 +290,9 @@ async function resolveSubtitleAction(
       // the first candidate rather than dropping subtitles. External subs
       // frequently carry no default flag.
       const defaultStream = candidates.find((s) => s.default) ?? candidates[0];
+      if (!defaultStream) {
+        return null;
+      }
 
       if (
         mayReturnUnextracted &&
@@ -334,35 +337,34 @@ async function resolveSubtitleAction(
         hints?.preferTextBased || action.preferTextBased,
       );
 
-      for (const lang of action.languages) {
+      const passesFilters = (stream: SubtitleStreamDetails) =>
+        !(action.filterType === 'forced' && !stream.forced) &&
+        !(action.filterType === 'default' && !stream.default) &&
+        !(!action.allowExternal && stream.type === 'external') &&
+        !(!action.allowImageBased && isImageBasedSubtitle(stream.codec));
+
+      // Untagged streams are a last resort, tried only after every requested
+      // language misses. The legacy picker accepted them for any language, and
+      // libraries without language tags would otherwise get no subtitles.
+      const languagePasses: Array<(stream: SubtitleStreamDetails) => boolean> =
+        [
+          ...action.languages.map(
+            (lang) => (stream: SubtitleStreamDetails) =>
+              streamMatchesLanguage(stream, lang),
+          ),
+          (stream) => !hasLanguageTag(stream),
+        ];
+
+      for (const matchesLanguage of languagePasses) {
         for (const stream of candidates) {
-          if (!streamMatchesLanguage(stream, lang)) {
-            continue;
-          }
-
-          if (action.filterType === 'forced' && !stream.forced) {
-            continue;
-          }
-          if (action.filterType === 'default' && !stream.default) {
-            continue;
-          }
-
-          if (!action.allowExternal && stream.type === 'external') {
-            continue;
-          }
-
-          if (!action.allowImageBased && isImageBasedSubtitle(stream.codec)) {
+          if (!matchesLanguage(stream) || !passesFilters(stream)) {
             continue;
           }
 
           const isEmbeddedText =
             stream.type === 'embedded' && !isImageBasedSubtitle(stream.codec);
 
-          if (!isEmbeddedText) {
-            return stream;
-          }
-
-          if (mayReturnUnextracted) {
+          if (!isEmbeddedText || mayReturnUnextracted) {
             return stream;
           }
 
