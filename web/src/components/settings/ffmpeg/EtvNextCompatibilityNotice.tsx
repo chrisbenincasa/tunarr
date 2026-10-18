@@ -1,6 +1,7 @@
 import {
   getApiEtvTranscodeConfigsByIdCompatibilityOptions,
   getApiSystemFeatureFlagsOptions,
+  getChannelsOptions,
 } from '@/generated/@tanstack/react-query.gen';
 import { Trans } from '@lingui/react/macro';
 import { Alert, AlertTitle, Box } from '@mui/material';
@@ -8,6 +9,9 @@ import { useQuery } from '@tanstack/react-query';
 
 type Props = {
   configId: string;
+
+  /** Set by a channel form whose unsaved opt-in box is ticked. */
+  channelOptedIn?: boolean;
 };
 
 /**
@@ -16,12 +20,21 @@ type Props = {
  *
  * Without this the first sign of an unsupported codec is a channel that fails
  * to start, because the backend is only handed the config at spawn time.
- * Hidden entirely when the experimental backend is off, since nothing then
- * reads the config differently.
+ * Shown when the global flag is on or when a channel on this config opted in
+ * by itself. Otherwise nothing reads the config differently.
  */
-export const EtvNextCompatibilityNotice = ({ configId }: Props) => {
+export const EtvNextCompatibilityNotice = ({
+  configId,
+  channelOptedIn = false,
+}: Props) => {
   const { data: flags } = useQuery(getApiSystemFeatureFlagsOptions());
-  const enabled = flags?.flags.ersatzTvNextEnabled === true;
+  const { data: channels } = useQuery(getChannelsOptions());
+  const enabled =
+    channelOptedIn ||
+    flags?.flags.ersatzTvNextEnabled === true ||
+    (channels ?? []).some(
+      (channel) => channel.useEtvNext && channel.transcodeConfigId === configId,
+    );
 
   const { data } = useQuery({
     ...getApiEtvTranscodeConfigsByIdCompatibilityOptions({

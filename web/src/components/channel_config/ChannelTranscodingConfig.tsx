@@ -30,6 +30,7 @@ import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import useStore from '../../store/index.ts';
 import { RouterLink } from '../base/RouterLink.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
+import { EtvNextCompatibilityNotice } from '../settings/ffmpeg/EtvNextCompatibilityNotice.tsx';
 import {
   CheckboxFormController,
   NumericFormControllerText,
@@ -103,12 +104,14 @@ export default function ChannelTranscodingConfig() {
     subtitlesEnabled,
     fadePeriod,
     streamMode,
+    useEtvNext,
   ] = watch([
     'watermark',
     'transcodeConfigId',
     'subtitlesEnabled',
     'watermark.fadeConfig.0.periodMins',
     'streamMode',
+    'useEtvNext',
   ]);
 
   const transcodeConfig = useMemo(
@@ -248,6 +251,12 @@ export default function ChannelTranscodingConfig() {
                 )}
               </FormHelperText>
             </FormControl>
+          )}
+          {(etvNextEnabledGlobally || useEtvNext) && transcodeConfigId && (
+            <EtvNextCompatibilityNotice
+              configId={transcodeConfigId}
+              channelOptedIn={useEtvNext}
+            />
           )}
         </Box>
         <Stack gap={1}>
