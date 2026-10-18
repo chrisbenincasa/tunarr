@@ -8113,7 +8113,7 @@ export type GetApiProgramsFacetsByFacetNameResponse = GetApiProgramsFacetsByFace
 export type PostApiProgramsFacetsByFacetNameData = {
     body?: {
         filter?: SearchFilterInput;
-    };
+    } | null;
     path: {
         facetName: string;
     };
