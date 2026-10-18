@@ -19,6 +19,7 @@ import type { EtvNextTroubleshootRunner } from '@/stream/etv/EtvNextTroubleshoot
 import type { ProgramStreamResult } from '@/stream/types.js';
 import { isNonEmptyArray } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { redactMediaServerSecrets } from '@/util/redactSecrets.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { TroubleshootStreamSelectionTrace } from '@tunarr/types';
@@ -200,19 +201,15 @@ export class TroubleshootService {
 
       streamDetails = streamResult.get();
 
-      const redactPath = (p: string) =>
-        p
-          .replace(/(X-Plex-Token=)[A-Za-z0-9_-]+/g, '$1REDACTED')
-          .replace(/(X-Emby-Token[:=]\s*)[A-Za-z0-9_-]+/g, '$1REDACTED')
-          .replace(/(api_key=)[A-Za-z0-9_-]+/g, '$1REDACTED');
-
       result.mediaInfo = {
         title: program.title,
         type: program.type,
         duration: program.duration,
         sourceType: mediaSource.type,
         streamSourceType: streamDetails.streamSource.type,
-        streamSourcePath: redactPath(streamDetails.streamSource.path),
+        streamSourcePath: redactMediaServerSecrets(
+          streamDetails.streamSource.path,
+        ),
         videoStreams:
           streamDetails.streamDetails.videoDetails?.map((v) => ({
             index: v.streamIndex ?? 0,
@@ -395,13 +392,7 @@ export class TroubleshootService {
       // const { session } = sessionResult;
 
       // Extract pipeline info from the real session's process.
-      const redactArg = (arg: string) =>
-        arg
-          .replace(/(X-Plex-Token=)[A-Za-z0-9_-]+/g, '$1REDACTED')
-          .replace(/(X-Emby-Token[:=]\s*)[A-Za-z0-9_-]+/g, '$1REDACTED')
-          .replace(/(api_key=)[A-Za-z0-9_-]+/g, '$1REDACTED');
-
-      const redactedArgs = session.process.args.map(redactArg);
+      const redactedArgs = session.process.args.map(redactMediaServerSecrets);
 
       result.pipeline = {
         hardwareAccelMode: transcodeConfig.hardwareAccelerationMode ?? 'none',

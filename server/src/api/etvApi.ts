@@ -1,11 +1,14 @@
 import archiver from 'archiver';
 import { inject, injectable } from 'inversify';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod/v4';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import {
   dossierDirectory,
+  listDossierFiles,
   listDossiers,
+  redactDossierFile,
 } from '../stream/etv/EtvNextDossiers.ts';
 import { EtvNextDynamicTokenRegistry } from '../stream/etv/EtvNextDynamicTokenRegistry.ts';
 import { parseBearerToken } from '../stream/etv/EtvNextDynamicTokenRegistry.ts';
@@ -327,7 +330,13 @@ export class EtvNextApiController implements ApiController {
         });
 
         for (const dossier of dossiers) {
-          archive.directory(path.join(directory, dossier.name), dossier.name);
+          const dossierPath = path.join(directory, dossier.name);
+          for (const file of await listDossierFiles(dossierPath)) {
+            const content = await fs.readFile(path.join(dossierPath, file));
+            archive.append(redactDossierFile(content), {
+              name: path.join(dossier.name, file),
+            });
+          }
         }
 
         // Finalize is not awaited. Fastify consumes the archive as the response

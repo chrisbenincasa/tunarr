@@ -1,4 +1,5 @@
 import type { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
+import { redactMediaServerSecrets } from '@/util/redactSecrets.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { StreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
@@ -312,10 +313,7 @@ function tail(stderr: string, lines = StderrTailLines): string {
  * written to be pasted into a bug report.
  */
 function redactSecrets(text: string | undefined): string | undefined {
-  return text
-    ?.replace(/(X-Plex-Token=)[A-Za-z0-9_-]+/g, '$1REDACTED')
-    .replace(/(X-Emby-Token[:=]\s*)[A-Za-z0-9_-]+/g, '$1REDACTED')
-    .replace(/(api_key=)[A-Za-z0-9_-]+/g, '$1REDACTED');
+  return text === undefined ? undefined : redactMediaServerSecrets(text);
 }
 
 function describeUnsupported({

@@ -4,8 +4,10 @@ import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import {
   dossierDirectory,
+  listDossierFiles,
   listDossiers,
   pruneDossiers,
+  redactDossierFile,
 } from './EtvNextDossiers.ts';
 
 const channelUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
@@ -116,5 +118,38 @@ describe('pruneDossiers', () => {
     await expect(
       pruneDossiers(path.join(root, 'nothing-here')),
     ).resolves.toBeUndefined();
+  });
+});
+
+describe('listDossierFiles', () => {
+  test('lists nested files relative to the dossier', async () => {
+    const root = await makeRoot();
+    await writeDossier(root, '1_100', { mtimeMs: 1_000 });
+    await fs.mkdir(path.join(root, '1_100', 'json'));
+    await fs.writeFile(path.join(root, '1_100', 'json', 'item.json'), '{}');
+
+    const files = await listDossierFiles(path.join(root, '1_100'));
+
+    expect(files.sort()).toEqual(
+      ['ffreport.log', 'outcome.txt', path.join('json', 'item.json')].sort(),
+    );
+  });
+});
+
+describe('redactDossierFile', () => {
+  test('redacts media-server tokens in text', () => {
+    const content = Buffer.from(
+      'ffmpeg -i "http://plex:32400/library/parts/1?X-Plex-Token=abc123"',
+    );
+
+    expect(redactDossierFile(content)).toBe(
+      'ffmpeg -i "http://plex:32400/library/parts/1?X-Plex-Token=REDACTED"',
+    );
+  });
+
+  test('passes binary content through unchanged', () => {
+    const content = Buffer.from([0x47, 0x00, 0x11, 0x10]);
+
+    expect(redactDossierFile(content)).toBe(content);
   });
 });
