@@ -305,6 +305,7 @@ export class AutoChannelService {
           maxDays: 30,
           padMs: 0,
           latenessMs: 900000, // 15 minutes
+          overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
           slots: params.blocks.map((b) => ({
             id: v4(),
