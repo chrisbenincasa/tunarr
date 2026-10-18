@@ -17,8 +17,8 @@ Durable records for the six architecture candidates surfaced in the web-package 
 
 Cross-package features get their own directory.
 
-| Feature | Status | Record |
-| --- | --- | --- |
+| Feature            | Status                                           | Record                                                |
+| ------------------ | ------------------------------------------------ | ----------------------------------------------------- |
 | Infinite schedules | Design settled (10/12/2026) · slices not started | [infinite-schedules/](./infinite-schedules/README.md) |
 
 ## Domain language

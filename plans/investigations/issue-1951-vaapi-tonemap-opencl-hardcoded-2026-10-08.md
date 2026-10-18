@@ -42,10 +42,10 @@
 
 ## Fix options
 
-| Option | What | Cost |
-|---|---|---|
-| A. Flip default to `vaapi` | Prefer `tonemap_vaapi`, then opencl, then software. Matches the docs. | Small. Reverts the `8b850631f` intent, so check why opencl was preferred (likely quality or driver bugs). |
-| B. Expose preference | Add a VAAPI tonemap preference to the transcode config. | Schema + migration + UI + API regen. |
-| C. Probe OpenCL interop | Test `-init_hw_device vaapi=va:... -init_hw_device opencl@va` once at startup; use opencl only when it succeeds. | Keeps opencl where it works. Adds a probe to hardware capabilities. |
+| Option                     | What                                                                                                             | Cost                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| A. Flip default to `vaapi` | Prefer `tonemap_vaapi`, then opencl, then software. Matches the docs.                                            | Small. Reverts the `8b850631f` intent, so check why opencl was preferred (likely quality or driver bugs). |
+| B. Expose preference       | Add a VAAPI tonemap preference to the transcode config.                                                          | Schema + migration + UI + API regen.                                                                      |
+| C. Probe OpenCL interop    | Test `-init_hw_device vaapi=va:... -init_hw_device opencl@va` once at startup; use opencl only when it succeeds. | Keeps opencl where it works. Adds a probe to hardware capabilities.                                       |
 
 C plus a fallback order of opencl (if probed OK) → vaapi → software fixes the reporter without a config knob. B can follow if users want manual control.

@@ -23,12 +23,12 @@ The reporter found 922 lineup items whose stored duration was off by more than a
 
 ### Live verification (stream-repro `--mid-truncate`, `--start-ago`)
 
-| Run | Change | Result |
-|---|---|---|
-| A, `hls` | Future program 60 s -> 30 s | Next program on time; no gap |
-| B, `hls` | On-air program 60 s -> 35 s | Old length still airs; next program skips its first 25 s once |
-| C, `hls` | Earlier program on a looped channel | `start_time` rebased; on-air program and next start unchanged |
-| D, `hls_slower` | Future program 60 s -> 30 s | Transcoded at 30 s; continuous output |
+| Run             | Change                              | Result                                                        |
+| --------------- | ----------------------------------- | ------------------------------------------------------------- |
+| A, `hls`        | Future program 60 s -> 30 s         | Next program on time; no gap                                  |
+| B, `hls`        | On-air program 60 s -> 35 s         | Old length still airs; next program skips its first 25 s once |
+| C, `hls`        | Earlier program on a looped channel | `start_time` rebased; on-air program and next start unchanged |
+| D, `hls_slower` | Future program 60 s -> 30 s         | Transcoded at 30 s; continuous output                         |
 
 ## Report
 

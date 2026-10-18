@@ -1,0 +1,89 @@
+import { isNonEmptyString } from '@tunarr/shared/util';
+import { bindingScopeValues, injectable } from 'inversify';
+import { randomBytes } from 'node:crypto';
+import type { Maybe } from '../../types/util.ts';
+import { safeEqual } from '../../util/basicAuth.ts';
+
+/** What a valid token grants access to. */
+type EtvNextTokenGrant = {
+  channelUuid: string;
+  channelNumber: number;
+};
+
+type Registration = EtvNextTokenGrant & { token: string };
+
+/**
+ * The bearer tokens the dynamic resolver accepts, one per running session.
+ *
+ * A token is minted when a session starts and dropped when it stops, so
+ * nothing is persisted and a token cannot outlive the worker it was issued
+ * for. The channel it grants comes from the registration rather than from the
+ * request, which keeps the worker's `x-etv-channel` header out of the
+ * authorization decision.
+ *
+ * Singleton-scoped, or a session would mint its token into a registry the
+ * resolver does not read.
+ */
+@injectable(bindingScopeValues.Singleton)
+export class EtvNextDynamicTokenRegistry {
+  #byChannel = new Map<string, Registration>();
+
+  /** Mints a token for a channel, replacing any token it already held. */
+  issue(channelUuid: string, channelNumber: number): string {
+    const token = randomBytes(32).toString('base64url');
+    this.#byChannel.set(channelUuid, { channelUuid, channelNumber, token });
+    return token;
+  }
+
+  /**
+   * Drops a channel's token, but only if it is still the one given. A session
+   * stopping late must not revoke the token of the session that replaced it.
+   */
+  revoke(channelUuid: string, token: string): void {
+    if (this.#byChannel.get(channelUuid)?.token === token) {
+      this.#byChannel.delete(channelUuid);
+    }
+  }
+
+  get size(): number {
+    return this.#byChannel.size;
+  }
+
+  /**
+   * Finds what a presented token grants, or nothing.
+   *
+   * Every candidate is compared in constant time, so a caller cannot learn a
+   * token by measuring how long a rejection takes.
+   */
+  resolve(token: Maybe<string>): Maybe<EtvNextTokenGrant> {
+    if (!isNonEmptyString(token)) {
+      return;
+    }
+
+    for (const registration of this.#byChannel.values()) {
+      if (safeEqual(token, registration.token)) {
+        return {
+          channelUuid: registration.channelUuid,
+          channelNumber: registration.channelNumber,
+        };
+      }
+    }
+
+    return;
+  }
+}
+
+/** Pulls the credential out of an `Authorization: Bearer <token>` header. */
+export function parseBearerToken(header: Maybe<string>): Maybe<string> {
+  if (!isNonEmptyString(header)) {
+    return;
+  }
+
+  const prefix = 'bearer ';
+  if (!header.toLowerCase().startsWith(prefix)) {
+    return;
+  }
+
+  const token = header.slice(prefix.length).trim();
+  return token.length > 0 ? token : undefined;
+}

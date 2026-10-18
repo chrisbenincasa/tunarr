@@ -1,0 +1,12 @@
+{
+  "source": "https://github.com/ErsatzTV/next",
+  "commit": "4a0b59a66bef93b908e5eb2086847418492e2555",
+  "committedAt": "2026-10-13T20:30:35Z",
+  "files": {
+    "channel_config.json": "5f83a547237ee8aa5a6e4c9cc227da5fe2ac7b4f495d4f79e5b9739b4c44ef8d",
+    "lineup_config.json": "05498875c1686d811eda5279482a7a7c4e615a8cc69f98a68a7612c41384822a",
+    "playout.json": "417ad600dfaf566d230313e13223d029fc542085a7b6e126d41151b9b31fa957",
+    "example-playout.json": "fa4492212fd7e4d438ba6f813ba86c6e9f0a83172035a3c15688181af0d5500b"
+  },
+  "note": "example-playout.json is upstream examples/playout/playout.json, kept as a contract fixture."
+}

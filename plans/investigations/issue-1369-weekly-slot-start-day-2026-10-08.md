@@ -18,10 +18,10 @@
 
 ## Fixes
 
-| Commit | Change | First tag |
-|--------|--------|-----------|
-| `84b88c0d9` | Scheduler starts at `channel.startTime` and reads slot offsets from that time's period. `ChannelDB` stops overwriting the start time. | v1.1.15 |
-| `1966218bb` | Changing the channel start time regenerates slotted lineups (`RegenerateChannelLineupCommand`). | v1.1.15 |
+| Commit      | Change                                                                                                                                | First tag |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `84b88c0d9` | Scheduler starts at `channel.startTime` and reads slot offsets from that time's period. `ChannelDB` stops overwriting the start time. | v1.1.15   |
+| `1966218bb` | Changing the channel start time regenerates slotted lineups (`RegenerateChannelLineupCommand`).                                       | v1.1.15   |
 
 ## Verification on `main`
 

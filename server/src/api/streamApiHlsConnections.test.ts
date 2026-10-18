@@ -97,6 +97,7 @@ async function buildApp(sessionManager: unknown) {
         }),
       },
       sessionManager,
+      featureFlagService: { get: () => false },
     };
     done();
   });
@@ -258,5 +259,57 @@ describe('streamApi channel playlist variant flag', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toBe(VARIANT_PLAYLIST);
+  });
+});
+
+describe('streamApi etv_next mode gate', () => {
+  it('refuses an explicit etv_next mode when neither the flag nor the channel opts in', async () => {
+    const getOrCreateEtvNextSession = vi.fn();
+    const app = await buildApp({ getOrCreateEtvNextSession });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}.m3u8?mode=etv_next`,
+    });
+    await app.close();
+
+    expect(res.statusCode).toBe(400);
+    expect(getOrCreateEtvNextSession).not.toHaveBeenCalled();
+  });
+});
+
+describe('streamApi etv_next file serving', () => {
+  it('answers 404 for a file teardown already removed', async () => {
+    const dir = tmp.dirSync({ unsafeCleanup: true });
+    const etvSession = {
+      stoppingOrStopped: false,
+      workingDirectory: dir.name,
+      isKnownConnection: () => true,
+      recordHeartbeat: vi.fn(),
+    };
+    const app = await buildApp({ getEtvNextSession: () => etvSession });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/etv_next/live.m3u8`,
+    });
+    await app.close();
+    dir.removeCallback();
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('answers 404 for a stopping session', async () => {
+    const app = await buildApp({
+      getEtvNextSession: () => ({ stoppingOrStopped: true }),
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/etv_next/live.m3u8`,
+    });
+    await app.close();
+
+    expect(res.statusCode).toBe(404);
   });
 });

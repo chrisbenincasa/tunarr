@@ -117,4 +117,5 @@ COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
 # other assumptions that Tunarr makes about its working directory
 RUN mkdir /tunarr/bin
 RUN ln -s /tunarr/server/bin/meilisearch-${exec_target} /tunarr/bin/meilisearch
+RUN ln -s /tunarr/server/bin/ersatztv-channel-${exec_target} /tunarr/bin/ersatztv-channel
 RUN ln -s /tunarr/server/bin/tunarr-${exec_target} /tunarr/tunarr

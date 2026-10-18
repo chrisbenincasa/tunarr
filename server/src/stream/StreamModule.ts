@@ -11,12 +11,20 @@ import type {
 } from '@/stream/hls/HlsSession.js';
 import { HlsSession } from '@/stream/hls/HlsSession.js';
 import { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
+import { EtvNextBinaryResolver } from '@/stream/etv/EtvNextBinaryResolver.js';
+import { EtvNextDynamicTokenRegistry } from '@/stream/etv/EtvNextDynamicTokenRegistry.js';
+import { EtvNextPlayoutWriter } from '@/stream/etv/EtvNextPlayoutWriter.js';
+import type { EtvNextSessionProvider } from '@/stream/etv/EtvNextSession.js';
+import { EtvNextSession } from '@/stream/etv/EtvNextSession.js';
+import { EtvNextTroubleshootRunner } from '@/stream/etv/EtvNextTroubleshootRunner.js';
 import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import type { ContainerModuleLoadOptions, Factory } from 'inversify';
 import { ContainerModule } from 'inversify';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import type { FFmpegAssistedFactory } from '../ffmpeg/FFmpegModule.ts';
 import { FillerPickerV2 } from '../services/scheduling/FillerPickerV2.ts';
+import { FeatureFlagService } from '../services/FeatureFlagService.ts';
+import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
 import { bindAssistedFactory } from '../util/assistedInject.ts';
 import { bindAutoFactory } from '../util/inject.ts';
 import { ProgramStream } from './ProgramStream.ts';
@@ -58,6 +66,40 @@ const configure = ({ bind }: ContainerModuleLoadOptions) => {
       );
     };
   });
+
+  bind(EtvNextBinaryResolver).toSelf().inSingletonScope();
+
+  // EtvNextPlayoutWriter is left to autobind. Its import chain reaches back
+  // into container.ts, so binding it here would read the class while it is
+  // still uninitialized. The factory below touches it lazily, which is safe.
+
+  bind<Factory<EtvNextSession, Parameters<EtvNextSessionProvider>>>(
+    KEYS.EtvNextSession,
+  ).toFactory((ctx) => {
+    return (channel, options) => {
+      return new EtvNextSession(
+        channel,
+        options,
+        ctx.get(EtvNextBinaryResolver),
+        ctx.get(EtvNextPlayoutWriter),
+        ctx.get(ChildProcessHelper),
+        ctx.get<ISettingsDB>(KEYS.SettingsDB),
+        ctx.get(FeatureFlagService),
+        ctx.get(EtvNextDynamicTokenRegistry),
+      );
+    };
+  });
+
+  bind<EtvNextTroubleshootRunner>(KEYS.EtvNextTroubleshootRunner)
+    .toDynamicValue(
+      (ctx) =>
+        new EtvNextTroubleshootRunner(
+          ctx.get(EtvNextBinaryResolver),
+          ctx.get(EtvNextPlayoutWriter),
+          ctx.get(ChildProcessHelper),
+        ),
+    )
+    .inSingletonScope();
 
   bind<Factory<ConcatSession, Parameters<ConcatSessionFactory>>>(
     KEYS.ConcatSession,

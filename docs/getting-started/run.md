@@ -89,6 +89,8 @@ Tunarr has various command line / environment variables for configuration. These
 | `TUNARR_TONEMAP_ENABLED` | N/A | `false` | Enable experimental HDR tonemapping. When set to `true`, Tunarr will apply HDR-to-SDR tonemapping when HDR source content is detected. See [HDR Tonemapping](../configure/ffmpeg/transcode_config.md#hdr-tonemapping). |
 | `TUNARR_DISABLE_VULKAN` | N/A | `false` | Disable Vulkan-based tonemapping in the CUDA pipeline. Use if Vulkan is not available on your system or is causing stream failures; Tunarr will fall back to software tonemapping. |
 | `TUNARR_DISABLE_VAAPI_PAD` | N/A | `false` | Disable hardware pad filters (`pad_vaapi`/`pad_opencl`) for VAAPI and fall back to software padding. Use if hardware padding causes artifacts or stream errors on your hardware. |
+| `TUNARR_ERSATZTV_NEXT_ENABLED` | N/A | `false` | Enable the experimental ErsatzTV next streaming backend. When set to `true`, channels using the HLS, HLS Direct v2 and MPEG-TS stream modes are served by an `ersatztv-channel` worker instead of Tunarr's own pipeline. See [ErsatzTV next backend](../configure/channels/transcoding.md#ersatztv-next-backend-experimental). |
+| `TUNARR_ERSATZTV_NEXT_PATH` | N/A | (unset) | Where to find the `ersatztv-channel` binary, either the binary itself or the directory holding it. Without it, Tunarr looks in `bin/` next to the server and in the working directory. |
 
 ### Performance
 

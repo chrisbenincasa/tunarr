@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check formatting
+        run: pnpm exec prettier --check .
+
       - name: Check the generated OpenAPI spec and web client are current
         run: |
           pnpm turbo build --filter=@tunarr/types --filter=@tunarr/shared
