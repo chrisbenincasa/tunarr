@@ -51,6 +51,7 @@ export class EtvNextNotReadyError extends Error {
  * ```
  * <base>/etv_<key>/
  *   channel.json                 read by the worker at spawn
+ *   worker.pid                   for the startup sweep
  *   playout/<start>_<finish>.json  the window it plays from
  *   out/                         live.m3u8, live%06d.ts, .ready, .heartbeat
  * ```
@@ -63,6 +64,7 @@ export class EtvNextWorkspace {
   readonly readyFilePath: string;
   readonly heartbeatFilePath: string;
   readonly mediaPlaylistPath: string;
+  readonly workerPidFilePath: string;
 
   constructor(baseDirectory: string, key: string) {
     this.root = path.join(baseDirectory, `etv_${key}`);
@@ -81,6 +83,19 @@ export class EtvNextWorkspace {
       this.outputDirectory,
       EtvNextOutputFiles.MediaPlaylist,
     );
+    this.workerPidFilePath = EtvNextWorkspace.pidFilePathFor(this.root);
+  }
+
+  /**
+   * The worker's pid, kept beside its workspace so the startup sweep can kill
+   * a worker that outlived Tunarr before it removes the directory.
+   */
+  static pidFilePathFor(root: string): string {
+    return path.join(root, 'worker.pid');
+  }
+
+  async writeWorkerPid(pid: number): Promise<void> {
+    await fs.writeFile(this.workerPidFilePath, `${pid}`);
   }
 
   /** Wipes and recreates the channel's directories. */

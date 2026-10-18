@@ -11,7 +11,7 @@ import type { ChildProcessWrapper } from '../../util/ChildProcessHelper.ts';
 import type { ChildProcessHelper } from '../../util/ChildProcessHelper.ts';
 import { isNonEmptyString, timeoutPromise } from '../../util/index.ts';
 import { defaultHlsOptions } from '../../ffmpeg/builder/constants.ts';
-import type { SessionOptions } from '../Session.ts';
+import type { SessionOptions, StopOptions } from '../Session.ts';
 import { Session } from '../Session.ts';
 import type { EtvNextBinaryResolver } from './EtvNextBinaryResolver.ts';
 import { toChannelConfig } from './EtvNextChannelConfigMapper.ts';
@@ -58,6 +58,7 @@ export const ResolverSilenceGraceMs = 5 * 60 * 1000;
 export const ResolverWatchdogIntervalMs = 30_000;
 
 const WorkerExitTimeoutMs = 30_000;
+const WorkerKillTimeoutMs = 5_000;
 
 export type EtvNextSessionOptions = SessionOptions & {
   transcodeDirectory?: string;
@@ -262,6 +263,11 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
       this.#onWorkerExit(code, signal),
     );
 
+    const pid = this.#process.process?.pid;
+    if (pid !== undefined) {
+      await this.#workspace.writeWorkerPid(pid);
+    }
+
     this.#startWindowRefresh();
     this.#startResolverWatchdog();
   }
@@ -333,7 +339,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     );
   }
 
-  protected async stopInternal(): Promise<void> {
+  protected async stopInternal(options: StopOptions): Promise<void> {
     // Set before the kill so the exit listener knows this one was deliberate.
     this.#stopping = true;
     this.#stopWindowRefresh();
@@ -347,25 +353,40 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     await this.#inFlightWindowWrite?.catch(() => undefined);
 
     try {
-      // Cleanup must not race the worker's last writes. Listen before the
-      // kill so a fast exit is not missed. Bounded because the worker only
-      // gets SIGTERM and may not honor it.
-      const worker = this.#process?.process;
+      // Listen before the kill so a fast exit is not missed.
+      const workerProcess = this.#process;
+      const worker = workerProcess?.process;
       const exited =
         worker && worker.exitCode === null && worker.signalCode === null
           ? once(worker, 'exit')
           : undefined;
 
-      this.#process?.kill();
+      workerProcess?.kill();
       this.#process = undefined;
 
-      if (exited) {
-        await timeoutPromise(exited, WorkerExitTimeoutMs).catch(() =>
-          this.logger.warn(
-            'The ErsatzTV next worker did not exit %dms after SIGTERM. Removing its workspace anyway.',
-            WorkerExitTimeoutMs,
-          ),
+      // Server shutdown does not wait. The workspace and its pid file stay, so
+      // the startup sweep can kill a worker that ignored SIGTERM.
+      if (exited && options.waitForExit === false) {
+        return;
+      }
+
+      if (exited && !(await this.#waitForWorkerExit(exited))) {
+        this.logger.warn(
+          'The ErsatzTV next worker did not exit %dms after SIGTERM. Sending SIGKILL.',
+          WorkerExitTimeoutMs,
         );
+        workerProcess?.kill('SIGKILL');
+
+        // SIGKILL cannot interrupt a process stuck in a driver call. Leave the
+        // workspace for the startup sweep rather than delete it under the
+        // worker.
+        if (!(await this.#waitForWorkerExit(exited, WorkerKillTimeoutMs))) {
+          this.logger.error(
+            'The ErsatzTV next worker survived SIGKILL. Leaving %s for the startup sweep.',
+            this.#workspace.root,
+          );
+          return;
+        }
       }
 
       await this.#workspace.cleanup();
@@ -375,6 +396,18 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
       this.#windowItems = [];
       this.state = 'stopped';
       this.emit('stop');
+    }
+  }
+
+  async #waitForWorkerExit(
+    exited: Promise<unknown>,
+    timeoutMs: number = WorkerExitTimeoutMs,
+  ): Promise<boolean> {
+    try {
+      await timeoutPromise(exited, timeoutMs);
+      return true;
+    } catch {
+      return false;
     }
   }
 

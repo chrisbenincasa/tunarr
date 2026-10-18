@@ -5,9 +5,15 @@ import path from 'node:path';
 import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { defaultHlsOptions } from '../../ffmpeg/builder/constants.ts';
 import { serverOptions } from '../../globals.ts';
+import { ETV_NEXT_BINARY_NAME } from '../../stream/etv/EtvNextBinaryResolver.ts';
+import { EtvNextWorkspace } from '../../stream/etv/EtvNextWorkspace.ts';
 import { KEYS } from '../../types/inject.ts';
 import { isNodeError, isNonEmptyString } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
+import {
+  killOrphanedProcess,
+  readPidFile,
+} from '../../util/killOrphanedProcess.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { SimpleStartupTask } from './IStartupTask.ts';
 
@@ -23,7 +29,8 @@ export const StreamDirectoryNameRegex = new RegExp(
 );
 
 /**
- * Removes HLS working directories left behind by an unclean exit.
+ * Removes HLS working directories left behind by an unclean exit, and kills
+ * any ErsatzTV next worker still writing to one.
  *
  * Each session instance writes to its own directory, so nothing reuses or
  * wipes a predecessor's. Startup tasks finish before the server listens, so no
@@ -71,6 +78,19 @@ export class ClearStreamDirectoriesStartupTask extends SimpleStartupTask {
           continue;
         }
         const dir = path.join(base, entry.name);
+
+        // A worker that outlived Tunarr still writes here. Kill it first.
+        const workerPid = await readPidFile(
+          EtvNextWorkspace.pidFilePathFor(dir),
+        );
+        if (workerPid !== undefined) {
+          await killOrphanedProcess(
+            workerPid,
+            (name) => name.startsWith(ETV_NEXT_BINARY_NAME),
+            this.logger,
+          );
+        }
+
         this.logger.info('Removing leftover stream directory: %s', dir);
         await fs
           .rm(dir, { recursive: true, force: true, maxRetries: 2 })

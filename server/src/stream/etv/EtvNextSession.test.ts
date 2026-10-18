@@ -155,11 +155,13 @@ async function makeSession({
   const workerProcess = Object.assign(new EventEmitter(), {
     exitCode: processExitCode,
     signalCode: null,
+    pid: 4242,
   });
 
-  const killed = vi.fn(() => {
-    if (exitsOnKill) {
-      workerProcess.emit('exit', null, 'SIGTERM');
+  // SIGKILL always lands. SIGTERM lands only when exitsOnKill is set.
+  const killed = vi.fn((signal: NodeJS.Signals = 'SIGTERM') => {
+    if (exitsOnKill || signal === 'SIGKILL') {
+      workerProcess.emit('exit', null, signal);
     }
   });
 
@@ -390,6 +392,56 @@ describe('teardown', () => {
     workerProcess.emit('exit', null, 'SIGTERM');
     await stopped;
     await expect(fs.stat(root)).rejects.toThrow();
+  });
+
+  test('records the worker pid for the startup sweep', async () => {
+    const { session, transcodeDirectory } = await makeSession();
+    await session.start();
+
+    await expect(
+      fs.readFile(
+        path.join(transcodeDirectory, workspaceName, 'worker.pid'),
+        'utf-8',
+      ),
+    ).resolves.toBe('4242');
+  });
+
+  test('sends SIGKILL to a worker that ignores SIGTERM', async () => {
+    const { session, transcodeDirectory, killed } = await makeSession({
+      exitsOnKill: false,
+    });
+    await session.start();
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+
+    try {
+      const stopped = session.stop();
+      await vi.advanceTimersByTimeAsync(30_000);
+      await stopped;
+    } finally {
+      vi.useRealTimers();
+    }
+
+    expect(killed).toHaveBeenNthCalledWith(1);
+    expect(killed).toHaveBeenNthCalledWith(2, 'SIGKILL');
+    await expect(
+      fs.stat(path.join(transcodeDirectory, workspaceName)),
+    ).rejects.toThrow();
+  });
+
+  // Server shutdown has a short budget. The startup sweep reaps what is left.
+  test('does not wait for the worker when asked not to', async () => {
+    const { session, transcodeDirectory, killed } = await makeSession({
+      exitsOnKill: false,
+    });
+    await session.start();
+
+    await session.stop({ waitForExit: false });
+
+    expect(killed).toHaveBeenCalledTimes(1);
+    expect(session.state).toBe('stopped');
+    await expect(
+      fs.stat(path.join(transcodeDirectory, workspaceName, 'worker.pid')),
+    ).resolves.toBeDefined();
   });
 
   // SessionManager drops the session from its map on 'stop', and reads state

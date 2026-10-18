@@ -57,11 +57,10 @@ export class ChildProcessWrapper extends ITypedEventEmitter {
     return this.controller;
   }
 
+  // Signals on every call, so a caller can escalate from SIGTERM to SIGKILL.
   kill(signal: NodeJS.Signals = 'SIGTERM') {
-    if (!this.wasAborted) {
-      this.wasAborted = true;
-      this.underlying?.kill(signal);
-    }
+    this.wasAborted = true;
+    this.underlying?.kill(signal);
   }
 
   [_internalStart]() {
