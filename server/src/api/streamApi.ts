@@ -474,7 +474,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         variant: TruthyQueryParam.optional()
           .default(false)
           .describe(
-            'For hls and hls_direct_v2, return the variant playlist instead of the master. The .ts wrapper uses this so ffmpeg reads only the muxed streams.',
+            'For hls and hls_direct_v2, return the variant playlist instead of the master. For etv_next, drop the subtitle rendition. The .ts wrapper uses this so ffmpeg reads only the muxed streams.',
           ),
       }),
     },
@@ -626,7 +626,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
                 session.recordHeartbeat(req.ip);
                 return res
                   .type('application/vnd.apple.mpegurl')
-                  .send(session.getMasterPlaylist());
+                  .send(session.getMasterPlaylist(req.query.variant));
               }),
             );
           break;

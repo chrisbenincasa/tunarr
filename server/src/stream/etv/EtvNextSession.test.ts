@@ -679,6 +679,14 @@ describe('the playlist clients are handed', () => {
     const on = await makeSession({ webvttEnabled: true });
     expect(on.session.getMasterPlaylist()).toContain('live_sub.m3u8');
   });
+
+  // The MPEG-TS wrapper remuxes everything it reads, and MPEG-TS has no
+  // WebVTT.
+  test('leaves subtitles out of the variant-only playlist', async () => {
+    const { session } = await makeSession({ webvttEnabled: true });
+
+    expect(session.getMasterPlaylist(true)).not.toContain('live_sub.m3u8');
+  });
 });
 
 describe('the dynamic playout window', () => {

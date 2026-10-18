@@ -440,14 +440,20 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
    * The worker writes a media playlist only; upstream's server synthesizes
    * this wrapper at request time and Tunarr does not run that server.
    */
-  getMasterPlaylist(): string {
+  /**
+   * @param variantOnly drops the subtitle rendition. The MPEG-TS wrapper asks
+   * for this, because it remuxes every stream it reads and MPEG-TS cannot
+   * carry WebVTT.
+   */
+  getMasterPlaylist(variantOnly = false): string {
     const { transcodeConfig } = this.channel;
 
     return createMultivariantPlaylist({
       streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
       videoBitrateKbps: transcodeConfig.videoBitRate,
       audioBitrateKbps: transcodeConfig.audioBitRate,
-      includeSubtitles: this.featureFlagService.get('webvttSidecarEnabled'),
+      includeSubtitles:
+        !variantOnly && this.featureFlagService.get('webvttSidecarEnabled'),
     });
   }
 
