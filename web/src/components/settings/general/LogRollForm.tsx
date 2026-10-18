@@ -183,20 +183,13 @@ export const LogRollForm = () => {
                     render={({ field }) => (
                       <Checkbox
                         checked={(field.value ?? 0) > 0}
-                        onChange={(_, checked) => {
+                        onChange={(_, checked) =>
                           field.onChange(
                             checked
                               ? defaultLogRollConfig().maxFileSizeBytes
                               : 0,
-                          );
-                          setValue(
-                            'logging.logRollConfig.schedule.unit',
-                            'day',
-                            {
-                              shouldDirty: true,
-                            },
-                          );
-                        }}
+                          )
+                        }
                       />
                     )}
                   />
