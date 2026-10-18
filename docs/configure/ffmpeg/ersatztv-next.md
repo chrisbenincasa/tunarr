@@ -4,7 +4,7 @@ Tunarr can hand a channel to `ersatztv-channel`, a standalone worker from the [E
 
 !!! warning "Experimental"
 
-    Upstream publishes no tagged release, so Tunarr builds against a pinned commit. A worker built from a different commit still runs, but Tunarr logs a warning and streams may fail in ways its schema checks cannot catch.
+    Tunarr pins ErsatzTV next release `v0.2.2` and refuses a bundled worker from any other release. A worker you point at with `TUNARR_ERSATZTV_NEXT_PATH` still runs, but Tunarr logs a warning and streams may fail in ways its schema checks cannot catch.
 
 This page covers how your FFmpeg and transcode settings reach the worker. For what the backend is and how it plays a channel, see [Channel Transcoding Settings](../channels/transcoding.md#ersatztv-next-backend-experimental).
 
@@ -33,7 +33,7 @@ A transcode config with any of these cannot back a channel on this backend. The 
 | Audio format | `aac`, `ac3` |
 | Hardware acceleration | `none`, `cuda`, `qsv`, `vaapi`, `videotoolbox` |
 
-The transcode config editor warns about these while the backend is enabled, so you can find an offending config before a viewer does.
+The transcode config editor warns about these while the backend is on globally or for any channel that uses the config. The channel editor shows the same warning under **Use ErsatzTV next Backend** once the box is ticked. Either way you can find an offending config before a viewer does.
 
 ### Dropped settings
 
@@ -97,4 +97,4 @@ Every time the worker cannot play an item it writes a bundle to `etv-diagnostics
 
 This is on and needs no setting. A channel keeps its five most recent bundles; older ones are removed when the channel next starts. Turning off file logging does not turn it off, because the bundle is what a bug report needs and asking for it after the fact means asking someone to reproduce a failure they have already had.
 
-The [Stream Troubleshooter](../../misc/troubleshooting.md) offers **Download Backend Diagnostics** for a channel that has any, which hands back all five as one zip.
+The [Stream Troubleshooter](../../misc/troubleshooting.md) offers **Download Backend Diagnostics** for a channel that has any, which hands back all five as one zip. Plex, Jellyfin and Emby tokens are removed from the files before they are zipped.
