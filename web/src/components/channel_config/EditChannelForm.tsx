@@ -1,4 +1,5 @@
 import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
+import { toChannelUpdateRequest } from '@/helpers/channelUpdateRequest.ts';
 import { DefaultChannel } from '@/helpers/constants.ts';
 import { useLingui } from '@lingui/react/macro';
 import { Badge } from '@mui/material';
@@ -219,7 +220,10 @@ export function EditChannelForm({
     } else {
       updateChannelMutation.mutate({
         path: { id: channel.id },
-        body: dataTransform,
+        body: toChannelUpdateRequest(
+          dataTransform,
+          formMethods.formState.defaultValues?.startTime,
+        ),
       });
     }
   };

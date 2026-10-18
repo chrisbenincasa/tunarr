@@ -3416,7 +3416,7 @@ export type PutApiChannelsByIdData = {
             soundtrack?: string;
             mode: 'pic' | 'clip';
         };
-        startTime: number;
+        startTime?: number;
         stealth: boolean;
         watermark?: {
             url?: string;
