@@ -88,7 +88,7 @@ export function FacetPicker({
         return `${activeField} = "${selected[0]}"`;
       }
       const quoted = selected.map((v) => `"${v}"`).join(', ');
-      return `${activeField} in (${quoted})`;
+      return `${activeField} in [${quoted}]`;
     },
     [activeField],
   );
