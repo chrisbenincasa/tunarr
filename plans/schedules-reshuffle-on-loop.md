@@ -24,10 +24,10 @@ stream and each iterator's state. Users get a fresh shuffle every cycle without 
 
 ## Prerequisites
 
-| Item | State |
-|---|---|
-| #2301: seeded RNG for `ordered_shuffle` and random slot picks (fixes #2303) | Merged 10/13/2026 |
-| #2306: a settings save reverts a server-moved `startTime` | Open. Fix on `main` first |
+| Item                                                                        | State                     |
+| --------------------------------------------------------------------------- | ------------------------- |
+| #2301: seeded RNG for `ordered_shuffle` and random slot picks (fixes #2303) | Merged 10/13/2026         |
+| #2306: a settings save reverts a server-moved `startTime`                   | Open. Fix on `main` first |
 
 #2306 fix:
 
@@ -38,24 +38,24 @@ stream and each iterator's state. Users get a fresh shuffle every cycle without 
 
 ## Current state
 
-| Piece | Where | State |
-|---|---|---|
-| Slot schedule definition | lineup JSON (`LineupRepository.ts`) | Stored |
-| `scheduleSeed` | lineup JSON | Stored on slot save, cleared on manual save |
-| RNG skip count (`discardCount`) | `TimeSlotService.ts`, `RandomSlotsService.ts` | Accepted and returned by the schedulers, never stored |
-| Lineup length | `upperLimit = t0 + maxDays + 1 day` (`TimeSlotService.ts:181`, `RandomSlotsService.ts:242`) | `maxDays` defaults to 365 |
-| Rebuild from schedule | `RegenerateChannelLineupCommand.ts` | Replays seed from `startTime`. Runs after scans and some property changes |
-| Slot iterator position | `ProgramIterator.ts` | In memory only, starts at 0 every build |
-| Channel position | `(now - startTime) % duration` | Read per program by `StreamProgramCalculator`. No session holds a lineup index |
+| Piece                           | Where                                                                                       | State                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Slot schedule definition        | lineup JSON (`LineupRepository.ts`)                                                         | Stored                                                                         |
+| `scheduleSeed`                  | lineup JSON                                                                                 | Stored on slot save, cleared on manual save                                    |
+| RNG skip count (`discardCount`) | `TimeSlotService.ts`, `RandomSlotsService.ts`                                               | Accepted and returned by the schedulers, never stored                          |
+| Lineup length                   | `upperLimit = t0 + maxDays + 1 day` (`TimeSlotService.ts:181`, `RandomSlotsService.ts:242`) | `maxDays` defaults to 365                                                      |
+| Rebuild from schedule           | `RegenerateChannelLineupCommand.ts`                                                         | Replays seed from `startTime`. Runs after scans and some property changes      |
+| Slot iterator position          | `ProgramIterator.ts`                                                                        | In memory only, starts at 0 every build                                        |
+| Channel position                | `(now - startTime) % duration`                                                              | Read per program by `StreamProgramCalculator`. No session holds a lineup index |
 
 ## Cycles
 
 ### Length
 
-| Schedule | Cycle |
-|---|---|
-| Time slots | One `schedule.period` (day, week or month). `maxDays` is ignored |
-| Random slots | `maxDays` |
+| Schedule     | Cycle                                                            |
+| ------------ | ---------------------------------------------------------------- |
+| Time slots   | One `schedule.period` (day, week or month). `maxDays` is ignored |
+| Random slots | `maxDays`                                                        |
 
 - A cycle ends where its last program ends, so lengths vary and are not whole minutes.
 - Each cycle starts exactly where the previous one ended.
@@ -183,15 +183,15 @@ identical shuffles.
 
 ### Replayable ops
 
-| Op | Randomizing | Source |
-|---|---|---|
-| Random sort (all, by show) | Yes | `useRandomSort.ts` |
-| Block / cyclic shuffle | Yes | `blockShuffle` in `useBlockShuffle.ts` |
-| Replicate (random) | Yes | `replicatePrograms` |
-| Add breaks | Yes | `addBreaks` |
-| Pad start times | No | `padStartTimes` |
-| Restrict hours | No | `restrictHours` |
-| Remove flex | No | `useRemoveFlex.ts` |
+| Op                         | Randomizing | Source                                 |
+| -------------------------- | ----------- | -------------------------------------- |
+| Random sort (all, by show) | Yes         | `useRandomSort.ts`                     |
+| Block / cyclic shuffle     | Yes         | `blockShuffle` in `useBlockShuffle.ts` |
+| Replicate (random)         | Yes         | `replicatePrograms`                    |
+| Add breaks                 | Yes         | `addBreaks`                            |
+| Pad start times            | No          | `padStartTimes`                        |
+| Restrict hours             | No          | `restrictHours`                        |
+| Remove flex                | No          | `useRemoveFlex.ts`                     |
 
 ### Edits after the first randomizing op
 
