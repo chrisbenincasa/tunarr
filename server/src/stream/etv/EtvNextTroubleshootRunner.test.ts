@@ -88,7 +88,11 @@ async function makeRunner({
   writesPlaylist = true,
   dossier,
   materialize,
+  hangs = false,
+  timeoutMs = 5_000,
 }: {
+  hangs?: boolean;
+  timeoutMs?: number;
   exitCode?: number | null;
   stderr?: string;
   writesPlaylist?: boolean;
@@ -116,7 +120,12 @@ async function makeRunner({
     stderr: new EventEmitter(),
   });
 
-  const killed = vi.fn();
+  // A hung worker ignores SIGTERM and dies only on SIGKILL.
+  const killed = vi.fn((signal?: NodeJS.Signals) => {
+    if (signal === 'SIGKILL') {
+      workerProcess.emit('exit', null, 'SIGKILL');
+    }
+  });
   const spawn = vi.fn(async () => {
     if (writesPlaylist) {
       await fs.writeFile(
@@ -132,6 +141,9 @@ async function makeRunner({
     }
 
     setImmediate(() => {
+      if (hangs) {
+        return;
+      }
       if (stderr.length > 0) {
         workerProcess.stderr.emit('data', Buffer.from(stderr));
       }
@@ -154,7 +166,7 @@ async function makeRunner({
       ffmpegSettings: ffmpegSettings as never,
       baseDirectory,
       sessionId: channelUuid,
-      timeoutMs: 5_000,
+      timeoutMs,
       subtitleMode: 'burn',
     });
 
@@ -184,6 +196,32 @@ describe('EtvNextTroubleshootRunner', () => {
     ).resolves.toContain('#EXT-X-ENDLIST');
 
     expect(spawn.mock.calls[0]?.[1]).toContain('--troubleshoot');
+  });
+
+  // The caller deletes the workspace as soon as the run returns.
+  test('kills a worker that runs past the timeout before returning', async () => {
+    const { run, killed } = await makeRunner({ hangs: true, timeoutMs: 100 });
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+
+    try {
+      let settled = false;
+      const result = run().finally(() => {
+        settled = true;
+      });
+
+      // The run does real file I/O before it arms its timers, so keep
+      // yielding to the event loop while the fake clock moves.
+      while (!settled) {
+        await new Promise((resolve) => setImmediate(resolve));
+        await vi.advanceTimersByTimeAsync(1_000);
+      }
+      await expect(result).resolves.toMatchObject({ success: false });
+    } finally {
+      vi.useRealTimers();
+    }
+
+    expect(killed).toHaveBeenNthCalledWith(1);
+    expect(killed).toHaveBeenNthCalledWith(2, 'SIGKILL');
   });
 
   test('reports the failure without a playlist when the worker dies', async () => {
