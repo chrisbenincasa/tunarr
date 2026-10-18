@@ -1,4 +1,6 @@
+import { GenericBadRequestError } from '@/types/errors.js';
 import { KEYS } from '@/types/inject.js';
+import { Result } from '@/types/result.js';
 import { seq } from '@tunarr/shared/util';
 import type {
   BulkAssignFillersRequest,
@@ -37,6 +39,7 @@ import type {
   IFillerListDB,
 } from './interfaces/IFillerListDB.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
+import { Channel } from './schema/Channel.ts';
 import { ChannelFillerShow } from './schema/ChannelFillerShow.ts';
 import type { NewFillerShow } from './schema/FillerShow.ts';
 import { FillerShow } from './schema/FillerShow.ts';
@@ -404,11 +407,47 @@ export class FillerDB implements IFillerListDB {
 
   bulkAssignFillers(
     request: BulkAssignFillersRequest,
-  ): BulkAssignFillersResponse {
-    let added = 0;
-    let alreadyExisted = 0;
+  ): Result<BulkAssignFillersResponse> {
+    const fillerIds = request.fillers.map((f) => f.fillerShowId);
 
-    this.drizzle.transaction((tx) => {
+    return this.drizzle.transaction((tx) => {
+      const foundChannelIds = new Set(
+        tx
+          .select({ uuid: Channel.uuid })
+          .from(Channel)
+          .where(inArray(Channel.uuid, request.channelIds))
+          .all()
+          .map((row) => row.uuid),
+      );
+      const foundFillerIds = new Set(
+        tx
+          .select({ uuid: FillerShow.uuid })
+          .from(FillerShow)
+          .where(inArray(FillerShow.uuid, fillerIds))
+          .all()
+          .map((row) => row.uuid),
+      );
+      const missingChannelIds = request.channelIds.filter(
+        (id) => !foundChannelIds.has(id),
+      );
+      const missingFillerIds = fillerIds.filter(
+        (id) => !foundFillerIds.has(id),
+      );
+      if (missingChannelIds.length > 0 || missingFillerIds.length > 0) {
+        const problems = [
+          missingChannelIds.length > 0
+            ? `unknown channel IDs: ${missingChannelIds.join(', ')}`
+            : null,
+          missingFillerIds.length > 0
+            ? `unknown filler list IDs: ${missingFillerIds.join(', ')}`
+            : null,
+        ].filter((p) => p !== null);
+        return Result.failure(new GenericBadRequestError(problems.join('; ')));
+      }
+
+      let added = 0;
+      let alreadyExisted = 0;
+
       if (request.mode === 'replace') {
         tx.delete(ChannelFillerShow)
           .where(inArray(ChannelFillerShow.channelUuid, request.channelIds))
@@ -471,8 +510,8 @@ export class FillerDB implements IFillerListDB {
 
         added = toInsert.length;
       }
-    });
 
-    return { added, alreadyExisted };
+      return Result.success({ added, alreadyExisted });
+    });
   }
 }

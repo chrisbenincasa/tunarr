@@ -111,6 +111,37 @@ describe('POST /channels/bulk/fillers', () => {
     expect(res.statusCode, res.body).toBe(400);
   });
 
+  test('rejects an unknown channel ID with a 400 and writes nothing', async () => {
+    const unknownId = v4();
+    const res = await bulkAssign({
+      channelIds: [channelIds[0], unknownId],
+      fillers: [{ fillerShowId: fillerIds[0], weight: 1, cooldownSeconds: 0 }],
+      mode: 'add',
+    });
+
+    expect(res.statusCode, res.body).toBe(400);
+    expect(res.json<{ message: string }>().message).toContain(unknownId);
+    expect(fillersFor(channelIds[0])).toHaveLength(0);
+  });
+
+  test('rejects an unknown filler ID with a 400 and writes nothing', async () => {
+    const unknownId = v4();
+    const res = await bulkAssign({
+      channelIds,
+      fillers: [
+        { fillerShowId: fillerIds[0], weight: 1, cooldownSeconds: 0 },
+        { fillerShowId: unknownId, weight: 1, cooldownSeconds: 0 },
+      ],
+      mode: 'replace',
+    });
+
+    expect(res.statusCode, res.body).toBe(400);
+    expect(res.json<{ message: string }>().message).toContain(unknownId);
+    for (const channelId of channelIds) {
+      expect(fillersFor(channelId)).toHaveLength(0);
+    }
+  });
+
   test('add mode skips pairs that already exist', async () => {
     const first = await bulkAssign({
       channelIds: [channelIds[0]],

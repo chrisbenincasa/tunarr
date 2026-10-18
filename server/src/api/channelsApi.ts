@@ -407,7 +407,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const result = req.serverCtx.fillerDB.bulkAssignFillers(req.body);
-      return res.send(result);
+      if (result.isFailure()) {
+        return res.status(400).send({ message: result.error.message });
+      }
+      return res.send(result.get());
     },
   );
 
