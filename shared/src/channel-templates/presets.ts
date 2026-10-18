@@ -310,6 +310,7 @@ export const ClassicTvDayPreset: ChannelPreset = {
     period: 'day',
     padMs: 0,
     latenessMs: 900000,
+    overflow: { type: 'duration', maxMs: 0 },
     timeZoneOffset: 0,
     slots: [
       {
