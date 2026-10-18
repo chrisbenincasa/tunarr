@@ -34,7 +34,7 @@ const savedLogRollConfig = async (page: Page) => {
     logging: {
       logRollConfig: {
         maxFileSizeBytes?: number;
-        schedule?: { increment: number };
+        schedule?: { increment: number; unit: string };
       };
     };
   };
@@ -71,6 +71,27 @@ test('unticking size saves while the schedule stays on', async ({ page }) => {
   const config = await savedLogRollConfig(page);
   expect(config.schedule?.increment).toBe(1);
   expect(config.maxFileSizeBytes).toBeUndefined();
+});
+
+test('toggling size keeps an hourly schedule', async ({ page }) => {
+  await open(page);
+  await schedule(page).check();
+  await page
+    .getByRole('combobox')
+    .filter({ hasText: /^Days?$/ })
+    .click();
+  await page.getByRole('option', { name: 'Hour' }).click();
+  await size(page).check();
+  await save(page);
+
+  await page.reload();
+  await expect(
+    page.getByRole('combobox').filter({ hasText: /^Hours?$/ }),
+  ).toBeVisible();
+
+  const config = await savedLogRollConfig(page);
+  expect(config.schedule?.unit).toBe('hour');
+  expect(config.maxFileSizeBytes).toBe(FIFTY_MB);
 });
 
 test('ticking size fills in 50 MB', async ({ page }) => {
