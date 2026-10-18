@@ -4,6 +4,7 @@ import type {
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
+import type { Result } from '../../types/result.ts';
 import type { Maybe, Nilable } from '../../types/util.ts';
 import type { FillerShow, FillerShowOrm } from '../schema/FillerShow.ts';
 import type { ProgramOrm } from '../schema/Program.ts';
@@ -50,7 +51,7 @@ export interface IFillerListDB {
 
   bulkAssignFillers(
     request: BulkAssignFillersRequest,
-  ): BulkAssignFillersResponse;
+  ): Result<BulkAssignFillersResponse>;
 }
 
 export type FillerShowWithContent = FillerShowOrm & {
