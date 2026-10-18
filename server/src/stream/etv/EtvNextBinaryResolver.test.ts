@@ -80,11 +80,14 @@ describe('resolveChecked', () => {
       getStdout: vi.fn(() => Promise.resolve(versionOutput)),
     } as unknown as ChildProcessHelper;
 
-    return new EtvNextBinaryResolver(childProcessHelper);
+    return {
+      resolver: new EtvNextBinaryResolver(childProcessHelper),
+      childProcessHelper,
+    };
   }
 
   test('accepts a bundled binary on the pin, build target included', async () => {
-    const resolver = await makeResolver(
+    const { resolver } = await makeResolver(
       'bundled',
       `${ETV_NEXT_BINARY_NAME} ${pinnedEtvNextVersion}+linux-x64`,
     );
@@ -94,8 +97,26 @@ describe('resolveChecked', () => {
     );
   });
 
+  // Every session start calls this under its channel lock.
+  test('probes the version once, with a timeout', async () => {
+    const { resolver, childProcessHelper } = await makeResolver(
+      'bundled',
+      `${ETV_NEXT_BINARY_NAME} ${pinnedEtvNextVersion}+linux-x64`,
+    );
+
+    await resolver.resolveChecked();
+    await resolver.resolveChecked();
+
+    expect(childProcessHelper.getStdout).toHaveBeenCalledTimes(1);
+    expect(childProcessHelper.getStdout).toHaveBeenCalledWith(
+      expect.any(String),
+      ['--version'],
+      expect.objectContaining({ timeout: expect.any(Number) }),
+    );
+  });
+
   test('refuses a bundled binary off the pin', async () => {
-    const resolver = await makeResolver(
+    const { resolver } = await makeResolver(
       'bundled',
       `${ETV_NEXT_BINARY_NAME} 9.9.9+linux-x64`,
     );
@@ -106,7 +127,7 @@ describe('resolveChecked', () => {
   });
 
   test('refuses a bundled binary whose version cannot be read', async () => {
-    const resolver = await makeResolver('bundled', 'garbage');
+    const { resolver } = await makeResolver('bundled', 'garbage');
 
     await expect(resolver.resolveChecked()).rejects.toBeInstanceOf(
       EtvNextVersionMismatchError,
@@ -114,7 +135,7 @@ describe('resolveChecked', () => {
   });
 
   test('runs a binary off the pin when the env var points at it', async () => {
-    const resolver = await makeResolver(
+    const { resolver } = await makeResolver(
       'env',
       `${ETV_NEXT_BINARY_NAME} 9.9.9+local`,
     );

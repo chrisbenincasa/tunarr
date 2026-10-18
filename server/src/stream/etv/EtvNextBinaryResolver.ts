@@ -16,6 +16,8 @@ import {
 
 export const ETV_NEXT_BINARY_NAME = 'ersatztv-channel';
 
+const VersionProbeTimeoutMs = 10_000;
+
 export class EtvNextBinaryNotFoundError extends Error {
   constructor(readonly testedPaths: string[]) {
     super(
@@ -49,6 +51,7 @@ export class EtvNextBinaryResolver {
   @InjectLogger() declare private readonly logger: Logger;
 
   #resolved: string | undefined;
+  #checked: string | undefined;
 
   constructor(
     @inject(ChildProcessHelper)
@@ -130,9 +133,12 @@ export class EtvNextBinaryResolver {
   /** Reads the worker's own version string, e.g. `0.2.0-96aa6cb6-develop+linux-x64`. */
   async getVersion(): Promise<string | undefined> {
     const executablePath = await this.resolve();
-    const stdout = await this.childProcessHelper.getStdout(executablePath, [
-      '--version',
-    ]);
+    // Bounded, because every session start runs this under its channel lock.
+    const stdout = await this.childProcessHelper.getStdout(
+      executablePath,
+      ['--version'],
+      { timeout: VersionProbeTimeoutMs, isPath: true },
+    );
 
     return parseEtvNextVersion(stdout);
   }
@@ -148,10 +154,15 @@ export class EtvNextBinaryResolver {
    * @throws EtvNextVersionMismatchError for a bundled binary off the pin.
    */
   async resolveChecked(): Promise<string> {
+    if (this.#checked !== undefined) {
+      return this.#checked;
+    }
+
     const executablePath = await this.resolve();
     const version = await this.getVersion();
 
     if (version && matchesPinnedEtvNextVersion(version)) {
+      this.#checked = executablePath;
       return executablePath;
     }
 
@@ -167,6 +178,7 @@ export class EtvNextBinaryResolver {
       version ?? 'no readable version',
       pinnedEtvNextVersion,
     );
+    this.#checked = executablePath;
     return executablePath;
   }
 }
