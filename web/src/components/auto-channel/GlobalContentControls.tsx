@@ -7,7 +7,11 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { getApiMediaSourcesOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { capitalize } from 'lodash-es';
+import {
+  getApiCustomShowsOptions,
+  getApiMediaSourcesOptions,
+} from '../../generated/@tanstack/react-query.gen.ts';
 import { useMediaSourceLibraries } from '../../hooks/media-sources/useMediaSourceLibraries.ts';
 
 export type GlobalContentContext = {
@@ -22,10 +26,15 @@ type Props = {
 
 export function GlobalContentControls({ context, onContextChange }: Props) {
   const { data: mediaSources } = useQuery(getApiMediaSourcesOptions());
+  const { data: customShows } = useQuery(getApiCustomShowsOptions());
+
+  const isCustomShows = context.mediaSourceId === 'custom-shows';
 
   const { data: libraries } = useMediaSourceLibraries(
     context.mediaSourceId ?? '',
-    { enabled: context.mediaSourceId !== undefined },
+    {
+      enabled: context.mediaSourceId !== undefined && !isCustomShows,
+    },
   );
 
   return (
@@ -50,38 +59,43 @@ export function GlobalContentControls({ context, onContextChange }: Props) {
             <MenuItem value="">All Sources</MenuItem>
             {mediaSources?.map((source) => (
               <MenuItem key={source.id} value={source.id}>
-                {source.name}
+                {capitalize(source.type)}: {source.name}
               </MenuItem>
             ))}
+            {customShows && customShows.length > 0 && (
+              <MenuItem value="custom-shows">Custom Shows</MenuItem>
+            )}
           </Select>
         </FormControl>
 
-        <FormControl
-          size="small"
-          sx={{ minWidth: 200 }}
-          disabled={!context.mediaSourceId}
-        >
-          <InputLabel>Library</InputLabel>
-          <Select
-            multiple
-            value={context.libraryIds ?? []}
-            label="Library"
-            onChange={(e) => {
-              const val = e.target.value;
-              const ids = typeof val === 'string' ? [val] : val;
-              onContextChange({
-                ...context,
-                libraryIds: ids.length > 0 ? ids : undefined,
-              });
-            }}
+        {!isCustomShows && (
+          <FormControl
+            size="small"
+            sx={{ minWidth: 200 }}
+            disabled={!context.mediaSourceId}
           >
-            {libraries?.map((lib) => (
-              <MenuItem key={lib.id} value={lib.id}>
-                {lib.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            <InputLabel>Library</InputLabel>
+            <Select
+              multiple
+              value={context.libraryIds ?? []}
+              label="Library"
+              onChange={(e) => {
+                const val = e.target.value;
+                const ids = typeof val === 'string' ? [val] : val;
+                onContextChange({
+                  ...context,
+                  libraryIds: ids.length > 0 ? ids : undefined,
+                });
+              }}
+            >
+              {libraries?.map((lib) => (
+                <MenuItem key={lib.id} value={lib.id}>
+                  {lib.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
       </Stack>
     </Stack>
   );

@@ -203,7 +203,7 @@ export type FillerProgrammingSlot = z.infer<typeof FillerProgrammingSlotSchema>;
 
 export const SmartCollectionProgrammingSlot = z.object({
   type: z.literal('smart-collection'),
-  smartCollectionId: z.uuid(),
+  smartCollectionId: z.string(),
   ...BaseSlotOrdering.shape,
   ...Slot.shape,
 });

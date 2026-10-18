@@ -1,6 +1,14 @@
 import { AdvancedFilterSection } from '@/components/auto-channel/AdvancedFilterSection';
 import { ContentPreview } from '@/components/auto-channel/ContentPreview';
 import {
+  BlockConfigurator,
+  type TimeBlock,
+} from '@/components/auto-channel/BlockConfigurator';
+import {
+  DynamicRoleManager,
+  type WeightedGroup,
+} from '@/components/auto-channel/DynamicRoleManager';
+import {
   GlobalContentControls,
   type GlobalContentContext,
 } from '@/components/auto-channel/GlobalContentControls';
@@ -9,6 +17,7 @@ import { FacetPicker } from '@/components/auto-channel/content-pickers/FacetPick
 import { SingleShowPicker } from '@/components/auto-channel/content-pickers/SingleShowPicker';
 import { YearRangePicker } from '@/components/auto-channel/content-pickers/YearRangePicker';
 import PaddedPaper from '@/components/base/PaddedPaper';
+import { getApiMediaSourcesOptions } from '@/generated/@tanstack/react-query.gen';
 import {
   useAutoChannelPresets,
   useAutoCreateChannel,
@@ -19,14 +28,17 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   Grid,
+  Stack,
   Step,
   StepLabel,
   Stepper,
   TextField,
   Typography,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type {
   AutoChannelCreateRequest,
@@ -35,6 +47,7 @@ import type {
   ContentPreviewResponse,
   ContentQuery,
   ContentRequirement,
+  DynamicPresetParams,
 } from '@tunarr/types/api';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -55,7 +68,16 @@ export function AutoCreateWizard() {
   const [channelName, setChannelName] = useState('');
   const [channelNumber, setChannelNumber] = useState<number | undefined>();
   const [globalContext, setGlobalContext] = useState<GlobalContentContext>({});
+  const [dynamicRoles, setDynamicRoles] = useState<ContentRequirement[]>([]);
+  const [weightedGroups, setWeightedGroups] = useState<WeightedGroup[]>([]);
+  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
+  const [dynamicParams, setDynamicParams] = useState<
+    DynamicPresetParams | undefined
+  >();
 
+  const { data: mediaSources, isLoading: mediaSourcesLoading } = useQuery(
+    getApiMediaSourcesOptions(),
+  );
   const { data: presets, isLoading: presetsLoading } = useAutoChannelPresets();
   const previewMutation = usePreviewContent();
   const createMutation = useAutoCreateChannel();
@@ -100,7 +122,141 @@ export function AutoCreateWizard() {
     setContentAssignments({});
     setPreviews({});
     setGlobalContext({});
+
+    // Initialize dynamic roles for dynamic presets
+    if (preset.dynamicRequirements) {
+      const blockCount =
+        preset.defaultBlocks ?? preset.contentRequirements.length;
+      const isWeightedMix =
+        preset.contentRequirements[0]?.pickerHint?.type === 'weighted_mix';
+
+      if (isWeightedMix) {
+        const groups: WeightedGroup[] = Array.from(
+          { length: blockCount },
+          (_, i) => ({
+            role: `group_${i + 1}`,
+            label: `Group ${i + 1}`,
+            weight: 1,
+          }),
+        );
+        setWeightedGroups(groups);
+        setTimeBlocks([]);
+        setDynamicRoles(
+          groups.map((g) => ({
+            role: g.role,
+            label: g.label,
+            defaultQuery: {},
+            required: true,
+            minPrograms: 1,
+          })),
+        );
+        setDynamicParams({
+          type: 'weighted_mix',
+          groups: groups.map((g) => ({ role: g.role, weight: g.weight })),
+        });
+      } else {
+        // Classic TV Day — initialize time blocks from preset's schedule config
+        const slots =
+          'slots' in preset.scheduleConfig ? preset.scheduleConfig.slots : [];
+        const blocks: TimeBlock[] = preset.contentRequirements.map((req) => {
+          const matchingSlot = slots.find(
+            (s) =>
+              s.type === 'smart-collection' &&
+              s.smartCollectionId === req.role &&
+              'startTime' in s,
+          );
+          return {
+            role: req.role,
+            label: req.label,
+            startTime:
+              matchingSlot && 'startTime' in matchingSlot
+                ? matchingSlot.startTime
+                : 0,
+          };
+        });
+        setTimeBlocks(blocks);
+        setWeightedGroups([]);
+        setDynamicRoles(
+          blocks.map((b) => ({
+            role: b.role,
+            label: b.label,
+            defaultQuery: {},
+            required: true,
+            minPrograms: 0,
+          })),
+        );
+        setDynamicParams({
+          type: 'classic_tv_day',
+          blocks: blocks.map((b) => ({
+            role: b.role,
+            startTime: b.startTime,
+          })),
+        });
+      }
+    } else {
+      setDynamicRoles([]);
+      setWeightedGroups([]);
+      setTimeBlocks([]);
+      setDynamicParams(undefined);
+    }
+
     setActiveStep(1);
+  }, []);
+
+  const handleGroupsChange = useCallback((groups: WeightedGroup[]) => {
+    setWeightedGroups(groups);
+    setDynamicRoles(
+      groups.map((g) => ({
+        role: g.role,
+        label: g.label,
+        defaultQuery: {},
+        required: true,
+        minPrograms: 1,
+      })),
+    );
+    setDynamicParams({
+      type: 'weighted_mix',
+      groups: groups.map((g) => ({ role: g.role, weight: g.weight })),
+    });
+    // Clean up content assignments for removed roles
+    setContentAssignments((prev) => {
+      const roleSet = new Set(groups.map((g) => g.role));
+      const cleaned: Record<string, ContentAssignment> = {};
+      for (const [role, assignment] of Object.entries(prev)) {
+        if (roleSet.has(role)) {
+          cleaned[role] = assignment;
+        }
+      }
+      return cleaned;
+    });
+  }, []);
+
+  const handleBlocksChange = useCallback((blocks: TimeBlock[]) => {
+    setTimeBlocks(blocks);
+    setDynamicRoles(
+      blocks.map((b) => ({
+        role: b.role,
+        label: b.label,
+        defaultQuery: {},
+        required: true,
+        minPrograms: 0,
+      })),
+    );
+    setDynamicParams({
+      type: 'classic_tv_day',
+      blocks: blocks.map((b) => ({ role: b.role, startTime: b.startTime })),
+    });
+    // Clean up content assignments for removed roles
+    setContentAssignments((prev) => {
+      const roleSet = new Set(blocks.map((b) => b.role));
+      const cleaned: Record<string, ContentAssignment> = {};
+      for (const [role, assignment] of Object.entries(prev)) {
+        if (roleSet.has(role)) {
+          cleaned[role] = assignment;
+        }
+      }
+      return cleaned;
+    });
   }, []);
 
   const handleNext = useCallback(() => {
@@ -119,6 +275,7 @@ export function AutoCreateWizard() {
       contentAssignments,
       channelName: channelName || undefined,
       channelNumber: channelNumber || undefined,
+      dynamicParams,
     };
 
     createMutation.mutate(request, {
@@ -134,6 +291,7 @@ export function AutoCreateWizard() {
     contentAssignments,
     channelName,
     channelNumber,
+    dynamicParams,
     createMutation,
     navigate,
   ]);
@@ -165,6 +323,11 @@ export function AutoCreateWizard() {
             globalContext={globalContext}
             onGlobalContextChange={setGlobalContext}
             onContentChange={handleContentChange}
+            dynamicRoles={dynamicRoles}
+            weightedGroups={weightedGroups}
+            onGroupsChange={handleGroupsChange}
+            timeBlocks={timeBlocks}
+            onBlocksChange={handleBlocksChange}
           />
         );
       case 2:
@@ -176,6 +339,9 @@ export function AutoCreateWizard() {
             channelNumber={channelNumber}
             onNameChange={setChannelName}
             onNumberChange={setChannelNumber}
+            dynamicRoles={dynamicRoles}
+            weightedGroups={weightedGroups}
+            timeBlocks={timeBlocks}
           />
         );
       default:
@@ -197,7 +363,15 @@ export function AutoCreateWizard() {
         ))}
       </Stepper>
 
-      <PaddedPaper>{renderStepContent()}</PaddedPaper>
+      {!mediaSourcesLoading && (!mediaSources || mediaSources.length === 0) ? (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          You need to configure at least one media source before using
+          auto-channel creation. Add a Plex, Jellyfin, or Emby server in
+          Settings &gt; Media Sources.
+        </Alert>
+      ) : (
+        <PaddedPaper>{renderStepContent()}</PaddedPaper>
+      )}
 
       {createMutation.error && (
         <Alert severity="error" sx={{ mt: 2 }}>
@@ -219,7 +393,11 @@ export function AutoCreateWizard() {
             variant="contained"
             endIcon={<ArrowForward />}
             onClick={handleNext}
-            disabled={activeStep === 0 && !selectedPreset}
+            disabled={
+              (activeStep === 0 && !selectedPreset) ||
+              !mediaSources ||
+              mediaSources.length === 0
+            }
           >
             Next
           </Button>
@@ -264,54 +442,22 @@ function ChooseStyleStep({
     );
   }
 
-  // Group presets by category
-  const categoryLabels: Record<string, string> = {
-    simple: 'Simple',
-    binge: 'Binge',
-    genre: 'Themed',
-    people: 'People',
-    decade: 'Decades',
-    network: 'Networks',
-    'classic-tv': 'Structured',
-    movie: 'Movies',
-    music: 'Music',
-    custom: 'Custom',
-  };
-
-  const grouped = new Map<string, ChannelPreset[]>();
-  for (const preset of presets) {
-    const list = grouped.get(preset.category) ?? [];
-    list.push(preset);
-    grouped.set(preset.category, list);
-  }
-
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2 }}>
         Choose a channel style
       </Typography>
-      {[...grouped.entries()].map(([category, categoryPresets]) => (
-        <Box key={category} sx={{ mb: 3 }}>
-          <Typography
-            variant="overline"
-            color="text.secondary"
-            sx={{ mb: 1, display: 'block' }}
-          >
-            {categoryLabels[category] ?? category}
-          </Typography>
-          <Grid container spacing={2}>
-            {categoryPresets.map((preset) => (
-              <Grid key={preset.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                <PresetCard
-                  preset={preset}
-                  selected={preset.id === selectedPresetId}
-                  onClick={() => onSelect(preset)}
-                />
-              </Grid>
-            ))}
+      <Grid container spacing={2}>
+        {presets.map((preset) => (
+          <Grid key={preset.id} size={{ xs: 12, sm: 6, md: 4 }}>
+            <PresetCard
+              preset={preset}
+              selected={preset.id === selectedPresetId}
+              onClick={() => onSelect(preset)}
+            />
           </Grid>
-        </Box>
-      ))}
+        ))}
+      </Grid>
     </Box>
   );
 }
@@ -325,6 +471,11 @@ function SelectContentStep({
   globalContext,
   onGlobalContextChange,
   onContentChange,
+  dynamicRoles,
+  weightedGroups,
+  onGroupsChange,
+  timeBlocks,
+  onBlocksChange,
 }: {
   preset: ChannelPreset;
   contentAssignments: Record<string, ContentAssignment>;
@@ -334,7 +485,45 @@ function SelectContentStep({
   globalContext: GlobalContentContext;
   onGlobalContextChange: (ctx: GlobalContentContext) => void;
   onContentChange: (role: string, query: ContentQuery) => void;
+  dynamicRoles: ContentRequirement[];
+  weightedGroups: WeightedGroup[];
+  onGroupsChange: (groups: WeightedGroup[]) => void;
+  timeBlocks: TimeBlock[];
+  onBlocksChange: (blocks: TimeBlock[]) => void;
 }) {
+  const isDynamic = preset.dynamicRequirements === true;
+  const firstHint = preset.contentRequirements[0]?.pickerHint?.type;
+  const isWeightedMix = isDynamic && firstHint === 'weighted_mix';
+  const isClassicTv = isDynamic && firstHint === 'classic_tv';
+
+  // For dynamic presets, use dynamicRoles; otherwise use preset's static roles
+  const roles = isDynamic ? dynamicRoles : preset.contentRequirements;
+
+  const renderRoleSection = (req: ContentRequirement) => (
+    <RoleSection
+      key={req.role}
+      requirement={req}
+      query={contentAssignments[req.role]?.query ?? req.defaultQuery}
+      preview={previews[req.role]}
+      previewLoading={previewLoading && !previews[req.role]}
+      previewError={!previews[req.role] ? previewError : null}
+      globalContext={globalContext}
+      onQueryChange={(query) => onContentChange(req.role, query)}
+    />
+  );
+
+  const makeDynamicRequirement = (
+    role: string,
+    label: string,
+    minPrograms: number,
+  ): ContentRequirement => ({
+    role,
+    label,
+    defaultQuery: {},
+    required: true,
+    minPrograms,
+  });
+
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2 }}>
@@ -346,18 +535,33 @@ function SelectContentStep({
         onContextChange={onGlobalContextChange}
       />
 
-      {preset.contentRequirements.map((req) => (
-        <RoleSection
-          key={req.role}
-          requirement={req}
-          query={contentAssignments[req.role]?.query ?? req.defaultQuery}
-          preview={previews[req.role]}
-          previewLoading={previewLoading && !previews[req.role]}
-          previewError={!previews[req.role] ? previewError : null}
-          globalContext={globalContext}
-          onQueryChange={(query) => onContentChange(req.role, query)}
+      {isWeightedMix ? (
+        <DynamicRoleManager
+          groups={weightedGroups}
+          onGroupsChange={onGroupsChange}
+          min={preset.minBlocks ?? 2}
+          max={preset.maxBlocks ?? 10}
+          renderRoleContent={(group) =>
+            renderRoleSection(
+              makeDynamicRequirement(group.role, group.label, 1),
+            )
+          }
         />
-      ))}
+      ) : isClassicTv ? (
+        <BlockConfigurator
+          blocks={timeBlocks}
+          onBlocksChange={onBlocksChange}
+          min={preset.minBlocks ?? 2}
+          max={preset.maxBlocks ?? 8}
+          renderRoleContent={(block) =>
+            renderRoleSection(
+              makeDynamicRequirement(block.role, block.label, 0),
+            )
+          }
+        />
+      ) : (
+        roles.map((req) => renderRoleSection(req))
+      )}
     </Box>
   );
 }
@@ -402,7 +606,10 @@ function RoleSection({
   );
 
   const handleYearRangeChange = useCallback(
-    (_range: { start: number; end: number } | undefined, filterString: string) => {
+    (
+      _range: { start: number; end: number } | undefined,
+      filterString: string,
+    ) => {
       const parts: string[] = [];
       if (filterString) parts.push(filterString);
       if (advancedFilter) parts.push(advancedFilter);
@@ -490,7 +697,9 @@ function RoleSection({
   };
 
   return (
-    <Box sx={{ mb: 3, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+    <Box
+      sx={{ mb: 3, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}
+    >
       <Typography variant="subtitle1" fontWeight="bold">
         {requirement.label}
         {requirement.required && (
@@ -528,6 +737,9 @@ function ReviewStep({
   channelNumber,
   onNameChange,
   onNumberChange,
+  dynamicRoles,
+  weightedGroups,
+  timeBlocks,
 }: {
   preset: ChannelPreset;
   previews: Record<string, ContentPreviewResponse>;
@@ -535,11 +747,28 @@ function ReviewStep({
   channelNumber: number | undefined;
   onNameChange: (name: string) => void;
   onNumberChange: (num: number | undefined) => void;
+  dynamicRoles: ContentRequirement[];
+  weightedGroups: WeightedGroup[];
+  timeBlocks: TimeBlock[];
 }) {
   const totalPrograms = Object.values(previews).reduce(
     (sum, p) => sum + p.totalPrograms,
     0,
   );
+
+  const roleCount =
+    dynamicRoles.length > 0
+      ? dynamicRoles.length
+      : preset.contentRequirements.length;
+
+  const formatBlockTime = (ms: number) => {
+    const totalMinutes = Math.floor(ms / (60 * 1000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
 
   return (
     <Box>
@@ -591,10 +820,47 @@ function ReviewStep({
         </Typography>
         <Typography>
           {totalPrograms} program{totalPrograms !== 1 ? 's' : ''} across{' '}
-          {preset.contentRequirements.length} role
-          {preset.contentRequirements.length !== 1 ? 's' : ''}
+          {roleCount} group{roleCount !== 1 ? 's' : ''}
         </Typography>
       </Box>
+
+      {weightedGroups.length > 0 && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" color="text.secondary">
+            Weighted Groups
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+            {weightedGroups.map((g) => (
+              <Chip
+                key={g.role}
+                label={`${g.label}: weight ${g.weight}`}
+                size="small"
+                variant="outlined"
+              />
+            ))}
+          </Stack>
+        </Box>
+      )}
+
+      {timeBlocks.length > 0 && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" color="text.secondary">
+            Time Blocks
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+            {[...timeBlocks]
+              .sort((a, b) => a.startTime - b.startTime)
+              .map((b) => (
+                <Chip
+                  key={b.role}
+                  label={`${b.label} @ ${formatBlockTime(b.startTime)}`}
+                  size="small"
+                  variant="outlined"
+                />
+              ))}
+          </Stack>
+        </Box>
+      )}
     </Box>
   );
 }
