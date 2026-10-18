@@ -472,34 +472,30 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         channelId = req.params.id;
       }
 
-      let mode = req.query.mode;
-      if (isUndefined(mode)) {
-        channel ??= await req.serverCtx.channelDB.getChannel(req.params.id);
-        if (isNil(channel)) {
-          return res.status(404).send('Channel not found.');
-        }
-        mode = channel.streamMode;
+      // The backend comes from the flag and the channel's own opt-in, which
+      // lives on the channel row, so every request loads the channel. The
+      // concat child asks for etv_next by name, and that only happens when
+      // one of the two is already on.
+      channel ??= await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send('Channel not found.');
       }
 
-      // The concat child asks for etv_next by name. Every other request picks
-      // its backend from the flag and the channel's own opt-in, and the
-      // opt-in is on the channel row, so a caller-supplied mode still has to
-      // load it.
-      if (mode !== 'etv_next') {
-        channel ??= await req.serverCtx.channelDB.getChannel(req.params.id);
-        if (isNil(channel)) {
-          return res.status(404).send('Channel not found.');
-        }
+      let mode = req.query.mode ?? channel.streamMode;
 
-        if (
-          routesToEtvNext(
-            mode,
-            req.serverCtx.featureFlagService.get('ersatzTvNextEnabled'),
-            channel.useEtvNext ?? false,
-          )
-        ) {
-          mode = 'etv_next';
+      const etvNextEnabled = req.serverCtx.featureFlagService.get(
+        'ersatzTvNextEnabled',
+      );
+      const channelUsesEtvNext = channel.useEtvNext ?? false;
+
+      if (mode === 'etv_next') {
+        if (!etvNextEnabled && !channelUsesEtvNext) {
+          return res
+            .status(400)
+            .send('The ErsatzTV next backend is not enabled for this channel.');
         }
+      } else if (routesToEtvNext(mode, etvNextEnabled, channelUsesEtvNext)) {
+        mode = 'etv_next';
       }
 
       let sessionResult: Result<FastifyReply>;

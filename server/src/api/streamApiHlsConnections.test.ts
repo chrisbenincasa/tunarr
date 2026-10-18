@@ -261,3 +261,19 @@ describe('streamApi channel playlist variant flag', () => {
     expect(res.body).toBe(VARIANT_PLAYLIST);
   });
 });
+
+describe('streamApi etv_next mode gate', () => {
+  it('refuses an explicit etv_next mode when neither the flag nor the channel opts in', async () => {
+    const getOrCreateEtvNextSession = vi.fn();
+    const app = await buildApp({ getOrCreateEtvNextSession });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}.m3u8?mode=etv_next`,
+    });
+    await app.close();
+
+    expect(res.statusCode).toBe(400);
+    expect(getOrCreateEtvNextSession).not.toHaveBeenCalled();
+  });
+});
