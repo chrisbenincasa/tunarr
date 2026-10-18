@@ -94,7 +94,6 @@ export default function ChannelsPage() {
   const { data: transcodeConfigs } = useTranscodeConfigs();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-  const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteChannelConfirmation, setDeleteChannelConfirmation] = useState<
@@ -238,17 +237,6 @@ export default function ChannelsPage() {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         {renderChannelMenu(channel)}
-        {/* {!mediumViewport && (
-          <Tooltip title={t`Edit Channel Settings`} placement="top">
-            <RouterIconButtonLink
-              to={'/channels/$channelId/edit'}
-              params={{ channelId: channel.id }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Edit />
-            </RouterIconButtonLink>
-          </Tooltip>
-        )} */}
         <IconButton
           id="channel-options-button"
           aria-controls={channelMenuOpen ? 'channel-options-menu' : undefined}
