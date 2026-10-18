@@ -36,7 +36,7 @@ import { GlobalScheduler } from './Scheduler.js';
 
 @injectable()
 export class AutoChannelService {
-  @InjectLogger() private declare readonly logger: Logger;
+  @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
     @inject(MeilisearchService) private searchService: MeilisearchService,
@@ -338,7 +338,7 @@ export class AutoChannelService {
           name: 'Show',
           op: '=',
           type: 'string',
-          value: [encodedId as string],
+          value: [encodedId],
         },
       };
 
