@@ -40,15 +40,21 @@ msgstr ""
 msgid "{0, plural, one {(# health check issue)} other {(# health check issues)}}"
 msgstr ""
 
+#. placeholder {0}: selectedChannelIds.length
+#: src/components/channels/BulkActionsToolbar.tsx
+msgid "{0, plural, one {# channel selected} other {# channels selected}}"
+msgstr ""
+
 #. placeholder {0}: customShow.contentCount
 #: src/components/channel_config/SelectedProgrammingList.tsx
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr ""
 
 #. placeholder {0}: channel.programCount
+#. placeholder {0}: filler.contentCount
 #. placeholder {0}: programList.length
-#. placeholder {0}: value?.programCount ?? 0
 #: src/components/channel_config/ChannelLineupList.tsx
+#: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx
 #: src/pages/channels/ChannelsPage.tsx
 msgid "{0, plural, one {# program} other {# programs}}"
@@ -455,6 +461,14 @@ msgstr ""
 msgid "Add TV Shows or Movies to programming list."
 msgstr ""
 
+#. placeholder {0}: data.added
+#. placeholder {1}: data.added
+#. placeholder {2}: data.alreadyExisted
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Added {0} {1, plural, one {assignment} other {assignments}}, {2} already existed."
+msgstr ""
+
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Adds a channel redirect. During this period of time, the channel will redirect to another channel."
 msgstr ""
@@ -599,6 +613,13 @@ msgstr ""
 msgid "An error occurred: {0}"
 msgstr ""
 
+#. placeholder {0}: selectedChannelIds.length
+#. placeholder {0}: selectedChannelIds.size
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Apply to {0, plural, one {# channel} other {# channels}}"
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Apply to Program Types (empty = all)"
 msgstr ""
@@ -623,6 +644,24 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Ascending"
+msgstr ""
+
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Assign \"{fillerName}\" to Channels"
+msgstr ""
+
+#: src/components/channels/BulkActionsToolbar.tsx
+msgid "Assign Fillers"
+msgstr ""
+
+#. placeholder {0}: selectedChannelIds.length
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Assign Fillers to {0, plural, one {# Channel} other {# Channels}}"
+msgstr ""
+
+#: src/pages/library/FillerListsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
+msgid "Assign to Channels"
 msgstr ""
 
 #: src/pages/system/StatusPage.tsx
@@ -829,8 +868,10 @@ msgstr ""
 msgid "Calculating Slots..."
 msgstr ""
 
+#: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/components/DeleteConfirmationDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
 #: src/components/programming_controls/AddFlexModal.tsx
@@ -943,6 +984,7 @@ msgid "Channel Transcode Config"
 msgstr ""
 
 #: src/App.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
@@ -997,6 +1039,10 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Clear Schedule"
+msgstr ""
+
+#: src/components/channels/BulkActionsToolbar.tsx
+msgid "Clear Selection"
 msgstr ""
 
 #: src/components/channel_config/CustomShowProgrammingSelector.tsx
@@ -1125,9 +1171,10 @@ msgstr ""
 msgid "Cooldown (s)"
 msgstr ""
 
-#: src/components/channel_config/ChannelFlexConfig.tsx
-#~ msgid "Cooldown (seconds)"
-#~ msgstr ""
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Cooldown (seconds)"
+msgstr ""
 
 #: src/components/TopBar.tsx
 #~ msgid "Copied {0} URL to clipboard"
@@ -1427,6 +1474,10 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Deselect All"
+msgstr ""
+
 #: src/components/channels/ChannelNowPlayingCard.tsx
 msgid "Details"
 msgstr ""
@@ -1588,8 +1639,8 @@ msgid "Edit Channel Redirect"
 msgstr ""
 
 #: src/pages/channels/ChannelsPage.tsx
-msgid "Edit Channel Settings"
-msgstr ""
+#~ msgid "Edit Channel Settings"
+#~ msgstr ""
 
 #: src/pages/library/EditFillerPage.tsx
 msgid "Edit Filler List"
@@ -1786,6 +1837,16 @@ msgstr ""
 #: src/components/programs/Episodes.tsx
 #: src/pages/library/TrashPage.tsx
 msgid "Episodes"
+msgstr ""
+
+#. placeholder {0}: e.message
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Error assigning filler: {0}"
+msgstr ""
+
+#. placeholder {0}: e.message
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Error assigning fillers: {0}"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
@@ -2986,6 +3047,14 @@ msgstr ""
 msgid "No active sessions"
 msgstr ""
 
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "No channels found. Create a channel first."
+msgstr ""
+
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "No filler lists found. Create a filler list first."
+msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "No libraries are enabled yet. Tunarr only syncs content from enabled libraries, so choose at least one below."
 msgstr ""
@@ -3616,6 +3685,10 @@ msgstr ""
 msgid "Repeats"
 msgstr ""
 
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Replace all existing fillers"
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Replicate Programs"
 msgstr ""
@@ -3883,6 +3956,7 @@ msgid "Select a slot to link to"
 msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/search/SearchFieldRestrictMenu.tsx
 msgid "Select All"
 msgstr ""
@@ -4957,6 +5031,8 @@ msgid "Weekly"
 msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 msgid "Weight"
 msgstr ""
