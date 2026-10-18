@@ -15540,7 +15540,7 @@ export type GetStreamChannelsByIdM3U8Data = {
     query?: {
         mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
         /**
-         * For hls and hls_direct_v2, return the variant playlist instead of the master. The .ts wrapper uses this so ffmpeg reads only the muxed streams.
+         * For hls and hls_direct_v2, return the variant playlist instead of the master. For etv_next, drop the subtitle rendition. The .ts wrapper uses this so ffmpeg reads only the muxed streams.
          */
         variant?: boolean | 'true' | 'false' | number;
     };
@@ -15562,7 +15562,7 @@ export type HeadStreamChannelsByIdM3U8Data = {
     query?: {
         mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next';
         /**
-         * For hls and hls_direct_v2, return the variant playlist instead of the master. The .ts wrapper uses this so ffmpeg reads only the muxed streams.
+         * For hls and hls_direct_v2, return the variant playlist instead of the master. For etv_next, drop the subtitle rendition. The .ts wrapper uses this so ffmpeg reads only the muxed streams.
          */
         variant?: boolean | 'true' | 'false' | number;
     };
