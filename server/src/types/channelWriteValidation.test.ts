@@ -167,8 +167,8 @@ describe('SaveableChannelSchema uses the strict variants', () => {
 
   test('allows an update to omit startTime', () => {
     const { startTime: _, ...withoutStartTime } = channel;
-    expect(
-      UpdateChannelRequestSchema.safeParse(withoutStartTime).success,
-    ).toBe(true);
+    expect(UpdateChannelRequestSchema.safeParse(withoutStartTime).success).toBe(
+      true,
+    );
   });
 });
