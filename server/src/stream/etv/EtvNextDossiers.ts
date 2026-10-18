@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { serverOptions } from '../../globals.ts';
 import { EtvNextDossierFolderName } from '../../util/constants.ts';
+import { redactMediaServerSecrets } from '../../util/redactSecrets.ts';
 
 /**
  * How many dossiers a channel keeps.
@@ -106,4 +107,33 @@ async function directorySize(directory: string): Promise<number> {
   );
 
   return sizes.reduce((total, size) => total + size, 0);
+}
+
+/** Lists every file in a dossier as a path relative to the dossier. */
+export async function listDossierFiles(dossierPath: string): Promise<string[]> {
+  const entries = await fs.readdir(dossierPath, {
+    withFileTypes: true,
+    recursive: true,
+  });
+
+  return entries
+    .filter((entry) => entry.isFile())
+    .map((entry) =>
+      path.relative(dossierPath, path.join(entry.parentPath, entry.name)),
+    );
+}
+
+/**
+ * Prepares one dossier file for the diagnostics zip.
+ *
+ * The ffmpeg report and the playout item quote HTTP source URLs and headers,
+ * which carry media-server tokens, and users attach this zip to public bug
+ * reports. Text is redacted. A file with a NUL byte is treated as binary and
+ * passed through unchanged.
+ */
+export function redactDossierFile(content: Buffer): Buffer | string {
+  if (content.includes(0)) {
+    return content;
+  }
+  return redactMediaServerSecrets(content.toString('utf8'));
 }
