@@ -843,6 +843,9 @@ describe('the dynamic playout window', () => {
     await vi.waitFor(async () => {
       expect((await readWindow(transcodeDirectory)).name).not.toBe(before.name);
     });
+
+    // A roll still writing would race the temp directory cleanup.
+    await session.stop();
   });
 
   // A token outliving the worker it was minted for would keep granting this
