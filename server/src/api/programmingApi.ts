@@ -208,9 +208,11 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           mediaSourceId: z.uuid().optional(),
           libraryId: z.uuid().optional(),
         }),
-        body: z.object({
-          filter: SearchFilterQuerySchema.optional(),
-        }),
+        body: z
+          .object({
+            filter: SearchFilterQuerySchema.optional(),
+          })
+          .nullable(),
         response: {
           200: z.object({
             facetValues: z.record(z.string(), z.number()),
@@ -225,7 +227,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           facetQuery: req.query.facetQuery,
           facetName: req.params.facetName,
           libraryId: req.query.libraryId,
-          filter: req.body.filter,
+          filter: req.body?.filter,
           mediaSourceId: req.query.mediaSourceId,
         },
       );
