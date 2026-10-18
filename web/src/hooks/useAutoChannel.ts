@@ -1,67 +1,95 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  queryOptions,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import type {
   AutoChannelCreateRequest,
-  ChannelPreset,
   ContentPreviewResponse,
   ContentQuery,
 } from '@tunarr/types/api';
-import type { Channel } from '@tunarr/types';
-import useStore from '../store/index.ts';
-
-function getBackendUrl(path: string): string {
-  const backendUri = useStore.getState().settings.backendUri;
-  return `${backendUri}/api${path}`;
-}
-
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Request failed (${response.status}): ${body}`);
-  }
-  return response.json() as Promise<T>;
-}
+import { ContentPreviewResponseSchema } from '@tunarr/types/api';
+import { getApiAutoChannelsPresetsOptions } from '../generated/@tanstack/react-query.gen.ts';
+import {
+  postApiAutoChannelsCreate,
+  postApiAutoChannelsPreviewContent,
+} from '../generated/sdk.gen.ts';
+import { isEqual } from 'lodash-es';
+import { useDebounceValue } from 'usehooks-ts';
+import { invalidateTaggedQueries } from '../helpers/queryUtil.ts';
 
 export function useAutoChannelPresets() {
-  return useQuery({
-    queryKey: ['auto-channel', 'presets'],
-    queryFn: () =>
-      fetchJson<ChannelPreset[]>(getBackendUrl('/auto-channels/presets')),
-  });
+  return useQuery(getApiAutoChannelsPresetsOptions());
 }
 
-export function usePreviewContent() {
-  return useMutation({
-    mutationFn: (query: ContentQuery) =>
-      fetchJson<ContentPreviewResponse>(
-        getBackendUrl('/auto-channels/preview-content'),
-        {
-          method: 'POST',
-          body: JSON.stringify(query),
+export type RolePreview = {
+  data: ContentPreviewResponse | undefined;
+  isLoading: boolean;
+  error: Error | null;
+};
+
+/**
+ * Previews every role's content. Each role refetches only when its own query
+ * changes, and edits settle for a moment before they fire.
+ */
+export function useRolePreviews(
+  queries: Record<string, ContentQuery>,
+): Record<string, RolePreview> {
+  const [settled] = useDebounceValue(queries, 400, { equalityFn: isEqual });
+  const roles = Object.keys(settled);
+
+  const results = useQueries({
+    queries: roles.map((role) => {
+      const query = settled[role] ?? {};
+      return queryOptions({
+        queryKey: ['auto-channel', 'preview', query],
+        queryFn: async () => {
+          const { data } = await postApiAutoChannelsPreviewContent({
+            body: query,
+            throwOnError: true,
+          });
+
+          // OpenAPI widens the enum-keyed byType record to string keys.
+          return ContentPreviewResponseSchema.parse(data);
         },
-      ),
+        placeholderData: keepPreviousData,
+      });
+    }),
   });
+
+  const previews: Record<string, RolePreview> = {};
+  roles.forEach((role, i) => {
+    const result = results[i];
+    if (!result) {
+      return;
+    }
+
+    previews[role] = {
+      data: result.data,
+      isLoading: result.isFetching || !isEqual(queries[role], settled[role]),
+      error: result.error,
+    };
+  });
+  return previews;
 }
 
 export function useAutoCreateChannel() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: AutoChannelCreateRequest) =>
-      fetchJson<Channel>(getBackendUrl('/auto-channels/create'), {
-        method: 'POST',
-        body: JSON.stringify(request),
-      }),
+    mutationFn: async (request: AutoChannelCreateRequest) => {
+      const { data } = await postApiAutoChannelsCreate({
+        body: request,
+        throwOnError: true,
+      });
+      return data;
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        exact: false,
-        queryKey: ['Channels'],
+        predicate: invalidateTaggedQueries('Channels'),
       });
     },
   });
