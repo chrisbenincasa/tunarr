@@ -13,11 +13,7 @@ import {
   omitBy,
   values,
 } from 'lodash-es';
-import {
-  ChannelNotFoundError,
-  GenericError,
-  TypedError,
-} from '../types/errors.js';
+import { ChannelNotFoundError, TypedError } from '../types/errors.js';
 import {
   type ConcatSessionFactory,
   type ConcatSessionOptions,
@@ -441,11 +437,10 @@ export class SessionManager {
         return session;
       });
 
-      if (session.hasError) {
-        throw (
-          session.error ??
-          new GenericError('Session reported error but had none set.')
-        );
+      // Read the error rather than the state. The 'error' handler above stops
+      // a failed session, which moves it to 'stopped' before this check runs.
+      if (session.error !== undefined) {
+        throw session.error;
       }
 
       session.addConnection(token, connection);

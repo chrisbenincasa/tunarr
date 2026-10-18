@@ -210,6 +210,40 @@ describe('SessionManager', () => {
       expect(result.isFailure()).toBe(true);
       expect(result.error.message).toContain('ffmpeg could not be spawned');
     });
+
+    // HLS sessions never emit 'stop', so the failed session stays in the map.
+    // The next request must replace it rather than reuse it.
+    it('replaces a session that failed to start on the next request', async () => {
+      const created: StubHlsSession[] = [];
+      const manager = makeSessionManager((channel, options) => {
+        const session =
+          created.length === 0
+            ? new FailingStartSession(channel, options)
+            : new StubHlsSession(channel, options);
+        created.push(session);
+        return session;
+      });
+
+      const first = await manager.getOrCreateHlsSession(
+        channelUuid,
+        'token-a',
+        connection,
+        { streamMode: 'hls' },
+      );
+      expect(first.isFailure()).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(0);
+
+      const second = await manager.getOrCreateHlsSession(
+        channelUuid,
+        'token-b',
+        connection,
+        { streamMode: 'hls' },
+      );
+
+      expect(second.isSuccess()).toBe(true);
+      expect(created).toHaveLength(2);
+    });
   });
 
   describe('session replacement race condition', () => {

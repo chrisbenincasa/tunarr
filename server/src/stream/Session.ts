@@ -195,11 +195,6 @@ export abstract class Session<
         case 'error':
           this.logger.debug('Session already in error state. Cleaning it up.');
           await this.stopAndMarkStopped(options);
-
-          // stopAndMarkStopped sets 'stopped'. Restore the error so a caller
-          // still deciding whether to serve this session can see that it
-          // failed rather than that it ended.
-          this.state = 'error';
           return;
         default:
           this.logger.debug(
