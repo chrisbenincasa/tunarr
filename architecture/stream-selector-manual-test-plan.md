@@ -5,7 +5,7 @@ PR #1874 · branch `integrate-stream-selector` · drafted 2026-09-18
 ## Scope
 
 The PR wires `StreamSelector` into the ffmpeg pipeline, fixes two regressions the
-integration introduced, and fixes two bugs an external review found. Unit tests
+integration introduced, and fixes bugs that two external reviews found. Unit tests
 cover the evaluator. These cases cover what unit tests cannot — real containers,
 real track layouts, real ffmpeg output.
 
@@ -15,8 +15,8 @@ real track layouts, real ffmpeg output.
 |---|---|---|
 | Parity fallback | `default` action returned `null` when no track carried the default flag | Falls back to the first candidate |
 | `audioDetails` requirement | Subtitle selection was skipped when a file had no audio streams | Subtitles resolve independently of audio |
-| `subtitlesEnabled` gate | Passthrough path ignored the channel toggle | Passthrough honors `channel.subtitlesEnabled` |
 | `preferTextBased` ordering | Image-based subs sorted first, so text subs lost | Text-based subs sort first |
+| Untagged fallback | `by_language` dropped streams with no language tag | Untagged streams are tried after every listed language misses |
 
 ## Why these cases
 
@@ -88,8 +88,8 @@ selections agree, and that `preferChannels` resolves to the intended mix.
 **Needs:** multiple audio tracks, a large mixed image + text subtitle set, and at
 least one subtitle track with no language tag.
 
-Exercises `allowImageBased` in both positions and confirms untagged tracks do not
-break the language matcher.
+Exercises `allowImageBased` in both positions. A tagged track in the requested
+language must win over the untagged one.
 
 ### 7. Forced-subtitle filter
 
@@ -98,11 +98,21 @@ Episodic TV is a reliable source.
 
 Set `filterType: forced`. Only the forced track may be selected.
 
-### 8. Untagged language does not crash the matcher
+### 8. Untagged-only subtitles still load
 
 **Needs:** a file whose only subtitle track carries no language tag.
 
-Run a `by_language` action. Selection must fall through cleanly rather than throw.
+Run a `by_language` action for any language. The untagged track must be selected,
+matching the legacy picker.
+
+### 9. Mixed per-language filters collapse
+
+**Needs:** a channel with subtitle preferences `eng/forced` (priority 0) and
+`spa/any` (priority 1), over a file with non-forced English and Spanish tracks.
+
+No subtitles appear. The legacy profile applies the top preference's filter to
+every language, so the forced filter rules out the Spanish track too. This is a
+known, accepted change for passthrough; transcode already behaved this way.
 
 ## Also worth a look
 

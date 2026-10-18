@@ -2337,4 +2337,97 @@ describe('evaluateSubtitleSelection', () => {
 
     expect(result).toBeNull();
   });
+
+  describe('by_language', () => {
+    function byLanguage(
+      languages: [string, ...string[]],
+      filterType: 'any' | 'forced' = 'any',
+    ) {
+      return makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages,
+            filterType,
+            allowImageBased: true,
+            allowExternal: true,
+            preferTextBased: false,
+          },
+        }),
+      ]);
+    }
+
+    function untagged(index: number, forced = false): SubtitleStreamDetails {
+      return makeSubtitleStream({
+        index,
+        type: 'external',
+        forced,
+        language: undefined,
+        languageCodeISO6391: undefined,
+        languageCodeISO6392: undefined,
+      });
+    }
+
+    // One filterType covers every language in the action, so the legacy
+    // resolver's collapsed preferences cannot fall back to a lower-priority
+    // language with a looser filter.
+    it('applies one filterType to every listed language', async () => {
+      const streams = [
+        makeSubtitleStream({ index: 2, type: 'external' }),
+        makeSubtitleStream({
+          index: 3,
+          type: 'external',
+          language: 'Spanish',
+          languageCodeISO6391: 'es',
+          languageCodeISO6392: 'spa',
+        }),
+      ];
+
+      const result = await evaluateSubtitleSelection(
+        byLanguage(['eng', 'spa'], 'forced'),
+        streams,
+        makeCelService(true),
+        celContext,
+        lineupItem,
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('falls back to an untagged stream when no language matches', async () => {
+      const result = await evaluateSubtitleSelection(
+        byLanguage(['eng']),
+        [untagged(2)],
+        makeCelService(true),
+        celContext,
+        lineupItem,
+      );
+
+      expect(result?.index).toBe(2);
+    });
+
+    it('prefers a tagged match over an earlier untagged stream', async () => {
+      const result = await evaluateSubtitleSelection(
+        byLanguage(['eng']),
+        [untagged(2), makeSubtitleStream({ index: 3, type: 'external' })],
+        makeCelService(true),
+        celContext,
+        lineupItem,
+      );
+
+      expect(result?.index).toBe(3);
+    });
+
+    it('applies filters to the untagged fallback', async () => {
+      const result = await evaluateSubtitleSelection(
+        byLanguage(['eng'], 'forced'),
+        [untagged(2), untagged(3, true)],
+        makeCelService(true),
+        celContext,
+        lineupItem,
+      );
+
+      expect(result?.index).toBe(3);
+    });
+  });
 });

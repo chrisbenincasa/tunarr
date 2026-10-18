@@ -490,7 +490,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -778,7 +777,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(makeFfmpegSettings()),
         createCapturingPipelineBuilderFactory().factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         makeTranscodeConfig(),
@@ -898,7 +896,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(makeFfmpegSettings()),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         makeTranscodeConfig(),
@@ -1294,13 +1291,14 @@ describe('FfmpegStreamFactory', () => {
         const capturing = createCapturingPipelineBuilderFactory();
         const details = makeStreamDetails();
         details.subtitleDetails = [textSubtitleStream];
+        const streamSelector = makeMockStreamSelector(textSubtitleStream);
 
         const sut = new FfmpegStreamFactory(
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
           makeMockFeatureFlagService(),
-          makeMockStreamSelector(textSubtitleStream),
+          streamSelector,
           config,
           makeChannel({ subtitlesEnabled: true }),
         );
@@ -1320,6 +1318,12 @@ describe('FfmpegStreamFactory', () => {
           },
           lineupItem: makeLineupItem(),
         });
+
+        // Passthrough muxes embedded text subs straight from the container, so
+        // it must tell the selector to skip extraction.
+        expect(streamSelector.selectSubtitleStream).toHaveBeenCalledWith(
+          expect.objectContaining({ hints: { preferTextBased: true } }),
+        );
 
         const subtitleInput = capturing.getCapturedSubtitleInput();
         expect(subtitleInput).not.toBeNull();
