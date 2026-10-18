@@ -299,7 +299,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           req.params.id,
         );
 
-        if (isUndefined(etvSession)) {
+        if (isUndefined(etvSession) || etvSession.stoppingOrStopped) {
           return res.status(404).send('No session found');
         }
 
@@ -315,6 +315,11 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         const filePath = resolve(workingDirectory, req.params.file);
         if (!filePath.startsWith(workingDirectory + sep)) {
           return res.status(400).send('Invalid file path');
+        }
+
+        // Teardown removes the directory while clients still poll it.
+        if (!(await fileExists(filePath))) {
+          return res.status(404).send('File not found');
         }
 
         if (req.params.file.endsWith('.m3u8')) {
