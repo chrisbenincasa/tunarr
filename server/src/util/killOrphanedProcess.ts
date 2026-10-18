@@ -9,7 +9,7 @@ type FindProcess = typeof findProcessModule.default;
 // sits on `.default`. Vitest unwraps that level itself.
 const findProcess: FindProcess =
   typeof findProcessModule === 'function'
-    ? (findProcessModule as FindProcess)
+    ? findProcessModule
     : findProcessModule.default;
 
 /** Reads a pid file, or returns undefined when it is missing or malformed. */
