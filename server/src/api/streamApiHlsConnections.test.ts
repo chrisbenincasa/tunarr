@@ -277,3 +277,39 @@ describe('streamApi etv_next mode gate', () => {
     expect(getOrCreateEtvNextSession).not.toHaveBeenCalled();
   });
 });
+
+describe('streamApi etv_next file serving', () => {
+  it('answers 404 for a file teardown already removed', async () => {
+    const dir = tmp.dirSync({ unsafeCleanup: true });
+    const etvSession = {
+      stoppingOrStopped: false,
+      workingDirectory: dir.name,
+      isKnownConnection: () => true,
+      recordHeartbeat: vi.fn(),
+    };
+    const app = await buildApp({ getEtvNextSession: () => etvSession });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/etv_next/live.m3u8`,
+    });
+    await app.close();
+    dir.removeCallback();
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('answers 404 for a stopping session', async () => {
+    const app = await buildApp({
+      getEtvNextSession: () => ({ stoppingOrStopped: true }),
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/etv_next/live.m3u8`,
+    });
+    await app.close();
+
+    expect(res.statusCode).toBe(404);
+  });
+});
