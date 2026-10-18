@@ -1,5 +1,6 @@
 import { Autocomplete, TextField, Typography } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
+import type { HTMLAttributes } from 'react';
 import { useCallback, useState } from 'react';
 import { postApiProgramsSearch } from '../../../generated/sdk.gen.ts';
 
@@ -90,15 +91,14 @@ export function SingleShowPicker({
         opt.year ? `${opt.title} (${opt.year})` : opt.title
       }
       isOptionEqualToValue={(opt, val) => opt.id === val.id}
-      renderOption={({ key, ...props }, option) => (
+      renderOption={(
+        { key, ...props }: HTMLAttributes<HTMLLIElement> & { key: string },
+        option,
+      ) => (
         <li key={key} {...props}>
           <Typography>{option.title}</Typography>
           {option.year && (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ ml: 1 }}
-            >
+            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
               ({option.year})
             </Typography>
           )}

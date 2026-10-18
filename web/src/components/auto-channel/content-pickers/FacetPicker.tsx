@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { search } from '@tunarr/shared/util';
+import type { HTMLAttributes } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { postApiProgramsFacetsByFacetName } from '../../../generated/sdk.gen.ts';
 
@@ -107,7 +108,7 @@ export function FacetPicker({
       {facetFields.length > 1 && (
         <Tabs
           value={activeTab}
-          onChange={(_, v) => {
+          onChange={(_, v: number) => {
             setActiveTab(v);
             // Reset selections when switching tabs
             onChange([], '');
@@ -115,7 +116,11 @@ export function FacetPicker({
           sx={{ mb: 1, minHeight: 0 }}
         >
           {facetFields.map((field) => (
-            <Tab key={field} label={field} sx={{ textTransform: 'capitalize' }} />
+            <Tab
+              key={field}
+              label={field}
+              sx={{ textTransform: 'capitalize' }}
+            />
           ))}
         </Tabs>
       )}
@@ -129,11 +134,12 @@ export function FacetPicker({
         inputValue={inputValue}
         onInputChange={handleInputChange}
         onChange={handleChange}
-        getOptionLabel={(opt) =>
-          typeof opt === 'string' ? opt : opt.label
-        }
+        getOptionLabel={(opt) => (typeof opt === 'string' ? opt : opt.label)}
         isOptionEqualToValue={(opt, val) => opt.label === val.label}
-        renderOption={({ key, ...props }, option) => (
+        renderOption={(
+          { key, ...props }: HTMLAttributes<HTMLLIElement> & { key: string },
+          option,
+        ) => (
           <li key={key} {...props}>
             <Typography sx={{ flexGrow: 1 }}>
               {typeof option === 'string' ? option : option.label}
@@ -149,8 +155,7 @@ export function FacetPicker({
           tagValue.map((option, index) => {
             const { key, ...chipProps } = getTagProps({ index });
             const opt = typeof option === 'string' ? option : option.label;
-            const count =
-              typeof option === 'string' ? 0 : option.count;
+            const count = typeof option === 'string' ? 0 : option.count;
             return (
               <Chip
                 key={key}
