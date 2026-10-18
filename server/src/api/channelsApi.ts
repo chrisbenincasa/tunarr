@@ -401,7 +401,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         body: BulkAssignFillersRequestSchema,
         response: {
           200: BulkAssignFillersResponseSchema,
-          400: z.string(),
+          400: z.object({ message: z.string() }),
         },
       },
     },

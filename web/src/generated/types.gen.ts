@@ -3613,7 +3613,9 @@ export type BulkAssignFillersErrors = {
     /**
      * Default Response
      */
-    400: string;
+    400: {
+        message: string;
+    };
 };
 
 export type BulkAssignFillersError = BulkAssignFillersErrors[keyof BulkAssignFillersErrors];
