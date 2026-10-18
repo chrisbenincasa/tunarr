@@ -131,6 +131,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
   #refreshTimer?: NodeJS.Timeout;
   #refreshing = false;
   #stopping = false;
+  #dynamicToken?: string;
 
   /**
    * When the worker is next due to resolve an item, on the dynamic path.
@@ -255,7 +256,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
     } catch (e) {
       // A token outliving the worker it was minted for would keep granting
       // this channel's programming to nothing.
-      this.tokenRegistry.revoke(this.channel.uuid);
+      this.#revokeToken();
       throw e;
     }
 
@@ -286,6 +287,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
         this.channel.uuid,
         this.channel.number,
       );
+      this.#dynamicToken = token;
 
       await this.#writeDynamicWindow(Date.now());
 
@@ -347,7 +349,7 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
 
     // The token dies with the session, so a worker that outlives its kill
     // cannot keep resolving items.
-    this.tokenRegistry.revoke(this.channel.uuid);
+    this.#revokeToken();
 
     // Let a write that is already running finish before the directory goes.
     await this.#inFlightWindowWrite?.catch(() => undefined);
@@ -396,6 +398,13 @@ export class EtvNextSession extends Session<EtvNextSessionOptions> {
       this.#windowItems = [];
       this.state = 'stopped';
       this.emit('stop');
+    }
+  }
+
+  #revokeToken() {
+    if (this.#dynamicToken !== undefined) {
+      this.tokenRegistry.revoke(this.channel.uuid, this.#dynamicToken);
+      this.#dynamicToken = undefined;
     }
   }
 

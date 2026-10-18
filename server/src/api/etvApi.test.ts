@@ -240,7 +240,7 @@ describe('authorization', () => {
   // keep pulling programming.
   test('refuses a token once its session has stopped', async () => {
     const { app, token, tokenRegistry } = await makeApp();
-    tokenRegistry.revoke(channelUuid);
+    tokenRegistry.revoke(channelUuid, token);
 
     expect((await request(app, bearer(token))).statusCode).toBe(401);
   });

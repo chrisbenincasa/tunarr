@@ -35,8 +35,14 @@ export class EtvNextDynamicTokenRegistry {
     return token;
   }
 
-  revoke(channelUuid: string): void {
-    this.#byChannel.delete(channelUuid);
+  /**
+   * Drops a channel's token, but only if it is still the one given. A session
+   * stopping late must not revoke the token of the session that replaced it.
+   */
+  revoke(channelUuid: string, token: string): void {
+    if (this.#byChannel.get(channelUuid)?.token === token) {
+      this.#byChannel.delete(channelUuid);
+    }
   }
 
   get size(): number {

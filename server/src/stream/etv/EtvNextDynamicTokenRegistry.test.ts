@@ -56,10 +56,23 @@ describe('rejecting', () => {
     const registry = new EtvNextDynamicTokenRegistry();
     const token = registry.issue('chan-1', 7);
 
-    registry.revoke('chan-1');
+    registry.revoke('chan-1', token);
 
     expect(registry.resolve(token)).toBeUndefined();
     expect(registry.size).toBe(0);
+  });
+
+  test('a stale revoke leaves the replacement token alone', () => {
+    const registry = new EtvNextDynamicTokenRegistry();
+    const stale = registry.issue('chan-1', 7);
+    const current = registry.issue('chan-1', 7);
+
+    registry.revoke('chan-1', stale);
+
+    expect(registry.resolve(current)).toEqual({
+      channelUuid: 'chan-1',
+      channelNumber: 7,
+    });
   });
 });
 
