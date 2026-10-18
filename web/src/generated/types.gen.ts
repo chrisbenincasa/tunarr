@@ -13628,6 +13628,8 @@ export type GetApiEtvPlayoutItemResponses = {
             headers?: Array<string> | null;
             user_agent?: string | null;
             timeout_us?: number | null;
+            retry_budget_ms?: number | null;
+            retry_backoff_ms?: number | null;
         } | null;
         tracks?: {
             video?: {
@@ -13826,6 +13828,8 @@ export type GetApiEtvPlayoutItemResponses = {
                     headers?: Array<string> | null;
                     user_agent?: string | null;
                     timeout_us?: number | null;
+                    retry_budget_ms?: number | null;
+                    retry_backoff_ms?: number | null;
                 } | null;
                 stream_index?: number | null;
             } | null;
@@ -14025,6 +14029,8 @@ export type GetApiEtvPlayoutItemResponses = {
                     headers?: Array<string> | null;
                     user_agent?: string | null;
                     timeout_us?: number | null;
+                    retry_budget_ms?: number | null;
+                    retry_backoff_ms?: number | null;
                 } | null;
                 stream_index?: number | null;
             } | null;
@@ -14224,6 +14230,8 @@ export type GetApiEtvPlayoutItemResponses = {
                     headers?: Array<string> | null;
                     user_agent?: string | null;
                     timeout_us?: number | null;
+                    retry_budget_ms?: number | null;
+                    retry_backoff_ms?: number | null;
                 } | null;
                 stream_index?: number | null;
             } | null;
@@ -14424,6 +14432,8 @@ export type GetApiEtvPlayoutItemResponses = {
                 headers?: Array<string> | null;
                 user_agent?: string | null;
                 timeout_us?: number | null;
+                retry_budget_ms?: number | null;
+                retry_backoff_ms?: number | null;
             };
             stream_index?: number | null;
             kind?: 'media' | 'canvas';
@@ -14639,6 +14649,8 @@ export type GetApiEtvPlayoutItemResponses = {
                 headers?: Array<string> | null;
                 user_agent?: string | null;
                 timeout_us?: number | null;
+                retry_budget_ms?: number | null;
+                retry_backoff_ms?: number | null;
             };
             stream_index?: number | null;
             kind?: 'media' | 'canvas';
