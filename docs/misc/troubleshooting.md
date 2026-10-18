@@ -118,7 +118,7 @@ Two sections read differently:
 
 Settings the backend refuses or drops are listed under Errors, so a channel that streams differently than its transcode config reads says why.
 
-A **Download Backend Diagnostics** button appears beside **Run Troubleshooter** when the selected channel has bundles to give. The worker writes one every time it cannot play an item, and the button hands back the five most recent as a zip. Attach it to a bug report; it carries the FFmpeg report, the resolved pipeline, the playout item, the probe output and the channel config for each failure.
+A **Download Backend Diagnostics** button appears beside **Run Troubleshooter** when the selected channel has bundles to give. The worker writes one every time it cannot play an item, and the button hands back the five most recent as a zip. Attach it to a bug report; it carries the FFmpeg report, the resolved pipeline, the playout item, the probe output and the channel config for each failure. Plex, Jellyfin and Emby tokens are removed before the files are zipped.
 
 ## Producing a Troubleshoot Report for Bug Reports
 

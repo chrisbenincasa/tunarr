@@ -72,7 +72,7 @@ The modes above all run Tunarr's own FFmpeg pipeline. Tunarr can instead hand a 
 
 !!! warning "Experimental"
 
-    Upstream publishes no tagged release, so Tunarr builds against a pinned commit. A worker built from a different commit still runs, but Tunarr logs a warning and streams may fail in ways its schema checks cannot catch.
+    Tunarr pins ErsatzTV next release `v0.2.2` and refuses a bundled worker from any other release. A worker you point at with `TUNARR_ERSATZTV_NEXT_PATH` still runs, but Tunarr logs a warning and streams may fail in ways its schema checks cannot catch.
 
 Turn it on for one channel with **Use ErsatzTV next Backend** on the channel's Streaming tab, or for every channel at once by setting `TUNARR_ERSATZTV_NEXT_ENABLED=true` (see [Environment Variables](../../getting-started/run.md#transcoding)). Start with a single channel; the global switch is there for when you are ready to move the rest. It replaces the pipeline for channels set to **HLS**, **HLS Direct v2** and **MPEG-TS**. HLS alt and HLS Direct keep using Tunarr's pipeline. Channel settings do not change, and the mode you pick in the UI still means what it did.
 
