@@ -1,4 +1,5 @@
 import type { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
+import { timeoutPromise } from '@/util/index.js';
 import { redactMediaServerSecrets } from '@/util/redactSecrets.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -35,6 +36,12 @@ const PipelineLinePattern = /optimized pipeline:\s*(.+)$/m;
 
 /** Enough of the worker log to carry a failure, short enough to render. */
 const StderrTailLines = 60;
+
+/** Far more than the tail needs, and small enough to hold for a long run. */
+const MaxStderrChars = 256 * 1024;
+
+/** How long a timed-out worker gets to exit after each signal. */
+const WorkerExitTimeoutMs = 5_000;
 
 /** The worker names each troubleshoot dossier `<number>_<timestamp>_probe`. */
 const ProbeDossierSuffix = '_probe';
@@ -229,26 +236,36 @@ export class EtvNextTroubleshootRunner {
       return { code: null, signal: null, stderr: 'The worker did not start.' };
     }
 
+    // Only the tail is reported, so cap what a long run can accumulate.
     let stderr = '';
     child.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString();
+      stderr = (stderr + chunk.toString()).slice(-MaxStderrChars);
     });
 
-    return await new Promise((resolve) => {
-      const timer = setTimeout(() => {
-        this.logger.error(
-          'A troubleshoot transcode ran past %dms. Stopping the worker.',
-          timeoutMs,
-        );
-        wrapper.kill();
-        resolve({ code: null, signal: 'TIMEOUT', stderr: tail(stderr) });
-      }, timeoutMs);
+    const exited = new Promise<{ code: number | null; signal: string | null }>(
+      (resolve) =>
+        child.once('exit', (code, signal) => resolve({ code, signal })),
+    );
 
-      child.on('exit', (code, signal) => {
-        clearTimeout(timer);
-        resolve({ code, signal, stderr: tail(stderr) });
-      });
-    });
+    try {
+      const { code, signal } = await timeoutPromise(exited, timeoutMs);
+      return { code, signal, stderr: tail(stderr) };
+    } catch {
+      this.logger.error(
+        'A troubleshoot transcode ran past %dms. Stopping the worker.',
+        timeoutMs,
+      );
+    }
+
+    // The caller deletes the workspace once this returns, so the worker has
+    // to be gone first.
+    wrapper.kill();
+    if (!(await exitsWithin(exited, WorkerExitTimeoutMs))) {
+      wrapper.kill('SIGKILL');
+      await exitsWithin(exited, WorkerExitTimeoutMs);
+    }
+
+    return { code: null, signal: 'TIMEOUT', stderr: tail(stderr) };
   }
 
   /**
@@ -298,6 +315,18 @@ export class EtvNextTroubleshootRunner {
     } catch {
       return;
     }
+  }
+}
+
+async function exitsWithin(
+  exited: Promise<unknown>,
+  timeoutMs: number,
+): Promise<boolean> {
+  try {
+    await timeoutPromise(exited, timeoutMs);
+    return true;
+  } catch {
+    return false;
   }
 }
 
