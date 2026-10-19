@@ -3,7 +3,9 @@ import {
   getPresetById,
 } from '@tunarr/shared/channel-templates';
 import { isNonEmptyString, search } from '@tunarr/shared/util';
+import type { MediaSourceId } from '@tunarr/shared';
 import type { Channel, SaveableChannel } from '@tunarr/types';
+import { tag } from '@tunarr/types';
 import type {
   AutoChannelCreateRequest,
   ChannelPreset,
@@ -28,10 +30,7 @@ import type {
   ProgramSearchDocument,
   TerminalProgramSearchDocument,
 } from './MeilisearchService.ts';
-import {
-  encodeCaseSensitiveId,
-  MeilisearchService,
-} from './MeilisearchService.ts';
+import { MeilisearchService } from './MeilisearchService.ts';
 import { GlobalScheduler } from './Scheduler.js';
 
 @injectable()
@@ -135,13 +134,13 @@ export class AutoChannelService {
 
       // Create a smart collection for this role
       const collectionName = `${request.channelName ?? preset.name} - ${requirement.label}`;
-      const filterString = this.contentQueryToFilterString(query);
+      const filter = this.buildContentFilter(query);
 
       const collectionResult = await this.smartCollectionsDB.insert({
         name: collectionName,
         keywords: query.keywords ?? '',
-        filter: filterString ? this.parseFilterString(filterString) : undefined,
-        filterString,
+        filter,
+        filterString: filter ? search.searchFilterToString(filter) : undefined,
       });
 
       if (collectionResult.isFailure()) {
@@ -322,60 +321,7 @@ export class AutoChannelService {
   private async resolveContentQuery(
     query: ContentQuery,
   ): Promise<ProgramSearchDocument[]> {
-    let searchFilter: SearchFilter | undefined;
-
-    if (isNonEmptyString(query.filterString)) {
-      searchFilter = this.parseFilterString(query.filterString);
-    }
-
-    // Build groupingId filter (for binge channels — filter by show's grandparent.id)
-    if (isNonEmptyString(query.groupingId)) {
-      const encodedId = encodeCaseSensitiveId(query.groupingId);
-      const groupingFilter: SearchFilter = {
-        type: 'value',
-        fieldSpec: {
-          key: 'grandparent.id',
-          name: 'Show',
-          op: '=',
-          type: 'string',
-          value: [encodedId],
-        },
-      };
-
-      if (searchFilter) {
-        searchFilter = {
-          type: 'op',
-          op: 'and',
-          children: [searchFilter, groupingFilter],
-        };
-      } else {
-        searchFilter = groupingFilter;
-      }
-    }
-
-    // Build type filter if programTypes specified
-    if (query.programTypes?.length) {
-      const typeFilter: SearchFilter = {
-        type: 'value',
-        fieldSpec: {
-          key: 'type',
-          name: 'Type',
-          op: 'in',
-          type: 'string',
-          value: query.programTypes,
-        },
-      };
-
-      if (searchFilter) {
-        searchFilter = {
-          type: 'op',
-          op: 'and',
-          children: [searchFilter, typeFilter],
-        };
-      } else {
-        searchFilter = typeFilter;
-      }
-    }
+    const searchFilter = this.buildContentFilter(query);
 
     // Paginate through all results
     const results: ProgramSearchDocument[] = [];
@@ -386,8 +332,6 @@ export class AutoChannelService {
         paging: { page, limit: 100 },
         query: query.keywords ?? null,
         filter: searchFilter ?? null,
-        libraryId: query.libraryIds?.[0],
-        mediaSourceId: query.mediaSourceIds?.[0],
       });
 
       if (pageResult.results.length === 0) {
@@ -406,24 +350,76 @@ export class AutoChannelService {
     return results;
   }
 
-  private contentQueryToFilterString(query: ContentQuery): string | undefined {
-    const parts: string[] = [];
+  /**
+   * Builds the role's full filter as one tree. The search service
+   * parenthesizes nested groups, so an OR inside the user's filter
+   * cannot escape the scope clauses.
+   */
+  private buildContentFilter(query: ContentQuery): SearchFilter | undefined {
+    const children: SearchFilter[] = [];
 
     if (isNonEmptyString(query.filterString)) {
-      parts.push(query.filterString);
-    }
-
-    if (query.programTypes?.length) {
-      const types = query.programTypes.map((t) => `"${t}"`).join(', ');
-      parts.push(`type in (${types})`);
+      const parsed = this.parseFilterString(query.filterString);
+      if (parsed) {
+        children.push(
+          parsed.type === 'op' ? { ...parsed, grouped: true } : parsed,
+        );
+      }
     }
 
     if (isNonEmptyString(query.groupingId)) {
-      const encodedId = encodeCaseSensitiveId(query.groupingId);
-      parts.push(`grandparent.id = "${encodedId}"`);
+      children.push({
+        type: 'value',
+        fieldSpec: {
+          key: 'grandparent.id',
+          name: 'Show',
+          op: '=',
+          type: 'string',
+          value: [query.groupingId],
+        },
+      });
     }
 
-    return parts.length > 0 ? parts.join(' AND ') : undefined;
+    if (query.programTypes?.length) {
+      children.push({
+        type: 'value',
+        fieldSpec: {
+          key: 'type',
+          name: 'Type',
+          op: 'in',
+          type: 'string',
+          value: query.programTypes,
+        },
+      });
+    }
+
+    const anyOf = (filters: SearchFilter[]): SearchFilter | undefined => {
+      if (filters.length <= 1) {
+        return filters[0];
+      }
+      return { type: 'op', op: 'or', children: filters, grouped: true };
+    };
+
+    const mediaSourceFilter = anyOf(
+      (query.mediaSourceIds ?? []).map((id) =>
+        search.makeMediaSourceIdFilter(tag<MediaSourceId>(id)),
+      ),
+    );
+    if (mediaSourceFilter) {
+      children.push(mediaSourceFilter);
+    }
+
+    const libraryFilter = anyOf(
+      (query.libraryIds ?? []).map((id) => search.makeLibraryIdFilter(id)),
+    );
+    if (libraryFilter) {
+      children.push(libraryFilter);
+    }
+
+    if (children.length <= 1) {
+      return children[0];
+    }
+    return { type: 'op', op: 'and', children };
   }
 
   private parseFilterString(filterString: string): SearchFilter | undefined {

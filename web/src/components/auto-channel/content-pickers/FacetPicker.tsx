@@ -8,11 +8,31 @@ import {
 } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { search } from '@tunarr/shared/util';
+import type { SearchFilter } from '@tunarr/types/schemas';
 import type { HTMLAttributes } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { postApiProgramsFacetsByFacetName } from '../../../generated/sdk.gen.ts';
 
 type FacetValue = { label: string; count: number };
+
+// Episodes carry these values only on their show, so match the show's field too.
+const ShowLevelField: Partial<Record<string, string>> = {
+  genre: 'show_genre',
+  studio: 'show_studio',
+};
+
+function fieldFilter(field: string, values: string[]): SearchFilter {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: search.virtualFieldToIndexField[field] ?? field,
+      name: field,
+      op: values.length === 1 ? '=' : 'in',
+      type: 'faceted_string',
+      value: values,
+    },
+  };
+}
 
 type Props = {
   facetFields: string[];
@@ -84,11 +104,17 @@ export function FacetPicker({
   const buildFilterString = useCallback(
     (selected: string[]) => {
       if (selected.length === 0) return '';
-      if (selected.length === 1) {
-        return `${activeField} = "${selected[0]}"`;
-      }
-      const quoted = selected.map((v) => `"${v}"`).join(', ');
-      return `${activeField} in [${quoted}]`;
+      const filter = fieldFilter(activeField, selected);
+      const showField = ShowLevelField[activeField];
+      return search.searchFilterToString(
+        showField === undefined
+          ? filter
+          : {
+              type: 'op',
+              op: 'or',
+              children: [filter, fieldFilter(showField, selected)],
+            },
+      );
     },
     [activeField],
   );
