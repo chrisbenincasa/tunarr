@@ -40,6 +40,26 @@ This starts:
 - **Backend server** on `http://localhost:8000`
 - **Frontend dev server** on `http://localhost:5173/web`
 
+## Dev Containers
+
+The repository ships two [dev container](https://containers.dev/) configurations in `.devcontainer/`. Both include Node 22, pnpm, ffmpeg 7.1.1, and the Meilisearch binary, and both build `@tunarr/types` and `@tunarr/shared` on creation.
+
+| Configuration | Use it for | Extra setup |
+|---------------|------------|-------------|
+| **Tunarr: Testing** | Running unit tests and the e2e route sweep | Playwright Chromium and its system libraries |
+| **Tunarr: PR Review** | Checking out and reviewing a pull request | None, so it starts faster |
+
+VS Code asks which configuration to use when you run **Dev Containers: Reopen in Container**.
+
+### Reviewing a pull request in a container
+
+Use either route. Both clone the repository into an isolated Docker volume, so your local checkout stays untouched.
+
+- **Dev Containers extension:** run **Dev Containers: Clone Repository in Container Volume**, paste the pull request URL, and pick **Tunarr: PR Review**.
+- **GitHub Pull Requests extension:** right-click the pull request in the GitHub view and choose **Checkout Pull Request in Dev Container**.
+
+The container builds from the pull request's own `.devcontainer/`, so a PR that changes the container config is reviewed in the changed container.
+
 ## Repository Structure
 
 Tunarr is a monorepo with four main packages:
