@@ -200,6 +200,10 @@ msgstr ""
 msgid "{enabled} of {total} enabled"
 msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+msgid "{from}–{to} of {count}"
+msgstr ""
+
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr ""
@@ -319,6 +323,10 @@ msgstr ""
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Access Token"
+msgstr ""
+
+#: src/components/ui/table/ActionsHeader.tsx
+msgid "Actions"
 msgstr ""
 
 #: src/components/library/ProgramListItem.tsx
@@ -947,6 +955,10 @@ msgstr ""
 msgid "Clear All"
 msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+msgid "Clear filters"
+msgstr ""
+
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Clear Schedule"
 msgstr ""
@@ -1247,6 +1259,7 @@ msgstr ""
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
 msgid "Delete"
 msgstr ""
 
@@ -1485,6 +1498,7 @@ msgstr ""
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Edit"
@@ -1986,6 +2000,7 @@ msgstr ""
 #: src/hooks/useNavItems.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/FillerListsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
 msgid "Filler Lists"
 msgstr ""
 
@@ -2002,6 +2017,11 @@ msgstr ""
 #: src/components/search/SearchFilterBuilder.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Filter"
+msgstr ""
+
+#: src/components/ui/table/filters/TextFilter.tsx
+#: src/components/ui/table/filters/TextFilter.tsx
+msgid "Filter by {label}"
 msgstr ""
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
@@ -2089,6 +2109,22 @@ msgstr ""
 
 #: src/routes/__root.tsx
 msgid "Go Home"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Go to first page"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Go to last page"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Go to next page"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Go to previous page"
 msgstr ""
 
 #: src/components/base/ProgramViewToggleButton.tsx
@@ -2532,6 +2568,10 @@ msgstr ""
 msgid "Match any of"
 msgstr ""
 
+#: src/components/ui/table/filters/RangeFilter.tsx
+msgid "Max"
+msgstr ""
+
 #: src/components/settings/general/BackupForm.tsx
 #: src/components/settings/general/BackupForm.tsx
 msgid "Max Backups"
@@ -2622,6 +2662,10 @@ msgstr ""
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Mid-Roll"
+msgstr ""
+
+#: src/components/ui/table/filters/RangeFilter.tsx
+msgid "Min"
 msgstr ""
 
 #: src/components/programming_controls/AddBreaksModal.tsx
@@ -2821,9 +2865,17 @@ msgstr ""
 #~ msgid "No programs selected"
 #~ msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+msgid "No records to display"
+msgstr ""
+
 #: src/components/channel_config/MediaItemGrid.tsx
 #: src/components/channel_config/MediaItemList.tsx
 msgid "No results"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "No results found"
 msgstr ""
 
 #: src/components/VersionFooter.tsx
@@ -3469,6 +3521,10 @@ msgstr ""
 msgid "Root"
 msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+msgid "Rows per page"
+msgstr ""
+
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Run"
 msgstr ""
@@ -3555,6 +3611,8 @@ msgstr ""
 msgid "Schedule programming using slots assigned a start time and duration."
 msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/DataTable.tsx
 #: src/hooks/useRouteName.ts
 msgid "Search"
 msgstr ""
@@ -3709,6 +3767,25 @@ msgstr ""
 msgid "Show: {0}"
 msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/DataTable.tsx
+msgid "Show/Hide columns"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/DataTable.tsx
+msgid "Show/Hide filters"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Show/Hide filters ({activeFilters} active)"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/DataTable.tsx
+msgid "Show/Hide search"
+msgstr ""
+
 #: src/components/channels/ChannelPrograms.tsx
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
 msgid "Shows"
@@ -3802,6 +3879,14 @@ msgstr ""
 msgid "Sort"
 msgstr ""
 
+#: src/components/ui/table/SortButton.tsx
+msgid "Sort by {label} ascending"
+msgstr ""
+
+#: src/components/ui/table/SortButton.tsx
+msgid "Sort by {label} descending"
+msgstr ""
+
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Sort By..."
@@ -3817,6 +3902,14 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Sort TV Shows (desc)"
+msgstr ""
+
+#: src/components/ui/table/SortButton.tsx
+msgid "Sorted by {label} ascending"
+msgstr ""
+
+#: src/components/ui/table/SortButton.tsx
+msgid "Sorted by {label} descending"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
@@ -4260,6 +4353,10 @@ msgstr ""
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "toggle password visibility"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Toggle visibility {label}"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingTools.tsx

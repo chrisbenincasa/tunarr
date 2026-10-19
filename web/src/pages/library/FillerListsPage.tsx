@@ -15,28 +15,28 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
-import TableContainer from '@mui/material/TableContainer';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import { type FillerList } from '@tunarr/types';
 import { find } from 'lodash-es';
-import {
-  type MRT_ColumnDef,
-  type MRT_Row,
-  MaterialReactTable,
-  useMaterialReactTable,
-} from 'material-react-table';
 import { useSnackbar } from 'notistack';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import {
   deleteApiFillerListsByIdMutation,
   getApiFillerListsQueryKey,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
-import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
+import { DataTable } from '../../components/ui/table/DataTable.tsx';
+import { actionsColumn } from '../../components/ui/table/columns.tsx';
+import {
+  createAppColumnHelper,
+  useTunarrTable,
+} from '../../components/ui/table/tunarrTable.ts';
+import { useStoreBackedTableSettings } from '../../components/ui/table/useStoreBackedTableSettings.ts';
+
+const columnHelper = createAppColumnHelper<FillerList>();
 
 const TableName = 'FillerLists';
 
@@ -81,10 +81,7 @@ export default function FillerListsPage() {
   const { data: fillerLists } = useFillerLists();
   const navigate = useNavigate();
 
-  const handleFillterNavigation = (
-    _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
-    id: string,
-  ) => {
+  const handleFillerNavigation = (id: string) => {
     navigate({
       to: `/library/fillers/$fillerId/edit`,
       params: { fillerId: id },
@@ -130,85 +127,44 @@ export default function FillerListsPage() {
     );
   };
 
-  const renderActionCell = useCallback(
-    ({ row: { original: filler } }: { row: MRT_Row<FillerList> }) => {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
-          <Tooltip title={t`Edit`} placement="top">
-            <IconButton
-              to={`/library/fillers/${filler.id}/edit`}
-              component={RouterLink}
-            >
-              <Edit />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t`Delete`} placement="top">
-            <IconButton
-              onClick={(ev) => {
-                ev.preventDefault();
-                ev.stopPropagation();
-                setDeleteConfirmationId(filler.id);
-              }}
-            >
-              <Delete />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      );
-    },
+  const columns = useMemo(
+    () =>
+      columnHelper.columns([
+        columnHelper.accessor('name', { header: t`Name` }),
+        columnHelper.accessor('contentCount', {
+          header: t`# Programs`,
+          meta: { filterVariant: 'range', numeric: true },
+        }),
+        actionsColumn<FillerList>({
+          render: ({ original: filler }) => (
+            <>
+              <Tooltip title={t`Edit`} placement="top">
+                <IconButton
+                  aria-label={t`Edit`}
+                  to={`/library/fillers/${filler.id}/edit`}
+                  component={RouterLink}
+                >
+                  <Edit />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={t`Delete`} placement="top">
+                <IconButton
+                  aria-label={t`Delete`}
+                  onClick={() => setDeleteConfirmationId(filler.id)}
+                >
+                  <Delete />
+                </IconButton>
+              </Tooltip>
+            </>
+          ),
+        }),
+      ]),
     [t],
   );
 
-  const columns = useMemo<MRT_ColumnDef<FillerList>[]>(
-    () => [
-      {
-        header: t`Name`,
-        accessorKey: 'name',
-      },
-      {
-        header: t`# Programs`,
-        accessorKey: 'contentCount',
-        filterVariant: 'range',
-      },
-    ],
-    [t],
-  );
-
-  const table = useMaterialReactTable({
-    columns: columns,
+  const table = useTunarrTable({
+    columns,
     data: fillerLists,
-    enableRowActions: true,
-    layoutMode: 'grid',
-    renderRowActions: renderActionCell,
-    renderEmptyRowsFallback() {
-      return (
-        <Typography
-          sx={{ py: '2rem', textAlign: 'center', fontStyle: 'italic' }}
-        >
-          <Trans>
-            You have no Filler Lists. Create your first Filler List{' '}
-            <Link component={RouterLink} to="/library/fillers/new">
-              here.
-            </Link>
-          </Trans>
-        </Typography>
-      );
-    },
-    muiTableBodyRowProps: ({ row }) => ({
-      sx: {
-        cursor: 'pointer',
-      },
-      onClick: (event) => handleFillterNavigation(event, row.original.id),
-    }),
-    displayColumnDefOptions: {
-      'mrt-row-actions': {
-        size: 200,
-        grow: false,
-        Header: '',
-        visibleInShowHideMenu: false,
-      },
-    },
-    positionActionsColumn: 'last',
     ...tableState,
   });
 
@@ -241,9 +197,23 @@ export default function FillerListsPage() {
         </Button>
       </Box>
 
-      <TableContainer component={Paper} sx={{ width: '100%' }}>
-        <MaterialReactTable table={table} />
-      </TableContainer>
+      <DataTable
+        table={table}
+        aria-label={t`Filler Lists`}
+        getRowProps={(row) => ({
+          onClick: () => handleFillerNavigation(row.original.id),
+        })}
+        emptyFallback={
+          <Typography sx={{ py: 4, textAlign: 'center', fontStyle: 'italic' }}>
+            <Trans>
+              You have no Filler Lists. Create your first Filler List{' '}
+              <Link component={RouterLink} to="/library/fillers/new">
+                here.
+              </Link>
+            </Trans>
+          </Typography>
+        }
+      />
     </Box>
   );
 }

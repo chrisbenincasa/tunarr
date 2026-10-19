@@ -9,8 +9,25 @@
 
 ## Status
 
-- Not started. Plan written and grilled 10/18/2026. All design questions are decided.
-- Phase 0 starts now, alongside `plans/web-redesign.md` Phases 1 and 2, and must land before that plan's Phase 3 (decided 10/19/2026).
+- **Phase 0 built 10/19/2026, not yet committed.** Branch `feat/datatable`, based on `feat/design-tokens-theme` (PR #2348).
+  - The v9 spike hit none of the fallback triggers. No casts, no internals, no `useLegacyTable`.
+  - The parity spec passes on MRT for 8 pages, and on the wrapper for `/library/fillers`. Settings saved by the MRT build load unchanged.
+  - The ban is in `web/.oxlintrc.json`, with 15 legacy files.
+- Phase 0 runs alongside `plans/web-redesign.md` Phases 1 and 2, and must land before that plan's Phase 3 (decided 10/19/2026).
+- Next: Phase 1.
+
+### Phase 0 notes
+
+- `actionsColumn({ render })` takes no `position`. Callers place the column first or last, and `DataTable` aligns it to that edge, so placement and alignment cannot disagree.
+- Column meta is typed through v9's scoped `columnMeta: metaHelper<TunarrColumnMeta>()` slot, not a global `ColumnMeta` augmentation.
+- The new `useStoreBackedTableSettings` lives in `components/ui/table/` and wraps the unchanged `useTableSettings`. The MRT version in `hooks/useTableSettings.ts` stays until Phase 4.
+- The text filter uses `includesString`. MRT used fuzzy matching, so a typo no longer matches.
+- `DataTable` keeps MRT's accessible names ("Show/Hide filters", "Toggle visibility X", "Sort by X ascending", "Sorted by X descending", "Rows per page"), so one spec runs on both.
+- The parity spec skips `MediaSourceLibraryTable`, the subtitle table and both slot tables, each with a reason. Their port PRs add the entry and make it pass on MRT first.
+- Pages with `ported: true` in the spec also check the filter count and Clear filters.
+- The legacy list includes 3 files that use plain MUI `Table` without MRT: `StatusPage`, `TroubleshootPage`, `ConnectMediaSources`. They need a static-table primitive or a `DataTable` port before they leave the list.
+- Each legacy override turns off the whole `no-restricted-imports` rule. When another ban joins that rule (`Chip`, say), legacy table files escape it too. Split the overrides then.
+- `@tanstack/react-table` 9.3.1 was published 10/12/2026.
 - This supersedes the advice in `plans/dependency-audit-2026-09-16.md` to keep TanStack Table on v8 while MRT is in use, because MRT goes away.
 
 ## Decisions
@@ -66,13 +83,13 @@ Everything lives in `web/src/components/ui/table/`, inside the component layer f
   - an `emptyFallback` slot
   - `TablePagination`
 - `columns.tsx` holds display-column helpers:
-  - `actionsColumn({ position, render })` replaces `enableRowActions`, `renderRowActions`, `positionActionsColumn` and `displayColumnDefOptions`
+  - `actionsColumn({ render })` replaces `enableRowActions`, `renderRowActions`, `positionActionsColumn` and `displayColumnDefOptions`. Its place in the column list sets its position.
   - `dragHandleColumn()` for reorderable tables
 - `filters/` holds the four filter variants in use, which are text, `range`, `checkbox` and `multi-select`. We build nothing else.
 - `useRowReorder.ts` implements `react-dnd` drag and drop over rows and calls `onReorder(from, to)`.
-- `useTableSettings.ts` stays at its current path. `useStoreBackedTableSettings` returns v9 state slices and updaters in place of `MRT_TableOptions`.
+- `useTableSettings.ts` stays at its current path. A new `useStoreBackedTableSettings` in `components/ui/table/` returns v9 state slices and updaters in place of `MRT_TableOptions`.
 
-Column `meta` carries the per-column extras MRT had as top-level keys (`muiTableBodyCellProps`, `grow`, `size`). The wrapper reads them through one typed `ColumnMeta` augmentation.
+Column `meta` carries the per-column extras MRT had as top-level keys (`muiTableBodyCellProps`, `grow`, `size`). The wrapper types them through v9's `columnMeta` feature slot.
 
 Inline editing stays out of the wrapper. The subtitle table renders its own `Select` in the cell, because no other table edits in place.
 
