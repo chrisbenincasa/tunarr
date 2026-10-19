@@ -1,5 +1,6 @@
 import { renderWithProviders, screen, within } from '@/test/utils';
-import { useMemo } from 'react';
+import type { PaginationState } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 import { describe, expect, test, vi } from 'vitest';
 import { DataTable } from './DataTable.tsx';
 import { actionsColumn } from './columns.tsx';
@@ -20,12 +21,17 @@ const Harness = ({
   onRowClick,
   onAction,
   emptyFallback,
+  loading,
+  initialPagination = { pageIndex: 0, pageSize: 10 },
 }: {
   data?: Item[];
   onRowClick?: (item: Item) => void;
   onAction?: (item: Item) => void;
   emptyFallback?: string;
+  loading?: boolean;
+  initialPagination?: PaginationState;
 }) => {
+  const [pagination, setPagination] = useState(initialPagination);
   const columns = useMemo(
     () => [
       ...columnHelper.columns([
@@ -43,12 +49,18 @@ const Harness = ({
     ],
     [onAction],
   );
-  const table = useTunarrTable({ columns, data });
+  const table = useTunarrTable({
+    columns,
+    data,
+    state: { pagination },
+    onPaginationChange: setPagination,
+  });
   return (
     <DataTable
       table={table}
       aria-label="Items"
       emptyFallback={emptyFallback}
+      loading={loading}
       getRowProps={(row) => ({
         onClick: onRowClick ? () => onRowClick(row.original) : undefined,
       })}
@@ -90,9 +102,9 @@ describe('DataTable', () => {
   test('range filter keeps rows inside the bounds and counts as active', async () => {
     const { user } = renderWithProviders(<Harness />);
     await user.click(screen.getByRole('button', { name: 'Show/Hide filters' }));
-    await user.type(screen.getByRole('textbox', { name: 'Min' }), '3');
+    await user.type(screen.getByRole('textbox', { name: 'Min Count' }), '3');
     expect(names()).toEqual(['Alpha', 'Charlie']);
-    await user.type(screen.getByRole('textbox', { name: 'Max' }), '6');
+    await user.type(screen.getByRole('textbox', { name: 'Max Count' }), '6');
     expect(names()).toEqual(['Charlie']);
 
     expect(
@@ -100,7 +112,57 @@ describe('DataTable', () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(names()).toHaveLength(3);
-    expect(screen.getByRole('textbox', { name: 'Min' })).toHaveValue('');
+    expect(screen.getByRole('textbox', { name: 'Min Count' })).toHaveValue('');
+    expect(screen.getByRole('textbox', { name: 'Max Count' })).toHaveValue('');
+  });
+
+  test('range filter keeps partial decimal input', async () => {
+    const { user } = renderWithProviders(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'Show/Hide filters' }));
+    const min = screen.getByRole('textbox', { name: 'Min Count' });
+    await user.type(min, '4.');
+    expect(min).toHaveValue('4.');
+    await user.type(min, '5');
+    expect(min).toHaveValue('4.5');
+    expect(names()).toEqual(['Alpha', 'Charlie']);
+  });
+
+  test('global search filters rows across columns', async () => {
+    const { user } = renderWithProviders(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'Show/Hide search' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), 'arl');
+    expect(names()).toEqual(['Charlie']);
+
+    await user.clear(screen.getByRole('textbox', { name: 'Search' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), '10');
+    expect(names()).toEqual(['Alpha']);
+
+    // Search is not a column filter, so it adds no count or clear button.
+    expect(
+      screen.getByRole('button', { name: 'Show/Hide filters' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Clear filters' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('moves an out-of-range page index onto the last page', async () => {
+    const many = Array.from({ length: 12 }, (_, i) => ({
+      id: String(i),
+      name: `Item ${String(i + 1).padStart(2, '0')}`,
+      count: i,
+    }));
+    renderWithProviders(
+      <Harness data={many} initialPagination={{ pageIndex: 5, pageSize: 5 }} />,
+    );
+    expect(await screen.findByText('11–12 of 12')).toBeInTheDocument();
+    expect(names()).toEqual(['Item 11', 'Item 12']);
+  });
+
+  test('shows no empty message while loading', () => {
+    renderWithProviders(<Harness data={[]} loading />);
+    expect(screen.queryByText('No records to display')).not.toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
   test('text filter matches part of a value', async () => {
@@ -123,9 +185,11 @@ describe('DataTable', () => {
     await user.click(
       within(menu).getByRole('checkbox', { name: 'Toggle visibility Count' }),
     );
+    await user.keyboard('{Escape}');
     expect(
-      screen.queryByRole('columnheader', { name: /^Count/ }),
+      screen.queryByRole('button', { name: 'Sort by Count descending' }),
     ).not.toBeInTheDocument();
+    expect(names()).toEqual(['Bravo', 'Alpha', 'Charlie']);
   });
 
   test('row action clicks do not trigger the row click', async () => {

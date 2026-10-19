@@ -2,7 +2,7 @@ type Bound = number | undefined;
 export type RangeFilterValue = [Bound, Bound];
 
 const isBound = (v: unknown): v is Bound =>
-  v === undefined || typeof v === 'number';
+  v === undefined || (typeof v === 'number' && Number.isFinite(v));
 
 export const toRangeFilterValue = (value: unknown): RangeFilterValue => {
   if (Array.isArray(value) && value.length === 2) {
@@ -21,5 +21,5 @@ export const parseBound = (text: string): Bound => {
     return undefined;
   }
   const n = Number(trimmed);
-  return Number.isNaN(n) ? undefined : n;
+  return Number.isFinite(n) ? n : undefined;
 };

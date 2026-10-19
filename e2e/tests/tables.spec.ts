@@ -24,6 +24,9 @@ type TablePage = {
   sortColumn: string;
   hideColumn?: string;
   filter: (page: Page) => Promise<void>;
+
+  // Global search text that matches exactly one row.
+  search?: { text: string; row: string };
   rowAction?: (page: Page, ids: FixtureIds) => Promise<void>;
 };
 
@@ -104,6 +107,7 @@ const TABLES: Record<string, TableTarget> = {
       await page.getByRole('textbox', { name: 'Min' }).fill('2');
       await expectOnlyRow(page, 'E2E Bumpers');
     },
+    search: { text: 'Bumpers', row: 'E2E Bumpers' },
     rowAction: async (page, ids) => {
       await clickEditLink(
         page,
@@ -131,6 +135,7 @@ const TABLES: Record<string, TableTarget> = {
       await page.getByRole('textbox', { name: 'Min' }).fill('2');
       await expectOnlyRow(page, 'E2E Reruns');
     },
+    search: { text: 'Reruns', row: 'E2E Reruns' },
     rowAction: (page, ids) =>
       clickEditLink(
         page,
@@ -340,6 +345,18 @@ for (const [name, target] of Object.entries(TABLES)) {
       await open(page);
       await target.filter(page);
     });
+
+    const search = target.search;
+    if (search !== undefined) {
+      test('searches the table', async ({ page }) => {
+        await open(page);
+        await page.getByRole('button', { name: 'Show/Hide search' }).click();
+        await page
+          .getByRole('textbox', { name: 'Search', exact: true })
+          .fill(search.text);
+        await expectOnlyRow(page, search.row);
+      });
+    }
 
     if (target.ported) {
       test('counts and clears filters', async ({ page }) => {

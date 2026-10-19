@@ -30,7 +30,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { Row, RowData } from '@tanstack/react-table';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { SortButton } from './SortButton.tsx';
 import { ColumnFilter } from './filters/ColumnFilter.tsx';
 import { sxList } from './sx.ts';
@@ -58,6 +58,28 @@ export type DataTableProps<TData extends RowData> = {
   'aria-label'?: string;
 };
 
+// Moves a saved page index that points past the last page back onto it.
+// autoResetPageIndex skips the first render, so it never repairs one on load.
+// Waits for data, because an empty table would reset every saved page to 0.
+const PageIndexRepair = <TData extends RowData>({
+  table,
+  pageIndex,
+  lastPage,
+  ready,
+}: {
+  table: TunarrTable<TData>;
+  pageIndex: number;
+  lastPage: number;
+  ready: boolean;
+}) => {
+  useEffect(() => {
+    if (ready && pageIndex > lastPage) {
+      table.setPageIndex(lastPage);
+    }
+  }, [table, pageIndex, lastPage, ready]);
+  return null;
+};
+
 const cellAlign = <TData extends RowData>(
   column: TunarrColumn<TData>,
   isFirst: boolean,
@@ -83,9 +105,6 @@ export const DataTable = <TData extends RowData>({
   const [columnsMenuAnchor, setColumnsMenuAnchor] =
     useState<HTMLElement | null>(null);
 
-  // Remounts the filter inputs so a reset clears text they hold locally.
-  const [filterKey, setFilterKey] = useState(0);
-
   return (
     <table.Subscribe selector={(state) => state}>
       {(state) => {
@@ -94,7 +113,6 @@ export const DataTable = <TData extends RowData>({
         const canFilter = leafColumns.some((c) => c.getCanFilter());
         const canSearch = table.options.enableGlobalFilter ?? true;
         const activeFilters = state.columnFilters.length;
-        const hasAnyFilter = activeFilters > 0 || !!state.globalFilter;
         const visibleColumns = table.getVisibleLeafColumns();
         const firstColumnId = visibleColumns[0]?.id;
 
@@ -106,12 +124,6 @@ export const DataTable = <TData extends RowData>({
         const rowsPerPageOptions = pageSizeOptions.includes(pageSize)
           ? pageSizeOptions
           : [...pageSizeOptions, pageSize].sort((a, b) => a - b);
-
-        const clearFilters = () => {
-          table.resetColumnFilters(true);
-          table.resetGlobalFilter(true);
-          setFilterKey((k) => k + 1);
-        };
 
         return (
           <Box
@@ -148,11 +160,11 @@ export const DataTable = <TData extends RowData>({
                   slotProps={{ htmlInput: { 'aria-label': t`Search` } }}
                 />
               )}
-              {hasAnyFilter && (
+              {activeFilters > 0 && (
                 <Button
                   size="small"
                   startIcon={<FilterListOff />}
-                  onClick={clearFilters}
+                  onClick={() => table.resetColumnFilters(true)}
                 >
                   {t`Clear filters`}
                 </Button>
@@ -305,10 +317,7 @@ export const DataTable = <TData extends RowData>({
                                   )}
                                 </Box>
                                 {showFilters && column.getCanFilter() && (
-                                  <ColumnFilter
-                                    key={filterKey}
-                                    column={column}
-                                  />
+                                  <ColumnFilter column={column} />
                                 )}
                               </Stack>
                             )}
@@ -322,7 +331,9 @@ export const DataTable = <TData extends RowData>({
                   {rows.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={visibleColumns.length}>
-                        {hasData || emptyFallback === undefined ? (
+                        {loading && !hasData ? (
+                          <Box sx={{ py: 4 }} />
+                        ) : hasData || emptyFallback === undefined ? (
                           <Typography
                             sx={{
                               py: 4,
@@ -405,6 +416,14 @@ export const DataTable = <TData extends RowData>({
               </Table>
             </TableContainer>
 
+            <PageIndexRepair
+              table={table}
+              pageIndex={pageIndex}
+              lastPage={lastPage}
+              ready={hasData && !loading}
+            />
+            {/* The clamp covers the one render before PageIndexRepair runs. MUI
+                logs an error for an out-of-range page. */}
             <TablePagination
               component="div"
               count={rowCount}

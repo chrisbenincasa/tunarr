@@ -27,7 +27,6 @@ export const KNOWN_ISSUES: KnownIssue[] = [
       '/channels/$channelId/programming/slot-editor',
       '/library',
       '/library/custom-shows',
-      '/library/fillers',
       '/library/smart_collections',
       '/media_sources',
       '/settings/ffmpeg',

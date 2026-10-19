@@ -115,9 +115,11 @@ export default function FillerListsPage() {
             <Trans>Cancel</Trans>
           </Button>
           <Button
-            onClick={() =>
-              deleteFillerList.mutate({ path: { id: deleteConfirmationId! } })
-            }
+            onClick={() => {
+              if (deleteConfirmationId !== undefined) {
+                deleteFillerList.mutate({ path: { id: deleteConfirmationId } });
+              }
+            }}
             variant="contained"
           >
             <Trans>Delete</Trans>

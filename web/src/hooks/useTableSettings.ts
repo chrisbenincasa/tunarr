@@ -42,7 +42,8 @@ export const useTableSettings = (
   const tableSettings = settings.ui.tableSettings[tableName];
   const initialColumnModel =
     tableSettings?.columnModel ?? defaultVisibilityState;
-  const colVisibilityState = useState<ColumnVisibilityState>(initialColumnModel);
+  const colVisibilityState =
+    useState<ColumnVisibilityState>(initialColumnModel);
   const paginationState = useState<PaginationState>(
     tableSettings?.pagination ?? defaultPaginationState,
   );
@@ -87,7 +88,6 @@ export const useTableSettings = (
       if (isFunction(updater)) {
         sortState[1]((prev) => {
           const next = updater(prev);
-          console.log(next);
           setTableSortState(tableName, next);
           return next;
         });

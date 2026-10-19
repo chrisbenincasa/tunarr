@@ -9,7 +9,7 @@
 
 ## Status
 
-- **Phase 0 built 10/19/2026, not yet committed.** Branch `feat/datatable`, based on `feat/design-tokens-theme` (PR #2348).
+- **Phase 0 in review (10/19/2026).** PR #2350, branch `feat/datatable`, based on `main`. Review fixes applied 10/19/2026.
   - The v9 spike hit none of the fallback triggers. No casts, no internals, no `useLegacyTable`.
   - The parity spec passes on MRT for 8 pages, and on the wrapper for `/library/fillers`. Settings saved by the MRT build load unchanged.
   - The ban is in `web/.oxlintrc.json`, with 15 legacy files.
@@ -22,7 +22,10 @@
 - Column meta is typed through v9's scoped `columnMeta: metaHelper<TunarrColumnMeta>()` slot, not a global `ColumnMeta` augmentation.
 - The new `useStoreBackedTableSettings` lives in `components/ui/table/` and wraps the unchanged `useTableSettings`. The MRT version in `hooks/useTableSettings.ts` stays until Phase 4.
 - The text filter uses `includesString`. MRT used fuzzy matching, so a typo no longer matches.
-- `DataTable` keeps MRT's accessible names ("Show/Hide filters", "Toggle visibility X", "Sort by X ascending", "Sorted by X descending", "Rows per page"), so one spec runs on both.
+- `DataTable` keeps MRT's accessible names ("Show/Hide filters", "Show/Hide search", "Search", "Toggle visibility X", "Sort by X ascending", "Sorted by X descending", "Rows per page"), so one spec runs on both. Two names extend MRT's and still match the spec's substring lookups. The filter toggle reads "Show/Hide filters (N active)" while filters are set, and the range inputs read "Min X" and "Max X".
+- The header keeps two sort targets, the header text and the sort label. Wrapping the text in `TableSortLabel` would make the column header's accessible name start with "Sort by", and the spec finds headers by their column name.
+- The global search stays behind its toggle, as MRT's does by default. Clear filters appears only for column filters and clears only those.
+- `hooks/useTableSettings.ts` and `store/settings/actions.ts` type MRT's persisted state with v9's `PaginationState`, `SortingState` and `ColumnVisibilityState`. They match v8's shapes today, but nothing enforces it. Check them when bumping v9 before Phase 4 removes MRT.
 - The parity spec skips `MediaSourceLibraryTable`, the subtitle table and both slot tables, each with a reason. Their port PRs add the entry and make it pass on MRT first.
 - Pages with `ported: true` in the spec also check the filter count and Clear filters.
 - The legacy list includes 3 files that use plain MUI `Table` without MRT: `StatusPage`, `TroubleshootPage`, `ConnectMediaSources`. They need a static-table primitive or a `DataTable` port before they leave the list.
@@ -197,13 +200,13 @@ Any of these means redoing the spike on v8.21.3, which costs one table. Unfamili
 
 ## Risks
 
-| Risk                                                                          | Mitigation                                                                                     |
-| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| v9 is 2.5 months old                                                          | Small explicit feature set, no internals, pinned minor version, and the Phase 0 fallback rule. |
-| A changed column id resets saved settings without any error                   | Keep ids. The parity spec's reload steps catch it.                                             |
-| Users miss dropped toolbar controls                                           | Density is the most likely request, and it is a small addition.                                |
-| Changing reorder from `swap` to `move` surprises someone                      | Release notes. `move` matches what the drop indicator shows.                                   |
-| Desktop layout shifts from MRT's CSS-grid `layoutMode` to native table layout | Before and after screenshots in each port PR.                                                  |
+| Risk                                                                          | Mitigation                                                                                                                                                              |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v9 is 2.5 months old                                                          | Small explicit feature set, no internals, a `^9.3.1` range like the other TanStack packages with the lockfile pinning the exact version, and the Phase 0 fallback rule. |
+| A changed column id resets saved settings without any error                   | Keep ids. The parity spec's reload steps catch it.                                                                                                                      |
+| Users miss dropped toolbar controls                                           | Density is the most likely request, and it is a small addition.                                                                                                         |
+| Changing reorder from `swap` to `move` surprises someone                      | Release notes. `move` matches what the drop indicator shows.                                                                                                            |
+| Desktop layout shifts from MRT's CSS-grid `layoutMode` to native table layout | Before and after screenshots in each port PR.                                                                                                                           |
 
 ## Follow-ups
 
