@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (10/19/2026):** Plan written and grilled 10/19/2026. Phase 0 is in progress on branch `feat/design-tokens-theme`, with no PR yet. Done: tokens, the MUI theme, the app-wide density setting, Storybook with scheme and density switches, and the first primitives (`MonoText`, `StatusPill`, `PageHeader`). Next step is the Storybook Vitest and a11y add-ons and the story diff script, then the shell mocks. `plans/mrt-replacement.md` Phase 0 starts in parallel.
+> **Status (10/19/2026):** Phase 0 is done, in PR #2348 (`feat/design-tokens-theme`) and PR #2349 (the story diff script, stacked on it). The app shell is decided on the canvas: top nav only, IBM Plex fonts, Sources under Settings, density in Settings → General. Next steps are Phase 2 (`AppShell`) and `plans/mrt-replacement.md` Phase 0, in parallel. Phase 1 mocks for forms, the media browser and slot editors stay one phase ahead.
 
 ## Why
 
@@ -20,12 +20,15 @@ Decided 10/18–10/19/2026.
 | Visual direction    | "Hybrid" mocks: direction A's look with direction B's tools                                   | Chosen 10/18/2026. Canvas: https://claude.ai/artifact/MusrMMnDAuzxk2odbKhRhV (private)                                                                                                                                                                                                                                                          |
 | Density             | One app-wide setting, Comfortable or Dense                                                    | Comfortable means visual layouts (cards, poster rows). Dense means tables and tight spacing. Patterns may change their layout by density, not just their sizes. Below `sm`, patterns always use the Comfortable layout, and density still sets sizes. Set in Web Settings and persisted with the theme state. No per-table or per-page toggles. |
 | Tokens              | `web/src/themeTokens.ts`, consumed by `web/src/theme.ts`                                      | Colors per scheme, two fonts, one size table per density                                                                                                                                                                                                                                                                                        |
-| Fonts               | Plus Jakarta Sans and Geist Mono via `@fontsource-variable`                                   | Self-hosted, so offline installs work. Mono is for channel numbers, times and durations.                                                                                                                                                                                                                                                        |
+| Fonts               | IBM Plex Sans (variable) and IBM Plex Mono (400, 500, 600) via `@fontsource`                  | Self-hosted, so offline installs work. Mono is for channel numbers, times and durations. Chosen 10/19/2026 from six pairings on the canvas. Plus Jakarta Sans read as generic generated UI, and Plex reads as a technical tool.                                                                                                                 |
 | Component workbench | Storybook 10 with the React + Vite builder                                                    | Builds components in isolation, in every state, in both schemes and densities                                                                                                                                                                                                                                                                   |
 | Data split          | View components take data as props. Thin wrappers fetch it.                                   | Views become easy to story, test and reuse. Today many components call query hooks inside.                                                                                                                                                                                                                                                      |
 | Tables              | The `DataTable` wrapper from `plans/mrt-replacement.md`, in `components/ui/table/`            | TanStack Table v9 owns the state and MUI `Table*` only draws the HTML. It's built now, in parallel with Phases 1 and 2, and styled once to the dense collection mock. Its tables follow the app-wide density.                                                                                                                                   |
 | Slot editors        | In scope                                                                                      | Legacy schedules stay after infinite schedules ship, and an unrestyled screen would look broken                                                                                                                                                                                                                                                 |
 | Release             | Each phase merges to `main` as it lands                                                       | Theme and shell changes reach every page first, so the gap between rebuilt and old pages stays small. This fits the `main`/`dev` rule in `CLAUDE.md`, because each PR is a small-to-medium change that leaves the app working and needs no prerelease iteration.                                                                                |
+| App shell           | Top nav only, no left rail                                                                    | Chosen 10/19/2026 from the two shell mocks. Five sections leave the bar plenty of room. The canvas's "Top bar — how it degrades" board shows the collapse order.                                                                                                                                                                                |
+| Top-level sections  | Guide, Channels, Schedules, Library, System. Settings sits at the right end of the bar.       | Schedules holds infinite schedules and the slot library. Sources moves under Settings, which already has a Sources tab. Section pages show as a sub-tab row under the bar.                                                                                                                                                                      |
+| Density control     | Settings → General only                                                                       | It is set once and rarely changed, so it does not earn space in the top bar. Color mode keeps a top-bar button.                                                                                                                                                                                                                                 |
 
 ## Ban list
 
@@ -50,7 +53,7 @@ Each layer has stories before the layer above uses it.
 
 | Type            | Screens | Routes                                                                                                                                                                           |
 | --------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| App shell       | all     | top nav, ⌘K search, density switch, color mode                                                                                                                                   |
+| App shell       | all     | top nav, ⌘K search, color mode, Settings                                                                                                                                         |
 | Collection      | ~9      | `/channels`, `/library/custom-shows`, `/library/fillers`, `/library/smart_collections`, `/library/trash`, `/media_sources`, `/settings/sources`, `/system/tasks`, `/system/logs` |
 | Form / settings | ~14     | channel new/edit, custom show and filler new/edit, `/settings/*` tabs, `/settings/ffmpeg/$configId`                                                                              |
 | Lineup editor   | 3       | `/channels/$id/programming`, custom show and filler `programming`                                                                                                                |
@@ -98,17 +101,21 @@ Each phase is one or more PRs against `main`. Each PR leaves the app working.
 
 - Mock on the canvas, in both densities: app shell, form/settings, media browser, slot editors, and each one-off.
 - Add a phone-width frame for every page type, including the existing collection, lineup editor and guide mocks.
-- Mock the app shell twice, so the two can be compared side by side. One has top nav only, with Library sub-tabs. The other has top nav plus a left rail. If the rail collapses, expanding it overlays the content and never shrinks it. Today's rail is static.
+- The app shell was mocked twice, top nav only and top nav plus a left rail, and compared side by side. Top nav only won on 10/19/2026.
 - Collection, lineup editor and guide mocks exist already.
 - Phase 1 does not gate the later phases. Each phase needs its own page type's mock agreed before it starts. Mocking stays one phase ahead, so the next mock is agreed before the current phase ends. The shell mock gates Phase 2.
 - The first time a shared pattern appears (`SaveBar`, `Inspector`, `FormSection`), mock it against every page type that uses it.
 
 ### Phase 2. App shell
 
-- `AppShell` with top navigation, ⌘K search, the density switch and color mode.
+- `AppShell` with top navigation, ⌘K search, color mode and Settings. Density stays in Settings → General.
+- Sections are Guide, Channels, Schedules, Library and System. Library, System, Schedules and Settings show their pages as a sub-tab row.
+- Sources moves into Settings as its second tab. `/media_sources` redirects there.
+- The Schedules section appears when the infinite schedules web pages land (`architecture/infinite-schedules/README.md`, phase 7).
+- The bar degrades in a fixed order as it narrows. The search pill becomes an icon below about 1000 px, then the wordmark drops, then sections that don't fit move under More from the right. The active section always stays visible.
 - Replaces the left drawer and `TopBar` on every route at once.
 - ⌘K matches nav pages, settings tabs, channels, custom shows, filler lists and smart collections by name, all from data the app already loads. Its last row, "Search library for '…'", opens `/search` with a query built by the structured `SearchFilter` builder. Inline program results are out of scope for now.
-- Phone layout keeps a bottom nav bar, as today.
+- Phone layout keeps a bottom nav bar with five items: Guide, Channels, Schedules, Library and More (System, Settings). Section pages show as a chip row.
 
 ### Phase 3. Collection pages
 
@@ -175,4 +182,4 @@ Each phase is one or more PRs against `main`. Each PR leaves the app working.
 
 ## Open questions
 
-- Whether the app shell keeps a left rail on wide screens or uses only the top nav. Decide from the two Phase 1 shell mocks.
+- Whether Settings is a gear icon at the right end of the bar or a labeled nav item. Shell 1 on the canvas mocks both (Tweaks → settings).
