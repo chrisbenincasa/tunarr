@@ -221,7 +221,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
             return;
           }
 
-          return [file, dateNum + timeNum] as const;
+          return [file, `${date}${time}`] as const;
         }),
       ),
       ([, sort]) => sort,
