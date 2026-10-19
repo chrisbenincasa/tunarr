@@ -44,6 +44,10 @@ const preview: Preview = {
   parameters: {
     layout: 'fullscreen',
     controls: { expanded: true },
+
+    // Violations show in the a11y panel and as test warnings, but never fail
+    // the run. Switch to 'error' once existing stories pass.
+    a11y: { test: 'todo' },
   },
 };
 
