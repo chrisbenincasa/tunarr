@@ -1,10 +1,13 @@
-import type { SlotScheduleResult } from '@tunarr/types/api';
 import { RandomSlotScheduleSchema } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { z } from 'zod/v4';
-import { RandomSlotScheduler } from './RandomSlotsService.ts';
+import {
+  type RandomSlotCycleResult,
+  RandomSlotScheduler,
+} from './RandomSlotsService.ts';
 import { SlotSchedulerHelper } from './SlotSchedulerHelper.ts';
+import { SlotIteratorStateSchema } from './slotIteratorState.ts';
 
 export const ChannelSlotScheduleRequest = z.object({
   type: z.literal('channel'),
@@ -16,6 +19,9 @@ export const ChannelSlotScheduleRequest = z.object({
   // Set on save and preview. Rejects slots that reference missing content or
   // cannot play. Regeneration leaves it off so stored schedules keep playing.
   strictValidation: z.boolean().optional(),
+  // Set when building one cycle of a rebuilding channel. See SlotCycleOptions.
+  iteratorState: SlotIteratorStateSchema.optional(),
+  endTime: z.number().optional(),
 });
 
 export type ChannelSlotScheduleRequest = z.infer<
@@ -32,6 +38,9 @@ export const ProgramsSlotScheduleRequest = z.object({
   // Set on save and preview. Rejects slots that reference missing content or
   // cannot play. Regeneration leaves it off so stored schedules keep playing.
   strictValidation: z.boolean().optional(),
+  // Set when building one cycle of a rebuilding channel. See SlotCycleOptions.
+  iteratorState: SlotIteratorStateSchema.optional(),
+  endTime: z.number().optional(),
 });
 
 export type ProgramsSlotScheduleRequest = z.infer<
@@ -56,7 +65,7 @@ export class SlotSchedulerService {
 
   async schedule(
     request: SlotScheduleServiceRequest,
-  ): Promise<SlotScheduleResult> {
+  ): Promise<RandomSlotCycleResult> {
     const slotPrograms =
       await this.slotSchedulerHelper.collectSlotProgramming(request);
 
@@ -74,6 +83,11 @@ export class SlotSchedulerService {
       request.seed,
       request.discardCount,
       request.startTime ? dayjs(request.startTime) : undefined,
+      {
+        iteratorState: request.iteratorState,
+        endTime:
+          request.endTime !== undefined ? dayjs(request.endTime) : undefined,
+      },
     );
   }
 }

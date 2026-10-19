@@ -48,6 +48,10 @@ import {
   getFillerIteratorsForSlot,
   maybeAddPrePostFiller,
 } from './slotSchedulerUtil.js';
+import type {
+  SlotCycleOptions,
+  SlotIteratorState,
+} from './slotIteratorState.ts';
 import { TimeSlotImpl } from './TimeSlotImpl.js';
 
 dayjs.extend(duration);
@@ -90,6 +94,10 @@ function pushOrExtendFlex(
   return flexDurationMs;
 }
 
+export type TimeSlotCycleResult = TimeSlotScheduleResult & {
+  iteratorState: SlotIteratorState;
+};
+
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
@@ -97,7 +105,8 @@ export async function scheduleTimeSlots(
   seed: number[] = createEntropy(),
   discardCount: number = 0,
   startTime: dayjs.Dayjs = dayjs.tz(),
-): Promise<TimeSlotScheduleResult> {
+  cycle: SlotCycleOptions = {},
+): Promise<TimeSlotCycleResult> {
   const mt = MersenneTwister19937.seedWithArray(seed).discard(discardCount);
   const random = new Random(mt);
 
@@ -125,8 +134,16 @@ export async function scheduleTimeSlots(
     programMap,
     random,
   );
-  const { iterators: slotIterators, resetPeriodCallbacks } =
-    createSlotIterators(schedule.slots, programMap, random);
+  const {
+    iterators: slotIterators,
+    resetPeriodCallbacks,
+    snapshotIterators,
+  } = createSlotIterators(
+    schedule.slots,
+    programMap,
+    random,
+    cycle.iteratorState?.iterators,
+  );
 
   const periodDuration = dayjs.duration(1, schedule.period);
   const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
@@ -174,11 +191,11 @@ export async function scheduleTimeSlots(
   const startedinDst = startTime.utcOffset() !== startOfYear.utcOffset();
   const startOfCurrentPeriod = t0.startOf(schedule.period);
 
-  if (schedule.startTomorrow) {
+  if (schedule.startTomorrow && cycle.endTime === undefined) {
     t0 = t0.add(1, 'day');
   }
 
-  const upperLimit = t0.add(schedule.maxDays + 1, 'day');
+  const upperLimit = cycle.endTime ?? t0.add(schedule.maxDays + 1, 'day');
 
   let timeCursor = t0;
 
@@ -479,5 +496,6 @@ export async function scheduleTimeSlots(
     startTime: +t0,
     seed,
     discardCount: mt.getUseCount(),
+    iteratorState: { iterators: snapshotIterators() },
   };
 }
