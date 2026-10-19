@@ -1,5 +1,7 @@
 import languages from '@cospired/i18n-iso-languages';
 import en from '@cospired/i18n-iso-languages/langs/en.json';
+import '@fontsource-variable/geist-mono';
+import '@fontsource-variable/plus-jakarta-sans';
 import { ColorSpace, LCH, OKLCH, sRGB } from 'colorjs.io/fn';
 import dayjs from 'dayjs';
 import localeData from 'dayjs/plugin/localeData';

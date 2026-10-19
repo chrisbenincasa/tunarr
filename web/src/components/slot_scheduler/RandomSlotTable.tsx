@@ -91,6 +91,7 @@ export const RandomSlotTable = () => {
       weight: slotDistribution === 'weighted',
       cooldownMs: slotDistribution !== 'none',
     },
+    'compact',
   );
 
   const slotIds = useMemo(
