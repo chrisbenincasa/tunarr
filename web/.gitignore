@@ -26,3 +26,4 @@ dist-ssr
 # Catalogs are compiled from .po on import by @lingui/vite-plugin
 src/locales/*/messages.ts
 src/locales/*/messages.js
+storybook-static
