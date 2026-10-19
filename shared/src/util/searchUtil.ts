@@ -10,6 +10,7 @@ import type {
   SearchFilterOperatorNode,
   SearchFilterValueNode,
   StringOperators,
+  StringSearchField,
 } from '@tunarr/types/schemas';
 import { createToken, EmbeddedActionsParser, Lexer } from 'chevrotain';
 import dayjs from 'dayjs';
@@ -1525,6 +1526,23 @@ export function makeLibraryIdFilter(libraryId: string): SearchFilterValueNode {
       op: '=',
       type: 'string',
       value: [libraryId],
+    },
+  };
+}
+
+// The query syntax has no escapes, so a quoted value cannot hold `"`, `\` or `{`.
+// Those characters are dropped so the filter always serializes to a valid query.
+export function makeTitleContainsFilter(term: string): SearchFilterValueNode & {
+  fieldSpec: StringSearchField;
+} {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: 'title',
+      name: 'title',
+      op: 'contains',
+      type: 'string',
+      value: [term.replace(/["\\{]/g, '').trim()],
     },
   };
 }

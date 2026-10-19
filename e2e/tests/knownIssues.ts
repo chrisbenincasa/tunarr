@@ -47,11 +47,6 @@ export const KNOWN_ISSUES: KnownIssue[] = [
     note: 'Missing list keys in the lineup and programming editors.',
   },
   {
-    match: /MUI: The `value` provided to the Tabs component is invalid/,
-    routes: ['/settings', '/settings/sources'],
-    note: 'Settings tabs receive a value with no matching tab.',
-  },
-  {
     match: /Invalid prop `children` supplied to `ForwardRef\(Tooltip2?\)`/,
     routes: ['/channels'],
     note: 'Tooltip wraps a component that cannot hold a ref.',
