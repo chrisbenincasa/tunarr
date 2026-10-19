@@ -76,6 +76,12 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   // so subs.m3u8 never lists a pruned .vtt.
   #segmentFloor = 0;
   #lastServedPlaylist: string | undefined;
+
+  // Session time, in seconds, of the first entry in the on-disk stream.m3u8.
+  // Anything that trims that file must add the removed segments' EXTINF
+  // durations here, or subtitle windows shift.
+  #playlistStartOffset = 0;
+
   #cueFiles = new Map<number, Cue[]>();
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
@@ -224,7 +230,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   private async segmentWindow(segmentNumber: number) {
     const playlistLines = await this.readPlaylist();
     return playlistLines
-      ? segmentWindows(playlistLines.join('\n')).get(segmentNumber)
+      ? segmentWindows(playlistLines.join('\n'), this.#playlistStartOffset).get(
+          segmentNumber,
+        )
       : undefined;
   }
 
