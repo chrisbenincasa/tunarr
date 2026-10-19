@@ -40,6 +40,21 @@ describe('HlsSubtitlePlaylist', () => {
     expect(windows.get(2)?.[0]).toBeCloseTo(7.504);
   });
 
+  test('keeps windows on session time after the playlist is trimmed', () => {
+    const lines = video.split('\n');
+    const trimmed = [
+      ...lines.slice(0, 3),
+      '#EXT-X-MEDIA-SEQUENCE:1',
+      ...lines.slice(7),
+    ].join('\n');
+
+    const before = segmentWindows(video);
+    const after = segmentWindows(trimmed, 4.004);
+    expect(after.has(0)).toBe(false);
+    expect(after.get(1)).toEqual(before.get(1));
+    expect(after.get(2)).toEqual(before.get(2));
+  });
+
   test('puts each cue in the window where it starts', () => {
     const cues = parseCues(
       'WEBVTT\n\n00:04.500 --> 00:06.000\nHello\n\n01:00:05.000 --> 01:00:06.000\nLater\n',

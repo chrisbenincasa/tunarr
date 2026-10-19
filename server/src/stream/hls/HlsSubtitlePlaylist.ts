@@ -23,12 +23,16 @@ export function subtitlePlaylistFromVideo(videoPlaylist: string): string {
     .join('\n');
 }
 
-/** Start and end, in seconds from session start, of every segment in the full on-disk playlist. */
+/**
+ * Start and end, in seconds from session start, of every segment in the
+ * on-disk playlist. `startOffset` is the session time of the first entry.
+ */
 export function segmentWindows(
   videoPlaylist: string,
+  startOffset = 0,
 ): Map<number, [number, number]> {
   const windows = new Map<number, [number, number]>();
-  let time = 0;
+  let time = startOffset;
   let duration: number | undefined;
   for (const line of videoPlaylist.split('\n')) {
     if (line.startsWith('#EXTINF:')) {
