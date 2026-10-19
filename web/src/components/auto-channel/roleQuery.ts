@@ -1,4 +1,4 @@
-import type { ContentQuery } from '@tunarr/types/api';
+import type { ContentQuery, ContentRequirement } from '@tunarr/types/api';
 import { isEmpty } from 'lodash-es';
 import type { GlobalContentContext } from './GlobalContentControls.tsx';
 
@@ -86,4 +86,23 @@ export function buildRoleQuery(
 
 function emptyToUndefined<T>(arr: T[] | undefined): T[] | undefined {
   return arr && arr.length > 0 ? arr : undefined;
+}
+
+/**
+ * Whether the role has the input its picker needs. Roles with a facet, show,
+ * or year picker match everything until the user picks, so they stay idle.
+ */
+export function hasRequiredPick(
+  requirement: Pick<ContentRequirement, 'pickerHint'>,
+  selection: RoleSelection | undefined,
+): boolean {
+  switch (requirement.pickerHint?.type) {
+    case 'facet':
+    case 'year-range':
+      return !isEmpty(selection?.pickerFilter);
+    case 'single-show':
+      return selection?.show !== undefined;
+    default:
+      return true;
+  }
 }
