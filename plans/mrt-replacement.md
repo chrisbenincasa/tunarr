@@ -10,6 +10,7 @@
 ## Status
 
 - Not started. Plan written and grilled 10/18/2026. All design questions are decided.
+- Phase 0 starts now, alongside `plans/web-redesign.md` Phases 1 and 2, and must land before that plan's Phase 3 (decided 10/19/2026).
 - This supersedes the advice in `plans/dependency-audit-2026-09-16.md` to keep TanStack Table on v8 while MRT is in use, because MRT goes away.
 
 ## Decisions
@@ -55,7 +56,7 @@ No table uses server-side pagination, sorting or filtering, row virtualization, 
 
 ## Wrapper design
 
-Everything lives in `web/src/components/table/`.
+Everything lives in `web/src/components/ui/table/`, inside the component layer from `plans/web-redesign.md`. The table takes its look from that plan's dense collection mock and its sizes from the app-wide density setting. Every state has a Storybook story.
 
 - `tunarrTable.ts` calls `createTableHook` and defines the `features` set (sorting, column filtering, global filtering, pagination, column visibility) along with the row-model slots.
 - `DataTable.tsx` renders a table instance. It supports:
@@ -77,14 +78,14 @@ Inline editing stays out of the wrapper. The subtitle table renders its own `Sel
 
 ### Toolbar controls
 
-| Control                | Decision                                                         |
-| ---------------------- | ---------------------------------------------------------------- |
-| Global search          | Keep, on the tables that have it today                           |
-| Show/hide filters      | Keep                                                             |
-| Column-visibility menu | Keep, persisted as today                                         |
-| Density toggle         | Drop. All tables use one fixed density.                          |
-| Fullscreen toggle      | Drop                                                             |
-| Per-column action menu | Drop. Header click sorts, and the visibility menu hides columns. |
+| Control                | Decision                                                                    |
+| ---------------------- | --------------------------------------------------------------------------- |
+| Global search          | Keep, on the tables that have it today                                      |
+| Show/hide filters      | Keep                                                                        |
+| Column-visibility menu | Keep, persisted as today                                                    |
+| Density toggle         | Drop. Tables follow the app-wide density setting (`plans/web-redesign.md`). |
+| Fullscreen toggle      | Drop                                                                        |
+| Per-column action menu | Drop. Header click sorts, and the visibility menu hides columns.            |
 
 ### Filters
 
@@ -111,6 +112,7 @@ Inline editing stays out of the wrapper. The subtitle table renders its own `Sel
 
 - The wrapper renders a table that scrolls sideways on narrow screens, matching MRT.
 - `ChannelsPage`, `TaskSettingsPage` and `MediaSourceLibraryTable` keep their hand-built phone layouts below the `sm` breakpoint. Only their desktop branch moves to the wrapper.
+- `plans/web-redesign.md` Phase 3 later replaces those phone layouts. Below `sm`, its `CollectionView` always renders cards.
 
 ## Phases
 
