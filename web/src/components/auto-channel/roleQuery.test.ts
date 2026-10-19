@@ -1,6 +1,11 @@
 import { search } from '@tunarr/shared/util';
+import type { ContentRequirement } from '@tunarr/types/api';
 import { describe, expect, test } from 'vitest';
-import { buildRoleQuery, combineFilters } from './roleQuery.ts';
+import {
+  buildRoleQuery,
+  combineFilters,
+  hasRequiredPick,
+} from './roleQuery.ts';
 
 function parses(filter: string) {
   const tokenized = search.tokenizeSearchQuery(filter);
@@ -83,5 +88,53 @@ describe('buildRoleQuery', () => {
     );
     expect(query.groupingId).toBe('show-1');
     expect(query.programTypes).toEqual(['episode']);
+  });
+});
+
+type Picker = Pick<ContentRequirement, 'pickerHint'>;
+
+describe('hasRequiredPick', () => {
+  const facet: Picker = {
+    pickerHint: { type: 'facet', facetFields: ['genre'], label: 'Pick' },
+  };
+
+  test('waits for a facet pick', () => {
+    expect(hasRequiredPick(facet, undefined)).toBe(false);
+    expect(hasRequiredPick(facet, { facetValues: [], pickerFilter: '' })).toBe(
+      false,
+    );
+    expect(
+      hasRequiredPick(facet, {
+        facetValues: ['Comedy'],
+        pickerFilter: 'genre = "Comedy"',
+      }),
+    ).toBe(true);
+  });
+
+  test('waits for a show pick', () => {
+    const show = {
+      pickerHint: { type: 'single-show', label: 'Show' },
+    } as const;
+    expect(hasRequiredPick(show, {})).toBe(false);
+    expect(
+      hasRequiredPick(show, { show: { id: 'a', title: 'A', year: null } }),
+    ).toBe(true);
+  });
+
+  test('waits for a year range', () => {
+    const years = {
+      pickerHint: { type: 'year-range', label: 'Years' },
+    } as const;
+    expect(hasRequiredPick(years, {})).toBe(false);
+    expect(
+      hasRequiredPick(years, {
+        yearRange: { start: 1990, end: 1999 },
+        pickerFilter: 'year >= 1990 AND year <= 1999',
+      }),
+    ).toBe(true);
+  });
+
+  test('roles without a picker are always ready', () => {
+    expect(hasRequiredPick({}, undefined)).toBe(true);
   });
 });
