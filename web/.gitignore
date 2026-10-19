@@ -27,3 +27,4 @@ dist-ssr
 src/locales/*/messages.ts
 src/locales/*/messages.js
 storybook-static
+/story-diff
