@@ -17,7 +17,10 @@ import { FacetPicker } from '@/components/auto-channel/content-pickers/FacetPick
 import { SingleShowPicker } from '@/components/auto-channel/content-pickers/SingleShowPicker';
 import { YearRangePicker } from '@/components/auto-channel/content-pickers/YearRangePicker';
 import type { RoleSelection } from '@/components/auto-channel/roleQuery';
-import { buildRoleQuery } from '@/components/auto-channel/roleQuery';
+import {
+  buildRoleQuery,
+  hasRequiredPick,
+} from '@/components/auto-channel/roleQuery';
 import { SimpleContentControls } from '@/components/auto-channel/SimpleContentControls';
 import PaddedPaper from '@/components/base/PaddedPaper';
 import { getApiMediaSourcesOptions } from '@/generated/@tanstack/react-query.gen';
@@ -38,6 +41,7 @@ import {
   Grid,
   Stack,
   Step,
+  StepButton,
   StepLabel,
   Stepper,
   Switch,
@@ -46,6 +50,8 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import type { MediaSourceId } from '@tunarr/shared';
+import { tag } from '@tunarr/types';
 import type {
   AutoChannelCreateRequest,
   ChannelPreset,
@@ -107,7 +113,20 @@ export function AutoCreateWizard() {
     [roles, roleSelections, globalContext],
   );
 
-  const previews = useRolePreviews(roleQueries);
+  const previewQueries = useMemo(
+    () =>
+      Object.fromEntries(
+        roles.map((req) => [
+          req.role,
+          hasRequiredPick(req, roleSelections[req.role])
+            ? roleQueries[req.role]
+            : undefined,
+        ]),
+      ),
+    [roles, roleSelections, roleQueries],
+  );
+
+  const previews = useRolePreviews(previewQueries);
 
   const handleSelectionChange = useCallback(
     (role: string, selection: RoleSelection) => {
@@ -351,9 +370,15 @@ export function AutoCreateWizard() {
       </Typography>
 
       <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-        {steps.map((label) => (
+        {steps.map((label, index) => (
           <Step key={label}>
-            <StepLabel>{label}</StepLabel>
+            {index < activeStep ? (
+              <StepButton onClick={() => setActiveStep(index)}>
+                {label}
+              </StepButton>
+            ) : (
+              <StepLabel>{label}</StepLabel>
+            )}
           </Step>
         ))}
       </Stepper>
@@ -682,6 +707,12 @@ function RoleSection({
       <AdvancedFilterSection
         filterString={selection.advancedFilter ?? ''}
         onFilterStringChange={(advancedFilter) => update({ advancedFilter })}
+        mediaSourceId={
+          mediaSourceId !== undefined
+            ? tag<MediaSourceId>(mediaSourceId)
+            : undefined
+        }
+        libraryId={libraryId}
       />
 
       {tooFew && (
@@ -691,11 +722,18 @@ function RoleSection({
         </Alert>
       )}
 
-      <ContentPreview
-        preview={preview?.data}
-        isLoading={preview?.isLoading ?? true}
-        error={preview?.error ?? null}
-      />
+      {preview?.awaitingInput ? (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          {requirement.pickerHint?.label ?? 'Make a selection'} to preview
+          matching programs.
+        </Typography>
+      ) : (
+        <ContentPreview
+          preview={preview?.data}
+          isLoading={preview?.isLoading ?? true}
+          error={preview?.error ?? null}
+        />
+      )}
     </Box>
   );
 }
