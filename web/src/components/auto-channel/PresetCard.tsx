@@ -14,7 +14,6 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  Chip,
   Typography,
 } from '@mui/material';
 import type { ChannelPreset, ChannelPresetCategory } from '@tunarr/types/api';
@@ -32,19 +31,6 @@ const categoryIcons: Record<ChannelPresetCategory, React.ReactNode> = {
   custom: <Tune />,
 };
 
-const categoryLabels: Record<ChannelPresetCategory, string> = {
-  simple: 'Simple',
-  'classic-tv': 'Classic TV',
-  movie: 'Movie',
-  music: 'Music',
-  binge: 'Binge',
-  genre: 'Themed',
-  people: 'People',
-  decade: 'Decades',
-  network: 'Networks',
-  custom: 'Custom',
-};
-
 type PresetCardProps = {
   preset: ChannelPreset;
   selected: boolean;
@@ -59,10 +45,19 @@ export function PresetCard({ preset, selected, onClick }: PresetCardProps) {
         border: selected ? 2 : 1,
         borderColor: selected ? 'primary.main' : 'divider',
         transition: 'border-color 0.2s',
+        height: '100%',
       }}
     >
-      <CardActionArea onClick={onClick} sx={{ p: 2 }}>
-        <CardContent sx={{ textAlign: 'center', p: 1 }}>
+      <CardActionArea
+        onClick={onClick}
+        sx={{
+          p: 2,
+          height: '100%',
+          display: 'flex',
+          alignItems: 'flex-start',
+        }}
+      >
+        <CardContent sx={{ textAlign: 'center', p: 1, width: '100%' }}>
           {categoryIcons[preset.category]}
           <Typography variant="h6" sx={{ mt: 1 }}>
             {preset.name}
@@ -70,11 +65,6 @@ export function PresetCard({ preset, selected, onClick }: PresetCardProps) {
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {preset.description}
           </Typography>
-          <Chip
-            label={categoryLabels[preset.category]}
-            size="small"
-            sx={{ mt: 1 }}
-          />
         </CardContent>
       </CardActionArea>
     </Card>
