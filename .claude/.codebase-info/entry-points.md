@@ -1,6 +1,6 @@
 # Entry Points
 
-*Last Updated: 2026-09-29*
+*Last Updated: 2026-10-19*
 
 ## Process start
 
@@ -44,3 +44,10 @@ force scan). They are called from services and APIs, not from the CLI.
   generated `routeTree.gen.ts`.
 - Route folders under `web/src/routes/`: `channels_`, `guide`, `library`, `media_`,
   `media_sources_`, `search`, `settings`, `system`, `welcome`.
+  `/media_sources` redirects to `/settings/sources`. Library pages under
+  `/media_sources/$id/libraries/$libraryId` still resolve.
+- `App.tsx` `Root` wraps every route in `components/shell/AppShellContainer.tsx`: top bar, sub-tabs,
+  phone bottom bar, and the ⌘K palette (`CommandPaletteContainer.tsx`). The nav tree is
+  `components/shell/useShellNav.tsx`, so a new section is one entry there. The views live in
+  `components/ui/patterns/AppShell/`, and `web/.oxlintrc.json` bans `AppBar`/`Drawer`/
+  `BottomNavigation` outside `components/ui/`.

@@ -79,6 +79,12 @@ export type SizeTokens = {
   radiusControl: number;
   radiusSmall: number;
   cardPadding: number;
+  navItemHeight: number;
+  subTabHeight: number;
+  shellPaddingY: number;
+  shellPaddingX: number;
+  pagePaddingY: number;
+  pagePaddingX: number;
 };
 
 export const sizes: Record<Density, SizeTokens> = {
@@ -93,6 +99,12 @@ export const sizes: Record<Density, SizeTokens> = {
     radiusControl: 12,
     radiusSmall: 8,
     cardPadding: 18,
+    navItemHeight: 36,
+    subTabHeight: 42,
+    shellPaddingY: 14,
+    shellPaddingX: 32,
+    pagePaddingY: 28,
+    pagePaddingX: 32,
   },
   dense: {
     fontSize: 13,
@@ -105,6 +117,12 @@ export const sizes: Record<Density, SizeTokens> = {
     radiusControl: 8,
     radiusSmall: 6,
     cardPadding: 12,
+    navItemHeight: 30,
+    subTabHeight: 34,
+    shellPaddingY: 8,
+    shellPaddingX: 24,
+    pagePaddingY: 18,
+    pagePaddingX: 24,
   },
 };
 
