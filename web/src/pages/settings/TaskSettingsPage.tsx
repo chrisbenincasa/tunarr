@@ -278,51 +278,6 @@ export default function TaskSettingsPage() {
         </Typography>
       </Box>
       {isMobile ? renderMobileList() : <MaterialReactTable table={table} />}
-      {/* <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Task Name</TableCell>
-              <TableCell> Last Execution</TableCell>
-              <TableCell>Next Execution</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {renderTableRows()}
-            <TableRow>
-              <TableCell>Clear M3U Cache</TableCell>
-              <TableCell>-</TableCell>
-              <TableCell>--</TableCell>
-              <TableCell>
-                <Button
-                  onClick={() =>
-                    clearM3UCacheMutation.mutate(
-                      {},
-                      {
-                        onSettled: () => {
-                          clearM3UCacheMutation.reset();
-                        },
-                      },
-                    )
-                  }
-                  disabled={clearM3UCacheMutation.isPending}
-                  startIcon={
-                    clearM3UCacheMutation.isPending ? (
-                      <StyledLoopIcon />
-                    ) : (
-                      <PlayArrowOutlined />
-                    )
-                  }
-                  variant="contained"
-                >
-                  Run Now
-                </Button>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer> */}
     </Stack>
   );
 }
