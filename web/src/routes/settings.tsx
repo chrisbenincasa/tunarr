@@ -2,12 +2,7 @@ import { ErrorPage } from '@/pages/ErrorPage';
 import { SettingsLayout } from '@/pages/settings/SettingsLayout';
 import { useQueryErrorResetBoundary } from '@tanstack/react-query';
 import type { ErrorComponentProps } from '@tanstack/react-router';
-import {
-  createFileRoute,
-  useChildMatches,
-  useRouter,
-} from '@tanstack/react-router';
-import { head } from 'lodash-es';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect } from 'react';
 
 const WrappedError = ({ error, reset }: ErrorComponentProps) => {
@@ -27,20 +22,6 @@ const WrappedError = ({ error, reset }: ErrorComponentProps) => {
 };
 
 export const Route = createFileRoute('/settings')({
-  component: Wrapper,
+  component: SettingsLayout,
   errorComponent: WrappedError,
 });
-
-function Wrapper() {
-  const firstChild = useChildMatches();
-  return (
-    <SettingsLayout
-      currentTab={
-        '/' +
-        head(firstChild)
-          ?.fullPath.replace(/^\/settings/, '')
-          .split('/')[1]
-      }
-    />
-  );
-}
