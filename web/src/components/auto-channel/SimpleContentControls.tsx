@@ -9,7 +9,10 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import type { ContentQuery } from '@tunarr/types/api';
 import { getApiMediaSourcesOptions } from '@/generated/@tanstack/react-query.gen';
-import { useMediaSourceLibraries } from '@/hooks/media-sources/useMediaSourceLibraries';
+import {
+  selectEnabledLibraries,
+  useMediaSourceLibraries,
+} from '@/hooks/media-sources/useMediaSourceLibraries';
 
 const ProgramTypes = ['movie', 'episode', 'track'] as const;
 
@@ -38,6 +41,7 @@ export function SimpleContentControls({
 
   const { data: libraries } = useMediaSourceLibraries(selectedSourceId ?? '', {
     enabled: selectedSourceId !== undefined,
+    select: selectEnabledLibraries,
   });
 
   const handleSourceChange = (value: string) => {

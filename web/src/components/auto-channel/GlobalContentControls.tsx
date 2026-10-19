@@ -12,7 +12,10 @@ import {
   getApiCustomShowsOptions,
   getApiMediaSourcesOptions,
 } from '../../generated/@tanstack/react-query.gen.ts';
-import { useMediaSourceLibraries } from '../../hooks/media-sources/useMediaSourceLibraries.ts';
+import {
+  selectEnabledLibraries,
+  useMediaSourceLibraries,
+} from '../../hooks/media-sources/useMediaSourceLibraries.ts';
 
 export type GlobalContentContext = {
   mediaSourceId?: string;
@@ -34,6 +37,7 @@ export function GlobalContentControls({ context, onContextChange }: Props) {
     context.mediaSourceId ?? '',
     {
       enabled: context.mediaSourceId !== undefined && !isCustomShows,
+      select: selectEnabledLibraries,
     },
   );
 
