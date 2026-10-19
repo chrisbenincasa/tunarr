@@ -4,8 +4,8 @@
 export type Density = 'comfortable' | 'dense';
 
 export const fonts = {
-  sans: "'Plus Jakarta Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif",
-  mono: "'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace",
+  sans: "'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif",
+  mono: "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace",
 } as const;
 
 export type ColorTokens = {

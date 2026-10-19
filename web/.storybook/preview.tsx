@@ -1,5 +1,7 @@
-import '@fontsource-variable/geist-mono';
-import '@fontsource-variable/plus-jakarta-sans';
+import '@fontsource-variable/ibm-plex-sans';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '@fontsource/ibm-plex-mono/600.css';
 import type { Decorator, Preview } from '@storybook/react-vite';
 import { StoryProviders } from './StoryProviders.tsx';
 

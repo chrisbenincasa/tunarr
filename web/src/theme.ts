@@ -83,12 +83,12 @@ export const createTunarrTheme = (density: Density = 'comfortable') => {
     typography: {
       fontFamily: fonts.sans,
       fontSize: s.fontSize,
-      h1: { fontWeight: 800, letterSpacing: '-0.03em' },
-      h2: { fontWeight: 800, letterSpacing: '-0.03em' },
-      h3: { fontWeight: 700, letterSpacing: '-0.02em' },
-      h4: { fontWeight: 700, letterSpacing: '-0.02em' },
-      h5: { fontWeight: 700, letterSpacing: '-0.01em' },
-      h6: { fontWeight: 700, letterSpacing: '-0.01em' },
+      h1: { fontWeight: 700, letterSpacing: '-0.01em' },
+      h2: { fontWeight: 700, letterSpacing: '-0.01em' },
+      h3: { fontWeight: 700, letterSpacing: '-0.01em' },
+      h4: { fontWeight: 700, letterSpacing: '-0.01em' },
+      h5: { fontWeight: 700 },
+      h6: { fontWeight: 700 },
       button: { textTransform: 'none', fontWeight: 600 },
       overline: { fontWeight: 700, letterSpacing: '0.08em' },
       mono: {
