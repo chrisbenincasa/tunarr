@@ -21,6 +21,8 @@
     "@dotenvx/dotenvx": "^1.45.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@hookform/error-message": "^2.0.1",
     "@hookform/resolvers": "^5.2.2",
     "@lingui/core": "^5.9.0",

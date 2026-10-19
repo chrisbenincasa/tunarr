@@ -1,6 +1,7 @@
 import DarkModeButton from '@/components/settings/DarkModeButton.tsx';
 import useStore from '@/store/index.ts';
 import { setTimeFormat, setUiLocale } from '@/store/settings/actions.ts';
+import { setDensity } from '@/store/themeEditor/actions.ts';
 import type { SupportedLocales, TimeFormat } from '@/store/settings/store.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
@@ -15,12 +16,14 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback } from 'react';
+import type { Density } from '../../../themeTokens.ts';
 import type { Nullable } from '../../../types/util.ts';
 
 export const WebSettings = () => {
   const { t } = useLingui();
   const locale = useStore((state) => state.settings.ui.i18n.locale);
   const timeFormat = useStore((state) => state.settings.ui.i18n.timeFormat);
+  const density = useStore((state) => state.theme.density ?? 'comfortable');
 
   const handleLocaleChange = useCallback((value: SupportedLocales) => {
     void setUiLocale(value);
@@ -106,6 +109,32 @@ export const WebSettings = () => {
           <Trans>Theme Settings</Trans>
         </Typography>
         <DarkModeButton />
+      </Box>
+
+      <Box>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          <Trans>Density</Trans>
+        </Typography>
+        <ToggleButtonGroup
+          value={density}
+          exclusive
+          onChange={(_, value: Nullable<Density>) => {
+            if (value) {
+              setDensity(value);
+            }
+          }}
+          aria-label={t`Density`}
+        >
+          <ToggleButton value="comfortable">
+            <Trans>Comfortable</Trans>
+          </ToggleButton>
+          <ToggleButton value="dense">
+            <Trans>Dense</Trans>
+          </ToggleButton>
+        </ToggleButtonGroup>
+        <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+          <Trans>Dense fits more rows on screen with smaller controls.</Trans>
+        </Typography>
       </Box>
     </Stack>
   );

@@ -115,10 +115,12 @@ export const TimeSlotTable = () => {
   );
   const [selectedDay, setSelectedDay] = useState(0);
 
-  const tableState = useStoreBackedTableSettings('TimeSlots', {
-    pageIndex: 0,
-    pageSize: 25,
-  });
+  const tableState = useStoreBackedTableSettings(
+    'TimeSlots',
+    { pageIndex: 0, pageSize: 25 },
+    {},
+    'compact',
+  );
 
   const detailsBySlotId = useScheduledSlotProgramDetails(slotIds);
 

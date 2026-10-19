@@ -975,6 +975,10 @@ msgstr ""
 msgid "Color"
 msgstr ""
 
+#: src/components/settings/general/WebSettings.tsx
+msgid "Comfortable"
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx
 msgid "Commit"
 msgstr ""
@@ -1316,6 +1320,19 @@ msgstr ""
 #: src/components/settings/media_source/MediaSourceDeleteDialog.tsx
 #~ msgid "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
 #~ msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Dense"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Dense fits more rows on screen with smaller controls."
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx
+#: src/components/settings/general/WebSettings.tsx
+msgid "Density"
+msgstr ""
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Desc"
