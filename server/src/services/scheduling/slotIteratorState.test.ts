@@ -7,6 +7,7 @@ import type {
 import { MersenneTwister19937, Random } from 'random-js';
 import { describe, expect, test } from 'vitest';
 import {
+  fixtureCustomShowPrograms,
   fixtureEpisodes,
   fixtureSlotId,
 } from '../../testing/fakes/slotScheduleFixtures.ts';
@@ -14,11 +15,20 @@ import {
   WorkerRequest,
   WorkerSuccessReply,
 } from '../../types/worker_schemas.ts';
-import { ContentProgramChunkedShuffle } from './ProgramChunkedShuffle.ts';
-import { getProgramOrderer, RerunProgramIterator } from './ProgramIterator.ts';
-import { ContentProgramOrderedIterator } from './ProgramOrdereredIterator.ts';
+import {
+  ContentProgramChunkedShuffle,
+  CustomProgramChunkedShuffle,
+} from './ProgramChunkedShuffle.ts';
+import { getProgramOrderer } from './ProgramIterator.ts';
+import {
+  ContentProgramOrderedIterator,
+  CustomProgramOrderedIterator,
+} from './ProgramOrdereredIterator.ts';
 import { RandomSlotScheduler } from './RandomSlotsService.ts';
-import { ContentProgramShuffleIterator } from './ShuffleProgramIterator.ts';
+import {
+  ContentProgramShuffleIterator,
+  CustomProgramShuffleIterator,
+} from './ShuffleProgramIterator.ts';
 import type { SlotSchedulerProgram } from './slotSchedulerUtil.ts';
 import { scheduleTimeSlots } from './TimeSlotService.ts';
 
@@ -26,6 +36,7 @@ const oneHour = 60 * 60 * 1000;
 const oneDay = 24 * oneHour;
 const day1 = dayjs.utc('2024-03-04T00:00:00.000Z');
 const state = { slotDuration: oneHour, timeCursor: 0 };
+const customShowId = '00000000-0000-4000-8000-0000000000c5';
 
 function ids(programs: SlotSchedulerProgram[]) {
   return programs.map((program) => program.uuid);
@@ -102,18 +113,24 @@ describe('ordered iterator resume', () => {
     expect(resumed.snapshot()).toEqual(snapshot);
   });
 
-  test('a rerun group reports its inner iterator state', () => {
-    const inner = new ContentProgramOrderedIterator(
+  test('descending order continues toward the first episode', () => {
+    const resumed = new ContentProgramOrderedIterator(
       fixtureEpisodes('show', 5, oneHour),
       getProgramOrderer('next'),
+      false,
+      { type: 'ordered', lastProgramId: 'show-ep3' },
     );
-    const rerun = new RerunProgramIterator(inner, 2);
-    rerun.next();
-    rerun.next();
-    expect(rerun.snapshot()).toEqual({
-      type: 'ordered',
-      lastProgramId: 'show-ep1',
-    });
+    expect(take(resumed, 3)).toEqual(['show-ep2', 'show-ep1', 'show-ep5']);
+  });
+
+  test('a custom show continues in its listed order', () => {
+    const resumed = new CustomProgramOrderedIterator(
+      customShowId,
+      fixtureCustomShowPrograms(customShowId, 5, oneHour),
+      true,
+      { type: 'ordered', lastProgramId: 'custom-4' },
+    );
+    expect(take(resumed, 2)).toEqual(['custom-5', 'custom-1']);
   });
 });
 
@@ -139,6 +156,17 @@ describe('ordered_shuffle resume', () => {
       (offset) => episodes[(lastIndex + offset) % episodes.length]?.uuid,
     );
     expect(take(resumed, 3)).toEqual(expected);
+  });
+
+  test('a custom show continues in its listed order', () => {
+    const resumed = new CustomProgramChunkedShuffle(
+      customShowId,
+      fixtureCustomShowPrograms(customShowId, 6, oneHour),
+      random(),
+      true,
+      { type: 'ordered', lastProgramId: 'custom-5' },
+    );
+    expect(take(resumed, 3)).toEqual(['custom-6', 'custom-1', 'custom-2']);
   });
 });
 
@@ -169,6 +197,18 @@ describe('shuffle resume', () => {
     );
     expect(new Set(take(resumed, 4))).toEqual(
       new Set(['show-ep4', 'show-ep5', 'show-ep6', 'new-ep1']),
+    );
+  });
+
+  test('a custom show plays its unplayed programs first', () => {
+    const resumed = new CustomProgramShuffleIterator(
+      customShowId,
+      fixtureCustomShowPrograms(customShowId, 5, oneHour),
+      random(),
+      { type: 'shuffle', playedIds: ['custom-1', 'custom-2'] },
+    );
+    expect(new Set(take(resumed, 3))).toEqual(
+      new Set(['custom-3', 'custom-4', 'custom-5']),
     );
   });
 
@@ -309,7 +349,31 @@ describe('time slot cycles', () => {
 });
 
 describe('random slot cycles', () => {
-  const schedule = (): RandomSlotSchedule => ({
+  type RandomSlot = RandomSlotSchedule['slots'][number];
+
+  const randomShowSlot = (
+    n: number,
+    showId: string,
+    extra: Partial<RandomSlot> = {},
+  ) =>
+    ({
+      id: fixtureSlotId(n),
+      type: 'show',
+      showId,
+      order: 'next',
+      direction: 'asc',
+      seasonFilter: [],
+      seasonExcludeFilter: [],
+      weight: 1,
+      cooldownMs: 0,
+      durationSpec: { type: 'dynamic', programCount: 1 },
+      ...extra,
+    }) as RandomSlot;
+
+  const schedule = (
+    slots: RandomSlot[] = [randomShowSlot(1, 'a'), randomShowSlot(2, 'b')],
+    extra: Partial<RandomSlotSchedule> = {},
+  ): RandomSlotSchedule => ({
     type: 'random',
     flexPreference: 'end',
     maxDays: 365,
@@ -317,32 +381,8 @@ describe('random slot cycles', () => {
     padStyle: 'slot',
     randomDistribution: 'none',
     lockWeights: false,
-    slots: [
-      {
-        id: fixtureSlotId(1),
-        type: 'show',
-        showId: 'a',
-        order: 'next',
-        direction: 'asc',
-        seasonFilter: [],
-        seasonExcludeFilter: [],
-        weight: 1,
-        cooldownMs: 0,
-        durationSpec: { type: 'dynamic', programCount: 1 },
-      },
-      {
-        id: fixtureSlotId(2),
-        type: 'show',
-        showId: 'b',
-        order: 'next',
-        direction: 'asc',
-        seasonFilter: [],
-        seasonExcludeFilter: [],
-        weight: 1,
-        cooldownMs: 0,
-        durationSpec: { type: 'dynamic', programCount: 1 },
-      },
-    ],
+    slots,
+    ...extra,
   });
   const programs = () => [
     ...fixtureEpisodes('a', 40, oneHour),
@@ -374,6 +414,74 @@ describe('random slot cycles', () => {
       'b-ep14',
       'a-ep15',
     ]);
+  });
+
+  // Builds a cycle ending mid-program, then the cycle that follows it.
+  function crossingCycles(slot: RandomSlot, endHours: number) {
+    const slots = [slot];
+    const cycle1 = new RandomSlotScheduler(schedule(slots)).generateSchedule(
+      fixtureEpisodes('a', 40, oneHour),
+      [42],
+      0,
+      day1,
+      { endTime: day1.add(endHours * oneHour) },
+    );
+    const end1 = day1.add(
+      cycle1.lineup.reduce((sum, p) => sum + p.duration, 0),
+    );
+    const cycle2 = new RandomSlotScheduler(schedule(slots)).generateSchedule(
+      fixtureEpisodes('a', 40, oneHour),
+      [42],
+      cycle1.discardCount,
+      end1,
+      { endTime: end1.add(2, 'hour'), iteratorState: cycle1.iteratorState },
+    );
+    return { cycle1, cycle2 };
+  }
+
+  test('the program crossing the end time airs in the cycle', () => {
+    const { cycle1, cycle2 } = crossingCycles(randomShowSlot(1, 'a'), 2.5);
+    expect(contentIds(cycle1.lineup)).toEqual(['a-ep1', 'a-ep2', 'a-ep3']);
+    expect(contentIds(cycle2.lineup)[0]).toBe('a-ep4');
+  });
+
+  test('a fixed slot crossing the end time airs its whole group', () => {
+    const { cycle1, cycle2 } = crossingCycles(
+      randomShowSlot(1, 'a', {
+        durationSpec: { type: 'fixed', durationMs: 3 * oneHour },
+      }),
+      4.5,
+    );
+    expect(contentIds(cycle1.lineup)).toEqual(
+      ['1', '2', '3', '4', '5', '6'].map((n) => `a-ep${n}`),
+    );
+    expect(contentIds(cycle2.lineup)[0]).toBe('a-ep7');
+  });
+
+  test('cooldowns carry across cycles', () => {
+    const slots = [
+      randomShowSlot(1, 'a', { cooldownMs: 10 * oneHour }),
+      randomShowSlot(2, 'b'),
+    ];
+    const build = (iteratorState?: { iterators: Record<string, never> }) =>
+      new RandomSlotScheduler(
+        schedule(slots, { randomDistribution: 'uniform' }),
+      ).generateSchedule(programs(), [42], 0, day1, {
+        endTime: day1.add(4, 'hour'),
+        iteratorState: iteratorState && {
+          ...iteratorState,
+          slotLastPlayedMs: { '0': +day1.subtract(1, 'hour') },
+        },
+      });
+
+    expect(contentIds(build().lineup).some((id) => id.startsWith('a-'))).toBe(
+      true,
+    );
+    expect(
+      contentIds(build({ iterators: {} }).lineup).every((id) =>
+        id.startsWith('b-'),
+      ),
+    ).toBe(true);
   });
 });
 

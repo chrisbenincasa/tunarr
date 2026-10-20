@@ -422,9 +422,16 @@ export class RandomSlotScheduler {
         }
       }
 
+      // A cycle places every program the slot collected, because their
+      // iterators already advanced and the end state would otherwise count
+      // dropped programs as played. The loop condition then ends the cycle.
+      const dropCrossing = cycle.endTime === undefined;
       let done = false;
       for (const { program, padMs, totalDuration, filler } of finalPrograms) {
-        if (+context.timeCursor + program.duration > +upperLimit) {
+        if (
+          dropCrossing &&
+          +context.timeCursor + program.duration > +upperLimit
+        ) {
           done = true;
           break;
         }
@@ -436,7 +443,7 @@ export class RandomSlotScheduler {
         context.pushProgram(filler.tail);
         context.advanceTime(totalDuration - padMs);
 
-        if (+context.timeCursor + padMs > +upperLimit) {
+        if (dropCrossing && +context.timeCursor + padMs > +upperLimit) {
           done = true;
           break;
         }

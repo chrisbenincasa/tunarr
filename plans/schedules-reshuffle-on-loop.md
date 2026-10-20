@@ -59,6 +59,8 @@ stream and each iterator's state. Users get a fresh shuffle every cycle without 
 | Random slots | `maxDays` |
 
 - A cycle ends where its last program ends, so lengths vary and are not whole minutes.
+- The program crossing the end time airs in that cycle. A random fixed-duration slot airs its whole
+  packed group, because collecting the group already advanced its iterators.
 - Each cycle starts exactly where the previous one ended.
 - Each time-slot cycle is generated from its own `t0`, so DST is handled per cycle.
 
@@ -92,6 +94,11 @@ Each cycle stores a snapshot of the state it started from:
   carries over.
 - Iterators are keyed by slot position or link group, not slot ID, because duplicate slot IDs are
   replaced with random ones on every build. Filler iterators are not carried over.
+- `playedIds` grows to every program played in the current pass. A large library means thousands
+  of UUIDs per shuffle slot per stored cycle. Bound it, or store it once per channel, before slice 3
+  writes it to lineup JSON.
+- `playedIds` is keyed by program UUID. A custom show that lists one program twice loses the
+  duplicate when a pass resumes. The ordered modes already collapse duplicates, so this is accepted.
 
 One seed per channel, with skip counts, keeps every cycle reproducible from the channel's seed.
 

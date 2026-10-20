@@ -888,7 +888,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }
         throw unwrapError(scheduleResult.error);
       }
-      const { result } = scheduleResult.get();
+
+      // Cycle state only matters to channel rebuilds, so previews leave it out.
+      const { iteratorState: _iteratorState, ...result } =
+        scheduleResult.get().result;
 
       const programsById = await container
         .get(MaterializeLineupCommand)
@@ -963,7 +966,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }
         throw unwrapError(scheduleResult.error);
       }
-      const { result } = scheduleResult.get();
+
+      // Cycle state only matters to channel rebuilds, so previews leave it out.
+      const { iteratorState: _iteratorState, ...result } =
+        scheduleResult.get().result;
 
       const programsById = await container
         .get(MaterializeLineupCommand)

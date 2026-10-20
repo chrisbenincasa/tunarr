@@ -21,7 +21,8 @@ export const ChannelTimeSlotScheduleRequest = z.object({
   strictValidation: z.boolean().optional(),
   // Set when building one cycle of a rebuilding channel. See SlotCycleOptions.
   iteratorState: SlotIteratorStateSchema.optional(),
-  endTime: z.number().optional(),
+  // Epoch milliseconds.
+  endTime: z.number().int().optional(),
 });
 
 export type ChannelTimeSlotScheduleRequest = z.infer<
@@ -40,7 +41,8 @@ export const ProgramsTimeSlotScheduleRequest = z.object({
   strictValidation: z.boolean().optional(),
   // Set when building one cycle of a rebuilding channel. See SlotCycleOptions.
   iteratorState: SlotIteratorStateSchema.optional(),
-  endTime: z.number().optional(),
+  // Epoch milliseconds.
+  endTime: z.number().int().optional(),
 });
 
 export type ProgramsTimeSlotScheduleRequest = z.infer<

@@ -134,11 +134,6 @@ export class RerunProgramIterator<
   fork(): ProgramIterator<ProgramT> {
     return this;
   }
-
-  // The rerun count restarts with each build.
-  snapshot(): ProgramIteratorSnapshot | undefined {
-    return this.inner.snapshot?.();
-  }
 }
 
 // Dummy state used when calling current() from next() for recording.
@@ -191,12 +186,6 @@ export class RecordingProgramIterator<
 
   fork(): ProgramIterator<ProgramT> {
     return this;
-  }
-
-  // The period buffer restarts with each build, so reruns replay only what
-  // aired in the same build.
-  snapshot(): ProgramIteratorSnapshot | undefined {
-    return this.inner.snapshot?.();
   }
 }
 
