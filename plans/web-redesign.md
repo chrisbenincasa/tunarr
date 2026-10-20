@@ -30,6 +30,7 @@ Decided 10/18–10/19/2026.
 | Top-level sections  | Guide, Channels, Schedules, Library, System. Settings sits at the right end of the bar.       | Schedules holds infinite schedules and the slot library. Sources moves under Settings, which already has a Sources tab. Section pages show as a sub-tab row under the bar.                                                                                                                                                                                                                                  |
 | Density control     | Settings → General only                                                                       | It is set once and rarely changed, so it does not earn space in the top bar. Color mode keeps a top-bar button.                                                                                                                                                                                                                                                                                             |
 | Form section layout | One tab per section on any settings or edit page whose sections are unrelated                 | Chosen 10/20/2026. Stacking sections as cards on one scrolling page overwhelmed, and made unrelated settings look related. Settings → General gets Server, Logging, Backups and This browser. Channel edit gets General, Filler, Guide and Streaming. Tab dots mark changes and errors, and the `SaveBar` counts changes across all tabs. Mock: https://claude.ai/artifact/2PWVduEbpN1iW6E66uu8T7 (private) |
+| Section tab style   | Underline tabs, the same look as the Settings tab row                                         | Chosen 10/20/2026 over pills and a side list. One tab style across the app is simpler to learn and build. On phone the row scrolls sideways.                                                                                                                                                                                                                                                                |
 
 ## Ban list
 
@@ -128,7 +129,7 @@ Each phase is one or more PRs against `main`. Each PR leaves the app working.
 ### Phase 4. Forms and settings
 
 - `FormSection`, field rows and a sticky `SaveBar`, built for React Hook Form.
-- Settings and edit pages with unrelated sections put each section on its own tab (see Decisions), including Settings → General and channel edit. The form stays one React Hook Form instance across tabs, so switching tabs keeps edits and one Save covers them all.
+- Settings and edit pages with unrelated sections put each section on its own tab (see Decisions), including Settings → General and channel edit. The section tabs use the underline style. The form stays one React Hook Form instance across tabs, so switching tabs keeps edits and one Save covers them all.
 - All settings tabs, then the entity new/edit pages.
 
 ### Phase 5. Media browser
