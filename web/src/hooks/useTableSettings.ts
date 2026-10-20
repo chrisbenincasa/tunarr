@@ -2,7 +2,7 @@ import type {
   OnChangeFn,
   PaginationState,
   SortingState,
-  VisibilityState,
+  ColumnVisibilityState,
 } from '@tanstack/react-table';
 import { isFunction } from 'lodash-es';
 import type {
@@ -35,14 +35,15 @@ export const useTableDensity = (
 export const useTableSettings = (
   tableName: string,
   defaultPaginationState: PaginationState = { pageIndex: 0, pageSize: 10 },
-  defaultVisibilityState: VisibilityState = {},
+  defaultVisibilityState: ColumnVisibilityState = {},
   defaultSortState: SortingState = [],
 ) => {
   const settings = useSettings();
   const tableSettings = settings.ui.tableSettings[tableName];
   const initialColumnModel =
     tableSettings?.columnModel ?? defaultVisibilityState;
-  const colVisibilityState = useState<VisibilityState>(initialColumnModel);
+  const colVisibilityState =
+    useState<ColumnVisibilityState>(initialColumnModel);
   const paginationState = useState<PaginationState>(
     tableSettings?.pagination ?? defaultPaginationState,
   );
@@ -50,7 +51,7 @@ export const useTableSettings = (
     tableSettings?.sortState ?? defaultSortState,
   );
 
-  const visibilityUpdater: OnChangeFn<VisibilityState> = useCallback(
+  const visibilityUpdater: OnChangeFn<ColumnVisibilityState> = useCallback(
     (updater) => {
       if (isFunction(updater)) {
         colVisibilityState[1]((prev) => {
@@ -87,7 +88,6 @@ export const useTableSettings = (
       if (isFunction(updater)) {
         sortState[1]((prev) => {
           const next = updater(prev);
-          console.log(next);
           setTableSortState(tableName, next);
           return next;
         });
@@ -118,7 +118,7 @@ export const useTableSettings = (
 export const useStoreBackedTableSettings = <Data extends MRT_RowData>(
   tableName: string,
   defaultPaginationState: PaginationState = { pageIndex: 0, pageSize: 10 },
-  defaultVisibilityState: VisibilityState = {},
+  defaultVisibilityState: ColumnVisibilityState = {},
   comfortableDensity: MRT_DensityState = 'comfortable',
 ) => {
   const { density, enableDensityToggle } = useTableDensity(comfortableDensity);

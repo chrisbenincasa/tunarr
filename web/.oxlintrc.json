@@ -1,12 +1,7 @@
 {
   "$schema": "../node_modules/oxlint/configuration_schema.json",
-  "extends": [
-    "../.oxlintrc.json"
-  ],
-  "plugins": [
-    "typescript",
-    "react"
-  ],
+  "extends": ["../.oxlintrc.json"],
+  "plugins": ["typescript", "react"],
   "env": {
     "browser": true,
     "es2020": true
@@ -32,12 +27,41 @@
     "typescript/only-throw-error": [
       "error",
       {
-        "allow": [
-          "Redirect",
-          "NotFoundError"
-        ],
+        "allow": ["Redirect", "NotFoundError"],
         "allowThrowingAny": false,
         "allowThrowingUnknown": false
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "material-react-table",
+            "message": "Use DataTable from components/ui/table. See plans/mrt-replacement.md."
+          },
+          {
+            "name": "@mui/material",
+            "importNames": [
+              "Table",
+              "TableBody",
+              "TableCell",
+              "TableContainer",
+              "TableFooter",
+              "TableHead",
+              "TablePagination",
+              "TableRow",
+              "TableSortLabel"
+            ],
+            "message": "Use DataTable from components/ui/table. See plans/mrt-replacement.md."
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["@mui/material/Table*"],
+            "message": "Use DataTable from components/ui/table. See plans/mrt-replacement.md."
+          }
+        ]
       }
     ]
   },
@@ -51,5 +75,35 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/generated/*"
+  ],
+  "overrides": [
+    {
+      "files": ["src/components/ui/**"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "src/components/MediaSourceLibraryTable.tsx",
+        "src/components/channel_config/ChannelSubtitlePreferencesTable.tsx",
+        "src/components/settings/ConnectMediaSources.tsx",
+        "src/components/settings/ffmpeg/TranscodeConfigsTable.tsx",
+        "src/components/slot_scheduler/RandomSlotTable.tsx",
+        "src/components/slot_scheduler/TimeSlotTable.tsx",
+        "src/components/smart_collections/SmartCollectionsTable.tsx",
+        "src/hooks/useTableSettings.ts",
+        "src/pages/channels/ChannelsPage.tsx",
+        "src/pages/library/CustomShowsPage.tsx",
+        "src/pages/settings/MediaSourceSettingsPage.tsx",
+        "src/pages/settings/TaskSettingsPage.tsx",
+        "src/pages/system/StatusPage.tsx",
+        "src/pages/system/SystemLogsPage.tsx",
+        "src/pages/system/TroubleshootPage.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
   ]
 }
