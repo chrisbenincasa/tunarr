@@ -1,12 +1,7 @@
 {
   "$schema": "../node_modules/oxlint/configuration_schema.json",
-  "extends": [
-    "../.oxlintrc.json"
-  ],
-  "plugins": [
-    "typescript",
-    "react"
-  ],
+  "extends": ["../.oxlintrc.json"],
+  "plugins": ["typescript", "react"],
   "env": {
     "browser": true,
     "es2020": true
@@ -32,12 +27,29 @@
     "typescript/only-throw-error": [
       "error",
       {
-        "allow": [
-          "Redirect",
-          "NotFoundError"
-        ],
+        "allow": ["Redirect", "NotFoundError"],
         "allowThrowingAny": false,
         "allowThrowingUnknown": false
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@mui/material",
+            "importNames": ["ToggleButton", "ToggleButtonGroup"],
+            "message": "Use Segmented from components/ui instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/ToggleButton",
+            "message": "Use Segmented from components/ui instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/ToggleButtonGroup",
+            "message": "Use Segmented from components/ui instead. See plans/web-redesign.md, Ban list."
+          }
+        ]
       }
     ]
   },
@@ -51,5 +63,34 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/generated/*"
+  ],
+  "overrides": [
+    {
+      "files": ["src/components/ui/**"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "src/components/base/ProgramViewToggleButton.tsx",
+        "src/components/base/StandaloneToggleButton.tsx",
+        "src/components/channel_config/ChannelProgrammingConfig.tsx",
+        "src/components/channel_config/ProgrammingSelector.tsx",
+        "src/components/programming_controls/BalanceProgrammingModal.tsx",
+        "src/components/search/SearchInputToggle.tsx",
+        "src/components/settings/DarkModeButton.tsx",
+        "src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx",
+        "src/components/settings/general/WebSettings.tsx",
+        "src/components/slot_scheduler/EditRandomSlotDialogContent.tsx",
+        "src/components/slot_scheduler/MidRollConfigPanel.tsx",
+        "src/components/slot_scheduler/SlotFillerDialogPanel.tsx",
+        "src/components/slot_scheduler/SlotOrderFormControl.tsx",
+        "src/pages/library/TrashPage.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
   ]
 }
