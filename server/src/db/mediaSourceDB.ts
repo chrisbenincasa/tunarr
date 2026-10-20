@@ -1,6 +1,7 @@
 import { KEYS } from '@/types/inject.js';
 import type { Maybe } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { tag } from '@tunarr/types';
 import type {
@@ -25,6 +26,7 @@ import { v4 } from 'uuid';
 import type { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import type { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 
+import type { ProgramStateRepository } from './program/ProgramStateRepository.ts';
 import type {
   MediaSourceId,
   MediaSourceName,
@@ -44,6 +46,8 @@ import { MediaSourceLibraryReplacePath } from './schema/MediaSourceLibraryReplac
 import { Program } from './schema/Program.ts';
 import { ProgramGrouping } from './schema/ProgramGrouping.ts';
 
+const logger = LoggerFactory.child({ className: 'MediaSourceDB' });
+
 type MediaSourceUserInfo = {
   userId?: string;
   username?: string;
@@ -59,6 +63,8 @@ export class MediaSourceDB {
     private mediaSourceLibraryRefresher: () => MediaSourceLibraryRefresher,
     @inject(KEYS.DrizzleDB)
     private drizzleDB: DrizzleDBAccess,
+    @inject(KEYS.ProgramStateRepository)
+    private programStateRepo: ProgramStateRepository,
   ) {}
 
   async getAll(): Promise<MediaSourceWithRelations[]> {
@@ -214,6 +220,11 @@ export class MediaSourceDB {
     }
 
     if (updateReq.type === 'local') {
+      const trashedProgramIds: string[] = [];
+      const trashedGroupingIds: string[] = [];
+      const restoredProgramIds: string[] = [];
+      const restoredGroupingIds: string[] = [];
+
       this.drizzleDB.transaction((tx) => {
         tx.update(MediaSource)
           .set({
@@ -228,24 +239,84 @@ export class MediaSourceDB {
           mediaSource.libraries,
           (incomingPath, { externalKey }) => incomingPath === externalKey,
         );
-        const deletePaths = differenceWith(
-          mediaSource.libraries,
+        // A library that is already flagged is not removed again: it keeps its
+        // externalKey, so it would otherwise be re-diffed as newly removed on
+        // every later save, re-stamping the date and rewriting what is already
+        // in the trash.
+        const removedLibraries = differenceWith(
+          mediaSource.libraries.filter((library) =>
+            isNil(library.unavailableSince),
+          ),
           updateReq.paths,
           ({ externalKey }, incomingPath) => externalKey === incomingPath,
-        ).map(({ externalKey }) => externalKey);
+        );
 
-        if (deletePaths.length > 0) {
-          tx.delete(MediaSourceLibrary)
-            .where(
-              and(
-                eq(
-                  MediaSourceLibrary.mediaSourceId,
-                  tag<MediaSourceId>(updateReq.id),
-                ),
-                inArray(MediaSourceLibrary.externalKey, deletePaths),
-              ),
-            )
+        // Removing a path keeps its library and moves what it held to the
+        // trash instead of deleting it outright: the library row is flagged so
+        // that scans leave it alone, and the user can still recover its
+        // programs until the trash is emptied.
+        if (removedLibraries.length > 0) {
+          const removedIds = removedLibraries.map(({ uuid }) => uuid);
+
+          tx.update(MediaSourceLibrary)
+            .set({ unavailableSince: new Date() })
+            .where(inArray(MediaSourceLibrary.uuid, removedIds))
             .run();
+
+          trashedProgramIds.push(
+            ...tx
+              .select({ uuid: Program.uuid })
+              .from(Program)
+              .where(inArray(Program.libraryId, removedIds))
+              .all()
+              .map(({ uuid }) => uuid),
+          );
+          trashedGroupingIds.push(
+            ...tx
+              .select({ uuid: ProgramGrouping.uuid })
+              .from(ProgramGrouping)
+              .where(inArray(ProgramGrouping.libraryId, removedIds))
+              .all()
+              .map(({ uuid }) => uuid),
+          );
+        }
+
+        // A path that comes back is the same library: clear the flag instead of
+        // inserting a second row for it, which would strand the programs the
+        // user is restoring in the trash.
+        const restoredLibraries = mediaSource.libraries.filter(
+          (library) =>
+            !isNil(library.unavailableSince) &&
+            updateReq.paths.includes(library.externalKey),
+        );
+
+        if (restoredLibraries.length > 0) {
+          const restoredIds = restoredLibraries.map(({ uuid }) => uuid);
+
+          tx.update(MediaSourceLibrary)
+            .set({ unavailableSince: null })
+            .where(inArray(MediaSourceLibrary.uuid, restoredIds))
+            .run();
+
+          // What the path held went to the trash with it, so it comes back
+          // with it: the scan that follows leaves unchanged folders alone, and
+          // nothing else would ever move these rows out of the trash.
+          restoredProgramIds.push(
+            ...tx
+              .select({ uuid: Program.uuid })
+              .from(Program)
+              .where(inArray(Program.libraryId, restoredIds))
+              .all()
+              .map(({ uuid }) => uuid),
+          );
+          restoredGroupingIds.push(
+            ...tx
+              .select({ uuid: ProgramGrouping.uuid })
+              .from(ProgramGrouping)
+              .where(inArray(ProgramGrouping.libraryId, restoredIds))
+              .all()
+              .map(({ uuid }) => uuid),
+          );
         }
 
         if (newPaths.length > 0) {
@@ -264,6 +335,54 @@ export class MediaSourceDB {
             .run();
         }
       });
+
+      // The ids are handed back so the caller can refresh the search index: the
+      // DB layer cannot reach the search service (it depends on this class).
+      // The transaction is committed by now, so a state write that fails must
+      // not fail the whole update: the rows keep their old state and the next
+      // save or scan repairs them.
+      try {
+        if (trashedProgramIds.length > 0) {
+          await this.programStateRepo.updateProgramsState(
+            trashedProgramIds,
+            'missing',
+          );
+        }
+
+        if (trashedGroupingIds.length > 0) {
+          await this.programStateRepo.updateGroupingsState(
+            trashedGroupingIds,
+            'missing',
+          );
+        }
+
+        if (restoredProgramIds.length > 0) {
+          await this.programStateRepo.updateProgramsState(
+            restoredProgramIds,
+            'ok',
+          );
+        }
+
+        if (restoredGroupingIds.length > 0) {
+          await this.programStateRepo.updateGroupingsState(
+            restoredGroupingIds,
+            'ok',
+          );
+        }
+      } catch (err) {
+        logger.error(
+          err,
+          'Could not update the state of the programs of media source %s.',
+          updateReq.id,
+        );
+      }
+
+      return {
+        programIds: trashedProgramIds,
+        groupingIds: trashedGroupingIds,
+        restoredProgramIds,
+        restoredGroupingIds,
+      };
     } else {
       const sendGuideUpdates =
         updateReq.type === 'plex'
@@ -305,6 +424,13 @@ export class MediaSourceDB {
       }
 
       this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
+
+      return {
+        programIds: [],
+        groupingIds: [],
+        restoredProgramIds: [],
+        restoredGroupingIds: [],
+      };
     }
   }
 
