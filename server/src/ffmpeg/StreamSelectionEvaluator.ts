@@ -27,7 +27,7 @@ export type StreamSelectionResult = {
 };
 
 export function buildCelContext(
-  audioStreams: NonEmptyArray<AudioStreamDetails>,
+  audioStreams: readonly AudioStreamDetails[],
   subtitleStreams: SubtitleStreamDetails[] | undefined,
   channel: { name: string; number: number },
   program: { title: string; type: string },
@@ -85,6 +85,28 @@ export function buildCelContext(
   };
 }
 
+export type StreamSelectionHints = {
+  preferTextBased?: boolean;
+};
+
+function findMatchingRule(
+  profile: StreamSelectionProfile,
+  celService: CelEvaluationService,
+  celContext: StreamSelectionCelContext,
+): StreamSelectionProfile['rules'][number] | undefined {
+  for (const rule of profile.rules) {
+    if (celService.evaluate(rule.condition, celContext)) {
+      logger.debug(
+        'Stream selection rule matched: %s (condition: %s)',
+        rule.label ?? '(unlabeled)',
+        rule.condition,
+      );
+      return rule;
+    }
+  }
+  return undefined;
+}
+
 export async function evaluateStreamSelectionProfile(
   profile: StreamSelectionProfile,
   audioStreams: NonEmptyArray<AudioStreamDetails>,
@@ -92,31 +114,53 @@ export async function evaluateStreamSelectionProfile(
   celService: CelEvaluationService,
   celContext: StreamSelectionCelContext,
   lineupItem: ContentBackedStreamLineupItem,
+  hints?: StreamSelectionHints,
 ): Promise<StreamSelectionResult> {
-  for (const rule of profile.rules) {
-    const conditionResult = celService.evaluate(rule.condition, celContext);
-    if (conditionResult) {
-      logger.debug(
-        'Stream selection rule matched: %s (condition: %s)',
-        rule.label ?? '(unlabeled)',
-        rule.condition,
-      );
-      const audioStream = resolveAudioAction(rule.audioAction, audioStreams);
-      const subtitleStream = await resolveSubtitleAction(
-        rule.subtitleAction,
-        subtitleStreams,
-        lineupItem,
-      );
-      return { audioStream, subtitleStream };
-    }
+  const rule = findMatchingRule(profile, celService, celContext);
+  if (!rule) {
+    logger.debug('No stream selection rule matched, using defaults');
+    return {
+      audioStream: audioStreams[0],
+      subtitleStream: null,
+    };
   }
 
-  // No rule matched - fallback to first audio stream, no subtitles
-  logger.debug('No stream selection rule matched, using defaults');
   return {
-    audioStream: audioStreams[0],
-    subtitleStream: null,
+    audioStream: resolveAudioAction(rule.audioAction, audioStreams),
+    subtitleStream: await resolveSubtitleAction(
+      rule.subtitleAction,
+      subtitleStreams,
+      lineupItem,
+      hints,
+    ),
   };
+}
+
+/**
+ * Resolve only the subtitle stream, for callers that have no audio to select.
+ * Passthrough output reuses the source audio as-is, so requiring an audio
+ * stream here would drop subtitles from content that has none.
+ */
+export async function evaluateSubtitleSelection(
+  profile: StreamSelectionProfile,
+  subtitleStreams: SubtitleStreamDetails[] | undefined,
+  celService: CelEvaluationService,
+  celContext: StreamSelectionCelContext,
+  lineupItem: ContentBackedStreamLineupItem,
+  hints?: StreamSelectionHints,
+): Promise<SubtitleStreamDetails | null> {
+  const rule = findMatchingRule(profile, celService, celContext);
+  if (!rule) {
+    logger.debug('No stream selection rule matched, selecting no subtitles');
+    return null;
+  }
+
+  return await resolveSubtitleAction(
+    rule.subtitleAction,
+    subtitleStreams,
+    lineupItem,
+    hints,
+  );
 }
 
 export type LanguageTaggedStream = {
@@ -141,6 +185,12 @@ export function streamMatchesLanguage(
   const streamLanguage =
     stream.languageCodeISO6392 ?? stream.languageCodeISO6391 ?? stream.language;
   return LanguageService.codesMatch(streamLanguage, language);
+}
+
+function hasLanguageTag(stream: LanguageTaggedStream): boolean {
+  return Boolean(
+    stream.languageCodeISO6392 ?? stream.languageCodeISO6391 ?? stream.language,
+  );
 }
 
 export function resolveAudioAction(
@@ -168,7 +218,7 @@ export function resolveAudioAction(
         }
       }
       // Fallback to default behavior
-      return selectDefautlAudioStream(audioStreams);
+      return selectDefaultAudioStream(audioStreams);
     }
 
     case 'by_title': {
@@ -176,15 +226,15 @@ export function resolveAudioAction(
       const match = audioStreams.find((s) =>
         s.title?.toLowerCase().includes(titleLower),
       );
-      return match ?? selectDefautlAudioStream(audioStreams);
+      return match ?? selectDefaultAudioStream(audioStreams);
     }
 
     case 'default':
-      return selectDefautlAudioStream(audioStreams);
+      return selectDefaultAudioStream(audioStreams);
   }
 }
 
-function selectDefautlAudioStream(
+function selectDefaultAudioStream(
   audioStreams: NonEmptyArray<AudioStreamDetails>,
 ) {
   return (
@@ -194,23 +244,64 @@ function selectDefautlAudioStream(
   );
 }
 
+/**
+ * Order candidates so text-based subs come first. The sort is stable, so
+ * streams keep their original relative order within each group.
+ */
+function sortSubtitleCandidates(
+  subtitleStreams: SubtitleStreamDetails[],
+  preferTextBased: boolean | undefined,
+): SubtitleStreamDetails[] {
+  const candidates = [...subtitleStreams];
+  if (preferTextBased) {
+    candidates.sort(
+      (a, b) =>
+        (isImageBasedSubtitle(a.codec) ? 1 : 0) -
+        (isImageBasedSubtitle(b.codec) ? 1 : 0),
+    );
+  }
+  return candidates;
+}
+
 async function resolveSubtitleAction(
   action: SubtitleAction,
   subtitleStreams: SubtitleStreamDetails[] | undefined,
   lineupItem: ContentBackedStreamLineupItem,
+  hints?: StreamSelectionHints,
 ): Promise<SubtitleStreamDetails | null> {
+  // Sorting is a user preference, so the profile field and the caller hint both
+  // feed it. Skipping extraction is a caller capability — only a caller that can
+  // mux an embedded stream straight from the container may ask for it, so that
+  // is driven by the hint alone. A profile must never send an unextracted stream
+  // to a caller that needs a real file path.
+  const mayReturnUnextracted = hints?.preferTextBased ?? false;
+
   switch (action.type) {
     case 'disable':
       return null;
 
     case 'default': {
-      if (!subtitleStreams || subtitleStreams.length === 0) {
-        return null;
-      }
-      const defaultStream = subtitleStreams.find((s) => s.default);
+      const candidates = sortSubtitleCandidates(
+        subtitleStreams ?? [],
+        hints?.preferTextBased || action.preferTextBased,
+      );
+
+      // Matches the legacy picker: with no default-flagged stream, fall back to
+      // the first candidate rather than dropping subtitles. External subs
+      // frequently carry no default flag.
+      const defaultStream = candidates.find((s) => s.default) ?? candidates[0];
       if (!defaultStream) {
         return null;
       }
+
+      if (
+        mayReturnUnextracted &&
+        defaultStream.type === 'embedded' &&
+        !isImageBasedSubtitle(defaultStream.codec)
+      ) {
+        return defaultStream;
+      }
+
       const extracted =
         await SubtitleStreamPicker.getSubtitleDetailsWithExtractedPath(
           lineupItem,
@@ -220,11 +311,11 @@ async function resolveSubtitleAction(
         return extracted;
       }
 
+      // Extraction only applies to embedded text subs. Anything else is already
+      // usable as-is.
       if (
-        defaultStream &&
-        (defaultStream.type === 'external' ||
-          (defaultStream.type === 'embedded' &&
-            isImageBasedSubtitle(defaultStream.codec)))
+        defaultStream.type === 'external' ||
+        isImageBasedSubtitle(defaultStream.codec)
       ) {
         return defaultStream;
       }
@@ -241,48 +332,50 @@ async function resolveSubtitleAction(
         return null;
       }
 
-      for (const lang of action.languages) {
-        for (const stream of subtitleStreams) {
-          // Language match
-          if (!streamMatchesLanguage(stream, lang)) {
+      const candidates = sortSubtitleCandidates(
+        subtitleStreams,
+        hints?.preferTextBased || action.preferTextBased,
+      );
+
+      const passesFilters = (stream: SubtitleStreamDetails) =>
+        !(action.filterType === 'forced' && !stream.forced) &&
+        !(action.filterType === 'default' && !stream.default) &&
+        !(!action.allowExternal && stream.type === 'external') &&
+        !(!action.allowImageBased && isImageBasedSubtitle(stream.codec));
+
+      // Untagged streams are a last resort, tried only after every requested
+      // language misses. The legacy picker accepted them for any language, and
+      // libraries without language tags would otherwise get no subtitles.
+      const languagePasses: Array<(stream: SubtitleStreamDetails) => boolean> =
+        [
+          ...action.languages.map(
+            (lang) => (stream: SubtitleStreamDetails) =>
+              streamMatchesLanguage(stream, lang),
+          ),
+          (stream) => !hasLanguageTag(stream),
+        ];
+
+      for (const matchesLanguage of languagePasses) {
+        for (const stream of candidates) {
+          if (!matchesLanguage(stream) || !passesFilters(stream)) {
             continue;
           }
 
-          // Filter type check
-          if (action.filterType === 'forced' && !stream.forced) {
-            continue;
-          }
-          if (action.filterType === 'default' && !stream.default) {
-            continue;
+          const isEmbeddedText =
+            stream.type === 'embedded' && !isImageBasedSubtitle(stream.codec);
+
+          if (!isEmbeddedText || mayReturnUnextracted) {
+            return stream;
           }
 
-          // External check
-          if (!action.allowExternal && stream.type === 'external') {
-            continue;
+          const extracted =
+            await SubtitleStreamPicker.getSubtitleDetailsWithExtractedPath(
+              lineupItem,
+              stream,
+            );
+          if (extracted) {
+            return extracted;
           }
-
-          // Image-based check
-          if (!action.allowImageBased && isImageBasedSubtitle(stream.codec)) {
-            continue;
-          }
-
-          // For embedded text-based subs, verify extraction
-          if (
-            !isImageBasedSubtitle(stream.codec) &&
-            stream.type === 'embedded'
-          ) {
-            const extracted =
-              await SubtitleStreamPicker.getSubtitleDetailsWithExtractedPath(
-                lineupItem,
-                stream,
-              );
-            if (extracted) {
-              return extracted;
-            }
-            continue;
-          }
-
-          return stream;
         }
       }
 
