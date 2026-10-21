@@ -6,7 +6,12 @@ import {
   type EditChannelTabProps,
   type EditChannelTabs,
 } from './EditChannelTabPanel';
-import { firstTabWithError, tabId } from './editChannelTabs.ts';
+import {
+  firstErrorPath,
+  firstTabWithError,
+  focusField,
+  tabId,
+} from './editChannelTabs.ts';
 
 const onMount = vi.fn<(label: string) => void>();
 const onRender = vi.fn<(label: string) => void>();
@@ -119,5 +124,50 @@ describe('firstTabWithError', () => {
   test('returns undefined when no tab owns an errored field', () => {
     expect(firstTabWithError(tabs, ['stealth'])).toBeUndefined();
     expect(firstTabWithError(tabs, [])).toBeUndefined();
+  });
+});
+
+describe('firstErrorPath', () => {
+  const wrapper = { focus: () => undefined };
+
+  test('takes the first listed field that has an error', () => {
+    const errors = {
+      name: { type: 'required', ref: wrapper },
+      number: { type: 'validate', ref: wrapper },
+    };
+    expect(firstErrorPath(errors, ['number', 'name'])).toBe('number');
+  });
+
+  test('builds the dotted path of a nested error', () => {
+    const errors = { watermark: { width: { type: 'min', ref: wrapper } } };
+    expect(firstErrorPath(errors, ['watermark'])).toBe('watermark.width');
+  });
+
+  test('indexes into arrays', () => {
+    const errors = {
+      fillerCollections: [undefined, { weight: { type: 'min' } }],
+    };
+    expect(firstErrorPath(errors, ['fillerCollections'])).toBe(
+      'fillerCollections.1.weight',
+    );
+  });
+
+  test('ignores errors outside the listed fields', () => {
+    const errors = { stealth: { type: 'required' } };
+    expect(firstErrorPath(errors, ['name'])).toBeUndefined();
+  });
+});
+
+describe('focusField', () => {
+  test('focuses the control with the field name inside the container', () => {
+    render(
+      <div data-testid="panel">
+        <input aria-label="Width" name="watermark.width" />
+      </div>,
+    );
+
+    focusField(screen.getByTestId('panel'), 'watermark.width');
+
+    expect(screen.getByLabelText('Width')).toHaveFocus();
   });
 });

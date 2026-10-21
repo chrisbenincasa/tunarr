@@ -38,7 +38,13 @@ import {
   type EditChannelTabProps,
   type EditChannelTabs,
 } from './EditChannelTabPanel.tsx';
-import { firstTabWithError, tabId, tabPanelId } from './editChannelTabs.ts';
+import {
+  firstErrorPath,
+  firstTabWithError,
+  focusField,
+  tabId,
+  tabPanelId,
+} from './editChannelTabs.ts';
 
 function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
   return {
@@ -247,12 +253,19 @@ export function EditChannelForm({
     switchTab(newValue);
 
   // Visited tabs stay mounted, so an error can sit in a hidden tab. Show that
-  // tab before react-hook-form focuses the first invalid field, because focus
-  // does nothing inside a hidden panel.
+  // tab, then focus the field, because focus does nothing inside a hidden panel.
   const onInvalid: SubmitErrorHandler<SaveableChannel> = (errors) => {
     const tab = firstTabWithError(EditChannelTabsProps, keys(errors));
-    if (tab !== undefined) {
-      flushSync(() => switchTab(tab));
+    const fields = EditChannelTabsProps.find((t) => t.value === tab)?.fields;
+    if (tab === undefined || fields === undefined) {
+      return;
+    }
+
+    flushSync(() => switchTab(tab));
+    const path = firstErrorPath(errors, fields);
+    const panel = document.getElementById(tabPanelId(tab));
+    if (path !== undefined && panel) {
+      focusField(panel, path);
     }
   };
 
@@ -318,7 +331,13 @@ export function EditChannelForm({
           <ChannelEditActions isNewChannel={isNew} />
         </Box>
       </FormProvider>
-      {!isNew && <UnsavedNavigationAlert isDirty={formIsDirty} />}
+      {!isNew && (
+        <UnsavedNavigationAlert
+          isDirty={formIsDirty}
+          // Switching tabs only rewrites `?tab=` on this route.
+          exceptTargetPaths={['/channels/$channelId/edit']}
+        />
+      )}
     </Paper>
   );
 }
