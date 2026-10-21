@@ -1,5 +1,6 @@
-import { Box, Stack, Typography, useTheme } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
+import { useThemeTokens } from '@/hooks/useTunarrTheme.ts';
 
 export type EmptyStateProps = {
   title: ReactNode;
@@ -16,9 +17,7 @@ export const EmptyState = ({
   icon,
   actions,
 }: EmptyStateProps) => {
-  const theme = useTheme();
-  const tokens = theme.palette.tokens;
-  const dense = theme.density === 'dense';
+  const { tokens, dense } = useThemeTokens();
   const iconSize = dense ? 40 : 56;
 
   return (

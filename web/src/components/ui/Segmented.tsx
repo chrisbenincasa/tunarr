@@ -1,4 +1,5 @@
-import { ToggleButton, ToggleButtonGroup, useTheme } from '@mui/material';
+import { useThemeTokens } from '@/hooks/useTunarrTheme.ts';
+import { ToggleButton, ToggleButtonGroup } from '@mui/material';
 import type { ReactNode } from 'react';
 
 export type SegmentedOption<T extends string> = {
@@ -27,8 +28,7 @@ export const Segmented = <T extends string>({
   fullWidth,
   disabled,
 }: SegmentedProps<T>) => {
-  const theme = useTheme();
-  const dense = theme.density === 'dense';
+  const { theme, dense } = useThemeTokens();
 
   // The group's padding and border take 8px, so the whole control matches a
   // small button's height.
