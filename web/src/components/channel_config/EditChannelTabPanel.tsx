@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import type { SaveableChannel } from '@tunarr/types';
 import { memo, useState } from 'react';
+import { tabId, tabPanelId } from './editChannelTabs.ts';
 import type { FieldPath } from 'react-hook-form';
 
 function isActive(props: EditChannelTabPanelProps) {
@@ -14,7 +15,7 @@ function isActive(props: EditChannelTabPanelProps) {
 
 export const EditChannelTabPanel = memo(
   function EditChannelTabPanel(props: EditChannelTabPanelProps) {
-    const { children, currentValue } = props;
+    const { children, value, currentValue: _currentValue, ...other } = props;
     const active = isActive(props);
     const [visited, setVisited] = useState(active);
 
@@ -26,8 +27,9 @@ export const EditChannelTabPanel = memo(
       <div
         role="tabpanel"
         hidden={!active}
-        id={`simple-tabpanel-${currentValue}`}
-        aria-labelledby={`simple-tab-${currentValue}`}
+        id={tabPanelId(value)}
+        aria-labelledby={tabId(value)}
+        {...other}
       >
         {visited && <Box sx={{ p: 3 }}>{children}</Box>}
       </div>

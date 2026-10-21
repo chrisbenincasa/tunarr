@@ -16,6 +16,7 @@ import type {
 } from '@tunarr/types';
 import { isEmpty, isNil, keys, map, reject, some } from 'lodash-es';
 import { useCallback, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   FormProvider,
   useForm,
@@ -37,6 +38,7 @@ import {
   type EditChannelTabProps,
   type EditChannelTabs,
 } from './EditChannelTabPanel.tsx';
+import { firstTabWithError, tabId, tabPanelId } from './editChannelTabs.ts';
 
 function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
   return {
@@ -228,11 +230,7 @@ export function EditChannelForm({
     }
   };
 
-  const onInvalid: SubmitErrorHandler<SaveableChannel> = (data) => {
-    console.error(data, formMethods.getValues());
-  };
-
-  const handleChange = (_: React.SyntheticEvent, newValue: EditChannelTabs) => {
+  const switchTab = (newValue: EditChannelTabs) => {
     if (newValue !== currentTab) {
       setCurrentTab(newValue);
       // Don't enable routing for new channel, yet.
@@ -242,6 +240,19 @@ export function EditChannelForm({
           search: { tab: newValue === 'properties' ? undefined : newValue },
         }).catch(console.warn);
       }
+    }
+  };
+
+  const handleChange = (_: React.SyntheticEvent, newValue: EditChannelTabs) =>
+    switchTab(newValue);
+
+  // Visited tabs stay mounted, so an error can sit in a hidden tab. Show that
+  // tab before react-hook-form focuses the first invalid field, because focus
+  // does nothing inside a hidden panel.
+  const onInvalid: SubmitErrorHandler<SaveableChannel> = (errors) => {
+    const tab = firstTabWithError(EditChannelTabsProps, keys(errors));
+    if (tab !== undefined) {
+      flushSync(() => switchTab(tab));
     }
   };
 
@@ -257,6 +268,8 @@ export function EditChannelForm({
     return (
       <Tab
         key={tab.value}
+        id={tabId(tab.value)}
+        aria-controls={tabPanelId(tab.value)}
         disabled={isNew && tab.value !== currentTab && !formIsValid}
         value={tab.value}
         label={
