@@ -85,6 +85,7 @@ export type SizeTokens = {
   shellPaddingX: number;
   pagePaddingY: number;
   pagePaddingX: number;
+  shellBarHeight: number;
 };
 
 export const sizes: Record<Density, SizeTokens> = {
@@ -105,6 +106,7 @@ export const sizes: Record<Density, SizeTokens> = {
     shellPaddingX: 32,
     pagePaddingY: 28,
     pagePaddingX: 32,
+    shellBarHeight: 64,
   },
   dense: {
     fontSize: 13,
@@ -123,6 +125,7 @@ export const sizes: Record<Density, SizeTokens> = {
     shellPaddingX: 24,
     pagePaddingY: 18,
     pagePaddingX: 24,
+    shellBarHeight: 46,
   },
 };
 

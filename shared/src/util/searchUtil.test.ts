@@ -1288,7 +1288,12 @@ describe('dateValue parser rule', () => {
     const query = searchFilterToString(
       makeTitleContainsFilter(' say "hi" {now} \\ '),
     );
-    expect(query).toEqual('title ~ "say hi now}"');
+    expect(query).toEqual('title ~ "say hi now"');
     parseAndCheckExpression(query);
+  });
+
+  test('title contains filter keeps words split by a dropped character apart', () => {
+    const query = searchFilterToString(makeTitleContainsFilter('a"b}c'));
+    expect(query).toEqual('title ~ "a b c"');
   });
 });

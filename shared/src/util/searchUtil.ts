@@ -1531,7 +1531,8 @@ export function makeLibraryIdFilter(libraryId: string): SearchFilterValueNode {
 }
 
 // The query syntax has no escapes, so a quoted value cannot hold `"`, `\` or `{`.
-// Those characters are dropped so the filter always serializes to a valid query.
+// Those characters and `}` become spaces so the filter always serializes to a
+// valid query and the words around them stay apart.
 export function makeTitleContainsFilter(term: string): SearchFilterValueNode & {
   fieldSpec: StringSearchField;
 } {
@@ -1542,7 +1543,12 @@ export function makeTitleContainsFilter(term: string): SearchFilterValueNode & {
       name: 'title',
       op: 'contains',
       type: 'string',
-      value: [term.replace(/["\\{]/g, '').trim()],
+      value: [
+        term
+          .replace(/["\\{}]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim(),
+      ],
     },
   };
 }

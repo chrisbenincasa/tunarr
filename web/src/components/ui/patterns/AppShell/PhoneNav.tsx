@@ -21,6 +21,8 @@ import {
   type ShellNav,
   type ShellNavSection,
   visibleSections,
+  sectionAriaCurrent,
+  worstBadgeSeverity,
 } from './navModel.ts';
 import { LinkButtonBase, LinkMenuItem, ShellIconButton } from './shellLinks.ts';
 
@@ -144,6 +146,7 @@ export const PhoneBottomBar = ({ nav, active }: PhoneBottomBarProps) => {
   const overflowing = items.length > MaxBottomItems;
   const shown = overflowing ? items.slice(0, MaxBottomItems - 1) : items;
   const overflow = overflowing ? items.slice(MaxBottomItems - 1) : [];
+  const moreBadge = worstBadgeSeverity(overflow);
   const moreCurrent = overflow.some((s) => s.id === active.sectionId);
 
   return (
@@ -170,7 +173,7 @@ export const PhoneBottomBar = ({ nav, active }: PhoneBottomBarProps) => {
           <LinkButtonBase
             key={section.id}
             to={section.to}
-            aria-current={current ? 'page' : undefined}
+            aria-current={sectionAriaCurrent(section, current)}
             sx={itemSx(current)}
           >
             <ItemIcon section={section} />
@@ -189,8 +192,8 @@ export const PhoneBottomBar = ({ nav, active }: PhoneBottomBarProps) => {
           >
             <Badge
               variant="dot"
-              color="error"
-              invisible={!overflow.some((s) => s.badge)}
+              color={moreBadge ?? 'error'}
+              invisible={moreBadge === undefined}
             >
               <MoreHoriz />
             </Badge>

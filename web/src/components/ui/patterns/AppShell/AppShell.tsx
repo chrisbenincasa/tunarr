@@ -92,7 +92,11 @@ export const AppShell = ({
         component="main"
         sx={
           phone
-            ? { px: '16px', pt: '18px', pb: `${PhoneBottomBarHeight + 24}px` }
+            ? {
+                px: '16px',
+                pt: '18px',
+                pb: `calc(${PhoneBottomBarHeight + 24}px + env(safe-area-inset-bottom))`,
+              }
             : {
                 maxWidth: AppShellMaxContentWidth,
                 mx: 'auto',
