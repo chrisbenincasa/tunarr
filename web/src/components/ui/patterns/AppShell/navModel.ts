@@ -99,3 +99,30 @@ export function resolveActiveNav(
 
 export const visibleSections = (nav: ShellNav) =>
   nav.sections.filter((section) => !section.hidden);
+
+// A section with sub-pages is an ancestor of the current page, whose tab
+// carries 'page'. A section without them is the page itself.
+export const sectionAriaCurrent = (
+  section: ShellNavSection,
+  current: boolean,
+): 'page' | 'location' | undefined => {
+  if (!current) {
+    return undefined;
+  }
+
+  return section.pages.length > 0 ? 'location' : 'page';
+};
+
+// The worst badge among the sections, for a control that stands in for them.
+export const worstBadgeSeverity = (
+  sections: ShellNavSection[],
+): ShellNavBadge['severity'] | undefined => {
+  const severities = sections.flatMap((s) =>
+    s.badge ? [s.badge.severity] : [],
+  );
+  if (severities.includes('error')) {
+    return 'error';
+  }
+
+  return severities.length > 0 ? 'warning' : undefined;
+};

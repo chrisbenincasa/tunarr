@@ -7,6 +7,7 @@ import {
   TextSnippet,
 } from '@mui/icons-material';
 import {
+  Box,
   Divider,
   ListItemIcon,
   ListItemText,
@@ -129,7 +130,7 @@ export const HelpMenu = ({
           </MenuItem>
         ))}
         <Divider />
-        <MenuItem disabled sx={{ '&.Mui-disabled': { opacity: 1 } }}>
+        <Box component="li" role="none" sx={{ px: 2, py: 0.75 }}>
           <ListItemText
             slotProps={{
               primary: { variant: 'mono', color: 'text.secondary' },
@@ -150,7 +151,7 @@ export const HelpMenu = ({
               ) : undefined
             }
           />
-        </MenuItem>
+        </Box>
       </Menu>
     </>
   );

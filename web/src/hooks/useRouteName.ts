@@ -148,8 +148,8 @@ const useNamedRoutes = () => {
       },
       {
         matcher: /^\/media_sources$/g,
-        name: t`Media Sources`,
-        to: '/library',
+        name: t`Sources`,
+        to: '/settings/sources',
       },
       {
         matcher: entityPageMatcher('media_sources', ''),

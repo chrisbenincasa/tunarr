@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { resolveActiveNav, type ShellNav } from './navModel.ts';
+import {
+  resolveActiveNav,
+  sectionAriaCurrent,
+  type ShellNav,
+  type ShellNavSection,
+  worstBadgeSeverity,
+} from './navModel.ts';
 
 const nav: ShellNav = {
   sections: [
@@ -93,5 +99,49 @@ describe('resolveActiveNav', () => {
 
   test('paths outside every section match nothing', () => {
     expect(resolveActiveNav(nav, '/search')).toEqual({});
+  });
+});
+
+describe('sectionAriaCurrent', () => {
+  const [, guide, , library] = nav.sections;
+
+  test('a current section without pages is the page', () => {
+    expect(sectionAriaCurrent(guide, true)).toBe('page');
+  });
+
+  test('a current section with pages is only the location', () => {
+    expect(sectionAriaCurrent(library, true)).toBe('location');
+    expect(sectionAriaCurrent(nav.settings, true)).toBe('location');
+  });
+
+  test('a section that is not current claims nothing', () => {
+    expect(sectionAriaCurrent(library, false)).toBeUndefined();
+  });
+});
+
+describe('worstBadgeSeverity', () => {
+  const withBadge = (severity?: 'warning' | 'error'): ShellNavSection => ({
+    id: severity ?? 'none',
+    label: '',
+    to: '/guide',
+    icon: null,
+    pages: [],
+    badge: severity ? { count: 1, severity } : undefined,
+  });
+
+  test('no badges means no dot', () => {
+    expect(worstBadgeSeverity([withBadge()])).toBeUndefined();
+  });
+
+  test('warnings alone stay warnings', () => {
+    expect(worstBadgeSeverity([withBadge(), withBadge('warning')])).toBe(
+      'warning',
+    );
+  });
+
+  test('any error wins', () => {
+    expect(worstBadgeSeverity([withBadge('warning'), withBadge('error')])).toBe(
+      'error',
+    );
   });
 });

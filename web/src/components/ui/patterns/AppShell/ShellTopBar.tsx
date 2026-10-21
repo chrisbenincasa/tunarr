@@ -30,6 +30,7 @@ import {
   type ShellNav,
   type ShellNavSection,
   visibleSections,
+  sectionAriaCurrent,
 } from './navModel.ts';
 import { NavBadge } from './NavBadge.tsx';
 import {
@@ -86,7 +87,7 @@ const SectionPill = ({
 }) => (
   <LinkButtonBase
     to={section.to}
-    aria-current={current ? 'page' : undefined}
+    aria-current={sectionAriaCurrent(section, current)}
     sx={pillSx(current)}
   >
     {section.label}
@@ -202,7 +203,8 @@ const useTopBarLayout = (sectionCount: number, activeIndex?: number) => {
       setLayout((prev) =>
         prev.search === next.search &&
         prev.wordmark === next.wordmark &&
-        prev.visible.join() === next.visible.join()
+        prev.visible.join() === next.visible.join() &&
+        prev.overflow.join() === next.overflow.join()
           ? prev
           : next,
       );
@@ -356,7 +358,7 @@ export const ShellTopBar = ({
             <LinkShellIconButton
               to={nav.settings.to}
               aria-label={nav.settings.label}
-              aria-current={settingsCurrent ? 'page' : undefined}
+              aria-current={sectionAriaCurrent(nav.settings, settingsCurrent)}
               current={settingsCurrent}
             >
               <SettingsOutlined />
