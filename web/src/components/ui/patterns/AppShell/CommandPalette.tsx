@@ -8,7 +8,13 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { type KeyboardEvent, useId, useState } from 'react';
+import {
+  type KeyboardEvent,
+  useCallback,
+  useId,
+  useMemo,
+  useState,
+} from 'react';
 import type { PaletteGroup, PaletteItem } from './paletteModel.ts';
 
 export type CommandPaletteProps = {
@@ -46,42 +52,56 @@ export const CommandPalette = ({
   const idPrefix = useId();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const items = groups.flatMap((g) => g.items);
+  const items = useMemo(() => groups.flatMap((g) => g.items), [groups]);
   const searchable = query.trim().length > 0;
   const rowCount = items.length + (searchable ? 1 : 0);
   const active = rowCount === 0 ? -1 : Math.min(activeIndex, rowCount - 1);
-  const rowId = (index: number) => `${idPrefix}-row-${index}`;
+  const rowId = useCallback(
+    (index: number) => `${idPrefix}-row-${index}`,
+    [idPrefix],
+  );
 
-  const choose = (index: number) => {
-    const item = items[index];
-    if (item) {
-      onSelect(item);
-    } else if (searchable && index === items.length) {
-      onSearchLibrary(query.trim());
-    }
-  };
+  const choose = useCallback(
+    (index: number) => {
+      const item = items[index];
+      if (item) {
+        onSelect(item);
+      } else if (searchable && index === items.length) {
+        onSearchLibrary(query.trim());
+      }
+    },
+    [items, searchable, query, onSelect, onSearchLibrary],
+  );
 
-  const move = (delta: number) => {
-    if (rowCount === 0) {
-      return;
-    }
-    const next = (active + delta + rowCount) % rowCount;
-    setActiveIndex(next);
-    document.getElementById(rowId(next))?.scrollIntoView({ block: 'nearest' });
-  };
+  const move = useCallback(
+    (delta: number) => {
+      if (rowCount === 0) {
+        return;
+      }
+      const next = (active + delta + rowCount) % rowCount;
+      setActiveIndex(next);
+      document
+        .getElementById(rowId(next))
+        ?.scrollIntoView({ block: 'nearest' });
+    },
+    [active, rowCount, rowId],
+  );
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      move(1);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      move(-1);
-    } else if (e.key === 'Enter' && active >= 0) {
-      e.preventDefault();
-      choose(active);
-    }
-  };
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        move(1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        move(-1);
+      } else if (e.key === 'Enter' && active >= 0) {
+        e.preventDefault();
+        choose(active);
+      }
+    },
+    [active, move, choose],
+  );
 
   const rowSx = (index: number) => ({
     width: '100%',
@@ -324,7 +344,7 @@ export const CommandPalette = ({
           }}
         >
           <span>
-            <Kbd>↑</Kbd> <Kbd>↓</Kbd> <Trans>move</Trans>
+            <Kbd>&uarr;</Kbd> <Kbd>&darr;</Kbd> <Trans>move</Trans>
           </span>
           <span>
             <Kbd>Enter</Kbd> <Trans>open</Trans>
